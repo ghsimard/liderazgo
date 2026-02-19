@@ -123,8 +123,10 @@ function RegionSelector({ onSelect }: { onSelect: (region: string) => void }) {
             </button>
           ))}
         </div>
-        <div className="mt-10">
-          <img src={logoCosmo} alt="Cosmo Schools" className="h-8 w-auto mx-auto opacity-50" />
+        <div className="mt-10 flex justify-center">
+          <div className="bg-white rounded-xl px-6 py-3 shadow-md inline-flex items-center justify-center">
+            <img src={logoCosmo} alt="Cosmo Schools" className="h-8 w-auto" />
+          </div>
         </div>
       </div>
     </div>
@@ -808,13 +810,15 @@ export default function FichaRLTForm() {
         </main>
 
         {/* Footer */}
-        <footer className="py-5 text-center" style={{ background: "hsl(var(--primary))" }}>
-          <div className="flex flex-col items-center gap-3">
-            <img
-              src={logoCosmo}
-              alt="Cosmo Schools"
-              className="h-10 w-auto object-contain brightness-0 invert opacity-90"
-            />
+        <footer className="py-6 text-center" style={{ background: "hsl(var(--primary))" }}>
+          <div className="flex flex-col items-center gap-4">
+            <div className="bg-white rounded-xl px-6 py-3 shadow-md inline-flex items-center justify-center">
+              <img
+                src={logoCosmo}
+                alt="Cosmo Schools"
+                className="h-10 w-auto object-contain"
+              />
+            </div>
             <p className="text-white text-xs opacity-60">Programa RLT / CLT · Colombia · {new Date().getFullYear()}</p>
           </div>
         </footer>
