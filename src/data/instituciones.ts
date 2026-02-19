@@ -1,3 +1,9 @@
+// Mapa región → entidad territorial réelle (Antioquia pour Oriente, Chocó pour Quibdó)
+export const entidadTerritorialPorRegion: Record<string, string> = {
+  Oriente: "Antioquia",
+  Quibdó: "Chocó",
+};
+
 export const institucionesPorRegion: Record<string, string[]> = {
   Oriente: [
     "I.E. Ignacio Botero - El Retiro",
@@ -45,6 +51,23 @@ export const institucionesPorRegion: Record<string, string[]> = {
     "Centro Educativo José Antonio Velásquez del 21 - Quibdó",
   ],
 };
+
+// Extraire les municipios uniques d'une région depuis le nom des institutions (partie après " - ")
+export function getMunicipiosPorRegion(region: string): string[] {
+  const ies = institucionesPorRegion[region] ?? [];
+  const municipios = ies.map((ie) => {
+    const parts = ie.split(" - ");
+    return parts[parts.length - 1].trim();
+  });
+  return [...new Set(municipios)].sort();
+}
+
+// Filtrer les institutions par municipio
+export function getInstitucionesPorMunicipio(region: string, municipio: string): string[] {
+  return (institucionesPorRegion[region] ?? []).filter((ie) =>
+    ie.endsWith(` - ${municipio}`)
+  );
+}
 
 export const entidadesTerritorialesColombia = [
   "Amazonas",
