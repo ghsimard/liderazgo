@@ -315,7 +315,6 @@ export default function FichaRLTForm() {
                 <div className="text-left">
                   <h1 className="text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
                   <p className="text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
-                  <p className="text-xs opacity-60 mt-1">Colombia · Ministerio de Educación</p>
                 </div>
                 <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
               </div>
@@ -331,7 +330,7 @@ export default function FichaRLTForm() {
                   <p className="text-sm md:text-base font-light" style={{ color: "hsl(152 80% 70%)" }}>
                     Programa CLT — Coordinadores Líderes Transformadores
                   </p>
-                  <p className="text-xs opacity-60 mt-1">Colombia · Ministerio de Educación</p>
+                  
                 </div>
                 <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
               </div>
