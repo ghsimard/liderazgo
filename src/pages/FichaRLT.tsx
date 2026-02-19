@@ -254,11 +254,14 @@ export default function FichaRLTForm() {
     // Auto-remplir entidad territorial selon la région (verrouillé)
     const et = entidadTerritorialPorRegion[region] ?? "";
     setValue("entidad_territorial", et, { shouldValidate: true });
-    setMunicipioSeleccionado("");
-    setValue("nombre_ie", "");
+    // Pour Quibdó, le municipio est aussi "Quibdó" (fixe)
     if (region === "Quibdó") {
+      setMunicipioSeleccionado("Quibdó");
       setValue("cargo_actual", "Rector / a", { shouldValidate: true });
+    } else {
+      setMunicipioSeleccionado("");
     }
+    setValue("nombre_ie", "");
   };
 
   const handleNuevaFicha = () => {
@@ -575,22 +578,32 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              {/* Municipio — filtré selon la région */}
+              {/* Municipio — fixe pour Quibdó, liste déroulante pour Oriente */}
               <FormFieldWrapper name="municipio" label="Municipio" required>
-                <select
-                  id="municipio"
-                  value={municipioSeleccionado}
-                  onChange={(e) => {
-                    setMunicipioSeleccionado(e.target.value);
-                    setValue("nombre_ie", "");
-                  }}
-                  className="form-input"
-                >
-                  <option value="">Seleccione el municipio</option>
-                  {municipios.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
+                {regionSeleccionada === "Quibdó" ? (
+                  <input
+                    id="municipio"
+                    value="Quibdó"
+                    readOnly
+                    disabled
+                    className="form-input opacity-75 cursor-not-allowed"
+                  />
+                ) : (
+                  <select
+                    id="municipio"
+                    value={municipioSeleccionado}
+                    onChange={(e) => {
+                      setMunicipioSeleccionado(e.target.value);
+                      setValue("nombre_ie", "");
+                    }}
+                    className="form-input"
+                  >
+                    <option value="">Seleccione el municipio</option>
+                    {municipios.map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                )}
               </FormFieldWrapper>
 
               {/* Institution — filtrée selon le municipio */}
