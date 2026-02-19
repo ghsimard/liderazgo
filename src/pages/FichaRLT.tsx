@@ -1,4 +1,6 @@
 import { useState } from "react";
+import logoRLT from "@/assets/logo_rlt.png";
+import logoCosmo from "@/assets/logo_cosmo.png";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -245,14 +247,15 @@ export default function FichaRLTForm() {
     <FormProvider {...methods}>
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <header className="text-white py-8 px-4 text-center" style={{ background: "var(--gradient-header)" }}>
+        <header className="text-white px-4 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">
-            <div className="flex justify-center mb-3">
-              <div className="flex gap-1">
-                <div className="w-3 h-3 rounded-full bg-white opacity-60"></div>
-                <div className="w-3 h-3 rounded-full" style={{ background: "hsl(var(--accent))" }}></div>
-                <div className="w-3 h-3 rounded-full bg-white opacity-60"></div>
-              </div>
+            {/* Logo RLT en haut */}
+            <div className="flex justify-center pt-6 pb-3">
+              <img
+                src={logoRLT}
+                alt="Rectores Líderes Transformadores"
+                className="h-28 w-auto object-contain drop-shadow-lg"
+              />
             </div>
             <h1 className="text-2xl md:text-3xl font-bold leading-tight mb-2">
               Ficha de Información Básica
@@ -261,7 +264,7 @@ export default function FichaRLTForm() {
               Programa RLT — Rectores Líderes Transformadores<br />
               <span style={{ color: "hsl(152 80% 70%)" }}>CLT — Coordinadores Líderes Transformadores</span>
             </p>
-            <p className="text-sm opacity-70 mt-2">Colombia · Ministerio de Educación</p>
+            <p className="text-sm opacity-70 mt-2 pb-6">Colombia · Ministerio de Educación</p>
           </div>
         </header>
 
@@ -742,9 +745,15 @@ export default function FichaRLTForm() {
         </main>
 
         {/* Footer */}
-        <footer className="text-white py-4 text-center text-xs" style={{ background: "hsl(var(--primary))" }}>
-          <p>Programa RLT / CLT · Colombia · {new Date().getFullYear()}</p>
-          <p className="opacity-60 mt-1">Documento de uso interno — Información confidencial</p>
+        <footer className="py-5 text-center" style={{ background: "hsl(var(--primary))" }}>
+          <div className="flex flex-col items-center gap-3">
+            <img
+              src={logoCosmo}
+              alt="Cosmo Schools"
+              className="h-10 w-auto object-contain brightness-0 invert opacity-90"
+            />
+            <p className="text-white text-xs opacity-60">Programa RLT / CLT · Colombia · {new Date().getFullYear()}</p>
+          </div>
         </footer>
       </div>
     </FormProvider>
