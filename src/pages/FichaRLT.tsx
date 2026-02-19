@@ -327,7 +327,7 @@ export default function FichaRLTForm() {
                   <p className="text-sm md:text-base opacity-90 font-light mt-1">
                     Programa RLT — Rectores Líderes Transformadores
                   </p>
-                  <p className="text-sm md:text-base font-light" style={{ color: "hsl(152 80% 70%)" }}>
+                  <p className="text-sm md:text-base font-light opacity-90">
                     Programa CLT — Coordinadores Líderes Transformadores
                   </p>
                   
