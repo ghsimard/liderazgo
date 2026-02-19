@@ -324,9 +324,12 @@ export default function FichaRLTForm() {
                 </div>
               </div>
             ) : (
-              /* Oriente : logo CLT à gauche, logo RLT à droite, titres centrés */
-              <div className="flex items-center justify-center gap-10">
-                <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+              /* Oriente : les deux logos côte à côte centrés, puis titres en dessous */
+              <div className="flex flex-col items-center gap-4">
+                <div className="flex items-center justify-center gap-10">
+                  <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+                  <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+                </div>
                 <div className="text-center">
                   <h1 className="text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
                   <p className="text-sm md:text-base opacity-90 font-light mt-1">
@@ -337,7 +340,6 @@ export default function FichaRLTForm() {
                   </p>
                   <p className="text-xl md:text-2xl font-bold mt-2 opacity-95">Región: {regionSeleccionada}</p>
                 </div>
-                <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
               </div>
             )}
           </div>
