@@ -17,6 +17,7 @@ export type Database = {
       fichas_rlt: {
         Row: {
           acepta_datos: boolean
+          apellidos: string | null
           cargo_actual: string
           celular_personal: string
           codigo_dane: string | null
@@ -49,6 +50,7 @@ export type Database = {
           modelo_pedagogico: string | null
           niveles_educativos: string[] | null
           nombre_ie: string
+          nombres: string | null
           nombres_apellidos: string
           num_administrativos: number | null
           num_coordinadores: number | null
@@ -73,6 +75,7 @@ export type Database = {
         }
         Insert: {
           acepta_datos?: boolean
+          apellidos?: string | null
           cargo_actual: string
           celular_personal: string
           codigo_dane?: string | null
@@ -105,6 +108,7 @@ export type Database = {
           modelo_pedagogico?: string | null
           niveles_educativos?: string[] | null
           nombre_ie: string
+          nombres?: string | null
           nombres_apellidos: string
           num_administrativos?: number | null
           num_coordinadores?: number | null
@@ -129,6 +133,7 @@ export type Database = {
         }
         Update: {
           acepta_datos?: boolean
+          apellidos?: string | null
           cargo_actual?: string
           celular_personal?: string
           codigo_dane?: string | null
@@ -161,6 +166,7 @@ export type Database = {
           modelo_pedagogico?: string | null
           niveles_educativos?: string[] | null
           nombre_ie?: string
+          nombres?: string | null
           nombres_apellidos?: string
           num_administrativos?: number | null
           num_coordinadores?: number | null

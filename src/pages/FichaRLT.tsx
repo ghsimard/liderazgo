@@ -19,7 +19,8 @@ import { CheckCircle, Download, RefreshCw, Send, AlertCircle } from "lucide-reac
 // ── Schema de validación ─────────────────────────────────────
 const schema = z.object({
   acepta_datos: z.boolean().refine((v) => v === true, { message: "Debe aceptar el tratamiento de datos personales" }),
-  nombres_apellidos: z.string().min(3, "Ingrese sus nombres y apellidos completos"),
+  nombres: z.string().min(2, "Ingrese sus nombres"),
+  apellidos: z.string().min(2, "Ingrese sus apellidos"),
   fecha_nacimiento: z.string().min(1, "Seleccione su fecha de nacimiento"),
   lengua_materna: z.string().min(1, "Seleccione una lengua materna"),
   lengua_otra: z.string().optional(),
@@ -126,7 +127,9 @@ export default function FichaRLTForm() {
 
     const payload = {
       acepta_datos: data.acepta_datos,
-      nombres_apellidos: data.nombres_apellidos,
+      nombres: data.nombres,
+      apellidos: data.apellidos,
+      nombres_apellidos: `${data.nombres} ${data.apellidos}`,
       fecha_nacimiento: data.fecha_nacimiento || null,
       lengua_materna: data.lengua_materna,
       lengua_otra: data.lengua_otra ?? null,
@@ -293,14 +296,24 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 1: Datos personales */}
             <FormSection number={1} title="Datos Personales">
-              <FormFieldWrapper name="nombres_apellidos" label="Nombres y Apellidos completos" required className="md:col-span-2">
+              <FormFieldWrapper name="nombres" label="Nombres" required>
                 <FormInput
-                  id="nombres_apellidos"
-                  {...register("nombres_apellidos")}
-                  placeholder="Ej: María Carolina Rodríguez Pérez"
-                  hasError={!!err("nombres_apellidos")}
+                  id="nombres"
+                  {...register("nombres")}
+                  placeholder="Ej: María Carolina"
+                  hasError={!!err("nombres")}
                 />
-                {err("nombres_apellidos") && <p className="field-error">{err("nombres_apellidos")}</p>}
+                {err("nombres") && <p className="field-error">{err("nombres")}</p>}
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="apellidos" label="Apellidos" required>
+                <FormInput
+                  id="apellidos"
+                  {...register("apellidos")}
+                  placeholder="Ej: Rodríguez Pérez"
+                  hasError={!!err("apellidos")}
+                />
+                {err("apellidos") && <p className="field-error">{err("apellidos")}</p>}
               </FormFieldWrapper>
 
               <FormFieldWrapper name="fecha_nacimiento" label="Fecha de nacimiento" required>

@@ -68,7 +68,8 @@ export function generarPDFFicha(datos: Record<string, unknown>): void {
 
   // ── Secciones ────────────────────────────────────────────────
   drawSection("1. Datos Personales");
-  drawRow("Nombres y Apellidos", val("nombres_apellidos"));
+  drawRow("Nombres", val("nombres"));
+  drawRow("Apellidos", val("apellidos"));
   drawRow("Fecha de Nacimiento", val("fecha_nacimiento"));
   drawRow("Lengua Materna", val("lengua_materna"));
   if (datos["lengua_otra"]) drawRow("Otra Lengua", val("lengua_otra"));
@@ -142,6 +143,6 @@ export function generarPDFFicha(datos: Record<string, unknown>): void {
     doc.text(`Página ${i} de ${totalPages}`, pageW - margin, 293, { align: "right" });
   }
 
-  const nombre = String(datos["nombres_apellidos"] ?? "ficha").replace(/\s+/g, "_");
+  const nombre = String(datos["apellidos"] ?? datos["nombres"] ?? "ficha").replace(/\s+/g, "_");
   doc.save(`Ficha_RLT_${nombre}.pdf`);
 }
