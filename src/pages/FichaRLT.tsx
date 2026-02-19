@@ -314,18 +314,17 @@ export default function FichaRLTForm() {
         <header className="text-white px-4 py-6 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">
             {regionSeleccionada === "Quibdó" ? (
-              /* Quibdó : logo RLT à gauche et droite du titre */
-              <div className="flex items-center justify-center gap-10">
-                <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
-                <div className="text-left">
+              /* Quibdó : un seul logo RLT centré au-dessus des titres */
+              <div className="flex flex-col items-center gap-4">
+                <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg" />
+                <div className="text-center">
                   <h1 className="text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
                   <p className="text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
                   <p className="text-xl md:text-2xl font-bold mt-2 opacity-95">Región: {regionSeleccionada}</p>
                 </div>
-                <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
               </div>
             ) : (
-              /* Oriente : logo CLT à gauche, logo RLT à droite, les deux titres */
+              /* Oriente : logo CLT à gauche, logo RLT à droite, titres centrés */
               <div className="flex items-center justify-center gap-10">
                 <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
                 <div className="text-center">
