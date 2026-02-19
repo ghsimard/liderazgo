@@ -1,0 +1,152 @@
+import { useFormContext } from "react-hook-form";
+import { cn } from "@/lib/utils";
+import { ReactNode } from "react";
+
+interface FormFieldWrapperProps {
+  name: string;
+  label: string;
+  required?: boolean;
+  children: ReactNode;
+  className?: string;
+  hideError?: boolean;
+}
+
+export function FormFieldWrapper({ name, label, required, children, className, hideError }: FormFieldWrapperProps) {
+  const { formState: { errors } } = useFormContext();
+  const error = errors[name];
+  const msg = error?.message as string | undefined;
+
+  return (
+    <div className={cn("flex flex-col gap-1", className)}>
+      <label className="field-label" htmlFor={name}>
+        {label}
+        {required && <span className="required-star">*</span>}
+      </label>
+      {children}
+      {!hideError && msg && <p className="field-error">{msg}</p>}
+    </div>
+  );
+}
+
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  hasError?: boolean;
+}
+
+export function FormInput({ hasError, className, ...props }: InputProps) {
+  return (
+    <input
+      className={cn("form-input", hasError && "error", className)}
+      {...props}
+    />
+  );
+}
+
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  hasError?: boolean;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+}
+
+export function FormSelect({ hasError, options, placeholder, className, ...props }: SelectProps) {
+  return (
+    <select className={cn("form-input", hasError && "error", className)} {...props}>
+      {placeholder && <option value="">{placeholder}</option>}
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  );
+}
+
+interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  hasError?: boolean;
+}
+
+export function FormTextArea({ hasError, className, ...props }: TextAreaProps) {
+  return (
+    <textarea
+      rows={3}
+      className={cn("form-input resize-none", hasError && "error", className)}
+      {...props}
+    />
+  );
+}
+
+interface RadioGroupProps {
+  name: string;
+  options: { value: string; label: string }[];
+  value?: string;
+  onChange?: (value: string) => void;
+  hasError?: boolean;
+}
+
+export function FormRadioGroup({ name, options, value, onChange, hasError }: RadioGroupProps) {
+  return (
+    <div className={cn("flex flex-wrap gap-4 mt-1", hasError && "ring-1 ring-destructive rounded p-1")}>
+      {options.map((o) => (
+        <label key={o.value} className="flex items-center gap-2 cursor-pointer text-sm">
+          <input
+            type="radio"
+            name={name}
+            value={o.value}
+            checked={value === o.value}
+            onChange={() => onChange?.(o.value)}
+            className="accent-primary w-4 h-4"
+          />
+          {o.label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+interface CheckboxGroupProps {
+  name: string;
+  options: { value: string; label: string }[];
+  value?: string[];
+  onChange?: (value: string[]) => void;
+}
+
+export function FormCheckboxGroup({ name, options, value = [], onChange }: CheckboxGroupProps) {
+  const toggle = (v: string) => {
+    const next = value.includes(v) ? value.filter((x) => x !== v) : [...value, v];
+    onChange?.(next);
+  };
+
+  return (
+    <div className="flex flex-wrap gap-4 mt-1">
+      {options.map((o) => (
+        <label key={o.value} className="flex items-center gap-2 cursor-pointer text-sm">
+          <input
+            type="checkbox"
+            name={`${name}_${o.value}`}
+            checked={value.includes(o.value)}
+            onChange={() => toggle(o.value)}
+            className="accent-primary w-4 h-4"
+          />
+          {o.label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+interface SectionProps {
+  number: number;
+  title: string;
+  children: ReactNode;
+}
+
+export function FormSection({ number, title, children }: SectionProps) {
+  return (
+    <div className="form-section">
+      <h2 className="section-title">
+        <span className="section-icon">{number}</span>
+        {title}
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {children}
+      </div>
+    </div>
+  );
+}
