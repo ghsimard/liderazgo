@@ -308,30 +308,34 @@ export default function FichaRLTForm() {
         {/* Header */}
         <header className="text-white px-4 py-6 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">
-            {/* Logo flanquant le titre */}
-            <div className="flex items-center justify-center gap-4 mb-3">
-              <img
-                src={logoHeader}
-                alt={altHeader}
-                className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0"
-              />
-              <div className="text-left">
-                <h1 className="text-2xl md:text-3xl font-bold leading-tight">
-                  Ficha de Información Básica
-                </h1>
-                <p className="text-sm md:text-base opacity-90 font-light mt-1">
-                  {regionSeleccionada === "Quibdó"
-                    ? "Programa RLT — Rectores Líderes Transformadores"
-                    : "Programa CLT — Coordinadores Líderes Transformadores"}
-                </p>
-                <p className="text-xs opacity-60 mt-1">Colombia · Ministerio de Educación</p>
+            {regionSeleccionada === "Quibdó" ? (
+              /* Quibdó : logo RLT à gauche et droite du titre */
+              <div className="flex items-center justify-center gap-4">
+                <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+                <div className="text-left">
+                  <h1 className="text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
+                  <p className="text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
+                  <p className="text-xs opacity-60 mt-1">Colombia · Ministerio de Educación</p>
+                </div>
+                <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
               </div>
-              <img
-                src={logoHeader}
-                alt={altHeader}
-                className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0"
-              />
-            </div>
+            ) : (
+              /* Oriente : logo CLT à gauche, logo RLT à droite, les deux titres */
+              <div className="flex items-center justify-center gap-4">
+                <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+                <div className="text-center">
+                  <h1 className="text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
+                  <p className="text-sm md:text-base opacity-90 font-light mt-1">
+                    Programa RLT — Rectores Líderes Transformadores
+                  </p>
+                  <p className="text-sm md:text-base font-light" style={{ color: "hsl(152 80% 70%)" }}>
+                    Programa CLT — Coordinadores Líderes Transformadores
+                  </p>
+                  <p className="text-xs opacity-60 mt-1">Colombia · Ministerio de Educación</p>
+                </div>
+                <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+              </div>
+            )}
           </div>
         </header>
 
