@@ -243,6 +243,9 @@ export default function FichaRLTForm() {
   const handleRegionSelect = (region: string) => {
     setRegionSeleccionada(region);
     setValue("region", region);
+    if (region === "Quibdó") {
+      setValue("cargo_actual", "Rector / a", { shouldValidate: true });
+    }
   };
 
   const handleNuevaFicha = () => {
@@ -561,16 +564,26 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               <FormFieldWrapper name="cargo_actual" label="Cargo actual" required>
-                <FormSelect
-                  id="cargo_actual"
-                  {...register("cargo_actual")}
-                  hasError={!!err("cargo_actual")}
-                  placeholder="Seleccione su cargo"
-                  options={[
-                    { value: "Rector / a", label: "Rector / a" },
-                    { value: "Coordinador / a", label: "Coordinador / a" },
-                  ]}
-                />
+                {regionSeleccionada === "Quibdó" ? (
+                  <input
+                    id="cargo_actual"
+                    value="Rector / a"
+                    readOnly
+                    disabled
+                    className="form-input opacity-75 cursor-not-allowed"
+                  />
+                ) : (
+                  <FormSelect
+                    id="cargo_actual"
+                    {...register("cargo_actual")}
+                    hasError={!!err("cargo_actual")}
+                    placeholder="Seleccione su cargo"
+                    options={[
+                      { value: "Rector / a", label: "Rector / a" },
+                      { value: "Coordinador / a", label: "Coordinador / a" },
+                    ]}
+                  />
+                )}
                 {err("cargo_actual") && <p className="field-error">{err("cargo_actual")}</p>}
               </FormFieldWrapper>
 
