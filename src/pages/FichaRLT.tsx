@@ -1,5 +1,6 @@
 import { useState } from "react";
 import logoRLT from "@/assets/logo_rlt.png";
+import logoCLT from "@/assets/logo_clt.png";
 import logoCosmo from "@/assets/logo_cosmo.png";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -89,8 +90,44 @@ const defaultValues: Partial<FormData> = {
   niveles_educativos: [],
 };
 
+// ── Pantalla de selección de región ──────────────────────────
+function RegionSelector({ onSelect }: { onSelect: (region: string) => void }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+      <div className="w-full max-w-md text-center">
+        <div className="flex justify-center gap-8 mb-8">
+          <img src={logoRLT} alt="RLT" className="h-28 w-auto object-contain" />
+          <img src={logoCLT} alt="CLT" className="h-28 w-auto object-contain" />
+        </div>
+        <h1 className="text-2xl font-bold mb-2" style={{ color: "hsl(var(--primary))" }}>
+          Ficha de Información Básica
+        </h1>
+        <p className="text-muted-foreground mb-8 text-sm">
+          Seleccione su región para continuar
+        </p>
+        <div className="flex flex-col gap-4">
+          {Object.keys(institucionesPorRegion).map((region) => (
+            <button
+              key={region}
+              onClick={() => onSelect(region)}
+              className="w-full py-5 rounded-xl text-white font-semibold text-lg shadow-md transition-transform hover:scale-105 active:scale-95"
+              style={{ background: "var(--gradient-header)" }}
+            >
+              {region === "Quibdó" ? "🏫 Quibdó — RLT" : "🏫 Oriente — CLT"}
+            </button>
+          ))}
+        </div>
+        <div className="mt-10">
+          <img src={logoCosmo} alt="Cosmo Schools" className="h-8 w-auto mx-auto opacity-50" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Componente principal ─────────────────────────────────────
 export default function FichaRLTForm() {
+  const [regionSeleccionada, setRegionSeleccionada] = useState<string | null>(null);
   const [enviado, setEnviado] = useState(false);
   const [datosPDF, setDatosPDF] = useState<Record<string, unknown> | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -197,7 +234,13 @@ export default function FichaRLTForm() {
     setEnviando(false);
   };
 
+  const handleRegionSelect = (region: string) => {
+    setRegionSeleccionada(region);
+    setValue("region", region);
+  };
+
   const handleNuevaFicha = () => {
+    setRegionSeleccionada(null);
     reset(defaultValues);
     setEnviado(false);
     setDatosPDF(null);
@@ -209,6 +252,16 @@ export default function FichaRLTForm() {
   };
 
   const err = (name: keyof FormData) => errors[name]?.message as string | undefined;
+
+  // ── Selección de región ──────────────────────────────────────
+  if (!regionSeleccionada) {
+    return <RegionSelector onSelect={handleRegionSelect} />;
+  }
+
+  const logoHeader = regionSeleccionada === "Quibdó" ? logoRLT : logoCLT;
+  const altHeader = regionSeleccionada === "Quibdó"
+    ? "Rectores Líderes Transformadores"
+    : "Coordinadores Líderes Transformadores";
 
   // ── Pantalla de éxito ───────────────────────────────────────
   if (enviado) {
@@ -249,11 +302,11 @@ export default function FichaRLTForm() {
         {/* Header */}
         <header className="text-white px-4 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">
-            {/* Logo RLT en haut */}
+            {/* Logo dynamique selon la région */}
             <div className="flex justify-center pt-6 pb-3">
               <img
-                src={logoRLT}
-                alt="Rectores Líderes Transformadores"
+                src={logoHeader}
+                alt={altHeader}
                 className="h-28 w-auto object-contain drop-shadow-lg"
               />
             </div>
@@ -261,8 +314,9 @@ export default function FichaRLTForm() {
               Ficha de Información Básica
             </h1>
             <p className="text-base md:text-lg opacity-90 font-light">
-              Programa RLT — Rectores Líderes Transformadores<br />
-              <span style={{ color: "hsl(152 80% 70%)" }}>CLT — Coordinadores Líderes Transformadores</span>
+              {regionSeleccionada === "Quibdó"
+                ? "Programa RLT — Rectores Líderes Transformadores"
+                : "Programa CLT — Coordinadores Líderes Transformadores"}
             </p>
             <p className="text-sm opacity-70 mt-2 pb-6">Colombia · Ministerio de Educación</p>
           </div>
