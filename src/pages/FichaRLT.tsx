@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
-import { institucionesPorRegion, entidadesTerritorialesColombia } from "@/data/instituciones";
+import { institucionesPorRegion, entidadTerritorialPorRegion, getMunicipiosPorRegion, getInstitucionesPorMunicipio } from "@/data/instituciones";
 import {
   FormFieldWrapper,
   FormInput,
@@ -136,6 +136,7 @@ function RegionSelector({ onSelect }: { onSelect: (region: string) => void }) {
 // ── Componente principal ─────────────────────────────────────
 export default function FichaRLTForm() {
   const [regionSeleccionada, setRegionSeleccionada] = useState<string | null>(null);
+  const [municipioSeleccionado, setMunicipioSeleccionado] = useState<string>("");
   const [enviado, setEnviado] = useState(false);
   const [datosPDF, setDatosPDF] = useState<Record<string, unknown> | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -164,7 +165,12 @@ export default function FichaRLTForm() {
   const jornadas = watch("jornadas") ?? [];
   const nivelesEducativos = watch("niveles_educativos") ?? [];
 
-  const instituciones = regionActual ? (institucionesPorRegion[regionActual] ?? []) : [];
+  // Dériver municipios et institutions depuis la hiérarchie
+  const municipios = regionActual ? getMunicipiosPorRegion(regionActual) : [];
+  const instituciones = municipioSeleccionado
+    ? getInstitucionesPorMunicipio(regionActual ?? "", municipioSeleccionado)
+    : (regionActual ? (institucionesPorRegion[regionActual] ?? []) : []);
+
 
   const onSubmit = async (data: FormData) => {
     setEnviando(true);
@@ -245,6 +251,11 @@ export default function FichaRLTForm() {
   const handleRegionSelect = (region: string) => {
     setRegionSeleccionada(region);
     setValue("region", region);
+    // Auto-remplir entidad territorial selon la région (verrouillé)
+    const et = entidadTerritorialPorRegion[region] ?? "";
+    setValue("entidad_territorial", et, { shouldValidate: true });
+    setMunicipioSeleccionado("");
+    setValue("nombre_ie", "");
     if (region === "Quibdó") {
       setValue("cargo_actual", "Rector / a", { shouldValidate: true });
     }
@@ -252,6 +263,7 @@ export default function FichaRLTForm() {
 
   const handleNuevaFicha = () => {
     setRegionSeleccionada(null);
+    setMunicipioSeleccionado("");
     reset(defaultValues);
     setEnviado(false);
     setDatosPDF(null);
@@ -552,14 +564,45 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 4: Institución */}
             <FormSection number={4} title="Información Institucional">
-              <FormFieldWrapper name="nombre_ie" label="Nombre de la Institución Educativa" required>
+              {/* Entidad Territorial — auto-rempli et verrouillé */}
+              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial">
+                <input
+                  id="entidad_territorial"
+                  value={entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? ""}
+                  readOnly
+                  disabled
+                  className="form-input opacity-75 cursor-not-allowed"
+                />
+              </FormFieldWrapper>
+
+              {/* Municipio — filtré selon la région */}
+              <FormFieldWrapper name="municipio" label="Municipio" required>
+                <select
+                  id="municipio"
+                  value={municipioSeleccionado}
+                  onChange={(e) => {
+                    setMunicipioSeleccionado(e.target.value);
+                    setValue("nombre_ie", "");
+                  }}
+                  className="form-input"
+                >
+                  <option value="">Seleccione el municipio</option>
+                  {municipios.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </FormFieldWrapper>
+
+              {/* Institution — filtrée selon le municipio */}
+              <FormFieldWrapper name="nombre_ie" label="Nombre de la Institución Educativa" required className="md:col-span-2">
                 <select
                   id="nombre_ie"
                   {...register("nombre_ie")}
                   className={`form-input ${err("nombre_ie") ? "error" : ""}`}
+                  disabled={!municipioSeleccionado}
                 >
-                  <option value="">Seleccione la institución</option>
-                  {(institucionesPorRegion[regionSeleccionada] ?? []).map((ie) => (
+                  <option value="">{municipioSeleccionado ? "Seleccione la institución" : "Primero seleccione el municipio"}</option>
+                  {instituciones.map((ie) => (
                     <option key={ie} value={ie}>{ie}</option>
                   ))}
                 </select>
@@ -639,15 +682,6 @@ export default function FichaRLTForm() {
                   hasError={!!err("codigo_dane")}
                 />
                 {err("codigo_dane") && <p className="field-error">{err("codigo_dane")}</p>}
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial">
-                <FormSelect
-                  id="entidad_territorial"
-                  {...register("entidad_territorial")}
-                  placeholder="Seleccione"
-                  options={entidadesTerritorialesColombia.map((et) => ({ value: et, label: et }))}
-                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
