@@ -323,7 +323,6 @@ export default function FichaRLTForm() {
                   {...register("fecha_nacimiento")}
                   hasError={!!err("fecha_nacimiento")}
                 />
-                {err("fecha_nacimiento") && <p className="field-error">{err("fecha_nacimiento")}</p>}
               </FormFieldWrapper>
 
               <FormFieldWrapper name="lengua_materna" label="Lengua materna" required>
