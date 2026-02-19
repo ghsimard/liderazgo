@@ -96,12 +96,14 @@ function RegionSelector({ onSelect }: { onSelect: (region: string) => void }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
       <div className="w-full max-w-md text-center">
-        {/* Logos côte à côte : RLT sur fond foncé, CLT sur fond clair */}
-        <div className="flex justify-center gap-8 mb-8 items-center">
+        {/* Logos côte à côte : les deux sur fond foncé */}
+        <div className="flex justify-center gap-6 mb-8 items-center">
           <div className="rounded-xl p-3 flex items-center justify-center" style={{ background: "var(--gradient-header)" }}>
             <img src={logoRLT} alt="RLT" className="h-24 w-auto object-contain" />
           </div>
-          <img src={logoCLT} alt="CLT" className="h-28 w-auto object-contain" />
+          <div className="rounded-xl p-3 flex items-center justify-center" style={{ background: "var(--gradient-header)" }}>
+            <img src={logoCLTDark} alt="CLT" className="h-24 w-auto object-contain" />
+          </div>
         </div>
         <h1 className="text-2xl font-bold mb-2" style={{ color: "hsl(var(--primary))" }}>
           Ficha de Información Básica
