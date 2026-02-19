@@ -1,6 +1,6 @@
 import { useFormContext } from "react-hook-form";
 import { cn } from "@/lib/utils";
-import { ReactNode } from "react";
+import { ReactNode, forwardRef } from "react";
 
 interface FormFieldWrapperProps {
   name: string;
@@ -32,14 +32,16 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   hasError?: boolean;
 }
 
-export function FormInput({ hasError, className, ...props }: InputProps) {
-  return (
+export const FormInput = forwardRef<HTMLInputElement, InputProps>(
+  ({ hasError, className, ...props }, ref) => (
     <input
+      ref={ref}
       className={cn("form-input", hasError && "error", className)}
       {...props}
     />
-  );
-}
+  )
+);
+FormInput.displayName = "FormInput";
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   hasError?: boolean;
@@ -47,30 +49,33 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   placeholder?: string;
 }
 
-export function FormSelect({ hasError, options, placeholder, className, ...props }: SelectProps) {
-  return (
-    <select className={cn("form-input", hasError && "error", className)} {...props}>
+export const FormSelect = forwardRef<HTMLSelectElement, SelectProps>(
+  ({ hasError, options, placeholder, className, ...props }, ref) => (
+    <select ref={ref} className={cn("form-input", hasError && "error", className)} {...props}>
       {placeholder && <option value="">{placeholder}</option>}
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
       ))}
     </select>
-  );
-}
+  )
+);
+FormSelect.displayName = "FormSelect";
 
 interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   hasError?: boolean;
 }
 
-export function FormTextArea({ hasError, className, ...props }: TextAreaProps) {
-  return (
+export const FormTextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
+  ({ hasError, className, ...props }, ref) => (
     <textarea
+      ref={ref}
       rows={3}
       className={cn("form-input resize-none", hasError && "error", className)}
       {...props}
     />
-  );
-}
+  )
+);
+FormTextArea.displayName = "FormTextArea";
 
 interface RadioGroupProps {
   name: string;
