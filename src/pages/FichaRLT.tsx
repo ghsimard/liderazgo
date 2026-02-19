@@ -310,7 +310,7 @@ export default function FichaRLTForm() {
           <div className="max-w-4xl mx-auto">
             {regionSeleccionada === "Quibdó" ? (
               /* Quibdó : logo RLT à gauche et droite du titre */
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-10">
                 <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
                 <div className="text-left">
                   <h1 className="text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
@@ -320,7 +320,7 @@ export default function FichaRLTForm() {
               </div>
             ) : (
               /* Oriente : logo CLT à gauche, logo RLT à droite, les deux titres */
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-10">
                 <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
                 <div className="text-center">
                   <h1 className="text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
