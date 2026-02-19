@@ -306,25 +306,32 @@ export default function FichaRLTForm() {
     <FormProvider {...methods}>
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <header className="text-white px-4 text-center" style={{ background: "var(--gradient-header)" }}>
+        <header className="text-white px-4 py-6 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">
-            {/* Logo dynamique selon la région */}
-            <div className="flex justify-center pt-6 pb-3">
+            {/* Logo flanquant le titre */}
+            <div className="flex items-center justify-center gap-4 mb-3">
               <img
                 src={logoHeader}
                 alt={altHeader}
-                className="h-28 w-auto object-contain drop-shadow-lg"
+                className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0"
+              />
+              <div className="text-left">
+                <h1 className="text-2xl md:text-3xl font-bold leading-tight">
+                  Ficha de Información Básica
+                </h1>
+                <p className="text-sm md:text-base opacity-90 font-light mt-1">
+                  {regionSeleccionada === "Quibdó"
+                    ? "Programa RLT — Rectores Líderes Transformadores"
+                    : "Programa CLT — Coordinadores Líderes Transformadores"}
+                </p>
+                <p className="text-xs opacity-60 mt-1">Colombia · Ministerio de Educación</p>
+              </div>
+              <img
+                src={logoHeader}
+                alt={altHeader}
+                className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0"
               />
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold leading-tight mb-2">
-              Ficha de Información Básica
-            </h1>
-            <p className="text-base md:text-lg opacity-90 font-light">
-              {regionSeleccionada === "Quibdó"
-                ? "Programa RLT — Rectores Líderes Transformadores"
-                : "Programa CLT — Coordinadores Líderes Transformadores"}
-            </p>
-            <p className="text-sm opacity-70 mt-2 pb-6">Colombia · Ministerio de Educación</p>
           </div>
         </header>
 
