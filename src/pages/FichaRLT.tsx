@@ -1,6 +1,7 @@
 import { useState } from "react";
 import logoRLT from "@/assets/logo_rlt.png";
 import logoCLT from "@/assets/logo_clt.png";
+import logoCLTDark from "@/assets/logo_clt_dark.png";
 import logoCosmo from "@/assets/logo_cosmo.png";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -258,7 +259,7 @@ export default function FichaRLTForm() {
     return <RegionSelector onSelect={handleRegionSelect} />;
   }
 
-  const logoHeader = regionSeleccionada === "Quibdó" ? logoRLT : logoCLT;
+  const logoHeader = regionSeleccionada === "Quibdó" ? logoRLT : logoCLTDark;
   const altHeader = regionSeleccionada === "Quibdó"
     ? "Rectores Líderes Transformadores"
     : "Coordinadores Líderes Transformadores";
