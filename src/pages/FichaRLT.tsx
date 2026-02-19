@@ -315,6 +315,7 @@ export default function FichaRLTForm() {
                 <div className="text-left">
                   <h1 className="text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
                   <p className="text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
+                  <p className="text-xl md:text-2xl font-bold mt-2 opacity-95">Región: {regionSeleccionada}</p>
                 </div>
                 <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
               </div>
@@ -330,7 +331,7 @@ export default function FichaRLTForm() {
                   <p className="text-sm md:text-base font-light opacity-90">
                     Programa CLT — Coordinadores Líderes Transformadores
                   </p>
-                  
+                  <p className="text-xl md:text-2xl font-bold mt-2 opacity-95">Región: {regionSeleccionada}</p>
                 </div>
                 <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
               </div>
@@ -545,35 +546,14 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 4: Institución */}
             <FormSection number={4} title="Información Institucional">
-              <FormFieldWrapper name="region" label="Región" required>
-                <FormSelect
-                  id="region"
-                  {...register("region")}
-                  hasError={!!err("region")}
-                  placeholder="Seleccione una región"
-                  options={[
-                    { value: "Oriente", label: "Oriente" },
-                    { value: "Quibdó", label: "Quibdó" },
-                  ]}
-                  onChange={(e) => {
-                    setValue("region", e.target.value, { shouldValidate: true });
-                    setValue("nombre_ie", "", { shouldValidate: false });
-                  }}
-                />
-                {err("region") && <p className="field-error">{err("region")}</p>}
-              </FormFieldWrapper>
-
               <FormFieldWrapper name="nombre_ie" label="Nombre de la Institución Educativa" required>
                 <select
                   id="nombre_ie"
                   {...register("nombre_ie")}
                   className={`form-input ${err("nombre_ie") ? "error" : ""}`}
-                  disabled={!regionActual}
                 >
-                  <option value="">
-                    {regionActual ? "Seleccione la institución" : "Seleccione una región primero"}
-                  </option>
-                  {instituciones.map((ie) => (
+                  <option value="">Seleccione la institución</option>
+                  {(institucionesPorRegion[regionSeleccionada] ?? []).map((ie) => (
                     <option key={ie} value={ie}>{ie}</option>
                   ))}
                 </select>
