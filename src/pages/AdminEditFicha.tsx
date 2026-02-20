@@ -763,50 +763,58 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              {/* Municipio — wrapper manuel, field-has-value basé sur state local */}
-              <div className="flex flex-col gap-1">
-                <div className={cn("floating-field-wrapper", !!municipioSeleccionado && "field-has-value")}>
-                  {watch("entidad_territorial") === "Quibdó" ? (
-                    <input
-                      id="municipio"
-                      value="Quibdó"
-                      readOnly
-                      disabled
-                      placeholder=" "
-                      className="form-input floating-input opacity-75 cursor-not-allowed"
-                    />
-                  ) : watch("entidad_territorial") === "Antioquia" ? (
-                    <select
-                      id="municipio"
-                      value={municipioSeleccionado}
-                      onChange={(e) => {
-                        setMunicipioSeleccionado(e.target.value);
-                        setValue("nombre_ie", "");
-                      }}
-                      className="form-input floating-input"
-                    >
-                      <option value=""></option>
-                      {getMunicipiosPorRegion("Oriente").map((m) => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      id="municipio"
-                      value={municipioSeleccionado}
-                      onChange={(e) => {
-                        setMunicipioSeleccionado(e.target.value);
-                        setValue("nombre_ie", "");
-                      }}
-                      placeholder=" "
-                      className="form-input floating-input"
-                    />
-                  )}
-                  <label className="floating-label" htmlFor="municipio">
-                    Municipio<span className="required-star ml-0.5">*</span>
-                  </label>
-                </div>
-              </div>
+              {/* Municipio — field-has-value basé sur la valeur effective (state OU valeur fixe Quibdó) */}
+              {(() => {
+                const entidad = watch("entidad_territorial") ?? "";
+                const isQuibdo = entidad === "Quibdó";
+                const isAntioquia = entidad === "Antioquia";
+                const effectiveValue = isQuibdo ? "Quibdó" : municipioSeleccionado;
+                return (
+                  <div className="flex flex-col gap-1">
+                    <div className={cn("floating-field-wrapper", !!effectiveValue && "field-has-value")}>
+                      {isQuibdo ? (
+                        <input
+                          id="municipio"
+                          value="Quibdó"
+                          readOnly
+                          disabled
+                          placeholder=" "
+                          className="form-input floating-input opacity-75 cursor-not-allowed"
+                        />
+                      ) : isAntioquia ? (
+                        <select
+                          id="municipio"
+                          value={municipioSeleccionado}
+                          onChange={(e) => {
+                            setMunicipioSeleccionado(e.target.value);
+                            setValue("nombre_ie", "");
+                          }}
+                          className="form-input floating-input"
+                        >
+                          <option value=""></option>
+                          {getMunicipiosPorRegion("Oriente").map((m) => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          id="municipio"
+                          value={municipioSeleccionado}
+                          onChange={(e) => {
+                            setMunicipioSeleccionado(e.target.value);
+                            setValue("nombre_ie", "");
+                          }}
+                          placeholder=" "
+                          className="form-input floating-input"
+                        />
+                      )}
+                      <label className="floating-label" htmlFor="municipio">
+                        Municipio<span className="required-star ml-0.5">*</span>
+                      </label>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
                 <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
