@@ -505,7 +505,7 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 1: Datos personales */}
             <FormSection number={1} title="Datos Personales">
-              <FormFieldWrapper name="nombres" label="Nombres" required>
+              <FormFieldWrapper name="nombres" label="Nombre(s)" required>
                 <FormInput
                   id="nombres"
                   {...register("nombres")}
@@ -515,7 +515,7 @@ export default function FichaRLTForm() {
 
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="apellidos" label="Apellidos" required>
+              <FormFieldWrapper name="apellidos" label="Apellido(s)" required>
                 <FormInput
                   id="apellidos"
                   {...register("apellidos")}
