@@ -68,7 +68,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 
 export const FormSelect = forwardRef<HTMLSelectElement, SelectProps>(
   ({ hasError, options, placeholder, className, ...props }, ref) => (
-    <select ref={ref} className={cn("form-input select-floating", hasError && "error", className)} {...props}>
+    <select ref={ref} className={cn("form-input floating-input", hasError && "error", className)} {...props}>
       <option value="">{placeholder ?? ""}</option>
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
