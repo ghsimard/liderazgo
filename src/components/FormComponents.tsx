@@ -18,14 +18,25 @@ export function FormFieldWrapper({ name, label, required, children, className, h
   const error = errors[name];
   const msg = error?.message as string | undefined;
 
+  if (staticLabel) {
+    return (
+      <div className={cn("flex flex-col gap-1", className)}>
+        <label className="field-label" htmlFor={name}>
+          {label}{required && <span className="required-star">*</span>}
+        </label>
+        {children}
+        {!hideError && msg && <p className="field-error">{msg}</p>}
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("flex flex-col gap-1", className)}>
-      <label className="field-label" htmlFor={name}>
-        {label}
-        {required && <span className="required-star">*</span>}
-      </label>
+    <div className={cn("floating-field-wrapper", className)}>
       {children}
-      {!hideError && msg && <p className="field-error">{msg}</p>}
+      <label className="floating-label" htmlFor={name}>
+        {label}{required && <span className="required-star ml-0.5">*</span>}
+      </label>
+      {!hideError && msg && <p className="field-error mt-1">{msg}</p>}
     </div>
   );
 }
@@ -39,7 +50,7 @@ export const FormInput = forwardRef<HTMLInputElement, InputProps>(
     <input
       ref={ref}
       placeholder={placeholder}
-      className={cn("form-input placeholder-hidden-until-focus", hasError && "error", className)}
+      className={cn("form-input floating-input", hasError && "error", className)}
       {...props}
     />
   )
@@ -54,8 +65,8 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 
 export const FormSelect = forwardRef<HTMLSelectElement, SelectProps>(
   ({ hasError, options, placeholder, className, ...props }, ref) => (
-    <select ref={ref} className={cn("form-input", hasError && "error", className)} {...props}>
-      {placeholder && <option value="">{placeholder}</option>}
+    <select ref={ref} className={cn("form-input select-floating", hasError && "error", className)} {...props}>
+      <option value="">{placeholder ?? ""}</option>
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
       ))}
@@ -74,7 +85,7 @@ export const FormTextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
       ref={ref}
       rows={3}
       placeholder={placeholder}
-      className={cn("form-input resize-none placeholder-hidden-until-focus", hasError && "error", className)}
+      className={cn("form-input floating-input resize-none", hasError && "error", className)}
       {...props}
     />
   )
