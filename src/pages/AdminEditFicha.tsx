@@ -442,11 +442,6 @@ export default function AdminEditFicha() {
   if (!ficha) return null;
 
   const isQuibdo = regionSeleccionada === "Quibdó";
-  // Same logic as FichaRLT: auto-fill from mapping, fall back to stored DB value
-  const etFromMapping = entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? "";
-  const etStored = watch("entidad_territorial") ?? "";
-  const etLocked = etFromMapping || etStored;
-  const municipioLocked = !tienesMunicipios || (municipioSeleccionado && etLocked === municipioSeleccionado);
 
   return (
     <FormProvider {...methods}>
