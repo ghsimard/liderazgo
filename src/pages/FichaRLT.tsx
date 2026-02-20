@@ -149,6 +149,18 @@ function DatePickerField({
             IconLeft: () => null,
             IconRight: () => null,
             CaptionLabel: () => null,
+            Dropdown: ({ value, onChange, children, name }) => {
+              if (name === "months") return null;
+              return (
+                <select
+                  value={value}
+                  onChange={onChange}
+                  className="text-sm border rounded px-1 py-0.5 bg-background"
+                >
+                  {children}
+                </select>
+              );
+            },
           }}
         />
       </PopoverContent>
