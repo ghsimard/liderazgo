@@ -718,7 +718,7 @@ export default function FichaRLTForm() {
                 )}
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad" className="md:col-span-2">
+              <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
                 <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
               </FormFieldWrapper>
 
@@ -743,7 +743,6 @@ export default function FichaRLTForm() {
                 <FormInput
                   id="codigo_dane"
                   {...register("codigo_dane")}
-                  placeholder="123456789012"
                   maxLength={12}
                   hasError={!!err("codigo_dane")}
                 />
