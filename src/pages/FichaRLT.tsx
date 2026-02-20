@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { format, parse, isValid } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import logoRLT from "@/assets/logo_rlt.png";
 import logoCLT from "@/assets/logo_clt.png";
 import logoCLTDark from "@/assets/logo_clt_dark.png";
@@ -18,6 +20,10 @@ import {
   FormCheckboxGroup,
   FormSection,
 } from "@/components/FormComponents";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { CheckCircle, Download, RefreshCw, Send, AlertCircle } from "lucide-react";
 
 // ── Schema de validación ─────────────────────────────────────
@@ -90,6 +96,52 @@ const defaultValues: Partial<FormData> = {
   jornadas: [],
   niveles_educativos: [],
 };
+
+// ── DatePicker dd/MM/yyyy ─────────────────────────────────────
+function DatePickerField({
+  value,
+  onChange,
+  placeholder = "dd/mm/aaaa",
+  disabled = false,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  const parsed = value ? parse(value, "yyyy-MM-dd", new Date()) : undefined;
+  const selected = parsed && isValid(parsed) ? parsed : undefined;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={disabled}
+          className={cn(
+            "w-full justify-start text-left font-normal form-input h-auto py-2",
+            !selected && "text-muted-foreground"
+          )}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4 opacity-60" />
+          {selected ? format(selected, "dd/MM/yyyy") : <span>{placeholder}</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={selected}
+          onSelect={(date) => {
+            if (date) onChange(format(date, "yyyy-MM-dd"));
+          }}
+          initialFocus
+          className={cn("p-3 pointer-events-auto")}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 // ── Pantalla de selección de región ──────────────────────────
 function RegionSelector({ onSelect }: { onSelect: (region: string) => void }) {
@@ -419,12 +471,11 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               <FormFieldWrapper name="fecha_nacimiento" label="Fecha de nacimiento" required>
-                <FormInput
-                  id="fecha_nacimiento"
-                  type="date"
-                  {...register("fecha_nacimiento")}
-                  hasError={!!err("fecha_nacimiento")}
+                <DatePickerField
+                  value={watch("fecha_nacimiento") ?? ""}
+                  onChange={(v) => setValue("fecha_nacimiento", v, { shouldValidate: true })}
                 />
+                {err("fecha_nacimiento") && <p className="field-error">{err("fecha_nacimiento")}</p>}
               </FormFieldWrapper>
 
               <FormFieldWrapper name="lengua_materna" label="Lengua materna" required>
@@ -667,15 +718,24 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               <FormFieldWrapper name="fecha_vinculacion_servicio" label="Fecha de vinculación al servicio educativo estatal">
-                <FormInput id="fecha_vinculacion_servicio" type="date" {...register("fecha_vinculacion_servicio")} />
+                <DatePickerField
+                  value={watch("fecha_vinculacion_servicio") ?? ""}
+                  onChange={(v) => setValue("fecha_vinculacion_servicio", v)}
+                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="fecha_nombramiento_cargo" label="Fecha de nombramiento estatal en el cargo actual">
-                <FormInput id="fecha_nombramiento_cargo" type="date" {...register("fecha_nombramiento_cargo")} />
+                <DatePickerField
+                  value={watch("fecha_nombramiento_cargo") ?? ""}
+                  onChange={(v) => setValue("fecha_nombramiento_cargo", v)}
+                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="fecha_nombramiento_ie" label="Fecha de nombramiento del cargo actual en la IE">
-                <FormInput id="fecha_nombramiento_ie" type="date" {...register("fecha_nombramiento_ie")} />
+                <DatePickerField
+                  value={watch("fecha_nombramiento_ie") ?? ""}
+                  onChange={(v) => setValue("fecha_nombramiento_ie", v)}
+                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="estatuto" label="Estatuto al que pertenece">
