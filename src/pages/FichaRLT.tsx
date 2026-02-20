@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { format, parse, isValid } from "date-fns";
-import { es } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
 import logoRLT from "@/assets/logo_rlt.png";
 import logoCLT from "@/assets/logo_clt.png";
 import logoCLTDark from "@/assets/logo_clt_dark.png";
@@ -21,9 +19,6 @@ import {
   FormCheckboxGroup,
   FormSection,
 } from "@/components/FormComponents";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CheckCircle, Download, RefreshCw, Send, AlertCircle } from "lucide-react";
 
@@ -98,11 +93,10 @@ const defaultValues: Partial<FormData> = {
   niveles_educativos: [],
 };
 
-// ── DatePicker dd/MM/yyyy ─────────────────────────────────────
+// ── Saisie de date DD / MM / YYYY ────────────────────────────
 function DatePickerField({
   value,
   onChange,
-  placeholder = "dd/mm/aaaa",
   disabled = false,
 }: {
   value: string;
@@ -110,41 +104,68 @@ function DatePickerField({
   placeholder?: string;
   disabled?: boolean;
 }) {
-  const parsed = value ? parse(value, "yyyy-MM-dd", new Date()) : undefined;
-  const selected = parsed && isValid(parsed) ? parsed : undefined;
+  // value est en format "yyyy-MM-dd" ou vide
+  const parts = value ? value.split("-") : ["", "", ""];
+  const [year, month, day] = parts;
+
+  const handleChange = (newDay: string, newMonth: string, newYear: string) => {
+    const d = parseInt(newDay);
+    const m = parseInt(newMonth);
+    const y = parseInt(newYear);
+    if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1900 && y <= new Date().getFullYear()) {
+      const date = parse(`${newYear}-${newMonth.padStart(2,"0")}-${newDay.padStart(2,"0")}`, "yyyy-MM-dd", new Date());
+      if (isValid(date)) {
+        onChange(format(date, "yyyy-MM-dd"));
+        return;
+      }
+    }
+    // Valeur partielle : on stocke quand même pour ne pas bloquer la saisie
+    if (newYear.length === 4 || newMonth || newDay) {
+      onChange(`${newYear}-${newMonth.padStart(2,"0")}-${newDay.padStart(2,"0")}`);
+    }
+  };
+
+  const inputClass = "form-input text-center w-full tabular-nums";
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled}
-          className={cn(
-            "w-full justify-start text-left font-normal form-input h-auto py-2",
-            !selected && "text-muted-foreground"
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4 opacity-60" />
-          {selected ? format(selected, "dd/MM/yyyy") : <span>{placeholder}</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={selected}
-          onSelect={(date) => {
-            if (date) onChange(format(date, "yyyy-MM-dd"));
-          }}
-          initialFocus
-          captionLayout="dropdown-buttons"
-          fromYear={1940}
-          toYear={new Date().getFullYear()}
-          locale={es}
-          className={cn("p-3 pointer-events-auto")}
+    <div className={`flex gap-2 items-center ${disabled ? "opacity-60 pointer-events-none" : ""}`}>
+      <div className="flex flex-col items-center gap-1 flex-1">
+        <span className="text-xs text-muted-foreground font-medium">Día</span>
+        <input
+          type="number"
+          min={1}
+          max={31}
+          placeholder="DD"
+          value={day || ""}
+          onChange={(e) => handleChange(e.target.value, month || "", year || "")}
+          className={inputClass}
         />
-      </PopoverContent>
-    </Popover>
+      </div>
+      <div className="flex flex-col items-center gap-1 flex-1">
+        <span className="text-xs text-muted-foreground font-medium">Mes</span>
+        <input
+          type="number"
+          min={1}
+          max={12}
+          placeholder="MM"
+          value={month || ""}
+          onChange={(e) => handleChange(day || "", e.target.value, year || "")}
+          className={inputClass}
+        />
+      </div>
+      <div className="flex flex-col items-center gap-1 flex-2">
+        <span className="text-xs text-muted-foreground font-medium">Año</span>
+        <input
+          type="number"
+          min={1940}
+          max={new Date().getFullYear()}
+          placeholder="AAAA"
+          value={year || ""}
+          onChange={(e) => handleChange(day || "", month || "", e.target.value)}
+          className={`${inputClass} min-w-[90px]`}
+        />
+      </div>
+    </div>
   );
 }
 
