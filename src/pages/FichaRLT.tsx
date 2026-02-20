@@ -674,9 +674,10 @@ export default function FichaRLTForm() {
                   disabled={!municipioSeleccionado}
                 >
                   <option value="">{municipioSeleccionado ? "Seleccione la institución" : "Primero seleccione el municipio"}</option>
-                  {instituciones.map((ie) => (
-                    <option key={ie} value={ie}>{formatIEName(ie)}</option>
-                  ))}
+                  {instituciones.map((ie) => {
+                    const label = formatIEName(ie).replace(new RegExp(`\\s*-\\s*${municipioSeleccionado}$`), "");
+                    return <option key={ie} value={ie}>{label}</option>;
+                  })}
                 </select>
                 {err("nombre_ie") && <p className="field-error">{err("nombre_ie")}</p>}
               </FormFieldWrapper>
