@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
@@ -13,13 +14,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -29,8 +23,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   LogOut,
@@ -71,6 +63,7 @@ const formatDateTime = (d: string | null) => {
 export default function AdminPage() {
   const { isAdmin, signOut } = useAdminAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [total, setTotal] = useState(0);
@@ -80,10 +73,6 @@ export default function AdminPage() {
   // Filters
   const [search, setSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState("");
-
-  // Edit dialog
-  const [editFicha, setEditFicha] = useState<Ficha | null>(null);
-  const [editLoading, setEditLoading] = useState(false);
 
   // Delete dialog
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -157,35 +146,6 @@ export default function AdminPage() {
     URL.revokeObjectURL(url);
   };
 
-  // ── Save edit ────────────────────────────────────────────────
-  const handleSaveEdit = async () => {
-    if (!editFicha) return;
-    setEditLoading(true);
-    const { error } = await supabase
-      .from("fichas_rlt")
-      .update({
-        nombres: editFicha.nombres,
-        apellidos: editFicha.apellidos,
-        correo_personal: editFicha.correo_personal,
-        correo_institucional: editFicha.correo_institucional,
-        celular_personal: editFicha.celular_personal,
-        cargo_actual: editFicha.cargo_actual,
-        nombre_ie: editFicha.nombre_ie,
-        region: editFicha.region,
-        codigo_dane: editFicha.codigo_dane,
-        entidad_territorial: editFicha.entidad_territorial,
-      })
-      .eq("id", editFicha.id);
-
-    if (error) {
-      toast({ title: "Error al guardar", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Ficha actualizada correctamente" });
-      setEditFicha(null);
-      fetchFichas();
-    }
-    setEditLoading(false);
-  };
 
   // ── Delete ───────────────────────────────────────────────────
   const handleDelete = async () => {
@@ -308,7 +268,7 @@ export default function AdminPage() {
                     <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(f.created_at)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setEditFicha(f)} title="Editar">
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/ficha/${f.id}`)} title="Editar">
                           <Pencil className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleteId(f.id)} title="Eliminar" className="text-destructive hover:text-destructive">
@@ -339,51 +299,6 @@ export default function AdminPage() {
         )}
       </div>
 
-      {/* Edit Dialog */}
-      <Dialog open={!!editFicha} onOpenChange={(o) => !o && setEditFicha(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar ficha — {editFicha?.nombres_apellidos}</DialogTitle>
-          </DialogHeader>
-          {editFicha && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
-              {[
-                { key: "nombres", label: "Nombres" },
-                { key: "apellidos", label: "Apellidos" },
-                { key: "correo_personal", label: "Correo personal" },
-                { key: "correo_institucional", label: "Correo institucional" },
-                { key: "celular_personal", label: "Celular" },
-                { key: "cargo_actual", label: "Cargo actual" },
-                { key: "region", label: "Región" },
-                { key: "entidad_territorial", label: "Entidad territorial" },
-                { key: "codigo_dane", label: "Código DANE" },
-              ].map(({ key, label }) => (
-                <div key={key} className="flex flex-col gap-1">
-                  <Label className="text-xs">{label}</Label>
-                  <Input
-                    value={(editFicha[key as keyof Ficha] as string) ?? ""}
-                    onChange={(e) => setEditFicha({ ...editFicha, [key]: e.target.value })}
-                  />
-                </div>
-              ))}
-              <div className="flex flex-col gap-1 sm:col-span-2">
-                <Label className="text-xs">Institución Educativa</Label>
-                <Textarea
-                  value={editFicha.nombre_ie}
-                  onChange={(e) => setEditFicha({ ...editFicha, nombre_ie: e.target.value })}
-                  rows={2}
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditFicha(null)}>Cancelar</Button>
-            <Button onClick={handleSaveEdit} disabled={editLoading}>
-              {editLoading ? "Guardando…" : "Guardar cambios"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>

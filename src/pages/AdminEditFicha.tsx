@@ -1,0 +1,905 @@
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useToast } from "@/hooks/use-toast";
+import {
+  institucionesPorRegion,
+  entidadTerritorialPorRegion,
+  getMunicipiosPorRegion,
+  getInstitucionesPorMunicipio,
+  formatIEName,
+  entidadesTerritorialesColombia,
+} from "@/data/instituciones";
+import {
+  FormFieldWrapper,
+  FormInput,
+  FormSelect,
+  FormTextArea,
+  FormRadioGroup,
+  FormCheckboxGroup,
+  FormSection,
+} from "@/components/FormComponents";
+import { cn } from "@/lib/utils";
+import logoRLT from "@/assets/logo_rlt.png";
+import logoCLTDark from "@/assets/logo_clt_dark.png";
+import logoCosmo from "@/assets/logo_cosmo.png";
+import { AlertCircle, ArrowLeft, RefreshCw, Save } from "lucide-react";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Ficha = Tables<"fichas_rlt">;
+
+// ── Schema (identical to FichaRLT but without strict validation for admin) ─────
+const schema = z.object({
+  acepta_datos: z.boolean(),
+  nombres: z.string().min(1, "Requerido"),
+  apellidos: z.string().min(1, "Requerido"),
+  fecha_nacimiento: z.string().min(1, "Requerido"),
+  lengua_materna: z.string().min(1, "Requerido"),
+  lengua_otra: z.string().optional(),
+  celular_personal: z.string().min(1, "Requerido"),
+  correo_personal: z.string().email("Correo inválido"),
+  correo_institucional: z.string().email("Correo inválido").optional().or(z.literal("")),
+  prefiere_correo: z.string().min(1, "Requerido"),
+  enfermedad_base: z.string().min(1, "Requerido"),
+  enfermedad_detalle: z.string().optional(),
+  contacto_emergencia: z.string().optional(),
+  telefono_emergencia: z.string().optional(),
+  discapacidad: z.string().min(1, "Requerido"),
+  discapacidad_detalle: z.string().optional(),
+  tipo_formacion: z.string().optional(),
+  titulo_pregrado: z.string().optional(),
+  titulo_especializacion: z.string().optional(),
+  titulo_maestria: z.string().optional(),
+  titulo_doctorado: z.string().optional(),
+  otros_titulos: z.string().optional(),
+  region: z.string().min(1, "Requerido"),
+  nombre_ie: z.string().min(1, "Requerido"),
+  cargo_actual: z.string().min(1, "Requerido"),
+  tipo_vinculacion: z.string().optional(),
+  fecha_vinculacion_servicio: z.string().optional(),
+  fecha_nombramiento_cargo: z.string().optional(),
+  fecha_nombramiento_ie: z.string().optional(),
+  estatuto: z.string().optional(),
+  grado_escalafon: z.string().optional(),
+  codigo_dane: z.string().optional(),
+  entidad_territorial: z.string().optional(),
+  comuna_barrio: z.string().optional(),
+  zona_sede: z.string().optional(),
+  total_sedes: z.string().optional(),
+  sedes_rural: z.string().optional(),
+  sedes_urbana: z.string().optional(),
+  jornadas: z.array(z.string()).optional(),
+  grupos_etnicos: z.string().optional(),
+  proyectos_transversales: z.string().optional(),
+  estudiantes_jec: z.string().optional(),
+  desplazamiento: z.string().optional(),
+  niveles_educativos: z.array(z.string()).optional(),
+  tipo_bachillerato: z.string().optional(),
+  modelo_pedagogico: z.string().optional(),
+  num_docentes: z.string().optional(),
+  num_coordinadores: z.string().optional(),
+  num_administrativos: z.string().optional(),
+  num_orientadores: z.string().optional(),
+  estudiantes_preescolar: z.string().optional(),
+  estudiantes_primaria: z.string().optional(),
+  estudiantes_ciclo_complementario: z.string().optional(),
+});
+
+type FormData = z.infer<typeof schema>;
+
+// ── DatePicker ────────────────────────────────────────────────
+function DatePickerField({
+  value,
+  onChange,
+  disabled = false,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  disabled?: boolean;
+}) {
+  const parsed = value ? new Date(value + "T12:00:00") : undefined;
+
+  const [day, setDay] = useState<number | "">(parsed ? parsed.getDate() : "");
+  const [month, setMonth] = useState<number | "">(parsed ? parsed.getMonth() : "");
+  const [year, setYear] = useState<number | "">(parsed ? parsed.getFullYear() : "");
+  const [touched, setTouched] = useState(false);
+
+  // Sync when value changes externally (after data load)
+  useEffect(() => {
+    if (value) {
+      const d = new Date(value + "T12:00:00");
+      setDay(d.getDate());
+      setMonth(d.getMonth());
+      setYear(d.getFullYear());
+    }
+  }, [value]);
+
+  const anyFilled = day !== "" || month !== "" || year !== "";
+  const allFilled = day !== "" && month !== "" && year !== "";
+  const showError = touched && anyFilled && !allFilled;
+
+  const commit = (d: number | "", m: number | "", y: number | "") => {
+    setTouched(true);
+    if (d !== "" && m !== "" && y !== "") {
+      const date = new Date(y as number, m as number, d as number, 12);
+      onChange(format(date, "yyyy-MM-dd"));
+    }
+  };
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 1939 }, (_, i) => currentYear - i);
+  const months = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+  ];
+  const maxDay = month !== "" && year !== ""
+    ? new Date(year as number, (month as number) + 1, 0).getDate()
+    : 31;
+  const days = Array.from({ length: maxDay }, (_, i) => i + 1);
+
+  const selectClass = (filled: boolean) =>
+    `form-input flex-1 !pt-0 !pb-0${showError && !filled ? " error" : ""}`;
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex gap-2">
+        <select disabled={disabled} value={day} onChange={(e) => { const d = e.target.value ? Number(e.target.value) : "" as const; setDay(d); commit(d, month, year); }} className={selectClass(day !== "")}>
+          <option value="">Día</option>
+          {days.map((d) => <option key={d} value={d}>{d}</option>)}
+        </select>
+        <select disabled={disabled} value={month} onChange={(e) => { const m = e.target.value !== "" ? Number(e.target.value) : "" as const; setMonth(m); commit(day, m, year); }} className={selectClass(month !== "")}>
+          <option value="">Mes</option>
+          {months.map((m, i) => <option key={i} value={i}>{m}</option>)}
+        </select>
+        <select disabled={disabled} value={year} onChange={(e) => { const y = e.target.value ? Number(e.target.value) : "" as const; setYear(y); commit(day, month, y); }} className={selectClass(year !== "")}>
+          <option value="">Año</option>
+          {years.map((y) => <option key={y} value={y}>{y}</option>)}
+        </select>
+      </div>
+      {showError && <p className="field-error">Debe completar el día, mes y año</p>}
+    </div>
+  );
+}
+
+// ── InstitutionSearchField ────────────────────────────────────
+function InstitutionSearchField({
+  instituciones, municipioSeleccionado, disabled = false, value, onChange, hasError, errorMsg,
+}: {
+  instituciones: string[]; municipioSeleccionado: string; disabled?: boolean; value: string;
+  onChange: (val: string) => void; hasError?: boolean; errorMsg?: string;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const getLabel = (ie: string) => formatIEName(ie).replace(new RegExp(`\\s*-\\s*${municipioSeleccionado}$`), "");
+  const selectedLabel = value ? getLabel(value) : "";
+  const hasContent = !!selectedLabel || query.length > 0;
+  const labelUp = isFocused || hasContent;
+
+  const filtered = query.length >= 3
+    ? instituciones.filter((ie) => getLabel(ie).toLowerCase().includes(query.toLowerCase()))
+    : [];
+
+  return (
+    <div className="flex flex-col gap-1 md:col-span-2">
+      <div className="relative">
+        <input
+          id="nombre_ie" type="text" autoComplete="off" disabled={disabled}
+          placeholder=" " value={selectedLabel || query}
+          onChange={(e) => { if (value) onChange(""); setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => { setIsFocused(true); if (query.length >= 3) setOpen(true); }}
+          onBlur={() => { setIsFocused(false); setTimeout(() => setOpen(false), 150); }}
+          className={cn("form-input", hasError && "error")}
+        />
+        <label htmlFor="nombre_ie" style={{
+          position: "absolute", left: "0.75rem", right: "0.75rem",
+          top: labelUp ? "0.45rem" : "50%", transform: labelUp ? "none" : "translateY(-50%)",
+          fontSize: labelUp ? "0.68rem" : "0.875rem", fontWeight: labelUp ? 600 : 400,
+          color: isFocused ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
+          pointerEvents: "none", transition: "top 0.2s ease, font-size 0.2s ease, color 0.2s ease, transform 0.2s ease",
+          lineHeight: 1, zIndex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>
+          Nombre de la Institución Educativa <span style={{ color: "hsl(var(--destructive))" }}>*</span>
+        </label>
+        {open && filtered.length > 0 && (
+          <ul className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
+            {filtered.map((ie) => (
+              <li key={ie}>
+                <button type="button" onMouseDown={() => { onChange(ie); setQuery(""); setOpen(false); }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors">
+                  {getLabel(ie)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {open && query.length >= 3 && filtered.length === 0 && (
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border border-border bg-card shadow-lg px-3 py-2 text-sm text-muted-foreground">
+            Sin resultados — puede escribir el nombre manualmente
+          </div>
+        )}
+      </div>
+      {hasError && errorMsg && <p className="field-error">{errorMsg}</p>}
+    </div>
+  );
+}
+
+// ── Helper: ficha → FormData ──────────────────────────────────
+function fichaToFormData(f: Ficha): FormData {
+  const s = (v: number | null | undefined) => v != null ? String(v) : "";
+  return {
+    acepta_datos: f.acepta_datos,
+    nombres: f.nombres ?? "",
+    apellidos: f.apellidos ?? "",
+    fecha_nacimiento: f.fecha_nacimiento ?? "",
+    lengua_materna: f.lengua_materna ?? "Español",
+    lengua_otra: f.lengua_otra ?? "",
+    celular_personal: f.celular_personal ?? "",
+    correo_personal: f.correo_personal ?? "",
+    correo_institucional: f.correo_institucional ?? "",
+    prefiere_correo: f.prefiere_correo ?? "",
+    enfermedad_base: f.enfermedad_base ?? "No",
+    enfermedad_detalle: f.enfermedad_detalle ?? "",
+    contacto_emergencia: f.contacto_emergencia ?? "",
+    telefono_emergencia: f.telefono_emergencia ?? "",
+    discapacidad: f.discapacidad ?? "No",
+    discapacidad_detalle: f.discapacidad_detalle ?? "",
+    tipo_formacion: f.tipo_formacion ?? "",
+    titulo_pregrado: f.titulo_pregrado ?? "",
+    titulo_especializacion: f.titulo_especializacion ?? "",
+    titulo_maestria: f.titulo_maestria ?? "",
+    titulo_doctorado: f.titulo_doctorado ?? "",
+    otros_titulos: f.otros_titulos ?? "",
+    region: f.region ?? "",
+    nombre_ie: f.nombre_ie ?? "",
+    cargo_actual: f.cargo_actual ?? "",
+    tipo_vinculacion: f.tipo_vinculacion ?? "",
+    fecha_vinculacion_servicio: f.fecha_vinculacion_servicio ?? "",
+    fecha_nombramiento_cargo: f.fecha_nombramiento_cargo ?? "",
+    fecha_nombramiento_ie: f.fecha_nombramiento_ie ?? "",
+    estatuto: f.estatuto ?? "",
+    grado_escalafon: f.grado_escalafon ?? "",
+    codigo_dane: f.codigo_dane ?? "",
+    entidad_territorial: f.entidad_territorial ?? "",
+    comuna_barrio: f.comuna_barrio ?? "",
+    zona_sede: f.zona_sede ?? "",
+    total_sedes: s(f.total_sedes),
+    sedes_rural: s(f.sedes_rural),
+    sedes_urbana: s(f.sedes_urbana),
+    jornadas: f.jornadas ?? [],
+    grupos_etnicos: f.grupos_etnicos ?? "",
+    proyectos_transversales: f.proyectos_transversales ?? "",
+    estudiantes_jec: s(f.estudiantes_jec),
+    desplazamiento: f.desplazamiento ?? "",
+    niveles_educativos: f.niveles_educativos ?? [],
+    tipo_bachillerato: f.tipo_bachillerato ?? "",
+    modelo_pedagogico: f.modelo_pedagogico ?? "",
+    num_docentes: s(f.num_docentes),
+    num_coordinadores: s(f.num_coordinadores),
+    num_administrativos: s(f.num_administrativos),
+    num_orientadores: s(f.num_orientadores),
+    estudiantes_preescolar: s(f.estudiantes_preescolar),
+    estudiantes_primaria: s(f.estudiantes_primaria),
+    estudiantes_ciclo_complementario: s(f.estudiantes_ciclo_complementario),
+  };
+}
+
+// ── Main component ────────────────────────────────────────────
+export default function AdminEditFicha() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { isAdmin } = useAdminAuth();
+  const { toast } = useToast();
+
+  const [ficha, setFicha] = useState<Ficha | null>(null);
+  const [loadingFicha, setLoadingFicha] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [municipioSeleccionado, setMunicipioSeleccionado] = useState("");
+
+  const methods = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { jornadas: [], niveles_educativos: [] },
+    mode: "onBlur",
+  });
+
+  const { register, watch, setValue, handleSubmit, reset, formState: { errors } } = methods;
+
+  const regionActual = watch("region");
+  const lenguaMaterna = watch("lengua_materna");
+  const enfermedadBase = watch("enfermedad_base");
+  const discapacidad = watch("discapacidad");
+  const jornadas = watch("jornadas") ?? [];
+  const nivelesEducativos = watch("niveles_educativos") ?? [];
+
+  const tienesMunicipios = regionActual ? getMunicipiosPorRegion(regionActual).length > 1 : false;
+  const municipios = tienesMunicipios ? getMunicipiosPorRegion(regionActual ?? "") : [];
+  const instituciones = tienesMunicipios && municipioSeleccionado
+    ? getInstitucionesPorMunicipio(regionActual ?? "", municipioSeleccionado)
+    : (regionActual ? (institucionesPorRegion[regionActual] ?? []) : []);
+
+  // Load ficha
+  useEffect(() => {
+    if (!id || !isAdmin) return;
+    (async () => {
+      const { data, error } = await supabase.from("fichas_rlt").select("*").eq("id", id).single();
+      if (error || !data) {
+        toast({ title: "Ficha no encontrada", variant: "destructive" });
+        navigate("/admin");
+        return;
+      }
+      setFicha(data);
+      const fd = fichaToFormData(data);
+      reset(fd);
+
+      // Infer municipio from nombre_ie
+      const region = data.region ?? "";
+      if (getMunicipiosPorRegion(region).length > 1 && data.nombre_ie) {
+        const parts = data.nombre_ie.split(" - ");
+        const municipio = parts[parts.length - 1]?.trim() ?? "";
+        setMunicipioSeleccionado(municipio);
+      }
+
+      setLoadingFicha(false);
+    })();
+  }, [id, isAdmin]);
+
+  const err = (name: keyof FormData) => errors[name]?.message as string | undefined;
+
+  const onSubmit = async (data: FormData) => {
+    if (!ficha) return;
+    setSaving(true);
+
+    const toInt = (v: string | undefined) => (v ? parseInt(v) : null);
+
+    const payload = {
+      acepta_datos: data.acepta_datos,
+      nombres: data.nombres,
+      apellidos: data.apellidos,
+      nombres_apellidos: `${data.nombres} ${data.apellidos}`,
+      fecha_nacimiento: data.fecha_nacimiento || null,
+      lengua_materna: data.lengua_materna,
+      lengua_otra: data.lengua_otra ?? null,
+      celular_personal: data.celular_personal,
+      correo_personal: data.correo_personal,
+      correo_institucional: data.correo_institucional || null,
+      prefiere_correo: data.prefiere_correo,
+      enfermedad_base: data.enfermedad_base,
+      enfermedad_detalle: data.enfermedad_detalle ?? null,
+      contacto_emergencia: data.contacto_emergencia ?? null,
+      telefono_emergencia: data.telefono_emergencia ?? null,
+      discapacidad: data.discapacidad,
+      discapacidad_detalle: data.discapacidad_detalle ?? null,
+      tipo_formacion: data.tipo_formacion ?? null,
+      titulo_pregrado: data.titulo_pregrado ?? null,
+      titulo_especializacion: data.titulo_especializacion ?? null,
+      titulo_maestria: data.titulo_maestria ?? null,
+      titulo_doctorado: data.titulo_doctorado ?? null,
+      otros_titulos: data.otros_titulos ?? null,
+      region: data.region,
+      nombre_ie: data.nombre_ie,
+      cargo_actual: data.cargo_actual,
+      tipo_vinculacion: data.tipo_vinculacion ?? null,
+      fecha_vinculacion_servicio: data.fecha_vinculacion_servicio || null,
+      fecha_nombramiento_cargo: data.fecha_nombramiento_cargo || null,
+      fecha_nombramiento_ie: data.fecha_nombramiento_ie || null,
+      estatuto: data.estatuto ?? null,
+      grado_escalafon: data.grado_escalafon ?? null,
+      codigo_dane: data.codigo_dane ?? null,
+      entidad_territorial: data.entidad_territorial ?? null,
+      comuna_barrio: data.comuna_barrio ?? null,
+      zona_sede: data.zona_sede ?? null,
+      total_sedes: toInt(data.total_sedes),
+      sedes_rural: toInt(data.sedes_rural),
+      sedes_urbana: toInt(data.sedes_urbana),
+      jornadas: data.jornadas ?? null,
+      grupos_etnicos: data.grupos_etnicos ?? null,
+      proyectos_transversales: data.proyectos_transversales ?? null,
+      estudiantes_jec: toInt(data.estudiantes_jec),
+      desplazamiento: data.desplazamiento ?? null,
+      niveles_educativos: data.niveles_educativos ?? null,
+      tipo_bachillerato: data.tipo_bachillerato ?? null,
+      modelo_pedagogico: data.modelo_pedagogico ?? null,
+      num_docentes: toInt(data.num_docentes),
+      num_coordinadores: toInt(data.num_coordinadores),
+      num_administrativos: toInt(data.num_administrativos),
+      num_orientadores: toInt(data.num_orientadores),
+      estudiantes_preescolar: toInt(data.estudiantes_preescolar),
+      estudiantes_primaria: toInt(data.estudiantes_primaria),
+      estudiantes_ciclo_complementario: toInt(data.estudiantes_ciclo_complementario),
+    };
+
+    const { error } = await supabase.from("fichas_rlt").update(payload).eq("id", ficha.id);
+
+    if (error) {
+      toast({ title: "Error al guardar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Ficha actualizada correctamente" });
+      navigate("/admin");
+    }
+    setSaving(false);
+  };
+
+  if (!isAdmin || loadingFicha) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <RefreshCw className="animate-spin w-6 h-6 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!ficha) return null;
+
+  const region = ficha.region;
+  const isQuibdo = region === "Quibdó";
+
+  return (
+    <FormProvider {...methods}>
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="text-white px-4 py-5 md:py-6 text-center" style={{ background: "var(--gradient-header)" }}>
+          <div className="max-w-4xl mx-auto">
+            {isQuibdo ? (
+              <div className="flex flex-col items-center gap-3">
+                <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg" />
+                <div className="text-center">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Editar Ficha de Información</h1>
+                  <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">Región: {region}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center justify-center gap-4 sm:gap-10">
+                  <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+                  <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+                </div>
+                <div className="text-center">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Editar Ficha de Información</h1>
+                  <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">Programa RLT / CLT</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">Región: {region}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* Franja verde */}
+        <div className="h-1" style={{ background: "hsl(var(--accent))" }} />
+
+        {/* Back button */}
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 pt-4">
+          <button
+            type="button"
+            onClick={() => navigate("/admin")}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Volver al panel de administración
+          </button>
+        </div>
+
+        {/* Formulario */}
+        <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+
+            {/* Consentimiento */}
+            <div className="form-section border-l-4" style={{ borderLeftColor: "hsl(var(--primary))" }}>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...register("acepta_datos")}
+                  className="mt-1 w-5 h-5 accent-primary flex-shrink-0"
+                />
+                <span className="text-sm leading-relaxed">
+                  <strong>Autorización de datos personales: </strong>
+                  El participante acepta el tratamiento de sus datos personales conforme a la Ley 1581 de 2012.
+                </span>
+              </label>
+            </div>
+
+            {/* SECCIÓN 1: Datos personales */}
+            <FormSection number={1} title="Datos Personales">
+              <FormFieldWrapper name="nombres" label="Nombre(s)" required>
+                <FormInput id="nombres" {...register("nombres")} hasError={!!err("nombres")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="apellidos" label="Apellido(s)" required>
+                <FormInput id="apellidos" {...register("apellidos")} hasError={!!err("apellidos")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="fecha_nacimiento" label="Fecha de nacimiento" required staticLabel>
+                <DatePickerField
+                  value={watch("fecha_nacimiento") ?? ""}
+                  onChange={(v) => setValue("fecha_nacimiento", v, { shouldValidate: true })}
+                />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="lengua_materna" label="Lengua materna" required>
+                <FormSelect
+                  id="lengua_materna"
+                  {...register("lengua_materna")}
+                  hasError={!!err("lengua_materna")}
+                  options={[
+                    { value: "Español", label: "Español" },
+                    { value: "Otra", label: "Otra" },
+                  ]}
+                />
+              </FormFieldWrapper>
+
+              {lenguaMaterna === "Otra" && (
+                <FormFieldWrapper name="lengua_otra" label="Si su respuesta fue Otra ¿Cuál es?" className="md:col-span-2">
+                  <FormInput id="lengua_otra" {...register("lengua_otra")} />
+                </FormFieldWrapper>
+              )}
+
+              <FormFieldWrapper name="celular_personal" label="Número de celular personal" required>
+                <FormInput id="celular_personal" type="tel" {...register("celular_personal")} hasError={!!err("celular_personal")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="correo_personal" label="Correo electrónico personal" required>
+                <FormInput id="correo_personal" type="email" {...register("correo_personal")} hasError={!!err("correo_personal")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="correo_institucional" label="Correo electrónico institucional">
+                <FormInput id="correo_institucional" type="email" {...register("correo_institucional")} hasError={!!err("correo_institucional")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="prefiere_correo" label="Prefiere recibir comunicaciones en el correo" required staticLabel>
+                <FormRadioGroup
+                  name="prefiere_correo"
+                  options={[{ value: "Personal", label: "Personal" }, { value: "Institucional", label: "Institucional" }]}
+                  value={watch("prefiere_correo")}
+                  onChange={(v) => setValue("prefiere_correo", v, { shouldValidate: true })}
+                  hasError={!!err("prefiere_correo")}
+                />
+              </FormFieldWrapper>
+            </FormSection>
+
+            {/* SECCIÓN 2: Salud */}
+            <FormSection number={2} title="Salud y Contacto de Emergencia">
+              <FormFieldWrapper name="enfermedad_base" label="¿Tiene alguna enfermedad de base que pueda requerir atención especial?" required className="md:col-span-2" staticLabel>
+                <FormRadioGroup
+                  name="enfermedad_base"
+                  options={[{ value: "Sí", label: "Sí" }, { value: "No", label: "No" }]}
+                  value={watch("enfermedad_base")}
+                  onChange={(v) => setValue("enfermedad_base", v, { shouldValidate: true })}
+                  hasError={!!err("enfermedad_base")}
+                />
+              </FormFieldWrapper>
+
+              {enfermedadBase === "Sí" && (
+                <FormFieldWrapper name="enfermedad_detalle" label="Indique la enfermedad y sus requerimientos" className="md:col-span-2">
+                  <FormTextArea id="enfermedad_detalle" {...register("enfermedad_detalle")} />
+                </FormFieldWrapper>
+              )}
+
+              <FormFieldWrapper name="contacto_emergencia" label="Si requiere atención médica urgente ¿A quién podemos contactar?">
+                <FormInput id="contacto_emergencia" {...register("contacto_emergencia")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="telefono_emergencia" label="¿Cuál es el número de contacto de emergencia?">
+                <FormInput id="telefono_emergencia" type="tel" {...register("telefono_emergencia")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="discapacidad" label="¿Tiene alguna discapacidad?" required className="md:col-span-2" staticLabel>
+                <FormRadioGroup
+                  name="discapacidad"
+                  options={[{ value: "Sí", label: "Sí" }, { value: "No", label: "No" }]}
+                  value={watch("discapacidad")}
+                  onChange={(v) => setValue("discapacidad", v, { shouldValidate: true })}
+                  hasError={!!err("discapacidad")}
+                />
+              </FormFieldWrapper>
+
+              {discapacidad === "Sí" && (
+                <FormFieldWrapper name="discapacidad_detalle" label="Si su respuesta fue afirmativa ¿Cuál es?" className="md:col-span-2">
+                  <FormInput id="discapacidad_detalle" {...register("discapacidad_detalle")} />
+                </FormFieldWrapper>
+              )}
+            </FormSection>
+
+            {/* SECCIÓN 3: Formación */}
+            <FormSection number={3} title="Formación Académica">
+              <FormFieldWrapper name="tipo_formacion" label="Tipo de formación" className="md:col-span-2" staticLabel>
+                <FormRadioGroup
+                  name="tipo_formacion"
+                  options={[{ value: "Profesional", label: "Profesional" }, { value: "Licenciado/a", label: "Licenciado/a" }]}
+                  value={watch("tipo_formacion")}
+                  onChange={(v) => setValue("tipo_formacion", v, { shouldValidate: true })}
+                />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="titulo_pregrado" label="Título de pregrado">
+                <FormInput id="titulo_pregrado" {...register("titulo_pregrado")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="titulo_especializacion" label="Título de especialización">
+                <FormInput id="titulo_especializacion" {...register("titulo_especializacion")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="titulo_maestria" label="Título de maestría">
+                <FormInput id="titulo_maestria" {...register("titulo_maestria")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="titulo_doctorado" label="Título de doctorado">
+                <FormInput id="titulo_doctorado" {...register("titulo_doctorado")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="otros_titulos" label="Otros títulos ¿cuáles?" className="md:col-span-2">
+                <FormInput id="otros_titulos" {...register("otros_titulos")} />
+              </FormFieldWrapper>
+            </FormSection>
+
+            {/* SECCIÓN 4: Institución */}
+            <FormSection number={4} title="Información Institucional">
+              {/* Region */}
+              <FormFieldWrapper name="region" label="Región" required>
+                <FormSelect
+                  id="region"
+                  {...register("region")}
+                  hasError={!!err("region")}
+                  options={[
+                    { value: "Quibdó", label: "Quibdó" },
+                    { value: "Oriente", label: "Oriente" },
+                    { value: "Buenaventura", label: "Buenaventura" },
+                    { value: "Tumaco", label: "Tumaco" },
+                    { value: "Costa Caribe", label: "Costa Caribe" },
+                  ]}
+                  onChange={(e) => {
+                    const newRegion = e.target.value;
+                    setValue("region", newRegion);
+                    setValue("entidad_territorial", entidadTerritorialPorRegion[newRegion] ?? "");
+                    setValue("nombre_ie", "");
+                    setMunicipioSeleccionado("");
+                  }}
+                />
+              </FormFieldWrapper>
+
+              {/* Entidad Territorial */}
+              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial">
+                <FormSelect
+                  id="entidad_territorial"
+                  {...register("entidad_territorial")}
+                  options={entidadesTerritorialesColombia.map((e) => ({ value: e, label: e }))}
+                />
+              </FormFieldWrapper>
+
+              {/* Municipio */}
+              {tienesMunicipios && (
+                <div className="flex flex-col gap-1">
+                  <div className={cn("floating-field-wrapper", municipioSeleccionado && "field-has-value")}>
+                    <select
+                      id="municipio"
+                      value={municipioSeleccionado}
+                      onChange={(e) => { setMunicipioSeleccionado(e.target.value); setValue("nombre_ie", ""); }}
+                      className="form-input floating-input"
+                    >
+                      <option value=""></option>
+                      {municipios.map((m) => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    <label className="floating-label" htmlFor="municipio">Municipio</label>
+                  </div>
+                </div>
+              )}
+
+              <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
+                <FormInput id="comuna_barrio" {...register("comuna_barrio")} />
+              </FormFieldWrapper>
+
+              {/* Institution search */}
+              <InstitutionSearchField
+                instituciones={instituciones}
+                municipioSeleccionado={municipioSeleccionado}
+                disabled={tienesMunicipios && !municipioSeleccionado}
+                value={watch("nombre_ie") ?? ""}
+                onChange={(val) => setValue("nombre_ie", val, { shouldValidate: true })}
+                hasError={!!err("nombre_ie")}
+                errorMsg={errors.nombre_ie?.message as string}
+              />
+
+              <FormFieldWrapper name="codigo_dane" label="Código DANE (12 dígitos)" required>
+                <FormInput id="codigo_dane" {...register("codigo_dane")} maxLength={12} hasError={!!err("codigo_dane")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="cargo_actual" label="Cargo actual" required>
+                <FormSelect
+                  id="cargo_actual"
+                  {...register("cargo_actual")}
+                  hasError={!!err("cargo_actual")}
+                  options={[
+                    { value: "Rector / a", label: "Rector / a" },
+                    { value: "Coordinador / a", label: "Coordinador / a" },
+                  ]}
+                />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="tipo_vinculacion" label="Tipo de vinculación actual" staticLabel>
+                <FormRadioGroup
+                  name="tipo_vinculacion"
+                  options={[{ value: "En propiedad", label: "En propiedad" }, { value: "En encargo", label: "En encargo" }]}
+                  value={watch("tipo_vinculacion")}
+                  onChange={(v) => setValue("tipo_vinculacion", v)}
+                />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="fecha_vinculacion_servicio" label="Fecha de vinculación al servicio educativo estatal" staticLabel>
+                <DatePickerField value={watch("fecha_vinculacion_servicio") ?? ""} onChange={(v) => setValue("fecha_vinculacion_servicio", v)} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="fecha_nombramiento_cargo" label="Fecha de nombramiento estatal en el cargo actual" staticLabel>
+                <DatePickerField value={watch("fecha_nombramiento_cargo") ?? ""} onChange={(v) => setValue("fecha_nombramiento_cargo", v)} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="fecha_nombramiento_ie" label="Fecha de nombramiento del cargo actual en la IE" staticLabel>
+                <DatePickerField value={watch("fecha_nombramiento_ie") ?? ""} onChange={(v) => setValue("fecha_nombramiento_ie", v)} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="estatuto" label="Estatuto al que pertenece" staticLabel>
+                <FormRadioGroup
+                  name="estatuto"
+                  options={[{ value: "2277", label: "2277" }, { value: "1278", label: "1278" }]}
+                  value={watch("estatuto")}
+                  onChange={(v) => setValue("estatuto", v)}
+                />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="grado_escalafon" label="Grado en el escalafón">
+                <FormInput id="grado_escalafon" {...register("grado_escalafon")} />
+              </FormFieldWrapper>
+            </FormSection>
+
+            {/* SECCIÓN 5: Datos de la IE */}
+            <FormSection number={5} title="Datos de la Institución Educativa">
+              <FormFieldWrapper name="zona_sede" label="Zona de la sede principal de la IE" staticLabel>
+                <FormRadioGroup
+                  name="zona_sede"
+                  options={[{ value: "Urbana", label: "Urbana" }, { value: "Rural", label: "Rural" }]}
+                  value={watch("zona_sede")}
+                  onChange={(v) => setValue("zona_sede", v)}
+                />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="total_sedes" label="Número total de sedes (incluida la sede principal)">
+                <FormInput id="total_sedes" type="number" min={1} {...register("total_sedes")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="sedes_rural" label="Número de sedes en zona rural">
+                <FormInput id="sedes_rural" type="number" min={0} {...register("sedes_rural")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="sedes_urbana" label="Número de sedes en zona urbana">
+                <FormInput id="sedes_urbana" type="number" min={0} {...register("sedes_urbana")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="jornadas" label="Jornadas de la IE" className="md:col-span-2" hideError staticLabel>
+                <FormCheckboxGroup
+                  name="jornadas"
+                  options={[
+                    { value: "Mañana", label: "Mañana" },
+                    { value: "Tarde", label: "Tarde" },
+                    { value: "Nocturna", label: "Nocturna" },
+                    { value: "Única", label: "Única" },
+                  ]}
+                  value={jornadas}
+                  onChange={(v) => setValue("jornadas", v)}
+                />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="grupos_etnicos" label="Grupos étnicos en la IE">
+                <FormInput id="grupos_etnicos" {...register("grupos_etnicos")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="proyectos_transversales" label="Proyectos transversales de la IE">
+                <FormInput id="proyectos_transversales" {...register("proyectos_transversales")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="desplazamiento" label="¿Hay estudiantes o familias en condición de desplazamiento?" staticLabel>
+                <FormRadioGroup
+                  name="desplazamiento"
+                  options={[{ value: "Sí", label: "Sí" }, { value: "No", label: "No" }]}
+                  value={watch("desplazamiento")}
+                  onChange={(v) => setValue("desplazamiento", v)}
+                />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="niveles_educativos" label="Niveles educativos que ofrece la IE" className="md:col-span-2" hideError staticLabel>
+                <FormCheckboxGroup
+                  name="niveles_educativos"
+                  options={[
+                    { value: "Primera infancia", label: "Primera infancia" },
+                    { value: "Preescolar", label: "Preescolar" },
+                    { value: "Básica primaria", label: "Básica primaria" },
+                    { value: "Básica secundaria", label: "Básica secundaria" },
+                    { value: "Media", label: "Media" },
+                    { value: "Ciclo complementario", label: "Ciclo complementario" },
+                  ]}
+                  value={nivelesEducativos}
+                  onChange={(v) => setValue("niveles_educativos", v)}
+                />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="tipo_bachillerato" label="Tipo de bachillerato que ofrece la IE">
+                <FormInput id="tipo_bachillerato" {...register("tipo_bachillerato")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="modelo_pedagogico" label="Modelo o enfoque pedagógico">
+                <FormInput id="modelo_pedagogico" {...register("modelo_pedagogico")} />
+              </FormFieldWrapper>
+            </FormSection>
+
+            {/* SECCIÓN 6: Personal y estudiantes */}
+            <FormSection number={6} title="Personal y Estudiantes">
+              <FormFieldWrapper name="num_docentes" label="Número de docentes">
+                <FormInput id="num_docentes" type="number" min={0} {...register("num_docentes")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="num_coordinadores" label="Número de coordinadores/as">
+                <FormInput id="num_coordinadores" type="number" min={0} {...register("num_coordinadores")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="num_administrativos" label="Número de administrativos">
+                <FormInput id="num_administrativos" type="number" min={0} {...register("num_administrativos")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="num_orientadores" label="Número de orientadores/as">
+                <FormInput id="num_orientadores" type="number" min={0} {...register("num_orientadores")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="estudiantes_preescolar" label="Número de estudiantes en Preescolar">
+                <FormInput id="estudiantes_preescolar" type="number" min={0} {...register("estudiantes_preescolar")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="estudiantes_primaria" label="Número de estudiantes en Primaria">
+                <FormInput id="estudiantes_primaria" type="number" min={0} {...register("estudiantes_primaria")} />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="estudiantes_ciclo_complementario" label="Número de estudiantes en Ciclo Complementario">
+                <FormInput id="estudiantes_ciclo_complementario" type="number" min={0} {...register("estudiantes_ciclo_complementario")} />
+              </FormFieldWrapper>
+            </FormSection>
+
+            {/* Botón guardar */}
+            <div className="text-center pb-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => navigate("/admin")}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base border border-border transition-colors hover:bg-muted"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex items-center gap-3 px-10 py-4 rounded-xl text-white font-semibold text-lg transition-all hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{ background: "var(--gradient-header)", boxShadow: "var(--shadow-header)" }}
+              >
+                {saving ? (
+                  <><RefreshCw className="w-5 h-5 animate-spin" />Guardando...</>
+                ) : (
+                  <><Save className="w-5 h-5" />Guardar cambios</>
+                )}
+              </button>
+            </div>
+          </form>
+        </main>
+
+        {/* Footer */}
+        <footer className="py-6 text-center" style={{ background: "hsl(var(--primary))" }}>
+          <div className="flex flex-col items-center gap-4">
+            <div className="bg-white rounded-xl px-6 py-3 shadow-md inline-flex items-center justify-center">
+              <img src={logoCosmo} alt="Cosmo Schools" className="h-10 w-auto object-contain" />
+            </div>
+            <p className="text-white text-xs opacity-60">Programa RLT / CLT · Colombia · {new Date().getFullYear()}</p>
+          </div>
+        </footer>
+      </div>
+    </FormProvider>
+  );
+}
