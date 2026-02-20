@@ -525,7 +525,7 @@ export default function FichaRLTForm() {
                 {err("apellidos") && <p className="field-error">{err("apellidos")}</p>}
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="fecha_nacimiento" label="Fecha de nacimiento" required>
+              <FormFieldWrapper name="fecha_nacimiento" label="Fecha de nacimiento" required staticLabel>
                 <DatePickerField
                   value={watch("fecha_nacimiento") ?? ""}
                   onChange={(v) => setValue("fecha_nacimiento", v, { shouldValidate: true })}
@@ -585,7 +585,7 @@ export default function FichaRLTForm() {
                 {err("correo_institucional") && <p className="field-error">{err("correo_institucional")}</p>}
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="prefiere_correo" label="Prefiere recibir comunicaciones en el correo" required>
+              <FormFieldWrapper name="prefiere_correo" label="Prefiere recibir comunicaciones en el correo" required staticLabel>
                 <FormRadioGroup
                   name="prefiere_correo"
                   options={[
@@ -602,7 +602,7 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 2: Salud */}
             <FormSection number={2} title="Salud y Contacto de Emergencia">
-              <FormFieldWrapper name="enfermedad_base" label="¿Tiene alguna enfermedad de base que pueda requerir atención especial?" required className="md:col-span-2">
+              <FormFieldWrapper name="enfermedad_base" label="¿Tiene alguna enfermedad de base que pueda requerir atención especial?" required className="md:col-span-2" staticLabel>
                 <FormRadioGroup
                   name="enfermedad_base"
                   options={[
@@ -630,7 +630,7 @@ export default function FichaRLTForm() {
                 <FormInput id="telefono_emergencia" type="tel" {...register("telefono_emergencia")} placeholder="+57 300 0000 000" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="discapacidad" label="¿Tiene alguna discapacidad?" required className="md:col-span-2">
+              <FormFieldWrapper name="discapacidad" label="¿Tiene alguna discapacidad?" required className="md:col-span-2" staticLabel>
                 <FormRadioGroup
                   name="discapacidad"
                   options={[
@@ -653,7 +653,7 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 3: Formación */}
             <FormSection number={3} title="Formación Académica">
-              <FormFieldWrapper name="tipo_formacion" label="Tipo de formación" required className="md:col-span-2">
+              <FormFieldWrapper name="tipo_formacion" label="Tipo de formación" required className="md:col-span-2" staticLabel>
                 <FormRadioGroup name="tipo_formacion" options={[{ value: "Profesional", label: "Profesional" }, { value: "Licenciado/a", label: "Licenciado/a" }]} value={watch("tipo_formacion")} onChange={(v) => setValue("tipo_formacion", v, { shouldValidate: true })} hasError={!!err("tipo_formacion")} />
               </FormFieldWrapper>
 
@@ -681,7 +681,7 @@ export default function FichaRLTForm() {
             {/* SECCIÓN 4: Institución */}
             <FormSection number={4} title="Información Institucional">
               {/* Entidad Territorial — auto-rempli et verrouillé */}
-              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial" required>
+              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial" required staticLabel>
                 <input
                   id="entidad_territorial"
                   value={entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? ""}
@@ -692,7 +692,7 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               {/* Municipio — verrouillé (Quibdó) ou liste déroulante (Oriente) */}
-              <FormFieldWrapper name="municipio" label="Municipio" required>
+              <FormFieldWrapper name="municipio" label="Municipio" required staticLabel>
                 {!tienesMunicipios || (municipioSeleccionado && entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado) ? (
                   <input
                     id="municipio"
@@ -720,7 +720,7 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               {/* Institution — directe pour Quibdó, filtrée par municipio pour Oriente */}
-              <FormFieldWrapper name="nombre_ie" label="Nombre de la Institución Educativa" required className="md:col-span-2">
+              <FormFieldWrapper name="nombre_ie" label="Nombre de la Institución Educativa" required className="md:col-span-2" staticLabel>
                 <select
                   id="nombre_ie"
                   {...register("nombre_ie")}
@@ -747,7 +747,7 @@ export default function FichaRLTForm() {
                 {err("codigo_dane") && <p className="field-error">{err("codigo_dane")}</p>}
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="cargo_actual" label="Cargo actual" required>
+              <FormFieldWrapper name="cargo_actual" label="Cargo actual" required staticLabel>
                 {regionSeleccionada === "Quibdó" ? (
                   <input
                     id="cargo_actual"
@@ -771,7 +771,7 @@ export default function FichaRLTForm() {
                 {err("cargo_actual") && <p className="field-error">{err("cargo_actual")}</p>}
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="tipo_vinculacion" label="Tipo de vinculación actual" required>
+              <FormFieldWrapper name="tipo_vinculacion" label="Tipo de vinculación actual" required staticLabel>
                 <FormRadioGroup
                   name="tipo_vinculacion"
                   options={[
@@ -784,28 +784,28 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="fecha_vinculacion_servicio" label="Fecha de vinculación al servicio educativo estatal">
+              <FormFieldWrapper name="fecha_vinculacion_servicio" label="Fecha de vinculación al servicio educativo estatal" staticLabel>
                 <DatePickerField
                   value={watch("fecha_vinculacion_servicio") ?? ""}
                   onChange={(v) => setValue("fecha_vinculacion_servicio", v)}
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="fecha_nombramiento_cargo" label="Fecha de nombramiento estatal en el cargo actual">
+              <FormFieldWrapper name="fecha_nombramiento_cargo" label="Fecha de nombramiento estatal en el cargo actual" staticLabel>
                 <DatePickerField
                   value={watch("fecha_nombramiento_cargo") ?? ""}
                   onChange={(v) => setValue("fecha_nombramiento_cargo", v)}
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="fecha_nombramiento_ie" label="Fecha de nombramiento del cargo actual en la IE">
+              <FormFieldWrapper name="fecha_nombramiento_ie" label="Fecha de nombramiento del cargo actual en la IE" staticLabel>
                 <DatePickerField
                   value={watch("fecha_nombramiento_ie") ?? ""}
                   onChange={(v) => setValue("fecha_nombramiento_ie", v)}
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="estatuto" label="Estatuto al que pertenece">
+              <FormFieldWrapper name="estatuto" label="Estatuto al que pertenece" staticLabel>
                 <FormRadioGroup
                   name="estatuto"
                   options={[
@@ -827,7 +827,7 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 5: Datos de la IE */}
             <FormSection number={5} title="Datos de la Institución Educativa">
-              <FormFieldWrapper name="zona_sede" label="Zona de la sede principal de la IE" required>
+              <FormFieldWrapper name="zona_sede" label="Zona de la sede principal de la IE" required staticLabel>
                 <FormRadioGroup
                   name="zona_sede"
                   options={[
@@ -851,7 +851,7 @@ export default function FichaRLTForm() {
                 <FormInput id="sedes_urbana" type="number" min={0} {...register("sedes_urbana")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="jornadas" label="Jornadas de la IE" required className="md:col-span-2" hideError>
+              <FormFieldWrapper name="jornadas" label="Jornadas de la IE" required className="md:col-span-2" hideError staticLabel>
                 <FormCheckboxGroup
                   name="jornadas"
                   options={[
@@ -873,7 +873,7 @@ export default function FichaRLTForm() {
                 <FormInput id="proyectos_transversales" {...register("proyectos_transversales")} placeholder="Ej: PRAE, PIGA, etc." />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="desplazamiento" label="¿Hay estudiantes o familias en condición de desplazamiento?">
+              <FormFieldWrapper name="desplazamiento" label="¿Hay estudiantes o familias en condición de desplazamiento?" staticLabel>
                 <FormRadioGroup
                   name="desplazamiento"
                   options={[
@@ -885,7 +885,7 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="niveles_educativos" label="Niveles educativos que ofrece la IE" required className="md:col-span-2" hideError>
+              <FormFieldWrapper name="niveles_educativos" label="Niveles educativos que ofrece la IE" required className="md:col-span-2" hideError staticLabel>
                 <FormCheckboxGroup
                   name="niveles_educativos"
                   options={[

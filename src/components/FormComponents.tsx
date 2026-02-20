@@ -9,20 +9,37 @@ interface FormFieldWrapperProps {
   children: ReactNode;
   className?: string;
   hideError?: boolean;
+  /** Désactive le label flottant (ex: groupes radio/checkbox, date picker) */
+  staticLabel?: boolean;
 }
 
-export function FormFieldWrapper({ name, label, required, children, className, hideError }: FormFieldWrapperProps) {
+export function FormFieldWrapper({ name, label, required, children, className, hideError, staticLabel }: FormFieldWrapperProps) {
   const { formState: { errors } } = useFormContext();
   const error = errors[name];
   const msg = error?.message as string | undefined;
 
+  if (staticLabel) {
+    return (
+      <div className={cn("flex flex-col gap-1", className)}>
+        <label className="field-label" htmlFor={name}>
+          {label}
+          {required && <span className="required-star">*</span>}
+        </label>
+        {children}
+        {!hideError && msg && <p className="field-error">{msg}</p>}
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex flex-col gap-1", className)}>
-      <label className="field-label" htmlFor={name}>
-        {label}
-        {required && <span className="required-star">*</span>}
-      </label>
-      {children}
+      <div className="floating-field-wrapper">
+        {children}
+        <label className="floating-label" htmlFor={name}>
+          {label}
+          {required && <span className="required-star ml-0.5">*</span>}
+        </label>
+      </div>
       {!hideError && msg && <p className="field-error">{msg}</p>}
     </div>
   );
@@ -33,10 +50,11 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const FormInput = forwardRef<HTMLInputElement, InputProps>(
-  ({ hasError, className, ...props }, ref) => (
+  ({ hasError, className, placeholder, ...props }, ref) => (
     <input
       ref={ref}
-      className={cn("form-input", hasError && "error", className)}
+      placeholder={placeholder || " "}
+      className={cn("form-input floating-input", hasError && "error", className)}
       {...props}
     />
   )
@@ -51,8 +69,8 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 
 export const FormSelect = forwardRef<HTMLSelectElement, SelectProps>(
   ({ hasError, options, placeholder, className, ...props }, ref) => (
-    <select ref={ref} className={cn("form-input", hasError && "error", className)} {...props}>
-      {placeholder && <option value="">{placeholder}</option>}
+    <select ref={ref} className={cn("form-input floating-input", hasError && "error", className)} {...props}>
+      <option value="">{placeholder ?? " "}</option>
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
       ))}
@@ -66,11 +84,12 @@ interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 }
 
 export const FormTextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
-  ({ hasError, className, ...props }, ref) => (
+  ({ hasError, className, placeholder, ...props }, ref) => (
     <textarea
       ref={ref}
       rows={3}
-      className={cn("form-input resize-none", hasError && "error", className)}
+      placeholder={placeholder || " "}
+      className={cn("form-input floating-input resize-none", hasError && "error", className)}
       {...props}
     />
   )
