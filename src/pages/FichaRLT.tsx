@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
-import { institucionesPorRegion, entidadTerritorialPorRegion, getMunicipiosPorRegion, getInstitucionesPorMunicipio } from "@/data/instituciones";
+import { institucionesPorRegion, entidadTerritorialPorRegion, getMunicipiosPorRegion, getInstitucionesPorMunicipio, formatIEName } from "@/data/instituciones";
 import {
   FormFieldWrapper,
   FormInput,
@@ -675,7 +675,7 @@ export default function FichaRLTForm() {
                 >
                   <option value="">{municipioSeleccionado ? "Seleccione la institución" : "Primero seleccione el municipio"}</option>
                   {instituciones.map((ie) => (
-                    <option key={ie} value={ie}>{ie}</option>
+                    <option key={ie} value={ie}>{formatIEName(ie)}</option>
                   ))}
                 </select>
                 {err("nombre_ie") && <p className="field-error">{err("nombre_ie")}</p>}
