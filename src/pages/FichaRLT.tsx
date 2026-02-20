@@ -690,10 +690,6 @@ export default function FichaRLTForm() {
                  />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad" className="md:col-span-2">
-                <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
-              </FormFieldWrapper>
-
               {/* Municipio — verrouillé (Quibdó) ou liste déroulante (Oriente) */}
               <FormFieldWrapper name="municipio" label="Municipio" required staticLabel>
                 {!tienesMunicipios || (municipioSeleccionado && entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado) ? (
@@ -720,6 +716,10 @@ export default function FichaRLTForm() {
                     ))}
                   </select>
                 )}
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad" className="md:col-span-2">
+                <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
               </FormFieldWrapper>
 
               {/* Institution — directe pour Quibdó, filtrée par municipio pour Oriente */}
