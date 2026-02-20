@@ -859,10 +859,6 @@ export default function FichaRLTForm() {
                 <FormInput id="proyectos_transversales" {...register("proyectos_transversales")} placeholder="Ej: PRAE, PIGA, etc." />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="estudiantes_jec" label="Número de estudiantes en JEC / Inspiración Comfama">
-                <FormInput id="estudiantes_jec" type="number" min={0} {...register("estudiantes_jec")} placeholder="0" />
-              </FormFieldWrapper>
-
               <FormFieldWrapper name="desplazamiento" label="¿Hay estudiantes o familias en condición de desplazamiento?">
                 <FormRadioGroup
                   name="desplazamiento"
