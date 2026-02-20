@@ -142,7 +142,7 @@
     font-size: 0.875rem;
     color: hsl(var(--muted-foreground));
     pointer-events: none;
-    transition: top 0.18s ease, font-size 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    transition: top 0.18s ease, font-size 0.18s ease, color 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
     white-space: nowrap;
     overflow: hidden;
     max-width: calc(100% - 1.5rem);
@@ -150,6 +150,8 @@
     background: transparent;
     line-height: 1;
     z-index: 1;
+    /* Caché par défaut */
+    opacity: 0;
   }
 
   /* Pour textarea : ancrer en haut */
@@ -158,9 +160,10 @@
     transform: none;
   }
 
-  /* Label flotte quand l'input a du contenu ou est focusé */
+  /* Label flotte et apparaît quand l'input a du contenu ou est focusé */
   .floating-input:focus ~ .floating-label,
   .floating-input:not(:placeholder-shown) ~ .floating-label {
+    opacity: 1;
     top: 0.4rem;
     transform: none;
     font-size: 0.68rem;
@@ -171,6 +174,7 @@
   /* Pour textarea focusée */
   textarea.floating-input:focus ~ .floating-label,
   textarea.floating-input:not(:placeholder-shown) ~ .floating-label {
+    opacity: 1;
     top: 0.3rem;
     transform: none;
     font-size: 0.68rem;
@@ -178,8 +182,9 @@
     font-weight: 600;
   }
 
-  /* Select : label toujours en haut (le select a toujours une valeur visible) */
+  /* Select : label visible et toujours en haut */
   select.floating-input ~ .floating-label {
+    opacity: 1;
     top: 0.4rem;
     transform: none;
     font-size: 0.68rem;
