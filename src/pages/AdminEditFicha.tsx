@@ -755,20 +755,18 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              {/* Municipio — Quibdó verrouillé, Antioquia → dropdown Oriente, sinon texte libre */}
-              {watch("entidad_territorial") === "Quibdó" ? (
-                <FormFieldWrapper name="municipio_admin" label="Municipio" required>
-                  <FormInput
-                    id="municipio"
-                    value="Quibdó"
-                    readOnly
-                    placeholder=" "
-                    className="floating-input opacity-75 cursor-not-allowed"
-                  />
-                </FormFieldWrapper>
-              ) : watch("entidad_territorial") === "Antioquia" ? (
-                <div className="flex flex-col gap-1">
-                  <div className={cn("floating-field-wrapper", municipioSeleccionado && "field-has-value")}>
+              {/* Municipio — wrapper manuel pour que le label flottant détecte la valeur du state local */}
+              <div className="flex flex-col gap-1">
+                <div className={cn("floating-field-wrapper", municipioSeleccionado && "field-has-value")}>
+                  {watch("entidad_territorial") === "Quibdó" ? (
+                    <input
+                      id="municipio"
+                      value="Quibdó"
+                      readOnly
+                      disabled
+                      className="form-input floating-input opacity-75 cursor-not-allowed"
+                    />
+                  ) : watch("entidad_territorial") === "Antioquia" ? (
                     <select
                       id="municipio"
                       value={municipioSeleccionado}
@@ -783,25 +781,23 @@ export default function AdminEditFicha() {
                         <option key={m} value={m}>{m}</option>
                       ))}
                     </select>
-                    <label className="floating-label" htmlFor="municipio">
-                      Municipio<span className="required-star ml-0.5">*</span>
-                    </label>
-                  </div>
+                  ) : (
+                    <input
+                      id="municipio"
+                      value={municipioSeleccionado}
+                      onChange={(e) => {
+                        setMunicipioSeleccionado(e.target.value);
+                        setValue("nombre_ie", "");
+                      }}
+                      placeholder=" "
+                      className="form-input floating-input"
+                    />
+                  )}
+                  <label className="floating-label" htmlFor="municipio">
+                    Municipio<span className="required-star ml-0.5">*</span>
+                  </label>
                 </div>
-              ) : (
-                <FormFieldWrapper name="municipio_admin" label="Municipio" required>
-                  <FormInput
-                    id="municipio"
-                    value={municipioSeleccionado}
-                    onChange={(e) => {
-                      setMunicipioSeleccionado(e.target.value);
-                      setValue("nombre_ie", "");
-                    }}
-                    placeholder=" "
-                    className="floating-input"
-                  />
-                </FormFieldWrapper>
-              )}
+              </div>
 
               <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
                 <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
