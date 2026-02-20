@@ -112,6 +112,7 @@
     @apply placeholder:text-muted-foreground placeholder:opacity-0 focus:placeholder:opacity-100 placeholder:transition-opacity placeholder:duration-150;
     min-height: 44px;
     font-size: 16px;
+    font-family: inherit;
     padding-top: 1.5rem;
     padding-bottom: 0.4rem;
   }
@@ -144,6 +145,7 @@
   .floating-label {
     position: absolute;
     left: 0.75rem;
+    right: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
     font-size: 0.875rem;
@@ -153,6 +155,9 @@
     transition: top 0.2s ease, font-size 0.2s ease, color 0.2s ease, transform 0.2s ease, font-weight 0.2s ease;
     line-height: 1;
     z-index: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* Pour textarea */
