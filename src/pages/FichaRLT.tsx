@@ -251,17 +251,24 @@ export default function FichaRLTForm() {
   const handleRegionSelect = (region: string) => {
     setRegionSeleccionada(region);
     setValue("region", region);
-    // Auto-remplir entidad territorial selon la région (verrouillé)
+
+    // Auto-remplir l'Entidad Territorial depuis le mappage (verrouillé)
     const et = entidadTerritorialPorRegion[region] ?? "";
     setValue("entidad_territorial", et, { shouldValidate: true });
-    // Pour Quibdó, le municipio est aussi "Quibdó" (fixe)
-    if (region === "Quibdó") {
-      setMunicipioSeleccionado("Quibdó");
-      setValue("cargo_actual", "Rector / a", { shouldValidate: true });
+
+    // Si la valeur de l'Entidad Territorial existe aussi comme Municipio dans cette région
+    // → le Municipio est automatiquement verrouillé sur cette même valeur
+    const municipiosRegion = getMunicipiosPorRegion(region);
+    if (et && municipiosRegion.includes(et)) {
+      setMunicipioSeleccionado(et);
     } else {
       setMunicipioSeleccionado("");
     }
+
     setValue("nombre_ie", "");
+    if (region === "Quibdó") {
+      setValue("cargo_actual", "Rector / a", { shouldValidate: true });
+    }
   };
 
   const handleNuevaFicha = () => {
@@ -578,12 +585,13 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              {/* Municipio — fixe pour Quibdó, liste déroulante pour Oriente */}
+              {/* Municipio — verrouillé si l'Entidad Territorial = un Municipio existant, sinon liste déroulante */}
               <FormFieldWrapper name="municipio" label="Municipio" required>
-                {regionSeleccionada === "Quibdó" ? (
+                {municipioSeleccionado && municipios.includes(municipioSeleccionado) &&
+                 entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado ? (
                   <input
                     id="municipio"
-                    value="Quibdó"
+                    value={municipioSeleccionado}
                     readOnly
                     disabled
                     className="form-input opacity-75 cursor-not-allowed"
