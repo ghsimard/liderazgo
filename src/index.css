@@ -78,7 +78,7 @@
 
 @layer components {
   .form-section {
-    @apply bg-card rounded-xl p-6 mb-6 border border-border;
+    @apply bg-card rounded-xl p-4 md:p-6 mb-4 md:mb-6 border border-border;
     box-shadow: var(--shadow-card);
   }
 
@@ -106,9 +106,19 @@
   }
 
   .form-input {
-    @apply w-full rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors;
+    @apply w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm transition-colors;
     @apply focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent;
     @apply placeholder:text-muted-foreground;
+    /* Larger touch target on mobile */
+    min-height: 44px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  @media (min-width: 768px) {
+    .form-input {
+      font-size: 0.875rem;
+      min-height: unset;
+    }
   }
 
   .form-input.error {
