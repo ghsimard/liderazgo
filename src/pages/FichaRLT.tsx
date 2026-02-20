@@ -723,6 +723,17 @@ export default function FichaRLTForm() {
                 {err("nombre_ie") && <p className="field-error">{err("nombre_ie")}</p>}
               </FormFieldWrapper>
 
+              <FormFieldWrapper name="codigo_dane" label="Código DANE de la IE (12 dígitos)" required>
+                <FormInput
+                  id="codigo_dane"
+                  {...register("codigo_dane")}
+                  placeholder="123456789012"
+                  maxLength={12}
+                  hasError={!!err("codigo_dane")}
+                />
+                {err("codigo_dane") && <p className="field-error">{err("codigo_dane")}</p>}
+              </FormFieldWrapper>
+
               <FormFieldWrapper name="cargo_actual" label="Cargo actual" required>
                 {regionSeleccionada === "Quibdó" ? (
                   <input
@@ -795,18 +806,6 @@ export default function FichaRLTForm() {
               <FormFieldWrapper name="grado_escalafon" label="Grado en el escalafón">
                 <FormInput id="grado_escalafon" {...register("grado_escalafon")} placeholder="Ej: 2B, 3, etc." />
               </FormFieldWrapper>
-
-              <FormFieldWrapper name="codigo_dane" label="Código DANE de la IE (12 dígitos)" required>
-                <FormInput
-                  id="codigo_dane"
-                  {...register("codigo_dane")}
-                  placeholder="123456789012"
-                  maxLength={12}
-                  hasError={!!err("codigo_dane")}
-                />
-                {err("codigo_dane") && <p className="field-error">{err("codigo_dane")}</p>}
-              </FormFieldWrapper>
-
               <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
                 <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
               </FormFieldWrapper>
