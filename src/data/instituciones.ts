@@ -63,13 +63,15 @@ export function formatIEName(name: string): string {
     .replace(/^CER\s+/, "Centro Educativo Rural ");
 }
 
-// Extraire les municipios uniques d'une région depuis le nom des institutions (partie après " - ")
+// Extraire les municipios uniques d'une région — uniquement pour les institutions qui ont un suffixe " - Municipio"
 export function getMunicipiosPorRegion(region: string): string[] {
   const ies = institucionesPorRegion[region] ?? [];
-  const municipios = ies.map((ie) => {
-    const parts = ie.split(" - ");
-    return parts[parts.length - 1].trim();
-  });
+  const municipios = ies
+    .filter((ie) => ie.includes(" - "))
+    .map((ie) => {
+      const parts = ie.split(" - ");
+      return parts[parts.length - 1].trim();
+    });
   return [...new Set(municipios)].sort();
 }
 

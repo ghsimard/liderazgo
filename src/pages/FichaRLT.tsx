@@ -637,35 +637,33 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              {/* Municipio — uniquement pour les régions avec structure " - Municipio" (ex: Oriente) */}
-              {tienesMunicipios && (
-                <FormFieldWrapper name="municipio" label="Municipio" required>
-                  {municipioSeleccionado && entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado ? (
-                    <input
-                      id="municipio"
-                      value={municipioSeleccionado}
-                      readOnly
-                      disabled
-                      className="form-input opacity-75 cursor-not-allowed"
-                    />
-                  ) : (
-                    <select
-                      id="municipio"
-                      value={municipioSeleccionado}
-                      onChange={(e) => {
-                        setMunicipioSeleccionado(e.target.value);
-                        setValue("nombre_ie", "");
-                      }}
-                      className="form-input"
-                    >
-                      <option value="">Seleccione el municipio</option>
-                      {municipios.map((m) => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  )}
-                </FormFieldWrapper>
-              )}
+              {/* Municipio — verrouillé (Quibdó) ou liste déroulante (Oriente) */}
+              <FormFieldWrapper name="municipio" label="Municipio" required>
+                {!tienesMunicipios || (municipioSeleccionado && entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado) ? (
+                  <input
+                    id="municipio"
+                    value={entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? municipioSeleccionado}
+                    readOnly
+                    disabled
+                    className="form-input opacity-75 cursor-not-allowed"
+                  />
+                ) : (
+                  <select
+                    id="municipio"
+                    value={municipioSeleccionado}
+                    onChange={(e) => {
+                      setMunicipioSeleccionado(e.target.value);
+                      setValue("nombre_ie", "");
+                    }}
+                    className="form-input"
+                  >
+                    <option value="">Seleccione el municipio</option>
+                    {municipios.map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                )}
+              </FormFieldWrapper>
 
               {/* Institution — directe pour Quibdó, filtrée par municipio pour Oriente */}
               <FormFieldWrapper name="nombre_ie" label="Nombre de la Institución Educativa" required className="md:col-span-2">
