@@ -49,7 +49,7 @@ export const FormInput = forwardRef<HTMLInputElement, InputProps>(
   ({ hasError, className, placeholder, ...props }, ref) => (
     <input
       ref={ref}
-      placeholder={placeholder}
+      placeholder={placeholder || " "}
       className={cn("form-input floating-input", hasError && "error", className)}
       {...props}
     />
@@ -84,7 +84,7 @@ export const FormTextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
     <textarea
       ref={ref}
       rows={3}
-      placeholder={placeholder}
+      placeholder={placeholder || " "}
       className={cn("form-input floating-input resize-none", hasError && "error", className)}
       {...props}
     />
