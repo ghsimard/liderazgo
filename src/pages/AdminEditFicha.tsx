@@ -442,11 +442,6 @@ export default function AdminEditFicha() {
   if (!ficha) return null;
 
   const isQuibdo = regionSeleccionada === "Quibdó";
-  // Same logic as FichaRLT: auto-fill from mapping, fall back to stored DB value
-  const etFromMapping = entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? "";
-  const etStored = watch("entidad_territorial") ?? "";
-  const etLocked = etFromMapping || etStored;
-  const municipioLocked = !tienesMunicipios || (municipioSeleccionado && etLocked === municipioSeleccionado);
 
   return (
     <FormProvider {...methods}>
@@ -652,47 +647,29 @@ export default function AdminEditFicha() {
 
             {/* SECCIÓN 4: Institución — identical logic to FichaRLT */}
             <FormSection number={4} title="Información Institucional">
-              {/* Entidad Territorial — auto-rempli et verrouillé (same as FichaRLT) */}
+              {/* Entidad Territorial — editable for admin */}
               <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial" required>
-                <input
+                <FormInput
                   id="entidad_territorial"
-                  value={etLocked}
-                  readOnly
-                  disabled
-                  className="form-input floating-input opacity-75 cursor-not-allowed"
+                  {...register("entidad_territorial")}
+                  placeholder="Ej: Antioquia"
+                  hasError={!!err("entidad_territorial")}
                 />
               </FormFieldWrapper>
 
-              {/* Municipio — locked (Quibdó) or dropdown (Oriente), identical to FichaRLT */}
-              <div className="flex flex-col gap-1">
-                <div className={cn("floating-field-wrapper", !!(etLocked || municipioSeleccionado) && "field-has-value")}>
-                  {municipioLocked ? (
-                    <input
-                      id="municipio"
-                      value={etLocked || municipioSeleccionado}
-                      readOnly
-                      disabled
-                      className="form-input floating-input opacity-75 cursor-not-allowed"
-                    />
-                  ) : (
-                    <select
-                      id="municipio"
-                      value={municipioSeleccionado}
-                      onChange={(e) => {
-                        setMunicipioSeleccionado(e.target.value);
-                        setValue("nombre_ie", "");
-                      }}
-                      className="form-input floating-input"
-                    >
-                      <option value=""></option>
-                      {municipios.map((m) => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                  )}
-                  <label className="floating-label" htmlFor="municipio">
-                    Municipio<span className="required-star ml-0.5">*</span>
-                  </label>
-                </div>
-              </div>
+              {/* Municipio — editable for admin */}
+              <FormFieldWrapper name="municipio_admin" label="Municipio" required>
+                <input
+                  id="municipio"
+                  value={municipioSeleccionado}
+                  onChange={(e) => {
+                    setMunicipioSeleccionado(e.target.value);
+                    setValue("nombre_ie", "");
+                  }}
+                  placeholder="Ej: El Carmen de Viboral"
+                  className="form-input"
+                />
+              </FormFieldWrapper>
 
               <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
                 <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
