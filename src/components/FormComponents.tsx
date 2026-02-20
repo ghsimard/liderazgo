@@ -21,7 +21,7 @@ export function FormFieldWrapper({ name, label, required, children, className, h
 
   if (staticLabel) {
     return (
-      <div className={cn("flex flex-col gap-1", className)}>
+      <div className={cn("flex flex-col gap-1 static-field", className)}>
         <label className="field-label" htmlFor={name}>
           {label}{required && <span className="required-star">*</span>}
         </label>
