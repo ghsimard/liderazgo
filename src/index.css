@@ -193,15 +193,12 @@
     font-weight: 600;
   }
 
-  /* Select : label toujours en haut */
-  select.floating-input ~ .floating-label {
+  /* Select floating-input : focus → label monte */
+  select.floating-input:focus ~ .floating-label {
     top: 0.45rem;
     transform: none;
     font-size: 0.68rem;
     font-weight: 600;
-    color: hsl(var(--muted-foreground));
-  }
-  select.floating-input:focus ~ .floating-label {
     color: hsl(var(--primary));
   }
 
