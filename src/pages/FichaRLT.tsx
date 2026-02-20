@@ -30,14 +30,14 @@ const schema = z.object({
   fecha_nacimiento: z.string().min(1, "Seleccione su fecha de nacimiento"),
   lengua_materna: z.string().min(1, "Seleccione una lengua materna"),
   lengua_otra: z.string().optional(),
-  celular_personal: z.string().regex(/^\+57\s?\d{3}\s?\d{4}\s?\d{3}$|^\d{10}$|^\+57\d{10}$/, "Ingrese un número celular válido de Colombia"),
+  celular_personal: z.string().transform(v => v.replace(/[\s\-().]/g, "")).refine(v => /^(\+57)?3\d{9}$/.test(v), "Ingrese un número celular válido de Colombia (ej: 300 000 0000)"),
   correo_personal: z.string().email("Ingrese un correo electrónico válido"),
   correo_institucional: z.string().email("Ingrese un correo institucional válido").optional().or(z.literal("")),
   prefiere_correo: z.string().min(1, "Seleccione dónde prefiere recibir comunicaciones"),
   enfermedad_base: z.string().min(1, "Seleccione una opción"),
   enfermedad_detalle: z.string().optional(),
   contacto_emergencia: z.string().optional(),
-  telefono_emergencia: z.string().optional(),
+  telefono_emergencia: z.string().optional().transform(v => v ? v.replace(/[\s\-().]/g, "") : v).refine(v => !v || /^(\+57)?[3]\d{9}$|^(\+57)?\d{7}$/.test(v), "Ingrese un número válido"),
   discapacidad: z.string().min(1, "Seleccione una opción"),
   discapacidad_detalle: z.string().optional(),
   tipo_formacion: z.string().optional(),
@@ -528,7 +528,7 @@ export default function FichaRLTForm() {
                 <FormInput
                   id="celular_personal"
                   {...register("celular_personal")}
-                  placeholder="+57 300 0000 000"
+                  placeholder="300 000 0000 o +57 300 000 0000"
                   type="tel"
                   hasError={!!err("celular_personal")}
                 />
