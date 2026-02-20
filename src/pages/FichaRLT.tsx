@@ -105,7 +105,19 @@ function DatePickerField({
   placeholder?: string;
   disabled?: boolean;
 }) {
-  const selected = value ? new Date(value + "T12:00:00") : undefined;
+  const parsed = value ? new Date(value + "T12:00:00") : undefined;
+
+  const [day, setDay] = useState<number | "">(parsed ? parsed.getDate() : "");
+  const [month, setMonth] = useState<number | "">(parsed ? parsed.getMonth() : "");
+  const [year, setYear] = useState<number | "">(parsed ? parsed.getFullYear() : "");
+
+  // Sync interne → externe quand les 3 valeurs sont remplies
+  const commit = (d: number | "", m: number | "", y: number | "") => {
+    if (d !== "" && m !== "" && y !== "") {
+      const date = new Date(y as number, m as number, d as number, 12);
+      onChange(format(date, "yyyy-MM-dd"));
+    }
+  };
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1939 }, (_, i) => currentYear - i);
@@ -114,31 +126,20 @@ function DatePickerField({
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
   ];
 
-  const selectedDay = selected ? selected.getDate() : "";
-  const selectedMonth = selected ? selected.getMonth() : "";
-  const selectedYear = selected ? selected.getFullYear() : "";
-
-  const daysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
-  const maxDay = (selectedMonth !== "" && selectedYear !== "")
-    ? daysInMonth(selectedMonth as number, selectedYear as number)
+  const maxDay = (month !== "" && year !== "")
+    ? new Date(year as number, (month as number) + 1, 0).getDate()
     : 31;
   const days = Array.from({ length: maxDay }, (_, i) => i + 1);
-
-  const handleChange = (day: number | "", month: number | "", year: number | "") => {
-    if (day !== "" && month !== "" && year !== "") {
-      const d = new Date(year as number, month as number, day as number, 12);
-      onChange(format(d, "yyyy-MM-dd"));
-    }
-  };
 
   return (
     <div className="flex gap-2">
       <select
         disabled={disabled}
-        value={selectedDay}
+        value={day}
         onChange={(e) => {
-          const d = e.target.value ? Number(e.target.value) : "";
-          handleChange(d, selectedMonth, selectedYear);
+          const d = e.target.value ? Number(e.target.value) : "" as const;
+          setDay(d);
+          commit(d, month, year);
         }}
         className="form-input flex-1"
       >
@@ -150,10 +151,11 @@ function DatePickerField({
 
       <select
         disabled={disabled}
-        value={selectedMonth}
+        value={month}
         onChange={(e) => {
-          const m = e.target.value !== "" ? Number(e.target.value) : "";
-          handleChange(selectedDay, m, selectedYear);
+          const m = e.target.value !== "" ? Number(e.target.value) : "" as const;
+          setMonth(m);
+          commit(day, m, year);
         }}
         className="form-input flex-1"
       >
@@ -165,10 +167,11 @@ function DatePickerField({
 
       <select
         disabled={disabled}
-        value={selectedYear}
+        value={year}
         onChange={(e) => {
-          const y = e.target.value ? Number(e.target.value) : "";
-          handleChange(selectedDay, selectedMonth, y);
+          const y = e.target.value ? Number(e.target.value) : "" as const;
+          setYear(y);
+          commit(day, month, y);
         }}
         className="form-input flex-1"
       >
