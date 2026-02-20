@@ -863,28 +863,26 @@ export default function FichaRLTForm() {
 
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="cargo_actual" label="Cargo actual" required staticLabel>
+              <FormFieldWrapper name="cargo_actual" label="Cargo actual" required>
                 {regionSeleccionada === "Quibdó" ? (
                   <input
                     id="cargo_actual"
                     value="Rector / a"
                     readOnly
                     disabled
-                    className="form-input opacity-75 cursor-not-allowed"
+                    className="form-input floating-input opacity-75 cursor-not-allowed"
                   />
                 ) : (
                   <FormSelect
                     id="cargo_actual"
                     {...register("cargo_actual")}
                     hasError={!!err("cargo_actual")}
-                    placeholder="Seleccione su cargo"
                     options={[
                       { value: "Rector / a", label: "Rector / a" },
                       { value: "Coordinador / a", label: "Coordinador / a" },
                     ]}
                   />
                 )}
-
               </FormFieldWrapper>
 
               <FormFieldWrapper name="tipo_vinculacion" label="Tipo de vinculación actual" required staticLabel>
