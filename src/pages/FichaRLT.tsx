@@ -641,7 +641,7 @@ export default function FichaRLTForm() {
             {/* SECCIÓN 3: Formación */}
             <FormSection number={3} title="Formación Académica">
               <FormFieldWrapper name="tipo_formacion" label="Tipo de formación" required className="md:col-span-2">
-                <FormSelect id="tipo_formacion" {...register("tipo_formacion")} hasError={!!err("tipo_formacion")} placeholder="Seleccione" options={[{ value: "Profesional", label: "Profesional" }, { value: "Licenciado/a", label: "Licenciado/a" }]} />
+                <FormRadioGroup name="tipo_formacion" options={[{ value: "Profesional", label: "Profesional" }, { value: "Licenciado/a", label: "Licenciado/a" }]} value={watch("tipo_formacion")} onChange={(v) => setValue("tipo_formacion", v, { shouldValidate: true })} hasError={!!err("tipo_formacion")} />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="titulo_pregrado" label="Título de pregrado" required>
