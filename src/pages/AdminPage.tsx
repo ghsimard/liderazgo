@@ -23,6 +23,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   LogOut,
@@ -33,6 +41,7 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  UserPlus,
 } from "lucide-react";
 import logoRLT from "@/assets/logo_rlt.png";
 import type { Tables } from "@/integrations/supabase/types";
@@ -77,6 +86,13 @@ export default function AdminPage() {
   // Delete dialog
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Create user dialog
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [makeAdmin, setMakeAdmin] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
 
   const fetchFichas = async () => {
     setLoading(true);
@@ -162,6 +178,30 @@ export default function AdminPage() {
     setDeleteLoading(false);
   };
 
+  // ── Create User ─────────────────────────────────────────────
+  const handleCreateUser = async () => {
+    if (!newEmail || !newPassword) {
+      toast({ title: "Email et mot de passe requis", variant: "destructive" });
+      return;
+    }
+    setCreateLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data, error } = await supabase.functions.invoke("create-user", {
+      body: { email: newEmail, password: newPassword, makeAdmin },
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    });
+    if (error || data?.error) {
+      toast({ title: "Error al crear usuario", description: data?.error ?? error?.message, variant: "destructive" });
+    } else {
+      toast({ title: "Usuario creado", description: `Cuenta creada para ${newEmail}` });
+      setCreateOpen(false);
+      setNewEmail("");
+      setNewPassword("");
+      setMakeAdmin(false);
+    }
+    setCreateLoading(false);
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -185,6 +225,10 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
+              <UserPlus className="w-4 h-4" />
+              Crear cuenta
+            </Button>
             <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
               <Download className="w-4 h-4" />
               Exportar CSV
@@ -321,6 +365,53 @@ export default function AdminPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setNewEmail(""); setNewPassword(""); setMakeAdmin(false); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear nueva cuenta</DialogTitle>
+            <DialogDescription>
+              Ingresa el correo y contraseña para el nuevo usuario.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">Correo electrónico</label>
+              <Input
+                type="email"
+                placeholder="usuario@ejemplo.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">Contraseña</label>
+              <Input
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input
+                type="checkbox"
+                checked={makeAdmin}
+                onChange={(e) => setMakeAdmin(e.target.checked)}
+                className="accent-primary w-4 h-4"
+              />
+              Asignar rol de administrador
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateUser} disabled={createLoading}>
+              {createLoading ? "Creando…" : "Crear cuenta"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
