@@ -723,24 +723,21 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               {/* Institution — directe pour Quibdó, filtrée par municipio pour Oriente */}
-              <FormFieldWrapper name="nombre_ie" label="Nombre de la Institución Educativa *" required className="md:col-span-2" staticLabel hideError>
+              <FormFieldWrapper name="nombre_ie" label="Nombre de la Institución Educativa" required className="md:col-span-2">
                 <select
                   id="nombre_ie"
                   {...register("nombre_ie")}
-                  className={`form-input ${err("nombre_ie") ? "error" : ""}`}
+                  className={`form-input floating-input ${err("nombre_ie") ? "error" : ""}`}
                   disabled={tienesMunicipios && !municipioSeleccionado}
                 >
                   <option value="">
-                    {tienesMunicipios && !municipioSeleccionado
-                      ? "Primero seleccione el municipio"
-                      : "Nombre de la Institución Educativa *"}
+                    {tienesMunicipios && !municipioSeleccionado ? "Primero seleccione el municipio" : ""}
                   </option>
                   {instituciones.map((ie) => {
                     const label = formatIEName(ie).replace(new RegExp(`\\s*-\\s*${municipioSeleccionado}$`), "");
                     return <option key={ie} value={ie}>{label}</option>;
                   })}
                 </select>
-                {err("nombre_ie") && <p className="field-error">{(errors.nombre_ie?.message as string) ?? ""}</p>}
               </FormFieldWrapper>
 
               <FormFieldWrapper name="codigo_dane" label="Código DANE de la IE (12 dígitos)" required>
