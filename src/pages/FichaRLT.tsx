@@ -128,11 +128,13 @@ function DatePickerField({
   const inputClass = "form-input text-center w-full tabular-nums";
 
   return (
-    <div className={`flex gap-2 items-center ${disabled ? "opacity-60 pointer-events-none" : ""}`}>
+    <div className={`flex gap-2 items-end ${disabled ? "opacity-60 pointer-events-none" : ""}`}>
       <div className="flex flex-col items-center gap-1 flex-1">
         <span className="text-xs text-muted-foreground font-medium">Día</span>
         <input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           min={1}
           max={31}
           placeholder="DD"
@@ -145,6 +147,8 @@ function DatePickerField({
         <span className="text-xs text-muted-foreground font-medium">Mes</span>
         <input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           min={1}
           max={12}
           placeholder="MM"
@@ -153,16 +157,18 @@ function DatePickerField({
           className={inputClass}
         />
       </div>
-      <div className="flex flex-col items-center gap-1 flex-2">
+      <div className="flex flex-col items-center gap-1" style={{ flex: "2" }}>
         <span className="text-xs text-muted-foreground font-medium">Año</span>
         <input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           min={1940}
           max={new Date().getFullYear()}
           placeholder="AAAA"
           value={year || ""}
           onChange={(e) => handleChange(day || "", month || "", e.target.value)}
-          className={`${inputClass} min-w-[90px]`}
+          className={`${inputClass} min-w-0`}
         />
       </div>
     </div>
@@ -172,21 +178,21 @@ function DatePickerField({
 // ── Pantalla de selección de región ──────────────────────────
 function RegionSelector({ onSelect }: { onSelect: (region: string) => void }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md text-center">
-        {/* Logos côte à côte : les deux sur fond foncé */}
-        <div className="flex justify-center gap-6 mb-8 items-center">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
+      <div className="w-full max-w-sm text-center">
+        {/* Logos */}
+        <div className="flex justify-center gap-4 mb-6 items-center">
           <div className="rounded-xl p-3 flex items-center justify-center" style={{ background: "var(--gradient-header)" }}>
-            <img src={logoRLT} alt="RLT" className="h-24 w-auto object-contain" />
+            <img src={logoRLT} alt="RLT" className="h-16 sm:h-24 w-auto object-contain" />
           </div>
           <div className="rounded-xl p-3 flex items-center justify-center" style={{ background: "var(--gradient-header)" }}>
-            <img src={logoCLTDark} alt="CLT" className="h-24 w-auto object-contain" />
+            <img src={logoCLTDark} alt="CLT" className="h-16 sm:h-24 w-auto object-contain" />
           </div>
         </div>
-        <h1 className="text-2xl font-bold mb-2" style={{ color: "hsl(var(--primary))" }}>
+        <h1 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: "hsl(var(--primary))" }}>
           Ficha de Información Básica
         </h1>
-        <p className="text-muted-foreground mb-8 text-sm">
+        <p className="text-muted-foreground mb-6 text-sm">
           Seleccione su región para continuar
         </p>
         <div className="flex flex-col gap-4">
@@ -194,14 +200,14 @@ function RegionSelector({ onSelect }: { onSelect: (region: string) => void }) {
             <button
               key={region}
               onClick={() => onSelect(region)}
-              className="w-full py-5 rounded-xl text-white font-semibold text-lg shadow-md transition-transform hover:scale-105 active:scale-95"
+              className="w-full py-5 rounded-xl text-white font-semibold text-lg shadow-md transition-transform active:scale-95"
               style={{ background: "var(--gradient-header)" }}
             >
               {region === "Quibdó" ? "🏫 Quibdó" : "🏫 Oriente"}
             </button>
           ))}
         </div>
-        <div className="mt-10 flex justify-center">
+        <div className="mt-8 flex justify-center">
           <div className="bg-white rounded-xl px-6 py-3 shadow-md inline-flex items-center justify-center">
             <img src={logoCosmo} alt="Cosmo Schools" className="h-8 w-auto" />
           </div>
@@ -412,34 +418,34 @@ export default function FichaRLTForm() {
     <FormProvider {...methods}>
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <header className="text-white px-4 py-6 text-center" style={{ background: "var(--gradient-header)" }}>
+        <header className="text-white px-4 py-5 md:py-6 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">
             {regionSeleccionada === "Quibdó" ? (
               /* Quibdó : un seul logo RLT centré au-dessus des titres */
-              <div className="flex flex-col items-center gap-4">
-                <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg" />
+              <div className="flex flex-col items-center gap-3">
+                <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg" />
                 <div className="text-center">
-                  <h1 className="text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
-                  <p className="text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
-                  <p className="text-xl md:text-2xl font-bold mt-2 opacity-95">Región: {regionSeleccionada}</p>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
+                  <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">Región: {regionSeleccionada}</p>
                 </div>
               </div>
             ) : (
               /* Oriente : les deux logos côte à côte centrés, puis titres en dessous */
-              <div className="flex flex-col items-center gap-4">
-                <div className="flex items-center justify-center gap-10">
-                  <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
-                  <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center justify-center gap-4 sm:gap-10">
+                  <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+                  <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
                 </div>
                 <div className="text-center">
-                  <h1 className="text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
-                  <p className="text-sm md:text-base opacity-90 font-light mt-1">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
+                  <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">
                     Programa RLT — Rectores Líderes Transformadores
                   </p>
-                  <p className="text-sm md:text-base font-light opacity-90">
+                  <p className="text-xs sm:text-sm md:text-base font-light opacity-90">
                     Programa CLT — Coordinadores Líderes Transformadores
                   </p>
-                  <p className="text-xl md:text-2xl font-bold mt-2 opacity-95">Región: {regionSeleccionada}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">Región: {regionSeleccionada}</p>
                 </div>
               </div>
             )}
@@ -450,7 +456,7 @@ export default function FichaRLTForm() {
         <div className="h-1" style={{ background: "hsl(var(--accent))" }} />
 
         {/* Formulario */}
-        <main className="max-w-4xl mx-auto px-4 py-8">
+        <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
 
             {/* Consentimiento */}
