@@ -811,32 +811,37 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               {/* Municipio — verrouillé (Quibdó) ou liste déroulante (Oriente) */}
-              <FormFieldWrapper name="municipio" label="Municipio" required>
-                {!tienesMunicipios || (municipioSeleccionado && entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado) ? (
-                  <input
-                    id="municipio"
-                    value={entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? municipioSeleccionado}
-                    readOnly
-                    disabled
-                    className="form-input floating-input opacity-75 cursor-not-allowed"
-                  />
-                ) : (
-                  <select
-                    id="municipio"
-                    value={municipioSeleccionado}
-                    onChange={(e) => {
-                      setMunicipioSeleccionado(e.target.value);
-                      setValue("nombre_ie", "");
-                    }}
-                    className="form-input floating-input"
-                  >
-                    <option value=""></option>
-                    {municipios.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                )}
-              </FormFieldWrapper>
+              <div className="flex flex-col gap-1">
+                <div className={cn("floating-field-wrapper", municipioSeleccionado && "field-has-value")}>
+                  {!tienesMunicipios || (municipioSeleccionado && entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado) ? (
+                    <input
+                      id="municipio"
+                      value={entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? municipioSeleccionado}
+                      readOnly
+                      disabled
+                      className="form-input floating-input opacity-75 cursor-not-allowed"
+                    />
+                  ) : (
+                    <select
+                      id="municipio"
+                      value={municipioSeleccionado}
+                      onChange={(e) => {
+                        setMunicipioSeleccionado(e.target.value);
+                        setValue("nombre_ie", "");
+                      }}
+                      className="form-input floating-input"
+                    >
+                      <option value=""></option>
+                      {municipios.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  )}
+                  <label className="floating-label" htmlFor="municipio">
+                    Municipio<span className="required-star ml-0.5">*</span>
+                  </label>
+                </div>
+              </div>
 
               <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
                 <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
