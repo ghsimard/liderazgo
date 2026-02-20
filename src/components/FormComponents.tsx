@@ -32,12 +32,14 @@ export function FormFieldWrapper({ name, label, required, children, className, h
   }
 
   return (
-    <div className={cn("floating-field-wrapper", hasValue && "field-has-value", className)}>
-      {children}
-      <label className="floating-label" htmlFor={name}>
-        {label}{required && <span className="required-star ml-0.5">*</span>}
-      </label>
-      {!hideError && msg && <p className="field-error mt-1">{msg}</p>}
+    <div className={cn("flex flex-col gap-1", className)}>
+      <div className={cn("floating-field-wrapper", hasValue && "field-has-value")}>
+        {children}
+        <label className="floating-label" htmlFor={name}>
+          {label}{required && <span className="required-star ml-0.5">*</span>}
+        </label>
+      </div>
+      {!hideError && msg && <p className="field-error">{msg}</p>}
     </div>
   );
 }
