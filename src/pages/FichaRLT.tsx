@@ -145,6 +145,10 @@ function DatePickerField({
           initialFocus
           locale={es}
           className="p-3 pointer-events-auto"
+          components={{
+            IconLeft: () => null,
+            IconRight: () => null,
+          }}
         />
       </PopoverContent>
     </Popover>
