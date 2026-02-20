@@ -13,7 +13,6 @@ import {
   getMunicipiosPorRegion,
   getInstitucionesPorMunicipio,
   formatIEName,
-  entidadesTerritorialesColombia,
 } from "@/data/instituciones";
 import {
   FormFieldWrapper,
@@ -33,7 +32,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Ficha = Tables<"fichas_rlt">;
 
-// ── Schema (identical to FichaRLT but without strict validation for admin) ─────
+// ── Schema (relaxed for admin) ────────────────────────────────
 const schema = z.object({
   acepta_datos: z.boolean(),
   nombres: z.string().min(1, "Requerido"),
@@ -92,7 +91,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-// ── DatePicker ────────────────────────────────────────────────
+// ── DatePicker (identical to FichaRLT) ───────────────────────
 function DatePickerField({
   value,
   onChange,
@@ -102,14 +101,18 @@ function DatePickerField({
   onChange: (val: string) => void;
   disabled?: boolean;
 }) {
-  const parsed = value ? new Date(value + "T12:00:00") : undefined;
+  const getparts = (v: string) => {
+    if (!v) return { d: "" as const, m: "" as const, y: "" as const };
+    const parsed = new Date(v + "T12:00:00");
+    return { d: parsed.getDate() as number, m: parsed.getMonth() as number, y: parsed.getFullYear() as number };
+  };
 
-  const [day, setDay] = useState<number | "">(parsed ? parsed.getDate() : "");
-  const [month, setMonth] = useState<number | "">(parsed ? parsed.getMonth() : "");
-  const [year, setYear] = useState<number | "">(parsed ? parsed.getFullYear() : "");
+  const initial = getparts(value);
+  const [day, setDay] = useState<number | "">(initial.d);
+  const [month, setMonth] = useState<number | "">(initial.m);
+  const [year, setYear] = useState<number | "">(initial.y);
   const [touched, setTouched] = useState(false);
 
-  // Sync when value changes externally (after data load)
   useEffect(() => {
     if (value) {
       const d = new Date(value + "T12:00:00");
@@ -133,13 +136,8 @@ function DatePickerField({
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1939 }, (_, i) => currentYear - i);
-  const months = [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-  ];
-  const maxDay = month !== "" && year !== ""
-    ? new Date(year as number, (month as number) + 1, 0).getDate()
-    : 31;
+  const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  const maxDay = month !== "" && year !== "" ? new Date(year as number, (month as number) + 1, 0).getDate() : 31;
   const days = Array.from({ length: maxDay }, (_, i) => i + 1);
 
   const selectClass = (filled: boolean) =>
@@ -166,7 +164,7 @@ function DatePickerField({
   );
 }
 
-// ── InstitutionSearchField ────────────────────────────────────
+// ── InstitutionSearchField (identical to FichaRLT) ────────────
 function InstitutionSearchField({
   instituciones, municipioSeleccionado, disabled = false, value, onChange, hasError, errorMsg,
 }: {
@@ -221,7 +219,7 @@ function InstitutionSearchField({
         )}
         {open && query.length >= 3 && filtered.length === 0 && (
           <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border border-border bg-card shadow-lg px-3 py-2 text-sm text-muted-foreground">
-            Sin resultados — puede escribir el nombre manualmente
+            Sin resultados
           </div>
         )}
       </div>
@@ -310,20 +308,21 @@ export default function AdminEditFicha() {
 
   const { register, watch, setValue, handleSubmit, reset, formState: { errors } } = methods;
 
-  const regionActual = watch("region");
+  const regionSeleccionada = watch("region");
   const lenguaMaterna = watch("lengua_materna");
   const enfermedadBase = watch("enfermedad_base");
   const discapacidad = watch("discapacidad");
   const jornadas = watch("jornadas") ?? [];
   const nivelesEducativos = watch("niveles_educativos") ?? [];
 
-  const tienesMunicipios = regionActual ? getMunicipiosPorRegion(regionActual).length > 1 : false;
-  const municipios = tienesMunicipios ? getMunicipiosPorRegion(regionActual ?? "") : [];
+  // Same logic as FichaRLT
+  const tienesMunicipios = regionSeleccionada ? getMunicipiosPorRegion(regionSeleccionada).length > 1 : false;
+  const municipios = tienesMunicipios ? getMunicipiosPorRegion(regionSeleccionada ?? "") : [];
   const instituciones = tienesMunicipios && municipioSeleccionado
-    ? getInstitucionesPorMunicipio(regionActual ?? "", municipioSeleccionado)
-    : (regionActual ? (institucionesPorRegion[regionActual] ?? []) : []);
+    ? getInstitucionesPorMunicipio(regionSeleccionada ?? "", municipioSeleccionado)
+    : (regionSeleccionada ? (institucionesPorRegion[regionSeleccionada] ?? []) : []);
 
-  // Load ficha
+  // Load ficha and reset form
   useEffect(() => {
     if (!id || !isAdmin) return;
     (async () => {
@@ -334,10 +333,9 @@ export default function AdminEditFicha() {
         return;
       }
       setFicha(data);
-      const fd = fichaToFormData(data);
-      reset(fd);
+      reset(fichaToFormData(data));
 
-      // Infer municipio from nombre_ie
+      // Infer municipio from nombre_ie for Oriente-style regions
       const region = data.region ?? "";
       if (getMunicipiosPorRegion(region).length > 1 && data.nombre_ie) {
         const parts = data.nombre_ie.split(" - ");
@@ -435,22 +433,24 @@ export default function AdminEditFicha() {
 
   if (!ficha) return null;
 
-  const region = ficha.region;
-  const isQuibdo = region === "Quibdó";
+  const isQuibdo = regionSeleccionada === "Quibdó";
+  // Same logic as FichaRLT for Entidad Territorial & Municipio
+  const etLocked = entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? "";
+  const municipioLocked = !tienesMunicipios || (municipioSeleccionado && etLocked === municipioSeleccionado);
 
   return (
     <FormProvider {...methods}>
       <div className="min-h-screen bg-background">
-        {/* Header */}
+        {/* Header — identical to FichaRLT */}
         <header className="text-white px-4 py-5 md:py-6 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">
             {isQuibdo ? (
               <div className="flex flex-col items-center gap-3">
                 <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg" />
                 <div className="text-center">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Editar Ficha de Información</h1>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
                   <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">Región: {region}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">Región: {regionSeleccionada}</p>
                 </div>
               </div>
             ) : (
@@ -460,9 +460,10 @@ export default function AdminEditFicha() {
                   <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
                 </div>
                 <div className="text-center">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Editar Ficha de Información</h1>
-                  <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">Programa RLT / CLT</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">Región: {region}</p>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
+                  <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
+                  <p className="text-xs sm:text-sm md:text-base font-light opacity-90">Programa CLT — Coordinadores Líderes Transformadores</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">Región: {regionSeleccionada}</p>
                 </div>
               </div>
             )}
@@ -485,7 +486,7 @@ export default function AdminEditFicha() {
         </div>
 
         {/* Formulario */}
-        <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
 
             {/* Consentimiento */}
@@ -498,7 +499,8 @@ export default function AdminEditFicha() {
                 />
                 <span className="text-sm leading-relaxed">
                   <strong>Autorización de datos personales: </strong>
-                  El participante acepta el tratamiento de sus datos personales conforme a la Ley 1581 de 2012.
+                  Entiendo la información y acepto el tratamiento de mis datos personales conforme a la Ley 1581 de 2012 de protección de datos de Colombia.{" "}
+                  <span className="required-star">*</span>
                 </span>
               </label>
             </div>
@@ -506,11 +508,11 @@ export default function AdminEditFicha() {
             {/* SECCIÓN 1: Datos personales */}
             <FormSection number={1} title="Datos Personales">
               <FormFieldWrapper name="nombres" label="Nombre(s)" required>
-                <FormInput id="nombres" {...register("nombres")} hasError={!!err("nombres")} />
+                <FormInput id="nombres" {...register("nombres")} placeholder="Ej: María Carolina" hasError={!!err("nombres")} />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="apellidos" label="Apellido(s)" required>
-                <FormInput id="apellidos" {...register("apellidos")} hasError={!!err("apellidos")} />
+                <FormInput id="apellidos" {...register("apellidos")} placeholder="Ej: Rodríguez Pérez" hasError={!!err("apellidos")} />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="fecha_nacimiento" label="Fecha de nacimiento" required staticLabel>
@@ -534,20 +536,20 @@ export default function AdminEditFicha() {
 
               {lenguaMaterna === "Otra" && (
                 <FormFieldWrapper name="lengua_otra" label="Si su respuesta fue Otra ¿Cuál es?" className="md:col-span-2">
-                  <FormInput id="lengua_otra" {...register("lengua_otra")} />
+                  <FormInput id="lengua_otra" {...register("lengua_otra")} placeholder="Indique su lengua materna" />
                 </FormFieldWrapper>
               )}
 
               <FormFieldWrapper name="celular_personal" label="Número de celular personal" required>
-                <FormInput id="celular_personal" type="tel" {...register("celular_personal")} hasError={!!err("celular_personal")} />
+                <FormInput id="celular_personal" {...register("celular_personal")} placeholder="+57 300 0000 000" type="tel" hasError={!!err("celular_personal")} />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="correo_personal" label="Correo electrónico personal" required>
-                <FormInput id="correo_personal" type="email" {...register("correo_personal")} hasError={!!err("correo_personal")} />
+                <FormInput id="correo_personal" type="email" {...register("correo_personal")} placeholder="correo@gmail.com" hasError={!!err("correo_personal")} />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="correo_institucional" label="Correo electrónico institucional">
-                <FormInput id="correo_institucional" type="email" {...register("correo_institucional")} hasError={!!err("correo_institucional")} />
+                <FormInput id="correo_institucional" type="email" {...register("correo_institucional")} placeholder="correo@edu.co" hasError={!!err("correo_institucional")} />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="prefiere_correo" label="Prefiere recibir comunicaciones en el correo" required staticLabel>
@@ -575,16 +577,16 @@ export default function AdminEditFicha() {
 
               {enfermedadBase === "Sí" && (
                 <FormFieldWrapper name="enfermedad_detalle" label="Indique la enfermedad y sus requerimientos" className="md:col-span-2">
-                  <FormTextArea id="enfermedad_detalle" {...register("enfermedad_detalle")} />
+                  <FormTextArea id="enfermedad_detalle" {...register("enfermedad_detalle")} placeholder="Describa la enfermedad y los requerimientos especiales..." />
                 </FormFieldWrapper>
               )}
 
               <FormFieldWrapper name="contacto_emergencia" label="Si requiere atención médica urgente ¿A quién podemos contactar?">
-                <FormInput id="contacto_emergencia" {...register("contacto_emergencia")} />
+                <FormInput id="contacto_emergencia" {...register("contacto_emergencia")} placeholder="Nombre completo del contacto" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="telefono_emergencia" label="¿Cuál es el número de contacto de emergencia?">
-                <FormInput id="telefono_emergencia" type="tel" {...register("telefono_emergencia")} />
+                <FormInput id="telefono_emergencia" type="tel" {...register("telefono_emergencia")} placeholder="+57 300 0000 000" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="discapacidad" label="¿Tiene alguna discapacidad?" required className="md:col-span-2" staticLabel>
@@ -599,7 +601,7 @@ export default function AdminEditFicha() {
 
               {discapacidad === "Sí" && (
                 <FormFieldWrapper name="discapacidad_detalle" label="Si su respuesta fue afirmativa ¿Cuál es?" className="md:col-span-2">
-                  <FormInput id="discapacidad_detalle" {...register("discapacidad_detalle")} />
+                  <FormInput id="discapacidad_detalle" {...register("discapacidad_detalle")} placeholder="Indique el tipo de discapacidad" />
                 </FormFieldWrapper>
               )}
             </FormSection>
@@ -616,83 +618,75 @@ export default function AdminEditFicha() {
               </FormFieldWrapper>
 
               <FormFieldWrapper name="titulo_pregrado" label="Título de pregrado">
-                <FormInput id="titulo_pregrado" {...register("titulo_pregrado")} />
+                <FormInput id="titulo_pregrado" {...register("titulo_pregrado")} placeholder="Título obtenido" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="titulo_especializacion" label="Título de especialización">
-                <FormInput id="titulo_especializacion" {...register("titulo_especializacion")} />
+                <FormInput id="titulo_especializacion" {...register("titulo_especializacion")} placeholder="Título obtenido" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="titulo_maestria" label="Título de maestría">
-                <FormInput id="titulo_maestria" {...register("titulo_maestria")} />
+                <FormInput id="titulo_maestria" {...register("titulo_maestria")} placeholder="Título obtenido" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="titulo_doctorado" label="Título de doctorado">
-                <FormInput id="titulo_doctorado" {...register("titulo_doctorado")} />
+                <FormInput id="titulo_doctorado" {...register("titulo_doctorado")} placeholder="Título obtenido" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="otros_titulos" label="Otros títulos ¿cuáles?" className="md:col-span-2">
-                <FormInput id="otros_titulos" {...register("otros_titulos")} />
+                <FormInput id="otros_titulos" {...register("otros_titulos")} placeholder="Otros títulos o certificaciones relevantes" />
               </FormFieldWrapper>
             </FormSection>
 
-            {/* SECCIÓN 4: Institución */}
+            {/* SECCIÓN 4: Institución — identical logic to FichaRLT */}
             <FormSection number={4} title="Información Institucional">
-              {/* Region */}
-              <FormFieldWrapper name="region" label="Región" required>
-                <FormSelect
-                  id="region"
-                  {...register("region")}
-                  hasError={!!err("region")}
-                  options={[
-                    { value: "Quibdó", label: "Quibdó" },
-                    { value: "Oriente", label: "Oriente" },
-                    { value: "Buenaventura", label: "Buenaventura" },
-                    { value: "Tumaco", label: "Tumaco" },
-                    { value: "Costa Caribe", label: "Costa Caribe" },
-                  ]}
-                  onChange={(e) => {
-                    const newRegion = e.target.value;
-                    setValue("region", newRegion);
-                    setValue("entidad_territorial", entidadTerritorialPorRegion[newRegion] ?? "");
-                    setValue("nombre_ie", "");
-                    setMunicipioSeleccionado("");
-                  }}
-                />
-              </FormFieldWrapper>
-
-              {/* Entidad Territorial */}
-              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial">
-                <FormSelect
+              {/* Entidad Territorial — auto-rempli et verrouillé (same as FichaRLT) */}
+              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial" required>
+                <input
                   id="entidad_territorial"
-                  {...register("entidad_territorial")}
-                  options={entidadesTerritorialesColombia.map((e) => ({ value: e, label: e }))}
+                  value={etLocked}
+                  readOnly
+                  disabled
+                  className="form-input floating-input opacity-75 cursor-not-allowed"
                 />
               </FormFieldWrapper>
 
-              {/* Municipio */}
-              {tienesMunicipios && (
-                <div className="flex flex-col gap-1">
-                  <div className={cn("floating-field-wrapper", municipioSeleccionado && "field-has-value")}>
+              {/* Municipio — locked (Quibdó) or dropdown (Oriente), identical to FichaRLT */}
+              <div className="flex flex-col gap-1">
+                <div className={cn("floating-field-wrapper", !!(etLocked || municipioSeleccionado) && "field-has-value")}>
+                  {municipioLocked ? (
+                    <input
+                      id="municipio"
+                      value={etLocked || municipioSeleccionado}
+                      readOnly
+                      disabled
+                      className="form-input floating-input opacity-75 cursor-not-allowed"
+                    />
+                  ) : (
                     <select
                       id="municipio"
                       value={municipioSeleccionado}
-                      onChange={(e) => { setMunicipioSeleccionado(e.target.value); setValue("nombre_ie", ""); }}
+                      onChange={(e) => {
+                        setMunicipioSeleccionado(e.target.value);
+                        setValue("nombre_ie", "");
+                      }}
                       className="form-input floating-input"
                     >
                       <option value=""></option>
                       {municipios.map((m) => <option key={m} value={m}>{m}</option>)}
                     </select>
-                    <label className="floating-label" htmlFor="municipio">Municipio</label>
-                  </div>
+                  )}
+                  <label className="floating-label" htmlFor="municipio">
+                    Municipio<span className="required-star ml-0.5">*</span>
+                  </label>
                 </div>
-              )}
+              </div>
 
               <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
-                <FormInput id="comuna_barrio" {...register("comuna_barrio")} />
+                <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
               </FormFieldWrapper>
 
-              {/* Institution search */}
+              {/* Institution search — identical to FichaRLT */}
               <InstitutionSearchField
                 instituciones={instituciones}
                 municipioSeleccionado={municipioSeleccionado}
@@ -707,24 +701,36 @@ export default function AdminEditFicha() {
                 <FormInput id="codigo_dane" {...register("codigo_dane")} maxLength={12} hasError={!!err("codigo_dane")} />
               </FormFieldWrapper>
 
+              {/* Cargo actual — locked for Quibdó, dropdown for others (identical to FichaRLT) */}
               <FormFieldWrapper name="cargo_actual" label="Cargo actual" required>
-                <FormSelect
-                  id="cargo_actual"
-                  {...register("cargo_actual")}
-                  hasError={!!err("cargo_actual")}
-                  options={[
-                    { value: "Rector / a", label: "Rector / a" },
-                    { value: "Coordinador / a", label: "Coordinador / a" },
-                  ]}
-                />
+                {isQuibdo ? (
+                  <input
+                    id="cargo_actual"
+                    value="Rector / a"
+                    readOnly
+                    disabled
+                    className="form-input floating-input opacity-75 cursor-not-allowed"
+                  />
+                ) : (
+                  <FormSelect
+                    id="cargo_actual"
+                    {...register("cargo_actual")}
+                    hasError={!!err("cargo_actual")}
+                    options={[
+                      { value: "Rector / a", label: "Rector / a" },
+                      { value: "Coordinador / a", label: "Coordinador / a" },
+                    ]}
+                  />
+                )}
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="tipo_vinculacion" label="Tipo de vinculación actual" staticLabel>
+              <FormFieldWrapper name="tipo_vinculacion" label="Tipo de vinculación actual" required staticLabel>
                 <FormRadioGroup
                   name="tipo_vinculacion"
                   options={[{ value: "En propiedad", label: "En propiedad" }, { value: "En encargo", label: "En encargo" }]}
                   value={watch("tipo_vinculacion")}
-                  onChange={(v) => setValue("tipo_vinculacion", v)}
+                  onChange={(v) => setValue("tipo_vinculacion", v, { shouldValidate: true })}
+                  hasError={!!err("tipo_vinculacion")}
                 />
               </FormFieldWrapper>
 
@@ -745,18 +751,18 @@ export default function AdminEditFicha() {
                   name="estatuto"
                   options={[{ value: "2277", label: "2277" }, { value: "1278", label: "1278" }]}
                   value={watch("estatuto")}
-                  onChange={(v) => setValue("estatuto", v)}
+                  onChange={(v) => setValue("estatuto", v, { shouldValidate: true })}
                 />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="grado_escalafon" label="Grado en el escalafón">
-                <FormInput id="grado_escalafon" {...register("grado_escalafon")} />
+                <FormInput id="grado_escalafon" {...register("grado_escalafon")} placeholder="Ej: 2B, 3, etc." />
               </FormFieldWrapper>
             </FormSection>
 
             {/* SECCIÓN 5: Datos de la IE */}
             <FormSection number={5} title="Datos de la Institución Educativa">
-              <FormFieldWrapper name="zona_sede" label="Zona de la sede principal de la IE" staticLabel>
+              <FormFieldWrapper name="zona_sede" label="Zona de la sede principal de la IE" required staticLabel>
                 <FormRadioGroup
                   name="zona_sede"
                   options={[{ value: "Urbana", label: "Urbana" }, { value: "Rural", label: "Rural" }]}
@@ -765,19 +771,19 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="total_sedes" label="Número total de sedes (incluida la sede principal)">
-                <FormInput id="total_sedes" type="number" min={1} {...register("total_sedes")} />
+              <FormFieldWrapper name="total_sedes" label="Número total de sedes (incluida la sede principal)" required>
+                <FormInput id="total_sedes" type="number" min={1} {...register("total_sedes")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="sedes_rural" label="Número de sedes en zona rural">
-                <FormInput id="sedes_rural" type="number" min={0} {...register("sedes_rural")} />
+              <FormFieldWrapper name="sedes_rural" label="Número de sedes en zona rural" required>
+                <FormInput id="sedes_rural" type="number" min={0} {...register("sedes_rural")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="sedes_urbana" label="Número de sedes en zona urbana">
-                <FormInput id="sedes_urbana" type="number" min={0} {...register("sedes_urbana")} />
+              <FormFieldWrapper name="sedes_urbana" label="Número de sedes en zona urbana" required>
+                <FormInput id="sedes_urbana" type="number" min={0} {...register("sedes_urbana")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="jornadas" label="Jornadas de la IE" className="md:col-span-2" hideError staticLabel>
+              <FormFieldWrapper name="jornadas" label="Jornadas de la IE" required className="md:col-span-2" hideError staticLabel>
                 <FormCheckboxGroup
                   name="jornadas"
                   options={[
@@ -792,11 +798,11 @@ export default function AdminEditFicha() {
               </FormFieldWrapper>
 
               <FormFieldWrapper name="grupos_etnicos" label="Grupos étnicos en la IE">
-                <FormInput id="grupos_etnicos" {...register("grupos_etnicos")} />
+                <FormInput id="grupos_etnicos" {...register("grupos_etnicos")} placeholder="Ej: Afrodescendiente, Indígena, etc." />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="proyectos_transversales" label="Proyectos transversales de la IE">
-                <FormInput id="proyectos_transversales" {...register("proyectos_transversales")} />
+                <FormInput id="proyectos_transversales" {...register("proyectos_transversales")} placeholder="Ej: PRAE, PIGA, etc." />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="desplazamiento" label="¿Hay estudiantes o familias en condición de desplazamiento?" staticLabel>
@@ -808,7 +814,7 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="niveles_educativos" label="Niveles educativos que ofrece la IE" className="md:col-span-2" hideError staticLabel>
+              <FormFieldWrapper name="niveles_educativos" label="Niveles educativos que ofrece la IE" required className="md:col-span-2" hideError staticLabel>
                 <FormCheckboxGroup
                   name="niveles_educativos"
                   options={[
@@ -825,46 +831,46 @@ export default function AdminEditFicha() {
               </FormFieldWrapper>
 
               <FormFieldWrapper name="tipo_bachillerato" label="Tipo de bachillerato que ofrece la IE">
-                <FormInput id="tipo_bachillerato" {...register("tipo_bachillerato")} />
+                <FormInput id="tipo_bachillerato" {...register("tipo_bachillerato")} placeholder="Ej: Académico, Técnico, etc." />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="modelo_pedagogico" label="Modelo o enfoque pedagógico">
-                <FormInput id="modelo_pedagogico" {...register("modelo_pedagogico")} />
+                <FormInput id="modelo_pedagogico" {...register("modelo_pedagogico")} placeholder="Ej: Constructivista, Tradicional, etc." />
               </FormFieldWrapper>
             </FormSection>
 
             {/* SECCIÓN 6: Personal y estudiantes */}
             <FormSection number={6} title="Personal y Estudiantes">
-              <FormFieldWrapper name="num_docentes" label="Número de docentes">
-                <FormInput id="num_docentes" type="number" min={0} {...register("num_docentes")} />
+              <FormFieldWrapper name="num_docentes" label="Número de docentes" required>
+                <FormInput id="num_docentes" type="number" min={0} {...register("num_docentes")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="num_coordinadores" label="Número de coordinadores/as">
-                <FormInput id="num_coordinadores" type="number" min={0} {...register("num_coordinadores")} />
+              <FormFieldWrapper name="num_coordinadores" label="Número de coordinadores/as" required>
+                <FormInput id="num_coordinadores" type="number" min={0} {...register("num_coordinadores")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="num_administrativos" label="Número de administrativos">
-                <FormInput id="num_administrativos" type="number" min={0} {...register("num_administrativos")} />
+              <FormFieldWrapper name="num_administrativos" label="Número de administrativos" required>
+                <FormInput id="num_administrativos" type="number" min={0} {...register("num_administrativos")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="num_orientadores" label="Número de orientadores/as">
-                <FormInput id="num_orientadores" type="number" min={0} {...register("num_orientadores")} />
+              <FormFieldWrapper name="num_orientadores" label="Número de orientadores/as" required>
+                <FormInput id="num_orientadores" type="number" min={0} {...register("num_orientadores")} placeholder="0" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="estudiantes_preescolar" label="Número de estudiantes en Preescolar">
-                <FormInput id="estudiantes_preescolar" type="number" min={0} {...register("estudiantes_preescolar")} />
+                <FormInput id="estudiantes_preescolar" type="number" min={0} {...register("estudiantes_preescolar")} placeholder="0" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="estudiantes_primaria" label="Número de estudiantes en Primaria">
-                <FormInput id="estudiantes_primaria" type="number" min={0} {...register("estudiantes_primaria")} />
+                <FormInput id="estudiantes_primaria" type="number" min={0} {...register("estudiantes_primaria")} placeholder="0" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="estudiantes_ciclo_complementario" label="Número de estudiantes en Ciclo Complementario">
-                <FormInput id="estudiantes_ciclo_complementario" type="number" min={0} {...register("estudiantes_ciclo_complementario")} />
+                <FormInput id="estudiantes_ciclo_complementario" type="number" min={0} {...register("estudiantes_ciclo_complementario")} placeholder="0" />
               </FormFieldWrapper>
             </FormSection>
 
-            {/* Botón guardar */}
+            {/* Botón guardar — styled like FichaRLT submit button */}
             <div className="text-center pb-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 type="button"
