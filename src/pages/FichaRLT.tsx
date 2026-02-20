@@ -137,7 +137,7 @@ function DatePickerField({
   const days = Array.from({ length: maxDay }, (_, i) => i + 1);
 
   const selectClass = (filled: boolean) =>
-    `form-input flex-1${showError && !filled ? " error" : ""}`;
+    `form-input flex-1 !pt-0 !pb-0${showError && !filled ? " error" : ""}`;
 
   return (
     <div className="flex flex-col gap-1">
