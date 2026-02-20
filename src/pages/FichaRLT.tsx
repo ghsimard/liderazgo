@@ -205,6 +205,7 @@ function InstitutionSearchField({
   value,
   onChange,
   hasError,
+  errorMsg,
 }: {
   instituciones: string[];
   municipioSeleccionado: string;
@@ -212,14 +213,18 @@ function InstitutionSearchField({
   value: string;
   onChange: (val: string) => void;
   hasError?: boolean;
+  errorMsg?: string;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const getLabel = (ie: string) =>
     formatIEName(ie).replace(new RegExp(`\\s*-\\s*${municipioSeleccionado}$`), "");
 
   const selectedLabel = value ? getLabel(value) : "";
+  const hasContent = !!selectedLabel || query.length > 0;
+  const labelUp = isFocused || hasContent;
 
   const filtered =
     query.length >= 3
@@ -235,43 +240,79 @@ function InstitutionSearchField({
   };
 
   return (
-    <div className="relative">
-      <input
-        id="nombre_ie"
-        type="text"
-        autoComplete="off"
-        disabled={disabled}
-        placeholder=" "
-        value={selectedLabel || query}
-        onChange={(e) => {
-          if (value) onChange(""); // efface la sélection si l'usager retape
-          setQuery(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => { if (query.length >= 3) setOpen(true); }}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        className={cn("form-input floating-input", hasError && "error")}
-      />
-      {open && filtered.length > 0 && (
-        <ul className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
-          {filtered.map((ie) => (
-            <li key={ie}>
-              <button
-                type="button"
-                onMouseDown={() => handleSelect(ie)}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors"
-              >
-                {getLabel(ie)}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {open && query.length >= 3 && filtered.length === 0 && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border border-border bg-card shadow-lg px-3 py-2 text-sm text-muted-foreground">
-          Sin resultados
-        </div>
-      )}
+    <div className="flex flex-col gap-1 md:col-span-2">
+      <div className="relative">
+        <input
+          id="nombre_ie"
+          type="text"
+          autoComplete="off"
+          disabled={disabled}
+          placeholder=" "
+          value={selectedLabel || query}
+          onChange={(e) => {
+            if (value) onChange("");
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => {
+            setIsFocused(true);
+            if (query.length >= 3) setOpen(true);
+          }}
+          onBlur={() => {
+            setIsFocused(false);
+            setTimeout(() => setOpen(false), 150);
+          }}
+          className={cn("form-input", hasError && "error")}
+        />
+        {/* Label flottant géré localement */}
+        <label
+          htmlFor="nombre_ie"
+          style={{
+            position: "absolute",
+            left: "0.75rem",
+            right: "0.75rem",
+            top: labelUp ? "0.45rem" : "50%",
+            transform: labelUp ? "none" : "translateY(-50%)",
+            fontSize: labelUp ? "0.68rem" : "0.875rem",
+            fontWeight: labelUp ? 600 : 400,
+            color: isFocused
+              ? "hsl(var(--primary))"
+              : labelUp
+              ? "hsl(var(--muted-foreground))"
+              : "hsl(var(--muted-foreground))",
+            pointerEvents: "none",
+            transition: "top 0.2s ease, font-size 0.2s ease, color 0.2s ease, transform 0.2s ease, font-weight 0.2s ease",
+            lineHeight: 1,
+            zIndex: 1,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          Nombre de la Institución Educativa <span style={{ color: "hsl(var(--destructive))" }}>*</span>
+        </label>
+        {open && filtered.length > 0 && (
+          <ul className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
+            {filtered.map((ie) => (
+              <li key={ie}>
+                <button
+                  type="button"
+                  onMouseDown={() => handleSelect(ie)}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors"
+                >
+                  {getLabel(ie)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {open && query.length >= 3 && filtered.length === 0 && (
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border border-border bg-card shadow-lg px-3 py-2 text-sm text-muted-foreground">
+            Sin resultados
+          </div>
+        )}
+      </div>
+      {hasError && errorMsg && <p className="field-error">{errorMsg}</p>}
     </div>
   );
 }
@@ -802,16 +843,15 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               {/* Institution — directe pour Quibdó, filtrée par municipio pour Oriente */}
-              <FormFieldWrapper name="nombre_ie" label="Nombre de la Institución Educativa" required className="md:col-span-2">
-                <InstitutionSearchField
-                  instituciones={instituciones}
-                  municipioSeleccionado={municipioSeleccionado}
-                  disabled={tienesMunicipios && !municipioSeleccionado}
-                  value={watch("nombre_ie") ?? ""}
-                  onChange={(val) => setValue("nombre_ie", val, { shouldValidate: true })}
-                  hasError={!!err("nombre_ie")}
-                />
-              </FormFieldWrapper>
+              <InstitutionSearchField
+                instituciones={instituciones}
+                municipioSeleccionado={municipioSeleccionado}
+                disabled={tienesMunicipios && !municipioSeleccionado}
+                value={watch("nombre_ie") ?? ""}
+                onChange={(val) => setValue("nombre_ie", val, { shouldValidate: true })}
+                hasError={!!err("nombre_ie")}
+                errorMsg={errors.nombre_ie?.message as string}
+              />
 
               <FormFieldWrapper name="codigo_dane" label="Código DANE (12 dígitos)" required>
                 <FormInput
