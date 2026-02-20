@@ -217,9 +217,10 @@ export default function FichaRLTForm() {
   const jornadas = watch("jornadas") ?? [];
   const nivelesEducativos = watch("niveles_educativos") ?? [];
 
-  // Dériver municipios et institutions depuis la hiérarchie
-  const municipios = regionActual ? getMunicipiosPorRegion(regionActual) : [];
-  const instituciones = municipioSeleccionado
+  // Quibdó n'a pas de structure " - Municipio" → pas de filtre par municipio
+  const tienesMunicipios = regionActual ? getMunicipiosPorRegion(regionActual).length > 1 : false;
+  const municipios = tienesMunicipios ? getMunicipiosPorRegion(regionActual ?? "") : [];
+  const instituciones = tienesMunicipios && municipioSeleccionado
     ? getInstitucionesPorMunicipio(regionActual ?? "", municipioSeleccionado)
     : (regionActual ? (institucionesPorRegion[regionActual] ?? []) : []);
 
@@ -636,44 +637,45 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              {/* Municipio — verrouillé si l'Entidad Territorial = un Municipio existant, sinon liste déroulante */}
-              <FormFieldWrapper name="municipio" label="Municipio" required>
-                {municipioSeleccionado && municipios.includes(municipioSeleccionado) &&
-                 entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado ? (
-                  <input
-                    id="municipio"
-                    value={municipioSeleccionado}
-                    readOnly
-                    disabled
-                    className="form-input opacity-75 cursor-not-allowed"
-                  />
-                ) : (
-                  <select
-                    id="municipio"
-                    value={municipioSeleccionado}
-                    onChange={(e) => {
-                      setMunicipioSeleccionado(e.target.value);
-                      setValue("nombre_ie", "");
-                    }}
-                    className="form-input"
-                  >
-                    <option value="">Seleccione el municipio</option>
-                    {municipios.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                )}
-              </FormFieldWrapper>
+              {/* Municipio — uniquement pour les régions avec structure " - Municipio" (ex: Oriente) */}
+              {tienesMunicipios && (
+                <FormFieldWrapper name="municipio" label="Municipio" required>
+                  {municipioSeleccionado && entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado ? (
+                    <input
+                      id="municipio"
+                      value={municipioSeleccionado}
+                      readOnly
+                      disabled
+                      className="form-input opacity-75 cursor-not-allowed"
+                    />
+                  ) : (
+                    <select
+                      id="municipio"
+                      value={municipioSeleccionado}
+                      onChange={(e) => {
+                        setMunicipioSeleccionado(e.target.value);
+                        setValue("nombre_ie", "");
+                      }}
+                      className="form-input"
+                    >
+                      <option value="">Seleccione el municipio</option>
+                      {municipios.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  )}
+                </FormFieldWrapper>
+              )}
 
-              {/* Institution — filtrée selon le municipio */}
+              {/* Institution — directe pour Quibdó, filtrée par municipio pour Oriente */}
               <FormFieldWrapper name="nombre_ie" label="Nombre de la Institución Educativa" required className="md:col-span-2">
                 <select
                   id="nombre_ie"
                   {...register("nombre_ie")}
                   className={`form-input ${err("nombre_ie") ? "error" : ""}`}
-                  disabled={!municipioSeleccionado}
+                  disabled={tienesMunicipios && !municipioSeleccionado}
                 >
-                  <option value="">{municipioSeleccionado ? "Seleccione la institución" : "Primero seleccione el municipio"}</option>
+                  <option value="">{tienesMunicipios && !municipioSeleccionado ? "Primero seleccione el municipio" : "Seleccione la institución"}</option>
                   {instituciones.map((ie) => {
                     const label = formatIEName(ie).replace(new RegExp(`\\s*-\\s*${municipioSeleccionado}$`), "");
                     return <option key={ie} value={ie}>{label}</option>;
