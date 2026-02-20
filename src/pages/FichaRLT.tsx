@@ -512,7 +512,7 @@ export default function FichaRLTForm() {
                   placeholder="Ej: María Carolina"
                   hasError={!!err("nombres")}
                 />
-                {err("nombres") && <p className="field-error">{err("nombres")}</p>}
+
               </FormFieldWrapper>
 
               <FormFieldWrapper name="apellidos" label="Apellidos" required>
@@ -522,7 +522,7 @@ export default function FichaRLTForm() {
                   placeholder="Ej: Rodríguez Pérez"
                   hasError={!!err("apellidos")}
                 />
-                {err("apellidos") && <p className="field-error">{err("apellidos")}</p>}
+
               </FormFieldWrapper>
 
               <FormFieldWrapper name="fecha_nacimiento" label="Fecha de nacimiento" required staticLabel>
@@ -530,7 +530,7 @@ export default function FichaRLTForm() {
                   value={watch("fecha_nacimiento") ?? ""}
                   onChange={(v) => setValue("fecha_nacimiento", v, { shouldValidate: true })}
                 />
-                {err("fecha_nacimiento") && <p className="field-error">{err("fecha_nacimiento")}</p>}
+
               </FormFieldWrapper>
 
               <FormFieldWrapper name="lengua_materna" label="Lengua materna" required>
@@ -543,7 +543,7 @@ export default function FichaRLTForm() {
                     { value: "Otra", label: "Otra" },
                   ]}
                 />
-                {err("lengua_materna") && <p className="field-error">{err("lengua_materna")}</p>}
+
               </FormFieldWrapper>
 
               {lenguaMaterna === "Otra" && (
@@ -560,7 +560,7 @@ export default function FichaRLTForm() {
                   type="tel"
                   hasError={!!err("celular_personal")}
                 />
-                {err("celular_personal") && <p className="field-error">{err("celular_personal")}</p>}
+
               </FormFieldWrapper>
 
               <FormFieldWrapper name="correo_personal" label="Correo electrónico personal" required>
@@ -571,7 +571,6 @@ export default function FichaRLTForm() {
                   placeholder="correo@gmail.com"
                   hasError={!!err("correo_personal")}
                 />
-                {err("correo_personal") && <p className="field-error">{err("correo_personal")}</p>}
               </FormFieldWrapper>
 
               <FormFieldWrapper name="correo_institucional" label="Correo electrónico institucional">
@@ -582,7 +581,7 @@ export default function FichaRLTForm() {
                   placeholder="correo@edu.co"
                   hasError={!!err("correo_institucional")}
                 />
-                {err("correo_institucional") && <p className="field-error">{err("correo_institucional")}</p>}
+
               </FormFieldWrapper>
 
               <FormFieldWrapper name="prefiere_correo" label="Prefiere recibir comunicaciones en el correo" required staticLabel>
@@ -596,7 +595,7 @@ export default function FichaRLTForm() {
                   onChange={(v) => setValue("prefiere_correo", v, { shouldValidate: true })}
                   hasError={!!err("prefiere_correo")}
                 />
-                {err("prefiere_correo") && <p className="field-error">{err("prefiere_correo")}</p>}
+
               </FormFieldWrapper>
             </FormSection>
 
@@ -613,7 +612,7 @@ export default function FichaRLTForm() {
                   onChange={(v) => setValue("enfermedad_base", v, { shouldValidate: true })}
                   hasError={!!err("enfermedad_base")}
                 />
-                {err("enfermedad_base") && <p className="field-error">{err("enfermedad_base")}</p>}
+
               </FormFieldWrapper>
 
               {enfermedadBase === "Sí" && (
@@ -641,7 +640,7 @@ export default function FichaRLTForm() {
                   onChange={(v) => setValue("discapacidad", v, { shouldValidate: true })}
                   hasError={!!err("discapacidad")}
                 />
-                {err("discapacidad") && <p className="field-error">{err("discapacidad")}</p>}
+
               </FormFieldWrapper>
 
               {discapacidad === "Sí" && (
@@ -733,7 +732,7 @@ export default function FichaRLTForm() {
                     return <option key={ie} value={ie}>{label}</option>;
                   })}
                 </select>
-                {err("nombre_ie") && <p className="field-error">{err("nombre_ie")}</p>}
+
               </FormFieldWrapper>
 
               <FormFieldWrapper name="codigo_dane" label="Código DANE de la IE (12 dígitos)" required>
@@ -744,7 +743,7 @@ export default function FichaRLTForm() {
                   maxLength={12}
                   hasError={!!err("codigo_dane")}
                 />
-                {err("codigo_dane") && <p className="field-error">{err("codigo_dane")}</p>}
+
               </FormFieldWrapper>
 
               <FormFieldWrapper name="cargo_actual" label="Cargo actual" required staticLabel>
@@ -768,7 +767,7 @@ export default function FichaRLTForm() {
                     ]}
                   />
                 )}
-                {err("cargo_actual") && <p className="field-error">{err("cargo_actual")}</p>}
+
               </FormFieldWrapper>
 
               <FormFieldWrapper name="tipo_vinculacion" label="Tipo de vinculación actual" required staticLabel>
