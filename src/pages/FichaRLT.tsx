@@ -800,25 +800,25 @@ export default function FichaRLTForm() {
             {/* SECCIÓN 4: Institución */}
             <FormSection number={4} title="Información Institucional">
               {/* Entidad Territorial — auto-rempli et verrouillé */}
-              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial" required staticLabel>
+              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial" required>
                 <input
                   id="entidad_territorial"
                   value={entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? ""}
                   readOnly
                   disabled
-                  className="form-input opacity-75 cursor-not-allowed"
+                  className="form-input floating-input opacity-75 cursor-not-allowed"
                  />
               </FormFieldWrapper>
 
               {/* Municipio — verrouillé (Quibdó) ou liste déroulante (Oriente) */}
-              <FormFieldWrapper name="municipio" label="Municipio" required staticLabel>
+              <FormFieldWrapper name="municipio" label="Municipio" required>
                 {!tienesMunicipios || (municipioSeleccionado && entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado) ? (
                   <input
                     id="municipio"
                     value={entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? municipioSeleccionado}
                     readOnly
                     disabled
-                    className="form-input opacity-75 cursor-not-allowed"
+                    className="form-input floating-input opacity-75 cursor-not-allowed"
                   />
                 ) : (
                   <select
@@ -828,9 +828,9 @@ export default function FichaRLTForm() {
                       setMunicipioSeleccionado(e.target.value);
                       setValue("nombre_ie", "");
                     }}
-                    className="form-input"
+                    className="form-input floating-input"
                   >
-                    <option value="">Seleccione el municipio</option>
+                    <option value=""></option>
                     {municipios.map((m) => (
                       <option key={m} value={m}>{m}</option>
                     ))}
