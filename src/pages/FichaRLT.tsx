@@ -89,6 +89,7 @@ const defaultValues: Partial<FormData> = {
   lengua_materna: "Español",
   enfermedad_base: "No",
   discapacidad: "No",
+  cargo_actual: "Rector / a",
   jornadas: [],
   niveles_educativos: [],
 };
