@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   institucionesPorRegion,
   entidadTerritorialPorRegion,
+  entidadesTerritorialesColombia,
   getMunicipiosPorRegion,
   getInstitucionesPorMunicipio,
   formatIEName,
@@ -286,6 +287,90 @@ function fichaToFormData(f: Ficha): FormData {
     estudiantes_primaria: s(f.estudiantes_primaria),
     estudiantes_ciclo_complementario: s(f.estudiantes_ciclo_complementario),
   };
+}
+
+// ── EntidadTerritorialField (autocomplete, dès 3 chars) ───────
+function EntidadTerritorialField({
+  value,
+  onChange,
+  hasError,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  hasError?: boolean;
+}) {
+  const [query, setQuery] = useState(value);
+  const [open, setOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    setQuery(value);
+  }, [value]);
+
+  const hasContent = query.length > 0;
+  const labelUp = isFocused || hasContent;
+
+  const filtered = query.length >= 3
+    ? entidadesTerritorialesColombia.filter((et: string) =>
+        et.toLowerCase().includes(query.toLowerCase())
+      )
+    : [];
+
+  return (
+    <div className="relative">
+      <input
+        id="entidad_territorial"
+        type="text"
+        autoComplete="off"
+        placeholder=" "
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => { setIsFocused(true); if (query.length >= 3) setOpen(true); }}
+        onBlur={() => { setIsFocused(false); setTimeout(() => setOpen(false), 150); }}
+        className={cn("form-input", hasError && "error")}
+      />
+      <label
+        htmlFor="entidad_territorial"
+        style={{
+          position: "absolute", left: "0.75rem", right: "0.75rem",
+          top: labelUp ? "0.45rem" : "50%",
+          transform: labelUp ? "none" : "translateY(-50%)",
+          fontSize: labelUp ? "0.68rem" : "0.875rem",
+          fontWeight: labelUp ? 600 : 400,
+          color: isFocused ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
+          pointerEvents: "none",
+          transition: "top 0.2s ease, font-size 0.2s ease, color 0.2s ease, transform 0.2s ease",
+          lineHeight: 1, zIndex: 1,
+        }}
+      >
+        Entidad Territorial <span style={{ color: "hsl(var(--destructive))" }}>*</span>
+      </label>
+      {open && filtered.length > 0 && (
+        <ul className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
+          {filtered.map((et: string) => (
+            <li key={et}>
+              <button
+                type="button"
+                onMouseDown={() => { onChange(et); setQuery(et); setOpen(false); }}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors"
+              >
+                {et}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {open && query.length >= 3 && filtered.length === 0 && (
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border border-border bg-card shadow-lg px-3 py-2 text-sm text-muted-foreground">
+          Sin resultados
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Main component ────────────────────────────────────────────
@@ -647,27 +732,26 @@ export default function AdminEditFicha() {
 
             {/* SECCIÓN 4: Institución — identical logic to FichaRLT */}
             <FormSection number={4} title="Información Institucional">
-              {/* Entidad Territorial — editable for admin */}
-              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial" required>
-                <FormInput
-                  id="entidad_territorial"
-                  {...register("entidad_territorial")}
-                  placeholder="Ej: Antioquia"
+              {/* Entidad Territorial — autocomplete admin */}
+              <FormFieldWrapper name="entidad_territorial" label="" required hideError>
+                <EntidadTerritorialField
+                  value={watch("entidad_territorial") ?? ""}
+                  onChange={(val) => setValue("entidad_territorial", val, { shouldValidate: true })}
                   hasError={!!err("entidad_territorial")}
                 />
               </FormFieldWrapper>
 
-              {/* Municipio — editable for admin */}
+              {/* Municipio — label flottant, texte libre */}
               <FormFieldWrapper name="municipio_admin" label="Municipio" required>
-                <input
+                <FormInput
                   id="municipio"
                   value={municipioSeleccionado}
                   onChange={(e) => {
                     setMunicipioSeleccionado(e.target.value);
                     setValue("nombre_ie", "");
                   }}
-                  placeholder="Ej: El Carmen de Viboral"
-                  className="form-input"
+                  placeholder=" "
+                  className="floating-input"
                 />
               </FormFieldWrapper>
 
