@@ -129,6 +129,12 @@
     border-color: hsl(var(--destructive));
   }
 
+  /* Champs sans label flottant (staticLabel) — padding centré */
+  .static-field .form-input {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
   /* ── Floating label ──────────────────────────── */
   .floating-field-wrapper {
     position: relative;

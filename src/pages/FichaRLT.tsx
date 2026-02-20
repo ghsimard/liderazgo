@@ -687,7 +687,7 @@ export default function FichaRLTForm() {
                   readOnly
                   disabled
                   className="form-input opacity-75 cursor-not-allowed"
-                />
+                 />
               </FormFieldWrapper>
 
               {/* Municipio — verrouillé (Quibdó) ou liste déroulante (Oriente) */}
