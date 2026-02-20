@@ -136,6 +136,9 @@ function DatePickerField({
             if (date) onChange(format(date, "yyyy-MM-dd"));
           }}
           initialFocus
+          captionLayout="dropdown-buttons"
+          fromYear={1940}
+          toYear={new Date().getFullYear()}
           className={cn("p-3 pointer-events-auto")}
         />
       </PopoverContent>
