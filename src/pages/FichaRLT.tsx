@@ -148,6 +148,7 @@ function DatePickerField({
           components={{
             IconLeft: () => null,
             IconRight: () => null,
+            CaptionLabel: () => null,
           }}
         />
       </PopoverContent>
