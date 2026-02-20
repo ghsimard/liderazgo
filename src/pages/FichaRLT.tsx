@@ -434,8 +434,8 @@ export default function FichaRLTForm() {
               /* Oriente : les deux logos côte à côte centrés, puis titres en dessous */
               <div className="flex flex-col items-center gap-3">
                 <div className="flex items-center justify-center gap-4 sm:gap-10">
-                  <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
                   <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+                  <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
                 </div>
                 <div className="text-center">
                   <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
