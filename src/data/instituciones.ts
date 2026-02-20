@@ -1,7 +1,7 @@
 // Mapa región → entidad territorial réelle (Antioquia pour Oriente, Chocó pour Quibdó)
 export const entidadTerritorialPorRegion: Record<string, string> = {
   Oriente: "Antioquia",
-  Quibdó: "Chocó",
+  Quibdó: "Quibdó",
 };
 
 export const institucionesPorRegion: Record<string, string[]> = {
