@@ -740,7 +740,7 @@ export default function FichaRLTForm() {
                 </select>
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="codigo_dane" label="Código DANE de la IE (12 dígitos)" required>
+              <FormFieldWrapper name="codigo_dane" label="Código DANE (12 dígitos)" required>
                 <FormInput
                   id="codigo_dane"
                   {...register("codigo_dane")}
