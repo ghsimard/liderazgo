@@ -333,10 +333,18 @@ export default function AdminEditFicha() {
         return;
       }
       setFicha(data);
-      reset(fichaToFormData(data));
+      const formData = fichaToFormData(data);
 
-      // Infer municipio from nombre_ie for Oriente-style regions
+      // If region has a fixed mapping for entidad_territorial, use it (same as FichaRLT)
       const region = data.region ?? "";
+      const etMapped = entidadTerritorialPorRegion[region];
+      if (etMapped) {
+        formData.entidad_territorial = etMapped;
+      }
+
+      reset(formData);
+
+      // Infer municipio from nombre_ie for regions with multiple municipios (e.g. Oriente)
       if (getMunicipiosPorRegion(region).length > 1 && data.nombre_ie) {
         const parts = data.nombre_ie.split(" - ");
         const municipio = parts[parts.length - 1]?.trim() ?? "";
@@ -434,8 +442,10 @@ export default function AdminEditFicha() {
   if (!ficha) return null;
 
   const isQuibdo = regionSeleccionada === "Quibdó";
-  // Same logic as FichaRLT for Entidad Territorial & Municipio
-  const etLocked = entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? "";
+  // Same logic as FichaRLT: auto-fill from mapping, fall back to stored DB value
+  const etFromMapping = entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? "";
+  const etStored = watch("entidad_territorial") ?? "";
+  const etLocked = etFromMapping || etStored;
   const municipioLocked = !tienesMunicipios || (municipioSeleccionado && etLocked === municipioSeleccionado);
 
   return (
@@ -488,6 +498,8 @@ export default function AdminEditFicha() {
         {/* Formulario */}
         <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            {/* Hidden fields — region is managed internally, not shown like in FichaRLT */}
+            <input type="hidden" {...register("region")} />
 
             {/* Consentimiento */}
             <div className="form-section border-l-4" style={{ borderLeftColor: "hsl(var(--primary))" }}>
