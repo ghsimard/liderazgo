@@ -772,14 +772,15 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               <FormFieldWrapper name="tipo_vinculacion" label="Tipo de vinculación actual" required>
-                <FormSelect
-                  id="tipo_vinculacion"
-                  {...register("tipo_vinculacion")}
-                  placeholder="Seleccione"
+                <FormRadioGroup
+                  name="tipo_vinculacion"
                   options={[
                     { value: "En propiedad", label: "En propiedad" },
                     { value: "En encargo", label: "En encargo" },
                   ]}
+                  value={watch("tipo_vinculacion")}
+                  onChange={(v) => setValue("tipo_vinculacion", v, { shouldValidate: true })}
+                  hasError={!!err("tipo_vinculacion")}
                 />
               </FormFieldWrapper>
 
