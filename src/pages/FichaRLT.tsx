@@ -110,9 +110,14 @@ function DatePickerField({
   const [day, setDay] = useState<number | "">(parsed ? parsed.getDate() : "");
   const [month, setMonth] = useState<number | "">(parsed ? parsed.getMonth() : "");
   const [year, setYear] = useState<number | "">(parsed ? parsed.getFullYear() : "");
+  const [touched, setTouched] = useState(false);
 
-  // Sync interne → externe quand les 3 valeurs sont remplies
+  const anyFilled = day !== "" || month !== "" || year !== "";
+  const allFilled = day !== "" && month !== "" && year !== "";
+  const showError = touched && anyFilled && !allFilled;
+
   const commit = (d: number | "", m: number | "", y: number | "") => {
+    setTouched(true);
     if (d !== "" && m !== "" && y !== "") {
       const date = new Date(y as number, m as number, d as number, 12);
       onChange(format(date, "yyyy-MM-dd"));
@@ -131,55 +136,63 @@ function DatePickerField({
     : 31;
   const days = Array.from({ length: maxDay }, (_, i) => i + 1);
 
+  const selectClass = (filled: boolean) =>
+    `form-input flex-1${showError && !filled ? " error" : ""}`;
+
   return (
-    <div className="flex gap-2">
-      <select
-        disabled={disabled}
-        value={day}
-        onChange={(e) => {
-          const d = e.target.value ? Number(e.target.value) : "" as const;
-          setDay(d);
-          commit(d, month, year);
-        }}
-        className="form-input flex-1"
-      >
-        <option value="">Día</option>
-        {days.map((d) => (
-          <option key={d} value={d}>{d}</option>
-        ))}
-      </select>
+    <div className="flex flex-col gap-1">
+      <div className="flex gap-2">
+        <select
+          disabled={disabled}
+          value={day}
+          onChange={(e) => {
+            const d = e.target.value ? Number(e.target.value) : "" as const;
+            setDay(d);
+            commit(d, month, year);
+          }}
+          className={selectClass(day !== "")}
+        >
+          <option value="">Día</option>
+          {days.map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
 
-      <select
-        disabled={disabled}
-        value={month}
-        onChange={(e) => {
-          const m = e.target.value !== "" ? Number(e.target.value) : "" as const;
-          setMonth(m);
-          commit(day, m, year);
-        }}
-        className="form-input flex-1"
-      >
-        <option value="">Mes</option>
-        {months.map((m, i) => (
-          <option key={i} value={i}>{m}</option>
-        ))}
-      </select>
+        <select
+          disabled={disabled}
+          value={month}
+          onChange={(e) => {
+            const m = e.target.value !== "" ? Number(e.target.value) : "" as const;
+            setMonth(m);
+            commit(day, m, year);
+          }}
+          className={selectClass(month !== "")}
+        >
+          <option value="">Mes</option>
+          {months.map((m, i) => (
+            <option key={i} value={i}>{m}</option>
+          ))}
+        </select>
 
-      <select
-        disabled={disabled}
-        value={year}
-        onChange={(e) => {
-          const y = e.target.value ? Number(e.target.value) : "" as const;
-          setYear(y);
-          commit(day, month, y);
-        }}
-        className="form-input flex-1"
-      >
-        <option value="">Año</option>
-        {years.map((y) => (
-          <option key={y} value={y}>{y}</option>
-        ))}
-      </select>
+        <select
+          disabled={disabled}
+          value={year}
+          onChange={(e) => {
+            const y = e.target.value ? Number(e.target.value) : "" as const;
+            setYear(y);
+            commit(day, month, y);
+          }}
+          className={selectClass(year !== "")}
+        >
+          <option value="">Año</option>
+          {years.map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+      </div>
+      {showError && (
+        <p className="field-error">Debe completar el día, mes y año</p>
+      )}
     </div>
   );
 }
