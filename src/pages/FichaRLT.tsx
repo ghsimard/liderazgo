@@ -197,7 +197,86 @@ function DatePickerField({
   );
 }
 
-// ── Pantalla de selección de región ──────────────────────────
+// ── Combobox de búsqueda de institución ──────────────────────
+function InstitutionSearchField({
+  instituciones,
+  municipioSeleccionado,
+  disabled = false,
+  value,
+  onChange,
+  hasError,
+}: {
+  instituciones: string[];
+  municipioSeleccionado: string;
+  disabled?: boolean;
+  value: string;
+  onChange: (val: string) => void;
+  hasError?: boolean;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const getLabel = (ie: string) =>
+    formatIEName(ie).replace(new RegExp(`\\s*-\\s*${municipioSeleccionado}$`), "");
+
+  const selectedLabel = value ? getLabel(value) : "";
+
+  const filtered =
+    query.length >= 3
+      ? instituciones.filter((ie) =>
+          getLabel(ie).toLowerCase().includes(query.toLowerCase())
+        )
+      : [];
+
+  const handleSelect = (ie: string) => {
+    onChange(ie);
+    setQuery("");
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative">
+      <input
+        id="nombre_ie"
+        type="text"
+        autoComplete="off"
+        disabled={disabled}
+        placeholder=" "
+        value={selectedLabel || query}
+        onChange={(e) => {
+          if (value) onChange(""); // efface la sélection si l'usager retape
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => { if (query.length >= 3) setOpen(true); }}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        className={cn("form-input floating-input", hasError && "error")}
+      />
+      {open && filtered.length > 0 && (
+        <ul className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
+          {filtered.map((ie) => (
+            <li key={ie}>
+              <button
+                type="button"
+                onMouseDown={() => handleSelect(ie)}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors"
+              >
+                {getLabel(ie)}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {open && query.length >= 3 && filtered.length === 0 && (
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border border-border bg-card shadow-lg px-3 py-2 text-sm text-muted-foreground">
+          Sin resultados
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function RegionSelector({ onSelect }: { onSelect: (region: string) => void }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
@@ -724,20 +803,14 @@ export default function FichaRLTForm() {
 
               {/* Institution — directe pour Quibdó, filtrée par municipio pour Oriente */}
               <FormFieldWrapper name="nombre_ie" label="Nombre de la Institución Educativa" required className="md:col-span-2">
-                <select
-                  id="nombre_ie"
-                  {...register("nombre_ie")}
-                  className={`form-input floating-input ${err("nombre_ie") ? "error" : ""}`}
+                <InstitutionSearchField
+                  instituciones={instituciones}
+                  municipioSeleccionado={municipioSeleccionado}
                   disabled={tienesMunicipios && !municipioSeleccionado}
-                >
-                  <option value="">
-                    {tienesMunicipios && !municipioSeleccionado ? "Primero seleccione el municipio" : ""}
-                  </option>
-                  {instituciones.map((ie) => {
-                    const label = formatIEName(ie).replace(new RegExp(`\\s*-\\s*${municipioSeleccionado}$`), "");
-                    return <option key={ie} value={ie}>{label}</option>;
-                  })}
-                </select>
+                  value={watch("nombre_ie") ?? ""}
+                  onChange={(val) => setValue("nombre_ie", val, { shouldValidate: true })}
+                  hasError={!!err("nombre_ie")}
+                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="codigo_dane" label="Código DANE (12 dígitos)" required>
