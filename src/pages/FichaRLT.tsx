@@ -345,7 +345,7 @@ function RegionSelector({ onSelect }: { onSelect: (region: string) => void }) {
               className="w-full py-5 rounded-xl text-white font-semibold text-lg shadow-md transition-transform active:scale-95"
               style={{ background: "var(--gradient-header)" }}
             >
-              {region === "Quibdó" ? "🏫 Quibdó" : "🏫 Oriente"}
+              {region === "Quibdó" ? "🏫 Quibdó" : "🏫 Antioquia"}
             </button>
           ))}
         </div>
