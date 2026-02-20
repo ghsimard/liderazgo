@@ -234,7 +234,7 @@ export default function AdminPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
-                <TableHead>Región</TableHead>
+                <TableHead>Entidad Territorial</TableHead>
                 <TableHead>Institución</TableHead>
                 <TableHead>Cargo</TableHead>
                 <TableHead>Correo</TableHead>
