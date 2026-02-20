@@ -1,10 +1,5 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import logoRLT from "@/assets/logo_rlt.png";
 import logoCLT from "@/assets/logo_clt.png";
 import logoCLTDark from "@/assets/logo_clt_dark.png";
@@ -110,49 +105,79 @@ function DatePickerField({
   placeholder?: string;
   disabled?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const selected = value ? new Date(value + "T12:00:00") : undefined;
 
-  const handleSelect = (date: Date | undefined) => {
-    if (date) {
-      onChange(format(date, "yyyy-MM-dd"));
-      setOpen(false);
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 1939 }, (_, i) => currentYear - i);
+  const months = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+
+  const selectedDay = selected ? selected.getDate() : "";
+  const selectedMonth = selected ? selected.getMonth() : "";
+  const selectedYear = selected ? selected.getFullYear() : "";
+
+  const daysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
+  const maxDay = (selectedMonth !== "" && selectedYear !== "")
+    ? daysInMonth(selectedMonth as number, selectedYear as number)
+    : 31;
+  const days = Array.from({ length: maxDay }, (_, i) => i + 1);
+
+  const handleChange = (day: number | "", month: number | "", year: number | "") => {
+    if (day !== "" && month !== "" && year !== "") {
+      const d = new Date(year as number, month as number, day as number, 12);
+      onChange(format(d, "yyyy-MM-dd"));
     }
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled}
-          className={`w-full justify-start text-left font-normal form-input h-auto ${!selected ? "text-muted-foreground" : ""}`}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-          {selected ? format(selected, "dd/MM/yyyy") : <span>DD/MM/AAAA</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 z-50" align="start">
-        <Calendar
-          mode="single"
-          selected={selected}
-          onSelect={handleSelect}
-          captionLayout="dropdown-buttons"
-          fromYear={1940}
-          toYear={new Date().getFullYear()}
-          defaultMonth={selected ?? new Date(1980, 0)}
-          initialFocus
-          locale={es}
-          className="p-3 pointer-events-auto"
-          components={{
-            IconLeft: () => null,
-            IconRight: () => null,
-            CaptionLabel: () => null,
-          }}
-        />
-      </PopoverContent>
-    </Popover>
+    <div className="flex gap-2">
+      <select
+        disabled={disabled}
+        value={selectedDay}
+        onChange={(e) => {
+          const d = e.target.value ? Number(e.target.value) : "";
+          handleChange(d, selectedMonth, selectedYear);
+        }}
+        className="form-input flex-1"
+      >
+        <option value="">Día</option>
+        {days.map((d) => (
+          <option key={d} value={d}>{d}</option>
+        ))}
+      </select>
+
+      <select
+        disabled={disabled}
+        value={selectedMonth}
+        onChange={(e) => {
+          const m = e.target.value !== "" ? Number(e.target.value) : "";
+          handleChange(selectedDay, m, selectedYear);
+        }}
+        className="form-input flex-1"
+      >
+        <option value="">Mes</option>
+        {months.map((m, i) => (
+          <option key={i} value={i}>{m}</option>
+        ))}
+      </select>
+
+      <select
+        disabled={disabled}
+        value={selectedYear}
+        onChange={(e) => {
+          const y = e.target.value ? Number(e.target.value) : "";
+          handleChange(selectedDay, selectedMonth, y);
+        }}
+        className="form-input flex-1"
+      >
+        <option value="">Año</option>
+        {years.map((y) => (
+          <option key={y} value={y}>{y}</option>
+        ))}
+      </select>
+    </div>
   );
 }
 
