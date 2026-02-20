@@ -806,14 +806,14 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               <FormFieldWrapper name="estatuto" label="Estatuto al que pertenece">
-                <FormSelect
-                  id="estatuto"
-                  {...register("estatuto")}
-                  placeholder="Seleccione"
+                <FormRadioGroup
+                  name="estatuto"
                   options={[
                     { value: "2277", label: "2277" },
                     { value: "1278", label: "1278" },
                   ]}
+                  value={watch("estatuto")}
+                  onChange={(v) => setValue("estatuto", v, { shouldValidate: true })}
                 />
               </FormFieldWrapper>
 
