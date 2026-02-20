@@ -40,8 +40,8 @@ const schema = z.object({
   telefono_emergencia: z.string().optional(),
   discapacidad: z.string().min(1, "Seleccione una opción"),
   discapacidad_detalle: z.string().optional(),
-  tipo_formacion: z.string().optional(),
-  titulo_pregrado: z.string().optional(),
+  tipo_formacion: z.string().min(1, "Seleccione el tipo de formación"),
+  titulo_pregrado: z.string().min(1, "Ingrese el título de pregrado"),
   titulo_especializacion: z.string().optional(),
   titulo_maestria: z.string().optional(),
   titulo_doctorado: z.string().optional(),
@@ -49,7 +49,7 @@ const schema = z.object({
   region: z.string().min(1, "Seleccione una región"),
   nombre_ie: z.string().min(1, "Seleccione la institución educativa"),
   cargo_actual: z.string().min(1, "Seleccione su cargo actual"),
-  tipo_vinculacion: z.string().optional(),
+  tipo_vinculacion: z.string().min(1, "Seleccione el tipo de vinculación"),
   fecha_vinculacion_servicio: z.string().optional(),
   fecha_nombramiento_cargo: z.string().optional(),
   fecha_nombramiento_ie: z.string().optional(),
@@ -57,26 +57,26 @@ const schema = z.object({
   grado_escalafon: z.string().optional(),
   codigo_dane: z
     .string()
-    .optional()
-    .refine((v) => !v || /^\d{12}$/.test(v), { message: "El Código DANE debe tener exactamente 12 dígitos numéricos" }),
-  entidad_territorial: z.string().optional(),
+    .min(1, "El Código DANE es obligatorio")
+    .refine((v) => /^\d{12}$/.test(v), { message: "El Código DANE debe tener exactamente 12 dígitos numéricos" }),
+  entidad_territorial: z.string().min(1, "Seleccione la entidad territorial"),
   comuna_barrio: z.string().optional(),
-  zona_sede: z.string().optional(),
-  total_sedes: z.string().optional(),
-  sedes_rural: z.string().optional(),
-  sedes_urbana: z.string().optional(),
-  jornadas: z.array(z.string()).optional(),
+  zona_sede: z.string().min(1, "Seleccione la zona de sede"),
+  total_sedes: z.string().min(1, "Ingrese el número total de sedes"),
+  sedes_rural: z.string().min(1, "Ingrese el número de sedes rurales"),
+  sedes_urbana: z.string().min(1, "Ingrese el número de sedes urbanas"),
+  jornadas: z.array(z.string()).min(1, "Seleccione al menos una jornada"),
   grupos_etnicos: z.string().optional(),
   proyectos_transversales: z.string().optional(),
   estudiantes_jec: z.string().optional(),
   desplazamiento: z.string().optional(),
-  niveles_educativos: z.array(z.string()).optional(),
+  niveles_educativos: z.array(z.string()).min(1, "Seleccione al menos un nivel educativo"),
   tipo_bachillerato: z.string().optional(),
   modelo_pedagogico: z.string().optional(),
-  num_docentes: z.string().optional(),
-  num_coordinadores: z.string().optional(),
-  num_administrativos: z.string().optional(),
-  num_orientadores: z.string().optional(),
+  num_docentes: z.string().min(1, "Ingrese el número de docentes"),
+  num_coordinadores: z.string().min(1, "Ingrese el número de coordinadores"),
+  num_administrativos: z.string().min(1, "Ingrese el número de administrativos"),
+  num_orientadores: z.string().min(1, "Ingrese el número de orientadores"),
   estudiantes_preescolar: z.string().optional(),
   estudiantes_primaria: z.string().optional(),
   estudiantes_ciclo_complementario: z.string().optional(),
@@ -640,11 +640,11 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 3: Formación */}
             <FormSection number={3} title="Formación Académica">
-              <FormFieldWrapper name="tipo_formacion" label="Tipo de formación" className="md:col-span-2">
+              <FormFieldWrapper name="tipo_formacion" label="Tipo de formación" required className="md:col-span-2">
                 <FormInput id="tipo_formacion" {...register("tipo_formacion")} placeholder="Ej: Licenciatura, Ingeniería, etc." />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="titulo_pregrado" label="Título de pregrado">
+              <FormFieldWrapper name="titulo_pregrado" label="Título de pregrado" required>
                 <FormInput id="titulo_pregrado" {...register("titulo_pregrado")} placeholder="Título obtenido" />
               </FormFieldWrapper>
 
@@ -668,7 +668,7 @@ export default function FichaRLTForm() {
             {/* SECCIÓN 4: Institución */}
             <FormSection number={4} title="Información Institucional">
               {/* Entidad Territorial — auto-rempli et verrouillé */}
-              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial">
+              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial" required>
                 <input
                   id="entidad_territorial"
                   value={entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? ""}
@@ -747,7 +747,7 @@ export default function FichaRLTForm() {
                 {err("cargo_actual") && <p className="field-error">{err("cargo_actual")}</p>}
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="tipo_vinculacion" label="Tipo de vinculación actual">
+              <FormFieldWrapper name="tipo_vinculacion" label="Tipo de vinculación actual" required>
                 <FormSelect
                   id="tipo_vinculacion"
                   {...register("tipo_vinculacion")}
@@ -796,7 +796,7 @@ export default function FichaRLTForm() {
                 <FormInput id="grado_escalafon" {...register("grado_escalafon")} placeholder="Ej: 2B, 3, etc." />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="codigo_dane" label="Código DANE de la IE (12 dígitos)">
+              <FormFieldWrapper name="codigo_dane" label="Código DANE de la IE (12 dígitos)" required>
                 <FormInput
                   id="codigo_dane"
                   {...register("codigo_dane")}
@@ -814,7 +814,7 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 5: Datos de la IE */}
             <FormSection number={5} title="Datos de la Institución Educativa">
-              <FormFieldWrapper name="zona_sede" label="Zona de la sede principal de la IE">
+              <FormFieldWrapper name="zona_sede" label="Zona de la sede principal de la IE" required>
                 <FormRadioGroup
                   name="zona_sede"
                   options={[
@@ -826,19 +826,19 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="total_sedes" label="Número total de sedes (incluida la sede principal)">
+              <FormFieldWrapper name="total_sedes" label="Número total de sedes (incluida la sede principal)" required>
                 <FormInput id="total_sedes" type="number" min={1} {...register("total_sedes")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="sedes_rural" label="Número de sedes en zona rural">
+              <FormFieldWrapper name="sedes_rural" label="Número de sedes en zona rural" required>
                 <FormInput id="sedes_rural" type="number" min={0} {...register("sedes_rural")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="sedes_urbana" label="Número de sedes en zona urbana">
+              <FormFieldWrapper name="sedes_urbana" label="Número de sedes en zona urbana" required>
                 <FormInput id="sedes_urbana" type="number" min={0} {...register("sedes_urbana")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="jornadas" label="Jornadas de la IE" className="md:col-span-2" hideError>
+              <FormFieldWrapper name="jornadas" label="Jornadas de la IE" required className="md:col-span-2" hideError>
                 <FormCheckboxGroup
                   name="jornadas"
                   options={[
@@ -876,7 +876,7 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="niveles_educativos" label="Niveles educativos que ofrece la IE" className="md:col-span-2" hideError>
+              <FormFieldWrapper name="niveles_educativos" label="Niveles educativos que ofrece la IE" required className="md:col-span-2" hideError>
                 <FormCheckboxGroup
                   name="niveles_educativos"
                   options={[
@@ -903,19 +903,19 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 6: Personal y estudiantes */}
             <FormSection number={6} title="Personal y Estudiantes">
-              <FormFieldWrapper name="num_docentes" label="Número de docentes">
+              <FormFieldWrapper name="num_docentes" label="Número de docentes" required>
                 <FormInput id="num_docentes" type="number" min={0} {...register("num_docentes")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="num_coordinadores" label="Número de coordinadores/as">
+              <FormFieldWrapper name="num_coordinadores" label="Número de coordinadores/as" required>
                 <FormInput id="num_coordinadores" type="number" min={0} {...register("num_coordinadores")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="num_administrativos" label="Número de administrativos">
+              <FormFieldWrapper name="num_administrativos" label="Número de administrativos" required>
                 <FormInput id="num_administrativos" type="number" min={0} {...register("num_administrativos")} placeholder="0" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="num_orientadores" label="Número de orientadores/as">
+              <FormFieldWrapper name="num_orientadores" label="Número de orientadores/as" required>
                 <FormInput id="num_orientadores" type="number" min={0} {...register("num_orientadores")} placeholder="0" />
               </FormFieldWrapper>
 
