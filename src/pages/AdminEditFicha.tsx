@@ -755,15 +755,16 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              {/* Municipio — wrapper manuel pour que le label flottant détecte la valeur du state local */}
+              {/* Municipio — wrapper manuel, field-has-value basé sur state local */}
               <div className="flex flex-col gap-1">
-                <div className={cn("floating-field-wrapper", municipioSeleccionado && "field-has-value")}>
+                <div className={cn("floating-field-wrapper", !!municipioSeleccionado && "field-has-value")}>
                   {watch("entidad_territorial") === "Quibdó" ? (
                     <input
                       id="municipio"
                       value="Quibdó"
                       readOnly
                       disabled
+                      placeholder=" "
                       className="form-input floating-input opacity-75 cursor-not-allowed"
                     />
                   ) : watch("entidad_territorial") === "Antioquia" ? (

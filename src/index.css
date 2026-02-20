@@ -177,10 +177,10 @@
 
   /* Label monte quand React détecte une valeur (classe ajoutée par JS) */
   .field-has-value .floating-label {
-    top: 0.45rem;
-    transform: none;
-    font-size: 0.68rem;
-    font-weight: 600;
+    top: 0.45rem !important;
+    transform: none !important;
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
     color: hsl(var(--muted-foreground));
   }
 
