@@ -52,6 +52,17 @@ export const institucionesPorRegion: Record<string, string[]> = {
   ],
 };
 
+// Formater le nom d'une IE : remplacer les abréviations par les noms complets
+export function formatIEName(name: string): string {
+  return name
+    .replace(/^I\.E\.R\.\s+/, "Institución Educativa Rural ")
+    .replace(/^I\.E\.R\s+/, "Institución Educativa Rural ")
+    .replace(/^IER\s+/, "Institución Educativa Rural ")
+    .replace(/^I\.E\.\s+/, "Institución Educativa ")
+    .replace(/^IE\s+/, "Institución Educativa ")
+    .replace(/^CER\s+/, "Centro Educativo Rural ");
+}
+
 // Extraire les municipios uniques d'une région depuis le nom des institutions (partie après " - ")
 export function getMunicipiosPorRegion(region: string): string[] {
   const ies = institucionesPorRegion[region] ?? [];
