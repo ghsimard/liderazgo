@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { format, parse, isValid } from "date-fns";
+import { es } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import logoRLT from "@/assets/logo_rlt.png";
 import logoCLT from "@/assets/logo_clt.png";
@@ -139,6 +140,7 @@ function DatePickerField({
           captionLayout="dropdown-buttons"
           fromYear={1940}
           toYear={new Date().getFullYear()}
+          locale={es}
           className={cn("p-3 pointer-events-auto")}
         />
       </PopoverContent>
