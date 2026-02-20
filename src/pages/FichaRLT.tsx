@@ -690,7 +690,7 @@ export default function FichaRLTForm() {
                  />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
+              <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad" className="md:col-span-2">
                 <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
               </FormFieldWrapper>
 
