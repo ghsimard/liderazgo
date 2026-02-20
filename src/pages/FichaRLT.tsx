@@ -812,7 +812,7 @@ export default function FichaRLTForm() {
 
               {/* Municipio — verrouillé (Quibdó) ou liste déroulante (Oriente) */}
               <div className="flex flex-col gap-1">
-                <div className={cn("floating-field-wrapper", municipioSeleccionado && "field-has-value")}>
+                <div className={cn("floating-field-wrapper", !!(entidadTerritorialPorRegion[regionSeleccionada ?? ""] || municipioSeleccionado) && "field-has-value")}>
                   {!tienesMunicipios || (municipioSeleccionado && entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado) ? (
                     <input
                       id="municipio"
