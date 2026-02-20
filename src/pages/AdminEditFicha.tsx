@@ -289,6 +289,11 @@ function fichaToFormData(f: Ficha): FormData {
   };
 }
 
+// Liste complète incluant Quibdó
+const ALL_ENTIDADES = ["Quibdó", ...entidadesTerritorialesColombia].sort((a, b) =>
+  a.localeCompare(b, "es")
+);
+
 // ── EntidadTerritorialField (autocomplete, dès 3 chars) ───────
 function EntidadTerritorialField({
   value,
@@ -311,9 +316,7 @@ function EntidadTerritorialField({
   const labelUp = isFocused || hasContent;
 
   const filtered = query.length >= 3
-    ? entidadesTerritorialesColombia.filter((et: string) =>
-        et.toLowerCase().includes(query.toLowerCase())
-      )
+    ? ALL_ENTIDADES.filter((et) => et.toLowerCase().includes(query.toLowerCase()))
     : [];
 
   return (
@@ -351,7 +354,7 @@ function EntidadTerritorialField({
       </label>
       {open && filtered.length > 0 && (
         <ul className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
-          {filtered.map((et: string) => (
+          {filtered.map((et) => (
             <li key={et}>
               <button
                 type="button"
@@ -732,28 +735,73 @@ export default function AdminEditFicha() {
 
             {/* SECCIÓN 4: Institución — identical logic to FichaRLT */}
             <FormSection number={4} title="Información Institucional">
-              {/* Entidad Territorial — autocomplete admin */}
-              <FormFieldWrapper name="entidad_territorial" label="" required hideError>
+              {/* Entidad Territorial — autocomplete, pas de required sur le wrapper (label interne gère l'*) */}
+              <FormFieldWrapper name="entidad_territorial" label="" hideError>
                 <EntidadTerritorialField
                   value={watch("entidad_territorial") ?? ""}
-                  onChange={(val) => setValue("entidad_territorial", val, { shouldValidate: true })}
+                  onChange={(val) => {
+                    setValue("entidad_territorial", val, { shouldValidate: true });
+                    // Logique dynamique municipio selon entidad choisie
+                    if (val === "Quibdó") {
+                      setMunicipioSeleccionado("Quibdó");
+                    } else if (val === "Antioquia") {
+                      setMunicipioSeleccionado(""); // l'admin choisit parmi les municipios d'Oriente
+                    } else {
+                      setMunicipioSeleccionado("");
+                    }
+                    setValue("nombre_ie", "");
+                  }}
                   hasError={!!err("entidad_territorial")}
                 />
               </FormFieldWrapper>
 
-              {/* Municipio — label flottant, texte libre */}
-              <FormFieldWrapper name="municipio_admin" label="Municipio" required>
-                <FormInput
-                  id="municipio"
-                  value={municipioSeleccionado}
-                  onChange={(e) => {
-                    setMunicipioSeleccionado(e.target.value);
-                    setValue("nombre_ie", "");
-                  }}
-                  placeholder=" "
-                  className="floating-input"
-                />
-              </FormFieldWrapper>
+              {/* Municipio — Quibdó verrouillé, Antioquia → dropdown Oriente, sinon texte libre */}
+              {watch("entidad_territorial") === "Quibdó" ? (
+                <FormFieldWrapper name="municipio_admin" label="Municipio" required>
+                  <FormInput
+                    id="municipio"
+                    value="Quibdó"
+                    readOnly
+                    placeholder=" "
+                    className="floating-input opacity-75 cursor-not-allowed"
+                  />
+                </FormFieldWrapper>
+              ) : watch("entidad_territorial") === "Antioquia" ? (
+                <div className="flex flex-col gap-1">
+                  <div className={cn("floating-field-wrapper", municipioSeleccionado && "field-has-value")}>
+                    <select
+                      id="municipio"
+                      value={municipioSeleccionado}
+                      onChange={(e) => {
+                        setMunicipioSeleccionado(e.target.value);
+                        setValue("nombre_ie", "");
+                      }}
+                      className="form-input floating-input"
+                    >
+                      <option value=""></option>
+                      {getMunicipiosPorRegion("Oriente").map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                    <label className="floating-label" htmlFor="municipio">
+                      Municipio<span className="required-star ml-0.5">*</span>
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <FormFieldWrapper name="municipio_admin" label="Municipio" required>
+                  <FormInput
+                    id="municipio"
+                    value={municipioSeleccionado}
+                    onChange={(e) => {
+                      setMunicipioSeleccionado(e.target.value);
+                      setValue("nombre_ie", "");
+                    }}
+                    placeholder=" "
+                    className="floating-input"
+                  />
+                </FormFieldWrapper>
+              )}
 
               <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
                 <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
