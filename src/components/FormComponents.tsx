@@ -1,4 +1,4 @@
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { ReactNode, forwardRef } from "react";
 
@@ -9,14 +9,15 @@ interface FormFieldWrapperProps {
   children: ReactNode;
   className?: string;
   hideError?: boolean;
-  /** Désactive le label flottant (ex: groupes radio/checkbox, date picker) */
   staticLabel?: boolean;
 }
 
 export function FormFieldWrapper({ name, label, required, children, className, hideError, staticLabel }: FormFieldWrapperProps) {
   const { formState: { errors } } = useFormContext();
+  const value = useWatch({ name });
   const error = errors[name];
   const msg = error?.message as string | undefined;
+  const hasValue = value !== undefined && value !== "" && value !== null;
 
   if (staticLabel) {
     return (
@@ -31,7 +32,7 @@ export function FormFieldWrapper({ name, label, required, children, className, h
   }
 
   return (
-    <div className={cn("floating-field-wrapper", className)}>
+    <div className={cn("floating-field-wrapper", hasValue && "field-has-value", className)}>
       {children}
       <label className="floating-label" htmlFor={name}>
         {label}{required && <span className="required-star ml-0.5">*</span>}

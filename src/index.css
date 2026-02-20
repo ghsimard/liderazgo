@@ -155,9 +155,8 @@
     transform: none;
   }
 
-  /* Label monte au focus OU quand il y a une valeur */
-  .floating-input:focus ~ .floating-label,
-  .floating-input:not(:placeholder-shown) ~ .floating-label {
+  /* Label monte au focus (CSS) */
+  .floating-input:focus ~ .floating-label {
     top: 0.45rem;
     transform: none;
     font-size: 0.68rem;
@@ -165,17 +164,25 @@
     color: hsl(var(--primary));
   }
 
-  /* Textarea */
+  /* Label monte quand React détecte une valeur (classe ajoutée par JS) */
+  .field-has-value .floating-label {
+    top: 0.45rem;
+    transform: none;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Textarea avec valeur */
   textarea.floating-input:focus ~ .floating-label,
-  textarea.floating-input:not(:placeholder-shown) ~ .floating-label {
+  .field-has-value textarea ~ .floating-label {
     top: 0.35rem;
     transform: none;
     font-size: 0.68rem;
     font-weight: 600;
-    color: hsl(var(--primary));
   }
 
-  /* Select : label toujours en haut (select a toujours une option visible) */
+  /* Select : label toujours en haut */
   select.floating-input ~ .floating-label {
     top: 0.45rem;
     transform: none;
@@ -197,4 +204,3 @@
     @apply rounded-xl p-6 text-center;
   }
 }
-
