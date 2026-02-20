@@ -432,11 +432,19 @@ export default function AdminEditFicha() {
 
       reset(formData);
 
-      // Infer municipio from nombre_ie for regions with multiple municipios (e.g. Oriente)
-      if (getMunicipiosPorRegion(region).length > 1 && data.nombre_ie) {
+      // Initialiser municipioSeleccionado selon la région/entidad
+      const et = etMapped || (data.entidad_territorial ?? "");
+      if (et === "Quibdó") {
+        // Quibdó : municipio verrouillé sur "Quibdó"
+        setMunicipioSeleccionado("Quibdó");
+      } else if (getMunicipiosPorRegion(region).length > 1 && data.nombre_ie) {
+        // Oriente (Antioquia) : inférer depuis le suffixe du nom de l'IE
         const parts = data.nombre_ie.split(" - ");
         const municipio = parts[parts.length - 1]?.trim() ?? "";
         setMunicipioSeleccionado(municipio);
+      } else {
+        // Autre entidad : utiliser la valeur stockée en DB si disponible
+        setMunicipioSeleccionado(data.entidad_territorial ?? "");
       }
 
       setLoadingFicha(false);
