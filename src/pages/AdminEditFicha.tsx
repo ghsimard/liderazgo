@@ -397,14 +397,15 @@ export default function AdminEditFicha() {
   const jornadas = watch("jornadas") ?? [];
   const nivelesEducativos = watch("niveles_educativos") ?? [];
 
-  // Geographic data from DB
-  const entidadActual = watch("entidad_territorial") ?? "";
-  const municipiosEntidad = geo.getMunicipiosForEntidad(entidadActual);
-  const tienesMunicipios = municipiosEntidad.length > 1;
-  const municipios = tienesMunicipios ? municipiosEntidad : [];
+  // Geographic data driven by region
+  const municipiosRegion = geo.getMunicipiosForRegion(regionSeleccionada ?? "");
+  const tienesMunicipios = municipiosRegion.length > 1;
+  const municipios = tienesMunicipios ? municipiosRegion : [];
   const instituciones = municipioSeleccionado
-    ? geo.getInstitucionesForMunicipioByEntidad(entidadActual, municipioSeleccionado)
-    : [];
+    ? geo.getInstitucionesForMunicipio(regionSeleccionada ?? "", municipioSeleccionado)
+    : regionSeleccionada && municipiosRegion.length === 1
+      ? geo.getInstitucionesForMunicipio(regionSeleccionada, municipiosRegion[0])
+      : [];
 
   // Load ficha and reset form
   useEffect(() => {
@@ -428,17 +429,12 @@ export default function AdminEditFicha() {
 
       reset(formData);
 
-      // Initialiser municipioSeleccionado selon la région/entidad
-      const et = etMapped || (data.entidad_territorial ?? "");
-      const munis = geo.getMunicipiosForEntidad(et);
+      // Initialiser municipioSeleccionado selon la région
+      const munis = geo.getMunicipiosForRegion(region);
       if (munis.length === 1) {
         setMunicipioSeleccionado(munis[0]);
-      } else if (munis.length > 1 && data.nombre_ie) {
-        // Try to find which municipio this institution belongs to
-        // For now, set empty and let the admin pick
-        setMunicipioSeleccionado("");
       } else {
-        setMunicipioSeleccionado(data.entidad_territorial ?? "");
+        setMunicipioSeleccionado("");
       }
 
       setLoadingFicha(false);
@@ -553,7 +549,7 @@ export default function AdminEditFicha() {
                 <div className="text-center">
                   <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
                   <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">Región: {regionSeleccionada}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">{regionSeleccionada ? `Región: ${regionSeleccionada}` : (isCreateMode ? "Nueva Ficha" : "")}</p>
                 </div>
               </div>
             ) : (
@@ -566,7 +562,7 @@ export default function AdminEditFicha() {
                   <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
                   <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
                   <p className="text-xs sm:text-sm md:text-base font-light opacity-90">Programa CLT — Coordinadores Líderes Transformadores</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">Región: {regionSeleccionada}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">{regionSeleccionada ? `Región: ${regionSeleccionada}` : (isCreateMode ? "Nueva Ficha" : "")}</p>
                 </div>
               </div>
             )}
@@ -745,14 +741,19 @@ export default function AdminEditFicha() {
 
             {/* SECCIÓN 4: Institución — identical logic to FichaRLT */}
             <FormSection number={4} title="Información Institucional">
-              {/* Entidad Territorial — autocomplete, pas de required sur le wrapper (label interne gère l'*) */}
-              <FormFieldWrapper name="entidad_territorial" label="" hideError>
-                <EntidadTerritorialField
-                  value={watch("entidad_territorial") ?? ""}
-                  entidadNames={geo.entidadNames}
-                  onChange={(val) => {
-                    setValue("entidad_territorial", val, { shouldValidate: true });
-                    const munis = geo.getMunicipiosForEntidad(val);
+              {/* Región */}
+              <FormFieldWrapper name="region" label="Región" required>
+                <FormSelect
+                  id="region"
+                  value={regionSeleccionada ?? ""}
+                  hasError={!!err("region")}
+                  options={geo.regionNames.map((r) => ({ value: r, label: r }))}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setValue("region", val, { shouldValidate: true });
+                    const et = geo.getEntidadForRegion(val);
+                    setValue("entidad_territorial", et);
+                    const munis = geo.getMunicipiosForRegion(val);
                     if (munis.length === 1) {
                       setMunicipioSeleccionado(munis[0]);
                     } else {
@@ -760,14 +761,24 @@ export default function AdminEditFicha() {
                     }
                     setValue("nombre_ie", "");
                   }}
-                  hasError={!!err("entidad_territorial")}
+                />
+              </FormFieldWrapper>
+
+              {/* Entidad Territorial — read-only, driven by region */}
+              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial">
+                <input
+                  id="entidad_territorial"
+                  value={watch("entidad_territorial") ?? ""}
+                  readOnly
+                  disabled
+                  className="form-input floating-input opacity-75 cursor-not-allowed"
+                  placeholder=" "
                 />
               </FormFieldWrapper>
 
               {/* Municipio — field-has-value basé sur la valeur effective (state OU valeur fixe Quibdó) */}
               {(() => {
-                const entidad = watch("entidad_territorial") ?? "";
-                const munis = geo.getMunicipiosForEntidad(entidad);
+                const munis = municipiosRegion;
                 const hasMultipleMunis = munis.length > 1;
                 const hasSingleMuni = munis.length === 1;
                 const effectiveValue = hasSingleMuni ? munis[0] : municipioSeleccionado;
