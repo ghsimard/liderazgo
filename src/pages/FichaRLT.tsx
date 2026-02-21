@@ -4,6 +4,9 @@ import logoRLT from "@/assets/logo_rlt.png";
 import logoCLT from "@/assets/logo_clt.png";
 import logoCLTDark from "@/assets/logo_clt_dark.png";
 import logoCosmo from "@/assets/logo_cosmo.png";
+import logoRLTWhite from "@/assets/logo_rlt_white.jpeg";
+import logoCLTWhite from "@/assets/logo_clt_white.jpeg";
+import logoCosmoWhite from "@/assets/logo_cosmo_white.png";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -546,7 +549,7 @@ export default function FichaRLTForm() {
     if (datosPDF) {
       const sr = geo.getShowLogoRlt(regionSeleccionada ?? "");
       const sc = geo.getShowLogoClt(regionSeleccionada ?? "");
-      generarPDFFicha(datosPDF, { logoRLT, logoCLTDark, logoCosmo }, { showLogoRlt: sr, showLogoClt: sc });
+      generarPDFFicha(datosPDF, { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite }, { showLogoRlt: sr, showLogoClt: sc });
     }
   };
 
