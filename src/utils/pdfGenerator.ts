@@ -151,8 +151,10 @@ export async function generarPDFFicha(
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    const labelText = `${label}:  `;
+    const labelText = `${label}:`;
     doc.text(labelText, margin + 2, y);
+    // Measure label width while still in bold font
+    const labelWidth = doc.getTextWidth(labelText) + 4;
     if (val) {
       doc.setFont("helvetica", "normal");
       if (valueBelow) {
@@ -161,7 +163,6 @@ export async function generarPDFFicha(
         doc.text(lines, margin + 8, y);
         y += lines.length * 4.5 + 2;
       } else {
-        const labelWidth = doc.getTextWidth(labelText) + 2;
         const maxValW = contentW - labelWidth - 2;
         const lines = doc.splitTextToSize(val, maxValW);
         doc.text(lines, margin + 2 + labelWidth, y);
@@ -186,9 +187,9 @@ export async function generarPDFFicha(
     // Left field
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    const lt1 = `${label1}:  `;
+    const lt1 = `${label1}:`;
     doc.text(lt1, margin + 2, y);
-    const lw1 = doc.getTextWidth(lt1);
+    const lw1 = doc.getTextWidth(lt1) + 4;
     if (v1) {
       doc.setFont("helvetica", "normal");
       doc.text(v1, margin + 2 + lw1, y);
@@ -196,9 +197,9 @@ export async function generarPDFFicha(
 
     // Right field
     doc.setFont("helvetica", "bold");
-    const lt2 = `${label2}:  `;
+    const lt2 = `${label2}:`;
     doc.text(lt2, margin + halfW, y);
-    const lw2 = doc.getTextWidth(lt2);
+    const lw2 = doc.getTextWidth(lt2) + 4;
     if (v2) {
       doc.setFont("helvetica", "normal");
       doc.text(v2, margin + halfW + lw2, y);
