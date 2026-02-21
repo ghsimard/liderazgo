@@ -12,8 +12,12 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Download, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Search, Download, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight, Plus, FileDown } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { generarPDFFicha } from "@/utils/pdfGenerator";
+import logoRLTWhite from "@/assets/logo_rlt_white.jpeg";
+import logoCLTWhite from "@/assets/logo_clt_white.jpeg";
+import logoCosmoWhite from "@/assets/logo_cosmo_white.png";
 
 type Ficha = Tables<"fichas_rlt">;
 const PAGE_SIZE = 20;
@@ -124,6 +128,25 @@ export default function AdminFichasTab() {
     setDeleteLoading(false);
   };
 
+  const handleDownloadPdf = async (f: Ficha) => {
+    // Fetch region logo flags
+    const { data: regionData } = await supabase
+      .from("regiones")
+      .select("mostrar_logo_rlt, mostrar_logo_clt")
+      .eq("nombre", f.region)
+      .maybeSingle();
+
+    const showLogoRlt = regionData?.mostrar_logo_rlt ?? true;
+    const showLogoClt = regionData?.mostrar_logo_clt ?? true;
+
+    const datosPDF: Record<string, unknown> = { ...f };
+    generarPDFFicha(
+      datosPDF,
+      { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite },
+      { showLogoRlt, showLogoClt }
+    );
+  };
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
@@ -190,6 +213,9 @@ export default function AdminFichasTab() {
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(f.created_at)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleDownloadPdf(f)} title="Descargar PDF">
+                        <FileDown className="w-4 h-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/ficha/${f.id}`)} title="Editar">
                         <Pencil className="w-4 h-4" />
                       </Button>
