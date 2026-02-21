@@ -412,6 +412,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_enum_types: {
+        Args: never
+        Returns: {
+          enum_values: string
+          type_name: string
+        }[]
+      }
+      get_table_columns: {
+        Args: { table_names: string[] }
+        Returns: {
+          column_default: string
+          column_name: string
+          is_nullable: string
+          table_name: string
+          udt_name_full: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

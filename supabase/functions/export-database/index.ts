@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Tables to export
+    // Tables to export (order matters for foreign keys)
     const tables = [
       "entidades_territoriales",
       "regiones",
@@ -71,27 +71,67 @@ Deno.serve(async (req) => {
     ];
 
     let sql = `-- Database export generated on ${new Date().toISOString()}\n`;
-    sql += `-- Project: Fichas RLT\n\n`;
+    sql += `-- Project: Fichas RLT\n`;
+    sql += `-- Includes: CREATE TABLE + INSERT data\n\n`;
 
+    // Get column info for all tables from information_schema
+    const { data: columnsInfo } = await supabaseAdmin.rpc("get_table_columns", {
+      table_names: tables,
+    });
+
+    // Get enum types
+    const { data: enumInfo } = await supabaseAdmin.rpc("get_enum_types");
+
+    // Export enums first
+    if (enumInfo && enumInfo.length > 0) {
+      sql += `-- ========================\n`;
+      sql += `-- ENUM TYPES\n`;
+      sql += `-- ========================\n\n`;
+      for (const e of enumInfo) {
+        sql += `DO $$ BEGIN\n  CREATE TYPE ${e.type_name} AS ENUM (${e.enum_values});\nEXCEPTION WHEN duplicate_object THEN NULL;\nEND $$;\n\n`;
+      }
+    }
+
+    // Export structure + data per table
     for (const table of tables) {
+      sql += `-- ========================\n`;
+      sql += `-- TABLE: ${table}\n`;
+      sql += `-- ========================\n\n`;
+
+      // CREATE TABLE from column info
+      const tableCols = (columnsInfo || []).filter(
+        (c: any) => c.table_name === table
+      );
+
+      if (tableCols.length > 0) {
+        sql += `CREATE TABLE IF NOT EXISTS public.${table} (\n`;
+        const colDefs = tableCols.map((c: any) => {
+          let def = `  "${c.column_name}" ${c.udt_name_full}`;
+          if (c.is_nullable === "NO") def += " NOT NULL";
+          if (c.column_default) def += ` DEFAULT ${c.column_default}`;
+          return def;
+        });
+        sql += colDefs.join(",\n");
+        sql += `\n);\n\n`;
+      }
+
       // Get all data
       const { data: rows, error } = await supabaseAdmin
         .from(table)
         .select("*");
 
       if (error) {
-        sql += `-- Error exporting table ${table}: ${error.message}\n\n`;
+        sql += `-- Error exporting data for ${table}: ${error.message}\n\n`;
         continue;
       }
 
       if (!rows || rows.length === 0) {
-        sql += `-- Table ${table}: no data\n\n`;
+        sql += `-- No data in ${table}\n\n`;
         continue;
       }
 
-      sql += `-- Table: ${table} (${rows.length} rows)\n`;
+      sql += `-- Data: ${rows.length} rows\n`;
 
-      // Generate INSERT statements
       const columns = Object.keys(rows[0]);
       const colList = columns.map((c) => `"${c}"`).join(", ");
 
