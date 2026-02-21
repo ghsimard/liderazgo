@@ -163,7 +163,7 @@ export async function generarPDFFicha(
         y += 3.5;
         const lines = doc.splitTextToSize(val, contentW - 10);
         doc.text(lines, margin + 8, y);
-        y += lines.length * 3;
+        y += (lines.length - 1) * 3.5 + 5;
       } else {
         const maxValW = contentW - labelWidth - 2;
         const lines = doc.splitTextToSize(val, maxValW);
