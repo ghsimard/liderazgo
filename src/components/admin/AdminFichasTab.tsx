@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Search, Download, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight, Plus, FileDown, Files } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
+import JSZip from "jszip";
 import logoRLTWhite from "@/assets/logo_rlt_white.jpeg";
 import logoCLTWhite from "@/assets/logo_clt_white.jpeg";
 import logoCosmoWhite from "@/assets/logo_cosmo_white.png";
@@ -161,23 +162,36 @@ export default function AdminFichasTab() {
         return;
       }
 
+      const zip = new JSZip();
+      const folderName = regionFilter.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ _-]/g, "").replace(/\s+/g, "_");
+      const folder = zip.folder(folderName)!;
+
       for (let i = 0; i < data.length; i++) {
         const f = data[i];
         const cargo = (f.cargo_actual ?? "").toLowerCase();
         const isRector = cargo.includes("rector");
         const isCoordinador = cargo.includes("coordinador");
         const datosPDF: Record<string, unknown> = { ...f };
-        await generarPDFFicha(
+        const blob = await generarPDFFicha(
           datosPDF,
           { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite },
-          { showLogoRlt: isRector, showLogoClt: isCoordinador }
+          { showLogoRlt: isRector, showLogoClt: isCoordinador },
+          { returnBlob: true }
         );
-        // Small delay to avoid browser freeze
-        if (i < data.length - 1) {
-          await new Promise(r => setTimeout(r, 500));
+        if (blob) {
+          const fileName = `Ficha_${String(f.apellidos ?? f.nombres ?? "ficha").replace(/\s+/g, "_")}_${String(f.nombres ?? "").replace(/\s+/g, "_")}.pdf`;
+          folder.file(fileName, blob);
         }
       }
-      toast({ title: `${data.length} PDF(s) generado(s)` });
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Fichas_${folderName}_${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: `${data.length} PDF(s) empaquetado(s) en ZIP` });
     } catch {
       toast({ title: "Error al generar PDFs", variant: "destructive" });
     }

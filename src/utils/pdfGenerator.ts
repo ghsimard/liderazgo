@@ -28,8 +28,9 @@ export interface PdfLogos {
 export async function generarPDFFicha(
   datos: Record<string, unknown>,
   logoSources: { logoRLT: string; logoCLTDark: string; logoCosmo: string },
-  logoFlags: { showLogoRlt?: boolean; showLogoClt?: boolean } = {}
-): Promise<void> {
+  logoFlags: { showLogoRlt?: boolean; showLogoClt?: boolean } = {},
+  options: { returnBlob?: boolean } = {}
+): Promise<Blob | void> {
   const showRlt = logoFlags.showLogoRlt ?? true;
   const showClt = logoFlags.showLogoClt ?? true;
 
@@ -354,5 +355,8 @@ export async function generarPDFFicha(
   }
 
   const nombre = String(datos["apellidos"] ?? datos["nombres"] ?? "ficha").replace(/\s+/g, "_");
+  if (options.returnBlob) {
+    return doc.output("blob");
+  }
   doc.save(`Ficha_RLT_${nombre}.pdf`);
 }
