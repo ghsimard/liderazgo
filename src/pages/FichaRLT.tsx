@@ -17,6 +17,7 @@ import {
   FormTextArea,
   FormRadioGroup,
   FormCheckboxGroup,
+  FormRichTextArea,
   FormSection,
 } from "@/components/FormComponents";
 import { cn } from "@/lib/utils";
@@ -1043,8 +1044,13 @@ export default function FichaRLTForm() {
                 <FormInput id="grupos_etnicos" {...register("grupos_etnicos")} placeholder="Ej: Afrodescendiente, Indígena, etc." />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="proyectos_transversales" label="Proyectos transversales de la IE">
-                <FormInput id="proyectos_transversales" {...register("proyectos_transversales")} placeholder="Ej: PRAE, PIGA, etc." />
+              <FormFieldWrapper name="proyectos_transversales" label="Proyectos transversales de la IE" staticLabel>
+                <FormRichTextArea
+                  id="proyectos_transversales"
+                  value={watch("proyectos_transversales") || ""}
+                  onChange={(v) => setValue("proyectos_transversales", v)}
+                  placeholder="Ej: 1. PRAE&#10;2. PIGA"
+                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="desplazamiento" label="¿Hay estudiantes o familias en condición de desplazamiento?" staticLabel>

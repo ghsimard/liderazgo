@@ -1,6 +1,7 @@
 import { useFormContext, useWatch } from "react-hook-form";
 import { cn } from "@/lib/utils";
-import { ReactNode, forwardRef } from "react";
+import { ReactNode, forwardRef, useRef, useCallback } from "react";
+import { List, ListOrdered, Bold, Italic } from "lucide-react";
 
 interface FormFieldWrapperProps {
   name: string;
@@ -94,6 +95,84 @@ export const FormTextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
   )
 );
 FormTextArea.displayName = "FormTextArea";
+
+/* ── Rich Text Area with basic formatting toolbar ── */
+interface RichTextAreaProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+  hasError?: boolean;
+  className?: string;
+  id?: string;
+}
+
+export function FormRichTextArea({ value = "", onChange, placeholder, hasError, className, id }: RichTextAreaProps) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  const insertPrefix = useCallback((prefix: string) => {
+    const ta = ref.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const text = value;
+    const lineStart = text.lastIndexOf("\n", start - 1) + 1;
+    let lineEnd = text.indexOf("\n", end);
+    if (lineEnd === -1) lineEnd = text.length;
+    const selectedLines = text.slice(lineStart, lineEnd).split("\n");
+    const transformed = selectedLines.map((line, i) => {
+      const clean = line.replace(/^(\d+\.\s|[•\-]\s)/, "");
+      if (prefix === "ol") return `${i + 1}. ${clean}`;
+      if (prefix === "ul") return `• ${clean}`;
+      return clean;
+    }).join("\n");
+    const newText = text.slice(0, lineStart) + transformed + text.slice(lineEnd);
+    onChange?.(newText);
+    setTimeout(() => { ta.focus(); ta.selectionStart = lineStart; ta.selectionEnd = lineStart + transformed.length; }, 0);
+  }, [value, onChange]);
+
+  const wrapSelection = useCallback((wrapper: string) => {
+    const ta = ref.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = value.slice(start, end);
+    if (!selected) return;
+    const newText = value.slice(0, start) + wrapper + selected + wrapper + value.slice(end);
+    onChange?.(newText);
+    setTimeout(() => { ta.focus(); ta.selectionStart = start + wrapper.length; ta.selectionEnd = end + wrapper.length; }, 0);
+  }, [value, onChange]);
+
+  const btnClass = "p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors";
+
+  return (
+    <div className={cn("border rounded-md border-input focus-within:ring-2 focus-within:ring-ring", hasError && "border-destructive", className)}>
+      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-input bg-muted/30">
+        <button type="button" className={btnClass} onClick={() => wrapSelection("**")} title="Negrita">
+          <Bold className="w-4 h-4" />
+        </button>
+        <button type="button" className={btnClass} onClick={() => wrapSelection("_")} title="Cursiva">
+          <Italic className="w-4 h-4" />
+        </button>
+        <div className="w-px h-4 bg-border mx-1" />
+        <button type="button" className={btnClass} onClick={() => insertPrefix("ol")} title="Lista numerada">
+          <ListOrdered className="w-4 h-4" />
+        </button>
+        <button type="button" className={btnClass} onClick={() => insertPrefix("ul")} title="Lista con viñetas">
+          <List className="w-4 h-4" />
+        </button>
+      </div>
+      <textarea
+        ref={ref}
+        id={id}
+        rows={5}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        placeholder={placeholder || " "}
+        className="w-full px-3 py-2 text-sm bg-transparent outline-none resize-none placeholder:text-muted-foreground"
+      />
+    </div>
+  );
+}
 
 interface RadioGroupProps {
   name: string;
