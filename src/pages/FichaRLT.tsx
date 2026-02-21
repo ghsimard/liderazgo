@@ -521,7 +521,7 @@ export default function FichaRLTForm() {
   };
 
   const handleDescargarPDF = () => {
-    if (datosPDF) generarPDFFicha(datosPDF);
+    if (datosPDF) generarPDFFicha(datosPDF, { logoRLT, logoCLTDark, logoCosmo });
   };
 
   const fieldLabels: Record<string, string> = {
