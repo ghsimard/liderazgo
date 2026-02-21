@@ -251,6 +251,9 @@ export async function generarPDFFicha(
   drawRow("Otros títulos, ¿cuáles?", val("otros_titulos"));
 
   // ── INFORMACIÓN DE LA INSTITUCIÓN EDUCATIVA ──
+  doc.addPage();
+  drawPageHeader();
+  y = 42;
   drawSection("INFORMACIÓN DE LA INSTITUCIÓN EDUCATIVA – IE");
   drawRow("Nombre completo de la IE actual", val("nombre_ie"));
   drawRow("Código DANE de la IE (12 dígitos)", val("codigo_dane"));
