@@ -357,7 +357,7 @@ function RegionSelector({ onSelect, regionNames }: { onSelect: (region: string) 
               className="w-full py-5 rounded-xl text-white font-semibold text-lg shadow-md transition-transform active:scale-95"
               style={{ background: "var(--gradient-header)" }}
             >
-              🏫 {region}
+              {region}
             </button>
           ))}
         </div>
