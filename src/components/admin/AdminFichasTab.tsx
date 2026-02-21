@@ -12,7 +12,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Download, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Download, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Ficha = Tables<"fichas_rlt">;
@@ -149,6 +149,9 @@ export default function AdminFichasTab() {
         </Button>
         <Button variant="outline" size="sm" onClick={() => { setSearch(""); setRegionFilter(""); setPage(0); }} className="gap-1.5">
           <RefreshCw className="w-4 h-4" /> Limpiar
+        </Button>
+        <Button size="sm" onClick={() => navigate("/admin/ficha/new")} className="gap-1.5">
+          <Plus className="w-4 h-4" /> Crear ficha
         </Button>
       </div>
 
