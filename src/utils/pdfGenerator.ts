@@ -145,21 +145,28 @@ export async function generarPDFFicha(
   };
 
   // Single row: bold label + normal value
-  const drawRow = (label: string, value: string | undefined | null) => {
+  const drawRow = (label: string, value: string | undefined | null, valueBelow = false) => {
     const val = value ? String(value) : "";
-    checkNewPage(8);
+    checkNewPage(valueBelow && val ? 14 : 8);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     const labelText = `${label}:`;
     doc.text(labelText, margin + 2, y);
-    const labelWidth = doc.getTextWidth(labelText) + 2;
     if (val) {
       doc.setFont("helvetica", "normal");
-      const maxValW = contentW - labelWidth - 2;
-      const lines = doc.splitTextToSize(val, maxValW);
-      doc.text(lines, margin + 2 + labelWidth, y);
-      y += Math.max(lines.length * 4.5, 6);
+      if (valueBelow) {
+        y += 5;
+        const lines = doc.splitTextToSize(val, contentW - 4);
+        doc.text(lines, margin + 2, y);
+        y += lines.length * 4.5 + 2;
+      } else {
+        const labelWidth = doc.getTextWidth(labelText) + 2;
+        const maxValW = contentW - labelWidth - 2;
+        const lines = doc.splitTextToSize(val, maxValW);
+        doc.text(lines, margin + 2 + labelWidth, y);
+        y += Math.max(lines.length * 4.5, 6);
+      }
     } else {
       y += 6;
     }
@@ -259,7 +266,7 @@ export async function generarPDFFicha(
   drawRow("Urbanas", val("sedes_urbana"));
   drawRow("Jornadas de la IE (opción múltiple)", Array.isArray(datos["jornadas"]) ? (datos["jornadas"] as string[]).join(", ") : val("jornadas"));
   drawRow("Grupos étnicos en la IE (puede marcar más de una opción)", val("grupos_etnicos"));
-  drawRow("Proyectos transversales de la IE", val("proyectos_transversales"));
+  drawRow("Proyectos transversales de la IE", val("proyectos_transversales"), true);
   drawRow("Estudiantes y familias de la IE en condición de desplazamiento", val("desplazamiento"));
   drawRow("Estudiantes JEC / Inspiración Comfama", val("estudiantes_jec"));
   drawRow("Niveles educativos que ofrece la IE (opción múltiple)", Array.isArray(datos["niveles_educativos"]) ? (datos["niveles_educativos"] as string[]).join(", ") : val("niveles_educativos"));
