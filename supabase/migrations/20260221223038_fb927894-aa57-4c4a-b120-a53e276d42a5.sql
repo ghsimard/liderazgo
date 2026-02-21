@@ -1,0 +1,1 @@
+ALTER TABLE public.fichas_rlt DROP COLUMN IF EXISTS estudiantes_jec;

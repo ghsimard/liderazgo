@@ -272,7 +272,7 @@ export async function generarPDFFicha(
   drawRow("Grupos étnicos en la IE (puede marcar más de una opción)", val("grupos_etnicos"));
   drawRow("Proyectos transversales de la IE", val("proyectos_transversales"), true);
   drawRow("Estudiantes y familias de la IE en condición de desplazamiento", val("desplazamiento"));
-  drawRow("Estudiantes JEC / Inspiración Comfama", val("estudiantes_jec"));
+  
   drawRow("Niveles educativos que ofrece la IE (opción múltiple)", Array.isArray(datos["niveles_educativos"]) ? (datos["niveles_educativos"] as string[]).join(", ") : val("niveles_educativos"));
   drawRow("Tipo de bachillerato que ofrece la IE", val("tipo_bachillerato"));
   drawRow("Modelo o enfoque pedagógico", val("modelo_pedagogico"));

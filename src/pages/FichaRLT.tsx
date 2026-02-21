@@ -85,7 +85,7 @@ const schema = z.object({
   jornadas: z.array(z.string()).min(1, "Seleccione al menos una jornada"),
   grupos_etnicos: z.array(z.string()).optional(),
   proyectos_transversales: z.string().optional(),
-  estudiantes_jec: z.string().optional(),
+  
   desplazamiento: z.string().optional(),
   niveles_educativos: z.array(z.string()).min(1, "Seleccione al menos un nivel educativo"),
   tipo_bachillerato: z.array(z.string()).optional(),
@@ -485,7 +485,7 @@ export default function FichaRLTForm() {
       jornadas: data.jornadas ?? null,
       grupos_etnicos: data.grupos_etnicos?.length ? data.grupos_etnicos.join(", ") : null,
       proyectos_transversales: data.proyectos_transversales ?? null,
-      estudiantes_jec: toInt(data.estudiantes_jec),
+      
       desplazamiento: data.desplazamiento ?? null,
       niveles_educativos: data.niveles_educativos ?? null,
       tipo_bachillerato: data.tipo_bachillerato?.length ? data.tipo_bachillerato.join(", ") : null,
