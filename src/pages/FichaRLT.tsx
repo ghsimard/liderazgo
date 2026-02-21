@@ -1174,7 +1174,7 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 7: Estudiantes por nivel educativo */}
             <FormSection number={7} title="Estudiantes por nivel educativo">
-              <div className="md:col-span-2 space-y-3 max-w-[500px]">
+              <div className="md:col-span-2 space-y-3 max-w-[420px]">
                 <p className="text-sm text-muted-foreground mb-2">
                   Ingrese el número de estudiantes por nivel. Los niveles con estudiantes se marcarán automáticamente.
                 </p>

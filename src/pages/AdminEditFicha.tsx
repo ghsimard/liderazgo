@@ -1084,7 +1084,7 @@ export default function AdminEditFicha() {
 
             {/* SECCIÓN 7: Estudiantes por nivel educativo */}
             <FormSection number={7} title="Estudiantes por nivel educativo">
-              <div className="md:col-span-2 space-y-3 max-w-[500px]">
+              <div className="md:col-span-2 space-y-3 max-w-[420px]">
                 {[
                   { nivel: "Preescolar", label: "Preescolar (Prejardín, Jardín, Transición)", field: "estudiantes_preescolar" },
                   { nivel: "Básica primaria", label: "Básica primaria", field: "estudiantes_primaria" },
