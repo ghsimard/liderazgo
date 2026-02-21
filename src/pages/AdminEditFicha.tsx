@@ -73,7 +73,7 @@ const schema = z.object({
   sedes_rural: z.string().optional(),
   sedes_urbana: z.string().optional(),
   jornadas: z.array(z.string()).optional(),
-  grupos_etnicos: z.string().optional(),
+  grupos_etnicos: z.array(z.string()).optional(),
   proyectos_transversales: z.string().optional(),
   estudiantes_jec: z.string().optional(),
   desplazamiento: z.string().optional(),
@@ -278,7 +278,7 @@ function fichaToFormData(f: Ficha): FormData {
     sedes_rural: s(f.sedes_rural),
     sedes_urbana: s(f.sedes_urbana),
     jornadas: f.jornadas ?? [],
-    grupos_etnicos: f.grupos_etnicos ?? "",
+    grupos_etnicos: f.grupos_etnicos ? f.grupos_etnicos.split(", ") : [],
     proyectos_transversales: f.proyectos_transversales ?? "",
     estudiantes_jec: s(f.estudiantes_jec),
     desplazamiento: f.desplazamiento ?? "",
@@ -516,7 +516,7 @@ export default function AdminEditFicha() {
       sedes_rural: toInt(data.sedes_rural),
       sedes_urbana: toInt(data.sedes_urbana),
       jornadas: data.jornadas ?? null,
-      grupos_etnicos: data.grupos_etnicos ?? null,
+      grupos_etnicos: data.grupos_etnicos?.length ? data.grupos_etnicos.join(", ") : null,
       proyectos_transversales: data.proyectos_transversales ?? null,
       estudiantes_jec: toInt(data.estudiantes_jec),
       desplazamiento: data.desplazamiento ?? null,
@@ -1015,16 +1015,16 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="grupos_etnicos" label="Grupos étnicos en la IE">
-                <FormSelect
-                  id="grupos_etnicos"
-                  {...register("grupos_etnicos")}
+              <FormFieldWrapper name="grupos_etnicos" label="Grupos étnicos en la IE" staticLabel>
+                <FormCheckboxGroup
+                  name="grupos_etnicos"
                   options={[
                     { value: "Afrocolombianos / NARP", label: "Afrocolombianos / NARP (Negros, afrodescendientes, mulatos, raizales, palenqueros)" },
                     { value: "Indígenas", label: "Indígenas (pueblos originarios)" },
                     { value: "Rrom / Pueblo Gitano", label: "Rrom / Pueblo Gitano" },
                   ]}
-                  placeholder=" "
+                  value={watch("grupos_etnicos") || []}
+                  onChange={(v) => setValue("grupos_etnicos", v)}
                 />
               </FormFieldWrapper>
 
