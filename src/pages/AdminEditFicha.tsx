@@ -1067,7 +1067,6 @@ export default function AdminEditFicha() {
                   options={[
                     { value: "Académico", label: "Académico" },
                     { value: "Técnico", label: "Técnico" },
-                    { value: "N/A", label: "N/A" },
                   ]}
                   value={watch("tipo_bachillerato") || []}
                   onChange={(v) => setValue("tipo_bachillerato", v)}
