@@ -70,7 +70,6 @@ const schema = z.object({
   entidad_territorial: z.string().min(1, "Seleccione la entidad territorial"),
   comuna_barrio: z.string().optional(),
   zona_sede: z.string().min(1, "Seleccione la zona de sede"),
-  total_sedes: z.string().optional(),
   sedes_rural: z.string().min(1, "Ingrese el número de sedes rurales"),
   sedes_urbana: z.string().min(1, "Ingrese el número de sedes urbanas"),
   jornadas: z.array(z.string()).min(1, "Seleccione al menos una jornada"),
@@ -458,7 +457,6 @@ export default function FichaRLTForm() {
       entidad_territorial: data.entidad_territorial ?? null,
       comuna_barrio: data.comuna_barrio ?? null,
       zona_sede: data.zona_sede ?? null,
-      total_sedes: toInt(data.total_sedes),
       sedes_rural: toInt(data.sedes_rural),
       sedes_urbana: toInt(data.sedes_urbana),
       jornadas: data.jornadas ?? null,
@@ -546,7 +544,6 @@ export default function FichaRLTForm() {
     codigo_dane: "Código DANE",
     entidad_territorial: "Entidad territorial",
     zona_sede: "Zona de sede",
-    total_sedes: "Total de sedes",
     sedes_rural: "Sedes rurales",
     sedes_urbana: "Sedes urbanas",
     jornadas: "Jornadas",
@@ -1018,26 +1015,13 @@ export default function FichaRLTForm() {
                 <FormInput id="sedes_rural" type="number" min={0} {...register("sedes_rural")} placeholder="0"
                   onChange={(e) => {
                     register("sedes_rural").onChange(e);
-                    const rural = parseInt(e.target.value) || 0;
-                    const urbana = parseInt(watch("sedes_urbana") || "0") || 0;
-                    setValue("total_sedes", String(rural + urbana));
+                    register("sedes_rural").onChange(e);
                   }}
                 />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="sedes_urbana" label="Número de sedes en zona urbana" required>
-                <FormInput id="sedes_urbana" type="number" min={0} {...register("sedes_urbana")} placeholder="0"
-                  onChange={(e) => {
-                    register("sedes_urbana").onChange(e);
-                    const urbana = parseInt(e.target.value) || 0;
-                    const rural = parseInt(watch("sedes_rural") || "0") || 0;
-                    setValue("total_sedes", String(rural + urbana));
-                  }}
-                />
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="total_sedes" label="Número total de sedes (incluida la sede principal)">
-                <FormInput id="total_sedes" type="number" readOnly {...register("total_sedes")} placeholder="0" className="bg-muted/50 cursor-not-allowed" />
+                <FormInput id="sedes_urbana" type="number" min={0} {...register("sedes_urbana")} placeholder="0" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="jornadas" label="Jornadas de la IE" required className="md:col-span-2" hideError staticLabel>

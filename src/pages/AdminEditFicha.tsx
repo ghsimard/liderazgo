@@ -63,7 +63,6 @@ const schema = z.object({
   entidad_territorial: z.string().optional(),
   comuna_barrio: z.string().optional(),
   zona_sede: z.string().optional(),
-  total_sedes: z.string().optional(),
   sedes_rural: z.string().optional(),
   sedes_urbana: z.string().optional(),
   jornadas: z.array(z.string()).optional(),
@@ -261,7 +260,6 @@ function fichaToFormData(f: Ficha): FormData {
     entidad_territorial: f.entidad_territorial ?? "",
     comuna_barrio: f.comuna_barrio ?? "",
     zona_sede: f.zona_sede ?? "",
-    total_sedes: s(f.total_sedes),
     sedes_rural: s(f.sedes_rural),
     sedes_urbana: s(f.sedes_urbana),
     jornadas: f.jornadas ?? [],
@@ -490,7 +488,6 @@ export default function AdminEditFicha() {
       entidad_territorial: data.entidad_territorial ?? null,
       comuna_barrio: data.comuna_barrio ?? null,
       zona_sede: data.zona_sede ?? null,
-      total_sedes: toInt(data.total_sedes),
       sedes_rural: toInt(data.sedes_rural),
       sedes_urbana: toInt(data.sedes_urbana),
       jornadas: data.jornadas ?? null,
@@ -899,9 +896,6 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="total_sedes" label="Número total de sedes (incluida la sede principal)" required>
-                <FormInput id="total_sedes" type="number" min={1} {...register("total_sedes")} placeholder="0" />
-              </FormFieldWrapper>
 
               <FormFieldWrapper name="sedes_rural" label="Número de sedes en zona rural" required>
                 <FormInput id="sedes_rural" type="number" min={0} {...register("sedes_rural")} placeholder="0" />

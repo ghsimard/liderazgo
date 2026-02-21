@@ -110,7 +110,8 @@ export function generarPDFFicha(datos: Record<string, unknown>): void {
 
   drawSection("5. Datos de la IE");
   drawRow("Zona Sede Principal", val("zona_sede"));
-  drawRow("Total Sedes", val("total_sedes"));
+  const totalSedes = ((Number(datos["sedes_rural"]) || 0) + (Number(datos["sedes_urbana"]) || 0)) || undefined;
+  drawRow("Total Sedes", totalSedes ? String(totalSedes) : undefined);
   drawRow("Sedes Zona Rural", val("sedes_rural"));
   drawRow("Sedes Zona Urbana", val("sedes_urbana"));
   drawRow("Jornadas", Array.isArray(datos["jornadas"]) ? (datos["jornadas"] as string[]).join(", ") : val("jornadas"));
