@@ -154,7 +154,7 @@ export async function generarPDFFicha(
     doc.text(`${label}:`, margin + 2, y);
     if (val) {
       doc.setFont("helvetica", "normal");
-      const labelWidth = doc.getTextWidth(`${label}: `) + 1;
+      const labelWidth = doc.getTextWidth(`${label}: `) + 3;
       const maxValW = contentW - labelWidth - 2;
       const lines = doc.splitTextToSize(val, maxValW);
       doc.text(lines, margin + 2 + labelWidth, y);
@@ -181,7 +181,7 @@ export async function generarPDFFicha(
     doc.text(`${label1}:`, margin + 2, y);
     if (v1) {
       doc.setFont("helvetica", "normal");
-      const lw1 = doc.getTextWidth(`${label1}: `) + 1;
+      const lw1 = doc.getTextWidth(`${label1}: `) + 3;
       doc.text(v1, margin + 2 + lw1, y);
     }
 
@@ -190,7 +190,7 @@ export async function generarPDFFicha(
     doc.text(`${label2}:`, margin + halfW, y);
     if (v2) {
       doc.setFont("helvetica", "normal");
-      const lw2 = doc.getTextWidth(`${label2}: `) + 1;
+      const lw2 = doc.getTextWidth(`${label2}: `) + 3;
       doc.text(v2, margin + halfW + lw2, y);
     }
 
