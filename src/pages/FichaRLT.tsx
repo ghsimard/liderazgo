@@ -25,7 +25,7 @@ import { CheckCircle, Download, RefreshCw, Send, AlertCircle } from "lucide-reac
 
 // ── Schema de validación ─────────────────────────────────────
 const schema = z.object({
-  acepta_datos: z.boolean().refine((v) => v === true, { message: "Debe aceptar el tratamiento de datos personales" }),
+  acepta_datos: z.enum(["Sí", "No", ""]).refine((v) => v === "Sí", { message: "Debe aceptar el tratamiento de datos personales" }),
   nombres: z.string().min(2, "Ingrese sus nombres"),
   apellidos: z.string().min(2, "Ingrese sus apellidos"),
   genero: z.string().min(1, "Seleccione su género"),
@@ -101,7 +101,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const defaultValues: Partial<FormData> = {
-  acepta_datos: false,
+  acepta_datos: "" as any,
   lengua_materna: "Español",
   enfermedad_base: "No",
   discapacidad: "No",
@@ -435,7 +435,7 @@ export default function FichaRLTForm() {
     const toInt = (v: string | undefined) => (v ? parseInt(v) : null);
 
     const payload = {
-      acepta_datos: data.acepta_datos,
+      acepta_datos: data.acepta_datos === "Sí",
       nombres: data.nombres,
       apellidos: data.apellidos,
       nombres_apellidos: `${data.nombres} ${data.apellidos}`,
@@ -675,24 +675,29 @@ export default function FichaRLTForm() {
 
             {/* Consentimiento */}
             <div className="form-section border-l-4" style={{ borderLeftColor: "hsl(var(--primary))" }}>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  {...register("acepta_datos")}
-                  className="mt-1 w-5 h-5 accent-primary flex-shrink-0"
-                />
-                <span className="text-sm leading-relaxed">
+              <div className="space-y-3">
+                <p className="text-sm leading-relaxed">
                   <strong>Autorización de datos personales: </strong>
                   Entiendo la información y acepto el tratamiento de mis datos personales conforme a la Ley 1581 de 2012 de protección de datos de Colombia.{" "}
                   <span className="required-star">*</span>
-                </span>
-              </label>
-              {errors.acepta_datos && (
-                <p className="field-error mt-2 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.acepta_datos.message as string}
                 </p>
-              )}
+                <FormRadioGroup
+                  name="acepta_datos"
+                  options={[
+                    { value: "Sí", label: "Sí" },
+                    { value: "No", label: "No" },
+                  ]}
+                  value={watch("acepta_datos") as string}
+                  onChange={(v) => setValue("acepta_datos", v as any)}
+                  hasError={!!errors.acepta_datos}
+                />
+                {errors.acepta_datos && (
+                  <p className="field-error flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.acepta_datos.message as string}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* SECCIÓN 1: Datos personales */}
