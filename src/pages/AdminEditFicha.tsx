@@ -649,7 +649,6 @@ export default function AdminEditFicha() {
                   options={[
                     { value: "Masculino", label: "Masculino" },
                     { value: "Femenino", label: "Femenino" },
-                    { value: "Otro", label: "Otro" },
                   ]}
                   value={watch("genero")}
                   onChange={(v) => setValue("genero", v, { shouldValidate: true })}
