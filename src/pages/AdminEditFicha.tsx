@@ -897,13 +897,15 @@ export default function AdminEditFicha() {
               </FormFieldWrapper>
 
 
-              <FormFieldWrapper name="sedes_rural" label="Número de sedes en zona rural" required>
-                <FormInput id="sedes_rural" type="number" min={0} {...register("sedes_rural")} placeholder="0" />
-              </FormFieldWrapper>
+              <div className="md:col-span-2 grid grid-cols-1 gap-4">
+                <FormFieldWrapper name="sedes_rural" label="Número de sedes en zona rural" required>
+                  <FormInput id="sedes_rural" type="number" min={0} {...register("sedes_rural")} placeholder="0" />
+                </FormFieldWrapper>
 
-              <FormFieldWrapper name="sedes_urbana" label="Número de sedes en zona urbana" required>
-                <FormInput id="sedes_urbana" type="number" min={0} {...register("sedes_urbana")} placeholder="0" />
-              </FormFieldWrapper>
+                <FormFieldWrapper name="sedes_urbana" label="Número de sedes en zona urbana" required>
+                  <FormInput id="sedes_urbana" type="number" min={0} {...register("sedes_urbana")} placeholder="0" />
+                </FormFieldWrapper>
+              </div>
 
               <FormFieldWrapper name="jornadas" label="Jornadas de la IE" required className="md:col-span-2" hideError staticLabel>
                 <FormCheckboxGroup
