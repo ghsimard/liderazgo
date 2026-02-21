@@ -151,7 +151,7 @@ export async function generarPDFFicha(
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    const labelText = `${label}:`;
+    const labelText = `${label}:  `;
     doc.text(labelText, margin + 2, y);
     if (val) {
       doc.setFont("helvetica", "normal");
@@ -186,9 +186,9 @@ export async function generarPDFFicha(
     // Left field
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    const lt1 = `${label1}:`;
+    const lt1 = `${label1}:  `;
     doc.text(lt1, margin + 2, y);
-    const lw1 = doc.getTextWidth(lt1) + 2;
+    const lw1 = doc.getTextWidth(lt1);
     if (v1) {
       doc.setFont("helvetica", "normal");
       doc.text(v1, margin + 2 + lw1, y);
@@ -196,9 +196,9 @@ export async function generarPDFFicha(
 
     // Right field
     doc.setFont("helvetica", "bold");
-    const lt2 = `${label2}:`;
+    const lt2 = `${label2}:  `;
     doc.text(lt2, margin + halfW, y);
-    const lw2 = doc.getTextWidth(lt2) + 2;
+    const lw2 = doc.getTextWidth(lt2);
     if (v2) {
       doc.setFont("helvetica", "normal");
       doc.text(v2, margin + halfW + lw2, y);
