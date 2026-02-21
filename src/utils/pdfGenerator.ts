@@ -293,9 +293,9 @@ export async function generarPDFFicha(
   const remainingW = contentW - estudLabelW;
   const colW = remainingW / niveles.length;
   // Level headers on same line
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   niveles.forEach((n, i) => {
-    doc.text(n, margin + 2 + estudLabelW + i * colW + colW / 2, y, { align: "center" });
+    doc.text(n, margin + 2 + estudLabelW + i * colW, y);
   });
   y += 4;
   // Values row below
@@ -303,7 +303,8 @@ export async function generarPDFFicha(
   doc.setFontSize(8);
   nivelesKeys.forEach((k, i) => {
     const v = val(k) ?? "—";
-    doc.text(v, margin + 2 + estudLabelW + i * colW + colW / 2, y, { align: "center" });
+    const nw = doc.getTextWidth(niveles[i]);
+    doc.text(v, margin + 2 + estudLabelW + i * colW + nw / 2, y, { align: "center" });
   });
   y += 6;
 
