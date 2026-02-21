@@ -1065,26 +1065,26 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <div className="md:col-span-2 flex flex-col gap-3 max-w-[420px]">
-                <div className="flex items-center gap-3">
+              <div className="md:col-span-2 flex flex-col gap-3 max-w-[480px]">
+                <div className="flex items-center justify-between gap-3">
                   <label htmlFor="sedes_rural" className="text-sm font-medium whitespace-nowrap">
                     Número de sedes en zona rural<span className="required-star ml-0.5">*</span>
                   </label>
-                  <input id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0" className="form-input w-20 text-center" />
+                  <input id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0" className="form-input w-20 text-center shrink-0" />
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between gap-3">
                   <label htmlFor="sedes_urbana" className="text-sm font-medium whitespace-nowrap">
                     Número de sedes en zona urbana<span className="required-star ml-0.5">*</span>
                   </label>
-                  <input id="sedes_urbana" type="number" min={0} max={999} {...register("sedes_urbana")} placeholder="0" className="form-input w-20 text-center" />
+                  <input id="sedes_urbana" type="number" min={0} max={999} {...register("sedes_urbana")} placeholder="0" className="form-input w-20 text-center shrink-0" />
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <label className="text-sm font-semibold text-muted-foreground whitespace-nowrap">
+                <div className="flex items-center justify-between gap-3 pt-1 border-t border-border">
+                  <span className="text-sm font-semibold text-muted-foreground whitespace-nowrap">
                     Número total de sedes <span className="text-xs font-normal text-muted-foreground/70">(incluye la sede principal)</span>
-                  </label>
-                  <input type="number" value={totalSedes} readOnly disabled className="form-input w-20 text-center opacity-75 cursor-not-allowed font-semibold" />
+                  </span>
+                  <span className="w-20 text-center font-semibold text-sm shrink-0">{totalSedes}</span>
                 </div>
               </div>
 
