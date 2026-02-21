@@ -40,6 +40,7 @@ interface Region {
   id: string;
   nombre: string;
   entidad_territorial_id: string;
+  mostrar_logo_clt: boolean;
 }
 
 export default function AdminGeographyTab() {
@@ -73,6 +74,7 @@ export default function AdminGeographyTab() {
   const [regionEntidad, setRegionEntidad] = useState("");
   const [regionSelectedMunicipios, setRegionSelectedMunicipios] = useState<string[]>([]);
   const [regionSelectedInstituciones, setRegionSelectedInstituciones] = useState<string[]>([]);
+  const [regionMostrarLogoClt, setRegionMostrarLogoClt] = useState(true);
   const [editRegion, setEditRegion] = useState<Region | null>(null);
 
   const [newName, setNewName] = useState("");
@@ -185,12 +187,14 @@ export default function AdminGeographyTab() {
       setEditRegion(region);
       setRegionName(region.nombre);
       setRegionEntidad(region.entidad_territorial_id);
+      setRegionMostrarLogoClt(region.mostrar_logo_clt);
       setRegionSelectedMunicipios(regionMunicipios.filter(rm => rm.region_id === region.id).map(rm => rm.municipio_id));
       setRegionSelectedInstituciones(regionInstituciones.filter(ri => ri.region_id === region.id).map(ri => ri.institucion_id));
     } else {
       setEditRegion(null);
       setRegionName("");
       setRegionEntidad("");
+      setRegionMostrarLogoClt(true);
       setRegionSelectedMunicipios([]);
       setRegionSelectedInstituciones([]);
     }
@@ -211,7 +215,7 @@ export default function AdminGeographyTab() {
     };
 
     if (editRegion) {
-      await supabase.from("regiones").update({ nombre: regionName.trim(), entidad_territorial_id: regionEntidad }).eq("id", editRegion.id);
+      await supabase.from("regiones").update({ nombre: regionName.trim(), entidad_territorial_id: regionEntidad, mostrar_logo_clt: regionMostrarLogoClt }).eq("id", editRegion.id);
       await supabase.from("region_municipios").delete().eq("region_id", editRegion.id);
       if (regionSelectedMunicipios.length > 0) {
         await supabase.from("region_municipios").insert(
@@ -221,7 +225,7 @@ export default function AdminGeographyTab() {
       await syncInstituciones(editRegion.id);
       toast({ title: "Región actualizada" });
     } else {
-      const { data, error } = await supabase.from("regiones").insert({ nombre: regionName.trim(), entidad_territorial_id: regionEntidad }).select().single();
+      const { data, error } = await supabase.from("regiones").insert({ nombre: regionName.trim(), entidad_territorial_id: regionEntidad, mostrar_logo_clt: regionMostrarLogoClt }).select().single();
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
       if (data) {
         if (regionSelectedMunicipios.length > 0) {
@@ -640,6 +644,16 @@ export default function AdminGeographyTab() {
           <DialogHeader><DialogTitle>{editRegion ? "Editar" : "Nueva"} Región</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-3 py-2">
             <Input placeholder="Nombre de la región" value={regionName} onChange={(e) => setRegionName(e.target.value)} />
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={regionMostrarLogoClt}
+                onChange={(e) => setRegionMostrarLogoClt(e.target.checked)}
+                className="accent-primary w-4 h-4"
+              />
+              <span className="font-medium">Mostrar logo CLT</span>
+              <span className="text-xs text-muted-foreground">(Coordinadores Líderes Transformadores)</span>
+            </label>
             <div>
               <label className="text-sm font-medium mb-1 block">Entidad Territorial</label>
               <select
