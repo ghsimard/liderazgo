@@ -160,10 +160,10 @@ export async function generarPDFFicha(
     if (val) {
       doc.setFont("helvetica", "normal");
       if (valueBelow) {
-        y += 5;
+        y += 4;
         const lines = doc.splitTextToSize(val, contentW - 10);
         doc.text(lines, margin + 8, y);
-        y += lines.length * 4.5;
+        y += lines.length * 3.5;
       } else {
         const maxValW = contentW - labelWidth - 2;
         const lines = doc.splitTextToSize(val, maxValW);
