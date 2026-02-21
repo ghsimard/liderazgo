@@ -233,7 +233,7 @@ export default function AdminGeographyTab() {
     return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
   };
 
-  // ── CSV Import ────────────────────────────────────────────────
+  // ── CSV Import (batch) ─────────────────────────────────────────
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -260,82 +260,125 @@ export default function AdminGeographyTab() {
       }
 
       setSaving(true);
-      const totalRows = lines.length - 1;
-      setImportProgress({ current: 0, total: totalRows });
-      let created = { entidades: 0, municipios: 0, instituciones: 0 };
-      let errors = 0;
+      setImportProgress({ current: 0, total: 4 }); // 4 phases
 
-      // Cache to avoid repeated DB lookups
-      const entidadCache = new Map<string, string>();
-      const municipioCache = new Map<string, string>();
-      const institucionCache = new Set<string>();
-
+      // ── Phase 1: Parse all rows ──
+      interface ParsedRow { entidad: string; municipio: string; institucion: string }
+      const rows: ParsedRow[] = [];
       for (let i = 1; i < lines.length; i++) {
         const cols = parseCSVLine(lines[i], delimiter);
-        const entidadName = cols[entidadIdx]?.trim();
-        const municipioName = cols[municipioIdx]?.trim();
-        const institucionName = institucionIdx >= 0 ? cols[institucionIdx]?.trim() : "";
+        let entidadName = cols[entidadIdx]?.trim() || "";
+        let municipioName = cols[municipioIdx]?.trim() || "";
+        const institucionName = institucionIdx >= 0 ? cols[institucionIdx]?.trim() || "" : "";
 
-        if (!entidadName || !municipioName) {
-          setImportProgress({ current: i, total: totalRows });
-          continue;
+        // Handle edge case: "Bogotá, D.C." where comma splits the name incorrectly
+        // If municipio is empty but the raw line has content, treat the whole line as entidad=municipio
+        if (entidadName && !municipioName) {
+          // Reconstruct the full value from all columns
+          const fullValue = cols.join(delimiter === "," ? ", " : delimiter).trim();
+          entidadName = fullValue;
+          municipioName = fullValue;
         }
 
-        try {
-          // Upsert entidad (with cache)
-          let entidadId = entidadCache.get(entidadName);
-          if (!entidadId) {
-            const { data: entidad } = await supabase.from("entidades_territoriales").select("id").eq("nombre", entidadName).maybeSingle();
-            if (entidad) {
-              entidadId = entidad.id;
-            } else {
-              const { data } = await supabase.from("entidades_territoriales").insert({ nombre: entidadName }).select("id").single();
-              if (!data) continue;
-              entidadId = data.id;
-              created.entidades++;
-            }
-            entidadCache.set(entidadName, entidadId);
-          }
-
-          // Upsert municipio (with cache)
-          const muniKey = `${municipioName}|${entidadId}`;
-          let municipioId = municipioCache.get(muniKey);
-          if (!municipioId) {
-            const { data: municipio } = await supabase.from("municipios").select("id").eq("nombre", municipioName).eq("entidad_territorial_id", entidadId).maybeSingle();
-            if (municipio) {
-              municipioId = municipio.id;
-            } else {
-              const { data } = await supabase.from("municipios").insert({ nombre: municipioName, entidad_territorial_id: entidadId }).select("id").single();
-              if (!data) continue;
-              municipioId = data.id;
-              created.municipios++;
-            }
-            municipioCache.set(muniKey, municipioId);
-          }
-
-          // Upsert institucion if present
-          if (institucionName) {
-            const instKey = `${institucionName}|${municipioId}`;
-            if (!institucionCache.has(instKey)) {
-              const { data: existing } = await supabase.from("instituciones").select("id").eq("nombre", institucionName).eq("municipio_id", municipioId).maybeSingle();
-              if (!existing) {
-                const { error } = await supabase.from("instituciones").insert({ nombre: institucionName, municipio_id: municipioId });
-                if (!error) created.instituciones++;
-                else errors++;
-              }
-              institucionCache.add(instKey);
-            }
-          }
-        } catch {
-        errors++;
-        }
-
-        setImportProgress({ current: i, total: totalRows });
-        // Yield to UI every 10 rows
-        if (i % 10 === 0) await new Promise(r => setTimeout(r, 0));
+        if (!entidadName || !municipioName) continue;
+        rows.push({ entidad: entidadName, municipio: municipioName, institucion: institucionName });
       }
 
-      const desc = `${created.entidades} entidades, ${created.municipios} municipios, ${created.instituciones} instituciones creadas` + (errors > 0 ? ` (${errors} errores)` : "");
+      // ── Phase 2: Batch upsert entidades ──
+      setImportProgress({ current: 1, total: 4 });
+      await new Promise(r => setTimeout(r, 0));
+
+      const uniqueEntidades = [...new Set(rows.map(r => r.entidad))];
+
+      // Load existing entidades
+      const { data: existingEntidades } = await supabase.from("entidades_territoriales").select("id, nombre");
+      const entidadMap = new Map<string, string>(); // name -> id
+      (existingEntidades ?? []).forEach(e => entidadMap.set(e.nombre, e.id));
+
+      const newEntidades = uniqueEntidades.filter(name => !entidadMap.has(name));
+      if (newEntidades.length > 0) {
+        // Insert in chunks of 50
+        for (let i = 0; i < newEntidades.length; i += 50) {
+          const chunk = newEntidades.slice(i, i + 50).map(nombre => ({ nombre }));
+          const { data } = await supabase.from("entidades_territoriales").insert(chunk).select("id, nombre");
+          (data ?? []).forEach(e => entidadMap.set(e.nombre, e.id));
+        }
+      }
+
+      // ── Phase 3: Batch upsert municipios ──
+      setImportProgress({ current: 2, total: 4 });
+      await new Promise(r => setTimeout(r, 0));
+
+      // Build unique municipio entries
+      const uniqueMunicipios = new Map<string, { nombre: string; entidad_territorial_id: string }>();
+      for (const row of rows) {
+        const entidadId = entidadMap.get(row.entidad);
+        if (!entidadId) continue;
+        const key = `${row.municipio}|${entidadId}`;
+        if (!uniqueMunicipios.has(key)) {
+          uniqueMunicipios.set(key, { nombre: row.municipio, entidad_territorial_id: entidadId });
+        }
+      }
+
+      // Load existing municipios
+      const { data: existingMunicipios } = await supabase.from("municipios").select("id, nombre, entidad_territorial_id");
+      const municipioMap = new Map<string, string>(); // "name|entidadId" -> id
+      (existingMunicipios ?? []).forEach(m => municipioMap.set(`${m.nombre}|${m.entidad_territorial_id}`, m.id));
+
+      const newMunicipios: { nombre: string; entidad_territorial_id: string }[] = [];
+      for (const [key, val] of uniqueMunicipios) {
+        if (!municipioMap.has(key)) newMunicipios.push(val);
+      }
+
+      if (newMunicipios.length > 0) {
+        for (let i = 0; i < newMunicipios.length; i += 50) {
+          const chunk = newMunicipios.slice(i, i + 50);
+          const { data } = await supabase.from("municipios").insert(chunk).select("id, nombre, entidad_territorial_id");
+          (data ?? []).forEach(m => municipioMap.set(`${m.nombre}|${m.entidad_territorial_id}`, m.id));
+        }
+      }
+
+      // ── Phase 4: Batch upsert instituciones ──
+      setImportProgress({ current: 3, total: 4 });
+      await new Promise(r => setTimeout(r, 0));
+
+      let createdInstituciones = 0;
+      const instRows = rows.filter(r => r.institucion);
+      if (instRows.length > 0) {
+        // Build unique instituciones
+        const uniqueInstituciones = new Map<string, { nombre: string; municipio_id: string }>();
+        for (const row of instRows) {
+          const entidadId = entidadMap.get(row.entidad);
+          if (!entidadId) continue;
+          const municipioId = municipioMap.get(`${row.municipio}|${entidadId}`);
+          if (!municipioId) continue;
+          const key = `${row.institucion}|${municipioId}`;
+          if (!uniqueInstituciones.has(key)) {
+            uniqueInstituciones.set(key, { nombre: row.institucion, municipio_id: municipioId });
+          }
+        }
+
+        // Load existing instituciones
+        const { data: existingInst } = await supabase.from("instituciones").select("id, nombre, municipio_id");
+        const instSet = new Set((existingInst ?? []).map(i => `${i.nombre}|${i.municipio_id}`));
+
+        const newInst: { nombre: string; municipio_id: string }[] = [];
+        for (const [key, val] of uniqueInstituciones) {
+          if (!instSet.has(key)) newInst.push(val);
+        }
+
+        if (newInst.length > 0) {
+          for (let i = 0; i < newInst.length; i += 50) {
+            const chunk = newInst.slice(i, i + 50);
+            const { data } = await supabase.from("instituciones").insert(chunk).select("id");
+            createdInstituciones += (data ?? []).length;
+          }
+        }
+      }
+
+      setImportProgress({ current: 4, total: 4 });
+
+      const desc = `${newEntidades.length} entidades, ${newMunicipios.length} municipios, ${createdInstituciones} instituciones creadas`;
       toast({ title: "Importación completada", description: desc });
     } catch (err: any) {
       toast({ title: "Error al importar", description: err?.message || "Error desconocido", variant: "destructive" });
@@ -614,7 +657,11 @@ export default function AdminGeographyTab() {
                 <Progress value={Math.round((importProgress.current / importProgress.total) * 100)} className="h-2" />
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <RefreshCw className="animate-spin w-4 h-4" />
-                  Importando… {importProgress.current} / {importProgress.total} ({Math.round((importProgress.current / importProgress.total) * 100)}%)
+                  {importProgress.current === 0 && "Analizando archivo…"}
+                  {importProgress.current === 1 && "Importando entidades…"}
+                  {importProgress.current === 2 && "Importando municipios…"}
+                  {importProgress.current === 3 && "Importando instituciones…"}
+                  {importProgress.current === 4 && "¡Completado!"}
                 </p>
               </div>
             )}
