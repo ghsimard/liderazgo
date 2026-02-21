@@ -12,7 +12,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Download, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight, Plus, FileDown } from "lucide-react";
+import { Search, Download, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight, Plus, FileDown, Files } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
 import logoRLTWhite from "@/assets/logo_rlt_white.jpeg";
@@ -141,6 +141,49 @@ export default function AdminFichasTab() {
     );
   };
 
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  const handleBatchPdf = async () => {
+    if (!regionFilter) {
+      toast({ title: "Seleccione una región primero", variant: "destructive" });
+      return;
+    }
+    setBatchLoading(true);
+    try {
+      let query = supabase.from("fichas_rlt").select("*").eq("region", regionFilter).order("nombres_apellidos");
+      if (search) {
+        query = query.or(`nombres_apellidos.ilike.%${search}%,nombre_ie.ilike.%${search}%,correo_personal.ilike.%${search}%`);
+      }
+      const { data, error } = await query;
+      if (error || !data?.length) {
+        toast({ title: "No hay fichas para esta región", variant: "destructive" });
+        setBatchLoading(false);
+        return;
+      }
+
+      for (let i = 0; i < data.length; i++) {
+        const f = data[i];
+        const cargo = (f.cargo_actual ?? "").toLowerCase();
+        const isRector = cargo.includes("rector");
+        const isCoordinador = cargo.includes("coordinador");
+        const datosPDF: Record<string, unknown> = { ...f };
+        await generarPDFFicha(
+          datosPDF,
+          { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite },
+          { showLogoRlt: isRector, showLogoClt: isCoordinador }
+        );
+        // Small delay to avoid browser freeze
+        if (i < data.length - 1) {
+          await new Promise(r => setTimeout(r, 500));
+        }
+      }
+      toast({ title: `${data.length} PDF(s) generado(s)` });
+    } catch {
+      toast({ title: "Error al generar PDFs", variant: "destructive" });
+    }
+    setBatchLoading(false);
+  };
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
@@ -163,6 +206,9 @@ export default function AdminFichasTab() {
         </select>
         <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
           <Download className="w-4 h-4" /> Exportar CSV
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleBatchPdf} disabled={batchLoading || !regionFilter} className="gap-1.5">
+          <Files className="w-4 h-4" /> {batchLoading ? "Generando…" : "PDFs región"}
         </Button>
         <Button variant="outline" size="sm" onClick={() => { setSearch(""); setRegionFilter(""); setPage(0); }} className="gap-1.5">
           <RefreshCw className="w-4 h-4" /> Limpiar
