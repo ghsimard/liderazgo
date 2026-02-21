@@ -259,7 +259,10 @@ function InstitutionSearchField({
           }}
           onBlur={() => {
             setIsFocused(false);
-            setTimeout(() => setOpen(false), 150);
+            setTimeout(() => {
+              setOpen(false);
+              if (!value) setQuery("");
+            }, 150);
           }}
           className={cn("form-input", hasError && "error")}
         />
