@@ -7,14 +7,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useToast } from "@/hooks/use-toast";
-import {
-  institucionesPorRegion,
-  entidadTerritorialPorRegion,
-  entidadesTerritorialesColombia,
-  getMunicipiosPorRegion,
-  getInstitucionesPorMunicipio,
-  formatIEName,
-} from "@/data/instituciones";
+import { useGeographicData } from "@/hooks/useGeographicData";
 import {
   FormFieldWrapper,
   FormInput,
@@ -176,7 +169,7 @@ function InstitutionSearchField({
   const [open, setOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
-  const getLabel = (ie: string) => formatIEName(ie).replace(new RegExp(`\\s*-\\s*${municipioSeleccionado}$`), "");
+  const getLabel = (ie: string) => ie;
   const selectedLabel = value ? getLabel(value) : "";
   const hasContent = !!selectedLabel || query.length > 0;
   const labelUp = isFocused || hasContent;
@@ -289,20 +282,19 @@ function fichaToFormData(f: Ficha): FormData {
   };
 }
 
-// Liste complète incluant Quibdó
-const ALL_ENTIDADES = ["Quibdó", ...entidadesTerritorialesColombia].sort((a, b) =>
-  a.localeCompare(b, "es")
-);
+// EntidadTerritorialField now receives entidades from hook
 
 // ── EntidadTerritorialField (autocomplete, dès 3 chars) ───────
 function EntidadTerritorialField({
   value,
   onChange,
   hasError,
+  entidadNames,
 }: {
   value: string;
   onChange: (val: string) => void;
   hasError?: boolean;
+  entidadNames: string[];
 }) {
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
@@ -316,7 +308,7 @@ function EntidadTerritorialField({
   const labelUp = isFocused || hasContent;
 
   const filtered = query.length >= 3
-    ? ALL_ENTIDADES.filter((et) => et.toLowerCase().includes(query.toLowerCase()))
+    ? entidadNames.filter((et) => et.toLowerCase().includes(query.toLowerCase()))
     : [];
 
   return (
@@ -388,6 +380,8 @@ export default function AdminEditFicha() {
   const [saving, setSaving] = useState(false);
   const [municipioSeleccionado, setMunicipioSeleccionado] = useState("");
 
+  const geo = useGeographicData();
+
   const methods = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { jornadas: [], niveles_educativos: [] },
@@ -403,12 +397,14 @@ export default function AdminEditFicha() {
   const jornadas = watch("jornadas") ?? [];
   const nivelesEducativos = watch("niveles_educativos") ?? [];
 
-  // Same logic as FichaRLT
-  const tienesMunicipios = regionSeleccionada ? getMunicipiosPorRegion(regionSeleccionada).length > 1 : false;
-  const municipios = tienesMunicipios ? getMunicipiosPorRegion(regionSeleccionada ?? "") : [];
-  const instituciones = tienesMunicipios && municipioSeleccionado
-    ? getInstitucionesPorMunicipio(regionSeleccionada ?? "", municipioSeleccionado)
-    : (regionSeleccionada ? (institucionesPorRegion[regionSeleccionada] ?? []) : []);
+  // Geographic data from DB
+  const entidadActual = watch("entidad_territorial") ?? "";
+  const municipiosEntidad = geo.getMunicipiosForEntidad(entidadActual);
+  const tienesMunicipios = municipiosEntidad.length > 1;
+  const municipios = tienesMunicipios ? municipiosEntidad : [];
+  const instituciones = municipioSeleccionado
+    ? geo.getInstitucionesForMunicipioByEntidad(entidadActual, municipioSeleccionado)
+    : [];
 
   // Load ficha and reset form
   useEffect(() => {
@@ -423,9 +419,9 @@ export default function AdminEditFicha() {
       setFicha(data);
       const formData = fichaToFormData(data);
 
-      // If region has a fixed mapping for entidad_territorial, use it (same as FichaRLT)
+      // Use entidad from DB via region mapping
       const region = data.region ?? "";
-      const etMapped = entidadTerritorialPorRegion[region];
+      const etMapped = geo.getEntidadForRegion(region);
       if (etMapped) {
         formData.entidad_territorial = etMapped;
       }
@@ -434,16 +430,14 @@ export default function AdminEditFicha() {
 
       // Initialiser municipioSeleccionado selon la région/entidad
       const et = etMapped || (data.entidad_territorial ?? "");
-      if (et === "Quibdó") {
-        // Quibdó : municipio verrouillé sur "Quibdó"
-        setMunicipioSeleccionado("Quibdó");
-      } else if (getMunicipiosPorRegion(region).length > 1 && data.nombre_ie) {
-        // Oriente (Antioquia) : inférer depuis le suffixe du nom de l'IE
-        const parts = data.nombre_ie.split(" - ");
-        const municipio = parts[parts.length - 1]?.trim() ?? "";
-        setMunicipioSeleccionado(municipio);
+      const munis = geo.getMunicipiosForEntidad(et);
+      if (munis.length === 1) {
+        setMunicipioSeleccionado(munis[0]);
+      } else if (munis.length > 1 && data.nombre_ie) {
+        // Try to find which municipio this institution belongs to
+        // For now, set empty and let the admin pick
+        setMunicipioSeleccionado("");
       } else {
-        // Autre entidad : utiliser la valeur stockée en DB si disponible
         setMunicipioSeleccionado(data.entidad_territorial ?? "");
       }
 
@@ -747,13 +741,12 @@ export default function AdminEditFicha() {
               <FormFieldWrapper name="entidad_territorial" label="" hideError>
                 <EntidadTerritorialField
                   value={watch("entidad_territorial") ?? ""}
+                  entidadNames={geo.entidadNames}
                   onChange={(val) => {
                     setValue("entidad_territorial", val, { shouldValidate: true });
-                    // Logique dynamique municipio selon entidad choisie
-                    if (val === "Quibdó") {
-                      setMunicipioSeleccionado("Quibdó");
-                    } else if (val === "Antioquia") {
-                      setMunicipioSeleccionado(""); // l'admin choisit parmi les municipios d'Oriente
+                    const munis = geo.getMunicipiosForEntidad(val);
+                    if (munis.length === 1) {
+                      setMunicipioSeleccionado(munis[0]);
                     } else {
                       setMunicipioSeleccionado("");
                     }
@@ -766,22 +759,23 @@ export default function AdminEditFicha() {
               {/* Municipio — field-has-value basé sur la valeur effective (state OU valeur fixe Quibdó) */}
               {(() => {
                 const entidad = watch("entidad_territorial") ?? "";
-                const isQuibdo = entidad === "Quibdó";
-                const isAntioquia = entidad === "Antioquia";
-                const effectiveValue = isQuibdo ? "Quibdó" : municipioSeleccionado;
+                const munis = geo.getMunicipiosForEntidad(entidad);
+                const hasMultipleMunis = munis.length > 1;
+                const hasSingleMuni = munis.length === 1;
+                const effectiveValue = hasSingleMuni ? munis[0] : municipioSeleccionado;
                 return (
                   <div className="flex flex-col gap-1">
                     <div className={cn("floating-field-wrapper", !!effectiveValue && "field-has-value")}>
-                      {isQuibdo ? (
+                      {hasSingleMuni ? (
                         <input
                           id="municipio"
-                          value="Quibdó"
+                          value={munis[0]}
                           readOnly
                           disabled
                           placeholder=" "
                           className="form-input floating-input opacity-75 cursor-not-allowed"
                         />
-                      ) : isAntioquia ? (
+                      ) : hasMultipleMunis ? (
                         <select
                           id="municipio"
                           value={municipioSeleccionado}
@@ -792,7 +786,7 @@ export default function AdminEditFicha() {
                           className="form-input floating-input"
                         >
                           <option value=""></option>
-                          {getMunicipiosPorRegion("Oriente").map((m) => (
+                          {munis.map((m) => (
                             <option key={m} value={m}>{m}</option>
                           ))}
                         </select>
