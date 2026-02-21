@@ -1103,7 +1103,16 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               <FormFieldWrapper name="grupos_etnicos" label="Grupos étnicos en la IE">
-                <FormInput id="grupos_etnicos" {...register("grupos_etnicos")} placeholder="Ej: Afrodescendiente, Indígena, etc." />
+                <FormSelect
+                  id="grupos_etnicos"
+                  {...register("grupos_etnicos")}
+                  options={[
+                    { value: "Afrocolombianos / NARP", label: "Afrocolombianos / NARP (Negros, afrodescendientes, mulatos, raizales, palenqueros)" },
+                    { value: "Indígenas", label: "Indígenas (pueblos originarios)" },
+                    { value: "Rrom / Pueblo Gitano", label: "Rrom / Pueblo Gitano" },
+                  ]}
+                  placeholder=" "
+                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="proyectos_transversales" label="Proyectos transversales de la IE" staticLabel className="md:col-span-2">
