@@ -79,6 +79,10 @@ export default function AdminGeographyTab() {
   const [saving, setSaving] = useState(false);
   const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
 
+  // Accordion open state to preserve focus after CRUD operations
+  const [openEntidades, setOpenEntidades] = useState<string[]>([]);
+  const [openMunicipios, setOpenMunicipios] = useState<string[]>([]);
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     const [e, m, i, r, rm, ri] = await Promise.all([
@@ -113,18 +117,34 @@ export default function AdminGeographyTab() {
   const addMunicipio = async () => {
     if (!newName.trim() || !addMunicipioOpen) return;
     setSaving(true);
-    const { error } = await supabase.from("municipios").insert({ nombre: newName.trim(), entidad_territorial_id: addMunicipioOpen });
+    const entidadId = addMunicipioOpen;
+    const { error } = await supabase.from("municipios").insert({ nombre: newName.trim(), entidad_territorial_id: entidadId });
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Municipio creado" }); setAddMunicipioOpen(null); setNewName(""); fetchAll(); }
+    else {
+      toast({ title: "Municipio creado" });
+      // Keep the parent entidad accordion open
+      setOpenEntidades(prev => prev.includes(entidadId) ? prev : [...prev, entidadId]);
+      setAddMunicipioOpen(null); setNewName(""); fetchAll();
+    }
     setSaving(false);
   };
 
   const addInstitucion = async () => {
     if (!newName.trim() || !addInstitucionOpen) return;
     setSaving(true);
-    const { error } = await supabase.from("instituciones").insert({ nombre: newName.trim(), municipio_id: addInstitucionOpen });
+    const munId = addInstitucionOpen;
+    const { error } = await supabase.from("instituciones").insert({ nombre: newName.trim(), municipio_id: munId });
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Institución creada" }); setAddInstitucionOpen(null); setNewName(""); fetchAll(); }
+    else {
+      toast({ title: "Institución creada" });
+      // Keep the parent municipio accordion open (and its parent entidad)
+      const muni = municipios.find(m => m.id === munId);
+      if (muni) {
+        setOpenEntidades(prev => prev.includes(muni.entidad_territorial_id) ? prev : [...prev, muni.entidad_territorial_id]);
+      }
+      setOpenMunicipios(prev => prev.includes(munId) ? prev : [...prev, munId]);
+      setAddInstitucionOpen(null); setNewName(""); fetchAll();
+    }
     setSaving(false);
   };
 
@@ -473,7 +493,7 @@ export default function AdminGeographyTab() {
       {/* Entidades → Municipios → Instituciones tree */}
       <div>
         <h3 className="text-sm font-semibold mb-2 flex items-center gap-1.5"><Building2 className="w-4 h-4" /> Entidades Territoriales</h3>
-        <Accordion type="multiple" className="rounded-lg border bg-background">
+        <Accordion type="multiple" className="rounded-lg border bg-background" value={openEntidades} onValueChange={setOpenEntidades}>
           {entidades.map((ent) => (
             <AccordionItem key={ent.id} value={ent.id} className="border-b last:border-0">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
@@ -497,7 +517,7 @@ export default function AdminGeographyTab() {
                 {municipiosByEntidad(ent.id).length === 0 ? (
                   <p className="text-sm text-muted-foreground ml-4">Sin municipios</p>
                 ) : (
-                  <Accordion type="multiple" className="ml-4">
+                  <Accordion type="multiple" className="ml-4" value={openMunicipios} onValueChange={setOpenMunicipios}>
                     {municipiosByEntidad(ent.id).map((mun) => (
                       <AccordionItem key={mun.id} value={mun.id} className="border-b last:border-0">
                         <AccordionTrigger className="py-2 hover:no-underline text-sm">
