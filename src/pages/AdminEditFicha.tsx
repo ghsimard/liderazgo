@@ -936,7 +936,7 @@ export default function AdminEditFicha() {
                 <FormInput id="grupos_etnicos" {...register("grupos_etnicos")} placeholder="Ej: Afrodescendiente, Indígena, etc." />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="proyectos_transversales" label="Proyectos transversales de la IE" staticLabel>
+              <FormFieldWrapper name="proyectos_transversales" label="Proyectos transversales de la IE" staticLabel className="md:col-span-2">
                 <FormRichTextArea
                   id="proyectos_transversales"
                   value={watch("proyectos_transversales") || ""}
