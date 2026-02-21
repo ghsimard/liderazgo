@@ -267,6 +267,39 @@ export type Database = {
           },
         ]
       }
+      region_instituciones: {
+        Row: {
+          id: string
+          institucion_id: string
+          region_id: string
+        }
+        Insert: {
+          id?: string
+          institucion_id: string
+          region_id: string
+        }
+        Update: {
+          id?: string
+          institucion_id?: string
+          region_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "region_instituciones_institucion_id_fkey"
+            columns: ["institucion_id"]
+            isOneToOne: false
+            referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "region_instituciones_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       region_municipios: {
         Row: {
           id: string
