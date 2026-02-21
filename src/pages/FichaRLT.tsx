@@ -133,7 +133,9 @@ function DatePickerField({
   };
 
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 1939 }, (_, i) => currentYear - i);
+  const minYear = currentYear - 70;
+  const maxYear = currentYear - 18;
+  const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => maxYear - i);
   const months = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
