@@ -50,10 +50,10 @@ export async function generarPDFFicha(
   doc.setFillColor(40, 140, 90);
   doc.rect(0, 36, pageW, 3, "F");
 
-  // Logos in header — on each side of titles
-  const logoH = 28;
-  const logoW = 32;
-  const logoY = 4;
+  // Logos in header — on each side of titles (reduced 25%)
+  const logoH = 21;
+  const logoW = 24;
+  const logoY = 7;
   if (isQuibdo) {
     // RLT logo on left side
     doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
@@ -69,14 +69,12 @@ export async function generarPDFFicha(
   doc.text("FICHA DE INFORMACIÓN BÁSICA", pageW / 2, 22, { align: "center" });
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
-  doc.text(
-    isQuibdo
-      ? "Programa Rectores Líderes Transformadores (RLT)"
-      : "Programa Rectores Líderes Transformadores (RLT) / Coordinadores Líderes Transformadores (CLT)",
-    pageW / 2,
-    27,
-    { align: "center" }
-  );
+  if (isQuibdo) {
+    doc.text("Programa Rectores Líderes Transformadores (RLT)", pageW / 2, 27, { align: "center" });
+  } else {
+    doc.text("Programa Rectores Líderes Transformadores (RLT)", pageW / 2, 26, { align: "center" });
+    doc.text("Coordinadores Líderes Transformadores (CLT)", pageW / 2, 30, { align: "center" });
+  }
   doc.setFontSize(7);
   doc.text(
     `Generado el: ${new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}`,
@@ -197,8 +195,8 @@ export async function generarPDFFicha(
   // ── Pie de página con logo Cosmo ─────────────────────────────
   const totalPages = (doc.internal as { getNumberOfPages?: () => number }).getNumberOfPages?.() ?? 1;
   const footerH = 18;
-  const cosmoLogoW = 30;
-  const cosmoLogoH = 10;
+  const cosmoLogoW = 21;
+  const cosmoLogoH = 7;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     // Footer bar
