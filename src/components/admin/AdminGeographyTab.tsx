@@ -50,6 +50,7 @@ export default function AdminGeographyTab() {
   const [instituciones, setInstituciones] = useState<Institucion[]>([]);
   const [regiones, setRegiones] = useState<Region[]>([]);
   const [regionMunicipios, setRegionMunicipios] = useState<{ region_id: string; municipio_id: string }[]>([]);
+  const [regionInstituciones, setRegionInstituciones] = useState<{ region_id: string; institucion_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Dialogs
@@ -71,6 +72,7 @@ export default function AdminGeographyTab() {
   const [regionName, setRegionName] = useState("");
   const [regionEntidad, setRegionEntidad] = useState("");
   const [regionSelectedMunicipios, setRegionSelectedMunicipios] = useState<string[]>([]);
+  const [regionSelectedInstituciones, setRegionSelectedInstituciones] = useState<string[]>([]);
   const [editRegion, setEditRegion] = useState<Region | null>(null);
 
   const [newName, setNewName] = useState("");
@@ -79,18 +81,20 @@ export default function AdminGeographyTab() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [e, m, i, r, rm] = await Promise.all([
+    const [e, m, i, r, rm, ri] = await Promise.all([
       supabase.from("entidades_territoriales").select("*").order("nombre"),
       supabase.from("municipios").select("*").order("nombre"),
       supabase.from("instituciones").select("*").order("nombre"),
       supabase.from("regiones").select("*").order("nombre"),
       supabase.from("region_municipios").select("*"),
+      supabase.from("region_instituciones").select("*"),
     ]);
     setEntidades(e.data ?? []);
     setMunicipios(m.data ?? []);
     setInstituciones(i.data ?? []);
     setRegiones(r.data ?? []);
     setRegionMunicipios(rm.data ?? []);
+    setRegionInstituciones(ri.data ?? []);
     setLoading(false);
   }, []);
 
@@ -154,11 +158,13 @@ export default function AdminGeographyTab() {
       setRegionName(region.nombre);
       setRegionEntidad(region.entidad_territorial_id);
       setRegionSelectedMunicipios(regionMunicipios.filter(rm => rm.region_id === region.id).map(rm => rm.municipio_id));
+      setRegionSelectedInstituciones(regionInstituciones.filter(ri => ri.region_id === region.id).map(ri => ri.institucion_id));
     } else {
       setEditRegion(null);
       setRegionName("");
       setRegionEntidad("");
       setRegionSelectedMunicipios([]);
+      setRegionSelectedInstituciones([]);
     }
     setAddRegionOpen(true);
   };
@@ -167,25 +173,35 @@ export default function AdminGeographyTab() {
     if (!regionName.trim() || !regionEntidad) return;
     setSaving(true);
 
+    const syncInstituciones = async (regionId: string) => {
+      await supabase.from("region_instituciones").delete().eq("region_id", regionId);
+      if (regionSelectedInstituciones.length > 0) {
+        await supabase.from("region_instituciones").insert(
+          regionSelectedInstituciones.map(iid => ({ region_id: regionId, institucion_id: iid }))
+        );
+      }
+    };
+
     if (editRegion) {
-      // Update region
       await supabase.from("regiones").update({ nombre: regionName.trim(), entidad_territorial_id: regionEntidad }).eq("id", editRegion.id);
-      // Sync municipios
       await supabase.from("region_municipios").delete().eq("region_id", editRegion.id);
       if (regionSelectedMunicipios.length > 0) {
         await supabase.from("region_municipios").insert(
           regionSelectedMunicipios.map(mid => ({ region_id: editRegion.id, municipio_id: mid }))
         );
       }
+      await syncInstituciones(editRegion.id);
       toast({ title: "Región actualizada" });
     } else {
-      // Create region
       const { data, error } = await supabase.from("regiones").insert({ nombre: regionName.trim(), entidad_territorial_id: regionEntidad }).select().single();
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
-      if (regionSelectedMunicipios.length > 0 && data) {
-        await supabase.from("region_municipios").insert(
-          regionSelectedMunicipios.map(mid => ({ region_id: data.id, municipio_id: mid }))
-        );
+      if (data) {
+        if (regionSelectedMunicipios.length > 0) {
+          await supabase.from("region_municipios").insert(
+            regionSelectedMunicipios.map(mid => ({ region_id: data.id, municipio_id: mid }))
+          );
+        }
+        await syncInstituciones(data.id);
       }
       toast({ title: "Región creada" });
     }
@@ -641,23 +657,60 @@ export default function AdminGeographyTab() {
                               type="checkbox"
                               checked={isChecked}
                               onChange={(e) => {
-                                if (e.target.checked) setRegionSelectedMunicipios(prev => [...prev, m.id]);
-                                else setRegionSelectedMunicipios(prev => prev.filter(id => id !== m.id));
+                                if (e.target.checked) {
+                                  setRegionSelectedMunicipios(prev => [...prev, m.id]);
+                                  // Auto-select all instituciones of this municipio
+                                  const instIds = muniInstituciones.map(i => i.id);
+                                  setRegionSelectedInstituciones(prev => [...new Set([...prev, ...instIds])]);
+                                } else {
+                                  setRegionSelectedMunicipios(prev => prev.filter(id => id !== m.id));
+                                  // Deselect all instituciones of this municipio
+                                  const instIds = new Set(muniInstituciones.map(i => i.id));
+                                  setRegionSelectedInstituciones(prev => prev.filter(id => !instIds.has(id)));
+                                }
                               }}
                               className="accent-primary w-4 h-4"
                             />
                             <span className="font-medium">{m.nombre}</span>
                             {muniInstituciones.length > 0 && (
-                              <span className="text-xs text-muted-foreground ml-auto">{muniInstituciones.length} inst.</span>
+                              <span className="text-xs text-muted-foreground ml-auto">
+                                {muniInstituciones.filter(i => regionSelectedInstituciones.includes(i.id)).length}/{muniInstituciones.length} inst.
+                              </span>
                             )}
                           </label>
                           {isChecked && muniInstituciones.length > 0 && (
                             <div className="ml-8 pl-2 border-l border-muted space-y-0.5 mb-1">
+                              <label className="flex items-center gap-1.5 text-xs text-primary cursor-pointer py-0.5 px-1 hover:bg-muted/50 rounded">
+                                <input
+                                  type="checkbox"
+                                  checked={muniInstituciones.every(i => regionSelectedInstituciones.includes(i.id))}
+                                  onChange={(e) => {
+                                    const instIds = muniInstituciones.map(i => i.id);
+                                    if (e.target.checked) {
+                                      setRegionSelectedInstituciones(prev => [...new Set([...prev, ...instIds])]);
+                                    } else {
+                                      const toRemove = new Set(instIds);
+                                      setRegionSelectedInstituciones(prev => prev.filter(id => !toRemove.has(id)));
+                                    }
+                                  }}
+                                  className="accent-primary w-3.5 h-3.5"
+                                />
+                                <span className="font-medium">Todas</span>
+                              </label>
                               {muniInstituciones.map(inst => (
-                                <div key={inst.id} className="flex items-center gap-1.5 text-xs text-muted-foreground py-0.5 px-1">
-                                  <School className="w-3 h-3 shrink-0" />
+                                <label key={inst.id} className="flex items-center gap-1.5 text-xs cursor-pointer py-0.5 px-1 hover:bg-muted/50 rounded">
+                                  <input
+                                    type="checkbox"
+                                    checked={regionSelectedInstituciones.includes(inst.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) setRegionSelectedInstituciones(prev => [...prev, inst.id]);
+                                      else setRegionSelectedInstituciones(prev => prev.filter(id => id !== inst.id));
+                                    }}
+                                    className="accent-primary w-3.5 h-3.5"
+                                  />
+                                  <School className="w-3 h-3 shrink-0 text-muted-foreground" />
                                   {inst.nombre}
-                                </div>
+                                </label>
                               ))}
                             </div>
                           )}
