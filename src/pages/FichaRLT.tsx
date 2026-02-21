@@ -484,10 +484,10 @@ export default function FichaRLTForm() {
     const et = geo.getEntidadForRegion(region);
     setValue("entidad_territorial", et, { shouldValidate: true });
 
-    // Si l'entidad existe aussi comme municipio → verrouiller
+    // Auto-sélectionner le municipio unique, sinon vider
     const munis = geo.getMunicipiosForRegion(region);
-    if (et && munis.includes(et)) {
-      setMunicipioSeleccionado(et);
+    if (munis.length === 1) {
+      setMunicipioSeleccionado(munis[0]);
     } else {
       setMunicipioSeleccionado("");
     }
@@ -815,11 +815,11 @@ export default function FichaRLTForm() {
                 const et = geo.getEntidadForRegion(regionSeleccionada ?? "");
                 return (
                   <div className="flex flex-col gap-1">
-                    <div className={cn("floating-field-wrapper", !!(et || municipioSeleccionado) && "field-has-value")}>
-                      {!tienesMunicipios || (municipioSeleccionado && et === municipioSeleccionado) ? (
+                    <div className={cn("floating-field-wrapper", !!municipioSeleccionado && "field-has-value")}>
+                    {!tienesMunicipios ? (
                         <input
                           id="municipio"
-                          value={et || municipioSeleccionado}
+                          value={municipioSeleccionado}
                           readOnly
                           disabled
                           className="form-input floating-input opacity-75 cursor-not-allowed"
