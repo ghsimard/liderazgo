@@ -18,8 +18,6 @@ import type { Tables } from "@/integrations/supabase/types";
 type Ficha = Tables<"fichas_rlt">;
 const PAGE_SIZE = 20;
 
-const REGIONES = ["Quibdó", "Oriente", "Buenaventura", "Tumaco", "Costa Caribe"];
-
 const formatDateTime = (d: string | null) => {
   if (!d) return "—";
   return new Date(d).toLocaleString("es-CO", { timeZone: "America/Bogota" });
@@ -37,6 +35,13 @@ export default function AdminFichasTab() {
   const [regionFilter, setRegionFilter] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [regiones, setRegiones] = useState<string[]>([]);
+
+  useEffect(() => {
+    supabase.from("regiones").select("nombre").order("nombre").then(({ data }) => {
+      setRegiones((data ?? []).map(r => r.nombre));
+    });
+  }, []);
 
   const fetchFichas = async () => {
     setLoading(true);
@@ -137,7 +142,7 @@ export default function AdminFichasTab() {
           className="border rounded-md px-3 py-2 text-sm bg-background"
         >
           <option value="">Todas las regiones</option>
-          {REGIONES.map((r) => <option key={r} value={r}>{r}</option>)}
+          {regiones.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
         <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
           <Download className="w-4 h-4" /> Exportar CSV
