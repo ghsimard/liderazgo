@@ -287,24 +287,35 @@ export async function generarPDFFicha(
   doc.setTextColor(30, 30, 30);
   const estudLabel = "Número de estudiantes en:";
   doc.text(estudLabel, margin + 2, y);
-  const estudLabelW = doc.getTextWidth(estudLabel) + 4;
+  const estudLabelW = doc.getTextWidth(estudLabel) + 2;
   const niveles = ["Preescolar", "Básica primaria", "Básica secundaria", "Media", "Ciclo complementario"];
   const nivelesKeys = ["estudiantes_preescolar", "estudiantes_primaria", "estudiantes_basica_secundaria", "estudiantes_media", "estudiantes_ciclo_complementario"];
-  const remainingW = contentW - estudLabelW;
-  const colW = remainingW / niveles.length;
-  // Level headers on same line
+  // Calculate column widths based on text + padding
   doc.setFontSize(6.5);
+  const colPad = 3;
+  const colWidths = niveles.map(n => doc.getTextWidth(n) + colPad);
+  // Level headers with vertical separators
+  let cx = margin + 2 + estudLabelW;
+  const headerY = y;
   niveles.forEach((n, i) => {
-    doc.text(n, margin + 2 + estudLabelW + i * colW, y);
+    if (i > 0) {
+      doc.setDrawColor(150, 150, 150);
+      doc.setLineWidth(0.2);
+      doc.line(cx - 1, headerY - 3, cx - 1, headerY + 6);
+    }
+    doc.setFont("helvetica", "bold");
+    doc.text(n, cx + 1, headerY);
+    cx += colWidths[i];
   });
   y += 4;
-  // Values row below
+  // Values row below each header
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
+  cx = margin + 2 + estudLabelW;
   nivelesKeys.forEach((k, i) => {
     const v = val(k) ?? "—";
-    const nw = doc.getTextWidth(niveles[i]);
-    doc.text(v, margin + 2 + estudLabelW + i * colW + nw / 2, y, { align: "center" });
+    doc.text(v, cx + 1 + colWidths[i] / 2 - doc.getTextWidth(v) / 2, y);
+    cx += colWidths[i];
   });
   y += 6;
 
