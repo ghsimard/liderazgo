@@ -609,25 +609,61 @@ export default function AdminGeographyTab() {
             </div>
             {regionEntidad && (
               <div>
-                <label className="text-sm font-medium mb-1 block">Municipios incluidos</label>
-                <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium">Municipios incluidos</label>
+                  {municipiosByEntidad(regionEntidad).length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-6 px-2"
+                      onClick={() => {
+                        const allIds = municipiosByEntidad(regionEntidad).map(m => m.id);
+                        const allSelected = allIds.every(id => regionSelectedMunicipios.includes(id));
+                        setRegionSelectedMunicipios(allSelected ? [] : allIds);
+                      }}
+                    >
+                      {municipiosByEntidad(regionEntidad).every(m => regionSelectedMunicipios.includes(m.id)) ? "Deseleccionar todo" : "Seleccionar todo"}
+                    </Button>
+                  )}
+                </div>
+                <div className="max-h-64 overflow-y-auto border rounded-md p-2 space-y-0.5">
                   {municipiosByEntidad(regionEntidad).length === 0 ? (
                     <p className="text-xs text-muted-foreground">Esta entidad no tiene municipios</p>
                   ) : (
-                    municipiosByEntidad(regionEntidad).map(m => (
-                      <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">
-                        <input
-                          type="checkbox"
-                          checked={regionSelectedMunicipios.includes(m.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) setRegionSelectedMunicipios(prev => [...prev, m.id]);
-                            else setRegionSelectedMunicipios(prev => prev.filter(id => id !== m.id));
-                          }}
-                          className="accent-primary w-4 h-4"
-                        />
-                        {m.nombre}
-                      </label>
-                    ))
+                    municipiosByEntidad(regionEntidad).map(m => {
+                      const isChecked = regionSelectedMunicipios.includes(m.id);
+                      const muniInstituciones = institucionesByMunicipio(m.id);
+                      return (
+                        <div key={m.id}>
+                          <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) setRegionSelectedMunicipios(prev => [...prev, m.id]);
+                                else setRegionSelectedMunicipios(prev => prev.filter(id => id !== m.id));
+                              }}
+                              className="accent-primary w-4 h-4"
+                            />
+                            <span className="font-medium">{m.nombre}</span>
+                            {muniInstituciones.length > 0 && (
+                              <span className="text-xs text-muted-foreground ml-auto">{muniInstituciones.length} inst.</span>
+                            )}
+                          </label>
+                          {isChecked && muniInstituciones.length > 0 && (
+                            <div className="ml-8 pl-2 border-l border-muted space-y-0.5 mb-1">
+                              {muniInstituciones.map(inst => (
+                                <div key={inst.id} className="flex items-center gap-1.5 text-xs text-muted-foreground py-0.5 px-1">
+                                  <School className="w-3 h-3 shrink-0" />
+                                  {inst.nombre}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
