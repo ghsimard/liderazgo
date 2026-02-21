@@ -193,75 +193,143 @@ export default function AdminGeographyTab() {
     setSaving(false);
   };
 
+  // ── CSV helpers ────────────────────────────────────────────────
+  const parseCSVLine = (line: string, delimiter: string): string[] => {
+    const values: string[] = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === delimiter && !inQuotes) {
+        values.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    return values;
+  };
+
+  const detectDelimiter = (headerLine: string): string => {
+    // Count occurrences of common delimiters outside quotes
+    const counts: Record<string, number> = { ",": 0, ";": 0, "\t": 0 };
+    let inQuotes = false;
+    for (const char of headerLine) {
+      if (char === '"') inQuotes = !inQuotes;
+      else if (!inQuotes && char in counts) counts[char]++;
+    }
+    // Return the delimiter with the most occurrences
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  };
+
   // ── CSV Import ────────────────────────────────────────────────
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const text = await file.text();
-    const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-    if (lines.length < 2) {
-      toast({ title: "Archivo vacío o sin datos", variant: "destructive" });
-      return;
-    }
-
-    // Parse header
-    const header = lines[0].toLowerCase().split(/[,;\t]/).map(h => h.replace(/"/g, "").trim());
-    const entidadIdx = header.findIndex(h => h.includes("entidad"));
-    const municipioIdx = header.findIndex(h => h.includes("municipio"));
-    const institucionIdx = header.findIndex(h => h.includes("institucion") || h.includes("institución"));
-
-    if (entidadIdx === -1 || municipioIdx === -1) {
-      toast({ title: "El archivo debe tener columnas 'entidad' y 'municipio'", variant: "destructive" });
-      return;
-    }
-
-    setSaving(true);
-    let created = { entidades: 0, municipios: 0, instituciones: 0 };
-
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(/[,;\t]/).map(c => c.replace(/"/g, "").trim());
-      const entidadName = cols[entidadIdx];
-      const municipioName = cols[municipioIdx];
-      const institucionName = institucionIdx >= 0 ? cols[institucionIdx] : "";
-
-      if (!entidadName || !municipioName) continue;
-
-      // Upsert entidad
-      let { data: entidad } = await supabase.from("entidades_territoriales").select("id").eq("nombre", entidadName).maybeSingle();
-      if (!entidad) {
-        const { data } = await supabase.from("entidades_territoriales").insert({ nombre: entidadName }).select("id").single();
-        entidad = data;
-        created.entidades++;
+    try {
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (lines.length < 2) {
+        toast({ title: "Archivo vacío o sin datos", variant: "destructive" });
+        return;
       }
-      if (!entidad) continue;
 
-      // Upsert municipio
-      let { data: municipio } = await supabase.from("municipios").select("id").eq("nombre", municipioName).eq("entidad_territorial_id", entidad.id).maybeSingle();
-      if (!municipio) {
-        const { data } = await supabase.from("municipios").insert({ nombre: municipioName, entidad_territorial_id: entidad.id }).select("id").single();
-        municipio = data;
-        created.municipios++;
+      const delimiter = detectDelimiter(lines[0]);
+
+      // Parse header
+      const header = parseCSVLine(lines[0], delimiter).map(h => h.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
+      const entidadIdx = header.findIndex(h => h.includes("entidad"));
+      const municipioIdx = header.findIndex(h => h.includes("municipio"));
+      const institucionIdx = header.findIndex(h => h.includes("institucion"));
+
+      if (entidadIdx === -1 || municipioIdx === -1) {
+        toast({ title: "El archivo debe tener columnas 'entidad' y 'municipio'", variant: "destructive" });
+        return;
       }
-      if (!municipio) continue;
 
-      // Upsert institucion if present
-      if (institucionName) {
-        const { data: existing } = await supabase.from("instituciones").select("id").eq("nombre", institucionName).eq("municipio_id", municipio.id).maybeSingle();
-        if (!existing) {
-          await supabase.from("instituciones").insert({ nombre: institucionName, municipio_id: municipio.id });
-          created.instituciones++;
+      setSaving(true);
+      let created = { entidades: 0, municipios: 0, instituciones: 0 };
+      let errors = 0;
+
+      // Cache to avoid repeated DB lookups
+      const entidadCache = new Map<string, string>(); // name -> id
+      const municipioCache = new Map<string, string>(); // "name|entidadId" -> id
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCSVLine(lines[i], delimiter);
+        const entidadName = cols[entidadIdx]?.trim();
+        const municipioName = cols[municipioIdx]?.trim();
+        const institucionName = institucionIdx >= 0 ? cols[institucionIdx]?.trim() : "";
+
+        if (!entidadName || !municipioName) continue;
+
+        try {
+          // Upsert entidad (with cache)
+          let entidadId = entidadCache.get(entidadName);
+          if (!entidadId) {
+            const { data: entidad } = await supabase.from("entidades_territoriales").select("id").eq("nombre", entidadName).maybeSingle();
+            if (entidad) {
+              entidadId = entidad.id;
+            } else {
+              const { data } = await supabase.from("entidades_territoriales").insert({ nombre: entidadName }).select("id").single();
+              if (!data) continue;
+              entidadId = data.id;
+              created.entidades++;
+            }
+            entidadCache.set(entidadName, entidadId);
+          }
+
+          // Upsert municipio (with cache)
+          const muniKey = `${municipioName}|${entidadId}`;
+          let municipioId = municipioCache.get(muniKey);
+          if (!municipioId) {
+            const { data: municipio } = await supabase.from("municipios").select("id").eq("nombre", municipioName).eq("entidad_territorial_id", entidadId).maybeSingle();
+            if (municipio) {
+              municipioId = municipio.id;
+            } else {
+              const { data } = await supabase.from("municipios").insert({ nombre: municipioName, entidad_territorial_id: entidadId }).select("id").single();
+              if (!data) continue;
+              municipioId = data.id;
+              created.municipios++;
+            }
+            municipioCache.set(muniKey, municipioId);
+          }
+
+          // Upsert institucion if present
+          if (institucionName) {
+            const { data: existing } = await supabase.from("instituciones").select("id").eq("nombre", institucionName).eq("municipio_id", municipioId).maybeSingle();
+            if (!existing) {
+              const { error } = await supabase.from("instituciones").insert({ nombre: institucionName, municipio_id: municipioId });
+              if (!error) created.instituciones++;
+              else errors++;
+            }
+          }
+        } catch {
+          errors++;
         }
       }
-    }
 
-    toast({
-      title: "Importación completada",
-      description: `${created.entidades} entidades, ${created.municipios} municipios, ${created.instituciones} instituciones creadas`,
-    });
-    setSaving(false);
-    setImportOpen(false);
-    fetchAll();
+      const desc = `${created.entidades} entidades, ${created.municipios} municipios, ${created.instituciones} instituciones creadas` + (errors > 0 ? ` (${errors} errores)` : "");
+      toast({ title: "Importación completada", description: desc });
+    } catch (err: any) {
+      toast({ title: "Error al importar", description: err?.message || "Error desconocido", variant: "destructive" });
+    } finally {
+      setSaving(false);
+      setImportOpen(false);
+      // Reset file input
+      e.target.value = "";
+      fetchAll();
+    }
   };
 
   const municipiosByEntidad = (entidadId: string) => municipios.filter(m => m.entidad_territorial_id === entidadId);
