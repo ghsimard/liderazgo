@@ -45,26 +45,31 @@ export type Database = {
           correo_personal: string
           created_at: string
           desplazamiento: string | null
+          direccion_sede_principal: string | null
           discapacidad: string
           discapacidad_detalle: string | null
           enfermedad_base: string
           enfermedad_detalle: string | null
           entidad_territorial: string | null
           estatuto: string | null
+          estudiantes_basica_secundaria: number | null
           estudiantes_ciclo_complementario: number | null
           estudiantes_jec: number | null
+          estudiantes_media: number | null
           estudiantes_preescolar: number | null
           estudiantes_primaria: number | null
           fecha_nacimiento: string
           fecha_nombramiento_cargo: string | null
           fecha_nombramiento_ie: string | null
           fecha_vinculacion_servicio: string | null
+          genero: string | null
           grado_escalafon: string | null
           grupos_etnicos: string | null
           id: string
           jornadas: string[] | null
           lengua_materna: string
           lengua_otra: string | null
+          lugar_nacimiento: string | null
           modelo_pedagogico: string | null
           niveles_educativos: string[] | null
           nombre_ie: string
@@ -74,13 +79,16 @@ export type Database = {
           num_coordinadores: number | null
           num_docentes: number | null
           num_orientadores: number | null
+          numero_cedula: string | null
           otros_titulos: string | null
           prefiere_correo: string
           proyectos_transversales: string | null
           region: string
           sedes_rural: number | null
           sedes_urbana: number | null
+          sitio_web: string | null
           telefono_emergencia: string | null
+          telefono_ie: string | null
           tipo_bachillerato: string | null
           tipo_formacion: string | null
           tipo_vinculacion: string | null
@@ -102,26 +110,31 @@ export type Database = {
           correo_personal: string
           created_at?: string
           desplazamiento?: string | null
+          direccion_sede_principal?: string | null
           discapacidad?: string
           discapacidad_detalle?: string | null
           enfermedad_base?: string
           enfermedad_detalle?: string | null
           entidad_territorial?: string | null
           estatuto?: string | null
+          estudiantes_basica_secundaria?: number | null
           estudiantes_ciclo_complementario?: number | null
           estudiantes_jec?: number | null
+          estudiantes_media?: number | null
           estudiantes_preescolar?: number | null
           estudiantes_primaria?: number | null
           fecha_nacimiento: string
           fecha_nombramiento_cargo?: string | null
           fecha_nombramiento_ie?: string | null
           fecha_vinculacion_servicio?: string | null
+          genero?: string | null
           grado_escalafon?: string | null
           grupos_etnicos?: string | null
           id?: string
           jornadas?: string[] | null
           lengua_materna?: string
           lengua_otra?: string | null
+          lugar_nacimiento?: string | null
           modelo_pedagogico?: string | null
           niveles_educativos?: string[] | null
           nombre_ie: string
@@ -131,13 +144,16 @@ export type Database = {
           num_coordinadores?: number | null
           num_docentes?: number | null
           num_orientadores?: number | null
+          numero_cedula?: string | null
           otros_titulos?: string | null
           prefiere_correo: string
           proyectos_transversales?: string | null
           region: string
           sedes_rural?: number | null
           sedes_urbana?: number | null
+          sitio_web?: string | null
           telefono_emergencia?: string | null
+          telefono_ie?: string | null
           tipo_bachillerato?: string | null
           tipo_formacion?: string | null
           tipo_vinculacion?: string | null
@@ -159,26 +175,31 @@ export type Database = {
           correo_personal?: string
           created_at?: string
           desplazamiento?: string | null
+          direccion_sede_principal?: string | null
           discapacidad?: string
           discapacidad_detalle?: string | null
           enfermedad_base?: string
           enfermedad_detalle?: string | null
           entidad_territorial?: string | null
           estatuto?: string | null
+          estudiantes_basica_secundaria?: number | null
           estudiantes_ciclo_complementario?: number | null
           estudiantes_jec?: number | null
+          estudiantes_media?: number | null
           estudiantes_preescolar?: number | null
           estudiantes_primaria?: number | null
           fecha_nacimiento?: string
           fecha_nombramiento_cargo?: string | null
           fecha_nombramiento_ie?: string | null
           fecha_vinculacion_servicio?: string | null
+          genero?: string | null
           grado_escalafon?: string | null
           grupos_etnicos?: string | null
           id?: string
           jornadas?: string[] | null
           lengua_materna?: string
           lengua_otra?: string | null
+          lugar_nacimiento?: string | null
           modelo_pedagogico?: string | null
           niveles_educativos?: string[] | null
           nombre_ie?: string
@@ -188,13 +209,16 @@ export type Database = {
           num_coordinadores?: number | null
           num_docentes?: number | null
           num_orientadores?: number | null
+          numero_cedula?: string | null
           otros_titulos?: string | null
           prefiere_correo?: string
           proyectos_transversales?: string | null
           region?: string
           sedes_rural?: number | null
           sedes_urbana?: number | null
+          sitio_web?: string | null
           telefono_emergencia?: string | null
+          telefono_ie?: string | null
           tipo_bachillerato?: string | null
           tipo_formacion?: string | null
           tipo_vinculacion?: string | null

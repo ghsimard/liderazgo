@@ -130,7 +130,10 @@ export async function generarPDFFicha(
   drawSection("1. Datos Personales");
   drawRow("Nombres", val("nombres"));
   drawRow("Apellidos", val("apellidos"));
+  drawRow("Género", val("genero"));
+  drawRow("Número de Cédula", val("numero_cedula"));
   drawRow("Fecha de Nacimiento", val("fecha_nacimiento"));
+  drawRow("Lugar de Nacimiento", val("lugar_nacimiento"));
   drawRow("Lengua Materna", val("lengua_materna"));
   if (datos["lengua_otra"]) drawRow("Otra Lengua", val("lengua_otra"));
   drawRow("Celular Personal", val("celular_personal"));
@@ -169,6 +172,9 @@ export async function generarPDFFicha(
   drawRow("Comuna / Barrio / Corregimiento", val("comuna_barrio"));
 
   drawSection("5. Datos de la IE");
+  drawRow("Dirección Sede Principal", val("direccion_sede_principal"));
+  drawRow("Teléfono de la IE", val("telefono_ie"));
+  drawRow("Sitio Web", val("sitio_web"));
   drawRow("Zona Sede Principal", val("zona_sede"));
   const totalSedes = ((Number(datos["sedes_rural"]) || 0) + (Number(datos["sedes_urbana"]) || 0)) || undefined;
   drawRow("Total Sedes", totalSedes ? String(totalSedes) : undefined);
@@ -190,6 +196,8 @@ export async function generarPDFFicha(
   drawRow("Orientadores/as", val("num_orientadores"));
   drawRow("Estudiantes Preescolar", val("estudiantes_preescolar"));
   drawRow("Estudiantes Primaria", val("estudiantes_primaria"));
+  drawRow("Estudiantes Básica Secundaria", val("estudiantes_basica_secundaria"));
+  drawRow("Estudiantes Media", val("estudiantes_media"));
   drawRow("Estudiantes Ciclo Complementario", val("estudiantes_ciclo_complementario"));
 
   // ── Pie de página con logo Cosmo ─────────────────────────────

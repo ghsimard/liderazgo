@@ -32,7 +32,10 @@ const schema = z.object({
   acepta_datos: z.boolean(),
   nombres: z.string().min(1, "Requerido"),
   apellidos: z.string().min(1, "Requerido"),
+  genero: z.string().optional(),
+  numero_cedula: z.string().optional(),
   fecha_nacimiento: z.string().min(1, "Requerido"),
+  lugar_nacimiento: z.string().optional(),
   lengua_materna: z.string().min(1, "Requerido"),
   lengua_otra: z.string().optional(),
   celular_personal: z.string().min(1, "Requerido"),
@@ -63,6 +66,9 @@ const schema = z.object({
   codigo_dane: z.string().optional(),
   entidad_territorial: z.string().optional(),
   comuna_barrio: z.string().optional(),
+  direccion_sede_principal: z.string().optional(),
+  sitio_web: z.string().optional(),
+  telefono_ie: z.string().optional(),
   zona_sede: z.string().optional(),
   sedes_rural: z.string().optional(),
   sedes_urbana: z.string().optional(),
@@ -80,6 +86,8 @@ const schema = z.object({
   num_orientadores: z.string().optional(),
   estudiantes_preescolar: z.string().optional(),
   estudiantes_primaria: z.string().optional(),
+  estudiantes_basica_secundaria: z.string().optional(),
+  estudiantes_media: z.string().optional(),
   estudiantes_ciclo_complementario: z.string().optional(),
 });
 
@@ -229,7 +237,10 @@ function fichaToFormData(f: Ficha): FormData {
     acepta_datos: f.acepta_datos,
     nombres: f.nombres ?? "",
     apellidos: f.apellidos ?? "",
+    genero: (f as any).genero ?? "",
+    numero_cedula: (f as any).numero_cedula ?? "",
     fecha_nacimiento: f.fecha_nacimiento ?? "",
+    lugar_nacimiento: (f as any).lugar_nacimiento ?? "",
     lengua_materna: f.lengua_materna ?? "Español",
     lengua_otra: f.lengua_otra ?? "",
     celular_personal: f.celular_personal ?? "",
@@ -260,6 +271,9 @@ function fichaToFormData(f: Ficha): FormData {
     codigo_dane: f.codigo_dane ?? "",
     entidad_territorial: f.entidad_territorial ?? "",
     comuna_barrio: f.comuna_barrio ?? "",
+    direccion_sede_principal: (f as any).direccion_sede_principal ?? "",
+    sitio_web: (f as any).sitio_web ?? "",
+    telefono_ie: (f as any).telefono_ie ?? "",
     zona_sede: f.zona_sede ?? "",
     sedes_rural: s(f.sedes_rural),
     sedes_urbana: s(f.sedes_urbana),
@@ -277,6 +291,8 @@ function fichaToFormData(f: Ficha): FormData {
     num_orientadores: s(f.num_orientadores),
     estudiantes_preescolar: s(f.estudiantes_preescolar),
     estudiantes_primaria: s(f.estudiantes_primaria),
+    estudiantes_basica_secundaria: s((f as any).estudiantes_basica_secundaria),
+    estudiantes_media: s((f as any).estudiantes_media),
     estudiantes_ciclo_complementario: s(f.estudiantes_ciclo_complementario),
   };
 }
@@ -397,6 +413,11 @@ export default function AdminEditFicha() {
   const jornadas = watch("jornadas") ?? [];
   const nivelesEducativos = watch("niveles_educativos") ?? [];
 
+  // Calculated total sedes
+  const sedesRural = parseInt(watch("sedes_rural") || "0") || 0;
+  const sedesUrbana = parseInt(watch("sedes_urbana") || "0") || 0;
+  const totalSedes = sedesRural + sedesUrbana;
+
   // Geographic data driven by region
   const municipiosRegion = geo.getMunicipiosForRegion(regionSeleccionada ?? "");
   const tienesMunicipios = municipiosRegion.length > 1;
@@ -454,7 +475,10 @@ export default function AdminEditFicha() {
       nombres: data.nombres,
       apellidos: data.apellidos,
       nombres_apellidos: `${data.nombres} ${data.apellidos}`,
+      genero: data.genero ?? null,
+      numero_cedula: data.numero_cedula ?? null,
       fecha_nacimiento: data.fecha_nacimiento || null,
+      lugar_nacimiento: data.lugar_nacimiento ?? null,
       lengua_materna: data.lengua_materna,
       lengua_otra: data.lengua_otra ?? null,
       celular_personal: data.celular_personal,
@@ -485,6 +509,9 @@ export default function AdminEditFicha() {
       codigo_dane: data.codigo_dane ?? null,
       entidad_territorial: data.entidad_territorial ?? null,
       comuna_barrio: data.comuna_barrio ?? null,
+      direccion_sede_principal: data.direccion_sede_principal ?? null,
+      sitio_web: data.sitio_web ?? null,
+      telefono_ie: data.telefono_ie ?? null,
       zona_sede: data.zona_sede ?? null,
       sedes_rural: toInt(data.sedes_rural),
       sedes_urbana: toInt(data.sedes_urbana),
@@ -502,11 +529,13 @@ export default function AdminEditFicha() {
       num_orientadores: toInt(data.num_orientadores),
       estudiantes_preescolar: toInt(data.estudiantes_preescolar),
       estudiantes_primaria: toInt(data.estudiantes_primaria),
+      estudiantes_basica_secundaria: toInt(data.estudiantes_basica_secundaria),
+      estudiantes_media: toInt(data.estudiantes_media),
       estudiantes_ciclo_complementario: toInt(data.estudiantes_ciclo_complementario),
     };
 
     if (isCreateMode) {
-      const { error } = await supabase.from("fichas_rlt").insert(payload);
+      const { error } = await supabase.from("fichas_rlt").insert(payload as any);
       if (error) {
         toast({ title: "Error al crear", description: error.message, variant: "destructive" });
       } else {
@@ -514,7 +543,7 @@ export default function AdminEditFicha() {
         navigate("/admin");
       }
     } else {
-      const { error } = await supabase.from("fichas_rlt").update(payload).eq("id", ficha!.id);
+      const { error } = await supabase.from("fichas_rlt").update(payload as any).eq("id", ficha!.id);
       if (error) {
         toast({ title: "Error al guardar", description: error.message, variant: "destructive" });
       } else {
@@ -616,11 +645,32 @@ export default function AdminEditFicha() {
                 <FormInput id="apellidos" {...register("apellidos")} placeholder="Ej: Rodríguez Pérez" hasError={!!err("apellidos")} />
               </FormFieldWrapper>
 
+              <FormFieldWrapper name="genero" label="Género" staticLabel>
+                <FormRadioGroup
+                  name="genero"
+                  options={[
+                    { value: "Masculino", label: "Masculino" },
+                    { value: "Femenino", label: "Femenino" },
+                    { value: "Otro", label: "Otro" },
+                  ]}
+                  value={watch("genero")}
+                  onChange={(v) => setValue("genero", v, { shouldValidate: true })}
+                />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="numero_cedula" label="Número de cédula">
+                <FormInput id="numero_cedula" {...register("numero_cedula")} placeholder="Ej: 1234567890" />
+              </FormFieldWrapper>
+
               <FormFieldWrapper name="fecha_nacimiento" label="Fecha de nacimiento" required staticLabel>
                 <DatePickerField
                   value={watch("fecha_nacimiento") ?? ""}
                   onChange={(v) => setValue("fecha_nacimiento", v, { shouldValidate: true })}
                 />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="lugar_nacimiento" label="Lugar de nacimiento">
+                <FormInput id="lugar_nacimiento" {...register("lugar_nacimiento")} placeholder="Ej: Medellín, Antioquia" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="lengua_materna" label="Lengua materna" required>
@@ -909,6 +959,18 @@ export default function AdminEditFicha() {
 
             {/* SECCIÓN 5: Datos de la IE */}
             <FormSection number={5} title="Datos de la Institución Educativa">
+              <FormFieldWrapper name="direccion_sede_principal" label="Dirección de la sede principal" className="md:col-span-2">
+                <FormInput id="direccion_sede_principal" {...register("direccion_sede_principal")} placeholder="Ej: Calle 10 # 20-30" />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="telefono_ie" label="Teléfono de la IE">
+                <FormInput id="telefono_ie" type="tel" {...register("telefono_ie")} placeholder="Ej: +57 604 1234567" />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="sitio_web" label="Sitio web de la IE">
+                <FormInput id="sitio_web" {...register("sitio_web")} placeholder="Ej: www.ie-ejemplo.edu.co" />
+              </FormFieldWrapper>
+
               <FormFieldWrapper name="zona_sede" label="Zona de la sede principal de la IE" required staticLabel>
                 <FormRadioGroup
                   name="zona_sede"
@@ -918,15 +980,28 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-
-              <div className="md:col-span-2 grid grid-cols-1 gap-4 max-w-[320px]">
-                <FormFieldWrapper name="sedes_rural" label="Número de sedes en zona rural" required>
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-[500px]">
+                <FormFieldWrapper name="sedes_rural" label="Sedes en zona rural" required>
                   <FormInput id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0" />
                 </FormFieldWrapper>
 
-                <FormFieldWrapper name="sedes_urbana" label="Número de sedes en zona urbana" required>
+                <FormFieldWrapper name="sedes_urbana" label="Sedes en zona urbana" required>
                   <FormInput id="sedes_urbana" type="number" min={0} max={999} {...register("sedes_urbana")} placeholder="0" />
                 </FormFieldWrapper>
+
+                <div className="flex flex-col gap-1">
+                  <label className="field-label text-sm font-semibold text-muted-foreground">
+                    Número total de sedes
+                    <span className="block text-xs font-normal text-muted-foreground/70">(incluye la sede principal)</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={totalSedes}
+                    readOnly
+                    disabled
+                    className="form-input opacity-75 cursor-not-allowed font-semibold"
+                  />
+                </div>
               </div>
 
               <FormFieldWrapper name="jornadas" label="Jornadas de la IE" required className="md:col-span-2" hideError staticLabel>
@@ -969,7 +1044,6 @@ export default function AdminEditFicha() {
                 <FormCheckboxGroup
                   name="niveles_educativos"
                   options={[
-                    { value: "Primera infancia", label: "Primera infancia" },
                     { value: "Preescolar", label: "Preescolar" },
                     { value: "Básica primaria", label: "Básica primaria" },
                     { value: "Básica secundaria", label: "Básica secundaria" },
@@ -1014,6 +1088,14 @@ export default function AdminEditFicha() {
 
               <FormFieldWrapper name="estudiantes_primaria" label="Número de estudiantes en Primaria">
                 <FormInput id="estudiantes_primaria" type="number" min={0} {...register("estudiantes_primaria")} placeholder="0" />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="estudiantes_basica_secundaria" label="Número de estudiantes en Básica secundaria">
+                <FormInput id="estudiantes_basica_secundaria" type="number" min={0} {...register("estudiantes_basica_secundaria")} placeholder="0" />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="estudiantes_media" label="Número de estudiantes en Media">
+                <FormInput id="estudiantes_media" type="number" min={0} {...register("estudiantes_media")} placeholder="0" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="estudiantes_ciclo_complementario" label="Número de estudiantes en Ciclo Complementario">
