@@ -52,14 +52,14 @@ export async function generarPDFFicha(
     const logoW = 22;
     const logoY = 10;
 
-    // CLT logo left
-    if (showClt && cltB64) {
-      doc.addImage(cltB64, "PNG", margin, logoY, logoW, logoH);
-    }
-
-    // RLT logo right
+    // Place logos based on cargo: the "primary" logo goes left, the other right
+    // When both show, RLT left by default; when only CLT, CLT goes left
+    const rltLeft = showRlt;
     if (showRlt && rltB64) {
-      doc.addImage(rltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
+      doc.addImage(rltB64, "PNG", rltLeft ? margin : pageW - margin - logoW, logoY, logoW, logoH);
+    }
+    if (showClt && cltB64) {
+      doc.addImage(cltB64, "PNG", rltLeft ? pageW - margin - logoW : margin, logoY, logoW, logoH);
     }
 
     // Centered program titles
@@ -111,11 +111,12 @@ export async function generarPDFFicha(
     const logoH = 18;
     const logoW = 22;
     const logoY = 10;
-    if (showClt && cltB64) {
-      doc.addImage(cltB64, "PNG", margin, logoY, logoW, logoH);
-    }
+    const rltLeft2 = showRlt;
     if (showRlt && rltB64) {
-      doc.addImage(rltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
+      doc.addImage(rltB64, "PNG", rltLeft2 ? margin : pageW - margin - logoW, logoY, logoW, logoH);
+    }
+    if (showClt && cltB64) {
+      doc.addImage(cltB64, "PNG", rltLeft2 ? pageW - margin - logoW : margin, logoY, logoW, logoH);
     }
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
