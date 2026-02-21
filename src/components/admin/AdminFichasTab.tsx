@@ -129,21 +129,15 @@ export default function AdminFichasTab() {
   };
 
   const handleDownloadPdf = async (f: Ficha) => {
-    // Fetch region logo flags
-    const { data: regionData } = await supabase
-      .from("regiones")
-      .select("mostrar_logo_rlt, mostrar_logo_clt")
-      .eq("nombre", f.region)
-      .maybeSingle();
-
-    const showLogoRlt = regionData?.mostrar_logo_rlt ?? true;
-    const showLogoClt = regionData?.mostrar_logo_clt ?? true;
+    const cargo = (f.cargo_actual ?? "").toLowerCase();
+    const isRector = cargo.includes("rector");
+    const isCoordinador = cargo.includes("coordinador");
 
     const datosPDF: Record<string, unknown> = { ...f };
     generarPDFFicha(
       datosPDF,
       { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite },
-      { showLogoRlt, showLogoClt }
+      { showLogoRlt: isRector, showLogoClt: isCoordinador }
     );
   };
 
