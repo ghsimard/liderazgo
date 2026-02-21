@@ -52,14 +52,14 @@ export async function generarPDFFicha(
     const logoW = 22;
     const logoY = 10;
 
-    // RLT logo left
-    if (showRlt && rltB64) {
-      doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
+    // CLT logo left
+    if (showClt && cltB64) {
+      doc.addImage(cltB64, "PNG", margin, logoY, logoW, logoH);
     }
 
-    // CLT logo right
-    if (showClt && cltB64) {
-      doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
+    // RLT logo right
+    if (showRlt && rltB64) {
+      doc.addImage(rltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
     }
 
     // Centered program titles
@@ -111,11 +111,11 @@ export async function generarPDFFicha(
     const logoH = 18;
     const logoW = 22;
     const logoY = 10;
-    if (showRlt && rltB64) {
-      doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
-    }
     if (showClt && cltB64) {
-      doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
+      doc.addImage(cltB64, "PNG", margin, logoY, logoW, logoH);
+    }
+    if (showRlt && rltB64) {
+      doc.addImage(rltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
     }
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
