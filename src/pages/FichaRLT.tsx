@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
-import { institucionesPorRegion, entidadTerritorialPorRegion, getMunicipiosPorRegion, getInstitucionesPorMunicipio, formatIEName } from "@/data/instituciones";
+import { useGeographicData } from "@/hooks/useGeographicData";
 import {
   FormFieldWrapper,
   FormInput,
@@ -219,8 +219,7 @@ function InstitutionSearchField({
   const [open, setOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
-  const getLabel = (ie: string) =>
-    formatIEName(ie).replace(new RegExp(`\\s*-\\s*${municipioSeleccionado}$`), "");
+  const getLabel = (ie: string) => ie;
 
   const selectedLabel = value ? getLabel(value) : "";
   const hasContent = !!selectedLabel || query.length > 0;
@@ -318,7 +317,7 @@ function InstitutionSearchField({
 }
 
 
-function RegionSelector({ onSelect }: { onSelect: (region: string) => void }) {
+function RegionSelector({ onSelect, regionNames }: { onSelect: (region: string) => void; regionNames: string[] }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-sm text-center">
@@ -338,14 +337,14 @@ function RegionSelector({ onSelect }: { onSelect: (region: string) => void }) {
           Seleccione su región para continuar
         </p>
         <div className="flex flex-col gap-4">
-          {["Quibdó", "Oriente"].map((region) => (
+          {regionNames.map((region) => (
             <button
               key={region}
               onClick={() => onSelect(region)}
               className="w-full py-5 rounded-xl text-white font-semibold text-lg shadow-md transition-transform active:scale-95"
               style={{ background: "var(--gradient-header)" }}
             >
-              {region === "Quibdó" ? "🏫 Quibdó" : "🏫 Antioquia"}
+              🏫 {region}
             </button>
           ))}
         </div>
@@ -367,6 +366,8 @@ export default function FichaRLTForm() {
   const [datosPDF, setDatosPDF] = useState<Record<string, unknown> | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
+
+  const geo = useGeographicData();
 
   const methods = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -391,13 +392,13 @@ export default function FichaRLTForm() {
   const jornadas = watch("jornadas") ?? [];
   const nivelesEducativos = watch("niveles_educativos") ?? [];
 
-  // Quibdó n'a pas de structure " - Municipio" → pas de filtre par municipio
-  const tienesMunicipios = regionActual ? getMunicipiosPorRegion(regionActual).length > 1 : false;
-  const municipios = tienesMunicipios ? getMunicipiosPorRegion(regionActual ?? "") : [];
+  // Geographic data from DB
+  const municipiosRegion = regionActual ? geo.getMunicipiosForRegion(regionActual) : [];
+  const tienesMunicipios = municipiosRegion.length > 1;
+  const municipios = tienesMunicipios ? municipiosRegion : [];
   const instituciones = tienesMunicipios && municipioSeleccionado
-    ? getInstitucionesPorMunicipio(regionActual ?? "", municipioSeleccionado)
-    : (regionActual ? (institucionesPorRegion[regionActual] ?? []) : []);
-
+    ? geo.getInstitucionesForMunicipio(regionActual ?? "", municipioSeleccionado)
+    : (regionActual ? geo.getInstitucionesForRegion(regionActual) : []);
 
   const onSubmit = async (data: FormData) => {
     setEnviando(true);
@@ -479,14 +480,13 @@ export default function FichaRLTForm() {
     setRegionSeleccionada(region);
     setValue("region", region);
 
-    // Auto-remplir l'Entidad Territorial depuis le mappage (verrouillé)
-    const et = entidadTerritorialPorRegion[region] ?? "";
+    // Auto-remplir l'Entidad Territorial depuis la DB
+    const et = geo.getEntidadForRegion(region);
     setValue("entidad_territorial", et, { shouldValidate: true });
 
-    // Si la valeur de l'Entidad Territorial existe aussi comme Municipio dans cette région
-    // → le Municipio est automatiquement verrouillé sur cette même valeur
-    const municipiosRegion = getMunicipiosPorRegion(region);
-    if (et && municipiosRegion.includes(et)) {
+    // Si l'entidad existe aussi comme municipio → verrouiller
+    const munis = geo.getMunicipiosForRegion(region);
+    if (et && munis.includes(et)) {
       setMunicipioSeleccionado(et);
     } else {
       setMunicipioSeleccionado("");
@@ -515,7 +515,7 @@ export default function FichaRLTForm() {
 
   // ── Selección de región ──────────────────────────────────────
   if (!regionSeleccionada) {
-    return <RegionSelector onSelect={handleRegionSelect} />;
+    return <RegionSelector onSelect={handleRegionSelect} regionNames={geo.regionNames} />;
   }
 
   const logoHeader = regionSeleccionada === "Quibdó" ? logoRLT : logoCLTDark;
@@ -803,7 +803,7 @@ export default function FichaRLTForm() {
               <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial" required>
                 <input
                   id="entidad_territorial"
-                  value={entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? ""}
+                  value={geo.getEntidadForRegion(regionSeleccionada ?? "")}
                   readOnly
                   disabled
                   className="form-input floating-input opacity-75 cursor-not-allowed"
@@ -811,37 +811,42 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               {/* Municipio — verrouillé (Quibdó) ou liste déroulante (Oriente) */}
-              <div className="flex flex-col gap-1">
-                <div className={cn("floating-field-wrapper", !!(entidadTerritorialPorRegion[regionSeleccionada ?? ""] || municipioSeleccionado) && "field-has-value")}>
-                  {!tienesMunicipios || (municipioSeleccionado && entidadTerritorialPorRegion[regionSeleccionada ?? ""] === municipioSeleccionado) ? (
-                    <input
-                      id="municipio"
-                      value={entidadTerritorialPorRegion[regionSeleccionada ?? ""] ?? municipioSeleccionado}
-                      readOnly
-                      disabled
-                      className="form-input floating-input opacity-75 cursor-not-allowed"
-                    />
-                  ) : (
-                    <select
-                      id="municipio"
-                      value={municipioSeleccionado}
-                      onChange={(e) => {
-                        setMunicipioSeleccionado(e.target.value);
-                        setValue("nombre_ie", "");
-                      }}
-                      className="form-input floating-input"
-                    >
-                      <option value=""></option>
-                      {municipios.map((m) => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  )}
-                  <label className="floating-label" htmlFor="municipio">
-                    Municipio<span className="required-star ml-0.5">*</span>
-                  </label>
-                </div>
-              </div>
+              {(() => {
+                const et = geo.getEntidadForRegion(regionSeleccionada ?? "");
+                return (
+                  <div className="flex flex-col gap-1">
+                    <div className={cn("floating-field-wrapper", !!(et || municipioSeleccionado) && "field-has-value")}>
+                      {!tienesMunicipios || (municipioSeleccionado && et === municipioSeleccionado) ? (
+                        <input
+                          id="municipio"
+                          value={et || municipioSeleccionado}
+                          readOnly
+                          disabled
+                          className="form-input floating-input opacity-75 cursor-not-allowed"
+                        />
+                      ) : (
+                        <select
+                          id="municipio"
+                          value={municipioSeleccionado}
+                          onChange={(e) => {
+                            setMunicipioSeleccionado(e.target.value);
+                            setValue("nombre_ie", "");
+                          }}
+                          className="form-input floating-input"
+                        >
+                          <option value=""></option>
+                          {municipios.map((m) => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      )}
+                      <label className="floating-label" htmlFor="municipio">
+                        Municipio<span className="required-star ml-0.5">*</span>
+                      </label>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <FormFieldWrapper name="comuna_barrio" label="Comuna, barrio, corregimiento o localidad">
                 <FormInput id="comuna_barrio" {...register("comuna_barrio")} placeholder="Ej: Barrio La Esperanza" />
