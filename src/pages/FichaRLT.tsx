@@ -1140,7 +1140,7 @@ export default function FichaRLTForm() {
                 <FormCheckboxGroup
                   name="niveles_educativos"
                   options={[
-                    { value: "Preescolar", label: "Preescolar" },
+                    { value: "Preescolar", label: "Preescolar (Prejardín, Jardín, Transición)" },
                     { value: "Básica primaria", label: "Básica primaria" },
                     { value: "Básica secundaria", label: "Básica secundaria" },
                     { value: "Media", label: "Media" },
