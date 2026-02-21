@@ -75,7 +75,7 @@ const schema = z.object({
   jornadas: z.array(z.string()).optional(),
   grupos_etnicos: z.array(z.string()).optional(),
   proyectos_transversales: z.string().optional(),
-  estudiantes_jec: z.string().optional(),
+  
   desplazamiento: z.string().optional(),
   niveles_educativos: z.array(z.string()).optional(),
   tipo_bachillerato: z.array(z.string()).optional(),
@@ -280,7 +280,7 @@ function fichaToFormData(f: Ficha): FormData {
     jornadas: f.jornadas ?? [],
     grupos_etnicos: f.grupos_etnicos ? f.grupos_etnicos.split(", ") : [],
     proyectos_transversales: f.proyectos_transversales ?? "",
-    estudiantes_jec: s(f.estudiantes_jec),
+    
     desplazamiento: f.desplazamiento ?? "",
     niveles_educativos: f.niveles_educativos ?? [],
     tipo_bachillerato: f.tipo_bachillerato ? f.tipo_bachillerato.split(", ") : [],
@@ -518,7 +518,7 @@ export default function AdminEditFicha() {
       jornadas: data.jornadas ?? null,
       grupos_etnicos: data.grupos_etnicos?.length ? data.grupos_etnicos.join(", ") : null,
       proyectos_transversales: data.proyectos_transversales ?? null,
-      estudiantes_jec: toInt(data.estudiantes_jec),
+      
       desplazamiento: data.desplazamiento ?? null,
       niveles_educativos: data.niveles_educativos ?? null,
       tipo_bachillerato: data.tipo_bachillerato?.length ? data.tipo_bachillerato.join(", ") : null,
