@@ -1,0 +1,1 @@
+ALTER TABLE public.regiones ADD COLUMN mostrar_logo_rlt boolean NOT NULL DEFAULT true;
