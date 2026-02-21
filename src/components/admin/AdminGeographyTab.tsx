@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Pencil, Upload, RefreshCw, ChevronRight, MapPin, Building2, School } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface Entidad {
   id: string;
@@ -74,6 +75,7 @@ export default function AdminGeographyTab() {
 
   const [newName, setNewName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -258,12 +260,15 @@ export default function AdminGeographyTab() {
       }
 
       setSaving(true);
+      const totalRows = lines.length - 1;
+      setImportProgress({ current: 0, total: totalRows });
       let created = { entidades: 0, municipios: 0, instituciones: 0 };
       let errors = 0;
 
       // Cache to avoid repeated DB lookups
-      const entidadCache = new Map<string, string>(); // name -> id
-      const municipioCache = new Map<string, string>(); // "name|entidadId" -> id
+      const entidadCache = new Map<string, string>();
+      const municipioCache = new Map<string, string>();
+      const institucionCache = new Set<string>();
 
       for (let i = 1; i < lines.length; i++) {
         const cols = parseCSVLine(lines[i], delimiter);
@@ -271,7 +276,10 @@ export default function AdminGeographyTab() {
         const municipioName = cols[municipioIdx]?.trim();
         const institucionName = institucionIdx >= 0 ? cols[institucionIdx]?.trim() : "";
 
-        if (!entidadName || !municipioName) continue;
+        if (!entidadName || !municipioName) {
+          setImportProgress({ current: i, total: totalRows });
+          continue;
+        }
 
         try {
           // Upsert entidad (with cache)
@@ -307,16 +315,24 @@ export default function AdminGeographyTab() {
 
           // Upsert institucion if present
           if (institucionName) {
-            const { data: existing } = await supabase.from("instituciones").select("id").eq("nombre", institucionName).eq("municipio_id", municipioId).maybeSingle();
-            if (!existing) {
-              const { error } = await supabase.from("instituciones").insert({ nombre: institucionName, municipio_id: municipioId });
-              if (!error) created.instituciones++;
-              else errors++;
+            const instKey = `${institucionName}|${municipioId}`;
+            if (!institucionCache.has(instKey)) {
+              const { data: existing } = await supabase.from("instituciones").select("id").eq("nombre", institucionName).eq("municipio_id", municipioId).maybeSingle();
+              if (!existing) {
+                const { error } = await supabase.from("instituciones").insert({ nombre: institucionName, municipio_id: municipioId });
+                if (!error) created.instituciones++;
+                else errors++;
+              }
+              institucionCache.add(instKey);
             }
           }
         } catch {
-          errors++;
+        errors++;
         }
+
+        setImportProgress({ current: i, total: totalRows });
+        // Yield to UI every 10 rows
+        if (i % 10 === 0) await new Promise(r => setTimeout(r, 0));
       }
 
       const desc = `${created.entidades} entidades, ${created.municipios} municipios, ${created.instituciones} instituciones creadas` + (errors > 0 ? ` (${errors} errores)` : "");
@@ -325,8 +341,8 @@ export default function AdminGeographyTab() {
       toast({ title: "Error al importar", description: err?.message || "Error desconocido", variant: "destructive" });
     } finally {
       setSaving(false);
+      setImportProgress(null);
       setImportOpen(false);
-      // Reset file input
       e.target.value = "";
       fetchAll();
     }
@@ -591,9 +607,17 @@ export default function AdminGeographyTab() {
               El separador puede ser coma, punto y coma, o tabulación.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-3">
             <Input type="file" accept=".csv,.txt,.tsv" onChange={handleImport} disabled={saving} />
-            {saving && <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2"><RefreshCw className="animate-spin w-4 h-4" /> Importando…</p>}
+            {saving && importProgress && (
+              <div className="space-y-2">
+                <Progress value={Math.round((importProgress.current / importProgress.total) * 100)} className="h-2" />
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <RefreshCw className="animate-spin w-4 h-4" />
+                  Importando… {importProgress.current} / {importProgress.total} ({Math.round((importProgress.current / importProgress.total) * 100)}%)
+                </p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
