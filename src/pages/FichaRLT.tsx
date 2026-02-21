@@ -27,7 +27,15 @@ const schema = z.object({
   acepta_datos: z.boolean().refine((v) => v === true, { message: "Debe aceptar el tratamiento de datos personales" }),
   nombres: z.string().min(2, "Ingrese sus nombres"),
   apellidos: z.string().min(2, "Ingrese sus apellidos"),
-  fecha_nacimiento: z.string().min(1, "Seleccione su fecha de nacimiento"),
+  fecha_nacimiento: z.string().min(1, "Seleccione su fecha de nacimiento").refine((val) => {
+    if (!val) return false;
+    const birth = new Date(val);
+    const now = new Date();
+    let age = now.getFullYear() - birth.getFullYear();
+    const m = now.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+    return age >= 18 && age <= 70;
+  }, "La edad debe estar entre 18 y 70 años"),
   lengua_materna: z.string().min(1, "Seleccione una lengua materna"),
   lengua_otra: z.string().optional(),
   celular_personal: z.string().regex(/^\+57\s?\d{3}\s?\d{4}\s?\d{3}$|^\d{10}$|^\+57\d{10}$/, "Ingrese un número celular válido de Colombia"),
