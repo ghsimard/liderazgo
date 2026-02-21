@@ -547,9 +547,10 @@ export default function FichaRLTForm() {
 
   const handleDescargarPDF = () => {
     if (datosPDF) {
-      const sr = geo.getShowLogoRlt(regionSeleccionada ?? "");
-      const sc = geo.getShowLogoClt(regionSeleccionada ?? "");
-      generarPDFFicha(datosPDF, { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite }, { showLogoRlt: sr, showLogoClt: sc });
+      const cargo = String(datosPDF.cargo_actual ?? "");
+      const isRector = cargo.toLowerCase().includes("rector");
+      const isCoordinador = cargo.toLowerCase().includes("coordinador");
+      generarPDFFicha(datosPDF, { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite }, { showLogoRlt: isRector, showLogoClt: isCoordinador });
     }
   };
 
