@@ -404,7 +404,7 @@ export default function AdminEditFicha() {
     mode: "onBlur",
   });
 
-  const { register, watch, setValue, handleSubmit, reset, formState: { errors } } = methods;
+  const { register, watch, setValue, getValues, handleSubmit, reset, formState: { errors } } = methods;
 
   const regionSeleccionada = watch("region");
   const lenguaMaterna = watch("lengua_materna");
@@ -1085,10 +1085,6 @@ export default function AdminEditFicha() {
             {/* SECCIÓN 7: Estudiantes por nivel educativo */}
             <FormSection number={7} title="Estudiantes por nivel educativo">
               <div className="md:col-span-2 space-y-3">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Ingrese el número de estudiantes por nivel. Los niveles con estudiantes se marcarán automáticamente.
-                </p>
-
                 {[
                   { nivel: "Preescolar", label: "Preescolar (Prejardín, Jardín, Transición)", field: "estudiantes_preescolar" },
                   { nivel: "Básica primaria", label: "Básica primaria", field: "estudiantes_primaria" },
@@ -1097,45 +1093,35 @@ export default function AdminEditFicha() {
                   { nivel: "Ciclo complementario", label: "Ciclo complementario", field: "estudiantes_ciclo_complementario" },
                 ].map(({ nivel, label, field }) => {
                   const count = parseInt(watch(field as any) || "0") || 0;
-                  const checked = nivelesEducativos.includes(nivel);
                   return (
-                    <div key={nivel} className="flex items-center gap-4 py-2 px-3 rounded-md border border-input bg-background">
-                      <label className="flex items-center gap-2 cursor-pointer text-sm flex-1 min-w-0">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
-                            const next = checked
-                              ? nivelesEducativos.filter((v: string) => v !== nivel)
-                              : [...nivelesEducativos, nivel];
-                            setValue("niveles_educativos", next);
-                            if (!checked && count === 0) {
-                              setValue(field as any, "");
-                            }
-                          }}
-                          className="accent-primary w-4 h-4 shrink-0"
-                        />
-                        <span className="truncate">{label}</span>
-                      </label>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-muted-foreground">Estudiantes:</span>
-                        <input
-                          type="number"
-                          min={0}
-                          {...register(field as any, {
-                            onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                              const val = parseInt(e.target.value) || 0;
-                              if (val > 0 && !checked) {
-                                setValue("niveles_educativos", [...nivelesEducativos, nivel]);
-                              } else if (val === 0 && checked) {
-                                setValue("niveles_educativos", nivelesEducativos.filter((v: string) => v !== nivel));
-                              }
-                            }
-                          })}
-                          placeholder="0"
-                          className="form-input w-20 text-center"
-                        />
-                      </div>
+                    <div key={nivel} className={cn(
+                      "flex items-center justify-between gap-4 py-2 px-3 rounded-md border bg-background transition-colors",
+                      count > 0 ? "border-primary/50 bg-primary/5" : "border-input"
+                    )}>
+                      <span className="text-sm flex-1 min-w-0 truncate">{label}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        {...register(field as any, {
+                          onChange: () => {
+                            setTimeout(() => {
+                              const fields = [
+                                { nivel: "Preescolar", field: "estudiantes_preescolar" },
+                                { nivel: "Básica primaria", field: "estudiantes_primaria" },
+                                { nivel: "Básica secundaria", field: "estudiantes_basica_secundaria" },
+                                { nivel: "Media", field: "estudiantes_media" },
+                                { nivel: "Ciclo complementario", field: "estudiantes_ciclo_complementario" },
+                              ];
+                              const active = fields
+                                .filter(f => parseInt(getValues(f.field as any) || "0") > 0)
+                                .map(f => f.nivel);
+                              setValue("niveles_educativos", active);
+                            }, 0);
+                          }
+                        })}
+                        placeholder="0"
+                        className="form-input w-20 text-center shrink-0"
+                      />
                     </div>
                   );
                 })}
