@@ -369,6 +369,8 @@ export default function FichaRLTForm() {
   const [datosPDF, setDatosPDF] = useState<Record<string, unknown> | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
+  const [camposFaltantes, setCamposFaltantes] = useState<string[]>([]);
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false);
 
   const geo = useGeographicData();
 
@@ -514,6 +516,45 @@ export default function FichaRLTForm() {
     if (datosPDF) generarPDFFicha(datosPDF);
   };
 
+  const fieldLabels: Record<string, string> = {
+    acepta_datos: "Aceptación de tratamiento de datos",
+    nombres: "Nombres",
+    apellidos: "Apellidos",
+    fecha_nacimiento: "Fecha de nacimiento",
+    lengua_materna: "Lengua materna",
+    celular_personal: "Celular personal",
+    correo_personal: "Correo personal",
+    prefiere_correo: "Correo preferido para comunicaciones",
+    enfermedad_base: "Enfermedad base",
+    discapacidad: "Discapacidad",
+    tipo_formacion: "Tipo de formación",
+    titulo_pregrado: "Título de pregrado",
+    region: "Región",
+    nombre_ie: "Nombre de la institución educativa",
+    cargo_actual: "Cargo actual",
+    tipo_vinculacion: "Tipo de vinculación",
+    codigo_dane: "Código DANE",
+    entidad_territorial: "Entidad territorial",
+    zona_sede: "Zona de sede",
+    total_sedes: "Total de sedes",
+    sedes_rural: "Sedes rurales",
+    sedes_urbana: "Sedes urbanas",
+    jornadas: "Jornadas",
+    niveles_educativos: "Niveles educativos",
+    num_docentes: "Número de docentes",
+    num_coordinadores: "Número de coordinadores",
+    num_administrativos: "Número de administrativos",
+    num_orientadores: "Número de orientadores",
+  };
+
+  const onInvalid = (fieldErrors: Record<string, unknown>) => {
+    const labels = Object.keys(fieldErrors).map(
+      (key) => fieldLabels[key] || key
+    );
+    setCamposFaltantes(labels);
+    setMostrarModalErrores(true);
+  };
+
   const err = (name: keyof FormData) => errors[name]?.message as string | undefined;
 
   // ── Selección de región ──────────────────────────────────────
@@ -602,7 +643,7 @@ export default function FichaRLTForm() {
 
         {/* Formulario */}
         <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate>
 
             {/* Consentimiento */}
             <div className="form-section border-l-4" style={{ borderLeftColor: "hsl(var(--primary))" }}>
@@ -1114,6 +1155,40 @@ export default function FichaRLTForm() {
           </div>
         </footer>
       </div>
+
+      {/* Modal de campos faltantes */}
+      {mostrarModalErrores && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60" onClick={() => setMostrarModalErrores(false)}>
+          <div
+            className="bg-background rounded-xl shadow-2xl w-[90%] max-w-md p-6 max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-destructive flex-shrink-0" />
+              <h3 className="text-lg font-semibold text-foreground">Campos obligatorios faltantes</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Por favor complete los siguientes campos antes de enviar:
+            </p>
+            <ul className="space-y-1.5 mb-5">
+              {camposFaltantes.map((campo) => (
+                <li key={campo} className="flex items-center gap-2 text-sm text-destructive">
+                  <span className="w-1.5 h-1.5 rounded-full bg-destructive flex-shrink-0" />
+                  {campo}
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setMostrarModalErrores(false)}
+              className="w-full py-2.5 rounded-lg text-white font-semibold transition-opacity hover:opacity-90"
+              style={{ background: "var(--gradient-header)" }}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </FormProvider>
   );
 }
