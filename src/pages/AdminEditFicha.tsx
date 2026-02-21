@@ -831,7 +831,7 @@ export default function AdminEditFicha() {
                 {isQuibdo ? (
                   <input
                     id="cargo_actual"
-                    value="Rector / a"
+                    value="Rector/a"
                     readOnly
                     disabled
                     className="form-input floating-input opacity-75 cursor-not-allowed"
@@ -842,8 +842,8 @@ export default function AdminEditFicha() {
                     {...register("cargo_actual")}
                     hasError={!!err("cargo_actual")}
                     options={[
-                      { value: "Rector / a", label: "Rector / a" },
-                      { value: "Coordinador / a", label: "Coordinador / a" },
+                      { value: "Rector/a", label: "Rector/a" },
+                      { value: "Coordinador/a", label: "Coordinador/a" },
                     ]}
                   />
                 )}

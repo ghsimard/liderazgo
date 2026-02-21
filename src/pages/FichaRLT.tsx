@@ -96,7 +96,7 @@ const defaultValues: Partial<FormData> = {
   lengua_materna: "Español",
   enfermedad_base: "No",
   discapacidad: "No",
-  cargo_actual: "Rector / a",
+  cargo_actual: "Rector/a",
   jornadas: [],
   niveles_educativos: [],
 };
@@ -507,7 +507,7 @@ export default function FichaRLTForm() {
 
     setValue("nombre_ie", "");
     if (region === "Quibdó") {
-      setValue("cargo_actual", "Rector / a", { shouldValidate: true });
+      setValue("cargo_actual", "Rector/a", { shouldValidate: true });
     }
   };
 
@@ -928,7 +928,7 @@ export default function FichaRLTForm() {
                 {regionSeleccionada === "Quibdó" ? (
                   <input
                     id="cargo_actual"
-                    value="Rector / a"
+                    value="Rector/a"
                     readOnly
                     disabled
                     className="form-input floating-input opacity-75 cursor-not-allowed"
@@ -939,8 +939,8 @@ export default function FichaRLTForm() {
                     {...register("cargo_actual")}
                     hasError={!!err("cargo_actual")}
                     options={[
-                      { value: "Rector / a", label: "Rector / a" },
-                      { value: "Coordinador / a", label: "Coordinador / a" },
+                      { value: "Rector/a", label: "Rector/a" },
+                      { value: "Coordinador/a", label: "Coordinador/a" },
                     ]}
                   />
                 )}
