@@ -543,7 +543,7 @@ export default function FichaRLTForm() {
   };
 
   const handleDescargarPDF = () => {
-    if (datosPDF) generarPDFFicha(datosPDF, { logoRLT, logoCLTDark, logoCosmo });
+    if (datosPDF) generarPDFFicha(datosPDF, { logoRLT, logoCLTDark, logoCosmo }, geo.getShowLogoClt(regionSeleccionada ?? ""));
   };
 
   const fieldLabels: Record<string, string> = {
@@ -593,10 +593,11 @@ export default function FichaRLTForm() {
     return <RegionSelector onSelect={handleRegionSelect} regionNames={geo.regionNames} />;
   }
 
-  const logoHeader = regionSeleccionada === "Quibdó" ? logoRLT : logoCLTDark;
-  const altHeader = regionSeleccionada === "Quibdó"
-    ? "Rectores Líderes Transformadores"
-    : "Coordinadores Líderes Transformadores";
+  const showLogoClt = geo.getShowLogoClt(regionSeleccionada ?? "");
+  const logoHeader = showLogoClt ? logoCLTDark : logoRLT;
+  const altHeader = showLogoClt
+    ? "Coordinadores Líderes Transformadores"
+    : "Rectores Líderes Transformadores";
 
   // ── Pantalla de éxito ───────────────────────────────────────
   if (enviado) {
@@ -637,7 +638,7 @@ export default function FichaRLTForm() {
         {/* Header */}
         <header className="text-white px-4 py-5 md:py-6 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">
-            {regionSeleccionada === "Quibdó" ? (
+            {!showLogoClt ? (
               <div className="flex flex-col items-center gap-3">
                 <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg" />
                 <div className="text-center">

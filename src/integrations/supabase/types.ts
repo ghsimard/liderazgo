@@ -359,18 +359,21 @@ export type Database = {
           created_at: string
           entidad_territorial_id: string
           id: string
+          mostrar_logo_clt: boolean
           nombre: string
         }
         Insert: {
           created_at?: string
           entidad_territorial_id: string
           id?: string
+          mostrar_logo_clt?: boolean
           nombre: string
         }
         Update: {
           created_at?: string
           entidad_territorial_id?: string
           id?: string
+          mostrar_logo_clt?: boolean
           nombre?: string
         }
         Relationships: [

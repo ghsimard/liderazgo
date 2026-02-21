@@ -27,12 +27,12 @@ export interface PdfLogos {
 
 export async function generarPDFFicha(
   datos: Record<string, unknown>,
-  logoSources: { logoRLT: string; logoCLTDark: string; logoCosmo: string }
+  logoSources: { logoRLT: string; logoCLTDark: string; logoCosmo: string },
+  showLogoClt = true
 ): Promise<void> {
-  const isQuibdo = datos["region"] === "Quibdó";
   const [rltB64, cltB64, cosmoB64] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
-    isQuibdo ? Promise.resolve("") : loadImageAsBase64(logoSources.logoCLTDark),
+    showLogoClt ? loadImageAsBase64(logoSources.logoCLTDark) : Promise.resolve(""),
     loadImageAsBase64(logoSources.logoCosmo),
   ]);
 
@@ -52,8 +52,8 @@ export async function generarPDFFicha(
     // RLT logo left
     doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
 
-    // CLT logo right (if not Quibdó)
-    if (!isQuibdo && cltB64) {
+    // CLT logo right (if enabled)
+    if (showLogoClt && cltB64) {
       doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
     }
 
@@ -100,7 +100,7 @@ export async function generarPDFFicha(
     const logoW = 22;
     const logoY = 10;
     doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
-    if (!isQuibdo && cltB64) {
+    if (showLogoClt && cltB64) {
       doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
     }
     doc.setTextColor(30, 30, 30);
