@@ -1065,27 +1065,26 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-[500px]">
-                <FormFieldWrapper name="sedes_rural" label="Sedes en zona rural" required>
-                  <FormInput id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0" />
-                </FormFieldWrapper>
-
-                <FormFieldWrapper name="sedes_urbana" label="Sedes en zona urbana" required>
-                  <FormInput id="sedes_urbana" type="number" min={0} max={999} {...register("sedes_urbana")} placeholder="0" />
-                </FormFieldWrapper>
-
-                <div className="flex flex-col gap-1">
-                  <label className="field-label text-sm font-semibold text-muted-foreground">
-                    Número total de sedes
-                    <span className="block text-xs font-normal text-muted-foreground/70">(incluye la sede principal)</span>
+              <div className="md:col-span-2 flex flex-col gap-3 max-w-[420px]">
+                <div className="flex items-center gap-3">
+                  <label htmlFor="sedes_rural" className="text-sm font-medium whitespace-nowrap">
+                    Número de sedes en zona rural<span className="required-star ml-0.5">*</span>
                   </label>
-                  <input
-                    type="number"
-                    value={totalSedes}
-                    readOnly
-                    disabled
-                    className="form-input opacity-75 cursor-not-allowed font-semibold"
-                  />
+                  <input id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0" className="form-input w-20 text-center" />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label htmlFor="sedes_urbana" className="text-sm font-medium whitespace-nowrap">
+                    Número de sedes en zona urbana<span className="required-star ml-0.5">*</span>
+                  </label>
+                  <input id="sedes_urbana" type="number" min={0} max={999} {...register("sedes_urbana")} placeholder="0" className="form-input w-20 text-center" />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-semibold text-muted-foreground whitespace-nowrap">
+                    Número total de sedes <span className="text-xs font-normal text-muted-foreground/70">(incluye la sede principal)</span>
+                  </label>
+                  <input type="number" value={totalSedes} readOnly disabled className="form-input w-20 text-center opacity-75 cursor-not-allowed font-semibold" />
                 </div>
               </div>
 
