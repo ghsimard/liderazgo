@@ -1,1 +1,4 @@
 project_id = "krqxzxhqjkpimscufxnc"
+
+[functions.export-database]
+verify_jwt = false
