@@ -85,7 +85,7 @@ const schema = z.object({
   estudiantes_jec: z.string().optional(),
   desplazamiento: z.string().optional(),
   niveles_educativos: z.array(z.string()).min(1, "Seleccione al menos un nivel educativo"),
-  tipo_bachillerato: z.string().optional(),
+  tipo_bachillerato: z.array(z.string()).optional(),
   modelo_pedagogico: z.string().optional(),
   num_docentes: z.string().min(1, "Ingrese el número de docentes"),
   num_coordinadores: z.string().min(1, "Ingrese el número de coordinadores"),
@@ -485,7 +485,7 @@ export default function FichaRLTForm() {
       estudiantes_jec: toInt(data.estudiantes_jec),
       desplazamiento: data.desplazamiento ?? null,
       niveles_educativos: data.niveles_educativos ?? null,
-      tipo_bachillerato: data.tipo_bachillerato ?? null,
+      tipo_bachillerato: data.tipo_bachillerato?.length ? data.tipo_bachillerato.join(", ") : null,
       modelo_pedagogico: data.modelo_pedagogico ?? null,
       num_docentes: toInt(data.num_docentes),
       num_coordinadores: toInt(data.num_coordinadores),
@@ -1151,8 +1151,17 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="tipo_bachillerato" label="Tipo de bachillerato que ofrece la IE">
-                <FormInput id="tipo_bachillerato" {...register("tipo_bachillerato")} placeholder="Ej: Académico, Técnico, etc." />
+              <FormFieldWrapper name="tipo_bachillerato" label="Tipo de bachillerato que ofrece la IE" staticLabel>
+                <FormCheckboxGroup
+                  name="tipo_bachillerato"
+                  options={[
+                    { value: "Académico", label: "Académico" },
+                    { value: "Técnico", label: "Técnico" },
+                    { value: "N/A", label: "N/A" },
+                  ]}
+                  value={watch("tipo_bachillerato") || []}
+                  onChange={(v) => setValue("tipo_bachillerato", v)}
+                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="modelo_pedagogico" label="Modelo o enfoque pedagógico">
