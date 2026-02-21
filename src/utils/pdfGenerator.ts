@@ -276,15 +276,31 @@ export async function generarPDFFicha(
   drawRowDouble("Número de docentes", val("num_docentes"), "Número de coordinadores/as", val("num_coordinadores"));
   drawRowDouble("Número de administrativos", val("num_administrativos"), "Número de orientadores/as", val("num_orientadores"));
 
-  // Students in a single row
-  const estudiantesParts = [
-    `Preescolar: ${val("estudiantes_preescolar") ?? "—"}`,
-    `Básica primaria: ${val("estudiantes_primaria") ?? "—"}`,
-    `Básica secundaria: ${val("estudiantes_basica_secundaria") ?? "—"}`,
-    `Media: ${val("estudiantes_media") ?? "—"}`,
-    `Ciclo complementario: ${val("estudiantes_ciclo_complementario") ?? "—"}`,
-  ].join(" | ");
-  drawRow("Número de estudiantes en", estudiantesParts);
+  // Students: label row + headers + values
+  checkNewPage(20);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text("Número de estudiantes en:", margin + 2, y);
+  y += 5;
+  const niveles = ["Preescolar", "Básica primaria", "Básica secundaria", "Media", "Ciclo complementario"];
+  const nivelesKeys = ["estudiantes_preescolar", "estudiantes_primaria", "estudiantes_basica_secundaria", "estudiantes_media", "estudiantes_ciclo_complementario"];
+  const colW = contentW / niveles.length;
+  // Header row
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "bold");
+  niveles.forEach((n, i) => {
+    doc.text(n, margin + 2 + i * colW + colW / 2, y, { align: "center" });
+  });
+  y += 4;
+  // Values row
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  nivelesKeys.forEach((k, i) => {
+    const v = val(k) ?? "—";
+    doc.text(v, margin + 2 + i * colW + colW / 2, y, { align: "center" });
+  });
+  y += 6;
 
   // ── Disclaimer on page 1 ──
   const totalPages = (doc.internal as { getNumberOfPages?: () => number }).getNumberOfPages?.() ?? 1;
