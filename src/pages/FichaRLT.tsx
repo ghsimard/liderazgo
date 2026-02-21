@@ -80,7 +80,7 @@ const schema = z.object({
   sedes_rural: z.string().min(1, "Ingrese el número de sedes rurales"),
   sedes_urbana: z.string().min(1, "Ingrese el número de sedes urbanas"),
   jornadas: z.array(z.string()).min(1, "Seleccione al menos una jornada"),
-  grupos_etnicos: z.string().optional(),
+  grupos_etnicos: z.array(z.string()).optional(),
   proyectos_transversales: z.string().optional(),
   estudiantes_jec: z.string().optional(),
   desplazamiento: z.string().optional(),
@@ -480,7 +480,7 @@ export default function FichaRLTForm() {
       sedes_rural: toInt(data.sedes_rural),
       sedes_urbana: toInt(data.sedes_urbana),
       jornadas: data.jornadas ?? null,
-      grupos_etnicos: data.grupos_etnicos ?? null,
+      grupos_etnicos: data.grupos_etnicos?.length ? data.grupos_etnicos.join(", ") : null,
       proyectos_transversales: data.proyectos_transversales ?? null,
       estudiantes_jec: toInt(data.estudiantes_jec),
       desplazamiento: data.desplazamiento ?? null,
@@ -1102,16 +1102,16 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="grupos_etnicos" label="Grupos étnicos en la IE">
-                <FormSelect
-                  id="grupos_etnicos"
-                  {...register("grupos_etnicos")}
+              <FormFieldWrapper name="grupos_etnicos" label="Grupos étnicos en la IE" staticLabel>
+                <FormCheckboxGroup
+                  name="grupos_etnicos"
                   options={[
                     { value: "Afrocolombianos / NARP", label: "Afrocolombianos / NARP (Negros, afrodescendientes, mulatos, raizales, palenqueros)" },
                     { value: "Indígenas", label: "Indígenas (pueblos originarios)" },
                     { value: "Rrom / Pueblo Gitano", label: "Rrom / Pueblo Gitano" },
                   ]}
-                  placeholder=" "
+                  value={watch("grupos_etnicos") || []}
+                  onChange={(v) => setValue("grupos_etnicos", v)}
                 />
               </FormFieldWrapper>
 
