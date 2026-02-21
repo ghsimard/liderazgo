@@ -360,6 +360,7 @@ export type Database = {
           entidad_territorial_id: string
           id: string
           mostrar_logo_clt: boolean
+          mostrar_logo_rlt: boolean
           nombre: string
         }
         Insert: {
@@ -367,6 +368,7 @@ export type Database = {
           entidad_territorial_id: string
           id?: string
           mostrar_logo_clt?: boolean
+          mostrar_logo_rlt?: boolean
           nombre: string
         }
         Update: {
@@ -374,6 +376,7 @@ export type Database = {
           entidad_territorial_id?: string
           id?: string
           mostrar_logo_clt?: boolean
+          mostrar_logo_rlt?: boolean
           nombre?: string
         }
         Relationships: [

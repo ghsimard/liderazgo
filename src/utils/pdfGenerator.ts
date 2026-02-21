@@ -28,11 +28,14 @@ export interface PdfLogos {
 export async function generarPDFFicha(
   datos: Record<string, unknown>,
   logoSources: { logoRLT: string; logoCLTDark: string; logoCosmo: string },
-  showLogoClt = true
+  logoFlags: { showLogoRlt?: boolean; showLogoClt?: boolean } = {}
 ): Promise<void> {
+  const showRlt = logoFlags.showLogoRlt ?? true;
+  const showClt = logoFlags.showLogoClt ?? true;
+
   const [rltB64, cltB64, cosmoB64] = await Promise.all([
-    loadImageAsBase64(logoSources.logoRLT),
-    showLogoClt ? loadImageAsBase64(logoSources.logoCLTDark) : Promise.resolve(""),
+    showRlt ? loadImageAsBase64(logoSources.logoRLT) : Promise.resolve(""),
+    showClt ? loadImageAsBase64(logoSources.logoCLTDark) : Promise.resolve(""),
     loadImageAsBase64(logoSources.logoCosmo),
   ]);
 
@@ -50,10 +53,12 @@ export async function generarPDFFicha(
     const logoY = 10;
 
     // RLT logo left
-    doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
+    if (showRlt && rltB64) {
+      doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
+    }
 
-    // CLT logo right (if enabled)
-    if (showLogoClt && cltB64) {
+    // CLT logo right
+    if (showClt && cltB64) {
       doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
     }
 
@@ -61,8 +66,15 @@ export async function generarPDFFicha(
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text("PROGRAMA RECTORES LÍDERES TRANSFORMADORES - RLT", pageW / 2, 15, { align: "center" });
-    doc.text("PROGRAMA COORDINADORES LÍDERES TRASFORMADORES - CLT", pageW / 2, 20, { align: "center" });
+    let titleY = 15;
+    if (showRlt) {
+      doc.text("PROGRAMA RECTORES LÍDERES TRANSFORMADORES - RLT", pageW / 2, titleY, { align: "center" });
+      titleY += 5;
+    }
+    if (showClt) {
+      doc.text("PROGRAMA COORDINADORES LÍDERES TRASFORMADORES - CLT", pageW / 2, titleY, { align: "center" });
+      titleY += 3;
+    }
 
     // Separator line
     doc.setDrawColor(120, 120, 120);
@@ -99,20 +111,23 @@ export async function generarPDFFicha(
     const logoH = 18;
     const logoW = 22;
     const logoY = 10;
-    doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
-    if (showLogoClt && cltB64) {
+    if (showRlt && rltB64) {
+      doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
+    }
+    if (showClt && cltB64) {
       doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
     }
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text("PROGRAMA RECTORES LÍDERES TRANSFORMADORES - RLT", pageW / 2, 15, { align: "center" });
-    doc.text("PROGRAMA COORDINADORES LÍDERES TRASFORMADORES - CLT", pageW / 2, 20, { align: "center" });
+    let tY = 15;
+    if (showRlt) { doc.text("PROGRAMA RECTORES LÍDERES TRANSFORMADORES - RLT", pageW / 2, tY, { align: "center" }); tY += 5; }
+    if (showClt) { doc.text("PROGRAMA COORDINADORES LÍDERES TRASFORMADORES - CLT", pageW / 2, tY, { align: "center" }); tY += 3; }
     doc.setDrawColor(120, 120, 120);
     doc.setLineWidth(0.4);
-    doc.line(pageW / 2 - 45, 23, pageW / 2 + 45, 23);
+    doc.line(pageW / 2 - 45, tY, pageW / 2 + 45, tY);
     doc.setFontSize(9);
-    doc.text("FICHA DE INFORMACIÓN BÁSICA", pageW / 2, 28, { align: "center" });
+    doc.text("FICHA DE INFORMACIÓN BÁSICA", pageW / 2, tY + 5, { align: "center" });
   };
 
   // Section title: light gray bar, centered text

@@ -7,6 +7,7 @@ interface RegionData {
   entidad_territorial_id: string;
   entidad_nombre: string;
   municipio_ids: string[];
+  mostrar_logo_rlt: boolean;
   mostrar_logo_clt: boolean;
 }
 
@@ -38,7 +39,7 @@ export function useGeographicData() {
     (async () => {
       const [eRes, rRes, rmRes, mRes, iRes] = await Promise.all([
         supabase.from("entidades_territoriales").select("id, nombre").order("nombre"),
-        supabase.from("regiones").select("id, nombre, entidad_territorial_id, mostrar_logo_clt").order("nombre"),
+        supabase.from("regiones").select("id, nombre, entidad_territorial_id, mostrar_logo_rlt, mostrar_logo_clt").order("nombre"),
         supabase.from("region_municipios").select("region_id, municipio_id"),
         supabase.from("municipios").select("id, nombre, entidad_territorial_id").order("nombre"),
         supabase.from("instituciones").select("id, nombre, municipio_id").order("nombre"),
@@ -59,6 +60,7 @@ export function useGeographicData() {
         const munIds = rms.filter((rm) => rm.region_id === r.id).map((rm) => rm.municipio_id);
         return {
           ...r,
+          mostrar_logo_rlt: r.mostrar_logo_rlt ?? true,
           mostrar_logo_clt: r.mostrar_logo_clt ?? true,
           entidad_nombre: entidad?.nombre ?? "",
           municipio_ids: munIds,
@@ -73,6 +75,12 @@ export function useGeographicData() {
   const getEntidadForRegion = (regionName: string): string => {
     const region = regiones.find((r) => r.nombre === regionName);
     return region?.entidad_nombre ?? "";
+  };
+
+  /** Check if RLT logo should be shown for a region */
+  const getShowLogoRlt = (regionName: string): boolean => {
+    const region = regiones.find((r) => r.nombre === regionName);
+    return region?.mostrar_logo_rlt ?? true;
   };
 
   /** Check if CLT logo should be shown for a region */
@@ -147,6 +155,7 @@ export function useGeographicData() {
     regionNames,
     entidadNames,
     getEntidadForRegion,
+    getShowLogoRlt,
     getShowLogoClt,
     getMunicipiosForRegion,
     getInstitucionesForMunicipio,

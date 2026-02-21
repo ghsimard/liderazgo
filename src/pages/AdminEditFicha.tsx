@@ -564,37 +564,35 @@ export default function AdminEditFicha() {
 
   if (!isCreateMode && !ficha) return null;
 
+  const showLogoRlt = geo.getShowLogoRlt(regionSeleccionada ?? "");
   const showLogoClt = geo.getShowLogoClt(regionSeleccionada ?? "");
 
   return (
     <FormProvider {...methods}>
       <div className="min-h-screen bg-background">
-        {/* Header — identical to FichaRLT */}
+        {/* Header */}
         <header className="text-white px-4 py-5 md:py-6 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">
-            {!showLogoClt ? (
-              <div className="flex flex-col items-center gap-3">
-                <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg" />
-                <div className="text-center">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
-                  <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">{regionSeleccionada ? `Región: ${regionSeleccionada}` : (isCreateMode ? "Nueva Ficha" : "")}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center justify-center gap-4 sm:gap-10">
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center justify-center gap-4 sm:gap-10">
+                {showLogoRlt && (
                   <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
+                )}
+                {showLogoClt && (
                   <img src={logoCLTDark} alt="Coordinadores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
-                </div>
-                <div className="text-center">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
-                  <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
-                  <p className="text-xs sm:text-sm md:text-base font-light opacity-90">Programa CLT — Coordinadores Líderes Transformadores</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">{regionSeleccionada ? `Región: ${regionSeleccionada}` : (isCreateMode ? "Nueva Ficha" : "")}</p>
-                </div>
+                )}
               </div>
-            )}
+              <div className="text-center">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">Ficha de Información Básica</h1>
+                {showLogoRlt && (
+                  <p className="text-xs sm:text-sm md:text-base opacity-90 font-light mt-1">Programa RLT — Rectores Líderes Transformadores</p>
+                )}
+                {showLogoClt && (
+                  <p className="text-xs sm:text-sm md:text-base font-light opacity-90">Programa CLT — Coordinadores Líderes Transformadores</p>
+                )}
+                <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 opacity-95">{regionSeleccionada ? `Región: ${regionSeleccionada}` : (isCreateMode ? "Nueva Ficha" : "")}</p>
+              </div>
+            </div>
           </div>
         </header>
 
