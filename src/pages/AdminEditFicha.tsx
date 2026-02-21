@@ -370,12 +370,13 @@ function EntidadTerritorialField({
 // ── Main component ────────────────────────────────────────────
 export default function AdminEditFicha() {
   const { id } = useParams<{ id: string }>();
+  const isCreateMode = !id || id === "new";
   const navigate = useNavigate();
   const { isAdmin } = useAdminAuth();
   const { toast } = useToast();
 
   const [ficha, setFicha] = useState<Ficha | null>(null);
-  const [loadingFicha, setLoadingFicha] = useState(true);
+  const [loadingFicha, setLoadingFicha] = useState(!isCreateMode);
   const [saving, setSaving] = useState(false);
   const [municipioSeleccionado, setMunicipioSeleccionado] = useState("");
 
@@ -407,7 +408,7 @@ export default function AdminEditFicha() {
 
   // Load ficha and reset form
   useEffect(() => {
-    if (!id || !isAdmin) return;
+    if (isCreateMode || !id || !isAdmin) return;
     (async () => {
       const { data, error } = await supabase.from("fichas_rlt").select("*").eq("id", id).single();
       if (error || !data) {
@@ -447,7 +448,7 @@ export default function AdminEditFicha() {
   const err = (name: keyof FormData) => errors[name]?.message as string | undefined;
 
   const onSubmit = async (data: FormData) => {
-    if (!ficha) return;
+    if (!isCreateMode && !ficha) return;
     setSaving(true);
 
     const toInt = (v: string | undefined) => (v ? parseInt(v) : null);
@@ -508,13 +509,22 @@ export default function AdminEditFicha() {
       estudiantes_ciclo_complementario: toInt(data.estudiantes_ciclo_complementario),
     };
 
-    const { error } = await supabase.from("fichas_rlt").update(payload).eq("id", ficha.id);
-
-    if (error) {
-      toast({ title: "Error al guardar", description: error.message, variant: "destructive" });
+    if (isCreateMode) {
+      const { error } = await supabase.from("fichas_rlt").insert(payload);
+      if (error) {
+        toast({ title: "Error al crear", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Ficha creada correctamente" });
+        navigate("/admin");
+      }
     } else {
-      toast({ title: "Ficha actualizada correctamente" });
-      navigate("/admin");
+      const { error } = await supabase.from("fichas_rlt").update(payload).eq("id", ficha!.id);
+      if (error) {
+        toast({ title: "Error al guardar", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Ficha actualizada correctamente" });
+        navigate("/admin");
+      }
     }
     setSaving(false);
   };
@@ -527,7 +537,7 @@ export default function AdminEditFicha() {
     );
   }
 
-  if (!ficha) return null;
+  if (!isCreateMode && !ficha) return null;
 
   const isQuibdo = regionSeleccionada === "Quibdó";
 
