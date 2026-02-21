@@ -280,29 +280,30 @@ export async function generarPDFFicha(
   drawRowDouble("Número de docentes", val("num_docentes"), "Número de coordinadores/as", val("num_coordinadores"));
   drawRowDouble("Número de administrativos", val("num_administrativos"), "Número de orientadores/as", val("num_orientadores"));
 
-  // Students: label row + headers + values
-  checkNewPage(20);
+  // Students: label + level headers on same line, values below
+  checkNewPage(16);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text("Número de estudiantes en:", margin + 2, y);
-  y += 5;
+  const estudLabel = "Número de estudiantes en:";
+  doc.text(estudLabel, margin + 2, y);
+  const estudLabelW = doc.getTextWidth(estudLabel) + 4;
   const niveles = ["Preescolar", "Básica primaria", "Básica secundaria", "Media", "Ciclo complementario"];
   const nivelesKeys = ["estudiantes_preescolar", "estudiantes_primaria", "estudiantes_basica_secundaria", "estudiantes_media", "estudiantes_ciclo_complementario"];
-  const colW = contentW / niveles.length;
-  // Header row
+  const remainingW = contentW - estudLabelW;
+  const colW = remainingW / niveles.length;
+  // Level headers on same line
   doc.setFontSize(7);
-  doc.setFont("helvetica", "bold");
   niveles.forEach((n, i) => {
-    doc.text(n, margin + 2 + i * colW + colW / 2, y, { align: "center" });
+    doc.text(n, margin + 2 + estudLabelW + i * colW + colW / 2, y, { align: "center" });
   });
   y += 4;
-  // Values row
+  // Values row below
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   nivelesKeys.forEach((k, i) => {
     const v = val(k) ?? "—";
-    doc.text(v, margin + 2 + i * colW + colW / 2, y, { align: "center" });
+    doc.text(v, margin + 2 + estudLabelW + i * colW + colW / 2, y, { align: "center" });
   });
   y += 6;
 
