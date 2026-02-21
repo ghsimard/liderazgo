@@ -1011,7 +1011,7 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <div className="md:col-span-2 grid grid-cols-1 gap-4 max-w-[180px]">
+              <div className="md:col-span-2 grid grid-cols-1 gap-4 max-w-[320px]">
                 <FormFieldWrapper name="sedes_rural" label="Número de sedes en zona rural" required>
                   <FormInput id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0"
                     onChange={(e) => {
