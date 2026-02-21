@@ -1,8 +1,45 @@
 import jsPDF from "jspdf";
 
-export function generarPDFFicha(datos: Record<string, unknown>): void {
+/** Convert an image URL (imported asset) to a base64 data URL */
+function loadImageAsBase64(src: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas not supported"));
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    img.src = src;
+  });
+}
+
+export interface PdfLogos {
+  logoRLT: string;
+  logoCLT?: string;
+  logoCosmo: string;
+}
+
+export async function generarPDFFicha(
+  datos: Record<string, unknown>,
+  logoSources: { logoRLT: string; logoCLTDark: string; logoCosmo: string }
+): Promise<void> {
+  // Load images as base64
+  const isQuibdo = datos["region"] === "Quibdó";
+  const [rltB64, cltB64, cosmoB64] = await Promise.all([
+    loadImageAsBase64(logoSources.logoRLT),
+    isQuibdo ? Promise.resolve("") : loadImageAsBase64(logoSources.logoCLTDark),
+    loadImageAsBase64(logoSources.logoCosmo),
+  ]);
+
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const margin = 15;
   const contentW = pageW - margin * 2;
   let y = 0;
@@ -13,22 +50,49 @@ export function generarPDFFicha(datos: Record<string, unknown>): void {
   doc.setFillColor(40, 140, 90);
   doc.rect(0, 36, pageW, 3, "F");
 
+  // Logos in header
+  const logoH = 14;
+  const logoY = 2;
+  if (isQuibdo) {
+    // Only RLT logo, centered
+    doc.addImage(rltB64, "PNG", pageW / 2 - 12, logoY, 24, logoH);
+  } else {
+    // Both RLT + CLT logos side by side centered
+    const gap = 6;
+    const totalW = 24 + gap + 24;
+    const startX = (pageW - totalW) / 2;
+    doc.addImage(rltB64, "PNG", startX, logoY, 24, logoH);
+    doc.addImage(cltB64, "PNG", startX + 24 + gap, logoY, 24, logoH);
+  }
+
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(13);
-  doc.setFont("helvetica", "bold");
-  doc.text("FICHA DE INFORMACIÓN BÁSICA", pageW / 2, 15, { align: "center" });
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text("Programa Rectores Líderes Transformadores (RLT) / Coordinadores Líderes Transformadores (CLT)", pageW / 2, 23, { align: "center" });
+  doc.setFont("helvetica", "bold");
+  doc.text("FICHA DE INFORMACIÓN BÁSICA", pageW / 2, 22, { align: "center" });
   doc.setFontSize(8);
-  doc.text(`Generado el: ${new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}`, pageW / 2, 30, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.text(
+    isQuibdo
+      ? "Programa Rectores Líderes Transformadores (RLT)"
+      : "Programa Rectores Líderes Transformadores (RLT) / Coordinadores Líderes Transformadores (CLT)",
+    pageW / 2,
+    27,
+    { align: "center" }
+  );
+  doc.setFontSize(7);
+  doc.text(
+    `Generado el: ${new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}`,
+    pageW / 2,
+    32,
+    { align: "center" }
+  );
 
   y = 48;
   doc.setTextColor(30, 30, 30);
 
   // ── Helper functions ─────────────────────────────────────────
   const checkNewPage = (needed = 18) => {
-    if (y + needed > 275) {
+    if (y + needed > pageH - 22) {
       doc.addPage();
       y = 15;
     }
@@ -132,16 +196,20 @@ export function generarPDFFicha(datos: Record<string, unknown>): void {
   drawRow("Estudiantes Primaria", val("estudiantes_primaria"));
   drawRow("Estudiantes Ciclo Complementario", val("estudiantes_ciclo_complementario"));
 
-  // ── Pie de página ────────────────────────────────────────────
+  // ── Pie de página con logo Cosmo ─────────────────────────────
   const totalPages = (doc.internal as { getNumberOfPages?: () => number }).getNumberOfPages?.() ?? 1;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
+    // Footer bar
     doc.setFillColor(18, 52, 108);
-    doc.rect(0, 287, pageW, 10, "F");
+    doc.rect(0, pageH - 16, pageW, 16, "F");
+    // Cosmo logo on the left
+    doc.addImage(cosmoB64, "PNG", margin, pageH - 14, 28, 12);
+    // Text
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(7);
-    doc.text("Programa RLT/CLT — Documento confidencial generado automáticamente", pageW / 2, 293, { align: "center" });
-    doc.text(`Página ${i} de ${totalPages}`, pageW - margin, 293, { align: "right" });
+    doc.text("Programa RLT/CLT — Documento confidencial generado automáticamente", pageW / 2, pageH - 7, { align: "center" });
+    doc.text(`Página ${i} de ${totalPages}`, pageW - margin, pageH - 7, { align: "right" });
   }
 
   const nombre = String(datos["apellidos"] ?? datos["nombres"] ?? "ficha").replace(/\s+/g, "_");
