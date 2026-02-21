@@ -28,6 +28,8 @@ const schema = z.object({
   acepta_datos: z.boolean().refine((v) => v === true, { message: "Debe aceptar el tratamiento de datos personales" }),
   nombres: z.string().min(2, "Ingrese sus nombres"),
   apellidos: z.string().min(2, "Ingrese sus apellidos"),
+  genero: z.string().min(1, "Seleccione su género"),
+  numero_cedula: z.string().min(1, "Ingrese su número de cédula"),
   fecha_nacimiento: z.string().min(1, "Seleccione su fecha de nacimiento").refine((val) => {
     if (!val) return false;
     const birth = new Date(val);
@@ -37,6 +39,7 @@ const schema = z.object({
     if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
     return age >= 18 && age <= 70;
   }, "La edad debe estar entre 18 y 70 años"),
+  lugar_nacimiento: z.string().optional(),
   lengua_materna: z.string().min(1, "Seleccione una lengua materna"),
   lengua_otra: z.string().optional(),
   celular_personal: z.string().regex(/^\+57\s?\d{3}\s?\d{4}\s?\d{3}$|^\d{10}$|^\+57\d{10}$/, "Ingrese un número celular válido de Colombia"),
@@ -70,6 +73,9 @@ const schema = z.object({
     .refine((v) => /^\d{12}$/.test(v), { message: "El Código DANE debe tener exactamente 12 dígitos numéricos" }),
   entidad_territorial: z.string().min(1, "Seleccione la entidad territorial"),
   comuna_barrio: z.string().optional(),
+  direccion_sede_principal: z.string().optional(),
+  sitio_web: z.string().optional(),
+  telefono_ie: z.string().optional(),
   zona_sede: z.string().min(1, "Seleccione la zona de sede"),
   sedes_rural: z.string().min(1, "Ingrese el número de sedes rurales"),
   sedes_urbana: z.string().min(1, "Ingrese el número de sedes urbanas"),
@@ -87,6 +93,8 @@ const schema = z.object({
   num_orientadores: z.string().min(1, "Ingrese el número de orientadores"),
   estudiantes_preescolar: z.string().optional(),
   estudiantes_primaria: z.string().optional(),
+  estudiantes_basica_secundaria: z.string().optional(),
+  estudiantes_media: z.string().optional(),
   estudiantes_ciclo_complementario: z.string().optional(),
 });
 
@@ -407,6 +415,11 @@ export default function FichaRLTForm() {
   const jornadas = watch("jornadas") ?? [];
   const nivelesEducativos = watch("niveles_educativos") ?? [];
 
+  // Calculated total sedes
+  const sedesRural = parseInt(watch("sedes_rural") || "0") || 0;
+  const sedesUrbana = parseInt(watch("sedes_urbana") || "0") || 0;
+  const totalSedes = sedesRural + sedesUrbana;
+
   // Geographic data from DB
   const municipiosRegion = regionActual ? geo.getMunicipiosForRegion(regionActual) : [];
   const tienesMunicipios = municipiosRegion.length > 1;
@@ -426,7 +439,10 @@ export default function FichaRLTForm() {
       nombres: data.nombres,
       apellidos: data.apellidos,
       nombres_apellidos: `${data.nombres} ${data.apellidos}`,
+      genero: data.genero ?? null,
+      numero_cedula: data.numero_cedula ?? null,
       fecha_nacimiento: data.fecha_nacimiento || null,
+      lugar_nacimiento: data.lugar_nacimiento ?? null,
       lengua_materna: data.lengua_materna,
       lengua_otra: data.lengua_otra ?? null,
       celular_personal: data.celular_personal,
@@ -457,6 +473,9 @@ export default function FichaRLTForm() {
       codigo_dane: data.codigo_dane ?? null,
       entidad_territorial: data.entidad_territorial ?? null,
       comuna_barrio: data.comuna_barrio ?? null,
+      direccion_sede_principal: data.direccion_sede_principal ?? null,
+      sitio_web: data.sitio_web ?? null,
+      telefono_ie: data.telefono_ie ?? null,
       zona_sede: data.zona_sede ?? null,
       sedes_rural: toInt(data.sedes_rural),
       sedes_urbana: toInt(data.sedes_urbana),
@@ -474,6 +493,8 @@ export default function FichaRLTForm() {
       num_orientadores: toInt(data.num_orientadores),
       estudiantes_preescolar: toInt(data.estudiantes_preescolar),
       estudiantes_primaria: toInt(data.estudiantes_primaria),
+      estudiantes_basica_secundaria: toInt(data.estudiantes_basica_secundaria),
+      estudiantes_media: toInt(data.estudiantes_media),
       estudiantes_ciclo_complementario: toInt(data.estudiantes_ciclo_complementario),
     };
 
@@ -529,6 +550,8 @@ export default function FichaRLTForm() {
     acepta_datos: "Aceptación de tratamiento de datos",
     nombres: "Nombres",
     apellidos: "Apellidos",
+    genero: "Género",
+    numero_cedula: "Número de cédula",
     fecha_nacimiento: "Fecha de nacimiento",
     lengua_materna: "Lengua materna",
     celular_personal: "Celular personal",
@@ -615,7 +638,6 @@ export default function FichaRLTForm() {
         <header className="text-white px-4 py-5 md:py-6 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">
             {regionSeleccionada === "Quibdó" ? (
-              /* Quibdó : un seul logo RLT centré au-dessus des titres */
               <div className="flex flex-col items-center gap-3">
                 <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg" />
                 <div className="text-center">
@@ -625,7 +647,6 @@ export default function FichaRLTForm() {
                 </div>
               </div>
             ) : (
-              /* Oriente : les deux logos côte à côte centrés, puis titres en dessous */
               <div className="flex flex-col items-center gap-3">
                 <div className="flex items-center justify-center gap-4 sm:gap-10">
                   <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg flex-shrink-0" />
@@ -684,7 +705,6 @@ export default function FichaRLTForm() {
                   placeholder="Ej: María Carolina"
                   hasError={!!err("nombres")}
                 />
-
               </FormFieldWrapper>
 
               <FormFieldWrapper name="apellidos" label="Apellido(s)" required>
@@ -694,7 +714,29 @@ export default function FichaRLTForm() {
                   placeholder="Ej: Rodríguez Pérez"
                   hasError={!!err("apellidos")}
                 />
+              </FormFieldWrapper>
 
+              <FormFieldWrapper name="genero" label="Género" required staticLabel>
+                <FormRadioGroup
+                  name="genero"
+                  options={[
+                    { value: "Masculino", label: "Masculino" },
+                    { value: "Femenino", label: "Femenino" },
+                    { value: "Otro", label: "Otro" },
+                  ]}
+                  value={watch("genero")}
+                  onChange={(v) => setValue("genero", v, { shouldValidate: true })}
+                  hasError={!!err("genero")}
+                />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="numero_cedula" label="Número de cédula" required>
+                <FormInput
+                  id="numero_cedula"
+                  {...register("numero_cedula")}
+                  placeholder="Ej: 1234567890"
+                  hasError={!!err("numero_cedula")}
+                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="fecha_nacimiento" label="Fecha de nacimiento" required staticLabel>
@@ -702,7 +744,14 @@ export default function FichaRLTForm() {
                   value={watch("fecha_nacimiento") ?? ""}
                   onChange={(v) => setValue("fecha_nacimiento", v, { shouldValidate: true })}
                 />
+              </FormFieldWrapper>
 
+              <FormFieldWrapper name="lugar_nacimiento" label="Lugar de nacimiento">
+                <FormInput
+                  id="lugar_nacimiento"
+                  {...register("lugar_nacimiento")}
+                  placeholder="Ej: Medellín, Antioquia"
+                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="lengua_materna" label="Lengua materna" required>
@@ -715,7 +764,6 @@ export default function FichaRLTForm() {
                     { value: "Otra", label: "Otra" },
                   ]}
                 />
-
               </FormFieldWrapper>
 
               {lenguaMaterna === "Otra" && (
@@ -732,7 +780,6 @@ export default function FichaRLTForm() {
                   type="tel"
                   hasError={!!err("celular_personal")}
                 />
-
               </FormFieldWrapper>
 
               <FormFieldWrapper name="correo_personal" label="Correo electrónico personal" required>
@@ -753,7 +800,6 @@ export default function FichaRLTForm() {
                   placeholder="correo@edu.co"
                   hasError={!!err("correo_institucional")}
                 />
-
               </FormFieldWrapper>
 
               <FormFieldWrapper name="prefiere_correo" label="Prefiere recibir comunicaciones en el correo" required staticLabel>
@@ -767,7 +813,6 @@ export default function FichaRLTForm() {
                   onChange={(v) => setValue("prefiere_correo", v, { shouldValidate: true })}
                   hasError={!!err("prefiere_correo")}
                 />
-
               </FormFieldWrapper>
             </FormSection>
 
@@ -784,7 +829,6 @@ export default function FichaRLTForm() {
                   onChange={(v) => setValue("enfermedad_base", v, { shouldValidate: true })}
                   hasError={!!err("enfermedad_base")}
                 />
-
               </FormFieldWrapper>
 
               {enfermedadBase === "Sí" && (
@@ -812,7 +856,6 @@ export default function FichaRLTForm() {
                   onChange={(v) => setValue("discapacidad", v, { shouldValidate: true })}
                   hasError={!!err("discapacidad")}
                 />
-
               </FormFieldWrapper>
 
               {discapacidad === "Sí" && (
@@ -922,7 +965,6 @@ export default function FichaRLTForm() {
                   maxLength={12}
                   hasError={!!err("codigo_dane")}
                 />
-
               </FormFieldWrapper>
 
               <FormFieldWrapper name="cargo_actual" label="Cargo actual" required>
@@ -1000,6 +1042,18 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 5: Datos de la IE */}
             <FormSection number={5} title="Datos de la Institución Educativa">
+              <FormFieldWrapper name="direccion_sede_principal" label="Dirección de la sede principal" className="md:col-span-2">
+                <FormInput id="direccion_sede_principal" {...register("direccion_sede_principal")} placeholder="Ej: Calle 10 # 20-30" />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="telefono_ie" label="Teléfono de la IE">
+                <FormInput id="telefono_ie" type="tel" {...register("telefono_ie")} placeholder="Ej: +57 604 1234567" />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="sitio_web" label="Sitio web de la IE">
+                <FormInput id="sitio_web" {...register("sitio_web")} placeholder="Ej: www.ie-ejemplo.edu.co" />
+              </FormFieldWrapper>
+
               <FormFieldWrapper name="zona_sede" label="Zona de la sede principal de la IE" required staticLabel>
                 <FormRadioGroup
                   name="zona_sede"
@@ -1012,18 +1066,28 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <div className="md:col-span-2 grid grid-cols-1 gap-4 max-w-[320px]">
-                <FormFieldWrapper name="sedes_rural" label="Número de sedes en zona rural" required>
-                  <FormInput id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0"
-                    onChange={(e) => {
-                      register("sedes_rural").onChange(e);
-                    }}
-                  />
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-[500px]">
+                <FormFieldWrapper name="sedes_rural" label="Sedes en zona rural" required>
+                  <FormInput id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0" />
                 </FormFieldWrapper>
 
-                <FormFieldWrapper name="sedes_urbana" label="Número de sedes en zona urbana" required>
+                <FormFieldWrapper name="sedes_urbana" label="Sedes en zona urbana" required>
                   <FormInput id="sedes_urbana" type="number" min={0} max={999} {...register("sedes_urbana")} placeholder="0" />
                 </FormFieldWrapper>
+
+                <div className="flex flex-col gap-1">
+                  <label className="field-label text-sm font-semibold text-muted-foreground">
+                    Número total de sedes
+                    <span className="block text-xs font-normal text-muted-foreground/70">(incluye la sede principal)</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={totalSedes}
+                    readOnly
+                    disabled
+                    className="form-input opacity-75 cursor-not-allowed font-semibold"
+                  />
+                </div>
               </div>
 
               <FormFieldWrapper name="jornadas" label="Jornadas de la IE" required className="md:col-span-2" hideError staticLabel>
@@ -1069,7 +1133,6 @@ export default function FichaRLTForm() {
                 <FormCheckboxGroup
                   name="niveles_educativos"
                   options={[
-                    { value: "Primera infancia", label: "Primera infancia" },
                     { value: "Preescolar", label: "Preescolar" },
                     { value: "Básica primaria", label: "Básica primaria" },
                     { value: "Básica secundaria", label: "Básica secundaria" },
@@ -1114,6 +1177,14 @@ export default function FichaRLTForm() {
 
               <FormFieldWrapper name="estudiantes_primaria" label="Número de estudiantes en Primaria">
                 <FormInput id="estudiantes_primaria" type="number" min={0} {...register("estudiantes_primaria")} placeholder="0" />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="estudiantes_basica_secundaria" label="Número de estudiantes en Básica secundaria">
+                <FormInput id="estudiantes_basica_secundaria" type="number" min={0} {...register("estudiantes_basica_secundaria")} placeholder="0" />
+              </FormFieldWrapper>
+
+              <FormFieldWrapper name="estudiantes_media" label="Número de estudiantes en Media">
+                <FormInput id="estudiantes_media" type="number" min={0} {...register("estudiantes_media")} placeholder="0" />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="estudiantes_ciclo_complementario" label="Número de estudiantes en Ciclo Complementario">
