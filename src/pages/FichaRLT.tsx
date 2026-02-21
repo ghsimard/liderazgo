@@ -678,7 +678,11 @@ export default function FichaRLTForm() {
               <div className="space-y-3">
                 <p className="text-sm leading-relaxed">
                   <strong>Autorización de datos personales: </strong>
-                  Entiendo la información y acepto el tratamiento de mis datos personales conforme a la Ley 1581 de 2012 de protección de datos de Colombia.{" "}
+                  Entiendo la información y acepto el tratamiento de mis datos personales conforme a la{" "}
+                  <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:opacity-80">
+                    Ley 1581 de 2012
+                  </a>{" "}
+                  de protección de datos de Colombia.{" "}
                   <span className="required-star">*</span>
                 </p>
                 <FormRadioGroup
