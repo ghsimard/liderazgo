@@ -151,16 +151,17 @@ export async function generarPDFFicha(
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    doc.text(`${label}:`, margin + 2, y);
+    const labelText = `${label}:`;
+    doc.text(labelText, margin + 2, y);
+    const labelWidth = doc.getTextWidth(labelText) + 2;
     if (val) {
       doc.setFont("helvetica", "normal");
-      const labelWidth = doc.getTextWidth(`${label}: `) + 3;
       const maxValW = contentW - labelWidth - 2;
       const lines = doc.splitTextToSize(val, maxValW);
       doc.text(lines, margin + 2 + labelWidth, y);
-      y += Math.max(lines.length * 4.5, 5.5);
+      y += Math.max(lines.length * 4.5, 6);
     } else {
-      y += 5.5;
+      y += 6;
     }
   };
 
@@ -178,23 +179,25 @@ export async function generarPDFFicha(
     // Left field
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    doc.text(`${label1}:`, margin + 2, y);
+    const lt1 = `${label1}:`;
+    doc.text(lt1, margin + 2, y);
+    const lw1 = doc.getTextWidth(lt1) + 2;
     if (v1) {
       doc.setFont("helvetica", "normal");
-      const lw1 = doc.getTextWidth(`${label1}: `) + 3;
       doc.text(v1, margin + 2 + lw1, y);
     }
 
     // Right field
     doc.setFont("helvetica", "bold");
-    doc.text(`${label2}:`, margin + halfW, y);
+    const lt2 = `${label2}:`;
+    doc.text(lt2, margin + halfW, y);
+    const lw2 = doc.getTextWidth(lt2) + 2;
     if (v2) {
       doc.setFont("helvetica", "normal");
-      const lw2 = doc.getTextWidth(`${label2}: `) + 3;
       doc.text(v2, margin + halfW + lw2, y);
     }
 
-    y += 5.5;
+    y += 6;
   };
 
   const val = (key: string) => {
