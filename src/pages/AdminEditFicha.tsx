@@ -1046,21 +1046,6 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="niveles_educativos" label="Niveles educativos que ofrece la IE" required className="md:col-span-2" hideError staticLabel>
-                <FormCheckboxGroup
-                  name="niveles_educativos"
-                  options={[
-                    { value: "Preescolar", label: "Preescolar (Prejardín, Jardín, Transición)" },
-                    { value: "Básica primaria", label: "Básica primaria" },
-                    { value: "Básica secundaria", label: "Básica secundaria" },
-                    { value: "Media", label: "Media" },
-                    { value: "Ciclo complementario", label: "Ciclo complementario" },
-                  ]}
-                  value={nivelesEducativos}
-                  onChange={(v) => setValue("niveles_educativos", v)}
-                />
-              </FormFieldWrapper>
-
               <FormFieldWrapper name="tipo_bachillerato" label="Tipo de bachillerato que ofrece la IE" staticLabel>
                 <FormCheckboxGroup
                   name="tipo_bachillerato"
@@ -1078,8 +1063,8 @@ export default function AdminEditFicha() {
               </FormFieldWrapper>
             </FormSection>
 
-            {/* SECCIÓN 6: Personal y estudiantes */}
-            <FormSection number={6} title="Personal y Estudiantes">
+            {/* SECCIÓN 6: Personal */}
+            <FormSection number={6} title="Personal de la IE">
               <FormFieldWrapper name="num_docentes" label="Número de docentes" required>
                 <FormInput id="num_docentes" type="number" min={0} {...register("num_docentes")} placeholder="0" />
               </FormFieldWrapper>
@@ -1095,26 +1080,66 @@ export default function AdminEditFicha() {
               <FormFieldWrapper name="num_orientadores" label="Número de orientadores/as" required>
                 <FormInput id="num_orientadores" type="number" min={0} {...register("num_orientadores")} placeholder="0" />
               </FormFieldWrapper>
+            </FormSection>
 
-              <FormFieldWrapper name="estudiantes_preescolar" label="Número de estudiantes en Preescolar">
-                <FormInput id="estudiantes_preescolar" type="number" min={0} {...register("estudiantes_preescolar")} placeholder="0" />
-              </FormFieldWrapper>
+            {/* SECCIÓN 7: Estudiantes por nivel educativo */}
+            <FormSection number={7} title="Estudiantes por nivel educativo">
+              <div className="md:col-span-2 space-y-3">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Ingrese el número de estudiantes por nivel. Los niveles con estudiantes se marcarán automáticamente.
+                </p>
 
-              <FormFieldWrapper name="estudiantes_primaria" label="Número de estudiantes en Primaria">
-                <FormInput id="estudiantes_primaria" type="number" min={0} {...register("estudiantes_primaria")} placeholder="0" />
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="estudiantes_basica_secundaria" label="Número de estudiantes en Básica secundaria">
-                <FormInput id="estudiantes_basica_secundaria" type="number" min={0} {...register("estudiantes_basica_secundaria")} placeholder="0" />
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="estudiantes_media" label="Número de estudiantes en Media">
-                <FormInput id="estudiantes_media" type="number" min={0} {...register("estudiantes_media")} placeholder="0" />
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="estudiantes_ciclo_complementario" label="Número de estudiantes en Ciclo Complementario">
-                <FormInput id="estudiantes_ciclo_complementario" type="number" min={0} {...register("estudiantes_ciclo_complementario")} placeholder="0" />
-              </FormFieldWrapper>
+                {[
+                  { nivel: "Preescolar", label: "Preescolar (Prejardín, Jardín, Transición)", field: "estudiantes_preescolar" },
+                  { nivel: "Básica primaria", label: "Básica primaria", field: "estudiantes_primaria" },
+                  { nivel: "Básica secundaria", label: "Básica secundaria", field: "estudiantes_basica_secundaria" },
+                  { nivel: "Media", label: "Media", field: "estudiantes_media" },
+                  { nivel: "Ciclo complementario", label: "Ciclo complementario", field: "estudiantes_ciclo_complementario" },
+                ].map(({ nivel, label, field }) => {
+                  const count = parseInt(watch(field as any) || "0") || 0;
+                  const checked = nivelesEducativos.includes(nivel);
+                  return (
+                    <div key={nivel} className="flex items-center gap-4 py-2 px-3 rounded-md border border-input bg-background">
+                      <label className="flex items-center gap-2 cursor-pointer text-sm flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const next = checked
+                              ? nivelesEducativos.filter((v: string) => v !== nivel)
+                              : [...nivelesEducativos, nivel];
+                            setValue("niveles_educativos", next);
+                            if (!checked && count === 0) {
+                              setValue(field as any, "");
+                            }
+                          }}
+                          className="accent-primary w-4 h-4 shrink-0"
+                        />
+                        <span className="truncate">{label}</span>
+                      </label>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs text-muted-foreground">Estudiantes:</span>
+                        <input
+                          type="number"
+                          min={0}
+                          {...register(field as any, {
+                            onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                              const val = parseInt(e.target.value) || 0;
+                              if (val > 0 && !checked) {
+                                setValue("niveles_educativos", [...nivelesEducativos, nivel]);
+                              } else if (val === 0 && checked) {
+                                setValue("niveles_educativos", nivelesEducativos.filter((v: string) => v !== nivel));
+                              }
+                            }
+                          })}
+                          placeholder="0"
+                          className="form-input w-20 text-center"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </FormSection>
 
             {/* Botón guardar — styled like FichaRLT submit button */}
