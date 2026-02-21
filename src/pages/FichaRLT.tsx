@@ -1163,7 +1163,7 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="modelo_pedagogico" label="Modelo o enfoque pedagógico">
+              <FormFieldWrapper name="modelo_pedagogico" label="Modelo o enfoque pedagógico" className="md:col-span-2">
                 <FormInput id="modelo_pedagogico" {...register("modelo_pedagogico")} placeholder="Ej: Constructivista, Tradicional, etc." />
               </FormFieldWrapper>
             </FormSection>
