@@ -470,13 +470,14 @@ export default function AdminGeographyTab() {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Entidad Territorial</TableHead>
+                <TableHead>Logo CLT</TableHead>
                 <TableHead>Municipios</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {regiones.length === 0 ? (
-                <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Sin regiones</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Sin regiones</TableCell></TableRow>
               ) : regiones.map((r) => {
                 const entidad = entidades.find(e => e.id === r.entidad_territorial_id);
                 const rMunis = regionMunicipios.filter(rm => rm.region_id === r.id);
@@ -485,6 +486,7 @@ export default function AdminGeographyTab() {
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.nombre}</TableCell>
                     <TableCell className="text-sm">{entidad?.nombre ?? "—"}</TableCell>
+                    <TableCell className="text-sm">{r.mostrar_logo_clt ? "✓" : "✗"}</TableCell>
                     <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate" title={muniNames.join(", ")}>
                       {muniNames.length > 0 ? muniNames.join(", ") : "—"}
                     </TableCell>

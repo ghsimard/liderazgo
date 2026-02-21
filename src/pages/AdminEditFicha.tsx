@@ -564,7 +564,7 @@ export default function AdminEditFicha() {
 
   if (!isCreateMode && !ficha) return null;
 
-  const isQuibdo = regionSeleccionada === "Quibdó";
+  const showLogoClt = geo.getShowLogoClt(regionSeleccionada ?? "");
 
   return (
     <FormProvider {...methods}>
@@ -572,7 +572,7 @@ export default function AdminEditFicha() {
         {/* Header — identical to FichaRLT */}
         <header className="text-white px-4 py-5 md:py-6 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">
-            {isQuibdo ? (
+            {!showLogoClt ? (
               <div className="flex flex-col items-center gap-3">
                 <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-14 sm:h-20 w-auto object-contain drop-shadow-lg" />
                 <div className="text-center">
@@ -898,9 +898,9 @@ export default function AdminEditFicha() {
                 <FormInput id="codigo_dane" {...register("codigo_dane")} maxLength={12} hasError={!!err("codigo_dane")} />
               </FormFieldWrapper>
 
-              {/* Cargo actual — locked for Quibdó, dropdown for others (identical to FichaRLT) */}
+              {/* Cargo actual — locked for Quibdó, dropdown for others */}
               <FormFieldWrapper name="cargo_actual" label="Cargo actual" required>
-                {isQuibdo ? (
+                {regionSeleccionada === "Quibdó" ? (
                   <input
                     id="cargo_actual"
                     value="Rector/a"
