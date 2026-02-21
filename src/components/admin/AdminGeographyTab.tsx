@@ -102,6 +102,14 @@ export default function AdminGeographyTab() {
     setLoading(false);
   }, []);
 
+  /** Refresh data while preserving scroll position */
+  const fetchAllKeepScroll = useCallback(async () => {
+    const scrollY = window.scrollY;
+    await fetchAll();
+    // Restore after React re-render
+    requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: "instant" }));
+  }, [fetchAll]);
+
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   // ── CRUD helpers ──────────────────────────────────────────────
@@ -110,7 +118,7 @@ export default function AdminGeographyTab() {
     setSaving(true);
     const { error } = await supabase.from("entidades_territoriales").insert({ nombre: newName.trim() });
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Entidad creada" }); setAddEntidadOpen(false); setNewName(""); fetchAll(); }
+    else { toast({ title: "Entidad creada" }); setAddEntidadOpen(false); setNewName(""); fetchAllKeepScroll(); }
     setSaving(false);
   };
 
@@ -124,7 +132,7 @@ export default function AdminGeographyTab() {
       toast({ title: "Municipio creado" });
       // Keep the parent entidad accordion open
       setOpenEntidades(prev => prev.includes(entidadId) ? prev : [...prev, entidadId]);
-      setAddMunicipioOpen(null); setNewName(""); fetchAll();
+      setAddMunicipioOpen(null); setNewName(""); fetchAllKeepScroll();
     }
     setSaving(false);
   };
@@ -143,7 +151,7 @@ export default function AdminGeographyTab() {
         setOpenEntidades(prev => prev.includes(muni.entidad_territorial_id) ? prev : [...prev, muni.entidad_territorial_id]);
       }
       setOpenMunicipios(prev => prev.includes(munId) ? prev : [...prev, munId]);
-      setAddInstitucionOpen(null); setNewName(""); fetchAll();
+      setAddInstitucionOpen(null); setNewName(""); fetchAllKeepScroll();
     }
     setSaving(false);
   };
@@ -154,7 +162,7 @@ export default function AdminGeographyTab() {
     const table = editItem.type === "entidad" ? "entidades_territoriales" : editItem.type === "municipio" ? "municipios" : "instituciones";
     const { error } = await supabase.from(table).update({ nombre: editName.trim() }).eq("id", editItem.id);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Actualizado" }); setEditItem(null); fetchAll(); }
+    else { toast({ title: "Actualizado" }); setEditItem(null); fetchAllKeepScroll(); }
     setSaving(false);
   };
 
@@ -167,7 +175,7 @@ export default function AdminGeographyTab() {
       : "regiones";
     const { error } = await supabase.from(table).delete().eq("id", deleteItem.id);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Eliminado" }); setDeleteItem(null); fetchAll(); }
+    else { toast({ title: "Eliminado" }); setDeleteItem(null); fetchAllKeepScroll(); }
     setDeleteLoading(false);
   };
 
