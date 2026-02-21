@@ -50,19 +50,17 @@ export async function generarPDFFicha(
   doc.setFillColor(40, 140, 90);
   doc.rect(0, 36, pageW, 3, "F");
 
-  // Logos in header
-  const logoH = 14;
-  const logoY = 2;
+  // Logos in header — on each side of titles
+  const logoH = 28;
+  const logoW = 32;
+  const logoY = 4;
   if (isQuibdo) {
-    // Only RLT logo, centered
-    doc.addImage(rltB64, "PNG", pageW / 2 - 12, logoY, 24, logoH);
+    // RLT logo on left side
+    doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
   } else {
-    // Both RLT + CLT logos side by side centered
-    const gap = 6;
-    const totalW = 24 + gap + 24;
-    const startX = (pageW - totalW) / 2;
-    doc.addImage(rltB64, "PNG", startX, logoY, 24, logoH);
-    doc.addImage(cltB64, "PNG", startX + 24 + gap, logoY, 24, logoH);
+    // RLT on left, CLT on right
+    doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
+    doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
   }
 
   doc.setTextColor(255, 255, 255);
@@ -198,18 +196,27 @@ export async function generarPDFFicha(
 
   // ── Pie de página con logo Cosmo ─────────────────────────────
   const totalPages = (doc.internal as { getNumberOfPages?: () => number }).getNumberOfPages?.() ?? 1;
+  const footerH = 18;
+  const cosmoLogoW = 30;
+  const cosmoLogoH = 10;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     // Footer bar
     doc.setFillColor(18, 52, 108);
-    doc.rect(0, pageH - 16, pageW, 16, "F");
-    // Cosmo logo on the left
-    doc.addImage(cosmoB64, "PNG", margin, pageH - 14, 28, 12);
+    doc.rect(0, pageH - footerH, pageW, footerH, "F");
+    // White background rectangle for Cosmo logo
+    const cosmoPadX = 2;
+    const cosmoPadY = 1.5;
+    const cosmoX = margin;
+    const cosmoY = pageH - footerH + (footerH - cosmoLogoH) / 2;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(cosmoX - cosmoPadX, cosmoY - cosmoPadY, cosmoLogoW + cosmoPadX * 2, cosmoLogoH + cosmoPadY * 2, 2, 2, "F");
+    doc.addImage(cosmoB64, "PNG", cosmoX, cosmoY, cosmoLogoW, cosmoLogoH);
     // Text
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(7);
-    doc.text("Programa RLT/CLT — Documento confidencial generado automáticamente", pageW / 2, pageH - 7, { align: "center" });
-    doc.text(`Página ${i} de ${totalPages}`, pageW - margin, pageH - 7, { align: "right" });
+    doc.text("Programa RLT/CLT — Documento confidencial", pageW / 2, pageH - footerH / 2 + 1, { align: "center" });
+    doc.text(`Página ${i} de ${totalPages}`, pageW - margin, pageH - footerH / 2 + 1, { align: "right" });
   }
 
   const nombre = String(datos["apellidos"] ?? datos["nombres"] ?? "ficha").replace(/\s+/g, "_");
