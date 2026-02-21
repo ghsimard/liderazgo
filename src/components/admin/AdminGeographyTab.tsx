@@ -634,9 +634,16 @@ export default function AdminGeographyTab() {
                       size="sm"
                       className="text-xs h-6 px-2"
                       onClick={() => {
-                        const allIds = municipiosByEntidad(regionEntidad).map(m => m.id);
-                        const allSelected = allIds.every(id => regionSelectedMunicipios.includes(id));
-                        setRegionSelectedMunicipios(allSelected ? [] : allIds);
+                        const allMuniIds = municipiosByEntidad(regionEntidad).map(m => m.id);
+                        const allSelected = allMuniIds.every(id => regionSelectedMunicipios.includes(id));
+                        if (allSelected) {
+                          setRegionSelectedMunicipios([]);
+                          setRegionSelectedInstituciones([]);
+                        } else {
+                          setRegionSelectedMunicipios(allMuniIds);
+                          const allInstIds = allMuniIds.flatMap(mid => institucionesByMunicipio(mid).map(i => i.id));
+                          setRegionSelectedInstituciones(prev => [...new Set([...prev, ...allInstIds])]);
+                        }
                       }}
                     >
                       {municipiosByEntidad(regionEntidad).every(m => regionSelectedMunicipios.includes(m.id)) ? "Deseleccionar todo" : "Seleccionar todo"}
