@@ -290,7 +290,7 @@ export async function generarPDFFicha(
 
     // Disclaimer only on page 1
     if (i === 1) {
-      const disclaimerY = pageH - 28;
+      const disclaimerY = pageH - 20;
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30, 30, 30);
