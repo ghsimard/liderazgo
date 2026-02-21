@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      entidades_territoriales: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       fichas_rlt: {
         Row: {
           acepta_datos: boolean
@@ -190,6 +208,126 @@ export type Database = {
           zona_sede?: string | null
         }
         Relationships: []
+      }
+      instituciones: {
+        Row: {
+          created_at: string
+          id: string
+          municipio_id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          municipio_id: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          municipio_id?: string
+          nombre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instituciones_municipio_id_fkey"
+            columns: ["municipio_id"]
+            isOneToOne: false
+            referencedRelation: "municipios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      municipios: {
+        Row: {
+          created_at: string
+          entidad_territorial_id: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          entidad_territorial_id: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          entidad_territorial_id?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "municipios_entidad_territorial_id_fkey"
+            columns: ["entidad_territorial_id"]
+            isOneToOne: false
+            referencedRelation: "entidades_territoriales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      region_municipios: {
+        Row: {
+          id: string
+          municipio_id: string
+          region_id: string
+        }
+        Insert: {
+          id?: string
+          municipio_id: string
+          region_id: string
+        }
+        Update: {
+          id?: string
+          municipio_id?: string
+          region_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "region_municipios_municipio_id_fkey"
+            columns: ["municipio_id"]
+            isOneToOne: false
+            referencedRelation: "municipios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "region_municipios_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regiones: {
+        Row: {
+          created_at: string
+          entidad_territorial_id: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          entidad_territorial_id: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          entidad_territorial_id?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regiones_entidad_territorial_id_fkey"
+            columns: ["entidad_territorial_id"]
+            isOneToOne: false
+            referencedRelation: "entidades_territoriales"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
