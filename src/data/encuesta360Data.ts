@@ -457,21 +457,27 @@ export const COMPETENCY_NAMES = [
   "vision", "planeacion", "redes", "alianzas", "rendicion",
 ] as const;
 
-/** Management domain for each competency base */
+/**
+ * Management domain for each competency base.
+ * Source: PDF "Modelo de Informe 360°"
+ * - Gestión Personal: autoconciencia, emociones, comunicación, trabajo colaborativo
+ * - Gestión Pedagógica: dirección PEI, orientación pedagógica, convivencia, evaluación
+ * - Gestión Administrativa y Comunitaria: visión, planeación, redes, alianzas, rendición
+ */
 export const COMPETENCY_DOMAIN: Record<string, string> = {
   autoconciencia: "gestion_personal",
   emociones: "gestion_personal",
   comunicacion: "gestion_personal",
-  colaborativo: "gestion_pedagogica",
+  colaborativo: "gestion_personal",
   direccion: "gestion_pedagogica",
   orientacion: "gestion_pedagogica",
-  convivencia: "gestion_comunitaria",
+  convivencia: "gestion_pedagogica",
   evaluacion: "gestion_pedagogica",
-  vision: "gestion_administrativa",
-  planeacion: "gestion_administrativa",
-  redes: "gestion_comunitaria",
-  alianzas: "gestion_comunitaria",
-  rendicion: "gestion_administrativa",
+  vision: "gestion_administrativa_comunitaria",
+  planeacion: "gestion_administrativa_comunitaria",
+  redes: "gestion_administrativa_comunitaria",
+  alianzas: "gestion_administrativa_comunitaria",
+  rendicion: "gestion_administrativa_comunitaria",
 };
 
 /** Get the base competency name (strips the suffix _1, _2, etc.) */
