@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      encuestas_360: {
+        Row: {
+          cargo_directivo: string
+          cargo_evaluador: string | null
+          cedula: string | null
+          cedula_directivo: string | null
+          created_at: string
+          dias_contacto: string | null
+          grado_estudiante: string | null
+          id: string
+          institucion_educativa: string
+          nombre_completo: string | null
+          nombre_directivo: string | null
+          respuestas: Json
+          tipo_formulario: string
+        }
+        Insert: {
+          cargo_directivo: string
+          cargo_evaluador?: string | null
+          cedula?: string | null
+          cedula_directivo?: string | null
+          created_at?: string
+          dias_contacto?: string | null
+          grado_estudiante?: string | null
+          id?: string
+          institucion_educativa: string
+          nombre_completo?: string | null
+          nombre_directivo?: string | null
+          respuestas?: Json
+          tipo_formulario: string
+        }
+        Update: {
+          cargo_directivo?: string
+          cargo_evaluador?: string | null
+          cedula?: string | null
+          cedula_directivo?: string | null
+          created_at?: string
+          dias_contacto?: string | null
+          grado_estudiante?: string | null
+          id?: string
+          institucion_educativa?: string
+          nombre_completo?: string | null
+          nombre_directivo?: string | null
+          respuestas?: Json
+          tipo_formulario?: string
+        }
+        Relationships: []
+      }
       entidades_territoriales: {
         Row: {
           created_at: string
