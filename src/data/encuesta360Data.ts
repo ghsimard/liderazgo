@@ -405,49 +405,52 @@ export const AGREEMENT_SCORE: Record<string, number> = {
 };
 
 /**
- * Competency (obj) mapped to each item number.
- * Order follows the Excel columns exactly (1→39).
+ * Competency (obj) mapped to each form item number (1-39).
+ * Verified by matching each autoevaluación item text to Excel competency descriptions.
+ * Items do NOT follow the Excel column order — they are mixed across competencies.
  */
 export const ITEM_COMPETENCY: Record<number, string> = {
-  1:  "autoconciencia_1",
-  2:  "autoconciencia_2",
-  3:  "autoconciencia_3",
-  4:  "emociones_1",
-  5:  "emociones_2",
-  6:  "emociones_3",
-  7:  "comunicacion_1",
-  8:  "comunicacion_2",
-  9:  "comunicacion_3",
-  10: "colaborativo_1",
-  11: "colaborativo_2",
-  12: "colaborativo_3",
-  13: "direccion_1",
-  14: "direccion_2",
-  15: "direccion_3",
-  16: "orientacion_1",
-  17: "orientacion_2",
-  18: "orientacion_3",
-  19: "convivencia_1",
-  20: "convivencia_2",
-  21: "convivencia_3",
-  22: "evaluacion_1",
-  23: "evaluacion_2",
-  24: "evaluacion_3",
-  25: "vision_1",
-  26: "vision_2",
-  27: "vision_3",
-  28: "planeacion_1",
-  29: "planeacion_2",
-  30: "planeacion_3",
-  31: "redes_1",
-  32: "redes_2",
-  33: "redes_3",
-  34: "alianzas_1",
-  35: "alianzas_2",
-  36: "alianzas_3",
-  37: "rendicion_1",
-  38: "rendicion_2",
-  39: "rendicion_3",
+  // Frequency items (1-18)
+  1:  "autoconciencia_2",   // Espacios de reflexión con equipo de trabajo
+  2:  "direccion_2",        // Orientar planes y proyectos pedagógicos del PEI
+  3:  "vision_2",           // Diseñar estrategias para visión compartida
+  4:  "autoconciencia_3",   // Comunidad educativa identifica fortalezas
+  5:  "direccion_3",        // Seguimiento y evaluación de metas del PEI
+  6:  "planeacion_2",       // Estrategias de planeación participativa
+  7:  "emociones_1",        // Manifestar emociones y reconocer impacto
+  8:  "orientacion_2",      // Reflexiones pedagógicas con equipo
+  9:  "planeacion_3",       // Participación en planeación institucional
+  10: "emociones_2",        // Identificar emociones y su influencia en ambiente escolar
+  11: "convivencia_3",      // Construir acuerdos de convivencia con comunidad
+  12: "alianzas_2",         // Identificar alianzas con organizaciones del territorio
+  13: "comunicacion_2",     // Comunicación clara con equipos de trabajo
+  14: "evaluacion_2",       // Revisar pertinencia de evaluación con equipo
+  15: "rendicion_2",        // Estrategia de rendición de cuentas
+  16: "colaborativo_2",     // Principios de trabajo colaborativo con equipos
+  17: "evaluacion_3",       // Reflexión sobre evaluación con comunidad educativa
+  18: "rendicion_3",        // Participación de comunidad en rendición de cuentas
+  // Agreement items (19-39)
+  19: "alianzas_1",         // Reconocer posibilidad de alianzas
+  20: "autoconciencia_1",   // Identificar fortalezas y mejoras como directivo
+  21: "direccion_1",        // Conocer pertinencia del PEI
+  22: "vision_1",           // Importancia de visión compartida
+  23: "alianzas_3",         // Establecer alianzas
+  24: "emociones_3",        // Estrategias para expresar emociones
+  25: "orientacion_1",      // Valor de prácticas pedagógicas transformadoras
+  26: "vision_3",           // Construir visión compartida con comunidad
+  27: "rendicion_1",        // Rendición de cuentas como diálogo
+  28: "comunicacion_1",     // Reconocer fortalezas en comunicación
+  29: "orientacion_3",      // Corresponsabilidad en procesos pedagógicos
+  30: "planeacion_1",       // Importancia de participación en planeación
+  31: "comunicacion_3",     // Comunicación con comunidad educativa
+  32: "convivencia_1",      // Valorar diferencias para mejorar ambiente
+  33: "redes_1",            // Liderazgo y fortalecimiento de procesos
+  34: "colaborativo_1",     // Reconocer fortalezas para trabajo colaborativo
+  35: "convivencia_2",      // Acuerdos de convivencia con equipos
+  36: "redes_2",            // Intercambio con otras IE
+  37: "colaborativo_3",     // Actividades colaborativas con comunidad
+  38: "evaluacion_1",       // Evaluación como herramienta de mejora
+  39: "redes_3",            // Conformar redes con directivos de otras IE
 };
 
 /** All 13 competency base names */
@@ -486,52 +489,51 @@ export function getCompetencyBase(competencyKey: string): string {
 }
 
 /**
- * Weights per observer role for each item (1-39).
- * Values extracted from the Excel file line by line.
- * Role keys: coor, doce, admi, acud, estu. Autoevaluacion always = 1.0.
+ * Weights per observer role for each COMPETENCY (from Excel columns).
+ * We store by competency key, then derive item weights via ITEM_COMPETENCY mapping.
  */
 export type ObserverRole = "coor" | "doce" | "admi" | "acud" | "estu" | "autoeval";
 
-export const ITEM_WEIGHTS: Record<number, Record<Exclude<ObserverRole, "autoeval">, number>> = {
-  1:  { coor: 0.510, doce: 0.340, admi: 0.050, acud: 0.050, estu: 0.050 },
-  2:  { coor: 0.300, doce: 0.300, admi: 0.200, acud: 0.100, estu: 0.100 },
-  3:  { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
-  4:  { coor: 0.300, doce: 0.200, admi: 0.166, acud: 0.166, estu: 0.166 },
-  5:  { coor: 0.510, doce: 0.340, admi: 0.050, acud: 0.050, estu: 0.050 },
-  6:  { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
-  7:  { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
-  8:  { coor: 0.300, doce: 0.200, admi: 0.166, acud: 0.166, estu: 0.166 },
-  9:  { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
-  10: { coor: 0.337, doce: 0.337, admi: 0.224, acud: 0.050, estu: 0.050 },
-  11: { coor: 0.337, doce: 0.337, admi: 0.224, acud: 0.050, estu: 0.050 },
-  12: { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
-  13: { coor: 0.425, doce: 0.425, admi: 0.050, acud: 0.050, estu: 0.050 },
-  14: { coor: 0.420, doce: 0.280, admi: 0.100, acud: 0.100, estu: 0.100 },
-  15: { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
-  16: { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
-  17: { coor: 0.425, doce: 0.425, admi: 0.050, acud: 0.050, estu: 0.050 },
-  18: { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
-  19: { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
-  20: { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
-  21: { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
-  22: { coor: 0.425, doce: 0.425, admi: 0.050, acud: 0.050, estu: 0.050 },
-  23: { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
-  24: { coor: 0.200, doce: 0.300, admi: 0.166, acud: 0.166, estu: 0.166 },
-  25: { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
-  26: { coor: 0.425, doce: 0.425, admi: 0.050, acud: 0.050, estu: 0.050 },
-  27: { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
-  28: { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
-  29: { coor: 0.360, doce: 0.240, admi: 0.200, acud: 0.100, estu: 0.100 },
-  30: { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
-  31: { coor: 0.420, doce: 0.280, admi: 0.100, acud: 0.100, estu: 0.100 },
-  32: { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
-  33: { coor: 0.425, doce: 0.425, admi: 0.050, acud: 0.050, estu: 0.050 },
-  34: { coor: 0.300, doce: 0.200, admi: 0.166, acud: 0.166, estu: 0.166 },
-  35: { coor: 0.510, doce: 0.340, admi: 0.050, acud: 0.050, estu: 0.050 },
-  36: { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
-  37: { coor: 0.300, doce: 0.200, admi: 0.166, acud: 0.166, estu: 0.166 },
-  38: { coor: 0.440, doce: 0.294, admi: 0.166, acud: 0.050, estu: 0.050 },
-  39: { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
+const COMPETENCY_WEIGHTS: Record<string, Record<Exclude<ObserverRole, "autoeval">, number>> = {
+  autoconciencia_1: { coor: 0.510, doce: 0.340, admi: 0.050, acud: 0.050, estu: 0.050 },
+  autoconciencia_2: { coor: 0.300, doce: 0.300, admi: 0.200, acud: 0.100, estu: 0.100 },
+  autoconciencia_3: { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
+  emociones_1:      { coor: 0.300, doce: 0.200, admi: 0.166, acud: 0.166, estu: 0.166 },
+  emociones_2:      { coor: 0.510, doce: 0.340, admi: 0.050, acud: 0.050, estu: 0.050 },
+  emociones_3:      { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
+  comunicacion_1:   { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
+  comunicacion_2:   { coor: 0.300, doce: 0.200, admi: 0.166, acud: 0.166, estu: 0.166 },
+  comunicacion_3:   { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
+  colaborativo_1:   { coor: 0.337, doce: 0.337, admi: 0.224, acud: 0.050, estu: 0.050 },
+  colaborativo_2:   { coor: 0.337, doce: 0.337, admi: 0.224, acud: 0.050, estu: 0.050 },
+  colaborativo_3:   { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
+  direccion_1:      { coor: 0.425, doce: 0.425, admi: 0.050, acud: 0.050, estu: 0.050 },
+  direccion_2:      { coor: 0.420, doce: 0.280, admi: 0.100, acud: 0.100, estu: 0.100 },
+  direccion_3:      { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
+  orientacion_1:    { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
+  orientacion_2:    { coor: 0.425, doce: 0.425, admi: 0.050, acud: 0.050, estu: 0.050 },
+  orientacion_3:    { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
+  convivencia_1:    { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
+  convivencia_2:    { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
+  convivencia_3:    { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
+  evaluacion_1:     { coor: 0.425, doce: 0.425, admi: 0.050, acud: 0.050, estu: 0.050 },
+  evaluacion_2:     { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
+  evaluacion_3:     { coor: 0.200, doce: 0.300, admi: 0.166, acud: 0.166, estu: 0.166 },
+  vision_1:         { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
+  vision_2:         { coor: 0.425, doce: 0.425, admi: 0.050, acud: 0.050, estu: 0.050 },
+  vision_3:         { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
+  planeacion_1:     { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
+  planeacion_2:     { coor: 0.360, doce: 0.240, admi: 0.200, acud: 0.100, estu: 0.100 },
+  planeacion_3:     { coor: 0.250, doce: 0.250, admi: 0.166, acud: 0.166, estu: 0.166 },
+  redes_1:          { coor: 0.420, doce: 0.280, admi: 0.100, acud: 0.100, estu: 0.100 },
+  redes_2:          { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
+  redes_3:          { coor: 0.425, doce: 0.425, admi: 0.050, acud: 0.050, estu: 0.050 },
+  alianzas_1:       { coor: 0.300, doce: 0.200, admi: 0.166, acud: 0.166, estu: 0.166 },
+  alianzas_2:       { coor: 0.510, doce: 0.340, admi: 0.050, acud: 0.050, estu: 0.050 },
+  alianzas_3:       { coor: 0.350, doce: 0.350, admi: 0.100, acud: 0.100, estu: 0.100 },
+  rendicion_1:      { coor: 0.300, doce: 0.200, admi: 0.166, acud: 0.166, estu: 0.166 },
+  rendicion_2:      { coor: 0.440, doce: 0.294, admi: 0.166, acud: 0.050, estu: 0.050 },
+  rendicion_3:      { coor: 0.200, doce: 0.200, admi: 0.200, acud: 0.200, estu: 0.200 },
 };
 
 /** Map form tipo to observer role key */
@@ -549,7 +551,9 @@ export function getItemWeight(itemNum: number, tipo: string): number {
   if (tipo === "autoevaluacion") return 1.0;
   const role = TIPO_TO_ROLE[tipo];
   if (!role || role === "autoeval") return 1.0;
-  return ITEM_WEIGHTS[itemNum]?.[role] ?? 1.0;
+  const competency = ITEM_COMPETENCY[itemNum];
+  if (!competency) return 1.0;
+  return COMPETENCY_WEIGHTS[competency]?.[role] ?? 1.0;
 }
 
 /** Get numeric score for a response label (frequency or agreement) */
