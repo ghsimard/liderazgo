@@ -381,3 +381,159 @@ export const FORM_CONFIGS: Record<string, SurveyFormConfig> = {
   autoevaluacion: autoevaluacionConfig,
   administrativo: administrativoConfig,
 };
+
+// ══════════════════════════════════════════════════════════════
+// SCORING & WEIGHTING (for future report generation)
+// ══════════════════════════════════════════════════════════════
+
+/** Numeric value for each frequency response */
+export const FREQUENCY_SCORE: Record<string, number> = {
+  "Nunca": 2.5,
+  "Pocas veces": 5,
+  "Algunas veces": 7.5,
+  "Siempre": 10,
+  "No sé": 0,
+};
+
+/** Numeric value for each agreement response */
+export const AGREEMENT_SCORE: Record<string, number> = {
+  "Totalmente en desacuerdo": 2.5,
+  "Algo en desacuerdo": 5,
+  "Algo de acuerdo": 7.5,
+  "Totalmente de acuerdo": 10,
+  "No sé": 0,
+};
+
+/** Competency (obj) mapped to each item number */
+export const ITEM_COMPETENCY: Record<number, string> = {
+  1: "autoconciencia_1",
+  2: "orientacion_pedagogica_1",
+  3: "vision_estrategica_1",
+  4: "autoconciencia_2",
+  5: "orientacion_pedagogica_2",
+  6: "vision_estrategica_2",
+  7: "inteligencia_emocional_1",
+  8: "orientacion_pedagogica_3",
+  9: "vision_estrategica_3",
+  10: "inteligencia_emocional_2",
+  11: "convivencia_1",
+  12: "alianzas_1",
+  13: "comunicacion_1",
+  14: "evaluacion_1",
+  15: "rendicion_cuentas_1",
+  16: "trabajo_colaborativo_1",
+  17: "evaluacion_2",
+  18: "rendicion_cuentas_2",
+  19: "alianzas_2",
+  20: "autoconciencia_3",
+  21: "orientacion_pedagogica_4",
+  22: "vision_estrategica_4",
+  23: "alianzas_3",
+  24: "inteligencia_emocional_3",
+  25: "orientacion_pedagogica_5",
+  26: "vision_estrategica_5",
+  27: "rendicion_cuentas_3",
+  28: "comunicacion_2",
+  29: "orientacion_pedagogica_6",
+  30: "vision_estrategica_6",
+  31: "comunicacion_3",
+  32: "convivencia_2",
+  33: "trabajo_colaborativo_2",
+  34: "trabajo_colaborativo_3",
+  35: "convivencia_3",
+  36: "alianzas_4",
+  37: "trabajo_colaborativo_4",
+  38: "evaluacion_3",
+  39: "alianzas_5",
+};
+
+/** Management domain for each competency */
+export const COMPETENCY_DOMAIN: Record<string, string> = {
+  autoconciencia: "gestion_personal",
+  inteligencia_emocional: "gestion_personal",
+  comunicacion: "gestion_personal",
+  orientacion_pedagogica: "gestion_pedagogica",
+  evaluacion: "gestion_pedagogica",
+  vision_estrategica: "gestion_administrativa",
+  rendicion_cuentas: "gestion_administrativa",
+  convivencia: "gestion_comunitaria",
+  alianzas: "gestion_comunitaria",
+  trabajo_colaborativo: "gestion_comunitaria",
+};
+
+/** Get the domain for a competency key (strips the suffix _1, _2, etc.) */
+export function getCompetencyBase(competencyKey: string): string {
+  return competencyKey.replace(/_\d+$/, "");
+}
+
+/**
+ * Weights per observer role for each item (1-39).
+ * Role keys: coor, doce, admi, acud, estu. Autoevaluacion always = 1.0.
+ */
+export type ObserverRole = "coor" | "doce" | "admi" | "acud" | "estu" | "autoeval";
+
+export const ITEM_WEIGHTS: Record<number, Record<Exclude<ObserverRole, "autoeval">, number>> = {
+  1:  { coor: 1.0, doce: 1.0, admi: 0.5, acud: 0.5, estu: 0.5 },
+  2:  { coor: 1.0, doce: 1.0, admi: 0.5, acud: 0.5, estu: 0.5 },
+  3:  { coor: 1.0, doce: 0.5, admi: 0.5, acud: 0.5, estu: 0.5 },
+  4:  { coor: 0.5, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  5:  { coor: 0.5, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  6:  { coor: 1.0, doce: 0.5, admi: 0.5, acud: 0.5, estu: 0.5 },
+  7:  { coor: 1.0, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  8:  { coor: 1.0, doce: 1.0, admi: 0.5, acud: 0.5, estu: 0.5 },
+  9:  { coor: 1.0, doce: 0.5, admi: 1.0, acud: 1.0, estu: 1.0 },
+  10: { coor: 1.0, doce: 1.0, admi: 1.0, acud: 0.5, estu: 0.5 },
+  11: { coor: 0.5, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  12: { coor: 1.0, doce: 0.5, admi: 0.5, acud: 0.5, estu: 0.5 },
+  13: { coor: 1.0, doce: 1.0, admi: 0.5, acud: 0.5, estu: 0.5 },
+  14: { coor: 1.0, doce: 1.0, admi: 0.5, acud: 0.5, estu: 0.5 },
+  15: { coor: 1.0, doce: 0.5, admi: 0.5, acud: 1.0, estu: 1.0 },
+  16: { coor: 1.0, doce: 1.0, admi: 1.0, acud: 0.5, estu: 0.5 },
+  17: { coor: 1.0, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  18: { coor: 0.5, doce: 0.5, admi: 0.5, acud: 1.0, estu: 1.0 },
+  19: { coor: 1.0, doce: 1.0, admi: 0.5, acud: 0.5, estu: 0.5 },
+  20: { coor: 1.0, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  21: { coor: 1.0, doce: 1.0, admi: 0.5, acud: 0.5, estu: 0.5 },
+  22: { coor: 1.0, doce: 0.5, admi: 0.5, acud: 0.5, estu: 0.5 },
+  23: { coor: 1.0, doce: 0.5, admi: 0.5, acud: 1.0, estu: 1.0 },
+  24: { coor: 0.5, doce: 0.5, admi: 1.0, acud: 1.0, estu: 1.0 },
+  25: { coor: 1.0, doce: 1.0, admi: 0.5, acud: 1.0, estu: 1.0 },
+  26: { coor: 0.5, doce: 0.5, admi: 1.0, acud: 1.0, estu: 1.0 },
+  27: { coor: 0.5, doce: 0.5, admi: 0.5, acud: 1.0, estu: 1.0 },
+  28: { coor: 1.0, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  29: { coor: 0.5, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  30: { coor: 1.0, doce: 0.5, admi: 0.5, acud: 0.5, estu: 0.5 },
+  31: { coor: 1.0, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  32: { coor: 0.5, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  33: { coor: 1.0, doce: 1.0, admi: 0.5, acud: 0.5, estu: 0.5 },
+  34: { coor: 1.0, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  35: { coor: 1.0, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  36: { coor: 1.0, doce: 1.0, admi: 0.5, acud: 0.5, estu: 0.5 },
+  37: { coor: 0.5, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  38: { coor: 1.0, doce: 1.0, admi: 1.0, acud: 1.0, estu: 1.0 },
+  39: { coor: 1.0, doce: 0.5, admi: 0.5, acud: 0.5, estu: 0.5 },
+};
+
+/** Map form tipo to observer role key */
+export const TIPO_TO_ROLE: Record<string, ObserverRole> = {
+  docente: "doce",
+  estudiante: "estu",
+  directivo: "coor",
+  acudiente: "acud",
+  administrativo: "admi",
+  autoevaluacion: "autoeval",
+};
+
+/** Get weight for an item given a form type */
+export function getItemWeight(itemNum: number, tipo: string): number {
+  if (tipo === "autoevaluacion") return 1.0;
+  const role = TIPO_TO_ROLE[tipo];
+  if (!role || role === "autoeval") return 1.0;
+  return ITEM_WEIGHTS[itemNum]?.[role] ?? 1.0;
+}
+
+/** Get numeric score for a response label (frequency or agreement) */
+export function getResponseScore(itemNum: number, responseLabel: string): number {
+  if (itemNum <= 18) return FREQUENCY_SCORE[responseLabel] ?? 0;
+  return AGREEMENT_SCORE[responseLabel] ?? 0;
+}
