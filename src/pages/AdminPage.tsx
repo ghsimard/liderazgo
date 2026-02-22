@@ -149,9 +149,8 @@ export default function AdminPage() {
         <Tabs defaultValue="formularios">
           <TabsList className="mb-4">
             <TabsTrigger value="formularios" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Formularios</TabsTrigger>
-            <TabsTrigger value="fichas" className="gap-1.5"><FileText className="w-4 h-4" /> Fichas</TabsTrigger>
+            <TabsTrigger value="fichas" className="gap-1.5"><FileText className="w-4 h-4" /> Fichas Gestión</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
-            <TabsTrigger value="geography" className="gap-1.5"><MapPin className="w-4 h-4" /> Geografía</TabsTrigger>
           </TabsList>
           <TabsContent value="formularios">
             <div className="space-y-8">
@@ -176,9 +175,17 @@ export default function AdminPage() {
               ))}
             </div>
           </TabsContent>
-          <TabsContent value="fichas"><AdminFichasTab /></TabsContent>
+          <TabsContent value="fichas">
+            <Tabs defaultValue="lista">
+              <TabsList className="mb-4">
+                <TabsTrigger value="lista" className="gap-1.5"><FileText className="w-4 h-4" /> Lista de Fichas</TabsTrigger>
+                <TabsTrigger value="geography" className="gap-1.5"><MapPin className="w-4 h-4" /> Geografía</TabsTrigger>
+              </TabsList>
+              <TabsContent value="lista"><AdminFichasTab /></TabsContent>
+              <TabsContent value="geography"><AdminGeographyTab /></TabsContent>
+            </Tabs>
+          </TabsContent>
           <TabsContent value="users"><AdminUsersTab /></TabsContent>
-          <TabsContent value="geography"><AdminGeographyTab /></TabsContent>
         </Tabs>
       </div>
     </div>
