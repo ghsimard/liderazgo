@@ -179,7 +179,7 @@ export default function AdminPage() {
             <Tabs defaultValue="lista">
               <TabsList className="mb-4">
                 <TabsTrigger value="lista" className="gap-1.5"><FileText className="w-4 h-4" /> Lista de Fichas</TabsTrigger>
-                <TabsTrigger value="geography" className="gap-1.5"><MapPin className="w-4 h-4" /> Geografía</TabsTrigger>
+                <TabsTrigger value="geography" className="gap-1.5"><MapPin className="w-4 h-4" /> Configuración de Región</TabsTrigger>
               </TabsList>
               <TabsContent value="lista"><AdminFichasTab /></TabsContent>
               <TabsContent value="geography"><AdminGeographyTab /></TabsContent>
