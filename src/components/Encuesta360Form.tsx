@@ -243,6 +243,84 @@ function SurveyTable({
   );
 }
 
+// ── Directivo picker (loaded from fichas_rlt) ──
+interface DirectivoOption {
+  nombres_apellidos: string;
+  numero_cedula: string;
+  cargo_actual: string;
+}
+
+function DirectivoSelect({
+  institucion,
+  value,
+  onChange,
+  hasError,
+}: {
+  institucion: string;
+  value: string;
+  onChange: (nombre: string, cedula: string, cargo: string) => void;
+  hasError?: boolean;
+}) {
+  const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!institucion) {
+      setDirectivos([]);
+      return;
+    }
+    setLoading(true);
+    (async () => {
+      const { data } = await supabase
+        .from("fichas_rlt")
+        .select("nombres_apellidos, numero_cedula, cargo_actual")
+        .eq("nombre_ie", institucion)
+        .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+      setDirectivos((data as DirectivoOption[]) ?? []);
+      setLoading(false);
+    })();
+  }, [institucion]);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-sm font-medium text-foreground">
+        Nombre del directivo docente evaluado <span className="text-destructive">*</span>
+      </label>
+      <select
+        value={value}
+        disabled={!institucion || loading}
+        onChange={(e) => {
+          const selected = directivos.find((d) => d.nombres_apellidos === e.target.value);
+          if (selected) {
+            onChange(selected.nombres_apellidos, selected.numero_cedula ?? "", selected.cargo_actual);
+          } else {
+            onChange("", "", "");
+          }
+        }}
+        className={cn(
+          "w-full rounded-md border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-ring",
+          hasError ? "border-destructive" : "border-input"
+        )}
+      >
+        <option value="">
+          {!institucion
+            ? "Seleccione primero una institución"
+            : loading
+            ? "Cargando directivos…"
+            : directivos.length === 0
+            ? "No se encontraron directivos para esta institución"
+            : "Seleccione un directivo"}
+        </option>
+        {directivos.map((d) => (
+          <option key={d.nombres_apellidos + d.numero_cedula} value={d.nombres_apellidos}>
+            {d.nombres_apellidos} — {d.cargo_actual}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════
 // MAIN FORM COMPONENT
 // ══════════════════════════════════════════════════════════════
@@ -420,6 +498,10 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
             value={institucion}
             onChange={(v) => {
               setInstitucion(v);
+              // Reset directivo selection when institution changes
+              setNombreDirectivo("");
+              setCedulaDirectivo("");
+              setCargoDirectivo("");
               setFieldErrors((prev) => { const n = new Set(prev); n.delete("institucion"); return n; });
             }}
             hasError={fieldErrors.has("institucion")}
@@ -447,43 +529,55 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
                 required
                 hasError={fieldErrors.has("cedula")}
               />
+              <RadioField
+                label="Cargo en el colegio"
+                options={CARGO_OPTIONS}
+                value={cargoDirectivo}
+                onChange={(v) => {
+                  setCargoDirectivo(v);
+                  setFieldErrors((prev) => { const n = new Set(prev); n.delete("cargo_directivo"); return n; });
+                }}
+                required
+                hasError={fieldErrors.has("cargo_directivo")}
+              />
             </>
           ) : (
             <>
-              <TextField
-                label="Nombre del directivo docente evaluado"
+              <DirectivoSelect
+                institucion={institucion}
                 value={nombreDirectivo}
-                onChange={(v) => {
-                  setNombreDirectivo(v);
-                  setFieldErrors((prev) => { const n = new Set(prev); n.delete("nombre_directivo"); return n; });
+                onChange={(nombre, cedula, cargo) => {
+                  setNombreDirectivo(nombre);
+                  setCedulaDirectivo(cedula);
+                  setCargoDirectivo(cargo);
+                  setFieldErrors((prev) => {
+                    const n = new Set(prev);
+                    n.delete("nombre_directivo");
+                    n.delete("cedula_directivo");
+                    n.delete("cargo_directivo");
+                    return n;
+                  });
                 }}
-                required
                 hasError={fieldErrors.has("nombre_directivo")}
               />
               <TextField
                 label="Número de cédula del directivo docente evaluado"
                 value={cedulaDirectivo}
-                onChange={(v) => {
-                  setCedulaDirectivo(v);
-                  setFieldErrors((prev) => { const n = new Set(prev); n.delete("cedula_directivo"); return n; });
-                }}
+                onChange={() => {}}
                 required
                 hasError={fieldErrors.has("cedula_directivo")}
+                placeholder="Se completa automáticamente"
+              />
+              <RadioField
+                label="Cargo del directivo evaluado"
+                options={CARGO_OPTIONS}
+                value={cargoDirectivo}
+                onChange={() => {}}
+                required
+                hasError={fieldErrors.has("cargo_directivo")}
               />
             </>
           )}
-
-          <RadioField
-            label={config.isAutoeval ? "Cargo en el colegio" : "Cargo del directivo evaluado"}
-            options={CARGO_OPTIONS}
-            value={cargoDirectivo}
-            onChange={(v) => {
-              setCargoDirectivo(v);
-              setFieldErrors((prev) => { const n = new Set(prev); n.delete("cargo_directivo"); return n; });
-            }}
-            required
-            hasError={fieldErrors.has("cargo_directivo")}
-          />
 
           {!config.isAutoeval && (
             <RadioField
