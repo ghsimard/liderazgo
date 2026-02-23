@@ -134,7 +134,7 @@ export default function AdminCompetenciesManager() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-sm">Competencias</h3>
-        <Button size="sm" onClick={() => setEditComp({ key: "", label: "", domain_id: domains[0]?.id ?? "", sort_order: Math.max(0, ...competencies.map(c => c.sort_order)) + 1 })} className="gap-1.5">
+        <Button size="sm" onClick={() => setEditComp({ key: "", label: "", domain_id: domains[0]?.id ?? "", sort_order: competencies.length + 1 })} className="gap-1.5">
           <Plus className="w-4 h-4" /> Agregar
         </Button>
       </div>
@@ -195,11 +195,7 @@ export default function AdminCompetenciesManager() {
             </div>
             <div>
               <label className="text-xs font-medium">Dominio</label>
-              <Select value={editComp?.domain_id ?? ""} onValueChange={(v) => {
-                const compsInDomain = competencies.filter(c => c.domain_id === v);
-                const nextOrder = compsInDomain.length > 0 ? Math.max(...compsInDomain.map(c => c.sort_order)) + 1 : 1;
-                setEditComp((p) => ({ ...p, domain_id: v, ...(!p?.id ? { sort_order: nextOrder } : {}) }));
-              }}>
+              <Select value={editComp?.domain_id ?? ""} onValueChange={(v) => setEditComp((p) => ({ ...p, domain_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Seleccione dominio" /></SelectTrigger>
                 <SelectContent>
                   {domains.map((d) => <SelectItem key={d.id} value={d.id}>{d.label}</SelectItem>)}
