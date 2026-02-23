@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      competencies_360: {
+        Row: {
+          domain_id: string
+          id: string
+          key: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          domain_id: string
+          id?: string
+          key: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          domain_id?: string
+          id?: string
+          key?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competencies_360_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "domains_360"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competency_weights: {
         Row: {
           competency_key: string
@@ -32,6 +64,27 @@ export type Database = {
           id?: string
           observer_role?: string
           weight?: number
+        }
+        Relationships: []
+      }
+      domains_360: {
+        Row: {
+          id: string
+          key: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          key: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          id?: string
+          key?: string
+          label?: string
+          sort_order?: number
         }
         Relationships: []
       }
@@ -324,6 +377,59 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      item_texts_360: {
+        Row: {
+          form_type: string
+          id: string
+          item_id: string
+          text: string
+        }
+        Insert: {
+          form_type: string
+          id?: string
+          item_id: string
+          text: string
+        }
+        Update: {
+          form_type?: string
+          id?: string
+          item_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_texts_360_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items_360"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      items_360: {
+        Row: {
+          competency_key: string
+          id: string
+          item_number: number
+          response_type: string
+          sort_order: number
+        }
+        Insert: {
+          competency_key: string
+          id?: string
+          item_number: number
+          response_type: string
+          sort_order?: number
+        }
+        Update: {
+          competency_key?: string
+          id?: string
+          item_number?: number
+          response_type?: string
+          sort_order?: number
+        }
+        Relationships: []
       }
       municipios: {
         Row: {
