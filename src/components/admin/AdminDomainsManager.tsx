@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RefreshCw, Plus, Pencil, Trash2, Save, X } from "lucide-react";
@@ -76,42 +77,64 @@ export default function AdminDomainsManager() {
     if (!deleteId) return;
     setSaving(true);
     try {
-      // 1. Find competencies belonging to this domain
-      const { data: comps, error: cErr } = await supabase.from("competencies_360").select("key").eq("domain_id", deleteId);
-      if (cErr) throw cErr;
+      const domain = domains.find((d) => d.id === deleteId);
+      if (!domain) throw new Error("Dominio no encontrado");
 
-      if (comps && comps.length > 0) {
-        for (const comp of comps) {
-          // 2. Delete weights for this competency key (and variants)
-          const { error: wErr } = await supabase.from("competency_weights").delete().like("competency_key", `${comp.key}%`);
-          if (wErr) throw wErr;
+      // Capture all data for undo
+      const { data: comps } = await supabase.from("competencies_360").select("*").eq("domain_id", deleteId);
+      const backupComps = comps ?? [];
+      const compKeys = backupComps.map((c) => c.key);
 
-          // 3. Find items for this competency
-          const { data: matchedItems, error: iQErr } = await supabase.from("items_360").select("id").like("competency_key", `${comp.key}%`);
-          if (iQErr) throw iQErr;
-
-          if (matchedItems && matchedItems.length > 0) {
-            const itemIds = matchedItems.map((i) => i.id);
-            // 4. Delete item texts
-            const { error: tErr } = await supabase.from("item_texts_360").delete().in("item_id", itemIds);
-            if (tErr) throw tErr;
-            // 5. Delete items
-            const { error: iErr } = await supabase.from("items_360").delete().like("competency_key", `${comp.key}%`);
-            if (iErr) throw iErr;
-          }
+      let backupItems: any[] = [], backupTexts: any[] = [], backupWeights: any[] = [];
+      for (const key of compKeys) {
+        const [wRes, iRes] = await Promise.all([
+          supabase.from("competency_weights").select("*").like("competency_key", `${key}%`),
+          supabase.from("items_360").select("*").like("competency_key", `${key}%`),
+        ]);
+        backupWeights.push(...(wRes.data ?? []));
+        const matchedItems = iRes.data ?? [];
+        backupItems.push(...matchedItems);
+        if (matchedItems.length > 0) {
+          const tRes = await supabase.from("item_texts_360").select("*").in("item_id", matchedItems.map((i) => i.id));
+          backupTexts.push(...(tRes.data ?? []));
         }
-        // 6. Delete all competencies of this domain
-        const { error: cDelErr } = await supabase.from("competencies_360").delete().eq("domain_id", deleteId);
-        if (cDelErr) throw cDelErr;
       }
+      const backupDomain = { ...domain };
 
-      // 7. Finally delete the domain
+      // Delete cascade
+      for (const key of compKeys) {
+        await supabase.from("competency_weights").delete().like("competency_key", `${key}%`);
+        const { data: mItems } = await supabase.from("items_360").select("id").like("competency_key", `${key}%`);
+        if (mItems && mItems.length > 0) {
+          await supabase.from("item_texts_360").delete().in("item_id", mItems.map((i) => i.id));
+          await supabase.from("items_360").delete().like("competency_key", `${key}%`);
+        }
+      }
+      if (backupComps.length > 0) await supabase.from("competencies_360").delete().eq("domain_id", deleteId);
       const { error } = await supabase.from("domains_360").delete().eq("id", deleteId);
       if (error) throw error;
 
-      toast({ title: "Dominio eliminado", description: "Competencias, ítems, textos y pesos asociados también fueron eliminados." });
       setDeleteId(null);
+      setDeleteCounts(null);
       fetch();
+
+      toast({
+        title: "Dominio eliminado",
+        description: `${backupComps.length} comp., ${backupItems.length} ítem(s), ${backupTexts.length} texto(s), ${backupWeights.length} peso(s).`,
+        action: (
+          <ToastAction altText="Deshacer eliminación" onClick={async () => {
+            try {
+              await supabase.from("domains_360").insert({ id: backupDomain.id, key: backupDomain.key, label: backupDomain.label, sort_order: backupDomain.sort_order });
+              if (backupComps.length > 0) await supabase.from("competencies_360").insert(backupComps);
+              if (backupItems.length > 0) await supabase.from("items_360").insert(backupItems);
+              if (backupTexts.length > 0) await supabase.from("item_texts_360").insert(backupTexts.map(({ id, ...rest }) => rest));
+              if (backupWeights.length > 0) await supabase.from("competency_weights").insert(backupWeights.map(({ id, ...rest }) => rest));
+              toast({ title: "Dominio restaurado" });
+              fetch();
+            } catch (e: any) { toast({ title: "Error al restaurar", description: e.message, variant: "destructive" }); }
+          }}>Deshacer</ToastAction>
+        ),
+      });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }

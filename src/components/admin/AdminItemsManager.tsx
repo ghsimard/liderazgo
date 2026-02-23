@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -136,24 +137,48 @@ export default function AdminItemsManager() {
     setSaving(true);
     try {
       const item = items.find((i) => i.id === deleteId);
+      if (!item) throw new Error("Ítem no encontrado");
+
+      // Capture data for undo before deleting
+      const [savedTexts, savedWeights] = await Promise.all([
+        supabase.from("item_texts_360").select("*").eq("item_id", deleteId),
+        supabase.from("competency_weights").select("*").eq("competency_key", item.competency_key),
+      ]);
+      const backupTexts = savedTexts.data ?? [];
+      const backupWeights = savedWeights.data ?? [];
+      const backupItem = { ...item };
 
       // 1. Delete item texts
       const { error: tErr } = await supabase.from("item_texts_360").delete().eq("item_id", deleteId);
       if (tErr) throw tErr;
 
-      // 2. Delete associated weights (by competency_key)
-      if (item) {
-        const { error: wErr } = await supabase.from("competency_weights").delete().eq("competency_key", item.competency_key);
-        if (wErr) throw wErr;
-      }
+      // 2. Delete associated weights
+      const { error: wErr } = await supabase.from("competency_weights").delete().eq("competency_key", item.competency_key);
+      if (wErr) throw wErr;
 
       // 3. Delete the item
       const { error } = await supabase.from("items_360").delete().eq("id", deleteId);
       if (error) throw error;
 
-      toast({ title: "Ítem eliminado", description: "Textos y pesos asociados también fueron eliminados." });
       setDeleteId(null);
+      setDeleteCounts(null);
       fetchAll();
+
+      toast({
+        title: "Ítem eliminado",
+        description: `${backupTexts.length} texto(s) y ${backupWeights.length} peso(s) eliminados.`,
+        action: (
+          <ToastAction altText="Deshacer eliminación" onClick={async () => {
+            try {
+              await supabase.from("items_360").insert({ id: backupItem.id, item_number: backupItem.item_number, competency_key: backupItem.competency_key, response_type: backupItem.response_type, sort_order: backupItem.sort_order });
+              if (backupTexts.length > 0) await supabase.from("item_texts_360").insert(backupTexts.map(({ id, ...rest }) => rest));
+              if (backupWeights.length > 0) await supabase.from("competency_weights").insert(backupWeights.map(({ id, ...rest }) => rest));
+              toast({ title: "Ítem restaurado" });
+              fetchAll();
+            } catch (e: any) { toast({ title: "Error al restaurar", description: e.message, variant: "destructive" }); }
+          }}>Deshacer</ToastAction>
+        ),
+      });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
