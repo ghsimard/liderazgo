@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -67,35 +68,55 @@ export default function AdminCompetenciesManager() {
     if (!deleteId) return;
     setSaving(true);
     try {
-      // Find the competency to get its key
       const comp = competencies.find((c) => c.id === deleteId);
       if (!comp) throw new Error("Competencia no encontrada");
 
-      // 1. Delete weights matching this competency key (and variants like key_1, key_2)
-      const { error: wErr } = await supabase.from("competency_weights").delete().like("competency_key", `${comp.key}%`);
-      if (wErr) throw wErr;
+      // Capture data for undo
+      const [bWeights, bItems] = await Promise.all([
+        supabase.from("competency_weights").select("*").like("competency_key", `${comp.key}%`),
+        supabase.from("items_360").select("*").like("competency_key", `${comp.key}%`),
+      ]);
+      const backupWeights = bWeights.data ?? [];
+      const backupItems = bItems.data ?? [];
+      const itemIds = backupItems.map((i) => i.id);
+      const bTexts = itemIds.length > 0
+        ? await supabase.from("item_texts_360").select("*").in("item_id", itemIds)
+        : { data: [] };
+      const backupTexts = bTexts.data ?? [];
+      const backupComp = { ...comp };
 
-      // 2. Find items matching this competency key
-      const { data: matchedItems, error: iQueryErr } = await supabase.from("items_360").select("id").like("competency_key", `${comp.key}%`);
-      if (iQueryErr) throw iQueryErr;
-
-      if (matchedItems && matchedItems.length > 0) {
-        const itemIds = matchedItems.map((i) => i.id);
-        // 3. Delete item texts for those items
-        const { error: tErr } = await supabase.from("item_texts_360").delete().in("item_id", itemIds);
-        if (tErr) throw tErr;
-        // 4. Delete the items themselves
-        const { error: iErr } = await supabase.from("items_360").delete().like("competency_key", `${comp.key}%`);
-        if (iErr) throw iErr;
+      // Delete cascade
+      if (backupWeights.length > 0) {
+        const { error } = await supabase.from("competency_weights").delete().like("competency_key", `${comp.key}%`);
+        if (error) throw error;
       }
-
-      // 5. Finally delete the competency
+      if (itemIds.length > 0) {
+        await supabase.from("item_texts_360").delete().in("item_id", itemIds);
+        await supabase.from("items_360").delete().like("competency_key", `${comp.key}%`);
+      }
       const { error } = await supabase.from("competencies_360").delete().eq("id", deleteId);
       if (error) throw error;
 
-      toast({ title: "Competencia eliminada", description: "Ítems, textos y pesos asociados también fueron eliminados." });
       setDeleteId(null);
+      setDeleteCounts(null);
       fetchAll();
+
+      toast({
+        title: "Competencia eliminada",
+        description: `${backupItems.length} ítem(s), ${backupTexts.length} texto(s), ${backupWeights.length} peso(s).`,
+        action: (
+          <ToastAction altText="Deshacer eliminación" onClick={async () => {
+            try {
+              await supabase.from("competencies_360").insert({ id: backupComp.id, key: backupComp.key, label: backupComp.label, domain_id: backupComp.domain_id, sort_order: backupComp.sort_order });
+              if (backupItems.length > 0) await supabase.from("items_360").insert(backupItems);
+              if (backupTexts.length > 0) await supabase.from("item_texts_360").insert(backupTexts.map(({ id, ...rest }) => rest));
+              if (backupWeights.length > 0) await supabase.from("competency_weights").insert(backupWeights.map(({ id, ...rest }) => rest));
+              toast({ title: "Competencia restaurada" });
+              fetchAll();
+            } catch (e: any) { toast({ title: "Error al restaurar", description: e.message, variant: "destructive" }); }
+          }}>Deshacer</ToastAction>
+        ),
+      });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
