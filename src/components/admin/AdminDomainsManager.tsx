@@ -21,6 +21,7 @@ export default function AdminDomainsManager() {
   const [loading, setLoading] = useState(true);
   const [editDomain, setEditDomain] = useState<Partial<Domain> | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteCounts, setDeleteCounts] = useState<{ competencies: number; items: number; texts: number; weights: number } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const fetch = async () => {
@@ -141,7 +142,27 @@ export default function AdminDomainsManager() {
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditDomain(d)}>
               <Pencil className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(d.id)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
+              setDeleteId(d.id);
+              setDeleteCounts(null);
+              const { data: comps } = await supabase.from("competencies_360").select("key").eq("domain_id", d.id);
+              const compKeys = (comps ?? []).map((c) => c.key);
+              let totalItems = 0, totalTexts = 0, totalWeights = 0;
+              for (const key of compKeys) {
+                const [wRes, iRes] = await Promise.all([
+                  supabase.from("competency_weights").select("id", { count: "exact", head: true }).like("competency_key", `${key}%`),
+                  supabase.from("items_360").select("id").like("competency_key", `${key}%`),
+                ]);
+                totalWeights += wRes.count ?? 0;
+                const itemIds = (iRes.data ?? []).map((i) => i.id);
+                totalItems += itemIds.length;
+                if (itemIds.length > 0) {
+                  const tRes = await supabase.from("item_texts_360").select("id", { count: "exact", head: true }).in("item_id", itemIds);
+                  totalTexts += tRes.count ?? 0;
+                }
+              }
+              setDeleteCounts({ competencies: compKeys.length, items: totalItems, texts: totalTexts, weights: totalWeights });
+            }}>
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
@@ -178,14 +199,24 @@ export default function AdminDomainsManager() {
       </Dialog>
 
       {/* Delete confirm */}
-      <Dialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+      <Dialog open={!!deleteId} onOpenChange={(o) => { if (!o) { setDeleteId(null); setDeleteCounts(null); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>¿Eliminar dominio?</DialogTitle>
-            <DialogDescription>Se eliminarán también las competencias asociadas. Esta acción no se puede deshacer.</DialogDescription>
+            <DialogDescription>Esta acción no se puede deshacer. Se eliminarán los siguientes registros asociados:</DialogDescription>
           </DialogHeader>
+          {deleteCounts ? (
+            <ul className="text-sm space-y-1 pl-4 list-disc text-muted-foreground">
+              <li><strong>{deleteCounts.competencies}</strong> competencia(s)</li>
+              <li><strong>{deleteCounts.items}</strong> ítem(s)</li>
+              <li><strong>{deleteCounts.texts}</strong> texto(s) de formulario</li>
+              <li><strong>{deleteCounts.weights}</strong> ponderación(es)</li>
+            </ul>
+          ) : (
+            <div className="flex justify-center py-2"><RefreshCw className="animate-spin w-4 h-4 text-muted-foreground" /></div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setDeleteId(null); setDeleteCounts(null); }}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={saving}>Eliminar</Button>
           </DialogFooter>
         </DialogContent>
