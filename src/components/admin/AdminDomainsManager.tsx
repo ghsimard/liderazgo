@@ -75,9 +75,40 @@ export default function AdminDomainsManager() {
     if (!deleteId) return;
     setSaving(true);
     try {
+      // 1. Find competencies belonging to this domain
+      const { data: comps, error: cErr } = await supabase.from("competencies_360").select("key").eq("domain_id", deleteId);
+      if (cErr) throw cErr;
+
+      if (comps && comps.length > 0) {
+        for (const comp of comps) {
+          // 2. Delete weights for this competency key (and variants)
+          const { error: wErr } = await supabase.from("competency_weights").delete().like("competency_key", `${comp.key}%`);
+          if (wErr) throw wErr;
+
+          // 3. Find items for this competency
+          const { data: matchedItems, error: iQErr } = await supabase.from("items_360").select("id").like("competency_key", `${comp.key}%`);
+          if (iQErr) throw iQErr;
+
+          if (matchedItems && matchedItems.length > 0) {
+            const itemIds = matchedItems.map((i) => i.id);
+            // 4. Delete item texts
+            const { error: tErr } = await supabase.from("item_texts_360").delete().in("item_id", itemIds);
+            if (tErr) throw tErr;
+            // 5. Delete items
+            const { error: iErr } = await supabase.from("items_360").delete().like("competency_key", `${comp.key}%`);
+            if (iErr) throw iErr;
+          }
+        }
+        // 6. Delete all competencies of this domain
+        const { error: cDelErr } = await supabase.from("competencies_360").delete().eq("domain_id", deleteId);
+        if (cDelErr) throw cDelErr;
+      }
+
+      // 7. Finally delete the domain
       const { error } = await supabase.from("domains_360").delete().eq("id", deleteId);
       if (error) throw error;
-      toast({ title: "Dominio eliminado" });
+
+      toast({ title: "Dominio eliminado", description: "Competencias, ítems, textos y pesos asociados también fueron eliminados." });
       setDeleteId(null);
       fetch();
     } catch (err: any) {
