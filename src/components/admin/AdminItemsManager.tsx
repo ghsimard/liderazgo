@@ -261,14 +261,15 @@ export default function AdminItemsManager() {
                           <span className="text-xs font-mono text-muted-foreground w-8 text-center">{item.item_number}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-muted font-medium">{item.competency_key}</span>
-                              <span className="text-xs text-muted-foreground">{item.response_type === "frequency" ? "Frecuencia" : "Acuerdo"}</span>
-                              {domain && <span className="text-xs text-primary/70">{domain.label}</span>}
+                              {comp && <span className="text-sm font-medium">{comp.label}</span>}
+                              {domain && <span className="text-xs text-primary/70">· {domain.label}</span>}
                             </div>
-                            {itemTexts.length > 0 && (
+                            {itemTexts.length > 0 ? (
                               <p className="text-xs text-muted-foreground mt-1 truncate max-w-xl">
                                 {itemTexts[0].text}
                               </p>
+                            ) : (
+                              <p className="text-xs text-destructive italic mt-1">Sin texto</p>
                             )}
                           </div>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExpandedItem(isExpanded ? null : item.id)}>
@@ -290,16 +291,22 @@ export default function AdminItemsManager() {
                           </Button>
                         </div>
                         {isExpanded && (
-                          <div className="px-12 pb-3 space-y-1">
-                            {FORM_TYPES.map((ft) => {
-                              const t = itemTexts.find((x) => x.form_type === ft);
-                              return (
-                                <div key={ft} className="flex gap-2 text-xs">
-                                  <span className="font-medium w-28 shrink-0 text-muted-foreground">{FORM_TYPE_LABELS[ft]}:</span>
-                                  <span className={t ? "" : "text-destructive italic"}>{t?.text || "Sin texto"}</span>
-                                </div>
-                              );
-                            })}
+                          <div className="px-12 pb-3 space-y-2">
+                            <div className="flex gap-3 text-xs text-muted-foreground">
+                              <span>Clave: <span className="font-mono font-medium">{item.competency_key}</span></span>
+                              <span>· {item.response_type === "frequency" ? "Frecuencia" : "Acuerdo"}</span>
+                            </div>
+                            <div className="space-y-1">
+                              {FORM_TYPES.map((ft) => {
+                                const t = itemTexts.find((x) => x.form_type === ft);
+                                return (
+                                  <div key={ft} className="flex gap-2 text-xs">
+                                    <span className="font-medium w-28 shrink-0 text-muted-foreground">{FORM_TYPE_LABELS[ft]}:</span>
+                                    <span className={t ? "" : "text-destructive italic"}>{t?.text || "Sin texto"}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
                       </div>
