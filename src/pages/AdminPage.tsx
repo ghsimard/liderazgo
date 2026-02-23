@@ -3,7 +3,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logoRLT from "@/assets/logo_rlt.png";
@@ -11,6 +11,9 @@ import AdminFichasTab from "@/components/admin/AdminFichasTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminGeographyTab from "@/components/admin/AdminGeographyTab";
 import AdminWeightsTab from "@/components/admin/AdminWeightsTab";
+import AdminDomainsManager from "@/components/admin/AdminDomainsManager";
+import AdminCompetenciesManager from "@/components/admin/AdminCompetenciesManager";
+import AdminItemsManager from "@/components/admin/AdminItemsManager";
 
 interface FormItem {
   name: string;
@@ -151,7 +154,7 @@ export default function AdminPage() {
           <TabsList className="mb-4">
             <TabsTrigger value="formularios" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Formularios</TabsTrigger>
             <TabsTrigger value="fichas" className="gap-1.5"><FileText className="w-4 h-4" /> Fichas Gestión</TabsTrigger>
-            <TabsTrigger value="ponderaciones" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
+            <TabsTrigger value="ponderaciones" className="gap-1.5"><Settings2 className="w-4 h-4" /> Config 360°</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
           </TabsList>
           <TabsContent value="formularios">
@@ -187,7 +190,20 @@ export default function AdminPage() {
               <TabsContent value="geography"><AdminGeographyTab /></TabsContent>
             </Tabs>
           </TabsContent>
-          <TabsContent value="ponderaciones"><AdminWeightsTab /></TabsContent>
+          <TabsContent value="ponderaciones">
+            <Tabs defaultValue="dominios">
+              <TabsList className="mb-4 flex-wrap h-auto gap-1">
+                <TabsTrigger value="dominios" className="gap-1.5"><Layers className="w-4 h-4" /> Dominios</TabsTrigger>
+                <TabsTrigger value="competencias" className="gap-1.5"><ListTree className="w-4 h-4" /> Competencias</TabsTrigger>
+                <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
+                <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
+              </TabsList>
+              <TabsContent value="dominios"><AdminDomainsManager /></TabsContent>
+              <TabsContent value="competencias"><AdminCompetenciesManager /></TabsContent>
+              <TabsContent value="items"><AdminItemsManager /></TabsContent>
+              <TabsContent value="pesos"><AdminWeightsTab /></TabsContent>
+            </Tabs>
+          </TabsContent>
           <TabsContent value="users"><AdminUsersTab /></TabsContent>
         </Tabs>
       </div>
