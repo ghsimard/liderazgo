@@ -3,7 +3,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logoRLT from "@/assets/logo_rlt.png";
@@ -15,6 +15,7 @@ import AdminDomainsManager from "@/components/admin/AdminDomainsManager";
 import AdminCompetenciesManager from "@/components/admin/AdminCompetenciesManager";
 import AdminItemsManager from "@/components/admin/AdminItemsManager";
 import AdminCompetencyWizard from "@/components/admin/AdminCompetencyWizard";
+import AdminTrashManager from "@/components/admin/AdminTrashManager";
 
 interface FormItem {
   name: string;
@@ -211,11 +212,13 @@ export default function AdminPage() {
                 <TabsTrigger value="competencias" className="gap-1.5"><ListTree className="w-4 h-4" /> Competencias</TabsTrigger>
                 <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
                 <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
+                <TabsTrigger value="papelera" className="gap-1.5"><Trash2 className="w-4 h-4" /> Papelera</TabsTrigger>
               </TabsList>
               <TabsContent value="dominios"><AdminDomainsManager key={wizardRefreshKey} /></TabsContent>
               <TabsContent value="competencias"><AdminCompetenciesManager key={wizardRefreshKey} /></TabsContent>
               <TabsContent value="items"><AdminItemsManager key={wizardRefreshKey} /></TabsContent>
               <TabsContent value="pesos"><AdminWeightsTab key={wizardRefreshKey} /></TabsContent>
+              <TabsContent value="papelera"><AdminTrashManager /></TabsContent>
             </Tabs>
           </TabsContent>
           <TabsContent value="users"><AdminUsersTab /></TabsContent>

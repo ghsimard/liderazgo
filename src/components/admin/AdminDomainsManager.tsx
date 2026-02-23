@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RefreshCw, Plus, Pencil, Trash2, Save, X } from "lucide-react";
@@ -118,22 +118,16 @@ export default function AdminDomainsManager() {
       setDeleteCounts(null);
       fetch();
 
+      // Save to deleted_records for permanent undo
+      await supabase.from("deleted_records").insert({
+        record_type: "domain",
+        record_label: backupDomain.label,
+        deleted_data: { domain: backupDomain, competencies: backupComps, items: backupItems, texts: backupTexts, weights: backupWeights },
+      });
+
       toast({
         title: "Dominio eliminado",
-        description: `${backupComps.length} comp., ${backupItems.length} ítem(s), ${backupTexts.length} texto(s), ${backupWeights.length} peso(s).`,
-        action: (
-          <ToastAction altText="Deshacer eliminación" onClick={async () => {
-            try {
-              await supabase.from("domains_360").insert({ id: backupDomain.id, key: backupDomain.key, label: backupDomain.label, sort_order: backupDomain.sort_order });
-              if (backupComps.length > 0) await supabase.from("competencies_360").insert(backupComps);
-              if (backupItems.length > 0) await supabase.from("items_360").insert(backupItems);
-              if (backupTexts.length > 0) await supabase.from("item_texts_360").insert(backupTexts.map(({ id, ...rest }) => rest));
-              if (backupWeights.length > 0) await supabase.from("competency_weights").insert(backupWeights.map(({ id, ...rest }) => rest));
-              toast({ title: "Dominio restaurado" });
-              fetch();
-            } catch (e: any) { toast({ title: "Error al restaurar", description: e.message, variant: "destructive" }); }
-          }}>Deshacer</ToastAction>
-        ),
+        description: `${backupComps.length} comp., ${backupItems.length} ítem(s), ${backupTexts.length} texto(s), ${backupWeights.length} peso(s). Puede restaurar desde la Papelera.`,
       });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });

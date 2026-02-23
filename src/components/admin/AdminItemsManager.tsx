@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -164,20 +164,16 @@ export default function AdminItemsManager() {
       setDeleteCounts(null);
       fetchAll();
 
+      // Save to deleted_records for permanent undo
+      await supabase.from("deleted_records").insert({
+        record_type: "item",
+        record_label: `Ítem ${backupItem.item_number} (${backupItem.competency_key})`,
+        deleted_data: { item: backupItem, texts: backupTexts, weights: backupWeights },
+      });
+
       toast({
         title: "Ítem eliminado",
-        description: `${backupTexts.length} texto(s) y ${backupWeights.length} peso(s) eliminados.`,
-        action: (
-          <ToastAction altText="Deshacer eliminación" onClick={async () => {
-            try {
-              await supabase.from("items_360").insert({ id: backupItem.id, item_number: backupItem.item_number, competency_key: backupItem.competency_key, response_type: backupItem.response_type, sort_order: backupItem.sort_order });
-              if (backupTexts.length > 0) await supabase.from("item_texts_360").insert(backupTexts.map(({ id, ...rest }) => rest));
-              if (backupWeights.length > 0) await supabase.from("competency_weights").insert(backupWeights.map(({ id, ...rest }) => rest));
-              toast({ title: "Ítem restaurado" });
-              fetchAll();
-            } catch (e: any) { toast({ title: "Error al restaurar", description: e.message, variant: "destructive" }); }
-          }}>Deshacer</ToastAction>
-        ),
+        description: `${backupTexts.length} texto(s) y ${backupWeights.length} peso(s) eliminados. Puede restaurar desde la Papelera.`,
       });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
