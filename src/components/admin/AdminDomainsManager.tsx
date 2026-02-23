@@ -5,7 +5,7 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-p
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, Plus, Pencil, Trash2, Save, GripVertical } from "lucide-react";
+import { RefreshCw, Plus, Pencil, Trash2, Save, GripVertical, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -17,26 +17,31 @@ interface Domain {
   sort_order: number;
 }
 
+interface Competency { id: string; key: string; label: string; domain_id: string; sort_order: number; }
+
 export default function AdminDomainsManager() {
   const { toast } = useToast();
   const [domains, setDomains] = useState<Domain[]>([]);
+  const [competencies, setCompetencies] = useState<Competency[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDomain, setEditDomain] = useState<Partial<Domain> | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteCounts, setDeleteCounts] = useState<{ competencies: number; items: number; texts: number; weights: number } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const fetchAll = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("domains_360")
-      .select("*")
-      .order("sort_order");
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    const [dRes, cRes] = await Promise.all([
+      supabase.from("domains_360").select("*").order("sort_order"),
+      supabase.from("competencies_360").select("*").order("sort_order"),
+    ]);
+    if (dRes.error) {
+      toast({ title: "Error", description: dRes.error.message, variant: "destructive" });
     } else {
-      setDomains((data as Domain[]) ?? []);
+      setDomains((dRes.data as Domain[]) ?? []);
     }
+    setCompetencies((cRes.data as Competency[]) ?? []);
     setLoading(false);
   };
 
@@ -174,40 +179,60 @@ export default function AdminDomainsManager() {
               {domains.map((d, index) => (
                 <Draggable key={d.id} draggableId={d.id} index={index}>
                   {(prov, snapshot) => (
-                    <div ref={prov.innerRef} {...prov.draggableProps} className={`flex items-center gap-3 p-3 ${snapshot.isDragging ? "bg-accent shadow-md rounded-lg" : ""}`}>
-                      <span {...prov.dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground">
-                        <GripVertical className="w-4 h-4" />
-                      </span>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">{d.label}</span>
-                        <span className="text-xs text-muted-foreground ml-2">({d.key})</span>
-                      </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditDomain(d)}>
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
-                        setDeleteId(d.id);
-                        setDeleteCounts(null);
-                        const { data: comps } = await supabase.from("competencies_360").select("key").eq("domain_id", d.id);
-                        const compKeys = (comps ?? []).map((c) => c.key);
-                        let totalItems = 0, totalTexts = 0, totalWeights = 0;
-                        for (const key of compKeys) {
-                          const [wRes, iRes] = await Promise.all([
-                            supabase.from("competency_weights").select("id", { count: "exact", head: true }).like("competency_key", `${key}%`),
-                            supabase.from("items_360").select("id").like("competency_key", `${key}%`),
-                          ]);
-                          totalWeights += wRes.count ?? 0;
-                          const itemIds = (iRes.data ?? []).map((i) => i.id);
-                          totalItems += itemIds.length;
-                          if (itemIds.length > 0) {
-                            const tRes = await supabase.from("item_texts_360").select("id", { count: "exact", head: true }).in("item_id", itemIds);
-                            totalTexts += tRes.count ?? 0;
+                    <div ref={prov.innerRef} {...prov.draggableProps}>
+                      <div className={`flex items-center gap-3 p-3 ${snapshot.isDragging ? "bg-accent shadow-md rounded-lg" : ""}`}>
+                        <span {...prov.dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground">
+                          <GripVertical className="w-4 h-4" />
+                        </span>
+                        <div className="flex-1">
+                          <span className="text-sm font-medium">{d.label}</span>
+                          <span className="text-xs text-muted-foreground ml-2">({d.key})</span>
+                          <span className="text-xs text-muted-foreground ml-2">· {competencies.filter((c) => c.domain_id === d.id).length} competencia(s)</span>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExpandedId(expandedId === d.id ? null : d.id)}>
+                          {expandedId === d.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditDomain(d)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
+                          setDeleteId(d.id);
+                          setDeleteCounts(null);
+                          const { data: comps } = await supabase.from("competencies_360").select("key").eq("domain_id", d.id);
+                          const compKeys = (comps ?? []).map((c) => c.key);
+                          let totalItems = 0, totalTexts = 0, totalWeights = 0;
+                          for (const key of compKeys) {
+                            const [wRes, iRes] = await Promise.all([
+                              supabase.from("competency_weights").select("id", { count: "exact", head: true }).like("competency_key", `${key}%`),
+                              supabase.from("items_360").select("id").like("competency_key", `${key}%`),
+                            ]);
+                            totalWeights += wRes.count ?? 0;
+                            const itemIds = (iRes.data ?? []).map((i) => i.id);
+                            totalItems += itemIds.length;
+                            if (itemIds.length > 0) {
+                              const tRes = await supabase.from("item_texts_360").select("id", { count: "exact", head: true }).in("item_id", itemIds);
+                              totalTexts += tRes.count ?? 0;
+                            }
                           }
-                        }
-                        setDeleteCounts({ competencies: compKeys.length, items: totalItems, texts: totalTexts, weights: totalWeights });
-                      }}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                          setDeleteCounts({ competencies: compKeys.length, items: totalItems, texts: totalTexts, weights: totalWeights });
+                        }}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {expandedId === d.id && (
+                        <div className="px-10 pb-3 space-y-1">
+                          {competencies.filter((c) => c.domain_id === d.id).map((c) => (
+                            <div key={c.id} className="flex items-center gap-2 text-xs py-1">
+                              <span className="text-muted-foreground">•</span>
+                              <span className="font-medium">{c.label}</span>
+                              <span className="text-muted-foreground">({c.key})</span>
+                            </div>
+                          ))}
+                          {competencies.filter((c) => c.domain_id === d.id).length === 0 && (
+                            <p className="text-xs text-muted-foreground italic">Sin competencias</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </Draggable>
