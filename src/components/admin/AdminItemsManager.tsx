@@ -45,6 +45,7 @@ export default function AdminItemsManager() {
   const [editItem, setEditItem] = useState<Partial<Item> | null>(null);
   const [editTexts, setEditTexts] = useState<Record<string, string>>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteCounts, setDeleteCounts] = useState<{ texts: number; weights: number } | null>(null);
   const [saving, setSaving] = useState(false);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
@@ -209,7 +210,15 @@ export default function AdminItemsManager() {
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}>
                   <Pencil className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(item.id)}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
+                  setDeleteId(item.id);
+                  setDeleteCounts(null);
+                  const [tRes, wRes] = await Promise.all([
+                    supabase.from("item_texts_360").select("id", { count: "exact", head: true }).eq("item_id", item.id),
+                    supabase.from("competency_weights").select("id", { count: "exact", head: true }).eq("competency_key", item.competency_key),
+                  ]);
+                  setDeleteCounts({ texts: tRes.count ?? 0, weights: wRes.count ?? 0 });
+                }}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -301,14 +310,22 @@ export default function AdminItemsManager() {
       </Dialog>
 
       {/* Delete confirm */}
-      <Dialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+      <Dialog open={!!deleteId} onOpenChange={(o) => { if (!o) { setDeleteId(null); setDeleteCounts(null); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>¿Eliminar ítem?</DialogTitle>
-            <DialogDescription>Se eliminarán también los textos asociados. Esta acción no se puede deshacer.</DialogDescription>
+            <DialogDescription>Esta acción no se puede deshacer. Se eliminarán los siguientes registros asociados:</DialogDescription>
           </DialogHeader>
+          {deleteCounts ? (
+            <ul className="text-sm space-y-1 pl-4 list-disc text-muted-foreground">
+              <li><strong>{deleteCounts.texts}</strong> texto(s) de formulario</li>
+              <li><strong>{deleteCounts.weights}</strong> ponderación(es)</li>
+            </ul>
+          ) : (
+            <div className="flex justify-center py-2"><RefreshCw className="animate-spin w-4 h-4 text-muted-foreground" /></div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setDeleteId(null); setDeleteCounts(null); }}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={saving}>Eliminar</Button>
           </DialogFooter>
         </DialogContent>

@@ -19,6 +19,7 @@ export default function AdminCompetenciesManager() {
   const [loading, setLoading] = useState(true);
   const [editComp, setEditComp] = useState<Partial<Competency> | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteCounts, setDeleteCounts] = useState<{ items: number; texts: number; weights: number } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const fetchAll = async () => {
@@ -137,7 +138,19 @@ export default function AdminCompetenciesManager() {
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditComp(c)}>
                     <Pencil className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(c.id)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
+                    setDeleteId(c.id);
+                    setDeleteCounts(null);
+                    const [wRes, iRes] = await Promise.all([
+                      supabase.from("competency_weights").select("id", { count: "exact", head: true }).like("competency_key", `${c.key}%`),
+                      supabase.from("items_360").select("id").like("competency_key", `${c.key}%`),
+                    ]);
+                    const itemIds = (iRes.data ?? []).map((i) => i.id);
+                    const tRes = itemIds.length > 0
+                      ? await supabase.from("item_texts_360").select("id", { count: "exact", head: true }).in("item_id", itemIds)
+                      : { count: 0 };
+                    setDeleteCounts({ items: iRes.data?.length ?? 0, texts: tRes.count ?? 0, weights: wRes.count ?? 0 });
+                  }}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -186,14 +199,23 @@ export default function AdminCompetenciesManager() {
       </Dialog>
 
       {/* Delete confirm */}
-      <Dialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+      <Dialog open={!!deleteId} onOpenChange={(o) => { if (!o) { setDeleteId(null); setDeleteCounts(null); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>¿Eliminar competencia?</DialogTitle>
-            <DialogDescription>Se eliminarán también los pesos asociados. Esta acción no se puede deshacer.</DialogDescription>
+            <DialogDescription>Esta acción no se puede deshacer. Se eliminarán los siguientes registros asociados:</DialogDescription>
           </DialogHeader>
+          {deleteCounts ? (
+            <ul className="text-sm space-y-1 pl-4 list-disc text-muted-foreground">
+              <li><strong>{deleteCounts.items}</strong> ítem(s)</li>
+              <li><strong>{deleteCounts.texts}</strong> texto(s) de formulario</li>
+              <li><strong>{deleteCounts.weights}</strong> ponderación(es)</li>
+            </ul>
+          ) : (
+            <div className="flex justify-center py-2"><RefreshCw className="animate-spin w-4 h-4 text-muted-foreground" /></div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setDeleteId(null); setDeleteCounts(null); }}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={saving}>Eliminar</Button>
           </DialogFooter>
         </DialogContent>
