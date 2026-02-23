@@ -186,7 +186,6 @@ export default function AdminDomainsManager() {
                         </span>
                         <div className="flex-1">
                           <span className="text-sm font-medium">{d.label}</span>
-                          <span className="text-xs text-muted-foreground ml-2">({d.key})</span>
                           <span className="text-xs text-muted-foreground ml-2">· {competencies.filter((c) => c.domain_id === d.id).length} competencia(s)</span>
                         </div>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExpandedId(expandedId === d.id ? null : d.id)}>
