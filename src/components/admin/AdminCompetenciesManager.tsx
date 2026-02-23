@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Plus, Pencil, Trash2, Save } from "lucide-react";
+import { RefreshCw, Plus, Pencil, Trash2, Save, GripVertical } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -124,11 +125,34 @@ export default function AdminCompetenciesManager() {
 
   const domainMap = Object.fromEntries(domains.map((d) => [d.id, d]));
 
-  // Group by domain
   const grouped = domains.map((d) => ({
     domain: d,
     comps: competencies.filter((c) => c.domain_id === d.id),
   }));
+
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination || result.source.index === result.destination.index) return;
+    const domainId = result.source.droppableId;
+    const group = grouped.find((g) => g.domain.id === domainId);
+    if (!group) return;
+    const reordered = Array.from(group.comps);
+    const [moved] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, moved);
+    const updated = reordered.map((c, i) => ({ ...c, sort_order: i + 1 }));
+    setCompetencies((prev) => prev.map((c) => {
+      const u = updated.find((x) => x.id === c.id);
+      return u ?? c;
+    }));
+    try {
+      for (const c of updated) {
+        await supabase.from("competencies_360").update({ sort_order: c.sort_order }).eq("id", c.id);
+      }
+      toast({ title: "Orden actualizado" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+      fetchAll();
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -143,36 +167,49 @@ export default function AdminCompetenciesManager() {
         {grouped.map(({ domain, comps }) => (
           <div key={domain.id} className="border rounded-lg overflow-hidden">
             <div className="bg-primary/5 px-3 py-2 text-xs font-semibold text-primary">{domain.label}</div>
-            <div className="divide-y">
-              {comps.map((c) => (
-                <div key={c.id} className="flex items-center gap-3 p-3">
-                  <span className="text-xs text-muted-foreground w-8 text-center">{c.sort_order}</span>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium">{c.label}</span>
-                    <span className="text-xs text-muted-foreground ml-2">({c.key})</span>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId={domain.id}>
+                {(provided) => (
+                  <div className="divide-y" ref={provided.innerRef} {...provided.droppableProps}>
+                    {comps.map((c, index) => (
+                      <Draggable key={c.id} draggableId={c.id} index={index}>
+                        {(prov, snapshot) => (
+                          <div ref={prov.innerRef} {...prov.draggableProps} className={`flex items-center gap-3 p-3 ${snapshot.isDragging ? "bg-accent shadow-md rounded-lg" : ""}`}>
+                            <span {...prov.dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground">
+                              <GripVertical className="w-4 h-4" />
+                            </span>
+                            <div className="flex-1">
+                              <span className="text-sm font-medium">{c.label}</span>
+                              <span className="text-xs text-muted-foreground ml-2">({c.key})</span>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditComp(c)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
+                              setDeleteId(c.id);
+                              setDeleteCounts(null);
+                              const [wRes, iRes] = await Promise.all([
+                                supabase.from("competency_weights").select("id", { count: "exact", head: true }).like("competency_key", `${c.key}%`),
+                                supabase.from("items_360").select("id").like("competency_key", `${c.key}%`),
+                              ]);
+                              const itemIds = (iRes.data ?? []).map((i) => i.id);
+                              const tRes = itemIds.length > 0
+                                ? await supabase.from("item_texts_360").select("id", { count: "exact", head: true }).in("item_id", itemIds)
+                                : { count: 0 };
+                              setDeleteCounts({ items: iRes.data?.length ?? 0, texts: tRes.count ?? 0, weights: wRes.count ?? 0 });
+                            }}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                    {comps.length === 0 && <p className="text-sm text-muted-foreground p-3">Sin competencias.</p>}
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditComp(c)}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
-                    setDeleteId(c.id);
-                    setDeleteCounts(null);
-                    const [wRes, iRes] = await Promise.all([
-                      supabase.from("competency_weights").select("id", { count: "exact", head: true }).like("competency_key", `${c.key}%`),
-                      supabase.from("items_360").select("id").like("competency_key", `${c.key}%`),
-                    ]);
-                    const itemIds = (iRes.data ?? []).map((i) => i.id);
-                    const tRes = itemIds.length > 0
-                      ? await supabase.from("item_texts_360").select("id", { count: "exact", head: true }).in("item_id", itemIds)
-                      : { count: 0 };
-                    setDeleteCounts({ items: iRes.data?.length ?? 0, texts: tRes.count ?? 0, weights: wRes.count ?? 0 });
-                  }}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-              {comps.length === 0 && <p className="text-sm text-muted-foreground p-3">Sin competencias.</p>}
-            </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </div>
         ))}
       </div>

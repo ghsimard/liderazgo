@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Plus, Pencil, Trash2, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { RefreshCw, Plus, Pencil, Trash2, Save, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -189,6 +190,24 @@ export default function AdminItemsManager() {
   const domainMap = Object.fromEntries(domains.map((d) => [d.id, d]));
   const textsForItem = (id: string) => texts.filter((t) => t.item_id === id);
 
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination || result.source.index === result.destination.index) return;
+    const reordered = Array.from(items);
+    const [moved] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, moved);
+    const updated = reordered.map((item, i) => ({ ...item, sort_order: i + 1 }));
+    setItems(updated);
+    try {
+      for (const item of updated) {
+        await supabase.from("items_360").update({ sort_order: item.sort_order }).eq("id", item.id);
+      }
+      toast({ title: "Orden actualizado" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+      fetchAll();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -201,66 +220,80 @@ export default function AdminItemsManager() {
         </Button>
       </div>
 
-      <div className="border rounded-lg divide-y">
-        {items.map((item) => {
-          const base = getCompBase(item.competency_key);
-          const comp = compMap[base];
-          const domain = comp ? domainMap[comp.domain_id] : null;
-          const itemTexts = textsForItem(item.id);
-          const isExpanded = expandedItem === item.id;
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="items">
+          {(provided) => (
+            <div className="border rounded-lg divide-y" ref={provided.innerRef} {...provided.droppableProps}>
+              {items.map((item, index) => {
+                const base = getCompBase(item.competency_key);
+                const comp = compMap[base];
+                const domain = comp ? domainMap[comp.domain_id] : null;
+                const itemTexts = textsForItem(item.id);
+                const isExpanded = expandedItem === item.id;
 
-          return (
-            <div key={item.id}>
-              <div className="flex items-center gap-3 p-3">
-                <span className="text-xs font-mono text-muted-foreground w-8 text-center">{item.item_number}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-muted font-medium">{item.competency_key}</span>
-                    <span className="text-xs text-muted-foreground">{item.response_type === "frequency" ? "Frecuencia" : "Acuerdo"}</span>
-                    {domain && <span className="text-xs text-primary/70">{domain.label}</span>}
-                  </div>
-                  {itemTexts.length > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1 truncate max-w-xl">
-                      {itemTexts[0].text}
-                    </p>
-                  )}
-                </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExpandedItem(isExpanded ? null : item.id)}>
-                  {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}>
-                  <Pencil className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
-                  setDeleteId(item.id);
-                  setDeleteCounts(null);
-                  const [tRes, wRes] = await Promise.all([
-                    supabase.from("item_texts_360").select("id", { count: "exact", head: true }).eq("item_id", item.id),
-                    supabase.from("competency_weights").select("id", { count: "exact", head: true }).eq("competency_key", item.competency_key),
-                  ]);
-                  setDeleteCounts({ texts: tRes.count ?? 0, weights: wRes.count ?? 0 });
-                }}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-              {isExpanded && (
-                <div className="px-12 pb-3 space-y-1">
-                  {FORM_TYPES.map((ft) => {
-                    const t = itemTexts.find((x) => x.form_type === ft);
-                    return (
-                      <div key={ft} className="flex gap-2 text-xs">
-                        <span className="font-medium w-28 shrink-0 text-muted-foreground">{FORM_TYPE_LABELS[ft]}:</span>
-                        <span className={t ? "" : "text-destructive italic"}>{t?.text || "Sin texto"}</span>
+                return (
+                  <Draggable key={item.id} draggableId={item.id} index={index}>
+                    {(prov, snapshot) => (
+                      <div ref={prov.innerRef} {...prov.draggableProps}>
+                        <div className={`flex items-center gap-3 p-3 ${snapshot.isDragging ? "bg-accent shadow-md rounded-lg" : ""}`}>
+                          <span {...prov.dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground">
+                            <GripVertical className="w-4 h-4" />
+                          </span>
+                          <span className="text-xs font-mono text-muted-foreground w-8 text-center">{item.item_number}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-muted font-medium">{item.competency_key}</span>
+                              <span className="text-xs text-muted-foreground">{item.response_type === "frequency" ? "Frecuencia" : "Acuerdo"}</span>
+                              {domain && <span className="text-xs text-primary/70">{domain.label}</span>}
+                            </div>
+                            {itemTexts.length > 0 && (
+                              <p className="text-xs text-muted-foreground mt-1 truncate max-w-xl">
+                                {itemTexts[0].text}
+                              </p>
+                            )}
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExpandedItem(isExpanded ? null : item.id)}>
+                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
+                            setDeleteId(item.id);
+                            setDeleteCounts(null);
+                            const [tRes, wRes] = await Promise.all([
+                              supabase.from("item_texts_360").select("id", { count: "exact", head: true }).eq("item_id", item.id),
+                              supabase.from("competency_weights").select("id", { count: "exact", head: true }).eq("competency_key", item.competency_key),
+                            ]);
+                            setDeleteCounts({ texts: tRes.count ?? 0, weights: wRes.count ?? 0 });
+                          }}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        {isExpanded && (
+                          <div className="px-12 pb-3 space-y-1">
+                            {FORM_TYPES.map((ft) => {
+                              const t = itemTexts.find((x) => x.form_type === ft);
+                              return (
+                                <div key={ft} className="flex gap-2 text-xs">
+                                  <span className="font-medium w-28 shrink-0 text-muted-foreground">{FORM_TYPE_LABELS[ft]}:</span>
+                                  <span className={t ? "" : "text-destructive italic"}>{t?.text || "Sin texto"}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    )}
+                  </Draggable>
+                );
+              })}
+              {provided.placeholder}
+              {items.length === 0 && <p className="text-sm text-muted-foreground p-4">Sin ítems configurados.</p>}
             </div>
-          );
-        })}
-        {items.length === 0 && <p className="text-sm text-muted-foreground p-4">Sin ítems configurados.</p>}
-      </div>
+          )}
+        </Droppable>
+      </DragDropContext>
 
       {/* Edit/Create dialog */}
       <Dialog open={!!editItem} onOpenChange={(o) => !o && setEditItem(null)}>

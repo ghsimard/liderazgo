@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, Plus, Pencil, Trash2, Save, X } from "lucide-react";
+import { RefreshCw, Plus, Pencil, Trash2, Save, GripVertical } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -25,7 +26,7 @@ export default function AdminDomainsManager() {
   const [deleteCounts, setDeleteCounts] = useState<{ competencies: number; items: number; texts: number; weights: number } | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const fetch = async () => {
+  const fetchAll = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("domains_360")
@@ -39,7 +40,7 @@ export default function AdminDomainsManager() {
     setLoading(false);
   };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => { fetchAll(); }, []);
 
   const handleSave = async () => {
     if (!editDomain?.key?.trim() || !editDomain?.label?.trim()) {
@@ -66,7 +67,7 @@ export default function AdminDomainsManager() {
         toast({ title: "Dominio creado" });
       }
       setEditDomain(null);
-      fetch();
+      fetchAll();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
@@ -116,7 +117,7 @@ export default function AdminDomainsManager() {
 
       setDeleteId(null);
       setDeleteCounts(null);
-      fetch();
+      fetchAll();
 
       // Save to deleted_records for permanent undo
       await supabase.from("deleted_records").insert({
@@ -139,6 +140,24 @@ export default function AdminDomainsManager() {
     return <div className="flex justify-center py-8"><RefreshCw className="animate-spin w-5 h-5 text-muted-foreground" /></div>;
   }
 
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination || result.source.index === result.destination.index) return;
+    const reordered = Array.from(domains);
+    const [moved] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, moved);
+    const updated = reordered.map((d, i) => ({ ...d, sort_order: i + 1 }));
+    setDomains(updated);
+    try {
+      for (const d of updated) {
+        await supabase.from("domains_360").update({ sort_order: d.sort_order }).eq("id", d.id);
+      }
+      toast({ title: "Orden actualizado" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+      fetchAll();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -148,44 +167,57 @@ export default function AdminDomainsManager() {
         </Button>
       </div>
 
-      <div className="border rounded-lg divide-y">
-        {domains.map((d) => (
-          <div key={d.id} className="flex items-center gap-3 p-3">
-            <span className="text-xs text-muted-foreground w-8 text-center">{d.sort_order}</span>
-            <div className="flex-1">
-              <span className="text-sm font-medium">{d.label}</span>
-              <span className="text-xs text-muted-foreground ml-2">({d.key})</span>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="domains">
+          {(provided) => (
+            <div className="border rounded-lg divide-y" ref={provided.innerRef} {...provided.droppableProps}>
+              {domains.map((d, index) => (
+                <Draggable key={d.id} draggableId={d.id} index={index}>
+                  {(prov, snapshot) => (
+                    <div ref={prov.innerRef} {...prov.draggableProps} className={`flex items-center gap-3 p-3 ${snapshot.isDragging ? "bg-accent shadow-md rounded-lg" : ""}`}>
+                      <span {...prov.dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground">
+                        <GripVertical className="w-4 h-4" />
+                      </span>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium">{d.label}</span>
+                        <span className="text-xs text-muted-foreground ml-2">({d.key})</span>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditDomain(d)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
+                        setDeleteId(d.id);
+                        setDeleteCounts(null);
+                        const { data: comps } = await supabase.from("competencies_360").select("key").eq("domain_id", d.id);
+                        const compKeys = (comps ?? []).map((c) => c.key);
+                        let totalItems = 0, totalTexts = 0, totalWeights = 0;
+                        for (const key of compKeys) {
+                          const [wRes, iRes] = await Promise.all([
+                            supabase.from("competency_weights").select("id", { count: "exact", head: true }).like("competency_key", `${key}%`),
+                            supabase.from("items_360").select("id").like("competency_key", `${key}%`),
+                          ]);
+                          totalWeights += wRes.count ?? 0;
+                          const itemIds = (iRes.data ?? []).map((i) => i.id);
+                          totalItems += itemIds.length;
+                          if (itemIds.length > 0) {
+                            const tRes = await supabase.from("item_texts_360").select("id", { count: "exact", head: true }).in("item_id", itemIds);
+                            totalTexts += tRes.count ?? 0;
+                          }
+                        }
+                        setDeleteCounts({ competencies: compKeys.length, items: totalItems, texts: totalTexts, weights: totalWeights });
+                      }}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+              {domains.length === 0 && <p className="text-sm text-muted-foreground p-4">Sin dominios configurados.</p>}
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditDomain(d)}>
-              <Pencil className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
-              setDeleteId(d.id);
-              setDeleteCounts(null);
-              const { data: comps } = await supabase.from("competencies_360").select("key").eq("domain_id", d.id);
-              const compKeys = (comps ?? []).map((c) => c.key);
-              let totalItems = 0, totalTexts = 0, totalWeights = 0;
-              for (const key of compKeys) {
-                const [wRes, iRes] = await Promise.all([
-                  supabase.from("competency_weights").select("id", { count: "exact", head: true }).like("competency_key", `${key}%`),
-                  supabase.from("items_360").select("id").like("competency_key", `${key}%`),
-                ]);
-                totalWeights += wRes.count ?? 0;
-                const itemIds = (iRes.data ?? []).map((i) => i.id);
-                totalItems += itemIds.length;
-                if (itemIds.length > 0) {
-                  const tRes = await supabase.from("item_texts_360").select("id", { count: "exact", head: true }).in("item_id", itemIds);
-                  totalTexts += tRes.count ?? 0;
-                }
-              }
-              setDeleteCounts({ competencies: compKeys.length, items: totalItems, texts: totalTexts, weights: totalWeights });
-            }}>
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        ))}
-        {domains.length === 0 && <p className="text-sm text-muted-foreground p-4">Sin dominios configurados.</p>}
-      </div>
+          )}
+        </Droppable>
+      </DragDropContext>
 
       {/* Edit/Create dialog */}
       <Dialog open={!!editDomain} onOpenChange={(o) => !o && setEditDomain(null)}>
