@@ -3,7 +3,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2 } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logoRLT from "@/assets/logo_rlt.png";
@@ -16,6 +16,7 @@ import AdminCompetenciesManager from "@/components/admin/AdminCompetenciesManage
 import AdminItemsManager from "@/components/admin/AdminItemsManager";
 import AdminCompetencyWizard from "@/components/admin/AdminCompetencyWizard";
 import AdminTrashManager from "@/components/admin/AdminTrashManager";
+import AdminReporte360Tab from "@/components/admin/AdminReporte360Tab";
 
 interface FormItem {
   name: string;
@@ -159,6 +160,7 @@ export default function AdminPage() {
             <TabsTrigger value="formularios" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Formularios</TabsTrigger>
             <TabsTrigger value="fichas" className="gap-1.5"><FileText className="w-4 h-4" /> Fichas Gestión</TabsTrigger>
             <TabsTrigger value="ponderaciones" className="gap-1.5"><Settings2 className="w-4 h-4" /> Config 360°</TabsTrigger>
+            <TabsTrigger value="reportes360" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Informes 360°</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
           </TabsList>
           <TabsContent value="formularios">
@@ -221,6 +223,7 @@ export default function AdminPage() {
               <TabsContent value="papelera"><AdminTrashManager /></TabsContent>
             </Tabs>
           </TabsContent>
+          <TabsContent value="reportes360"><AdminReporte360Tab /></TabsContent>
           <TabsContent value="users"><AdminUsersTab /></TabsContent>
         </Tabs>
       </div>
