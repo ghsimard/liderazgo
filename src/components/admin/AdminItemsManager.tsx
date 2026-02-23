@@ -134,9 +134,23 @@ export default function AdminItemsManager() {
     if (!deleteId) return;
     setSaving(true);
     try {
+      const item = items.find((i) => i.id === deleteId);
+
+      // 1. Delete item texts
+      const { error: tErr } = await supabase.from("item_texts_360").delete().eq("item_id", deleteId);
+      if (tErr) throw tErr;
+
+      // 2. Delete associated weights (by competency_key)
+      if (item) {
+        const { error: wErr } = await supabase.from("competency_weights").delete().eq("competency_key", item.competency_key);
+        if (wErr) throw wErr;
+      }
+
+      // 3. Delete the item
       const { error } = await supabase.from("items_360").delete().eq("id", deleteId);
       if (error) throw error;
-      toast({ title: "Ítem eliminado" });
+
+      toast({ title: "Ítem eliminado", description: "Textos y pesos asociados también fueron eliminados." });
       setDeleteId(null);
       fetchAll();
     } catch (err: any) {
