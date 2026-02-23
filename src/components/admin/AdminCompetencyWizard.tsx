@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, ArrowRight, ArrowLeft, Check, Plus, Layers, ListTree, ListChecks, Scale } from "lucide-react";
+import { RefreshCw, ArrowRight, ArrowLeft, Check, Plus, Layers, ListTree, ListChecks, Scale, Wand2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -46,6 +46,14 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   onComplete: () => void;
 }
+
+const generateKey = (label: string) =>
+  label
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .trim()
+    .replace(/\s+/g, "_");
 
 export default function AdminCompetencyWizard({ open, onOpenChange, onComplete }: Props) {
   const { toast } = useToast();
@@ -269,12 +277,19 @@ export default function AdminCompetencyWizard({ open, onOpenChange, onComplete }
               ) : (
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-medium">Clave (interna)</label>
-                    <Input value={domainForm.key} onChange={(e) => setDomainForm((p) => ({ ...p, key: e.target.value }))} placeholder="gestion_nueva" />
-                  </div>
-                  <div>
                     <label className="text-xs font-medium">Etiqueta</label>
                     <Input value={domainForm.label} onChange={(e) => setDomainForm((p) => ({ ...p, label: e.target.value }))} placeholder="Gestión Nueva" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-medium">Clave (interna)</label>
+                      {domainForm.label.trim() && (
+                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1" onClick={() => setDomainForm((p) => ({ ...p, key: generateKey(p.label) }))}>
+                          <Wand2 className="w-3 h-3" /> Auto
+                        </Button>
+                      )}
+                    </div>
+                    <Input value={domainForm.key} onChange={(e) => setDomainForm((p) => ({ ...p, key: e.target.value }))} placeholder="gestion_nueva" />
                   </div>
                 </div>
               )}
@@ -286,13 +301,20 @@ export default function AdminCompetencyWizard({ open, onOpenChange, onComplete }
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">Définissez la compétence à ajouter dans le domaine sélectionné.</p>
               <div>
-                <label className="text-xs font-medium">Clave (interna, sin número)</label>
-                <Input value={compForm.key} onChange={(e) => setCompForm((p) => ({ ...p, key: e.target.value }))} placeholder="nueva_competencia" />
-                <p className="text-xs text-muted-foreground mt-1">Cette clé sera utilisée comme préfixe pour les variantes (ex: nueva_competencia_1, nueva_competencia_2)</p>
-              </div>
-              <div>
                 <label className="text-xs font-medium">Etiqueta</label>
                 <Input value={compForm.label} onChange={(e) => setCompForm((p) => ({ ...p, label: e.target.value }))} placeholder="Nueva Competencia" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium">Clave (interna, sin número)</label>
+                  {compForm.label.trim() && (
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1" onClick={() => setCompForm((p) => ({ ...p, key: generateKey(p.label) }))}>
+                      <Wand2 className="w-3 h-3" /> Auto
+                    </Button>
+                  )}
+                </div>
+                <Input value={compForm.key} onChange={(e) => setCompForm((p) => ({ ...p, key: e.target.value }))} placeholder="nueva_competencia" />
+                <p className="text-xs text-muted-foreground mt-1">Préfixe pour les variantes (ex: {compForm.key || "clave"}_1, {compForm.key || "clave"}_2)</p>
               </div>
             </div>
           )}
