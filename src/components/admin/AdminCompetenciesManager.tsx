@@ -186,7 +186,6 @@ export default function AdminCompetenciesManager() {
                               </span>
                               <div className="flex-1">
                                 <span className="text-sm font-medium">{c.label}</span>
-                                <span className="text-xs text-muted-foreground ml-2">({c.key})</span>
                                 <span className="text-xs text-muted-foreground ml-2">· {items.filter((i) => i.competency_key.startsWith(c.key)).length} ítem(s)</span>
                               </div>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}>
