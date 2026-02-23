@@ -3,7 +3,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logoRLT from "@/assets/logo_rlt.png";
@@ -14,6 +14,7 @@ import AdminWeightsTab from "@/components/admin/AdminWeightsTab";
 import AdminDomainsManager from "@/components/admin/AdminDomainsManager";
 import AdminCompetenciesManager from "@/components/admin/AdminCompetenciesManager";
 import AdminItemsManager from "@/components/admin/AdminItemsManager";
+import AdminCompetencyWizard from "@/components/admin/AdminCompetencyWizard";
 
 interface FormItem {
   name: string;
@@ -95,6 +96,8 @@ export default function AdminPage() {
   const { isAdmin, signOut } = useAdminAuth();
   const { toast } = useToast();
   const [exporting, setExporting] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
 
   const handleExportDB = async () => {
     setExporting(true);
@@ -191,6 +194,17 @@ export default function AdminPage() {
             </Tabs>
           </TabsContent>
           <TabsContent value="ponderaciones">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-muted-foreground">Gestión completa de competencias 360°</h3>
+              <Button size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
+                <Plus className="w-4 h-4" /> Asistente de creación
+              </Button>
+            </div>
+            <AdminCompetencyWizard
+              open={wizardOpen}
+              onOpenChange={setWizardOpen}
+              onComplete={() => setWizardRefreshKey((k) => k + 1)}
+            />
             <Tabs defaultValue="dominios">
               <TabsList className="mb-4 flex-wrap h-auto gap-1">
                 <TabsTrigger value="dominios" className="gap-1.5"><Layers className="w-4 h-4" /> Dominios</TabsTrigger>
@@ -198,10 +212,10 @@ export default function AdminPage() {
                 <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
                 <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
               </TabsList>
-              <TabsContent value="dominios"><AdminDomainsManager /></TabsContent>
-              <TabsContent value="competencias"><AdminCompetenciesManager /></TabsContent>
-              <TabsContent value="items"><AdminItemsManager /></TabsContent>
-              <TabsContent value="pesos"><AdminWeightsTab /></TabsContent>
+              <TabsContent value="dominios"><AdminDomainsManager key={wizardRefreshKey} /></TabsContent>
+              <TabsContent value="competencias"><AdminCompetenciesManager key={wizardRefreshKey} /></TabsContent>
+              <TabsContent value="items"><AdminItemsManager key={wizardRefreshKey} /></TabsContent>
+              <TabsContent value="pesos"><AdminWeightsTab key={wizardRefreshKey} /></TabsContent>
             </Tabs>
           </TabsContent>
           <TabsContent value="users"><AdminUsersTab /></TabsContent>
