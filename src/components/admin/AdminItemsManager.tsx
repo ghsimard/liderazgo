@@ -46,6 +46,8 @@ export default function AdminItemsManager() {
   const [loading, setLoading] = useState(true);
   const [editItem, setEditItem] = useState<Partial<Item> | null>(null);
   const [editTexts, setEditTexts] = useState<Record<string, string>>({});
+  const [selectedDomainId, setSelectedDomainId] = useState<string>("");
+  const [selectedCompKey, setSelectedCompKey] = useState<string>("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteCounts, setDeleteCounts] = useState<{ texts: number; weights: number } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -74,31 +76,48 @@ export default function AdminItemsManager() {
   // Each competency can have variants like autoconciencia_1, autoconciencia_2, etc.
   const existingVariants = [...new Set(items.map((i) => i.competency_key))].sort();
 
+  const getNextVariant = (compKey: string) => {
+    const existing = items.filter((i) => getCompBase(i.competency_key) === compKey);
+    const maxVariant = existing.reduce((m, i) => {
+      const match = i.competency_key.match(/_(\d+)$/);
+      return match ? Math.max(m, parseInt(match[1])) : m;
+    }, 0);
+    return `${compKey}_${maxVariant + 1}`;
+  };
+
   const openEdit = (item?: Item) => {
     if (item) {
       setEditItem(item);
+      const base = getCompBase(item.competency_key);
+      const comp = competencies.find((c) => c.key === base);
+      setSelectedCompKey(base);
+      setSelectedDomainId(comp?.domain_id ?? "");
       const itemTexts: Record<string, string> = {};
       texts.filter((t) => t.item_id === item.id).forEach((t) => { itemTexts[t.form_type] = t.text; });
       setEditTexts(itemTexts);
     } else {
       const maxNum = items.reduce((m, i) => Math.max(m, i.item_number), 0);
       setEditItem({ item_number: maxNum + 1, competency_key: "", response_type: "frequency", sort_order: maxNum + 1 });
+      setSelectedDomainId("");
+      setSelectedCompKey("");
       setEditTexts({});
     }
   };
 
   const handleSave = async () => {
-    if (!editItem?.competency_key?.trim() || !editItem?.response_type) {
-      toast({ title: "Campos requeridos", variant: "destructive" });
+    if (!editItem?.competency_key?.trim() && !selectedCompKey) {
+      toast({ title: "Campos requeridos", description: "Seleccione dominio y competencia.", variant: "destructive" });
       return;
     }
+    // For new items, generate the competency_key variant
+    const finalCompKey = editItem?.id ? editItem.competency_key! : getNextVariant(selectedCompKey);
     setSaving(true);
     try {
       let itemId = editItem.id;
       if (itemId) {
         const { error } = await supabase.from("items_360").update({
           item_number: editItem.item_number!,
-          competency_key: editItem.competency_key!,
+          competency_key: finalCompKey,
           response_type: editItem.response_type!,
           sort_order: editItem.sort_order ?? 0,
         }).eq("id", itemId);
@@ -106,9 +125,9 @@ export default function AdminItemsManager() {
       } else {
         const { data, error } = await supabase.from("items_360").insert({
           item_number: editItem.item_number!,
-          competency_key: editItem.competency_key!,
+          competency_key: finalCompKey,
           response_type: editItem.response_type!,
-          sort_order: editItem.sort_order ?? 0,
+          sort_order: editItem.sort_order ?? items.length + 1,
         }).select("id").single();
         if (error) throw error;
         itemId = data.id;
@@ -310,15 +329,36 @@ export default function AdminItemsManager() {
               </div>
             )}
             <div>
-              <label className="text-xs font-medium">Clave de competencia (variante)</label>
-              <Input value={editItem?.competency_key ?? ""} onChange={(e) => setEditItem((p) => ({ ...p, competency_key: e.target.value }))} placeholder="autoconciencia_2" />
-              <p className="text-xs text-muted-foreground mt-1">Formato: nombre_competencia + _N (ej: autoconciencia_1, emociones_2)</p>
+              <label className="text-xs font-medium">Dominio</label>
+              <Select value={selectedDomainId} onValueChange={(v) => { setSelectedDomainId(v); setSelectedCompKey(""); }} disabled={!!editItem?.id}>
+                <SelectTrigger><SelectValue placeholder="Seleccione dominio" /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {domains.map((d) => <SelectItem key={d.id} value={d.id}>{d.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs font-medium">Competencia</label>
+              <Select value={selectedCompKey} onValueChange={(v) => setSelectedCompKey(v)} disabled={!!editItem?.id || !selectedDomainId}>
+                <SelectTrigger><SelectValue placeholder={selectedDomainId ? "Seleccione competencia" : "Primero seleccione dominio"} /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {competencies.filter((c) => c.domain_id === selectedDomainId).map((c) => (
+                    <SelectItem key={c.key} value={c.key}>{c.label} ({c.key})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedCompKey && !editItem?.id && (
+                <p className="text-xs text-muted-foreground mt-1">Variante generada: <span className="font-mono font-medium">{getNextVariant(selectedCompKey)}</span></p>
+              )}
+              {editItem?.id && (
+                <p className="text-xs text-muted-foreground mt-1">Clave: <span className="font-mono font-medium">{editItem.competency_key}</span></p>
+              )}
             </div>
             <div>
               <label className="text-xs font-medium">Tipo de respuesta</label>
               <Select value={editItem?.response_type ?? "frequency"} onValueChange={(v) => setEditItem((p) => ({ ...p, response_type: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-popover z-50">
                   <SelectItem value="frequency">Frecuencia (Nunca → Siempre)</SelectItem>
                   <SelectItem value="agreement">Acuerdo (Tot. desacuerdo → Tot. de acuerdo)</SelectItem>
                 </SelectContent>
