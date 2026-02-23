@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      competency_weights: {
+        Row: {
+          competency_key: string
+          id: string
+          observer_role: string
+          weight: number
+        }
+        Insert: {
+          competency_key: string
+          id?: string
+          observer_role: string
+          weight?: number
+        }
+        Update: {
+          competency_key?: string
+          id?: string
+          observer_role?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       encuestas_360: {
         Row: {
           cargo_directivo: string

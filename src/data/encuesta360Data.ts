@@ -546,7 +546,7 @@ export const TIPO_TO_ROLE: Record<string, ObserverRole> = {
   autoevaluacion: "autoeval",
 };
 
-/** Get weight for an item given a form type */
+/** Get weight for an item given a form type (uses hardcoded fallback) */
 export function getItemWeight(itemNum: number, tipo: string): number {
   if (tipo === "autoevaluacion") return 1.0;
   const role = TIPO_TO_ROLE[tipo];
@@ -554,6 +554,32 @@ export function getItemWeight(itemNum: number, tipo: string): number {
   const competency = ITEM_COMPETENCY[itemNum];
   if (!competency) return 1.0;
   return COMPETENCY_WEIGHTS[competency]?.[role] ?? 1.0;
+}
+
+/** Get weight for an item using DB-loaded weights map */
+export function getItemWeightFromMap(
+  itemNum: number,
+  tipo: string,
+  dbWeights: Record<string, Record<string, number>>
+): number {
+  if (tipo === "autoevaluacion") return 1.0;
+  const role = TIPO_TO_ROLE[tipo];
+  if (!role || role === "autoeval") return 1.0;
+  const competency = ITEM_COMPETENCY[itemNum];
+  if (!competency) return 1.0;
+  return dbWeights[competency]?.[role] ?? getItemWeight(itemNum, tipo);
+}
+
+/** Fetch weights from database, returns map { competency_key: { role: weight } } */
+export async function fetchWeightsFromDB(): Promise<Record<string, Record<string, number>>> {
+  const { supabase } = await import("@/integrations/supabase/client");
+  const { data } = await supabase.from("competency_weights").select("competency_key, observer_role, weight");
+  const map: Record<string, Record<string, number>> = {};
+  (data ?? []).forEach((row: any) => {
+    if (!map[row.competency_key]) map[row.competency_key] = {};
+    map[row.competency_key][row.observer_role] = Number(row.weight);
+  });
+  return map;
 }
 
 /** Get numeric score for a response label (frequency or agreement) */
