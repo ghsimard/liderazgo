@@ -308,10 +308,6 @@ export default function AdminItemsManager() {
                 <label className="text-xs font-medium">Número de ítem</label>
                 <Input type="number" value={editItem?.item_number ?? 0} onChange={(e) => setEditItem((p) => ({ ...p, item_number: parseInt(e.target.value) || 0 }))} />
               </div>
-              <div>
-                <label className="text-xs font-medium">Orden</label>
-                <Input type="number" value={editItem?.sort_order ?? 0} onChange={(e) => setEditItem((p) => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
-              </div>
             </div>
             <div>
               <label className="text-xs font-medium">Clave de competencia (variante)</label>

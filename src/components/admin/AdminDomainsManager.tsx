@@ -235,10 +235,6 @@ export default function AdminDomainsManager() {
               <label className="text-xs font-medium">Etiqueta</label>
               <Input value={editDomain?.label ?? ""} onChange={(e) => setEditDomain((p) => ({ ...p, label: e.target.value }))} placeholder="Gestión Personal" />
             </div>
-            <div>
-              <label className="text-xs font-medium">Orden</label>
-              <Input type="number" value={editDomain?.sort_order ?? 0} onChange={(e) => setEditDomain((p) => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDomain(null)}>Cancelar</Button>

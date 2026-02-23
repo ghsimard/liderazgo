@@ -239,10 +239,6 @@ export default function AdminCompetenciesManager() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="text-xs font-medium">Orden</label>
-              <Input type="number" value={editComp?.sort_order ?? 0} onChange={(e) => setEditComp((p) => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditComp(null)}>Cancelar</Button>
