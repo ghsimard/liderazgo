@@ -3,13 +3,14 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logoRLT from "@/assets/logo_rlt.png";
 import AdminFichasTab from "@/components/admin/AdminFichasTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminGeographyTab from "@/components/admin/AdminGeographyTab";
+import AdminWeightsTab from "@/components/admin/AdminWeightsTab";
 
 interface FormItem {
   name: string;
@@ -150,6 +151,7 @@ export default function AdminPage() {
           <TabsList className="mb-4">
             <TabsTrigger value="formularios" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Formularios</TabsTrigger>
             <TabsTrigger value="fichas" className="gap-1.5"><FileText className="w-4 h-4" /> Fichas Gestión</TabsTrigger>
+            <TabsTrigger value="ponderaciones" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
           </TabsList>
           <TabsContent value="formularios">
@@ -185,6 +187,7 @@ export default function AdminPage() {
               <TabsContent value="geography"><AdminGeographyTab /></TabsContent>
             </Tabs>
           </TabsContent>
+          <TabsContent value="ponderaciones"><AdminWeightsTab /></TabsContent>
           <TabsContent value="users"><AdminUsersTab /></TabsContent>
         </Tabs>
       </div>
