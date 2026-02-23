@@ -66,9 +66,33 @@ export default function AdminCompetenciesManager() {
     if (!deleteId) return;
     setSaving(true);
     try {
+      // Find the competency to get its key
+      const comp = competencies.find((c) => c.id === deleteId);
+      if (!comp) throw new Error("Competencia no encontrada");
+
+      // 1. Delete weights matching this competency key (and variants like key_1, key_2)
+      const { error: wErr } = await supabase.from("competency_weights").delete().like("competency_key", `${comp.key}%`);
+      if (wErr) throw wErr;
+
+      // 2. Find items matching this competency key
+      const { data: matchedItems, error: iQueryErr } = await supabase.from("items_360").select("id").like("competency_key", `${comp.key}%`);
+      if (iQueryErr) throw iQueryErr;
+
+      if (matchedItems && matchedItems.length > 0) {
+        const itemIds = matchedItems.map((i) => i.id);
+        // 3. Delete item texts for those items
+        const { error: tErr } = await supabase.from("item_texts_360").delete().in("item_id", itemIds);
+        if (tErr) throw tErr;
+        // 4. Delete the items themselves
+        const { error: iErr } = await supabase.from("items_360").delete().like("competency_key", `${comp.key}%`);
+        if (iErr) throw iErr;
+      }
+
+      // 5. Finally delete the competency
       const { error } = await supabase.from("competencies_360").delete().eq("id", deleteId);
       if (error) throw error;
-      toast({ title: "Competencia eliminada" });
+
+      toast({ title: "Competencia eliminada", description: "Ítems, textos y pesos asociados también fueron eliminados." });
       setDeleteId(null);
       fetchAll();
     } catch (err: any) {
