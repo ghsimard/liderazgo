@@ -303,12 +303,12 @@ export default function AdminItemsManager() {
             <DialogDescription>Configure el ítem y sus textos por formulario.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            {editItem?.id && (
               <div>
                 <label className="text-xs font-medium">Número de ítem</label>
-                <Input type="number" value={editItem?.item_number ?? 0} onChange={(e) => setEditItem((p) => ({ ...p, item_number: parseInt(e.target.value) || 0 }))} />
+                <Input type="number" value={editItem.item_number} disabled className="bg-muted" />
               </div>
-            </div>
+            )}
             <div>
               <label className="text-xs font-medium">Clave de competencia (variante)</label>
               <Input value={editItem?.competency_key ?? ""} onChange={(e) => setEditItem((p) => ({ ...p, competency_key: e.target.value }))} placeholder="autoconciencia_2" />
