@@ -87,10 +87,11 @@ export async function generarReporte360PDF(
   logoSources: { logoRLT: string; logoCLT: string },
   options: { returnBlob?: boolean } = {}
 ): Promise<Blob | void> {
-  const [rltB64, cltB64, bulbB64] = await Promise.all([
+  const [rltB64, cltB64, bulbB64, cosmoB64] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
     loadImageAsBase64(logoSources.logoCLT),
     loadImageAsBase64("/images/lightbulb-icon.png"),
+    loadImageAsBase64((await import("@/assets/logo_cosmo.png")).default),
   ]);
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
@@ -457,10 +458,15 @@ export async function generarReporte360PDF(
 
   drawQualitativeTable(doc, data, margin, y, contentW);
 
-  // ── Add page numbers ──
+  // ── Add page numbers + Cosmo logo footer ──
   const totalPages = (doc.internal as { getNumberOfPages?: () => number }).getNumberOfPages?.() ?? 1;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
+    // Cosmo logo centered at bottom
+    const cosmoW = 18;
+    const cosmoH = 10;
+    doc.addImage(cosmoB64, "PNG", pageW / 2 - cosmoW / 2, pageH - marginBottom - cosmoH + 2, cosmoW, cosmoH);
+    // Page number
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 100, 100);
@@ -580,11 +586,13 @@ function drawRadarChart(
     doc.line(cx, cy, ex, ey);
   }
 
-  // Draw data polygons
-  const drawPolygon = (getScore: (cs: typeof competencyScores[0]) => number, color: readonly [number, number, number], lineWidth: number) => {
+  // Draw data polygons with value labels
+  const drawPolygon = (getScore: (cs: typeof competencyScores[0]) => number, color: readonly [number, number, number], lineWidth: number, showValues: boolean, valueOffset: number) => {
     const pts: [number, number][] = [];
+    const scores: number[] = [];
     for (let i = 0; i < n; i++) {
       const score = getScore(competencyScores[i]);
+      scores.push(score);
       const r = (score / maxVal) * radius;
       const angle = startAngle + i * angleStep;
       pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
@@ -595,15 +603,24 @@ function drawRadarChart(
       const next = (i + 1) % n;
       doc.line(pts[i][0], pts[i][1], pts[next][0], pts[next][1]);
     }
-    // Dots
-    pts.forEach(([px, py]) => {
+    // Dots + value labels
+    pts.forEach(([px, py], idx) => {
       doc.setFillColor(...color);
-      doc.circle(px, py, 0.8, "F");
+      doc.circle(px, py, 1, "F");
+      if (showValues && scores[idx] > 0) {
+        doc.setFontSize(4.5);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...color);
+        const angle = startAngle + idx * angleStep;
+        const offX = Math.cos(angle) * valueOffset;
+        const offY = Math.sin(angle) * valueOffset;
+        doc.text(r1(scores[idx]), px + offX, py + offY, { align: "center" });
+      }
     });
   };
 
-  drawPolygon((cs) => cs.observerScore, COLOR_OBSERVER, 0.6);
-  drawPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, 0.6);
+  drawPolygon((cs) => cs.observerScore, COLOR_OBSERVER, 1.0, true, 4);
+  drawPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, 1.0, true, 4);
 
   // Labels
   for (let i = 0; i < n; i++) {
@@ -622,9 +639,9 @@ function drawRadarChart(
     doc.text(labelLines, lx, ly, { align: align as any });
   }
 
-  // Legend
+  // Legend — more space above chart
   doc.setFontSize(7);
-  const legY = cy - radius - 12;
+  const legY = cy - radius - 18;
   doc.setFillColor(...COLOR_OBSERVER);
   doc.rect(cx - 40, legY, 4, 3, "F");
   doc.setTextColor(30, 30, 30);
