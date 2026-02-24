@@ -496,16 +496,12 @@ export async function generarReporte360PDF(
   y += 8;
 
   drawObserverBarChart(doc, data.competencyScores, margin, y, contentW, 80);
+  y += 88;
 
-  // ════════════════════════════════════════════════════════════
-  // PAGE 8 — STRENGTHS AND AREAS TO IMPROVE
-  // ════════════════════════════════════════════════════════════
-  doc.addPage();
-  drawPageHeader();
-  y = 20;
-
+  // STRENGTHS AND AREAS TO IMPROVE — same page as observer chart
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
   doc.text("ASPECTOS DESTACADOS Y POR MEJORAR", pageW / 2, y, { align: "center" });
   y += 8;
 
