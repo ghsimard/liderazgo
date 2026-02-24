@@ -405,13 +405,7 @@ export async function generarReporte360PDF(
   drawRadarChart(doc, data.competencyScores, pageW / 2, y + 55, 48);
   y += 115;
 
-  // Legend for radar
-  doc.setFontSize(6.5);
-  doc.setFont("helvetica", "normal");
-  doc.text("* Competencias de Gestión Personal", margin + 5, y);
-  doc.text("** Competencias de Gestión Pedagógica", margin + 5, y + 3.5);
-  doc.text("*** Competencias de Gestión Administrativa y Comunitaria", margin + 5, y + 7);
-  y += 12;
+  // (domain marks now drawn inside drawRadarChart)
 
   // Info box
   doc.setFillColor(245, 245, 245);
@@ -661,6 +655,15 @@ function drawRadarChart(
   doc.setFillColor(...COLOR_DIRECTIVO);
   doc.rect(cx + 5, legY, 4, 3, "F");
   doc.text("Directivo", cx + 10, legY + 2.5);
+
+  // Domain marks explanation
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80, 80, 80);
+  const notesY = legY + 7;
+  doc.text("* Competencias de Gestión Personal", cx - 40, notesY);
+  doc.text("** Competencias de Gestión Pedagógica", cx - 40, notesY + 3.5);
+  doc.text("*** Competencias de Gestión Administrativa y Comunitaria", cx - 40, notesY + 7);
 }
 
 function drawObserverBarChart(
