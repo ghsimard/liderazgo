@@ -406,9 +406,9 @@ export async function generarReporte360PDF(
   doc.setFillColor(245, 245, 245);
   doc.roundedRect(margin, y, contentW, 10, 1, 1, "F");
   doc.setFontSize(7);
-  drawLightbulbIcon(doc, margin + 1.5, y + 7, 5, bulbB64);
-  doc.text("Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.", margin + 8, y + 7.5);
-  y += 20;
+  drawLightbulbIcon(doc, margin + 1.5, y + 5.5, 5, bulbB64);
+  doc.text("Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.", margin + 8, y + 6);
+  y += 18;
 
   // ANÁLISIS DE OBSERVADORES
   doc.setFontSize(10);
