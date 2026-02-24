@@ -606,15 +606,13 @@ function drawObserverBarChart(
       doc.rect(bx, by, barW - 0.5, barH, "F");
     });
 
-    // Label
+    // Label — vertical
     const mark = COMPETENCY_DOMAIN_MARK[cs.competency] ?? "";
-    const shortLabel = cs.competencyLabel.length > 14 ? cs.competencyLabel.substring(0, 12) + "…" : cs.competencyLabel;
-    doc.setFontSize(4.5);
+    const labelText = `${cs.competencyLabel}${mark}`;
+    doc.setFontSize(5);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
-    const labelText = `${shortLabel}${mark}`;
-    // Rotate label
-    doc.text(labelText, gx, y + chartH + 3, { angle: 45 });
+    doc.text(labelText, gx, y + chartH + 3, { angle: 90 });
   });
 }
 
