@@ -258,81 +258,50 @@ export async function generarReporte360PDF(
   drawIdRow("CÓDIGO DANE I.E.", data.directivo.codigoDane);
   y += 4;
 
-  // OBSERVADORES — stacked horizontal bar chart (like online version)
+  // OBSERVADORES — table format matching model PDF
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.text("OBSERVADORES", margin, y);
-  y += 6;
+  y += 8;
 
-  // Collect all unique días categories
-  const allDias = new Set<string>();
-  data.observadores.forEach((obs) => {
-    Object.keys(obs.diasDistribution ?? {}).forEach((d) => allDias.add(d));
-  });
-  const diasKeys = Array.from(allDias).sort();
+  // Table header
+  const col1W = 45; // NÚMERO DE ENCUESTADOS
+  const col2W = 50; // ROL
+  const col3W = contentW - col1W - col2W; // INTERACCIÓN
+  const rowH = 7;
 
-  // Grayscale palette for print
-  const DIAS_GRAYS: [number, number, number][] = [
-    [60, 60, 60], [100, 100, 100], [140, 140, 140], [175, 175, 175], [205, 205, 205]
-  ];
-
-  // Legend
+  doc.setFillColor(...COLOR_HEADER_BG);
+  doc.rect(margin, y, contentW, rowH, "F");
   doc.setFontSize(7);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(255, 255, 255);
+  doc.text("NÚMERO DE ENCUESTADOS", margin + col1W / 2, y + rowH / 2 + 1, { align: "center" });
+  doc.text("ROL", margin + col1W + col2W / 2, y + rowH / 2 + 1, { align: "center" });
+  doc.text("INTERACCIÓN ANTES DE LA ENCUESTA", margin + col1W + col2W + col3W / 2, y + rowH / 2 + 1, { align: "center" });
+  y += rowH;
+
+  // Table rows
+  doc.setTextColor(30, 30, 30);
   doc.setFont("helvetica", "normal");
-  let legX = margin;
-  diasKeys.forEach((d, i) => {
-    const color = DIAS_GRAYS[i % DIAS_GRAYS.length];
-    doc.setFillColor(...color);
-    doc.rect(legX, y, 4, 3, "F");
-    doc.setTextColor(30, 30, 30);
-    doc.text(d, legX + 5, y + 2.5);
-    legX += doc.getTextWidth(d) + 9;
-  });
-  y += 7;
+  data.observadores.forEach((obs, i) => {
+    if (i % 2 === 0) {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(margin, y, contentW, rowH, "F");
+    }
+    // Vertical lines
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin + col1W, y, margin + col1W, y + rowH);
+    doc.line(margin + col1W + col2W, y, margin + col1W + col2W, y + rowH);
 
-  // Find max total for scale
-  const maxTotal = Math.max(...data.observadores.map((obs) => {
-    return Object.values(obs.diasDistribution ?? {}).reduce((s, v) => s + v, 0);
-  }), 1);
-
-  const chartX = margin + 30; // space for role labels
-  const chartW = contentW - 30;
-  const barH = 6;
-  const barGap = 4;
-
-  data.observadores.forEach((obs) => {
-    // Role label
     doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(30, 30, 30);
-    doc.text(obs.roleLabel, margin, y + barH / 2 + 1);
-
-    // Stacked bars
-    let bx = chartX;
-    diasKeys.forEach((d, i) => {
-      const val = (obs.diasDistribution ?? {})[d] ?? 0;
-      if (val <= 0) return;
-      const w = (val / maxTotal) * chartW;
-      const color = DIAS_GRAYS[i % DIAS_GRAYS.length];
-      doc.setFillColor(...color);
-      doc.rect(bx, y, w, barH, "F");
-      // Value label inside bar if wide enough
-      if (w > 6) {
-        doc.setFontSize(6);
-        doc.setTextColor(255, 255, 255);
-        doc.text(String(val), bx + w / 2, y + barH / 2 + 1, { align: "center" });
-      }
-      bx += w;
-    });
-
-    // Total at the end
-    const total = Object.values(obs.diasDistribution ?? {}).reduce((s, v) => s + v, 0);
-    doc.setFontSize(7);
-    doc.setTextColor(30, 30, 30);
-    doc.text(String(total), bx + 2, y + barH / 2 + 1);
-
-    y += barH + barGap;
+    doc.text(String(obs.count), margin + col1W / 2, y + rowH / 2 + 1, { align: "center" });
+    doc.text(obs.roleLabel, margin + col1W + 3, y + rowH / 2 + 1);
+    doc.text(obs.diasContacto || "—", margin + col1W + col2W + 3, y + rowH / 2 + 1);
+    y += rowH;
   });
+  // Bottom border
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, y, margin + contentW, y);
   y += 4;
 
   // Info box
