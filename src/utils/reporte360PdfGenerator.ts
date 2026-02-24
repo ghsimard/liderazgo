@@ -127,8 +127,8 @@ export async function generarReporte360PDF(
   // ════════════════════════════════════════════════════════════
   drawPageHeader();
 
-  // Logos at natural size (pixels to mm at 96 DPI: px * 25.4 / 96)
-  const pxToMm = 25.4 / 96;
+  // Logos at natural size reduced by 25% (pixels to mm at 96 DPI: px * 25.4 / 96)
+  const pxToMm = 25.4 / 96 * 0.75;
   const rltW = rltSize.width * pxToMm;
   const rltH = rltSize.height * pxToMm;
   const cltW = cltSize.width * pxToMm;
