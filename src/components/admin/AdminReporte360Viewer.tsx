@@ -92,29 +92,46 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
           {/* ── OBSERVADORES ── */}
           <section>
             <h3 className="text-sm font-semibold text-primary mb-3">OBSERVADORES</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {observadores.map((o) => (
-                <div key={o.role} className="rounded-lg border bg-card p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold">{o.roleLabel}</span>
-                    <Badge variant="secondary" className="text-xs">{o.count}</Badge>
+            {(() => {
+              // Collect all unique días categories
+              const allDias = new Set<string>();
+              observadores.forEach((o) => {
+                Object.keys(o.diasDistribution ?? {}).forEach((d) => allDias.add(d));
+              });
+              const diasKeys = Array.from(allDias).sort();
+
+              const DIAS_COLORS = ["#4285F4", "#EA862D", "#6AA84F", "#AB47BC", "#F44336"];
+
+              const chartData = observadores.map((o) => {
+                const entry: Record<string, any> = { role: o.roleLabel, total: o.count };
+                diasKeys.forEach((d) => { entry[d] = (o.diasDistribution ?? {})[d] ?? 0; });
+                return entry;
+              });
+
+              return (
+                <>
+                  <div className="flex flex-wrap gap-3 text-xs mb-2">
+                    {diasKeys.map((d, i) => (
+                      <span key={d} className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-sm" style={{ background: DIAS_COLORS[i % DIAS_COLORS.length] }} />
+                        {d}
+                      </span>
+                    ))}
                   </div>
-                  {Object.keys(o.diasDistribution ?? {}).length > 0 && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Días de contacto</span>
-                      {Object.entries(o.diasDistribution)
-                        .sort((a, b) => b[1] - a[1])
-                        .map(([dias, count]) => (
-                          <div key={dias} className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">{dias}</span>
-                            <span className="font-medium">{count}</span>
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                  <ResponsiveContainer width="100%" height={Math.max(160, observadores.length * 50)}>
+                    <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" allowDecimals={false} />
+                      <YAxis type="category" dataKey="role" width={110} tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      {diasKeys.map((d, i) => (
+                        <Bar key={d} dataKey={d} stackId="dias" fill={DIAS_COLORS[i % DIAS_COLORS.length]} barSize={18} radius={i === diasKeys.length - 1 ? [0, 3, 3, 0] : undefined} />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </>
+              );
+            })()}
           </section>
 
           {/* ── RESUMEN GENERAL (Bar Chart) ── */}
