@@ -496,7 +496,7 @@ export async function generarReporte360PDF(
   y += 8;
 
   drawObserverBarChart(doc, data.competencyScores, margin, y, contentW, 60);
-  y += 80;
+  y += 95;
 
   // STRENGTHS AND AREAS TO IMPROVE — same page as observer chart
   doc.setFontSize(12);
