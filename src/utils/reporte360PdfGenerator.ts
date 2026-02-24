@@ -215,6 +215,9 @@ export async function generarReporte360PDF(
   };
 
   drawGestionSection("GESTIÓN PERSONAL", GESTION_PERSONAL_TEXT, COMP_PERSONAL);
+  doc.addPage();
+  drawPageHeader();
+  y = 25;
   drawGestionSection("GESTIÓN PEDAGÓGICA", GESTION_PEDAGOGICA_TEXT, COMP_PEDAGOGICA);
   drawGestionSection("GESTIÓN ADMINISTRATIVA Y COMUNITARIA", GESTION_ADMIN_TEXT, COMP_ADMIN);
 
