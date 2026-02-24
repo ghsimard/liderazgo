@@ -195,8 +195,16 @@ export async function generarReporte360PDF(
         drawPageHeader();
         y = 20;
       }
-      const cLines = doc.splitTextToSize(`• ${c}`, contentW - 5);
-      doc.text(cLines, margin + 3, y, { align: "left", maxWidth: contentW - 5 });
+      const bulletIndent = 3;
+      const textIndent = bulletIndent + doc.getTextWidth("• ");
+      const wrappedLines = doc.splitTextToSize(c, contentW - textIndent);
+      // Draw bullet on first line
+      doc.text("•", margin + bulletIndent, y);
+      // Draw all text lines with hanging indent
+      wrappedLines.forEach((line: string, idx: number) => {
+        doc.text(line, margin + textIndent, y + idx * 4.5);
+      });
+      const cLines = wrappedLines;
       y += cLines.length * 4.5 + 1;
     });
     y += 4;
