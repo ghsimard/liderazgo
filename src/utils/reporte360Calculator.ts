@@ -146,25 +146,25 @@ export async function calcularReporte360(nombreDirectivo: string, institucion: s
     cargo: ficha?.cargo_actual ?? "",
   };
 
-  // 5. Build observer info (count per role + dias_contacto)
-  const roleGroups: Record<string, { count: number; dias: string[] }> = {};
+  // 5. Build observer info — group by role + dias_contacto so distinct values get separate rows
+  const roleContactGroups: Record<string, { count: number }> = {};
   observerEncuestas.forEach((e) => {
     const role = FORM_TYPE_TO_ROLE[e.tipo_formulario];
     if (!role) return;
-    if (!roleGroups[role]) roleGroups[role] = { count: 0, dias: [] };
-    roleGroups[role].count++;
-    if (e.dias_contacto) roleGroups[role].dias.push(e.dias_contacto);
+    const dia = e.dias_contacto ?? "—";
+    const key = `${role}||${dia}`;
+    if (!roleContactGroups[key]) roleContactGroups[key] = { count: 0 };
+    roleContactGroups[key].count++;
   });
 
-  const observadores: ObservadorInfo[] = Object.entries(roleGroups).map(([role, info]) => {
-    const diasDist: Record<string, number> = {};
-    info.dias.forEach((d) => { diasDist[d] = (diasDist[d] || 0) + 1; });
+  const observadores: ObservadorInfo[] = Object.entries(roleContactGroups).map(([key, info]) => {
+    const [role, dia] = key.split("||");
     return {
       role,
       roleLabel: ROLE_LABELS[role] ?? role,
       count: info.count,
-      diasContacto: getMostFrequent(info.dias),
-      diasDistribution: diasDist,
+      diasContacto: dia,
+      diasDistribution: { [dia]: info.count },
     };
   });
 
