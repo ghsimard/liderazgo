@@ -178,6 +178,35 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 <Legend wrapperStyle={{ fontSize: 11 }} />
               </RadarChart>
             </ResponsiveContainer>
+
+            {/* Table with radar values */}
+            <div className="border rounded-lg overflow-hidden mt-4">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50">
+                    <th className="text-left px-3 py-2 font-semibold text-xs">COMPETENCIA</th>
+                    <th className="text-center px-3 py-2 font-semibold text-xs" style={{ color: COLOR_AUTO }}>AUTOPERCEPCIÓN</th>
+                    <th className="text-center px-3 py-2 font-semibold text-xs" style={{ color: COLOR_OBSERVER }}>OBSERVADORES</th>
+                    <th className="text-center px-3 py-2 font-semibold text-xs">BRECHA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {radarData.map((row, i) => {
+                    const brecha = row.Autopercepción - row.Observadores;
+                    return (
+                      <tr key={i} className={i % 2 === 0 ? "" : "bg-muted/20"}>
+                        <td className="px-3 py-1.5 text-xs">{row.competency}</td>
+                        <td className="px-3 py-1.5 text-xs text-center font-medium">{r1(row.Autopercepción)}</td>
+                        <td className="px-3 py-1.5 text-xs text-center font-medium">{r1(row.Observadores)}</td>
+                        <td className={`px-3 py-1.5 text-xs text-center font-medium ${brecha > 0 ? "text-amber-600" : brecha < 0 ? "text-emerald-600" : ""}`}>
+                          {brecha > 0 ? "+" : ""}{r1(brecha)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           {/* ── ANÁLISIS DE OBSERVADORES (Internos vs Externos) ── */}
