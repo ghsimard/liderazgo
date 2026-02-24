@@ -27,10 +27,10 @@ function loadImageAsBase64(src: string): Promise<string> {
 }
 
 // ── Color constants (grayscale for black-ink-only printing) ──
-const COLOR_DIRECTIVO: [number, number, number] = [30, 30, 30];       // near-black
+const COLOR_DIRECTIVO: [number, number, number] = [0, 100, 180];       // strong blue
 const COLOR_INTERNOS: [number, number, number] = [120, 120, 120];     // medium gray
 const COLOR_EXTERNOS: [number, number, number] = [190, 190, 190];     // light gray
-const COLOR_OBSERVER: [number, number, number] = [100, 100, 100];     // dark gray
+const COLOR_OBSERVER: [number, number, number] = [220, 60, 60];       // red
 const COLOR_HEADER_BG: [number, number, number] = [60, 60, 60];       // dark header
 const _COLOR_LIGHT_BG: [number, number, number] = [230, 230, 230];
 
@@ -586,41 +586,53 @@ function drawRadarChart(
     doc.line(cx, cy, ex, ey);
   }
 
-  // Draw data polygons with value labels
-  const drawPolygon = (getScore: (cs: typeof competencyScores[0]) => number, color: readonly [number, number, number], lineWidth: number, showValues: boolean, valueOffset: number) => {
+  // Draw filled data polygons
+  const drawFilledPolygon = (getScore: (cs: typeof competencyScores[0]) => number, color: readonly [number, number, number], lineWidth: number, fillOpacity: number) => {
     const pts: [number, number][] = [];
-    const scores: number[] = [];
     for (let i = 0; i < n; i++) {
       const score = getScore(competencyScores[i]);
-      scores.push(score);
       const r = (score / maxVal) * radius;
       const angle = startAngle + i * angleStep;
       pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
     }
+
+    // Fill polygon
+    (doc as any).setGState(new (jsPDF as any).GState({ opacity: fillOpacity }));
+    doc.setFillColor(...color);
+    const flatPts = pts.reduce((acc, [px, py]) => { acc.push(px, py); return acc; }, [] as number[]);
+    // Build polygon path manually
+    if (pts.length > 0) {
+      doc.setDrawColor(...color);
+      doc.setLineWidth(0);
+      // Use triangle fan to fill
+      for (let i = 1; i < pts.length - 1; i++) {
+        doc.triangle(
+          pts[0][0], pts[0][1],
+          pts[i][0], pts[i][1],
+          pts[i + 1][0], pts[i + 1][1],
+          "F"
+        );
+      }
+    }
+    (doc as any).setGState(new (jsPDF as any).GState({ opacity: 1 }));
+
+    // Stroke outline
     doc.setDrawColor(...color);
     doc.setLineWidth(lineWidth);
     for (let i = 0; i < n; i++) {
       const next = (i + 1) % n;
       doc.line(pts[i][0], pts[i][1], pts[next][0], pts[next][1]);
     }
-    // Dots + value labels
-    pts.forEach(([px, py], idx) => {
+    // Dots
+    pts.forEach(([px, py]) => {
       doc.setFillColor(...color);
       doc.circle(px, py, 1, "F");
-      if (showValues && scores[idx] > 0) {
-        doc.setFontSize(4.5);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(...color);
-        const angle = startAngle + idx * angleStep;
-        const offX = Math.cos(angle) * valueOffset;
-        const offY = Math.sin(angle) * valueOffset;
-        doc.text(r1(scores[idx]), px + offX, py + offY, { align: "center" });
-      }
     });
   };
 
-  drawPolygon((cs) => cs.observerScore, COLOR_OBSERVER, 1.0, false, 0);
-  drawPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, 1.0, false, 0);
+  // Draw observer first (behind), then directivo on top
+  drawFilledPolygon((cs) => cs.observerScore, COLOR_OBSERVER, 1.2, 0.15);
+  drawFilledPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, 1.2, 0.15);
 
   // Labels
   for (let i = 0; i < n; i++) {
