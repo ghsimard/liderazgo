@@ -336,8 +336,8 @@ export async function generarReporte360PDF(
   doc.setFillColor(245, 245, 245);
   doc.roundedRect(margin, y, contentW, 8, 1, 1, "F");
   doc.setFontSize(7);
-  drawLightbulbIcon(doc, margin + 2, y + 5, 3);
-  doc.text("Las puntuaciones se calculan a partir de sus respuestas y las de los observadores.", margin + 7, y + 5);
+  drawLightbulbIcon(doc, margin + 1.5, y + 4.5, 5);
+  doc.text("Las puntuaciones se calculan a partir de sus respuestas y las de los observadores.", margin + 8, y + 5);
   y += 14;
 
   // RESUMEN GENERAL — Bar chart
@@ -384,8 +384,8 @@ export async function generarReporte360PDF(
   doc.roundedRect(margin, y, contentW, 8, 1, 1, "F");
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  drawLightbulbIcon(doc, margin + 2, y + 5, 3);
-  doc.text("Analice las brechas que existen entre las puntuaciones promedio de los grupos de referencia y su puntuación en cada gestión.", margin + 7, y + 5);
+  drawLightbulbIcon(doc, margin + 1.5, y + 4.5, 5);
+  doc.text("Analice las brechas que existen entre las puntuaciones promedio de los grupos de referencia y su puntuación en cada gestión.", margin + 8, y + 5);
 
   // ════════════════════════════════════════════════════════════
   // PAGE 5 — RADAR + OBSERVER ANALYSIS
@@ -414,8 +414,8 @@ export async function generarReporte360PDF(
   doc.setFillColor(245, 245, 245);
   doc.roundedRect(margin, y, contentW, 10, 1, 1, "F");
   doc.setFontSize(7);
-  drawLightbulbIcon(doc, margin + 2, y + 6, 3);
-  doc.text("Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.", margin + 7, y + 6);
+  drawLightbulbIcon(doc, margin + 1.5, y + 5.5, 5);
+  doc.text("Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.", margin + 8, y + 6);
   y += 15;
 
   // ANÁLISIS DE OBSERVADORES
