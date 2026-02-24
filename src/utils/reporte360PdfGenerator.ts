@@ -325,7 +325,7 @@ export async function generarReporte360PDF(
     doc.text(obs.roleLabel, margin + col1W + 3, y + rowH / 2 + 1);
 
     // Draw dias as individual rounded badges
-    const diasEntries = Object.keys(obs.diasDistribution);
+    const diasEntries = Object.entries(obs.diasDistribution);
     if (diasEntries.length === 0) {
       doc.text("—", margin + col1W + col2W + 3, y + rowH / 2 + 1);
     } else {
@@ -333,18 +333,29 @@ export async function generarReporte360PDF(
       const badgeY = y + 1.2;
       const badgeH = 4.5;
       const badgePadding = 2;
-      const badgeGap = 2;
+      const badgeGap = 3;
       doc.setFontSize(6.5);
-      diasEntries.forEach((dias) => {
+      diasEntries.forEach(([dias, count]) => {
         const label = dias || "—";
         const textW = doc.getTextWidth(label);
-        const badgeW = textW + badgePadding * 2;
+        const badgeW = textW + badgePadding * 2 + 4; // extra space for count circle
         // Badge background and border
         doc.setFillColor(240, 240, 240);
         doc.setDrawColor(190, 190, 190);
         doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1, 1, "FD");
         doc.setTextColor(60, 60, 60);
         doc.text(label, badgeX + badgePadding, badgeY + badgeH / 2 + 1);
+        // Count circle in top-right corner
+        const circleR = 1.8;
+        const cx = badgeX + badgeW - 0.5;
+        const cy = badgeY - 0.2;
+        doc.setFillColor(30, 30, 30);
+        doc.circle(cx, cy, circleR, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(5.5);
+        doc.text(String(count), cx, cy + 0.8, { align: "center" });
+        doc.setFontSize(6.5);
+        doc.setTextColor(60, 60, 60);
         badgeX += badgeW + badgeGap;
       });
       doc.setTextColor(30, 30, 30);
