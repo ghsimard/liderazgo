@@ -345,15 +345,14 @@ export async function generarReporte360PDF(
         doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1, 1, "FD");
         doc.setTextColor(60, 60, 60);
         doc.text(label, badgeX + badgePadding, badgeY + badgeH / 2 + 1);
-        // Count circle in top-right corner
-        const circleR = 1.8;
-        const cx = badgeX + badgeW - 0.5;
-        const cy = badgeY - 0.2;
-        doc.setFillColor(30, 30, 30);
-        doc.circle(cx, cy, circleR, "F");
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(5.5);
-        doc.text(String(count), cx, cy + 0.8, { align: "center" });
+        // Count number in top-right corner
+        doc.setTextColor(30, 30, 30);
+        doc.setFontSize(5);
+        doc.setFont("helvetica", "bold");
+        doc.text(String(count), badgeX + badgeW - 1, badgeY + 1.5, { align: "right" });
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(6.5);
+        doc.setTextColor(60, 60, 60);
         doc.setFontSize(6.5);
         doc.setTextColor(60, 60, 60);
         badgeX += badgeW + badgeGap;
