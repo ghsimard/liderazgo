@@ -582,8 +582,8 @@ function drawRadarChart(
 
 
 
-  // Draw filled data polygons with true transparency
-  const drawFilledPolygon = (getScore: (cs: typeof competencyScores[0]) => number, color: readonly [number, number, number], lineWidth: number) => {
+  // Draw filled data polygons with true PDF transparency
+  const drawFilledPolygon = (getScore: (cs: typeof competencyScores[0]) => number, color: readonly [number, number, number], lineWidth: number, fillOpacity: number) => {
     const pts: [number, number][] = [];
     for (let i = 0; i < n; i++) {
       const score = getScore(competencyScores[i]);
@@ -592,10 +592,23 @@ function drawRadarChart(
       pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
     }
 
-    // Fill polygon — draw grid lines first, then semi-opaque fill on top won't work.
-    // Instead: skip fill entirely and just use colored outlines for clarity.
+    // Transparent fill using GState
+    if (pts.length > 2) {
+      doc.saveGraphicsState();
+      doc.setGState(new (doc as any).GState({ opacity: fillOpacity }));
+      doc.setFillColor(...color);
+      for (let i = 1; i < pts.length - 1; i++) {
+        doc.triangle(
+          pts[0][0], pts[0][1],
+          pts[i][0], pts[i][1],
+          pts[i + 1][0], pts[i + 1][1],
+          "F"
+        );
+      }
+      doc.restoreGraphicsState();
+    }
 
-    // Stroke outline
+    // Stroke outline (full opacity)
     doc.setDrawColor(...color);
     doc.setLineWidth(lineWidth);
     for (let i = 0; i < n; i++) {
@@ -609,8 +622,8 @@ function drawRadarChart(
     });
   };
 
-  drawFilledPolygon((cs) => cs.observerScore, COLOR_OBSERVER, 1.5);
-  drawFilledPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, 1.5);
+  drawFilledPolygon((cs) => cs.observerScore, COLOR_OBSERVER, 1.5, 0.15);
+  drawFilledPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, 1.5, 0.15);
 
   // Labels
   for (let i = 0; i < n; i++) {
