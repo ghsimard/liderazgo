@@ -161,7 +161,7 @@ export async function generarReporte360PDF(
   // ════════════════════════════════════════════════════════════
   doc.addPage();
   drawPageHeader();
-  y = 20;
+  y = 25;
 
   doc.setTextColor(30, 30, 30);
   doc.setFontSize(13);
@@ -178,10 +178,10 @@ export async function generarReporte360PDF(
 
   // Gestión Personal
   const drawGestionSection = (title: string, text: string, competencias: string[]) => {
-    if (y > pageH - 60) {
+    if (y > pageH - 65) {
       doc.addPage();
       drawPageHeader();
-      y = 20;
+      y = 25;
     }
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -194,10 +194,10 @@ export async function generarReporte360PDF(
     doc.text(lines, margin, y, { align: "left", maxWidth: contentW });
     y += lines.length * 4.5 + 3;
     competencias.forEach((c) => {
-      if (y > pageH - 15) {
+      if (y > pageH - 25) {
         doc.addPage();
         drawPageHeader();
-        y = 20;
+        y = 25;
       }
       const bulletIndent = 3;
       const textIndent = bulletIndent + doc.getTextWidth("• ");
