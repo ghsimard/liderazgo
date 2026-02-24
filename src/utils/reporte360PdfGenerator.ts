@@ -617,9 +617,9 @@ function drawRadarChart(
     });
   };
 
-  // Light fill colors (simulating ~15% opacity on white background)
-  const FILL_OBSERVER: [number, number, number] = [248, 225, 225];   // light red
-  const FILL_DIRECTIVO: [number, number, number] = [220, 235, 248];  // light blue
+  // Light gray fill colors (transparent feel on white)
+  const FILL_OBSERVER: [number, number, number] = [235, 235, 235];   // light gray
+  const FILL_DIRECTIVO: [number, number, number] = [215, 215, 215];  // slightly darker gray
 
   drawFilledPolygon((cs) => cs.observerScore, COLOR_OBSERVER, FILL_OBSERVER, 1.2);
   drawFilledPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, FILL_DIRECTIVO, 1.2);
