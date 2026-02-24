@@ -237,7 +237,7 @@ export async function generarReporte360PDF(
   // ════════════════════════════════════════════════════════════
   doc.addPage();
   drawPageHeader();
-  y = 20;
+  y = 25;
 
   // IDENTIFICACIÓN
   doc.setFontSize(12);
@@ -409,7 +409,7 @@ export async function generarReporte360PDF(
   // ════════════════════════════════════════════════════════════
   doc.addPage();
   drawPageHeader();
-  y = 20;
+  y = 25;
 
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
@@ -501,7 +501,7 @@ export async function generarReporte360PDF(
   // ════════════════════════════════════════════════════════════
   doc.addPage();
   drawPageHeader();
-  y = 20;
+  y = 25;
 
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
