@@ -397,7 +397,7 @@ export async function generarReporte360PDF(
   doc.text("ANÁLISIS DE LA DISTANCIA ENTRE EL DIRECTIVO Y LOS OBSERVADORES", margin, y);
   y += 6;
 
-  drawRadarChart(doc, data.competencyScores, pageW / 2, y + 42, 38);
+  drawRadarChart(doc, data.competencyScores, pageW / 2, y + 48, 38);
   y += 115;
 
   // ── Competency table ──
