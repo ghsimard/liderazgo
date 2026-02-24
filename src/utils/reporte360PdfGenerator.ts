@@ -398,7 +398,7 @@ export async function generarReporte360PDF(
   y += 6;
 
   drawRadarChart(doc, data.competencyScores, pageW / 2, y + 48, 38);
-  y += 115;
+  y += 121;
 
   // ── Competency table ──
   doc.setFontSize(9);
