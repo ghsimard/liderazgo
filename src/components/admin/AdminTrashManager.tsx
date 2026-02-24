@@ -21,6 +21,7 @@ const TYPE_LABELS: Record<string, string> = {
   competency: "Competencia",
   item: "Ítem",
   encuesta_360: "Encuesta 360",
+  ficha_rlt: "Ficha RLT",
 };
 
 export default function AdminTrashManager() {
@@ -64,9 +65,16 @@ export default function AdminTrashManager() {
         if (d.texts?.length > 0) await supabase.from("item_texts_360").insert(d.texts.map(({ id, ...rest }: any) => rest));
         if (d.weights?.length > 0) await supabase.from("competency_weights").insert(d.weights.map(({ id, ...rest }: any) => rest));
       } else if (record.record_type === "encuesta_360") {
-        // Restore the encuesta — re-insert the full row
         const { id, ...rest } = d;
         await supabase.from("encuestas_360").insert([{ id, ...rest }]);
+      } else if (record.record_type === "ficha_rlt") {
+        // Restore ficha first
+        const { ficha, encuestas } = d;
+        await supabase.from("fichas_rlt").insert([ficha]);
+        // Restore associated encuestas
+        if (encuestas?.length > 0) {
+          await supabase.from("encuestas_360").insert(encuestas);
+        }
       }
 
       // Remove from trash
