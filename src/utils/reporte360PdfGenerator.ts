@@ -386,7 +386,7 @@ export async function generarReporte360PDF(
   doc.text("Analice las brechas que existen entre las puntuaciones promedio de los grupos de referencia y su puntuación en cada gestión.", margin + 8, y + 5);
 
   // ════════════════════════════════════════════════════════════
-  // PAGE 5 — RADAR CHART
+  // PAGE 5 — RADAR CHART + COMPETENCY TABLE
   // ════════════════════════════════════════════════════════════
   doc.addPage();
   drawPageHeader();
@@ -397,57 +397,41 @@ export async function generarReporte360PDF(
   doc.text("ANÁLISIS DE LA DISTANCIA ENTRE EL DIRECTIVO Y LOS OBSERVADORES", margin, y);
   y += 6;
 
-  drawRadarChart(doc, data.competencyScores, pageW / 2, y + 65, 55);
+  drawRadarChart(doc, data.competencyScores, pageW / 2, y + 42, 38);
+  y += 100;
 
-  // Info box at bottom of radar page
-  const radarInfoY = pageH - marginBottom - 22;
-  doc.setFillColor(245, 245, 245);
-  doc.roundedRect(margin, radarInfoY, contentW, 10, 1, 1, "F");
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  drawLightbulbIcon(doc, margin + 1.5, radarInfoY + 5.5, 5, bulbB64);
-  doc.text("Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.", margin + 8, radarInfoY + 6);
-
-  // ════════════════════════════════════════════════════════════
-  // PAGE 6 — COMPETENCY TABLE (radar data)
-  // ════════════════════════════════════════════════════════════
-  doc.addPage();
-  drawPageHeader();
-  y = 20;
-
-  doc.setFontSize(10);
+  // ── Competency table ──
+  doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.text("PUNTUACIONES POR COMPETENCIA", margin, y);
-  y += 8;
+  y += 5;
 
-  // Draw competency table
   {
     const tableHeaders = ["Competencia", "Autoevaluación", "Dir., Doc. y Adm.", "Est. y Acud."];
     const colWidths = [contentW * 0.46, contentW * 0.18, contentW * 0.18, contentW * 0.18];
-    const rowH = 7;
+    const rowH = 5.5;
 
     // Header row
     doc.setFillColor(230, 230, 230);
-    doc.rect(margin, y, contentW, rowH + 1, "F");
-    doc.setFontSize(8);
+    doc.rect(margin, y, contentW, rowH + 0.5, "F");
+    doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0, 0, 0);
     let tx = margin;
     tableHeaders.forEach((h, hi) => {
-      doc.text(h, hi === 0 ? tx + 2 : tx + colWidths[hi] / 2, y + 5, hi === 0 ? undefined : { align: "center" });
+      doc.text(h, hi === 0 ? tx + 2 : tx + colWidths[hi] / 2, y + 4, hi === 0 ? undefined : { align: "center" });
       tx += colWidths[hi];
     });
-    y += rowH + 1;
+    y += rowH + 0.5;
 
     // Data rows
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
+    doc.setFontSize(6.5);
     data.competencyScores.forEach((c, i) => {
       if (i % 2 === 1) {
         doc.setFillColor(245, 245, 245);
         doc.rect(margin, y, contentW, rowH, "F");
       }
-      // Draw row border
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.2);
       doc.line(margin, y + rowH, margin + contentW, y + rowH);
@@ -455,23 +439,27 @@ export async function generarReporte360PDF(
       const label = COMPETENCY_LABELS[c.competency] ?? c.competency;
       tx = margin;
       doc.setTextColor(0, 0, 0);
-      doc.text(label, tx + 2, y + 4.8);
+      doc.text(label, tx + 2, y + 3.8);
       tx += colWidths[0];
       doc.setFont("helvetica", "bold");
-      doc.text(c.autoScore.toFixed(1), tx + colWidths[1] / 2, y + 4.8, { align: "center" });
+      doc.text(c.autoScore.toFixed(1), tx + colWidths[1] / 2, y + 3.8, { align: "center" });
       tx += colWidths[1];
-      doc.text(c.internosScore.toFixed(1), tx + colWidths[2] / 2, y + 4.8, { align: "center" });
+      doc.text(c.internosScore.toFixed(1), tx + colWidths[2] / 2, y + 3.8, { align: "center" });
       tx += colWidths[2];
-      doc.text(c.externosScore.toFixed(1), tx + colWidths[3] / 2, y + 4.8, { align: "center" });
+      doc.text(c.externosScore.toFixed(1), tx + colWidths[3] / 2, y + 3.8, { align: "center" });
       doc.setFont("helvetica", "normal");
       y += rowH;
     });
-
-    // Bottom border
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.line(margin, y, margin + contentW, y);
   }
+
+  // Info box
+  y += 4;
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(margin, y, contentW, 10, 1, 1, "F");
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  drawLightbulbIcon(doc, margin + 1.5, y + 5.5, 5, bulbB64);
+  doc.text("Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.", margin + 8, y + 6);
 
   // ════════════════════════════════════════════════════════════
   // PAGE 7 — OBSERVER ANALYSIS
