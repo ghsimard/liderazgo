@@ -8,6 +8,7 @@ import { FileText, RefreshCw, Download, Eye } from "lucide-react";
 import { calcularReporte360, type Reporte360Data } from "@/utils/reporte360Calculator";
 import { generarReporte360PDF } from "@/utils/reporte360PdfGenerator";
 import AdminReporte360Viewer from "./AdminReporte360Viewer";
+import AdminEncuestaMonitor from "./AdminEncuestaMonitor";
 import logoRLT from "@/assets/logo_rlt_white.jpeg";
 import logoCLT from "@/assets/logo_clt_white.jpeg";
 import JSZip from "jszip";
@@ -127,6 +128,9 @@ export default function AdminReporte360Tab() {
 
   return (
     <div className="space-y-6">
+      {/* Completion monitor */}
+      <AdminEncuestaMonitor />
+
       {/* Batch export */}
       <Card>
         <CardContent className="p-4 flex items-center gap-3 flex-wrap">
