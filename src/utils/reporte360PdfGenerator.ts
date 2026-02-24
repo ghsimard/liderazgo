@@ -87,9 +87,10 @@ export async function generarReporte360PDF(
   logoSources: { logoRLT: string; logoCLT: string },
   options: { returnBlob?: boolean } = {}
 ): Promise<Blob | void> {
-  const [rltB64, cltB64] = await Promise.all([
+  const [rltB64, cltB64, bulbB64] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
     loadImageAsBase64(logoSources.logoCLT),
+    loadImageAsBase64("/images/lightbulb-icon.png"),
   ]);
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
@@ -336,7 +337,7 @@ export async function generarReporte360PDF(
   doc.setFillColor(245, 245, 245);
   doc.roundedRect(margin, y, contentW, 8, 1, 1, "F");
   doc.setFontSize(7);
-  drawLightbulbIcon(doc, margin + 1.5, y + 4.5, 5);
+  drawLightbulbIcon(doc, margin + 1.5, y + 4.5, 5, bulbB64);
   doc.text("Las puntuaciones se calculan a partir de sus respuestas y las de los observadores.", margin + 8, y + 5);
   y += 14;
 
@@ -384,7 +385,7 @@ export async function generarReporte360PDF(
   doc.roundedRect(margin, y, contentW, 8, 1, 1, "F");
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  drawLightbulbIcon(doc, margin + 1.5, y + 4.5, 5);
+  drawLightbulbIcon(doc, margin + 1.5, y + 4.5, 5, bulbB64);
   doc.text("Analice las brechas que existen entre las puntuaciones promedio de los grupos de referencia y su puntuación en cada gestión.", margin + 8, y + 5);
 
   // ════════════════════════════════════════════════════════════
@@ -414,7 +415,7 @@ export async function generarReporte360PDF(
   doc.setFillColor(245, 245, 245);
   doc.roundedRect(margin, y, contentW, 10, 1, 1, "F");
   doc.setFontSize(7);
-  drawLightbulbIcon(doc, margin + 1.5, y + 5.5, 5);
+  drawLightbulbIcon(doc, margin + 1.5, y + 5.5, 5, bulbB64);
   doc.text("Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.", margin + 8, y + 6);
   y += 15;
 
@@ -476,24 +477,8 @@ export async function generarReporte360PDF(
 // HELPER: Draw lightbulb icon
 // ══════════════════════════════════════════════════════════════
 
-function drawLightbulbIcon(doc: jsPDF, x: number, cy: number, size: number = 3) {
-  // Use a simple "i" info icon instead — clean circle with "i"
-  const r = size * 0.42;
-  const cx = x + size / 2;
-  // Filled circle
-  doc.setDrawColor(70, 130, 180);
-  doc.setFillColor(70, 130, 180);
-  doc.circle(cx, cy, r, "F");
-  // White "i" letter
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(size * 2.2);
-  doc.setFont("helvetica", "bold");
-  doc.text("i", cx, cy + r * 0.45, { align: "center" });
-  // Reset
-  doc.setTextColor(80, 80, 80);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setDrawColor(0, 0, 0);
+function drawLightbulbIcon(doc: jsPDF, x: number, cy: number, size: number, bulbB64: string) {
+  doc.addImage(bulbB64, "PNG", x, cy - size / 2, size, size);
 }
 
 // ══════════════════════════════════════════════════════════════
