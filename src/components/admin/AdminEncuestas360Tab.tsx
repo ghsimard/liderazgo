@@ -251,7 +251,7 @@ export default function AdminEncuestas360Tab() {
             )}
           </DialogHeader>
 
-          <ScrollArea className="flex-1 -mx-6 px-6">
+          <ScrollArea className="flex-1 -mx-6 px-6" style={{ maxHeight: "60vh" }}>
             {loadingTexts ? (
               <div className="flex items-center justify-center py-8">
                 <RefreshCw className="animate-spin w-5 h-5 text-muted-foreground" />
