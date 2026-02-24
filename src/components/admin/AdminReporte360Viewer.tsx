@@ -147,7 +147,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
           {/* ── RESUMEN GENERAL (Bar Chart) ── */}
           <section>
             <h3 className={sectionTitleClass}>RESUMEN GENERAL</h3>
-            <div className="flex gap-4 text-xs mb-2">
+            <div className="flex gap-4 text-xs mb-2 justify-center">
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AUTO }} /> Directivo</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_INTERNOS }} /> Administrativo(a), coordinador(a) y docente</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_EXTERNOS }} /> Acudiente y estudiante</span>
@@ -175,7 +175,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                   }} />
               </BarChart>
             </ResponsiveContainer>
-            <div className="flex gap-6 text-sm mt-2">
+            <div className="flex gap-6 text-sm mt-2 justify-center">
               <span>Autopercepción promedio: <strong>{r1(autoAvg)}/10</strong></span>
               <span>Observadores promedio: <strong>{r1(observerAvg)}/10</strong></span>
             </div>
