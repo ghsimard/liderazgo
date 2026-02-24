@@ -167,11 +167,11 @@ export async function generarReporte360PDF(
   y += 8;
 
   // Intro text
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   const introLines = doc.splitTextToSize(INTRO_TEXT, contentW);
-  doc.text(introLines, margin, y);
-  y += introLines.length * 3.5 + 4;
+  doc.text(introLines, margin, y, { align: "justify", maxWidth: contentW });
+  y += introLines.length * 4.5 + 4;
 
   // Gestión Personal
   const drawGestionSection = (title: string, text: string, competencias: string[]) => {
@@ -180,15 +180,15 @@ export async function generarReporte360PDF(
       drawPageHeader();
       y = 20;
     }
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text(title, margin, y);
-    y += 5;
+    y += 6;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     const lines = doc.splitTextToSize(text, contentW);
-    doc.text(lines, margin, y);
-    y += lines.length * 3.5 + 3;
+    doc.text(lines, margin, y, { align: "justify", maxWidth: contentW });
+    y += lines.length * 4.5 + 3;
     competencias.forEach((c) => {
       if (y > pageH - 15) {
         doc.addPage();
@@ -196,8 +196,8 @@ export async function generarReporte360PDF(
         y = 20;
       }
       const cLines = doc.splitTextToSize(`• ${c}`, contentW - 5);
-      doc.text(cLines, margin + 3, y);
-      y += cLines.length * 3.5 + 1;
+      doc.text(cLines, margin + 3, y, { align: "justify", maxWidth: contentW - 5 });
+      y += cLines.length * 4.5 + 1;
     });
     y += 4;
   };
@@ -212,10 +212,10 @@ export async function generarReporte360PDF(
     drawPageHeader();
     y = 20;
   }
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   const structLines = doc.splitTextToSize(INFORME_STRUCTURE, contentW);
-  doc.text(structLines, margin, y);
+  doc.text(structLines, margin, y, { align: "justify", maxWidth: contentW });
 
   // ════════════════════════════════════════════════════════════
   // PAGE 4 — IDENTIFICATION + OBSERVERS + BAR CHART
