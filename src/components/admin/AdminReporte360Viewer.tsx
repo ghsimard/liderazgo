@@ -126,7 +126,10 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                       <Tooltip />
                       {diasKeys.map((d, i) => (
                         <Bar key={d} dataKey={d} stackId="dias" fill={DIAS_COLORS[i % DIAS_COLORS.length]} barSize={18} radius={i === diasKeys.length - 1 ? [0, 3, 3, 0] : undefined}
-                          label={{ position: "center", fill: "#fff", fontSize: 10, formatter: (v: number) => v > 0 ? v : "" }} />
+                          label={({ x, y, width, height, value }: any) => {
+                            if (!value || value <= 0 || width < 14) return null;
+                            return <text x={x + width / 2} y={y + height / 2} fill="#fff" fontSize={10} textAnchor="middle" dominantBaseline="central">{value}</text>;
+                          }} />
                       ))}
                     </BarChart>
                   </ResponsiveContainer>
