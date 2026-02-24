@@ -26,13 +26,13 @@ function loadImageAsBase64(src: string): Promise<string> {
   });
 }
 
-// ── Color constants ──
-const COLOR_DIRECTIVO: [number, number, number] = [66, 133, 244];
-const COLOR_INTERNOS: [number, number, number] = [234, 134, 45];
-const COLOR_EXTERNOS: [number, number, number] = [106, 168, 79];
-const COLOR_OBSERVER: [number, number, number] = [106, 168, 79];
-const COLOR_HEADER_BG: [number, number, number] = [47, 85, 151];
-const _COLOR_LIGHT_BG: [number, number, number] = [220, 230, 241];
+// ── Color constants (grayscale for black-ink-only printing) ──
+const COLOR_DIRECTIVO: [number, number, number] = [30, 30, 30];       // near-black
+const COLOR_INTERNOS: [number, number, number] = [120, 120, 120];     // medium gray
+const COLOR_EXTERNOS: [number, number, number] = [190, 190, 190];     // light gray
+const COLOR_OBSERVER: [number, number, number] = [100, 100, 100];     // dark gray
+const COLOR_HEADER_BG: [number, number, number] = [60, 60, 60];       // dark header
+const _COLOR_LIGHT_BG: [number, number, number] = [230, 230, 230];
 
 // ── Helper: round to 1 decimal ──
 function r1(n: number): string {
@@ -131,10 +131,10 @@ export async function generarReporte360PDF(
 
   // Central decorative area
   y += 20;
-  doc.setFillColor(230, 238, 248);
+  doc.setFillColor(230, 230, 230);
   doc.roundedRect(margin + 20, y, contentW - 40, 80, 5, 5, "F");
   doc.setFontSize(28);
-  doc.setTextColor(80, 120, 180);
+  doc.setTextColor(60, 60, 60);
   doc.text("Encuesta de", pageW / 2, y + 30, { align: "center" });
   doc.setFontSize(36);
   doc.setFont("helvetica", "bold");

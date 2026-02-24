@@ -136,7 +136,7 @@ export async function generarPDFFicha(
   const drawSection = (title: string) => {
     checkNewPage(14);
     y += 3;
-    doc.setFillColor(220, 230, 241); // light blue-gray
+    doc.setFillColor(220, 220, 220); // light gray for black-ink printing
     doc.rect(margin, y, contentW, 7, "F");
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(8.5);
