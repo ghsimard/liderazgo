@@ -398,9 +398,52 @@ export async function generarReporte360PDF(
   y += 6;
 
   drawRadarChart(doc, data.competencyScores, pageW / 2, y + 55, 48);
-  y += 125;
+  y += 120;
 
-  // (domain marks now drawn inside drawRadarChart)
+  // ── Table with radar values ──
+  {
+    const tableHeaders = ["Competencia", "Autopercepción", "Observadores", "Brecha"];
+    const colWidths = [contentW * 0.46, contentW * 0.18, contentW * 0.18, contentW * 0.18];
+    const rowH = 4.5;
+
+    // Header row
+    doc.setFillColor(230, 230, 230);
+    doc.rect(margin, y, contentW, rowH + 1, "F");
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    let tx = margin;
+    tableHeaders.forEach((h, hi) => {
+      doc.text(h, hi === 0 ? tx + 1 : tx + colWidths[hi] / 2, y + 3.5, hi === 0 ? undefined : { align: "center" });
+      tx += colWidths[hi];
+    });
+    y += rowH + 1;
+
+    // Data rows
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6);
+    data.competencyScores.forEach((c, i) => {
+      if (i % 2 === 1) {
+        doc.setFillColor(248, 248, 248);
+        doc.rect(margin, y, contentW, rowH, "F");
+      }
+      const label = COMPETENCY_LABELS[c.competency] ?? c.competency;
+      const brecha = c.autoScore - c.observerScore;
+      tx = margin;
+      doc.setTextColor(0, 0, 0);
+      doc.text(label.substring(0, 55), tx + 1, y + 3.2);
+      tx += colWidths[0];
+      doc.text(c.autoScore.toFixed(1), tx + colWidths[1] / 2, y + 3.2, { align: "center" });
+      tx += colWidths[1];
+      doc.text(c.observerScore.toFixed(1), tx + colWidths[2] / 2, y + 3.2, { align: "center" });
+      tx += colWidths[2];
+      if (brecha > 0) doc.setTextColor(180, 120, 0);
+      else if (brecha < 0) doc.setTextColor(50, 140, 70);
+      doc.text((brecha > 0 ? "+" : "") + brecha.toFixed(1), tx + colWidths[3] / 2, y + 3.2, { align: "center" });
+      doc.setTextColor(0, 0, 0);
+      y += rowH;
+    });
+    y += 4;
+  }
 
   // Info box
   doc.setFillColor(245, 245, 245);
