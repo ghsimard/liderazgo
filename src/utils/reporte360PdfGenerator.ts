@@ -691,8 +691,8 @@ function drawQualitativeTable(
   data: Reporte360Data,
   x: number, y: number, w: number
 ) {
-  // Sort items by observer score to determine strengths/weaknesses
-  const sorted = [...data.itemScores].filter((i) => i.phrase).sort((a, b) => b.observerScore - a.observerScore);
+  // Sort items by observer score — exclude items with no valid observer data (score 0 means "No sé" only)
+  const sorted = [...data.itemScores].filter((i) => i.phrase && i.observerScore > 0).sort((a, b) => b.observerScore - a.observerScore);
 
   // Top 8 = strengths, bottom 8 = areas to improve
   const strengths = sorted.slice(0, 8).map((i) => i.phrase);
