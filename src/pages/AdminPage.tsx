@@ -17,6 +17,7 @@ import AdminItemsManager from "@/components/admin/AdminItemsManager";
 import AdminCompetencyWizard from "@/components/admin/AdminCompetencyWizard";
 import AdminTrashManager from "@/components/admin/AdminTrashManager";
 import AdminReporte360Tab from "@/components/admin/AdminReporte360Tab";
+import AdminEncuestas360Tab from "@/components/admin/AdminEncuestas360Tab";
 
 interface FormItem {
   name: string;
@@ -160,6 +161,7 @@ export default function AdminPage() {
             <TabsTrigger value="formularios" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Formularios</TabsTrigger>
             <TabsTrigger value="fichas" className="gap-1.5"><FileText className="w-4 h-4" /> Fichas Gestión</TabsTrigger>
             <TabsTrigger value="ponderaciones" className="gap-1.5"><Settings2 className="w-4 h-4" /> Config 360°</TabsTrigger>
+            <TabsTrigger value="encuestas360" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Encuestas 360°</TabsTrigger>
             <TabsTrigger value="reportes360" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Informes 360°</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
           </TabsList>
@@ -223,6 +225,7 @@ export default function AdminPage() {
               <TabsContent value="papelera"><AdminTrashManager /></TabsContent>
             </Tabs>
           </TabsContent>
+          <TabsContent value="encuestas360"><AdminEncuestas360Tab /></TabsContent>
           <TabsContent value="reportes360"><AdminReporte360Tab /></TabsContent>
           <TabsContent value="users"><AdminUsersTab /></TabsContent>
         </Tabs>
