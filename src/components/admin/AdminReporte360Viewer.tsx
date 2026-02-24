@@ -103,13 +103,28 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                   </tr>
                 </thead>
                 <tbody>
-                  {observadores.map((obs, i) => (
-                    <tr key={i} className={i % 2 === 0 ? "" : "bg-muted/20"}>
-                      <td className="px-4 py-1.5 text-center">{obs.count}</td>
-                      <td className="px-4 py-1.5">{obs.roleLabel}</td>
-                      <td className="px-4 py-1.5">{obs.diasContacto || "—"}</td>
-                    </tr>
-                  ))}
+                  {observadores.map((obs, i) => {
+                    const diasEntries = Object.entries(obs.diasDistribution);
+                    return (
+                      <tr key={i} className={i % 2 === 0 ? "" : "bg-muted/20"}>
+                        <td className="px-4 py-1.5 text-center">{obs.count}</td>
+                        <td className="px-4 py-1.5">{obs.roleLabel}</td>
+                        <td className="px-4 py-1.5">
+                          {diasEntries.length === 0 ? "—" : diasEntries.length === 1 ? (
+                            <span>{diasEntries[0][0] || "—"}</span>
+                          ) : (
+                            <div className="flex gap-3">
+                              {diasEntries.map(([dias, count]) => (
+                                <span key={dias} className="inline-flex items-center gap-1">
+                                  <span className="font-medium text-muted-foreground text-xs">({count})</span> {dias}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
