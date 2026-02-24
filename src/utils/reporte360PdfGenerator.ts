@@ -92,7 +92,7 @@ export async function generarReporte360PDF(
     loadImageAsBase64(logoSources.logoCLT),
   ]);
 
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 15;
