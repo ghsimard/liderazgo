@@ -336,7 +336,8 @@ export async function generarReporte360PDF(
   doc.setFillColor(245, 245, 245);
   doc.roundedRect(margin, y, contentW, 8, 1, 1, "F");
   doc.setFontSize(7);
-  doc.text("💡 Las puntuaciones se calculan a partir de sus respuestas y las de los observadores.", margin + 5, y + 5);
+  drawLightbulbIcon(doc, margin + 2, y + 5, 3);
+  doc.text("Las puntuaciones se calculan a partir de sus respuestas y las de los observadores.", margin + 7, y + 5);
   y += 14;
 
   // RESUMEN GENERAL — Bar chart
@@ -383,7 +384,8 @@ export async function generarReporte360PDF(
   doc.roundedRect(margin, y, contentW, 8, 1, 1, "F");
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  doc.text("💡 Analice las brechas que existen entre las puntuaciones promedio de los grupos de referencia y su puntuación en cada gestión.", margin + 5, y + 5);
+  drawLightbulbIcon(doc, margin + 2, y + 5, 3);
+  doc.text("Analice las brechas que existen entre las puntuaciones promedio de los grupos de referencia y su puntuación en cada gestión.", margin + 7, y + 5);
 
   // ════════════════════════════════════════════════════════════
   // PAGE 5 — RADAR + OBSERVER ANALYSIS
@@ -412,7 +414,8 @@ export async function generarReporte360PDF(
   doc.setFillColor(245, 245, 245);
   doc.roundedRect(margin, y, contentW, 10, 1, 1, "F");
   doc.setFontSize(7);
-  doc.text("💡 Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.", margin + 5, y + 6);
+  drawLightbulbIcon(doc, margin + 2, y + 6, 3);
+  doc.text("Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.", margin + 7, y + 6);
   y += 15;
 
   // ANÁLISIS DE OBSERVADORES
@@ -467,6 +470,25 @@ export async function generarReporte360PDF(
     return doc.output("blob");
   }
   doc.save(`Informe_360_${nombre}.pdf`);
+}
+
+// ══════════════════════════════════════════════════════════════
+// HELPER: Draw lightbulb icon
+// ══════════════════════════════════════════════════════════════
+
+function drawLightbulbIcon(doc: jsPDF, x: number, cy: number, size: number = 3) {
+  const r = size * 0.38;
+  const cx = x + size / 2;
+  const bulbCy = cy - size * 0.1;
+  doc.setDrawColor(180, 150, 50);
+  doc.setFillColor(255, 210, 60);
+  doc.circle(cx, bulbCy, r, "FD");
+  doc.setLineWidth(0.2);
+  const baseY = bulbCy + r;
+  doc.line(cx - r * 0.45, baseY + 0.3, cx + r * 0.45, baseY + 0.3);
+  doc.line(cx - r * 0.3, baseY + 0.7, cx + r * 0.3, baseY + 0.7);
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.1);
 }
 
 // ══════════════════════════════════════════════════════════════
