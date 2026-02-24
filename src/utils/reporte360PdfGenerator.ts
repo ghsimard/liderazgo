@@ -606,13 +606,13 @@ function drawObserverBarChart(
       doc.rect(bx, by, barW - 0.5, barH, "F");
     });
 
-    // Label — vertical
+    // Label — vertical below the chart
     const mark = COMPETENCY_DOMAIN_MARK[cs.competency] ?? "";
     const labelText = `${cs.competencyLabel}${mark}`;
     doc.setFontSize(5);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
-    doc.text(labelText, gx, y + chartH + 3, { angle: 90 });
+    doc.text(labelText, gx, y + chartH + 3, { angle: -90 });
   });
 }
 
