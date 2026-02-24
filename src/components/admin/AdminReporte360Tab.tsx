@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, RefreshCw, Download } from "lucide-react";
-import { calcularReporte360 } from "@/utils/reporte360Calculator";
+import { FileText, RefreshCw, Download, Eye } from "lucide-react";
+import { calcularReporte360, type Reporte360Data } from "@/utils/reporte360Calculator";
 import { generarReporte360PDF } from "@/utils/reporte360PdfGenerator";
+import AdminReporte360Viewer from "./AdminReporte360Viewer";
 import logoRLT from "@/assets/logo_rlt.png";
 import logoCLT from "@/assets/logo_clt_dark.png";
 import JSZip from "jszip";
@@ -23,6 +24,9 @@ export default function AdminReporte360Tab() {
   const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
+  const [viewerData, setViewerData] = useState<Reporte360Data | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [batchRegion, setBatchRegion] = useState("");
   const [regions, setRegions] = useState<string[]>([]);
   const [batchGenerating, setBatchGenerating] = useState(false);
@@ -48,6 +52,18 @@ export default function AdminReporte360Tab() {
     setDirectivos(list);
     setRegions([...new Set(list.map((d) => d.region).filter(Boolean))]);
     setLoading(false);
+  };
+
+  const handleView = async (d: DirectivoOption) => {
+    setViewing(d.nombre);
+    try {
+      const data = await calcularReporte360(d.nombre, d.institucion);
+      setViewerData(data);
+      setViewerOpen(true);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setViewing(null);
   };
 
   const handleGenerate = async (d: DirectivoOption) => {
@@ -94,7 +110,7 @@ export default function AdminReporte360Tab() {
       a.download = `Informes_360_${batchRegion.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.zip`;
       a.click();
       URL.revokeObjectURL(url);
-      toast({ title: "Export ZIP téléchargé", description: `${regionDirectivos.length} informe(s) generados` });
+      toast({ title: "ZIP descargado", description: `${regionDirectivos.length} informe(s) generados` });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
@@ -148,21 +164,40 @@ export default function AdminReporte360Tab() {
                   <p className="text-xs text-muted-foreground truncate">{d.institucion}</p>
                   <p className="text-xs text-muted-foreground">{d.cargo} · {d.region}</p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGenerate(d)}
-                  disabled={generating === d.nombre}
-                  className="shrink-0 gap-1"
-                >
-                  {generating === d.nombre ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                  PDF
-                </Button>
+                <div className="flex flex-col gap-1 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleView(d)}
+                    disabled={viewing === d.nombre}
+                    className="gap-1 text-xs"
+                  >
+                    {viewing === d.nombre ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+                    Ver
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGenerate(d)}
+                    disabled={generating === d.nombre}
+                    className="gap-1 text-xs"
+                  >
+                    {generating === d.nombre ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                    PDF
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       </div>
+
+      {/* Report Viewer Dialog */}
+      <AdminReporte360Viewer
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        data={viewerData}
+      />
     </div>
   );
 }
