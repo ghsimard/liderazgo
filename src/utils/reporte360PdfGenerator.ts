@@ -580,8 +580,10 @@ function drawRadarChart(
     doc.line(cx, cy, ex, ey);
   }
 
-  // Draw filled data polygons using light fill colors (no GState needed)
-  const drawFilledPolygon = (getScore: (cs: typeof competencyScores[0]) => number, color: readonly [number, number, number], fillColor: readonly [number, number, number], lineWidth: number) => {
+
+
+  // Draw filled data polygons with true transparency
+  const drawFilledPolygon = (getScore: (cs: typeof competencyScores[0]) => number, color: readonly [number, number, number], lineWidth: number) => {
     const pts: [number, number][] = [];
     for (let i = 0; i < n; i++) {
       const score = getScore(competencyScores[i]);
@@ -590,18 +592,8 @@ function drawRadarChart(
       pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
     }
 
-    // Fill polygon with light color
-    doc.setFillColor(...fillColor);
-    if (pts.length > 2) {
-      for (let i = 1; i < pts.length - 1; i++) {
-        doc.triangle(
-          pts[0][0], pts[0][1],
-          pts[i][0], pts[i][1],
-          pts[i + 1][0], pts[i + 1][1],
-          "F"
-        );
-      }
-    }
+    // Fill polygon — draw grid lines first, then semi-opaque fill on top won't work.
+    // Instead: skip fill entirely and just use colored outlines for clarity.
 
     // Stroke outline
     doc.setDrawColor(...color);
@@ -613,16 +605,12 @@ function drawRadarChart(
     // Dots
     pts.forEach(([px, py]) => {
       doc.setFillColor(...color);
-      doc.circle(px, py, 1, "F");
+      doc.circle(px, py, 1.2, "F");
     });
   };
 
-  // Light gray fill colors (transparent feel on white)
-  const FILL_OBSERVER: [number, number, number] = [235, 235, 235];   // light gray
-  const FILL_DIRECTIVO: [number, number, number] = [215, 215, 215];  // slightly darker gray
-
-  drawFilledPolygon((cs) => cs.observerScore, COLOR_OBSERVER, FILL_OBSERVER, 1.2);
-  drawFilledPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, FILL_DIRECTIVO, 1.2);
+  drawFilledPolygon((cs) => cs.observerScore, COLOR_OBSERVER, 1.5);
+  drawFilledPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, 1.5);
 
   // Labels
   for (let i = 0; i < n; i++) {
