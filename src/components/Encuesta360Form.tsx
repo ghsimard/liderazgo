@@ -516,7 +516,7 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
               setFieldErrors((prev) => { const n = new Set(prev); n.delete("institucion"); return n; });
             }}
             hasError={fieldErrors.has("institucion")}
-            onlyWithFichas={config.isAutoeval}
+            onlyWithFichas
           />
 
           {config.isAutoeval ? (
