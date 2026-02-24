@@ -263,11 +263,13 @@ function DirectivoSelect({
   value,
   onChange,
   hasError,
+  label,
 }: {
   institucion: string;
   value: string;
   onChange: (nombre: string, cedula: string, cargo: string) => void;
   hasError?: boolean;
+  label?: string;
 }) {
   const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -279,11 +281,9 @@ function DirectivoSelect({
     }
     setLoading(true);
     (async () => {
-      const { data } = await supabase
-        .from("fichas_rlt")
-        .select("nombres_apellidos, numero_cedula, cargo_actual")
-        .eq("nombre_ie", institucion)
-        .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+      const { data } = await supabase.rpc("get_directivos_por_institucion", {
+        p_nombre_ie: institucion,
+      });
       setDirectivos((data as DirectivoOption[]) ?? []);
       setLoading(false);
     })();
@@ -292,7 +292,7 @@ function DirectivoSelect({
   return (
     <div className="flex flex-col gap-1">
       <label className="text-sm font-medium text-foreground">
-        Nombre del directivo docente evaluado <span className="text-destructive">*</span>
+        {label || "Nombre del directivo docente evaluado"} <span className="text-destructive">*</span>
       </label>
       <select
         value={value}
@@ -378,7 +378,6 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
 
     if (config.isAutoeval) {
       if (!nombreCompleto.trim()) errors.add("nombre_completo");
-      if (!cedula.trim()) errors.add("cedula");
     } else {
       if (!nombreDirectivo.trim()) errors.add("nombre_directivo");
       if (!cedulaDirectivo.trim()) errors.add("cedula_directivo");
@@ -518,36 +517,22 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
 
           {config.isAutoeval ? (
             <>
-              <TextField
-                label="Nombre completo"
+              <DirectivoSelect
+                institucion={institucion}
                 value={nombreCompleto}
-                onChange={(v) => {
-                  setNombreCompleto(v);
-                  setFieldErrors((prev) => { const n = new Set(prev); n.delete("nombre_completo"); return n; });
+                onChange={(nombre, _cedula, cargo) => {
+                  setNombreCompleto(nombre);
+                  setCedula(_cedula);
+                  setCargoDirectivo(cargo);
+                  setFieldErrors((prev) => {
+                    const n = new Set(prev);
+                    n.delete("nombre_completo");
+                    n.delete("cargo_directivo");
+                    return n;
+                  });
                 }}
-                required
                 hasError={fieldErrors.has("nombre_completo")}
-              />
-              <TextField
-                label="Número de cédula"
-                value={cedula}
-                onChange={(v) => {
-                  setCedula(v);
-                  setFieldErrors((prev) => { const n = new Set(prev); n.delete("cedula"); return n; });
-                }}
-                required
-                hasError={fieldErrors.has("cedula")}
-              />
-              <RadioField
-                label="Cargo en el colegio"
-                options={CARGO_OPTIONS}
-                value={cargoDirectivo}
-                onChange={(v) => {
-                  setCargoDirectivo(v);
-                  setFieldErrors((prev) => { const n = new Set(prev); n.delete("cargo_directivo"); return n; });
-                }}
-                required
-                hasError={fieldErrors.has("cargo_directivo")}
+                label="Nombre completo"
               />
             </>
           ) : (

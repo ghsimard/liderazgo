@@ -614,6 +614,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_directivos_por_institucion: {
+        Args: { p_nombre_ie: string }
+        Returns: {
+          cargo_actual: string
+          nombres_apellidos: string
+          numero_cedula: string
+        }[]
+      }
       get_enum_types: {
         Args: never
         Returns: {
