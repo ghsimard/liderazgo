@@ -349,7 +349,7 @@ export async function generarReporte360PDF(
         doc.setTextColor(30, 30, 30);
         doc.setFontSize(5);
         doc.setFont("helvetica", "bold");
-        doc.text(String(count), badgeX + badgeW - 1, badgeY + 1.5, { align: "right" });
+        doc.text(String(count), badgeX + badgeW - 1.5, badgeY + 2.2, { align: "right" });
         doc.setFont("helvetica", "normal");
         doc.setFontSize(6.5);
         doc.setTextColor(60, 60, 60);

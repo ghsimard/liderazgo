@@ -127,7 +127,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                               {diasEntries.map(([dias, count]) => (
                                 <span key={dias} className="relative border rounded px-2 pt-0.5 pb-0.5 pr-5 text-xs bg-muted/30">
                                   {dias || "—"}
-                                  <span className="absolute -top-1.5 -right-1.5 text-[9px] font-bold text-foreground">
+                                  <span className="absolute top-0 right-0.5 text-[9px] font-bold text-foreground leading-none">
                                     {count}
                                   </span>
                                 </span>
