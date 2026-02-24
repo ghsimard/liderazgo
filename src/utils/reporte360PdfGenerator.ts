@@ -580,8 +580,8 @@ function drawRadarChart(
     doc.line(cx, cy, ex, ey);
   }
 
-  // Draw filled data polygons
-  const drawFilledPolygon = (getScore: (cs: typeof competencyScores[0]) => number, color: readonly [number, number, number], lineWidth: number, fillOpacity: number) => {
+  // Draw filled data polygons using light fill colors (no GState needed)
+  const drawFilledPolygon = (getScore: (cs: typeof competencyScores[0]) => number, color: readonly [number, number, number], fillColor: readonly [number, number, number], lineWidth: number) => {
     const pts: [number, number][] = [];
     for (let i = 0; i < n; i++) {
       const score = getScore(competencyScores[i]);
@@ -590,15 +590,9 @@ function drawRadarChart(
       pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
     }
 
-    // Fill polygon
-    (doc as any).setGState(new (jsPDF as any).GState({ opacity: fillOpacity }));
-    doc.setFillColor(...color);
-    const flatPts = pts.reduce((acc, [px, py]) => { acc.push(px, py); return acc; }, [] as number[]);
-    // Build polygon path manually
-    if (pts.length > 0) {
-      doc.setDrawColor(...color);
-      doc.setLineWidth(0);
-      // Use triangle fan to fill
+    // Fill polygon with light color
+    doc.setFillColor(...fillColor);
+    if (pts.length > 2) {
       for (let i = 1; i < pts.length - 1; i++) {
         doc.triangle(
           pts[0][0], pts[0][1],
@@ -608,7 +602,6 @@ function drawRadarChart(
         );
       }
     }
-    (doc as any).setGState(new (jsPDF as any).GState({ opacity: 1 }));
 
     // Stroke outline
     doc.setDrawColor(...color);
@@ -624,9 +617,12 @@ function drawRadarChart(
     });
   };
 
-  // Draw observer first (behind), then directivo on top
-  drawFilledPolygon((cs) => cs.observerScore, COLOR_OBSERVER, 1.2, 0.15);
-  drawFilledPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, 1.2, 0.15);
+  // Light fill colors (simulating ~15% opacity on white background)
+  const FILL_OBSERVER: [number, number, number] = [248, 225, 225];   // light red
+  const FILL_DIRECTIVO: [number, number, number] = [220, 235, 248];  // light blue
+
+  drawFilledPolygon((cs) => cs.observerScore, COLOR_OBSERVER, FILL_OBSERVER, 1.2);
+  drawFilledPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, FILL_DIRECTIVO, 1.2);
 
   // Labels
   for (let i = 0; i < n; i++) {
