@@ -485,8 +485,8 @@ export async function generarReporte360PDF(
   doc.setFont("helvetica", "normal");
   lx = margin;
   [
-    { color: COLOR_INTERNOS, label: "Administrativo(a), coordinador(a) y docente" },
-    { color: COLOR_EXTERNOS, label: "Acudiente y estudiante" },
+    { color: [30, 30, 30] as [number, number, number], label: "Administrativo(a), coordinador(a) y docente" },
+    { color: [128, 128, 128] as [number, number, number], label: "Acudiente y estudiante" },
   ].forEach((item) => {
     doc.setFillColor(...item.color);
     doc.rect(lx, y, 4, 3, "F");
@@ -751,7 +751,7 @@ function drawObserverBarChart(
   competencyScores.forEach((cs, i) => {
     const gx = chartX + i * groupW + groupW / 2;
     const scores = [cs.internosScore, cs.externosScore];
-    const colors = [COLOR_INTERNOS, COLOR_EXTERNOS];
+    const colors: [number, number, number][] = [[30, 30, 30], [128, 128, 128]];
 
     scores.forEach((score, bi) => {
       const bx = gx - barW + bi * barW;
