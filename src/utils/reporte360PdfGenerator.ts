@@ -515,15 +515,16 @@ export async function generarReporte360PDF(
   const totalPages = (doc.internal as { getNumberOfPages?: () => number }).getNumberOfPages?.() ?? 1;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    // Cosmo logo centered at bottom
+    const footerY = pageH - marginBottom + 5;
+    // Cosmo logo at left
     const cosmoW = 18;
     const cosmoH = 10;
-    doc.addImage(cosmoB64, "PNG", pageW / 2 - cosmoW / 2, pageH - marginBottom - cosmoH + 2, cosmoW, cosmoH);
-    // Page number
+    doc.addImage(cosmoB64, "PNG", margin, footerY - cosmoH / 2 - 1, cosmoW, cosmoH);
+    // Page number at right, same baseline
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 100, 100);
-    doc.text(`${i}/${totalPages}`, pageW - margin, pageH - marginBottom + 5, { align: "right" });
+    doc.text(`${i}/${totalPages}`, pageW - margin, footerY, { align: "right" });
   }
 
   const nombre = data.directivo.nombre.replace(/\s+/g, "_");
