@@ -133,11 +133,11 @@ export async function generarReporte360PDF(
   const rltH = rltSize.height * pxToMm;
   const cltW = cltSize.width * pxToMm;
   const cltH = cltSize.height * pxToMm;
-  doc.addImage(rltB64, "PNG", margin, 15, rltW, rltH);
-  doc.addImage(cltB64, "PNG", pageW - margin - cltW, 15, cltW, cltH);
+  doc.addImage(rltB64, "PNG", margin, 25, rltW, rltH);
+  doc.addImage(cltB64, "PNG", pageW - margin - cltW, 25, cltW, cltH);
 
   // Title block
-  let y = 55;
+  let y = 65;
   doc.setTextColor(30, 30, 30);
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
