@@ -668,6 +668,13 @@ function drawObserverBarChart(
       const by = y + chartH - barH;
       doc.setFillColor(...colors[bi]);
       doc.rect(bx, by, barW - 0.5, barH, "F");
+      // Value label on top of bar
+      if (score > 0) {
+        doc.setFontSize(4.5);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 30, 30);
+        doc.text(r1(score), bx + (barW - 0.5) / 2, by - 1, { align: "center" });
+      }
     });
 
     // Label — vertical below the chart
