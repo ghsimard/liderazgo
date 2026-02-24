@@ -20,6 +20,7 @@ const TYPE_LABELS: Record<string, string> = {
   domain: "Dominio",
   competency: "Competencia",
   item: "Ítem",
+  encuesta_360: "Encuesta 360",
 };
 
 export default function AdminTrashManager() {
@@ -62,6 +63,10 @@ export default function AdminTrashManager() {
         await supabase.from("items_360").insert(d.item);
         if (d.texts?.length > 0) await supabase.from("item_texts_360").insert(d.texts.map(({ id, ...rest }: any) => rest));
         if (d.weights?.length > 0) await supabase.from("competency_weights").insert(d.weights.map(({ id, ...rest }: any) => rest));
+      } else if (record.record_type === "encuesta_360") {
+        // Restore the encuesta — re-insert the full row
+        const { id, ...rest } = d;
+        await supabase.from("encuestas_360").insert([{ id, ...rest }]);
       }
 
       // Remove from trash
