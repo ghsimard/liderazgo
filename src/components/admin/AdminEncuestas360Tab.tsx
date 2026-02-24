@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RefreshCw, School, ChevronDown, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 interface Encuesta {
   id: string;
@@ -251,7 +251,7 @@ export default function AdminEncuestas360Tab() {
             )}
           </DialogHeader>
 
-          <ScrollArea className="flex-1 -mx-6 px-6" style={{ maxHeight: "60vh" }}>
+          <div className="-mx-6 px-6 overflow-y-auto" style={{ maxHeight: "60vh" }}>
             {loadingTexts ? (
               <div className="flex items-center justify-center py-8">
                 <RefreshCw className="animate-spin w-5 h-5 text-muted-foreground" />
@@ -281,7 +281,7 @@ export default function AdminEncuestas360Tab() {
                 </table>
               </div>
             )}
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
