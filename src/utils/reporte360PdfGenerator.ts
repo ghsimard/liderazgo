@@ -97,11 +97,12 @@ export async function generarReporte360PDF(
   logoSources: { logoRLT: string; logoCLT: string },
   options: { returnBlob?: boolean } = {}
 ): Promise<Blob | void> {
-  const [rltB64, cltB64, bulbB64, cosmoB64, rltSize, cltSize] = await Promise.all([
+  const [rltB64, cltB64, bulbB64, cosmoB64, coverBgB64, rltSize, cltSize] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
     loadImageAsBase64(logoSources.logoCLT),
     loadImageAsBase64("/images/lightbulb-icon.png"),
     loadImageAsBase64((await import("@/assets/logo_cosmo.png")).default),
+    loadImageAsBase64("/images/cover-bg-logo.png"),
     getImageNaturalSize(logoSources.logoRLT),
     getImageNaturalSize(logoSources.logoCLT),
   ]);
@@ -147,10 +148,15 @@ export async function generarReporte360PDF(
   y += 8;
   doc.text("COORDINADORES LÍDERES TRANSFORMADORES", pageW / 2, y, { align: "center" });
 
-  // Central decorative area
+  // Central decorative area with background logo
   y += 20;
-  doc.setFillColor(230, 230, 230);
-  doc.roundedRect(margin + 20, y, contentW - 40, 80, 5, 5, "F");
+  const boxX = margin + 20;
+  const boxW = contentW - 40;
+  const boxH = 80;
+  // Background logo centered behind text
+  const bgLogoSize = 75;
+  doc.addImage(coverBgB64, "PNG", pageW / 2 - bgLogoSize / 2, y + (boxH - bgLogoSize) / 2, bgLogoSize, bgLogoSize);
+  // Text on top
   doc.setFontSize(28);
   doc.setTextColor(60, 60, 60);
   doc.text("Encuesta de", pageW / 2, y + 30, { align: "center" });
