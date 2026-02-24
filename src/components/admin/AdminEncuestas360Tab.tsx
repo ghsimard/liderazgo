@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RefreshCw, School, ChevronDown, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, School, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 
 interface Encuesta {
@@ -50,6 +52,7 @@ const FORM_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function AdminEncuestas360Tab() {
+  const { toast } = useToast();
   const [groups, setGroups] = useState<InstitutionGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -57,6 +60,8 @@ export default function AdminEncuestas360Tab() {
   const [selectedEncuesta, setSelectedEncuesta] = useState<Encuesta | null>(null);
   const [itemTexts, setItemTexts] = useState<ItemText[]>([]);
   const [loadingTexts, setLoadingTexts] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Encuesta | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadEncuestas();
@@ -89,7 +94,6 @@ export default function AdminEncuestas360Tab() {
     setSelectedEncuesta(enc);
     setLoadingTexts(true);
 
-    // Fetch item texts for this form type
     const { data } = await supabase
       .from("item_texts_360")
       .select("item_id, form_type, text, items_360!inner(item_number, competency_key, response_type)")
@@ -106,6 +110,32 @@ export default function AdminEncuestas360Tab() {
 
     setItemTexts(texts);
     setLoadingTexts(false);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      // Save to trash
+      const label = `${FORM_TYPE_LABELS[deleteTarget.tipo_formulario] ?? deleteTarget.tipo_formulario} — ${deleteTarget.tipo_formulario === "autoevaluacion" ? deleteTarget.nombre_completo : deleteTarget.nombre_directivo} (${deleteTarget.institucion_educativa})`;
+      const { error: trashError } = await supabase.from("deleted_records").insert([{
+        record_type: "encuesta_360",
+        record_label: label,
+        deleted_data: deleteTarget as any,
+      }]);
+      if (trashError) throw trashError;
+
+      // Delete the record
+      const { error: delError } = await supabase.from("encuestas_360").delete().eq("id", deleteTarget.id);
+      if (delError) throw delError;
+
+      toast({ title: "Encuesta eliminada", description: "Se puede restaurar desde la Papelera." });
+      setDeleteTarget(null);
+      loadEncuestas();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setDeleting(false);
   };
 
   const toggleExpand = (inst: string) => {
@@ -178,7 +208,6 @@ export default function AdminEncuestas360Tab() {
               {isOpen && (
                 <CardContent className="px-4 pb-4 pt-0 space-y-4">
                   {(() => {
-                    // Group encuestas by directivo evaluado
                     const byDirectivo: Record<string, { nombre: string; cargo: string; encuestas: Encuesta[] }> = {};
                     g.encuestas.forEach((e) => {
                       const dirName = e.tipo_formulario === "autoevaluacion"
@@ -202,6 +231,7 @@ export default function AdminEncuestas360Tab() {
                             <tr className="bg-muted/30 text-left">
                               <th className="px-3 py-1.5 font-medium">Tipo</th>
                               <th className="px-3 py-1.5 font-medium">Fecha</th>
+                              <th className="px-3 py-1.5 font-medium w-10"></th>
                             </tr>
                           </thead>
                           <tbody>
@@ -219,6 +249,16 @@ export default function AdminEncuestas360Tab() {
                                 <td className="px-3 py-2 text-muted-foreground">
                                   {new Date(e.created_at).toLocaleDateString("es-CO")}
                                 </td>
+                                <td className="px-3 py-2 text-right">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    onClick={(ev) => { ev.stopPropagation(); setDeleteTarget(e); }}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -235,6 +275,32 @@ export default function AdminEncuestas360Tab() {
           <p className="text-sm text-muted-foreground text-center py-8">No se encontraron instituciones.</p>
         )}
       </div>
+
+      {/* Delete confirm dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar esta encuesta?</DialogTitle>
+            <DialogDescription>
+              Se moverá a la Papelera y podrá ser restaurada posteriormente.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteTarget && (
+            <div className="text-sm space-y-1">
+              <p><strong>Tipo:</strong> {FORM_TYPE_LABELS[deleteTarget.tipo_formulario] ?? deleteTarget.tipo_formulario}</p>
+              <p><strong>Directivo:</strong> {deleteTarget.tipo_formulario === "autoevaluacion" ? deleteTarget.nombre_completo : deleteTarget.nombre_directivo}</p>
+              <p><strong>Institución:</strong> {deleteTarget.institucion_educativa}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? <RefreshCw className="w-4 h-4 animate-spin mr-1.5" /> : <Trash2 className="w-4 h-4 mr-1.5" />}
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedEncuesta} onOpenChange={(open) => { if (!open) setSelectedEncuesta(null); }}>
