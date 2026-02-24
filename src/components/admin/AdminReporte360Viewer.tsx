@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Lightbulb } from "lucide-react";
 import type { Reporte360Data, DomainScore, CompetencyScore } from "@/utils/reporte360Calculator";
 import {
   DOMAIN_ORDER,
@@ -25,6 +26,17 @@ const COLOR_OBSERVER = "#6AA84F";
 function r1(n: number): string {
   return n.toFixed(1).replace(".", ",");
 }
+
+function InfoBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-center gap-2 bg-muted/50 rounded-md px-4 py-2 mt-3">
+      <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
+      <span className="text-xs text-muted-foreground">{children}</span>
+    </div>
+  );
+}
+
+const sectionTitleClass = "text-base font-bold text-foreground mb-3";
 
 export default function AdminReporte360Viewer({ open, onOpenChange, data }: Props) {
   if (!data) return null;
@@ -72,7 +84,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
         <div className="overflow-y-auto flex-1 space-y-8 pr-2 pb-4">
           {/* ── IDENTIFICACIÓN ── */}
           <section>
-            <h3 className="text-sm font-semibold text-primary mb-3">IDENTIFICACIÓN</h3>
+            <h3 className={sectionTitleClass}>IDENTIFICACIÓN</h3>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
               {[
                 ["Directivo/a Docente", directivo.nombre],
@@ -92,7 +104,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
 
           {/* ── OBSERVADORES ── */}
           <section>
-            <h3 className="text-sm font-semibold text-primary mb-3">OBSERVADORES</h3>
+            <h3 className={sectionTitleClass}>OBSERVADORES</h3>
             <div className="border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
@@ -126,15 +138,16 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 </tbody>
               </table>
             </div>
+            <InfoBox>Las puntuaciones se calculan a partir de sus respuestas y las de los observadores.</InfoBox>
           </section>
 
           {/* ── RESUMEN GENERAL (Bar Chart) ── */}
           <section>
-            <h3 className="text-sm font-semibold text-primary mb-3">RESUMEN GENERAL</h3>
+            <h3 className={sectionTitleClass}>RESUMEN GENERAL</h3>
             <div className="flex gap-4 text-xs mb-2">
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AUTO }} /> Directivo</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_INTERNOS }} /> Internos</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_EXTERNOS }} /> Externos</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_INTERNOS }} /> Administrativo(a), coordinador(a) y docente</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_EXTERNOS }} /> Acudiente y estudiante</span>
             </div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 30 }}>
@@ -163,11 +176,12 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
               <span>Autopercepción promedio: <strong>{r1(autoAvg)}/10</strong></span>
               <span>Observadores promedio: <strong>{r1(observerAvg)}/10</strong></span>
             </div>
+            <InfoBox>Analice las brechas que existen entre las puntuaciones promedio de los grupos de referencia y su puntuación en cada gestión.</InfoBox>
           </section>
 
-          {/* ── ANÁLISIS COMPARATIVO — Radar ── */}
+          {/* ── ANÁLISIS DE LA DISTANCIA — Radar ── */}
           <section>
-            <h3 className="text-sm font-semibold text-primary mb-3">ANÁLISIS COMPARATIVO POR COMPETENCIAS</h3>
+            <h3 className={sectionTitleClass}>ANÁLISIS DE LA DISTANCIA ENTRE EL DIRECTIVO Y LOS OBSERVADORES</h3>
             <ResponsiveContainer width="100%" height={350}>
               <RadarChart data={radarData} outerRadius="70%">
                 <PolarGrid />
@@ -178,9 +192,12 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 <Legend wrapperStyle={{ fontSize: 11 }} />
               </RadarChart>
             </ResponsiveContainer>
+          </section>
 
-            {/* Table with radar values */}
-            <div className="border rounded-lg overflow-hidden mt-4">
+          {/* ── PUNTUACIONES POR COMPETENCIA ── */}
+          <section>
+            <h3 className={sectionTitleClass}>PUNTUACIONES POR COMPETENCIA</h3>
+            <div className="border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/50">
@@ -202,11 +219,16 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 </tbody>
               </table>
             </div>
+            <InfoBox>Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.</InfoBox>
           </section>
 
-          {/* ── ANÁLISIS DE OBSERVADORES (Internos vs Externos) ── */}
+          {/* ── ANÁLISIS DE OBSERVADORES ── */}
           <section>
-            <h3 className="text-sm font-semibold text-primary mb-3">ANÁLISIS DE OBSERVADORES: INTERNOS vs EXTERNOS</h3>
+            <h3 className={sectionTitleClass}>ANÁLISIS DE OBSERVADORES</h3>
+            <div className="flex gap-4 text-xs mb-2">
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_INTERNOS }} /> Administrativo(a), coordinador(a) y docente</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_EXTERNOS }} /> Acudiente y estudiante</span>
+            </div>
             <ResponsiveContainer width="100%" height={320}>
               <BarChart data={obsBarData} margin={{ bottom: 80, left: 10, right: 10, top: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -238,9 +260,9 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
             </ResponsiveContainer>
           </section>
 
-          {/* ── ANÁLISIS CUALITATIVO ── */}
+          {/* ── ASPECTOS DESTACADOS Y POR MEJORAR ── */}
           <section>
-            <h3 className="text-sm font-semibold text-primary mb-3">ANÁLISIS CUALITATIVO</h3>
+            <h3 className={`${sectionTitleClass} text-center`}>ASPECTOS DESTACADOS Y POR MEJORAR</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h4 className="text-xs font-semibold text-emerald-700 mb-2">🟢 FORTALEZAS (Top 8)</h4>
