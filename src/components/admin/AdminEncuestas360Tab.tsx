@@ -176,47 +176,60 @@ export default function AdminEncuestas360Tab() {
                 </div>
               </CardHeader>
               {isOpen && (
-                <CardContent className="px-4 pb-4 pt-0">
-                  <div className="border rounded-md overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-muted/50 text-left">
-                          <th className="px-3 py-2 font-medium">Tipo</th>
-                          <th className="px-3 py-2 font-medium">Evaluador</th>
-                          <th className="px-3 py-2 font-medium">Directivo evaluado</th>
-                          <th className="px-3 py-2 font-medium">Cargo</th>
-                          <th className="px-3 py-2 font-medium">Fecha</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {g.encuestas.map((e) => (
-                          <tr
-                            key={e.id}
-                            className="border-t hover:bg-muted/30 cursor-pointer"
-                            onClick={() => handleViewEncuesta(e)}
-                          >
-                            <td className="px-3 py-2">
-                              <Badge variant="secondary" className={`text-xs ${FORM_TYPE_COLORS[e.tipo_formulario] ?? ""}`}>
-                                {FORM_TYPE_LABELS[e.tipo_formulario] ?? e.tipo_formulario}
-                              </Badge>
-                            </td>
-                            <td className="px-3 py-2 text-muted-foreground">
-                              {e.nombre_completo || "—"}
-                            </td>
-                            <td className="px-3 py-2">
-                              {e.tipo_formulario === "autoevaluacion"
-                                ? e.nombre_completo || "—"
-                                : e.nombre_directivo || "—"}
-                            </td>
-                            <td className="px-3 py-2 text-muted-foreground">{e.cargo_directivo}</td>
-                            <td className="px-3 py-2 text-muted-foreground">
-                              {new Date(e.created_at).toLocaleDateString("es-CO")}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                <CardContent className="px-4 pb-4 pt-0 space-y-4">
+                  {(() => {
+                    // Group encuestas by directivo evaluado
+                    const byDirectivo: Record<string, { nombre: string; cargo: string; encuestas: Encuesta[] }> = {};
+                    g.encuestas.forEach((e) => {
+                      const dirName = e.tipo_formulario === "autoevaluacion"
+                        ? (e.nombre_completo || "Sin nombre")
+                        : (e.nombre_directivo || "Sin nombre");
+                      if (!byDirectivo[dirName]) {
+                        byDirectivo[dirName] = { nombre: dirName, cargo: e.cargo_directivo, encuestas: [] };
+                      }
+                      byDirectivo[dirName].encuestas.push(e);
+                    });
+
+                    return Object.values(byDirectivo).map((group) => (
+                      <div key={group.nombre} className="border rounded-md overflow-hidden">
+                        <div className="bg-muted/50 px-3 py-2 flex items-center gap-2 text-sm">
+                          <span className="font-semibold">{group.nombre}</span>
+                          <span className="text-muted-foreground">— {group.cargo}</span>
+                          <Badge variant="outline" className="ml-auto text-xs">{group.encuestas.length} resp.</Badge>
+                        </div>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-muted/30 text-left">
+                              <th className="px-3 py-1.5 font-medium">Tipo</th>
+                              <th className="px-3 py-1.5 font-medium">Evaluador</th>
+                              <th className="px-3 py-1.5 font-medium">Fecha</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {group.encuestas.map((e) => (
+                              <tr
+                                key={e.id}
+                                className="border-t hover:bg-muted/30 cursor-pointer"
+                                onClick={() => handleViewEncuesta(e)}
+                              >
+                                <td className="px-3 py-2">
+                                  <Badge variant="secondary" className={`text-xs ${FORM_TYPE_COLORS[e.tipo_formulario] ?? ""}`}>
+                                    {FORM_TYPE_LABELS[e.tipo_formulario] ?? e.tipo_formulario}
+                                  </Badge>
+                                </td>
+                                <td className="px-3 py-2 text-muted-foreground">
+                                  {e.nombre_completo || "—"}
+                                </td>
+                                <td className="px-3 py-2 text-muted-foreground">
+                                  {new Date(e.created_at).toLocaleDateString("es-CO")}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ));
+                  })()}
                 </CardContent>
               )}
             </Card>
