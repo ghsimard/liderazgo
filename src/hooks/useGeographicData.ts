@@ -7,6 +7,7 @@ interface RegionData {
   entidad_territorial_id: string;
   entidad_nombre: string;
   municipio_ids: string[];
+  institucion_ids: string[]; // specific institutions selected for this region (empty = all)
   mostrar_logo_rlt: boolean;
   mostrar_logo_clt: boolean;
 }
@@ -37,10 +38,11 @@ export function useGeographicData() {
 
   useEffect(() => {
     (async () => {
-      const [eRes, rRes, rmRes, mRes, iRes] = await Promise.all([
+      const [eRes, rRes, rmRes, riRes, mRes, iRes] = await Promise.all([
         supabase.from("entidades_territoriales").select("id, nombre").order("nombre"),
         supabase.from("regiones").select("id, nombre, entidad_territorial_id, mostrar_logo_rlt, mostrar_logo_clt").order("nombre"),
         supabase.from("region_municipios").select("region_id, municipio_id"),
+        supabase.from("region_instituciones").select("region_id, institucion_id"),
         supabase.from("municipios").select("id, nombre, entidad_territorial_id").order("nombre"),
         supabase.from("instituciones").select("id, nombre, municipio_id").order("nombre"),
       ]);
@@ -48,22 +50,25 @@ export function useGeographicData() {
       const ents = eRes.data ?? [];
       const regs = rRes.data ?? [];
       const rms = rmRes.data ?? [];
+      const ris = riRes.data ?? [];
       const munis = mRes.data ?? [];
 
       setEntidades(ents);
       setMunicipios(munis);
       setInstituciones(iRes.data ?? []);
 
-      // Build region data with entidad name and municipio IDs
+      // Build region data with entidad name, municipio IDs and institution IDs
       const regionData: RegionData[] = regs.map((r) => {
         const entidad = ents.find((e) => e.id === r.entidad_territorial_id);
         const munIds = rms.filter((rm) => rm.region_id === r.id).map((rm) => rm.municipio_id);
+        const instIds = ris.filter((ri) => ri.region_id === r.id).map((ri) => ri.institucion_id);
         return {
           ...r,
           mostrar_logo_rlt: r.mostrar_logo_rlt ?? true,
           mostrar_logo_clt: r.mostrar_logo_clt ?? true,
           entidad_nombre: entidad?.nombre ?? "",
           municipio_ids: munIds,
+          institucion_ids: instIds,
         };
       });
       setRegiones(regionData);
@@ -108,13 +113,25 @@ export function useGeographicData() {
       (m) => m.nombre === municipioName && region.municipio_ids.includes(m.id)
     );
     if (!muni) return [];
-    return instituciones.filter((i) => i.municipio_id === muni.id).map((i) => i.nombre);
+    let result = instituciones.filter((i) => i.municipio_id === muni.id);
+    // If region has specific institution selections, filter to only those
+    if (region.institucion_ids.length > 0) {
+      result = result.filter((i) => region.institucion_ids.includes(i.id));
+    }
+    return result.map((i) => i.nombre);
   };
 
   /** Get all institution names for a region (when there's only one municipio or no filtering needed) */
   const getInstitucionesForRegion = (regionName: string): string[] => {
     const region = regiones.find((r) => r.nombre === regionName);
     if (!region) return [];
+    // If region has specific institution selections, return only those
+    if (region.institucion_ids.length > 0) {
+      return instituciones
+        .filter((i) => region.institucion_ids.includes(i.id))
+        .map((i) => i.nombre);
+    }
+    // Otherwise return all institutions from the region's municipios
     return instituciones
       .filter((i) => region.municipio_ids.some((mid) => {
         const muni = municipios.find((m) => m.id === mid);
