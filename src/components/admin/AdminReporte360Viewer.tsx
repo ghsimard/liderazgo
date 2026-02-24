@@ -99,7 +99,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                     <span className="text-sm font-semibold">{o.roleLabel}</span>
                     <Badge variant="secondary" className="text-xs">{o.count}</Badge>
                   </div>
-                  {Object.keys(o.diasDistribution).length > 0 && (
+                  {Object.keys(o.diasDistribution ?? {}).length > 0 && (
                     <div className="space-y-1">
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Días de contacto</span>
                       {Object.entries(o.diasDistribution)
