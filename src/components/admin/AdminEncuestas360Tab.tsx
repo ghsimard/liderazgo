@@ -201,7 +201,6 @@ export default function AdminEncuestas360Tab() {
                           <thead>
                             <tr className="bg-muted/30 text-left">
                               <th className="px-3 py-1.5 font-medium">Tipo</th>
-                              <th className="px-3 py-1.5 font-medium">Evaluador</th>
                               <th className="px-3 py-1.5 font-medium">Fecha</th>
                             </tr>
                           </thead>
@@ -216,9 +215,6 @@ export default function AdminEncuestas360Tab() {
                                   <Badge variant="secondary" className={`text-xs ${FORM_TYPE_COLORS[e.tipo_formulario] ?? ""}`}>
                                     {FORM_TYPE_LABELS[e.tipo_formulario] ?? e.tipo_formulario}
                                   </Badge>
-                                </td>
-                                <td className="px-3 py-2 text-muted-foreground">
-                                  {e.nombre_completo || "—"}
                                 </td>
                                 <td className="px-3 py-2 text-muted-foreground">
                                   {new Date(e.created_at).toLocaleDateString("es-CO")}
