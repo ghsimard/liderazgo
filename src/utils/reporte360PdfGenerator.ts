@@ -27,10 +27,10 @@ function loadImageAsBase64(src: string): Promise<string> {
 }
 
 // ── Color constants (grayscale for black-ink-only printing) ──
-const COLOR_DIRECTIVO: [number, number, number] = [0, 100, 180];       // strong blue
+const COLOR_DIRECTIVO: [number, number, number] = [30, 30, 30];       // near-black
 const COLOR_INTERNOS: [number, number, number] = [120, 120, 120];     // medium gray
 const COLOR_EXTERNOS: [number, number, number] = [190, 190, 190];     // light gray
-const COLOR_OBSERVER: [number, number, number] = [220, 60, 60];       // red
+const COLOR_OBSERVER: [number, number, number] = [170, 170, 170];     // light gray
 const COLOR_HEADER_BG: [number, number, number] = [60, 60, 60];       // dark header
 const _COLOR_LIGHT_BG: [number, number, number] = [230, 230, 230];
 
