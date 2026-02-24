@@ -238,6 +238,7 @@ export async function generarReporte360PDF(
   // IDENTIFICACIÓN
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
   doc.text("IDENTIFICACIÓN", margin, y);
   y += 8;
 
@@ -261,6 +262,7 @@ export async function generarReporte360PDF(
   // OBSERVADORES — table format matching model PDF
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
   doc.text("OBSERVADORES", margin, y);
   y += 5;
 
@@ -392,8 +394,9 @@ export async function generarReporte360PDF(
   drawPageHeader();
   y = 20;
 
-  doc.setFontSize(10);
+  doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
   doc.text("ANÁLISIS DE LA DISTANCIA ENTRE EL DIRECTIVO Y LOS OBSERVADORES", margin, y);
   y += 6;
 
@@ -401,8 +404,9 @@ export async function generarReporte360PDF(
   y += 121;
 
   // ── Competency table ──
-  doc.setFontSize(9);
+  doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
   doc.text("PUNTUACIONES POR COMPETENCIA", margin, y);
   y += 5;
 
@@ -475,8 +479,9 @@ export async function generarReporte360PDF(
   drawPageHeader();
   y = 20;
 
-  doc.setFontSize(10);
+  doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
   doc.text("ANÁLISIS DE OBSERVADORES", margin, y);
   y += 6;
 
