@@ -21,10 +21,12 @@ function InstitutionSearch({
   value,
   onChange,
   hasError,
+  onlyWithFichas,
 }: {
   value: string;
   onChange: (v: string) => void;
   hasError?: boolean;
+  onlyWithFichas?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -33,14 +35,23 @@ function InstitutionSearch({
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("instituciones")
-        .select("nombre")
-        .order("nombre");
-      setInstituciones((data ?? []).map((i) => i.nombre));
+      if (onlyWithFichas) {
+        // Only show institutions that have at least one ficha_rlt
+        const { data } = await supabase
+          .from("fichas_rlt")
+          .select("nombre_ie");
+        const unique = [...new Set((data ?? []).map((f) => f.nombre_ie))].sort();
+        setInstituciones(unique);
+      } else {
+        const { data } = await supabase
+          .from("instituciones")
+          .select("nombre")
+          .order("nombre");
+        setInstituciones((data ?? []).map((i) => i.nombre));
+      }
       setLoading(false);
     })();
-  }, []);
+  }, [onlyWithFichas]);
 
   const filtered =
     query.length >= 3
@@ -505,6 +516,7 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
               setFieldErrors((prev) => { const n = new Set(prev); n.delete("institucion"); return n; });
             }}
             hasError={fieldErrors.has("institucion")}
+            onlyWithFichas={config.isAutoeval}
           />
 
           {config.isAutoeval ? (
