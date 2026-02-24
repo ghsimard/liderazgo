@@ -92,11 +92,27 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
           {/* ── OBSERVADORES ── */}
           <section>
             <h3 className="text-sm font-semibold text-primary mb-3">OBSERVADORES</h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {observadores.map((o) => (
-                <Badge key={o.role} variant="outline" className="text-xs py-1 px-3">
-                  {o.roleLabel}: {o.count} — {o.diasContacto}
-                </Badge>
+                <div key={o.role} className="rounded-lg border bg-card p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold">{o.roleLabel}</span>
+                    <Badge variant="secondary" className="text-xs">{o.count}</Badge>
+                  </div>
+                  {Object.keys(o.diasDistribution).length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Días de contacto</span>
+                      {Object.entries(o.diasDistribution)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([dias, count]) => (
+                          <div key={dias} className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">{dias}</span>
+                            <span className="font-medium">{count}</span>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </section>
