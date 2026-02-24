@@ -230,13 +230,14 @@ export async function generarReporte360PDF(
   doc.text("IDENTIFICACIÓN", margin, y);
   y += 8;
 
+  const labelColW = 55;
   const drawIdRow = (label: string, value: string) => {
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text(label, margin + 20, y, { align: "right" });
+    doc.text(label, margin + labelColW, y, { align: "right" });
     doc.setFont("helvetica", "normal");
-    doc.text(value || "—", margin + 22, y);
-    y += 5;
+    doc.text(value || "—", margin + labelColW + 4, y);
+    y += 6;
   };
 
   drawIdRow("DIRECTIVO/A DOCENTE", data.directivo.nombre.toUpperCase());
