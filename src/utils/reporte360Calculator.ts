@@ -48,6 +48,7 @@ export interface ObservadorInfo {
   roleLabel: string;
   count: number;
   diasContacto: string;
+  diasDistribution: Record<string, number>;
 }
 
 export interface DomainScore {
@@ -155,12 +156,17 @@ export async function calcularReporte360(nombreDirectivo: string, institucion: s
     if (e.dias_contacto) roleGroups[role].dias.push(e.dias_contacto);
   });
 
-  const observadores: ObservadorInfo[] = Object.entries(roleGroups).map(([role, info]) => ({
-    role,
-    roleLabel: ROLE_LABELS[role] ?? role,
-    count: info.count,
-    diasContacto: getMostFrequent(info.dias),
-  }));
+  const observadores: ObservadorInfo[] = Object.entries(roleGroups).map(([role, info]) => {
+    const diasDist: Record<string, number> = {};
+    info.dias.forEach((d) => { diasDist[d] = (diasDist[d] || 0) + 1; });
+    return {
+      role,
+      roleLabel: ROLE_LABELS[role] ?? role,
+      count: info.count,
+      diasContacto: getMostFrequent(info.dias),
+      diasDistribution: diasDist,
+    };
+  });
 
   // 6. Calculate scores per item
   const autoResponses = (autoEncuesta?.respuestas ?? {}) as Record<string, string>;
