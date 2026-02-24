@@ -624,10 +624,9 @@ function drawQualitativeTable(
   // Sort items by observer score to determine strengths/weaknesses
   const sorted = [...data.itemScores].filter((i) => i.phrase).sort((a, b) => b.observerScore - a.observerScore);
 
-  // Top items = strengths, bottom = areas to improve
-  const half = Math.ceil(sorted.length / 2);
-  const strengths = sorted.slice(0, half).map((i) => i.phrase);
-  const improvements = sorted.slice(half).map((i) => i.phrase);
+  // Top 8 = strengths, bottom 8 = areas to improve
+  const strengths = sorted.slice(0, 8).map((i) => i.phrase);
+  const improvements = sorted.slice(-8).map((i) => i.phrase);
 
   // Match them into pairs for the table
   const rowCount = Math.max(strengths.length, improvements.length);
