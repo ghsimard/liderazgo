@@ -113,10 +113,10 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                           {diasEntries.length === 0 ? "—" : diasEntries.length === 1 ? (
                             <span>{diasEntries[0][0] || "—"}</span>
                           ) : (
-                            <div className="flex gap-3">
-                              {diasEntries.map(([dias, count]) => (
-                                <span key={dias} className="inline-flex items-center gap-1">
-                                  <span className="font-medium text-muted-foreground text-xs">({count})</span> {dias}
+                            <div className="flex gap-2">
+                              {diasEntries.map(([dias]) => (
+                                <span key={dias} className="border rounded px-2 py-0.5 text-xs bg-muted/30">
+                                  {dias}
                                 </span>
                               ))}
                             </div>
