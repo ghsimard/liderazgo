@@ -619,8 +619,8 @@ function drawRadarChart(
     });
   };
 
-  drawPolygon((cs) => cs.observerScore, COLOR_OBSERVER, 1.0, true, 4);
-  drawPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, 1.0, true, 4);
+  drawPolygon((cs) => cs.observerScore, COLOR_OBSERVER, 1.0, false, 0);
+  drawPolygon((cs) => cs.autoScore, COLOR_DIRECTIVO, 1.0, false, 0);
 
   // Labels
   for (let i = 0; i < n; i++) {
@@ -639,9 +639,9 @@ function drawRadarChart(
     doc.text(labelLines, lx, ly, { align: align as any });
   }
 
-  // Legend — more space above chart
+  // Legend — below the chart
   doc.setFontSize(7);
-  const legY = cy - radius - 18;
+  const legY = cy + radius + 12;
   doc.setFillColor(...COLOR_OBSERVER);
   doc.rect(cx - 40, legY, 4, 3, "F");
   doc.setTextColor(30, 30, 30);
