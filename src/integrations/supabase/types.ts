@@ -621,6 +621,12 @@ export type Database = {
           type_name: string
         }[]
       }
+      get_instituciones_con_ficha: {
+        Args: never
+        Returns: {
+          nombre_ie: string
+        }[]
+      }
       get_table_columns: {
         Args: { table_names: string[] }
         Returns: {
