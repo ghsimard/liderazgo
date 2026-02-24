@@ -201,8 +201,16 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 <Tooltip
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName ?? ""}
                 />
-                <Bar dataKey="Internos" fill={COLOR_INTERNOS} barSize={12} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Externos" fill={COLOR_EXTERNOS} barSize={12} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Internos" fill={COLOR_INTERNOS} barSize={12} radius={[3, 3, 0, 0]}
+                  label={({ x, y, width, value }: any) => {
+                    if (!value) return null;
+                    return <text x={x + width / 2} y={y - 4} fill={COLOR_INTERNOS} fontSize={8} textAnchor="middle">{(+value).toFixed(1)}</text>;
+                  }} />
+                <Bar dataKey="Externos" fill={COLOR_EXTERNOS} barSize={12} radius={[3, 3, 0, 0]}
+                  label={({ x, y, width, value }: any) => {
+                    if (!value) return null;
+                    return <text x={x + width / 2} y={y - 4} fill={COLOR_EXTERNOS} fontSize={8} textAnchor="middle">{(+value).toFixed(1)}</text>;
+                  }} />
               </BarChart>
             </ResponsiveContainer>
           </section>
