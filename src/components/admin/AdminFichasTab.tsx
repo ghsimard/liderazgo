@@ -119,11 +119,24 @@ export default function AdminFichasTab() {
     if (!deleteId) return;
     setDeleteLoading(true);
 
-    // Get ficha info before deleting to clean up related encuestas
     const ficha = fichas.find((f) => f.id === deleteId);
     if (ficha) {
       const nombre = ficha.nombres_apellidos;
       const ie = ficha.nombre_ie;
+
+      // Fetch related encuestas before deleting
+      const { data: relatedEncuestas } = await supabase
+        .from("encuestas_360")
+        .select("*")
+        .eq("institucion_educativa", ie)
+        .or(`nombre_directivo.eq.${nombre},and(nombre_completo.eq.${nombre},tipo_formulario.eq.autoevaluacion)`);
+
+      // Save ficha + related encuestas to trash
+      await supabase.from("deleted_records").insert([{
+        record_type: "ficha_rlt",
+        record_label: `${nombre} — ${ie}`,
+        deleted_data: { ficha, encuestas: relatedEncuestas ?? [] } as any,
+      }]);
 
       // Delete encuestas where this directivo is evaluated (observer responses)
       await supabase
@@ -145,7 +158,7 @@ export default function AdminFichasTab() {
     if (error) {
       toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Ficha y encuestas asociadas eliminadas" });
+      toast({ title: "Ficha eliminada", description: "Se puede restaurar desde la Papelera." });
       setDeleteId(null);
       fetchFichas();
     }
@@ -326,7 +339,7 @@ export default function AdminFichasTab() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar esta ficha?</AlertDialogTitle>
-            <AlertDialogDescription>Esta acción eliminará la ficha y todas las encuestas 360° asociadas a este directivo. Es irreversible.</AlertDialogDescription>
+            <AlertDialogDescription>Esta acción eliminará la ficha y todas las encuestas 360° asociadas. Podrá restaurarla desde la Papelera.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
