@@ -8,8 +8,8 @@ import { FileText, RefreshCw, Download, Eye } from "lucide-react";
 import { calcularReporte360, type Reporte360Data } from "@/utils/reporte360Calculator";
 import { generarReporte360PDF } from "@/utils/reporte360PdfGenerator";
 import AdminReporte360Viewer from "./AdminReporte360Viewer";
-import logoRLT from "@/assets/logo_rlt.png";
-import logoCLT from "@/assets/logo_clt_dark.png";
+import logoRLT from "@/assets/logo_rlt_white.jpeg";
+import logoCLT from "@/assets/logo_clt_white.jpeg";
 import JSZip from "jszip";
 
 interface DirectivoOption {
