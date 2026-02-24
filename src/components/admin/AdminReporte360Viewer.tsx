@@ -124,9 +124,12 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                         <td className="px-4 py-1.5">
                           {diasEntries.length === 0 ? "—" : (
                             <div className="flex gap-2">
-                              {diasEntries.map(([dias]) => (
-                                <span key={dias} className="border rounded px-2 py-0.5 text-xs bg-muted/30">
+                              {diasEntries.map(([dias, count]) => (
+                                <span key={dias} className="relative border rounded px-2 pt-0.5 pb-0.5 pr-5 text-xs bg-muted/30">
                                   {dias || "—"}
+                                  <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                    {count}
+                                  </span>
                                 </span>
                               ))}
                             </div>
