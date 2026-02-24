@@ -118,11 +118,34 @@ export default function AdminFichasTab() {
   const handleDelete = async () => {
     if (!deleteId) return;
     setDeleteLoading(true);
+
+    // Get ficha info before deleting to clean up related encuestas
+    const ficha = fichas.find((f) => f.id === deleteId);
+    if (ficha) {
+      const nombre = ficha.nombres_apellidos;
+      const ie = ficha.nombre_ie;
+
+      // Delete encuestas where this directivo is evaluated (observer responses)
+      await supabase
+        .from("encuestas_360")
+        .delete()
+        .eq("nombre_directivo", nombre)
+        .eq("institucion_educativa", ie);
+
+      // Delete autoevaluacion by this directivo
+      await supabase
+        .from("encuestas_360")
+        .delete()
+        .eq("nombre_completo", nombre)
+        .eq("institucion_educativa", ie)
+        .eq("tipo_formulario", "autoevaluacion");
+    }
+
     const { error } = await supabase.from("fichas_rlt").delete().eq("id", deleteId);
     if (error) {
       toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Ficha eliminada" });
+      toast({ title: "Ficha y encuestas asociadas eliminadas" });
       setDeleteId(null);
       fetchFichas();
     }
@@ -303,7 +326,7 @@ export default function AdminFichasTab() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar esta ficha?</AlertDialogTitle>
-            <AlertDialogDescription>Esta acción es irreversible.</AlertDialogDescription>
+            <AlertDialogDescription>Esta acción eliminará la ficha y todas las encuestas 360° asociadas a este directivo. Es irreversible.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
