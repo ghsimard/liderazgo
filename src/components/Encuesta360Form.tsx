@@ -36,12 +36,9 @@ function InstitutionSearch({
   useEffect(() => {
     (async () => {
       if (onlyWithFichas) {
-        // Only show institutions that have at least one ficha_rlt
-        const { data } = await supabase
-          .from("fichas_rlt")
-          .select("nombre_ie");
-        const unique = [...new Set((data ?? []).map((f) => f.nombre_ie))].sort();
-        setInstituciones(unique);
+        // Only show institutions that have at least one ficha_rlt (uses SECURITY DEFINER function)
+        const { data } = await supabase.rpc("get_instituciones_con_ficha");
+        setInstituciones((data ?? []).map((r: any) => r.nombre_ie));
       } else {
         const { data } = await supabase
           .from("instituciones")
