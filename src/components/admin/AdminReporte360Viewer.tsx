@@ -154,18 +154,18 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 <Tooltip />
                 <Bar dataKey="Directivo" fill={COLOR_AUTO} barSize={10} radius={[0, 3, 3, 0]}
                   label={({ x, y, width, height, value }: any) => {
-                    if (!value || width < 20) return null;
-                    return <text x={x + width / 2} y={y + height / 2} fill="#fff" fontSize={9} textAnchor="middle" dominantBaseline="central">{(+value).toFixed(1)}</text>;
+                    if (!value) return null;
+                    return <text x={x + width + 4} y={y + height / 2} fill={COLOR_AUTO} fontSize={9} textAnchor="start" dominantBaseline="central">{(+value).toFixed(1)}</text>;
                   }} />
                 <Bar dataKey="Internos" fill={COLOR_INTERNOS} barSize={10} radius={[0, 3, 3, 0]}
                   label={({ x, y, width, height, value }: any) => {
-                    if (!value || width < 20) return null;
-                    return <text x={x + width / 2} y={y + height / 2} fill="#fff" fontSize={9} textAnchor="middle" dominantBaseline="central">{(+value).toFixed(1)}</text>;
+                    if (!value) return null;
+                    return <text x={x + width + 4} y={y + height / 2} fill={COLOR_INTERNOS} fontSize={9} textAnchor="start" dominantBaseline="central">{(+value).toFixed(1)}</text>;
                   }} />
                 <Bar dataKey="Externos" fill={COLOR_EXTERNOS} barSize={10} radius={[0, 3, 3, 0]}
                   label={({ x, y, width, height, value }: any) => {
-                    if (!value || width < 20) return null;
-                    return <text x={x + width / 2} y={y + height / 2} fill="#fff" fontSize={9} textAnchor="middle" dominantBaseline="central">{(+value).toFixed(1)}</text>;
+                    if (!value) return null;
+                    return <text x={x + width + 4} y={y + height / 2} fill={COLOR_EXTERNOS} fontSize={9} textAnchor="start" dominantBaseline="central">{(+value).toFixed(1)}</text>;
                   }} />
               </BarChart>
             </ResponsiveContainer>
