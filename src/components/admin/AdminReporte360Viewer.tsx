@@ -193,10 +193,19 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
           {/* ── ANÁLISIS DE OBSERVADORES (Internos vs Externos) ── */}
           <section>
             <h3 className="text-sm font-semibold text-primary mb-3">ANÁLISIS DE OBSERVADORES: INTERNOS vs EXTERNOS</h3>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={obsBarData} margin={{ bottom: 40, left: 10, right: 10 }}>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={obsBarData} margin={{ bottom: 80, left: 10, right: 10, top: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize: 8 }} interval={0} height={60} />
+                <XAxis
+                  dataKey="name"
+                  tick={({ x, y, payload }: any) => (
+                    <text x={x} y={y + 8} transform={`rotate(-90, ${x}, ${y + 8})`} fontSize={8} textAnchor="end" fill="#666">
+                      {payload.value}
+                    </text>
+                  )}
+                  interval={0}
+                  height={80}
+                />
                 <YAxis domain={[0, 10]} tick={{ fontSize: 9 }} />
                 <Tooltip
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName ?? ""}
@@ -204,12 +213,12 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 <Bar dataKey="Internos" fill={COLOR_INTERNOS} barSize={12} radius={[3, 3, 0, 0]}
                   label={({ x, y, width, value }: any) => {
                     if (!value) return null;
-                    return <text x={x + width / 2} y={y - 4} fill={COLOR_INTERNOS} fontSize={8} textAnchor="middle">{(+value).toFixed(1)}</text>;
+                    return <text x={x + width / 2} y={y - 6} fill={COLOR_INTERNOS} fontSize={7} textAnchor="middle">{(+value).toFixed(1)}</text>;
                   }} />
                 <Bar dataKey="Externos" fill={COLOR_EXTERNOS} barSize={12} radius={[3, 3, 0, 0]}
                   label={({ x, y, width, value }: any) => {
                     if (!value) return null;
-                    return <text x={x + width / 2} y={y - 4} fill={COLOR_EXTERNOS} fontSize={8} textAnchor="middle">{(+value).toFixed(1)}</text>;
+                    return <text x={x + width / 2} y={y - 6} fill={COLOR_EXTERNOS} fontSize={7} textAnchor="middle">{(+value).toFixed(1)}</text>;
                   }} />
               </BarChart>
             </ResponsiveContainer>
