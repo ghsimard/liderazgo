@@ -228,7 +228,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
           {/* ── ANÁLISIS DE OBSERVADORES ── */}
           <section>
             <h3 className={sectionTitleClass}>ANÁLISIS DE OBSERVADORES</h3>
-            <div className="flex gap-4 text-xs mb-2">
+            <div className="flex gap-4 text-xs mb-2 justify-center">
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_INTERNOS }} /> Administrativo(a), coordinador(a) y docente</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_EXTERNOS }} /> Acudiente y estudiante</span>
             </div>
