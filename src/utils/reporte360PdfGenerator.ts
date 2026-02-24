@@ -383,13 +383,19 @@ export async function generarReporte360PDF(
   doc.text(`${r1(data.observerAvg)} /10`, margin + 65, y + 5);
   y += 12;
 
-  // Info box
-  doc.setFillColor(245, 245, 245);
-  doc.roundedRect(margin, y, contentW, 8, 1, 1, "F");
+  // Info box — centered
+  const infoText1 = "Analice las brechas que existen entre las puntuaciones promedio de los grupos de referencia y su puntuación en cada gestión.";
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  drawLightbulbIcon(doc, margin + 1.5, y + 4.5, 5, bulbB64);
-  doc.text("Analice las brechas que existen entre las puntuaciones promedio de los grupos de referencia y su puntuación en cada gestión.", margin + 8, y + 5);
+  const infoTextW1 = doc.getTextWidth(infoText1);
+  const iconW1 = 5;
+  const gap1 = 2;
+  const totalW1 = iconW1 + gap1 + infoTextW1;
+  const startX1 = margin + (contentW - totalW1) / 2;
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(margin, y, contentW, 8, 1, 1, "F");
+  drawLightbulbIcon(doc, startX1, y + 4.5, iconW1, bulbB64);
+  doc.text(infoText1, startX1 + iconW1 + gap1, y + 5);
 
   // ════════════════════════════════════════════════════════════
   // PAGE 5 — RADAR CHART + COMPETENCY TABLE
@@ -468,13 +474,20 @@ export async function generarReporte360PDF(
   }
 
   // Info box
+  // Info box — centered
   y += 4;
-  doc.setFillColor(245, 245, 245);
-  doc.roundedRect(margin, y, contentW, 10, 1, 1, "F");
+  const infoText2 = "Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.";
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  drawLightbulbIcon(doc, margin + 1.5, y + 5.5, 5, bulbB64);
-  doc.text("Identifique sus puntuaciones altas y bajas y compárelas con las de los observadores teniendo en cuenta la brecha entre los puntajes.", margin + 8, y + 6);
+  const infoTextW2 = doc.getTextWidth(infoText2);
+  const iconW2 = 5;
+  const gap2 = 2;
+  const totalW2 = iconW2 + gap2 + infoTextW2;
+  const startX2 = margin + (contentW - totalW2) / 2;
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(margin, y, contentW, 10, 1, 1, "F");
+  drawLightbulbIcon(doc, startX2, y + 5.5, iconW2, bulbB64);
+  doc.text(infoText2, startX2 + iconW2 + gap2, y + 6);
 
   // ════════════════════════════════════════════════════════════
   // PAGE 7 — OBSERVER ANALYSIS
