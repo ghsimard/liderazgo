@@ -170,7 +170,7 @@ export async function generarReporte360PDF(
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   const introLines = doc.splitTextToSize(INTRO_TEXT, contentW);
-  doc.text(introLines, margin, y, { align: "justify", maxWidth: contentW });
+  doc.text(introLines, margin, y, { align: "left", maxWidth: contentW });
   y += introLines.length * 4.5 + 4;
 
   // Gestión Personal
@@ -187,7 +187,7 @@ export async function generarReporte360PDF(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
     const lines = doc.splitTextToSize(text, contentW);
-    doc.text(lines, margin, y, { align: "justify", maxWidth: contentW });
+    doc.text(lines, margin, y, { align: "left", maxWidth: contentW });
     y += lines.length * 4.5 + 3;
     competencias.forEach((c) => {
       if (y > pageH - 15) {
@@ -196,7 +196,7 @@ export async function generarReporte360PDF(
         y = 20;
       }
       const cLines = doc.splitTextToSize(`• ${c}`, contentW - 5);
-      doc.text(cLines, margin + 3, y, { align: "justify", maxWidth: contentW - 5 });
+      doc.text(cLines, margin + 3, y, { align: "left", maxWidth: contentW - 5 });
       y += cLines.length * 4.5 + 1;
     });
     y += 4;
@@ -215,7 +215,7 @@ export async function generarReporte360PDF(
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   const structLines = doc.splitTextToSize(INFORME_STRUCTURE, contentW);
-  doc.text(structLines, margin, y, { align: "justify", maxWidth: contentW });
+  doc.text(structLines, margin, y, { align: "left", maxWidth: contentW });
 
   // ════════════════════════════════════════════════════════════
   // PAGE 4 — IDENTIFICATION + OBSERVERS + BAR CHART
