@@ -400,48 +400,6 @@ export async function generarReporte360PDF(
   drawRadarChart(doc, data.competencyScores, pageW / 2, y + 55, 48);
   y += 120;
 
-  // ── Table with radar values ──
-  {
-    const tableHeaders = ["Competencia", "Autoevaluación", "Dir., Doc. y Adm.", "Est. y Acud."];
-    const colWidths = [contentW * 0.46, contentW * 0.18, contentW * 0.18, contentW * 0.18];
-    const rowH = 4.5;
-
-    // Header row
-    doc.setFillColor(230, 230, 230);
-    doc.rect(margin, y, contentW, rowH + 1, "F");
-    doc.setFontSize(6.5);
-    doc.setFont("helvetica", "bold");
-    let tx = margin;
-    tableHeaders.forEach((h, hi) => {
-      doc.text(h, hi === 0 ? tx + 1 : tx + colWidths[hi] / 2, y + 3.5, hi === 0 ? undefined : { align: "center" });
-      tx += colWidths[hi];
-    });
-    y += rowH + 1;
-
-    // Data rows
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(6);
-    data.competencyScores.forEach((c, i) => {
-      if (i % 2 === 1) {
-        doc.setFillColor(248, 248, 248);
-        doc.rect(margin, y, contentW, rowH, "F");
-      }
-      const label = COMPETENCY_LABELS[c.competency] ?? c.competency;
-      tx = margin;
-      doc.setTextColor(0, 0, 0);
-      doc.text(label.substring(0, 55), tx + 1, y + 3.2);
-      tx += colWidths[0];
-      doc.text(c.autoScore.toFixed(1), tx + colWidths[1] / 2, y + 3.2, { align: "center" });
-      tx += colWidths[1];
-      doc.text(c.internosScore.toFixed(1), tx + colWidths[2] / 2, y + 3.2, { align: "center" });
-      tx += colWidths[2];
-      doc.text(c.externosScore.toFixed(1), tx + colWidths[3] / 2, y + 3.2, { align: "center" });
-      doc.setTextColor(0, 0, 0);
-      y += rowH;
-    });
-    y += 4;
-  }
-
   // Info box
   doc.setFillColor(245, 245, 245);
   doc.roundedRect(margin, y, contentW, 10, 1, 1, "F");
@@ -696,6 +654,49 @@ function drawRadarChart(
   doc.text("* Competencias de Gestión Personal", cx - 40, notesY);
   doc.text("** Competencias de Gestión Pedagógica", cx - 40, notesY + 3.5);
   doc.text("*** Competencias de Gestión Administrativa y Comunitaria", cx - 40, notesY + 7);
+
+  // ── Table with radar values ──
+  const tableY = notesY + 12;
+  const tableMargin = cx - 40;
+  const tableW = 80;
+  const tableHeaders = ["Competencia", "Autoevaluación", "Dir., Doc. y Adm.", "Est. y Acud."];
+  const colWidths = [tableW * 0.46, tableW * 0.18, tableW * 0.18, tableW * 0.18];
+  const rowH = 4.5;
+  let ty = tableY;
+
+  // Header row
+  doc.setFillColor(230, 230, 230);
+  doc.rect(tableMargin, ty, tableW, rowH + 1, "F");
+  doc.setFontSize(5.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0, 0, 0);
+  let tx = tableMargin;
+  tableHeaders.forEach((h, hi) => {
+    doc.text(h, hi === 0 ? tx + 1 : tx + colWidths[hi] / 2, ty + 3.5, hi === 0 ? undefined : { align: "center" });
+    tx += colWidths[hi];
+  });
+  ty += rowH + 1;
+
+  // Data rows
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(5);
+  competencyScores.forEach((c, i) => {
+    if (i % 2 === 1) {
+      doc.setFillColor(248, 248, 248);
+      doc.rect(tableMargin, ty, tableW, rowH, "F");
+    }
+    const label = COMPETENCY_LABELS[c.competency] ?? c.competency;
+    tx = tableMargin;
+    doc.setTextColor(0, 0, 0);
+    doc.text(label.substring(0, 40), tx + 1, ty + 3.2);
+    tx += colWidths[0];
+    doc.text(c.autoScore.toFixed(1), tx + colWidths[1] / 2, ty + 3.2, { align: "center" });
+    tx += colWidths[1];
+    doc.text(c.internosScore.toFixed(1), tx + colWidths[2] / 2, ty + 3.2, { align: "center" });
+    tx += colWidths[2];
+    doc.text(c.externosScore.toFixed(1), tx + colWidths[3] / 2, ty + 3.2, { align: "center" });
+    ty += rowH;
+  });
 }
 
 function drawObserverBarChart(
