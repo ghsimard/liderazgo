@@ -54,8 +54,9 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
     Externos: +c.externosScore.toFixed(1),
   }));
 
-  // Top 8 / Bottom 8 for qualitative analysis
-  const sorted = [...itemScores].sort((a, b) => b.observerScore - a.observerScore);
+  // Top 8 / Bottom 8 for qualitative analysis — exclude items with no valid observer data (score 0)
+  const validItemScores = itemScores.filter((item) => item.observerScore > 0);
+  const sorted = [...validItemScores].sort((a, b) => b.observerScore - a.observerScore);
   const top8 = sorted.slice(0, 8);
   const bottom8 = sorted.slice(-8).reverse();
 
