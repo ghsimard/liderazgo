@@ -397,28 +397,45 @@ export async function generarReporte360PDF(
     { color: COLOR_INTERNOS, label: "Administrativo(a), coordinador(a) y docente" },
     { color: COLOR_EXTERNOS, label: "Acudiente y estudiante" },
   ];
-  let lx = margin;
-  legendItems.forEach((item) => {
+  // Calculate total legend width first
+  let totalLegendW = 0;
+  legendItems.forEach((item, i) => {
+    totalLegendW += 4 + 1 + doc.getTextWidth(item.label) + (i < legendItems.length - 1 ? 6 : 0);
+  });
+  let lx = (pageW - totalLegendW) / 2;
+  legendItems.forEach((item, i) => {
     doc.setFillColor(...item.color);
     doc.rect(lx, y, 4, 3, "F");
     doc.text(item.label, lx + 5, y + 2.5);
-    lx += doc.getTextWidth(item.label) + 10;
+    lx += 4 + 1 + doc.getTextWidth(item.label) + 6;
   });
   y += 7;
 
   drawBarChart(doc, data.domainScores, margin, y, contentW, 55);
   y += 60;
 
-  // Averages
+  // Averages — centered
   doc.setFontSize(8);
+  const avgLine1 = `Su puntaje promedio en la autoevaluación fue  ${r1(data.autoAvg)} /10`;
+  const avgLine2 = `La percepción promedio de los observadores fue  ${r1(data.observerAvg)} /10`;
   doc.setFont("helvetica", "normal");
-  doc.text(`Su puntaje promedio en la autoevaluación fue`, margin, y);
+  // Line 1
+  const avg1Text = "Su puntaje promedio en la autoevaluación fue  ";
+  const avg1Val = `${r1(data.autoAvg)} /10`;
+  const avg1W = doc.getTextWidth(avg1Text) + doc.getTextWidth(avg1Val);
+  let ax = (pageW - avg1W) / 2;
+  doc.text(avg1Text, ax, y);
   doc.setFont("helvetica", "bold");
-  doc.text(`${r1(data.autoAvg)} /10`, margin + 65, y);
+  doc.text(avg1Val, ax + doc.getTextWidth(avg1Text), y);
+  // Line 2
   doc.setFont("helvetica", "normal");
-  doc.text(`La percepción promedio de los observadores fue`, margin, y + 5);
+  const avg2Text = "La percepción promedio de los observadores fue  ";
+  const avg2Val = `${r1(data.observerAvg)} /10`;
+  const avg2W = doc.getTextWidth(avg2Text) + doc.getTextWidth(avg2Val);
+  ax = (pageW - avg2W) / 2;
+  doc.text(avg2Text, ax, y + 5);
   doc.setFont("helvetica", "bold");
-  doc.text(`${r1(data.observerAvg)} /10`, margin + 65, y + 5);
+  doc.text(avg2Val, ax + doc.getTextWidth(avg2Text), y + 5);
   y += 12;
 
   // Info box — centered
@@ -543,15 +560,20 @@ export async function generarReporte360PDF(
   // Legend
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  lx = margin;
-  [
+  const obsLegendItems = [
     { color: [30, 30, 30] as [number, number, number], label: "Administrativo(a), coordinador(a) y docente" },
     { color: [128, 128, 128] as [number, number, number], label: "Acudiente y estudiante" },
-  ].forEach((item) => {
+  ];
+  let totalObsLegW = 0;
+  obsLegendItems.forEach((item, i) => {
+    totalObsLegW += 4 + 1 + doc.getTextWidth(item.label) + (i < obsLegendItems.length - 1 ? 6 : 0);
+  });
+  lx = (pageW - totalObsLegW) / 2;
+  obsLegendItems.forEach((item) => {
     doc.setFillColor(...item.color);
     doc.rect(lx, y, 4, 3, "F");
     doc.text(item.label, lx + 5, y + 2.5);
-    lx += doc.getTextWidth(item.label) + 10;
+    lx += 4 + 1 + doc.getTextWidth(item.label) + 6;
   });
   y += 8;
 
