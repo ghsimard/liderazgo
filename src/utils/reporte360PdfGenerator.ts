@@ -722,9 +722,14 @@ function drawRadarChart(
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
   const notesY = legY + 7;
-  doc.text("* Competencias de Gestión Personal", cx - 40, notesY);
-  doc.text("** Competencias de Gestión Pedagógica", cx - 40, notesY + 3.5);
-  doc.text("*** Competencias de Gestión Administrativa y Comunitaria", cx - 40, notesY + 7);
+  const markX = cx - 40;
+  const labelX = markX + 10;
+  doc.text("*", markX, notesY, { align: "left" });
+  doc.text("Competencias de Gestión Personal", labelX, notesY);
+  doc.text("**", markX, notesY + 3.5, { align: "left" });
+  doc.text("Competencias de Gestión Pedagógica", labelX, notesY + 3.5);
+  doc.text("***", markX, notesY + 7, { align: "left" });
+  doc.text("Competencias de Gestión Administrativa y Comunitaria", labelX, notesY + 7);
 }
 
 function drawObserverBarChart(
