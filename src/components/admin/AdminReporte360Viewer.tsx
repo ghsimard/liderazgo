@@ -125,7 +125,8 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                       <YAxis type="category" dataKey="role" width={110} tick={{ fontSize: 11 }} />
                       <Tooltip />
                       {diasKeys.map((d, i) => (
-                        <Bar key={d} dataKey={d} stackId="dias" fill={DIAS_COLORS[i % DIAS_COLORS.length]} barSize={18} radius={i === diasKeys.length - 1 ? [0, 3, 3, 0] : undefined} />
+                        <Bar key={d} dataKey={d} stackId="dias" fill={DIAS_COLORS[i % DIAS_COLORS.length]} barSize={18} radius={i === diasKeys.length - 1 ? [0, 3, 3, 0] : undefined}
+                          label={{ position: "center", fill: "#fff", fontSize: 10, formatter: (v: number) => v > 0 ? v : "" }} />
                       ))}
                     </BarChart>
                   </ResponsiveContainer>
