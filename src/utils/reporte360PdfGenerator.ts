@@ -137,7 +137,7 @@ export async function generarReporte360PDF(
   doc.addImage(cltB64, "PNG", pageW - margin - cltW, 25, cltW, cltH);
 
   // Title block
-  let y = 65;
+  let y = 75;
   doc.setTextColor(30, 30, 30);
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
