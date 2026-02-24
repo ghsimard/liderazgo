@@ -183,8 +183,9 @@ export async function generarReporte360PDF(
       drawPageHeader();
       y = 20;
     }
-    doc.setFontSize(11);
+    doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
     doc.text(title, margin, y);
     y += 6;
     doc.setFont("helvetica", "normal");
