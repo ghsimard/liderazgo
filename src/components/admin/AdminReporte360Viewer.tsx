@@ -152,9 +152,21 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 <XAxis type="number" domain={[0, 10]} />
                 <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="Directivo" fill={COLOR_AUTO} barSize={10} radius={[0, 3, 3, 0]} />
-                <Bar dataKey="Internos" fill={COLOR_INTERNOS} barSize={10} radius={[0, 3, 3, 0]} />
-                <Bar dataKey="Externos" fill={COLOR_EXTERNOS} barSize={10} radius={[0, 3, 3, 0]} />
+                <Bar dataKey="Directivo" fill={COLOR_AUTO} barSize={10} radius={[0, 3, 3, 0]}
+                  label={({ x, y, width, height, value }: any) => {
+                    if (!value || width < 20) return null;
+                    return <text x={x + width / 2} y={y + height / 2} fill="#fff" fontSize={9} textAnchor="middle" dominantBaseline="central">{(+value).toFixed(1)}</text>;
+                  }} />
+                <Bar dataKey="Internos" fill={COLOR_INTERNOS} barSize={10} radius={[0, 3, 3, 0]}
+                  label={({ x, y, width, height, value }: any) => {
+                    if (!value || width < 20) return null;
+                    return <text x={x + width / 2} y={y + height / 2} fill="#fff" fontSize={9} textAnchor="middle" dominantBaseline="central">{(+value).toFixed(1)}</text>;
+                  }} />
+                <Bar dataKey="Externos" fill={COLOR_EXTERNOS} barSize={10} radius={[0, 3, 3, 0]}
+                  label={({ x, y, width, height, value }: any) => {
+                    if (!value || width < 20) return null;
+                    return <text x={x + width / 2} y={y + height / 2} fill="#fff" fontSize={9} textAnchor="middle" dominantBaseline="central">{(+value).toFixed(1)}</text>;
+                  }} />
               </BarChart>
             </ResponsiveContainer>
             <div className="flex gap-6 text-sm mt-2">
