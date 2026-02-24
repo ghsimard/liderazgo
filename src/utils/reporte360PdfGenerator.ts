@@ -336,7 +336,7 @@ export async function generarReporte360PDF(
   doc.setFontSize(7);
   drawLightbulbIcon(doc, margin + 1.5, y + 4.5, 5, bulbB64);
   doc.text("Las puntuaciones se calculan a partir de sus respuestas y las de los observadores.", margin + 8, y + 5);
-  y += 14;
+  y += 20;
 
   // RESUMEN GENERAL — Bar chart
   doc.setFontSize(12);
