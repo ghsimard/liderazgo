@@ -296,7 +296,33 @@ export async function generarReporte360PDF(
     doc.setFontSize(8);
     doc.text(String(obs.count), margin + col1W / 2, y + rowH / 2 + 1, { align: "center" });
     doc.text(obs.roleLabel, margin + col1W + 3, y + rowH / 2 + 1);
-    doc.text(obs.diasContacto || "—", margin + col1W + col2W + 3, y + rowH / 2 + 1);
+
+    // Draw dias as individual rounded badges
+    const diasEntries = Object.keys(obs.diasDistribution);
+    if (diasEntries.length === 0) {
+      doc.text("—", margin + col1W + col2W + 3, y + rowH / 2 + 1);
+    } else {
+      let badgeX = margin + col1W + col2W + 3;
+      const badgeY = y + 1.2;
+      const badgeH = 4.5;
+      const badgePadding = 2;
+      const badgeGap = 2;
+      doc.setFontSize(6.5);
+      diasEntries.forEach((dias) => {
+        const label = dias || "—";
+        const textW = doc.getTextWidth(label);
+        const badgeW = textW + badgePadding * 2;
+        // Badge background and border
+        doc.setFillColor(240, 240, 240);
+        doc.setDrawColor(190, 190, 190);
+        doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1, 1, "FD");
+        doc.setTextColor(60, 60, 60);
+        doc.text(label, badgeX + badgePadding, badgeY + badgeH / 2 + 1);
+        badgeX += badgeW + badgeGap;
+      });
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(8);
+    }
     y += rowH;
   });
   // Bottom border
