@@ -47,7 +47,24 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const { action, ...params } = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { action, ...params } = body as Record<string, unknown>;
+
+    if (typeof action !== "string" || !["list", "update_password", "delete"].includes(action)) {
+      return new Response(JSON.stringify({ error: `Invalid action. Must be one of: list, update_password, delete` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     switch (action) {
       case "list": {
@@ -84,9 +101,16 @@ Deno.serve(async (req) => {
       }
 
       case "update_password": {
-        const { user_id, password } = params;
-        if (!user_id || !password) {
-          return new Response(JSON.stringify({ error: "user_id and password required" }), {
+        const { user_id, password } = params as Record<string, unknown>;
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (typeof user_id !== "string" || !uuidRegex.test(user_id)) {
+          return new Response(JSON.stringify({ error: "user_id must be a valid UUID" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (typeof password !== "string" || password.length < 6 || password.length > 128) {
+          return new Response(JSON.stringify({ error: "Password must be between 6 and 128 characters" }), {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -106,9 +130,10 @@ Deno.serve(async (req) => {
       }
 
       case "delete": {
-        const { user_id } = params;
-        if (!user_id) {
-          return new Response(JSON.stringify({ error: "user_id required" }), {
+        const { user_id } = params as Record<string, unknown>;
+        const uuidRx = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (typeof user_id !== "string" || !uuidRx.test(user_id)) {
+          return new Response(JSON.stringify({ error: "user_id must be a valid UUID" }), {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
