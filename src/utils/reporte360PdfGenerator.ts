@@ -407,22 +407,29 @@ export async function generarReporte360PDF(
   y += 5;
 
   {
-    const tableHeaders = ["Competencia", "Autoevaluación", "Dir., Doc. y Adm.", "Est. y Acud."];
+    const tableHeaders = ["Competencia", "Autoevaluación", "Directivos, Docentes y Administrativos", "Estudiantes y Acudientes"];
     const colWidths = [contentW * 0.46, contentW * 0.18, contentW * 0.18, contentW * 0.18];
     const rowH = 5.5;
 
     // Header row
+    const headerH = 10;
     doc.setFillColor(230, 230, 230);
-    doc.rect(margin, y, contentW, rowH + 0.5, "F");
-    doc.setFontSize(7);
+    doc.rect(margin, y, contentW, headerH, "F");
+    doc.setFontSize(6.5);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0, 0, 0);
     let tx = margin;
     tableHeaders.forEach((h, hi) => {
-      doc.text(h, hi === 0 ? tx + 2 : tx + colWidths[hi] / 2, y + 4, hi === 0 ? undefined : { align: "center" });
+      if (hi === 0) {
+        doc.text(h, tx + 2, y + 6);
+      } else {
+        const lines = doc.splitTextToSize(h, colWidths[hi] - 2);
+        const startY = y + (headerH / 2) - ((lines.length - 1) * 3) / 2 + 1;
+        doc.text(lines, tx + colWidths[hi] / 2, startY, { align: "center" });
+      }
       tx += colWidths[hi];
     });
-    y += rowH + 0.5;
+    y += headerH;
 
     // Data rows
     doc.setFont("helvetica", "normal");
