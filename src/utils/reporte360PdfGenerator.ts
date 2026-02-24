@@ -253,10 +253,11 @@ export async function generarReporte360PDF(
   y += 6;
 
   // Table header
-  const colWidths = [30, 55, 55];
-  const tableX = margin + 15;
+  const tableW = contentW;
+  const colWidths = [tableW * 0.2, tableW * 0.45, tableW * 0.35];
+  const tableX = margin;
   doc.setFillColor(...COLOR_HEADER_BG);
-  doc.rect(tableX, y, colWidths[0] + colWidths[1] + colWidths[2], 8, "F");
+  doc.rect(tableX, y, tableW, 8, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
@@ -269,13 +270,13 @@ export async function generarReporte360PDF(
   doc.setFont("helvetica", "normal");
   data.observadores.forEach((obs) => {
     doc.setDrawColor(200, 200, 200);
-    doc.line(tableX, y, tableX + colWidths[0] + colWidths[1] + colWidths[2], y);
+    doc.line(tableX, y, tableX + tableW, y);
     doc.text(String(obs.count), tableX + colWidths[0] / 2, y + 4.5, { align: "center" });
     doc.text(obs.roleLabel, tableX + colWidths[0] + 3, y + 4.5);
     doc.text(obs.diasContacto, tableX + colWidths[0] + colWidths[1] + colWidths[2] / 2, y + 4.5, { align: "center" });
     y += 7;
   });
-  doc.line(tableX, y, tableX + colWidths[0] + colWidths[1] + colWidths[2], y);
+  doc.line(tableX, y, tableX + tableW, y);
   y += 4;
 
   // Info box
