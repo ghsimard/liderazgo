@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, School, ChevronDown, ChevronRight, User, Calendar } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RefreshCw, School, ChevronDown, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Encuesta {
   id: string;
@@ -15,11 +16,19 @@ interface Encuesta {
   cargo_directivo: string;
   dias_contacto: string | null;
   created_at: string;
+  respuestas: Record<string, string>;
 }
 
 interface InstitutionGroup {
   institucion: string;
   encuestas: Encuesta[];
+}
+
+interface ItemText {
+  item_number: number;
+  competency_key: string;
+  response_type: string;
+  text: string;
 }
 
 const FORM_TYPE_COLORS: Record<string, string> = {
@@ -45,6 +54,9 @@ export default function AdminEncuestas360Tab() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [selectedEncuesta, setSelectedEncuesta] = useState<Encuesta | null>(null);
+  const [itemTexts, setItemTexts] = useState<ItemText[]>([]);
+  const [loadingTexts, setLoadingTexts] = useState(false);
 
   useEffect(() => {
     loadEncuestas();
@@ -54,14 +66,15 @@ export default function AdminEncuestas360Tab() {
     setLoading(true);
     const { data } = await supabase
       .from("encuestas_360")
-      .select("id, tipo_formulario, nombre_completo, nombre_directivo, institucion_educativa, cargo_directivo, dias_contacto, created_at")
+      .select("id, tipo_formulario, nombre_completo, nombre_directivo, institucion_educativa, cargo_directivo, dias_contacto, created_at, respuestas")
       .order("institucion_educativa")
       .order("created_at", { ascending: false });
 
     const byInst: Record<string, Encuesta[]> = {};
     (data ?? []).forEach((e) => {
-      if (!byInst[e.institucion_educativa]) byInst[e.institucion_educativa] = [];
-      byInst[e.institucion_educativa].push(e);
+      const enc = { ...e, respuestas: (e.respuestas ?? {}) as Record<string, string> };
+      if (!byInst[enc.institucion_educativa]) byInst[enc.institucion_educativa] = [];
+      byInst[enc.institucion_educativa].push(enc);
     });
 
     const grouped = Object.entries(byInst)
@@ -70,6 +83,29 @@ export default function AdminEncuestas360Tab() {
 
     setGroups(grouped);
     setLoading(false);
+  };
+
+  const handleViewEncuesta = async (enc: Encuesta) => {
+    setSelectedEncuesta(enc);
+    setLoadingTexts(true);
+
+    // Fetch item texts for this form type
+    const { data } = await supabase
+      .from("item_texts_360")
+      .select("item_id, form_type, text, items_360!inner(item_number, competency_key, response_type)")
+      .eq("form_type", enc.tipo_formulario)
+      .order("items_360(item_number)");
+
+    const texts: ItemText[] = (data ?? []).map((row: any) => ({
+      item_number: row.items_360.item_number,
+      competency_key: row.items_360.competency_key,
+      response_type: row.items_360.response_type,
+      text: row.text,
+    }));
+    texts.sort((a, b) => a.item_number - b.item_number);
+
+    setItemTexts(texts);
+    setLoadingTexts(false);
   };
 
   const toggleExpand = (inst: string) => {
@@ -154,7 +190,11 @@ export default function AdminEncuestas360Tab() {
                       </thead>
                       <tbody>
                         {g.encuestas.map((e) => (
-                          <tr key={e.id} className="border-t hover:bg-muted/30">
+                          <tr
+                            key={e.id}
+                            className="border-t hover:bg-muted/30 cursor-pointer"
+                            onClick={() => handleViewEncuesta(e)}
+                          >
                             <td className="px-3 py-2">
                               <Badge variant="secondary" className={`text-xs ${FORM_TYPE_COLORS[e.tipo_formulario] ?? ""}`}>
                                 {FORM_TYPE_LABELS[e.tipo_formulario] ?? e.tipo_formulario}
@@ -186,6 +226,64 @@ export default function AdminEncuestas360Tab() {
           <p className="text-sm text-muted-foreground text-center py-8">No se encontraron instituciones.</p>
         )}
       </div>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!selectedEncuesta} onOpenChange={(open) => { if (!open) setSelectedEncuesta(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Badge variant="secondary" className={`${FORM_TYPE_COLORS[selectedEncuesta?.tipo_formulario ?? ""] ?? ""}`}>
+                {FORM_TYPE_LABELS[selectedEncuesta?.tipo_formulario ?? ""] ?? selectedEncuesta?.tipo_formulario}
+              </Badge>
+              <span className="truncate">
+                {selectedEncuesta?.tipo_formulario === "autoevaluacion"
+                  ? selectedEncuesta?.nombre_completo
+                  : selectedEncuesta?.nombre_completo}
+              </span>
+            </DialogTitle>
+            {selectedEncuesta && (
+              <div className="text-sm text-muted-foreground space-y-0.5 pt-1">
+                <p><strong>Institución:</strong> {selectedEncuesta.institucion_educativa}</p>
+                <p><strong>Directivo evaluado:</strong> {selectedEncuesta.tipo_formulario === "autoevaluacion" ? selectedEncuesta.nombre_completo : selectedEncuesta.nombre_directivo}</p>
+                <p><strong>Cargo:</strong> {selectedEncuesta.cargo_directivo} · <strong>Fecha:</strong> {new Date(selectedEncuesta.created_at).toLocaleDateString("es-CO")}</p>
+                {selectedEncuesta.dias_contacto && <p><strong>Días de contacto:</strong> {selectedEncuesta.dias_contacto}</p>}
+              </div>
+            )}
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            {loadingTexts ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="animate-spin w-5 h-5 text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="border rounded-md overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted/50 text-left">
+                      <th className="px-3 py-2 font-medium w-10">#</th>
+                      <th className="px-3 py-2 font-medium">Pregunta</th>
+                      <th className="px-3 py-2 font-medium w-44">Respuesta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {itemTexts.map((item) => {
+                      const answer = selectedEncuesta?.respuestas?.[String(item.item_number)] ?? "—";
+                      return (
+                        <tr key={item.item_number} className="border-t">
+                          <td className="px-3 py-2 text-muted-foreground font-mono">{item.item_number}</td>
+                          <td className="px-3 py-2">{item.text}</td>
+                          <td className="px-3 py-2 font-medium">{answer}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
