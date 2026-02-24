@@ -64,7 +64,14 @@ Deno.serve(async (req) => {
       "instituciones",
       "region_municipios",
       "region_instituciones",
+      "domains_360",
+      "competencies_360",
+      "items_360",
+      "item_texts_360",
+      "competency_weights",
       "fichas_rlt",
+      "encuestas_360",
+      "deleted_records",
       "user_roles",
     ];
 
