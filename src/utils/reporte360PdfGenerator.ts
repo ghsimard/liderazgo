@@ -96,7 +96,8 @@ export async function generarReporte360PDF(
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const margin = 15;
+  const margin = 20;
+  const marginBottom = 15;
   const contentW = pageW - margin * 2;
 
   // ── Page header (repeated on each page) ──
@@ -463,7 +464,7 @@ export async function generarReporte360PDF(
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 100, 100);
-    doc.text(`${i}/${totalPages}`, pageW - margin, pageH - 10, { align: "right" });
+    doc.text(`${i}/${totalPages}`, pageW - margin, pageH - marginBottom + 5, { align: "right" });
   }
 
   const nombre = data.directivo.nombre.replace(/\s+/g, "_");
