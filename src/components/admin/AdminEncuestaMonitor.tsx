@@ -185,7 +185,9 @@ export default function AdminEncuestaMonitor() {
                             className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold ${
                               ok
                                 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                : count > 0
+                                  ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                             }`}
                           >
                             {count}/{min}
