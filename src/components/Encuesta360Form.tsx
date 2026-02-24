@@ -380,7 +380,6 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
       if (!nombreCompleto.trim()) errors.add("nombre_completo");
     } else {
       if (!nombreDirectivo.trim()) errors.add("nombre_directivo");
-      if (!cedulaDirectivo.trim()) errors.add("cedula_directivo");
       if (!diasContacto) errors.add("dias_contacto");
     }
 
@@ -553,22 +552,6 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
                   });
                 }}
                 hasError={fieldErrors.has("nombre_directivo")}
-              />
-              <TextField
-                label="Número de cédula del directivo docente evaluado"
-                value={cedulaDirectivo}
-                onChange={() => {}}
-                required
-                hasError={fieldErrors.has("cedula_directivo")}
-                placeholder="Se completa automáticamente"
-              />
-              <RadioField
-                label="Cargo del directivo evaluado"
-                options={CARGO_OPTIONS}
-                value={cargoDirectivo}
-                onChange={() => {}}
-                required
-                hasError={fieldErrors.has("cargo_directivo")}
               />
             </>
           )}
