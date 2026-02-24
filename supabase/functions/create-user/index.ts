@@ -51,11 +51,35 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse request body
-    const { email, password, makeAdmin } = await req.json();
+    // Parse and validate request body
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    if (!email || !password) {
-      return new Response(JSON.stringify({ error: "Email et mot de passe requis" }), {
+    const { email, password, makeAdmin } = body as Record<string, unknown>;
+
+    if (typeof email !== "string" || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      return new Response(JSON.stringify({ error: "Email invalide" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (typeof password !== "string" || password.length < 6 || password.length > 128) {
+      return new Response(JSON.stringify({ error: "Le mot de passe doit contenir entre 6 et 128 caractères" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (makeAdmin !== undefined && typeof makeAdmin !== "boolean") {
+      return new Response(JSON.stringify({ error: "makeAdmin doit être un booléen" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
