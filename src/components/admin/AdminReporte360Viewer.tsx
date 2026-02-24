@@ -110,13 +110,11 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                         <td className="px-4 py-1.5 text-center">{obs.count}</td>
                         <td className="px-4 py-1.5">{obs.roleLabel}</td>
                         <td className="px-4 py-1.5">
-                          {diasEntries.length === 0 ? "—" : diasEntries.length === 1 ? (
-                            <span>{diasEntries[0][0] || "—"}</span>
-                          ) : (
+                          {diasEntries.length === 0 ? "—" : (
                             <div className="flex gap-2">
                               {diasEntries.map(([dias]) => (
                                 <span key={dias} className="border rounded px-2 py-0.5 text-xs bg-muted/30">
-                                  {dias}
+                                  {dias || "—"}
                                 </span>
                               ))}
                             </div>
