@@ -336,12 +336,19 @@ export async function generarReporte360PDF(
   doc.line(margin, y, margin + contentW, y);
   y += 4;
 
-  // Info box
+  // Info box — centered
+  const infoText0 = "Las puntuaciones se calculan a partir de sus respuestas y las de los observadores.";
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  const infoTextW0 = doc.getTextWidth(infoText0);
+  const iconW0 = 5;
+  const gap0 = 2;
+  const totalW0 = iconW0 + gap0 + infoTextW0;
+  const startX0 = margin + (contentW - totalW0) / 2;
   doc.setFillColor(245, 245, 245);
   doc.roundedRect(margin, y, contentW, 8, 1, 1, "F");
-  doc.setFontSize(7);
-  drawLightbulbIcon(doc, margin + 1.5, y + 4.5, 5, bulbB64);
-  doc.text("Las puntuaciones se calculan a partir de sus respuestas y las de los observadores.", margin + 8, y + 5);
+  drawLightbulbIcon(doc, startX0, y + 4.5, iconW0, bulbB64);
+  doc.text(infoText0, startX0 + iconW0 + gap0, y + 5);
   y += 20;
 
   // RESUMEN GENERAL — Bar chart
