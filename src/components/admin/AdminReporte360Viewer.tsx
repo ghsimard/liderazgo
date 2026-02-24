@@ -185,25 +185,20 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 <thead>
                   <tr className="bg-muted/50">
                     <th className="text-left px-3 py-2 font-semibold text-xs">COMPETENCIA</th>
-                    <th className="text-center px-3 py-2 font-semibold text-xs" style={{ color: COLOR_AUTO }}>AUTOPERCEPCIÓN</th>
-                    <th className="text-center px-3 py-2 font-semibold text-xs" style={{ color: COLOR_OBSERVER }}>OBSERVADORES</th>
-                    <th className="text-center px-3 py-2 font-semibold text-xs">BRECHA</th>
+                    <th className="text-center px-3 py-2 font-semibold text-xs" style={{ color: COLOR_AUTO }}>AUTOEVALUACIÓN</th>
+                    <th className="text-center px-3 py-2 font-semibold text-xs" style={{ color: COLOR_INTERNOS }}>DIRECTIVOS, DOCENTES Y ADMINISTRATIVOS</th>
+                    <th className="text-center px-3 py-2 font-semibold text-xs" style={{ color: COLOR_EXTERNOS }}>ESTUDIANTES Y ACUDIENTES</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {radarData.map((row, i) => {
-                    const brecha = row.Autopercepción - row.Observadores;
-                    return (
-                      <tr key={i} className={i % 2 === 0 ? "" : "bg-muted/20"}>
-                        <td className="px-3 py-1.5 text-xs">{row.competency}</td>
-                        <td className="px-3 py-1.5 text-xs text-center font-medium">{r1(row.Autopercepción)}</td>
-                        <td className="px-3 py-1.5 text-xs text-center font-medium">{r1(row.Observadores)}</td>
-                        <td className={`px-3 py-1.5 text-xs text-center font-medium ${brecha > 0 ? "text-amber-600" : brecha < 0 ? "text-emerald-600" : ""}`}>
-                          {brecha > 0 ? "+" : ""}{r1(brecha)}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {competencyScores.map((c, i) => (
+                    <tr key={i} className={i % 2 === 0 ? "" : "bg-muted/20"}>
+                      <td className="px-3 py-1.5 text-xs">{COMPETENCY_LABELS[c.competency] ?? c.competency}</td>
+                      <td className="px-3 py-1.5 text-xs text-center font-medium">{r1(c.autoScore)}</td>
+                      <td className="px-3 py-1.5 text-xs text-center font-medium">{r1(c.internosScore)}</td>
+                      <td className="px-3 py-1.5 text-xs text-center font-medium">{r1(c.externosScore)}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

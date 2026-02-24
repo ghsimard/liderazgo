@@ -402,7 +402,7 @@ export async function generarReporte360PDF(
 
   // ── Table with radar values ──
   {
-    const tableHeaders = ["Competencia", "Autopercepción", "Observadores", "Brecha"];
+    const tableHeaders = ["Competencia", "Autoevaluación", "Dir., Doc. y Adm.", "Est. y Acud."];
     const colWidths = [contentW * 0.46, contentW * 0.18, contentW * 0.18, contentW * 0.18];
     const rowH = 4.5;
 
@@ -427,18 +427,15 @@ export async function generarReporte360PDF(
         doc.rect(margin, y, contentW, rowH, "F");
       }
       const label = COMPETENCY_LABELS[c.competency] ?? c.competency;
-      const brecha = c.autoScore - c.observerScore;
       tx = margin;
       doc.setTextColor(0, 0, 0);
       doc.text(label.substring(0, 55), tx + 1, y + 3.2);
       tx += colWidths[0];
       doc.text(c.autoScore.toFixed(1), tx + colWidths[1] / 2, y + 3.2, { align: "center" });
       tx += colWidths[1];
-      doc.text(c.observerScore.toFixed(1), tx + colWidths[2] / 2, y + 3.2, { align: "center" });
+      doc.text(c.internosScore.toFixed(1), tx + colWidths[2] / 2, y + 3.2, { align: "center" });
       tx += colWidths[2];
-      if (brecha > 0) doc.setTextColor(180, 120, 0);
-      else if (brecha < 0) doc.setTextColor(50, 140, 70);
-      doc.text((brecha > 0 ? "+" : "") + brecha.toFixed(1), tx + colWidths[3] / 2, y + 3.2, { align: "center" });
+      doc.text(c.externosScore.toFixed(1), tx + colWidths[3] / 2, y + 3.2, { align: "center" });
       doc.setTextColor(0, 0, 0);
       y += rowH;
     });
