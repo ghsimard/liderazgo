@@ -26,6 +26,16 @@ function loadImageAsBase64(src: string): Promise<string> {
   });
 }
 
+function getImageNaturalSize(src: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    img.src = src;
+  });
+}
+
 // ── Color constants (grayscale for black-ink-only printing) ──
 const COLOR_DIRECTIVO: [number, number, number] = [30, 30, 30];       // near-black
 const COLOR_INTERNOS: [number, number, number] = [120, 120, 120];     // medium gray
@@ -87,11 +97,13 @@ export async function generarReporte360PDF(
   logoSources: { logoRLT: string; logoCLT: string },
   options: { returnBlob?: boolean } = {}
 ): Promise<Blob | void> {
-  const [rltB64, cltB64, bulbB64, cosmoB64] = await Promise.all([
+  const [rltB64, cltB64, bulbB64, cosmoB64, rltSize, cltSize] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
     loadImageAsBase64(logoSources.logoCLT),
     loadImageAsBase64("/images/lightbulb-icon.png"),
     loadImageAsBase64((await import("@/assets/logo_cosmo.png")).default),
+    getImageNaturalSize(logoSources.logoRLT),
+    getImageNaturalSize(logoSources.logoCLT),
   ]);
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
@@ -115,11 +127,14 @@ export async function generarReporte360PDF(
   // ════════════════════════════════════════════════════════════
   drawPageHeader();
 
-  // Logos
-  const logoW = 30;
-  const logoH = 22;
-  doc.addImage(rltB64, "PNG", margin, 15, logoW, logoH);
-  doc.addImage(cltB64, "PNG", pageW - margin - logoW, 15, logoW, logoH);
+  // Logos at natural size (pixels to mm at 96 DPI: px * 25.4 / 96)
+  const pxToMm = 25.4 / 96;
+  const rltW = rltSize.width * pxToMm;
+  const rltH = rltSize.height * pxToMm;
+  const cltW = cltSize.width * pxToMm;
+  const cltH = cltSize.height * pxToMm;
+  doc.addImage(rltB64, "PNG", margin, 15, rltW, rltH);
+  doc.addImage(cltB64, "PNG", pageW - margin - cltW, 15, cltW, cltH);
 
   // Title block
   let y = 55;
