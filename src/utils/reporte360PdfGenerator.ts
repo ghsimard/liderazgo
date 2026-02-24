@@ -477,18 +477,23 @@ export async function generarReporte360PDF(
 // ══════════════════════════════════════════════════════════════
 
 function drawLightbulbIcon(doc: jsPDF, x: number, cy: number, size: number = 3) {
-  const r = size * 0.38;
+  // Use a simple "i" info icon instead — clean circle with "i"
+  const r = size * 0.42;
   const cx = x + size / 2;
-  const bulbCy = cy - size * 0.1;
-  doc.setDrawColor(180, 150, 50);
-  doc.setFillColor(255, 210, 60);
-  doc.circle(cx, bulbCy, r, "FD");
-  doc.setLineWidth(0.2);
-  const baseY = bulbCy + r;
-  doc.line(cx - r * 0.45, baseY + 0.3, cx + r * 0.45, baseY + 0.3);
-  doc.line(cx - r * 0.3, baseY + 0.7, cx + r * 0.3, baseY + 0.7);
+  // Filled circle
+  doc.setDrawColor(70, 130, 180);
+  doc.setFillColor(70, 130, 180);
+  doc.circle(cx, cy, r, "F");
+  // White "i" letter
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(size * 2.2);
+  doc.setFont("helvetica", "bold");
+  doc.text("i", cx, cy + r * 0.45, { align: "center" });
+  // Reset
+  doc.setTextColor(80, 80, 80);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
   doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.1);
 }
 
 // ══════════════════════════════════════════════════════════════
