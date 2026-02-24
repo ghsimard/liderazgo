@@ -262,7 +262,7 @@ export async function generarReporte360PDF(
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.text("OBSERVADORES", margin, y);
-  y += 8;
+  y += 5;
 
   // Table header
   const col1W = 45; // NÚMERO DE ENCUESTADOS
