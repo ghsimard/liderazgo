@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/utils/dbClient";
+import { apiFetch } from "@/utils/apiFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,13 +16,16 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, Trash2, KeyRound, RefreshCw } from "lucide-react";
 
+const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
+
 interface AdminUser {
   id: string;
   email: string;
   created_at: string;
-  last_sign_in_at: string | null;
+  last_sign_in_at?: string | null;
 }
 
+// ─── Supabase mode helpers ────────────────────────────
 async function invokeManageUsers(action: string, params: Record<string, unknown> = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   const { data, error } = await supabase.functions.invoke("manage-users", {
@@ -56,8 +60,14 @@ export default function AdminUsersTab() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await invokeManageUsers("list");
-      setUsers(data.users ?? []);
+      if (USE_EXPRESS) {
+        const { data, error } = await apiFetch<{ users: AdminUser[] }>("/api/users");
+        if (error) throw new Error(error);
+        setUsers(data?.users ?? []);
+      } else {
+        const data = await invokeManageUsers("list");
+        setUsers(data.users ?? []);
+      }
     } catch {
       toast({ title: "Error al cargar administradores", variant: "destructive" });
     }
@@ -73,11 +83,19 @@ export default function AdminUsersTab() {
     }
     setCreateLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      await supabase.functions.invoke("create-user", {
-        body: { email: newEmail, password: newPassword, makeAdmin: true },
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-      });
+      if (USE_EXPRESS) {
+        const { error } = await apiFetch("/api/users", {
+          method: "POST",
+          body: { email: newEmail, password: newPassword, role: "admin" },
+        });
+        if (error) throw new Error(error);
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        await supabase.functions.invoke("create-user", {
+          body: { email: newEmail, password: newPassword, makeAdmin: true },
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+      }
       toast({ title: "Administrador creado", description: newEmail });
       setCreateOpen(false);
       setNewEmail("");
@@ -93,7 +111,12 @@ export default function AdminUsersTab() {
     if (!deleteUser) return;
     setDeleteLoading(true);
     try {
-      await invokeManageUsers("delete", { user_id: deleteUser.id });
+      if (USE_EXPRESS) {
+        const { error } = await apiFetch(`/api/users/${deleteUser.id}`, { method: "DELETE" });
+        if (error) throw new Error(error);
+      } else {
+        await invokeManageUsers("delete", { user_id: deleteUser.id });
+      }
       toast({ title: "Administrador eliminado" });
       setDeleteUser(null);
       fetchUsers();
@@ -107,7 +130,15 @@ export default function AdminUsersTab() {
     if (!pwUser || !newPw) return;
     setPwLoading(true);
     try {
-      await invokeManageUsers("update_password", { user_id: pwUser.id, password: newPw });
+      if (USE_EXPRESS) {
+        const { error } = await apiFetch(`/api/users/${pwUser.id}/password`, {
+          method: "PUT",
+          body: { password: newPw },
+        });
+        if (error) throw new Error(error);
+      } else {
+        await invokeManageUsers("update_password", { user_id: pwUser.id, password: newPw });
+      }
       toast({ title: "Contraseña actualizada" });
       setPwUser(null);
       setNewPw("");
@@ -117,7 +148,7 @@ export default function AdminUsersTab() {
     setPwLoading(false);
   };
 
-  const formatDate = (d: string | null) => {
+  const formatDate = (d: string | null | undefined) => {
     if (!d) return "—";
     return new Date(d).toLocaleString("es-CO", { timeZone: "America/Bogota" });
   };
