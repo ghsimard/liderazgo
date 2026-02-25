@@ -1,12 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import logoRLT from "@/assets/logo_rlt.png";
-import logoCLT from "@/assets/logo_clt.png";
-import logoCLTDark from "@/assets/logo_clt_dark.png";
-import logoCosmo from "@/assets/logo_cosmo.png";
-import logoRLTWhite from "@/assets/logo_rlt_white.jpeg";
-import logoCLTWhite from "@/assets/logo_clt_white.jpeg";
-import logoCosmoWhite from "@/assets/logo_cosmo_white.png";
+import { useAppImages } from "@/hooks/useAppImages";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -342,6 +336,10 @@ function InstitutionSearchField({
 
 
 function RegionSelector({ onSelect, regionNames }: { onSelect: (region: string) => void; regionNames: string[] }) {
+  const { images } = useAppImages();
+  const logoRLT = images.logo_rlt;
+  const logoCLTDark = images.logo_clt_dark;
+  const logoCosmo = images.logo_cosmo;
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-sm text-center">
@@ -392,6 +390,14 @@ export default function FichaRLTForm() {
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [camposFaltantes, setCamposFaltantes] = useState<string[]>([]);
   const [mostrarModalErrores, setMostrarModalErrores] = useState(false);
+
+  const { images } = useAppImages();
+  const logoRLT = images.logo_rlt;
+  const logoCLTDark = images.logo_clt_dark;
+  const logoCosmo = images.logo_cosmo;
+  const logoRLTWhite = images.logo_rlt_white;
+  const logoCLTWhite = images.logo_clt_white;
+  const logoCosmoWhite = images.logo_cosmo_white;
 
   const geo = useGeographicData();
 

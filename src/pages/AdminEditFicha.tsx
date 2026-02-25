@@ -19,9 +19,7 @@ import {
   FormSection,
 } from "@/components/FormComponents";
 import { cn } from "@/lib/utils";
-import logoRLT from "@/assets/logo_rlt.png";
-import logoCLTDark from "@/assets/logo_clt_dark.png";
-import logoCosmo from "@/assets/logo_cosmo.png";
+import { useAppImages } from "@/hooks/useAppImages";
 import { AlertCircle, ArrowLeft, RefreshCw, Save } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -390,6 +388,10 @@ export default function AdminEditFicha() {
   const navigate = useNavigate();
   const { isAdmin } = useAdminAuth();
   const { toast } = useToast();
+  const { images } = useAppImages();
+  const logoRLT = images.logo_rlt;
+  const logoCLTDark = images.logo_clt_dark;
+  const logoCosmo = images.logo_cosmo;
 
   const [ficha, setFicha] = useState<Ficha | null>(null);
   const [loadingFicha, setLoadingFicha] = useState(!isCreateMode);

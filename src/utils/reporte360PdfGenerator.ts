@@ -94,15 +94,18 @@ Nota: si alguna de las barras o promedios está en cero es porque uno o más de 
 
 export async function generarReporte360PDF(
   data: Reporte360Data,
-  logoSources: { logoRLT: string; logoCLT: string },
+  logoSources: { logoRLT: string; logoCLT: string; logoCosmo?: string; coverBg?: string; lightbulb?: string },
   options: { returnBlob?: boolean } = {}
 ): Promise<Blob | void> {
+  const cosmoSrc = logoSources.logoCosmo || (await import("@/assets/logo_cosmo.png")).default;
+  const coverSrc = logoSources.coverBg || "/images/cover-bg-logo.png";
+  const bulbSrc = logoSources.lightbulb || "/images/lightbulb-icon.png";
   const [rltB64, cltB64, bulbB64, cosmoB64, coverBgB64, rltSize, cltSize] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
     loadImageAsBase64(logoSources.logoCLT),
-    loadImageAsBase64("/images/lightbulb-icon.png"),
-    loadImageAsBase64((await import("@/assets/logo_cosmo.png")).default),
-    loadImageAsBase64("/images/cover-bg-logo.png"),
+    loadImageAsBase64(bulbSrc),
+    loadImageAsBase64(cosmoSrc),
+    loadImageAsBase64(coverSrc),
     getImageNaturalSize(logoSources.logoRLT),
     getImageNaturalSize(logoSources.logoCLT),
   ]);
