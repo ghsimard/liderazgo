@@ -1,19 +1,29 @@
 /**
- * Supabase-compatible query builder that uses apiFetch.
- * 
- * Provides the same fluent API as the Supabase JS client so admin components
- * require minimal changes — just swap the import:
- * 
- *   Before: import { supabase } from "@/integrations/supabase/client";
- *   After:  import { supabase } from "@/utils/dbClient";
- * 
- * All queries are routed through the Express REST API via apiFetch.
- * The Express backend must implement matching endpoints.
+ * Supabase-compatible query builder — DUAL MODE.
+ *
+ * • When VITE_API_URL is set  → routes through Express REST API
+ * • When VITE_API_URL is empty → uses the real Supabase client
+ *
+ * Usage stays the same everywhere:
+ *   import { supabase } from "@/utils/dbClient";
  */
 
+import { supabase as realSupabase } from "@/integrations/supabase/client";
 import { apiFetch, getToken } from "./apiFetch";
 
-// ── Query Builder ──────────────────────────────────────
+const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
+
+// ═══════════════════════════════════════════════════════
+// If NOT using Express → just re-export the real client
+// ═══════════════════════════════════════════════════════
+
+if (!USE_EXPRESS) {
+  // Early export — skip all the shim code below
+}
+
+// ═══════════════════════════════════════════════════════
+// Express shim (only used when VITE_API_URL is set)
+// ═══════════════════════════════════════════════════════
 
 class QueryBuilder<T = any> {
   private _table: string;
@@ -49,7 +59,7 @@ class QueryBuilder<T = any> {
 
   upsert(data: any, opts?: { onConflict?: string }) {
     this._method = "POST";
-    this._body = { ...( Array.isArray(data) ? { rows: data } : data), _upsert: true, _onConflict: opts?.onConflict };
+    this._body = { ...(Array.isArray(data) ? { rows: data } : data), _upsert: true, _onConflict: opts?.onConflict };
     return this;
   }
 
@@ -92,7 +102,6 @@ class QueryBuilder<T = any> {
   single() { this._single = true; return this; }
   maybeSingle() { this._maybeSingle = true; return this; }
 
-  /** Build query string for GET requests */
   private buildQuery(): string {
     const params = new URLSearchParams();
     if (this._select !== "*") params.set("select", this._select);
@@ -112,7 +121,6 @@ class QueryBuilder<T = any> {
     return qs ? `?${qs}` : "";
   }
 
-  /** Execute the query */
   async then<R>(
     resolve: (value: { data: T | T[] | null; error: any; count?: number | null }) => R,
     reject?: (reason: any) => R
@@ -130,7 +138,6 @@ class QueryBuilder<T = any> {
         });
       }
 
-      // For mutations, include filters in the body
       const body: any = {
         _method: this._method,
         _filters: this._filters,
@@ -149,9 +156,9 @@ class QueryBuilder<T = any> {
   }
 }
 
-// ── RPC Builder ────────────────────────────────────────
+// ── Express RPC ───────────────────────────────────────
 
-async function rpc(fnName: string, params?: Record<string, any>) {
+async function expressRpc(fnName: string, params?: Record<string, any>) {
   const query = params
     ? "?" + new URLSearchParams(
         Object.entries(params).map(([k, v]) => [k, String(v)])
@@ -164,9 +171,9 @@ async function rpc(fnName: string, params?: Record<string, any>) {
   };
 }
 
-// ── Auth Compat ────────────────────────────────────────
+// ── Express Auth Compat ──────────────────────────────
 
-const auth = {
+const expressAuth = {
   async getSession() {
     const token = getToken();
     if (!token) return { data: { session: null }, error: null };
@@ -181,9 +188,9 @@ const auth = {
   },
 };
 
-// ── Functions Compat ───────────────────────────────────
+// ── Express Functions Compat ─────────────────────────
 
-const functions = {
+const expressFunctions = {
   async invoke(fnName: string, opts?: { body?: any; headers?: Record<string, string> }) {
     const result = await apiFetch<any>(`/api/${fnName}`, {
       method: opts?.body ? "POST" : "GET",
@@ -193,9 +200,9 @@ const functions = {
   },
 };
 
-// ── Storage Compat ─────────────────────────────────────
+// ── Express Storage Compat ──────────────────────────
 
-function storageFrom(bucket: string) {
+function expressStorageFrom(bucket: string) {
   return {
     async upload(path: string, file: File, opts?: { upsert?: boolean; cacheControl?: string }) {
       const formData = new FormData();
@@ -220,16 +227,16 @@ function storageFrom(bucket: string) {
   };
 }
 
-const storage = {
-  from: storageFrom,
-};
+// ═══════════════════════════════════════════════════════
+// Exported client — picks the right implementation
+// ═══════════════════════════════════════════════════════
 
-// ── Exported client (same shape as supabase client) ────
-
-export const supabase = {
+const expressClient = {
   from: <T = any>(table: string) => new QueryBuilder<T>(table),
-  rpc,
-  auth,
-  functions,
-  storage,
+  rpc: expressRpc,
+  auth: expressAuth,
+  functions: expressFunctions,
+  storage: { from: expressStorageFrom },
 };
+
+export const supabase: any = USE_EXPRESS ? expressClient : realSupabase;
