@@ -572,7 +572,7 @@ export function getItemWeightFromMap(
 
 /** Fetch weights from database, returns map { competency_key: { role: weight } } */
 export async function fetchWeightsFromDB(): Promise<Record<string, Record<string, number>>> {
-  const { supabase } = await import("@/integrations/supabase/client");
+  const { supabase } = await import("@/utils/dbClient");
   const { data } = await supabase.from("competency_weights").select("competency_key, observer_role, weight");
   const map: Record<string, Record<string, number>> = {};
   (data ?? []).forEach((row: any) => {
