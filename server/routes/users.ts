@@ -79,7 +79,7 @@ router.post("/", async (req: Request, res: Response) => {
 /** PUT /api/users/:id/password — reset password */
 router.put("/:id/password", async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { password } = req.body;
 
     if (!password || password.length < 6 || password.length > 128) {
@@ -107,7 +107,7 @@ router.put("/:id/password", async (req: Request, res: Response) => {
 /** DELETE /api/users/:id — delete a user */
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     // Prevent self-deletion
     if (id === req.user!.userId) {

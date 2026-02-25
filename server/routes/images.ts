@@ -55,7 +55,7 @@ router.post(
   upload.single("file"),
   async (req: Request, res: Response) => {
     try {
-      const { imageKey } = req.params;
+      const imageKey = req.params.imageKey as string;
       if (!req.file) {
         res.status(400).json({ error: "Fichier requis" });
         return;
@@ -81,7 +81,7 @@ router.post(
 /** DELETE /api/images/:imageKey — reset to default (admin only) */
 router.delete("/:imageKey", requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { imageKey } = req.params;
+    const imageKey = req.params.imageKey as string;
 
     // Get current file to delete from disk
     const existing = await queryOne<{ storage_path: string }>(
