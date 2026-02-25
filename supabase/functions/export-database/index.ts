@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
 
     let sql = `-- Database export generated on ${new Date().toISOString()}\n`;
     sql += `-- Project: Fichas RLT\n`;
-    sql += `-- Includes: CREATE TABLE + INSERT data\n\n`;
+    sql += `-- Includes: CREATE TABLE + INSERT data + Auth Users + Storage files\n\n`;
 
     // Get column info for all tables from information_schema
     const { data: columnsInfo } = await supabaseAdmin.rpc("get_table_columns", {
@@ -149,12 +149,6 @@ Deno.serve(async (req) => {
       }
 
       const rows = allRows;
-      const error = null;
-
-      if (error) {
-        sql += `-- Error exporting data for ${table}: ${error.message}\n\n`;
-        continue;
-      }
 
       if (!rows || rows.length === 0) {
         sql += `-- No data in ${table}\n\n`;
@@ -187,6 +181,155 @@ Deno.serve(async (req) => {
       }
 
       sql += `\n`;
+    }
+
+    // ════════════════════════════════════════════════════════
+    // AUTH USERS EXPORT
+    // ════════════════════════════════════════════════════════
+    sql += `-- ========================\n`;
+    sql += `-- AUTH USERS\n`;
+    sql += `-- ========================\n`;
+    sql += `-- Note: Passwords cannot be exported. Users will need new passwords after migration.\n\n`;
+
+    try {
+      const allUsers: any[] = [];
+      let page = 1;
+      let fetchMore = true;
+      while (fetchMore) {
+        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+          page,
+          perPage: 100,
+        });
+        if (listError || !users || users.length === 0) {
+          fetchMore = false;
+        } else {
+          allUsers.push(...users);
+          fetchMore = users.length === 100;
+          page++;
+        }
+      }
+
+      if (allUsers.length > 0) {
+        sql += `-- ${allUsers.length} user(s) found\n`;
+        sql += `-- Format: id | email | created_at | email_confirmed_at | last_sign_in_at\n\n`;
+        for (const u of allUsers) {
+          const escapedEmail = (u.email || "").replace(/'/g, "''");
+          sql += `-- User: ${u.email}\n`;
+          sql += `--   id: ${u.id}\n`;
+          sql += `--   created_at: ${u.created_at || "NULL"}\n`;
+          sql += `--   email_confirmed_at: ${u.email_confirmed_at || "NULL"}\n`;
+          sql += `--   last_sign_in_at: ${u.last_sign_in_at || "NULL"}\n\n`;
+        }
+
+        sql += `-- To recreate users in a standard PostgreSQL setup, create a users table:\n`;
+        sql += `-- CREATE TABLE IF NOT EXISTS public.users (\n`;
+        sql += `--   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n`;
+        sql += `--   email TEXT UNIQUE NOT NULL,\n`;
+        sql += `--   password_hash TEXT NOT NULL,\n`;
+        sql += `--   created_at TIMESTAMPTZ DEFAULT now(),\n`;
+        sql += `--   email_confirmed_at TIMESTAMPTZ\n`;
+        sql += `-- );\n\n`;
+
+        for (const u of allUsers) {
+          const escapedEmail = (u.email || "").replace(/'/g, "''");
+          sql += `-- INSERT INTO public.users (id, email, password_hash, created_at, email_confirmed_at)\n`;
+          sql += `-- VALUES ('${u.id}', '${escapedEmail}', 'CHANGE_ME', '${u.created_at || "now()"}', ${u.email_confirmed_at ? `'${u.email_confirmed_at}'` : "NULL"});\n`;
+        }
+        sql += `\n`;
+      } else {
+        sql += `-- No users found\n\n`;
+      }
+    } catch (authErr: any) {
+      sql += `-- Error exporting auth users: ${authErr.message}\n\n`;
+    }
+
+    // ════════════════════════════════════════════════════════
+    // STORAGE EXPORT
+    // ════════════════════════════════════════════════════════
+    sql += `-- ========================\n`;
+    sql += `-- STORAGE FILES\n`;
+    sql += `-- ========================\n\n`;
+
+    try {
+      const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+
+      if (buckets && buckets.length > 0) {
+        for (const bucket of buckets) {
+          sql += `-- Bucket: ${bucket.name} (public: ${bucket.public})\n`;
+
+          const { data: files, error: listErr } = await supabaseAdmin.storage
+            .from(bucket.name)
+            .list("", { limit: 500 });
+
+          if (listErr || !files || files.length === 0) {
+            sql += `-- No files in bucket ${bucket.name}\n\n`;
+            continue;
+          }
+
+          sql += `-- ${files.length} file(s)\n\n`;
+
+          // Section 1: Download URLs
+          sql += `-- === Download URLs ===\n`;
+          for (const file of files) {
+            if (!file.name || file.name === ".emptyFolderPlaceholder") continue;
+            const { data: urlData } = supabaseAdmin.storage
+              .from(bucket.name)
+              .getPublicUrl(file.name);
+            sql += `-- File: ${file.name}\n`;
+            sql += `--   URL: ${urlData.publicUrl}\n`;
+            sql += `--   Size: ${file.metadata?.size || "unknown"} bytes\n`;
+            sql += `--   Type: ${file.metadata?.mimetype || "unknown"}\n\n`;
+          }
+
+          // Section 2: Base64 encoded files
+          sql += `-- === Base64 Encoded Files ===\n`;
+          sql += `-- Decode with: echo "<base64>" | base64 -d > filename\n\n`;
+          for (const file of files) {
+            if (!file.name || file.name === ".emptyFolderPlaceholder") continue;
+            try {
+              const { data: fileData, error: dlErr } = await supabaseAdmin.storage
+                .from(bucket.name)
+                .download(file.name);
+
+              if (dlErr || !fileData) {
+                sql += `-- Could not download ${file.name}: ${dlErr?.message || "unknown error"}\n\n`;
+                continue;
+              }
+
+              const arrayBuffer = await fileData.arrayBuffer();
+              const bytes = new Uint8Array(arrayBuffer);
+
+              // Manual base64 encoding for Deno
+              const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+              let b64 = "";
+              for (let i = 0; i < bytes.length; i += 3) {
+                const b0 = bytes[i];
+                const b1 = i + 1 < bytes.length ? bytes[i + 1] : 0;
+                const b2 = i + 2 < bytes.length ? bytes[i + 2] : 0;
+                b64 += chars[b0 >> 2];
+                b64 += chars[((b0 & 3) << 4) | (b1 >> 4)];
+                b64 += i + 1 < bytes.length ? chars[((b1 & 15) << 2) | (b2 >> 6)] : "=";
+                b64 += i + 2 < bytes.length ? chars[b2 & 63] : "=";
+              }
+
+              // Split base64 into lines of 76 chars
+              sql += `-- FILE: ${bucket.name}/${file.name}\n`;
+              sql += `-- DECODE: echo "..." | base64 -d > ${file.name}\n`;
+              sql += `-- BEGIN BASE64\n`;
+              for (let i = 0; i < b64.length; i += 76) {
+                sql += `-- ${b64.slice(i, i + 76)}\n`;
+              }
+              sql += `-- END BASE64\n\n`;
+            } catch (fileErr: any) {
+              sql += `-- Error downloading ${file.name}: ${fileErr.message}\n\n`;
+            }
+          }
+        }
+      } else {
+        sql += `-- No storage buckets found\n\n`;
+      }
+    } catch (storageErr: any) {
+      sql += `-- Error exporting storage: ${storageErr.message}\n\n`;
     }
 
     return new Response(sql, {
