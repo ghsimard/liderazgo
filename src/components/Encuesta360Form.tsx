@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { apiFetch } from "@/utils/apiFetch";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, CheckCircle2, Info } from "lucide-react";
@@ -36,15 +36,11 @@ function InstitutionSearch({
   useEffect(() => {
     (async () => {
       if (onlyWithFichas) {
-        // Only show institutions that have at least one ficha_rlt (uses SECURITY DEFINER function)
-        const { data } = await supabase.rpc("get_instituciones_con_ficha");
+        const { data } = await apiFetch<any[]>("/api/rpc/instituciones-ficha");
         setInstituciones((data ?? []).map((r: any) => r.nombre_ie));
       } else {
-        const { data } = await supabase
-          .from("instituciones")
-          .select("nombre")
-          .order("nombre");
-        setInstituciones((data ?? []).map((i) => i.nombre));
+        const { data } = await apiFetch<any[]>("/api/geography/instituciones");
+        setInstituciones((data ?? []).map((i: any) => i.nombre));
       }
       setLoading(false);
     })();
@@ -281,10 +277,8 @@ function DirectivoSelect({
     }
     setLoading(true);
     (async () => {
-      const { data } = await supabase.rpc("get_directivos_por_institucion", {
-        p_nombre_ie: institucion,
-      });
-      setDirectivos((data as DirectivoOption[]) ?? []);
+      const { data } = await apiFetch<DirectivoOption[]>(`/api/rpc/directivos?institucion=${encodeURIComponent(institucion)}`);
+      setDirectivos(data ?? []);
       setLoading(false);
     })();
   }, [institucion]);
@@ -432,8 +426,8 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
       if (extraValues.grado_estudiante) payload.grado_estudiante = extraValues.grado_estudiante;
       if (extraValues.cargo_evaluador) payload.cargo_evaluador = extraValues.cargo_evaluador;
 
-      const { error } = await supabase.from("encuestas_360").insert(payload as any);
-      if (error) throw error;
+      const { error } = await apiFetch("/api/encuestas", { method: "POST", body: payload as any });
+      if (error) throw new Error(error);
 
       setSubmitted(true);
     } catch (err: any) {
