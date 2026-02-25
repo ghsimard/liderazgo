@@ -20,15 +20,15 @@ export interface AppImageConfig {
 }
 
 export const APP_IMAGE_CONFIGS: AppImageConfig[] = [
-  { key: "logo_rlt", label: "Logo RLT", description: "Logo principal Rectores Líderes Transformadores", fallback: staticLogoRlt },
-  { key: "logo_rlt_white", label: "Logo RLT (blanco)", description: "Version blanche pour fonds sombres", fallback: staticLogoRltWhite },
-  { key: "logo_clt", label: "Logo CLT", description: "Logo Coordinadores Líderes Transformadores", fallback: staticLogoClt },
-  { key: "logo_clt_dark", label: "Logo CLT (sombre)", description: "Version sombre du logo CLT", fallback: staticLogoCltDark },
-  { key: "logo_clt_white", label: "Logo CLT (blanco)", description: "Version blanche du logo CLT", fallback: staticLogoCltWhite },
-  { key: "logo_cosmo", label: "Logo Cosmo Schools", description: "Logo Cosmo Schools", fallback: staticLogoCosmo },
-  { key: "logo_cosmo_white", label: "Logo Cosmo Schools (blanco)", description: "Version blanche Cosmo Schools", fallback: staticLogoCosmoWhite },
-  { key: "cover_bg", label: "Image couverture PDF", description: "Arrière-plan de la page de couverture du rapport 360°", fallback: "/images/cover-bg-logo.png", isPublic: true },
-  { key: "lightbulb_icon", label: "Icône ampoule", description: "Icône utilisée dans les sections info du PDF", fallback: "/images/lightbulb-icon.png", isPublic: true },
+  { key: "logo_rlt", label: "Logo RLT", description: "Header formulaires, header admin, page login, couverture PDF 360°, en-tête PDF ficha", fallback: staticLogoRlt },
+  { key: "logo_rlt_white", label: "Logo RLT (blanco)", description: "Couverture PDF 360° (fond sombre), en-tête PDF ficha (version impression)", fallback: staticLogoRltWhite },
+  { key: "logo_clt", label: "Logo CLT", description: "Header formulaire Ficha (écran sélecteur de région)", fallback: staticLogoClt },
+  { key: "logo_clt_dark", label: "Logo CLT (sombre)", description: "Header formulaire Ficha, header admin édition ficha (fond clair)", fallback: staticLogoCltDark },
+  { key: "logo_clt_white", label: "Logo CLT (blanco)", description: "Couverture PDF 360°, en-tête PDF ficha (version impression)", fallback: staticLogoCltWhite },
+  { key: "logo_cosmo", label: "Logo Cosmo Schools", description: "Footer formulaires web (fond blanc), footer admin édition ficha", fallback: staticLogoCosmo },
+  { key: "logo_cosmo_white", label: "Logo Cosmo Schools (blanco)", description: "Footer PDF ficha (version impression, fond sombre)", fallback: staticLogoCosmoWhite },
+  { key: "cover_bg", label: "Image couverture PDF", description: "Arrière-plan page 1 du rapport PDF 360° (derrière le titre principal)", fallback: "/images/cover-bg-logo.png", isPublic: true },
+  { key: "lightbulb_icon", label: "Icône ampoule", description: "Boîtes d'information dans le rapport PDF 360° (sections conseils)", fallback: "/images/lightbulb-icon.png", isPublic: true },
 ];
 
 const FALLBACK_MAP: Record<string, string> = {};
