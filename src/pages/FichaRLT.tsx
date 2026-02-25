@@ -4,7 +4,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { apiFetch } from "@/utils/apiFetch";
+import { supabase } from "@/utils/dbClient";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
 import { useGeographicData } from "@/hooks/useGeographicData";
 import {
@@ -507,7 +507,7 @@ export default function FichaRLTForm() {
       estudiantes_ciclo_complementario: toInt(data.estudiantes_ciclo_complementario),
     };
 
-    const { error } = await apiFetch("/api/fichas", { method: "POST", body: payload as any });
+    const { error } = await supabase.from("fichas_rlt").insert(payload as any);
 
     if (error) {
       setErrorEnvio("Error al guardar la ficha. Por favor intente de nuevo.");
