@@ -158,7 +158,7 @@ function parseFiltersFromQuery(qs: Record<string, any>): Filter[] {
 
 router.get("/:table", async (req: Request, res: Response) => {
   try {
-    const { table } = req.params;
+    const table = req.params.table as string;
     if (!ALLOWED_TABLES.has(table)) {
       res.status(403).json({ error: `Table "${table}" non autorisée` });
       return;
@@ -239,7 +239,7 @@ router.get("/:table", async (req: Request, res: Response) => {
 
 router.post("/:table", async (req: Request, res: Response) => {
   try {
-    const { table } = req.params;
+    const table = req.params.table as string;
     if (!ALLOWED_TABLES.has(table)) {
       res.status(403).json({ error: `Table "${table}" non autorisée` });
       return;
