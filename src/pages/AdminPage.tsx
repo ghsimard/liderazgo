@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, getToken } from "@/utils/apiFetch";
+import { supabase as cloudClient } from "@/integrations/supabase/client";
 import { useAppImages } from "@/hooks/useAppImages";
 import AdminFichasTab from "@/components/admin/AdminFichasTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
@@ -62,6 +63,8 @@ const categories: FormCategory[] = [
   },
 ];
 
+const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
+
 function CopyLinkButton({ path }: { path: string }) {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
@@ -108,14 +111,28 @@ export default function AdminPage() {
   const handleExportDB = async () => {
     setExporting(true);
     try {
-      const token = getToken();
-      if (!token) return;
+      let blob: Blob;
 
-      const { data, error } = await apiFetch<string>("/api/export");
+      if (USE_EXPRESS) {
+        const token = getToken();
+        if (!token) throw new Error("Session admin expirée. Reconnectez-vous.");
 
-      if (error) throw new Error(error);
+        const { data, error } = await apiFetch<string>("/api/export");
+        if (error || !data) throw new Error(error || "Aucune donnée exportée.");
+        blob = new Blob([data], { type: "application/sql" });
+      } else {
+        const { data, error } = await cloudClient.functions.invoke("export-database");
+        if (error) throw new Error(error.message || "Échec de l'export.");
 
-      const blob = new Blob([data as string], { type: "application/sql" });
+        if (data instanceof Blob) {
+          blob = data;
+        } else if (typeof data === "string") {
+          blob = new Blob([data], { type: "application/sql" });
+        } else {
+          throw new Error("Réponse d'export invalide.");
+        }
+      }
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -125,8 +142,9 @@ export default function AdminPage() {
       toast({ title: "Export SQL téléchargé" });
     } catch (err: any) {
       toast({ title: "Erreur d'export", description: err.message, variant: "destructive" });
+    } finally {
+      setExporting(false);
     }
-    setExporting(false);
   };
 
   if (!isAdmin) {
