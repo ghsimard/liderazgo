@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiFetch } from "@/utils/apiFetch";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RegionData {
   id: string;
@@ -39,12 +39,12 @@ export function useGeographicData() {
   useEffect(() => {
     (async () => {
       const [eRes, rRes, rmRes, riRes, mRes, iRes] = await Promise.all([
-        apiFetch<any[]>("/api/geography/entidades"),
-        apiFetch<any[]>("/api/geography/regiones"),
-        apiFetch<any[]>("/api/geography/region-municipios"),
-        apiFetch<any[]>("/api/geography/region-instituciones"),
-        apiFetch<any[]>("/api/geography/municipios"),
-        apiFetch<any[]>("/api/geography/instituciones"),
+        supabase.from("entidades_territoriales").select("id, nombre"),
+        supabase.from("regiones").select("*"),
+        supabase.from("region_municipios").select("*"),
+        supabase.from("region_instituciones").select("*"),
+        supabase.from("municipios").select("id, nombre, entidad_territorial_id"),
+        supabase.from("instituciones").select("id, nombre, municipio_id"),
       ]);
 
       const ents = eRes.data ?? [];
