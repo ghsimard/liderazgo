@@ -117,7 +117,12 @@ Deno.serve(async (req) => {
       if (tableCols.length > 0) {
         sql += `CREATE TABLE IF NOT EXISTS public.${table} (\n`;
         const colDefs = tableCols.map((c: any) => {
-          let def = `  "${c.column_name}" ${c.udt_name_full}`;
+          // Fix array types: Supabase returns "_text" for text[], "_int4" for int[], etc.
+          let colType = c.udt_name_full;
+          if (colType.startsWith("_")) {
+            colType = colType.substring(1) + "[]";
+          }
+          let def = `  "${c.column_name}" ${colType}`;
           if (c.is_nullable === "NO") def += " NOT NULL";
           if (c.column_default) def += ` DEFAULT ${c.column_default}`;
           return def;
@@ -199,6 +204,9 @@ Deno.serve(async (req) => {
                 .map((v: unknown) => `'${String(v).replace(/'/g, "''")}'`)
                 .join(", ");
               return `ARRAY[${items}]`;
+            }
+            if (typeof val === "object") {
+              return `'${JSON.stringify(val).replace(/'/g, "''")}'`;
             }
             return `'${String(val).replace(/'/g, "''")}'`;
           })
