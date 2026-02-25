@@ -120,10 +120,35 @@ Deno.serve(async (req) => {
         sql += `\n);\n\n`;
       }
 
-      // Get all data
-      const { data: rows, error } = await supabaseAdmin
-        .from(table)
-        .select("*");
+      // Get all data (paginated to avoid 1000-row limit)
+      let allRows: Record<string, unknown>[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data: page, error: pageError } = await supabaseAdmin
+          .from(table)
+          .select("*")
+          .range(from, from + pageSize - 1);
+
+        if (pageError) {
+          sql += `-- Error exporting data for ${table}: ${pageError.message}\n\n`;
+          hasMore = false;
+          break;
+        }
+
+        if (page && page.length > 0) {
+          allRows = allRows.concat(page);
+          from += pageSize;
+          hasMore = page.length === pageSize;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      const rows = allRows;
+      const error = null;
 
       if (error) {
         sql += `-- Error exporting data for ${table}: ${error.message}\n\n`;
