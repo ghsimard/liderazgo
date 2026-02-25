@@ -73,6 +73,7 @@ Deno.serve(async (req) => {
       "encuestas_360",
       "deleted_records",
       "user_roles",
+      "app_images",
     ];
 
     let sql = `-- Database export generated on ${new Date().toISOString()}\n`;
