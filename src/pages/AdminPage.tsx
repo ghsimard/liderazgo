@@ -3,10 +3,10 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3 } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import logoRLT from "@/assets/logo_rlt.png";
+import { useAppImages } from "@/hooks/useAppImages";
 import AdminFichasTab from "@/components/admin/AdminFichasTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminGeographyTab from "@/components/admin/AdminGeographyTab";
@@ -18,6 +18,7 @@ import AdminCompetencyWizard from "@/components/admin/AdminCompetencyWizard";
 import AdminTrashManager from "@/components/admin/AdminTrashManager";
 import AdminReporte360Tab from "@/components/admin/AdminReporte360Tab";
 import AdminEncuestas360Tab from "@/components/admin/AdminEncuestas360Tab";
+import AdminImagesTab from "@/components/admin/AdminImagesTab";
 
 interface FormItem {
   name: string;
@@ -98,6 +99,8 @@ function FormCard({ form }: { form: FormItem }) {
 export default function AdminPage() {
   const { isAdmin, signOut } = useAdminAuth();
   const { toast } = useToast();
+  const { images } = useAppImages();
+  const logoRLT = images.logo_rlt;
   const [exporting, setExporting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
@@ -164,6 +167,7 @@ export default function AdminPage() {
             <TabsTrigger value="encuestas360" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Encuestas 360°</TabsTrigger>
             <TabsTrigger value="reportes360" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Informes 360°</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
+            <TabsTrigger value="images" className="gap-1.5"><ImageIcon className="w-4 h-4" /> Images</TabsTrigger>
           </TabsList>
           <TabsContent value="formularios">
             <div className="space-y-8">
@@ -228,6 +232,7 @@ export default function AdminPage() {
           <TabsContent value="encuestas360"><AdminEncuestas360Tab /></TabsContent>
           <TabsContent value="reportes360"><AdminReporte360Tab /></TabsContent>
           <TabsContent value="users"><AdminUsersTab /></TabsContent>
+          <TabsContent value="images"><AdminImagesTab /></TabsContent>
         </Tabs>
       </div>
     </div>

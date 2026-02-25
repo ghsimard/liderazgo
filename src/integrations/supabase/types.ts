@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_images: {
+        Row: {
+          id: string
+          image_key: string
+          storage_path: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          image_key: string
+          storage_path: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          image_key?: string
+          storage_path?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       competencies_360: {
         Row: {
           domain_id: string

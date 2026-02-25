@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LogOut, RefreshCw, Copy, Check, FileText, ClipboardList, Users, GraduationCap, UserCheck, BookOpen, School } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import logoRLT from "@/assets/logo_rlt.png";
+import { useAppImages } from "@/hooks/useAppImages";
 
 interface FormItem {
   name: string;
@@ -84,6 +84,8 @@ function FormCard({ form }: { form: FormItem }) {
 
 export default function AdminDashboard() {
   const { isAdmin, signOut } = useAdminAuth();
+  const { images } = useAppImages();
+  const logoRLT = images.logo_rlt;
 
   if (!isAdmin) {
     return (

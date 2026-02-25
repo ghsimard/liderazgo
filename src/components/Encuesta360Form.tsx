@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, CheckCircle2, Info } from "lucide-react";
-import logoRLT from "@/assets/logo_rlt.png";
+import { useAppImages } from "@/hooks/useAppImages";
 import {
   type SurveyFormConfig,
   GLOSSARY,
@@ -337,6 +337,8 @@ interface Encuesta360FormProps {
 }
 
 export default function Encuesta360Form({ config }: Encuesta360FormProps) {
+  const { images } = useAppImages();
+  const logoRLT = images.logo_rlt;
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);

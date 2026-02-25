@@ -9,8 +9,7 @@ import { calcularReporte360, type Reporte360Data } from "@/utils/reporte360Calcu
 import { generarReporte360PDF } from "@/utils/reporte360PdfGenerator";
 import AdminReporte360Viewer from "./AdminReporte360Viewer";
 import AdminEncuestaMonitor from "./AdminEncuestaMonitor";
-import logoRLT from "@/assets/logo_rlt_white.jpeg";
-import logoCLT from "@/assets/logo_clt_white.jpeg";
+import { useAppImages } from "@/hooks/useAppImages";
 import JSZip from "jszip";
 
 interface DirectivoOption {
@@ -21,6 +20,9 @@ interface DirectivoOption {
 }
 
 export default function AdminReporte360Tab() {
+  const { images } = useAppImages();
+  const logoRLT = images.logo_rlt_white;
+  const logoCLT = images.logo_clt_white;
   const { toast } = useToast();
   const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ export default function AdminReporte360Tab() {
     setGenerating(d.nombre);
     try {
       const data = await calcularReporte360(d.nombre, d.institucion);
-      await generarReporte360PDF(data, { logoRLT, logoCLT });
+      await generarReporte360PDF(data, { logoRLT, logoCLT, logoCosmo: images.logo_cosmo, coverBg: images.cover_bg, lightbulb: images.lightbulb_icon });
       toast({ title: "Informe generado", description: `PDF descargado para ${d.nombre}` });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -94,7 +96,7 @@ export default function AdminReporte360Tab() {
       for (const d of regionDirectivos) {
         try {
           const data = await calcularReporte360(d.nombre, d.institucion);
-          const blob = await generarReporte360PDF(data, { logoRLT, logoCLT }, { returnBlob: true });
+          const blob = await generarReporte360PDF(data, { logoRLT, logoCLT, logoCosmo: images.logo_cosmo, coverBg: images.cover_bg, lightbulb: images.lightbulb_icon }, { returnBlob: true });
           if (blob) {
             const fileName = `Informe_360_${d.nombre.replace(/\s+/g, "_")}.pdf`;
             zip.file(fileName, blob);
