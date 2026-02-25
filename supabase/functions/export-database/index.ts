@@ -88,6 +88,11 @@ Deno.serve(async (req) => {
     // Get enum types
     const { data: enumInfo } = await supabaseAdmin.rpc("get_enum_types");
 
+    // Get constraints (PK, UNIQUE, FK)
+    const { data: constraintsInfo } = await supabaseAdmin.rpc("get_table_constraints", {
+      table_names: tables,
+    });
+
     // Export enums first
     if (enumInfo && enumInfo.length > 0) {
       sql += `-- ========================\n`;
@@ -119,6 +124,27 @@ Deno.serve(async (req) => {
         });
         sql += colDefs.join(",\n");
         sql += `\n);\n\n`;
+      }
+
+      // Add constraints (PK, UNIQUE, FK)
+      const tableConstraints = (constraintsInfo || []).filter(
+        (c: any) => c.table_name === table
+      );
+
+      for (const c of tableConstraints) {
+        const cols = c.column_names.split(", ").map((col: string) => `"${col.trim()}"`).join(", ");
+        if (c.constraint_type === "PRIMARY KEY") {
+          sql += `ALTER TABLE public.${table} ADD CONSTRAINT "${c.constraint_name}" PRIMARY KEY (${cols});\n`;
+        } else if (c.constraint_type === "UNIQUE") {
+          sql += `ALTER TABLE public.${table} ADD CONSTRAINT "${c.constraint_name}" UNIQUE (${cols});\n`;
+        } else if (c.constraint_type === "FOREIGN KEY" && c.foreign_table) {
+          const fCols = c.foreign_columns.split(", ").map((col: string) => `"${col.trim()}"`).join(", ");
+          sql += `ALTER TABLE public.${table} ADD CONSTRAINT "${c.constraint_name}" FOREIGN KEY (${cols}) REFERENCES public.${c.foreign_table} (${fCols});\n`;
+        }
+      }
+
+      if (tableConstraints.length > 0) {
+        sql += `\n`;
       }
 
       // Get all data (paginated to avoid 1000-row limit)
