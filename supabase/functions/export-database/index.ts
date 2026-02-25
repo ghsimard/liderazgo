@@ -138,14 +138,23 @@ Deno.serve(async (req) => {
 
       for (const c of tableConstraints) {
         const cols = c.column_names.split(", ").map((col: string) => `"${col.trim()}"`).join(", ");
-        sql += `ALTER TABLE public.${table} DROP CONSTRAINT IF EXISTS "${c.constraint_name}";\n`;
         if (c.constraint_type === "PRIMARY KEY") {
-          sql += `ALTER TABLE public.${table} ADD CONSTRAINT "${c.constraint_name}" PRIMARY KEY (${cols});\n`;
+          // Use DO block to only add if not exists (avoids DROP CASCADE issues)
+          sql += `DO $$ BEGIN\n`;
+          sql += `  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '${c.constraint_name}') THEN\n`;
+          sql += `    ALTER TABLE public.${table} ADD CONSTRAINT "${c.constraint_name}" PRIMARY KEY (${cols});\n`;
+          sql += `  END IF;\nEND $$;\n`;
         } else if (c.constraint_type === "UNIQUE") {
-          sql += `ALTER TABLE public.${table} ADD CONSTRAINT "${c.constraint_name}" UNIQUE (${cols});\n`;
+          sql += `DO $$ BEGIN\n`;
+          sql += `  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '${c.constraint_name}') THEN\n`;
+          sql += `    ALTER TABLE public.${table} ADD CONSTRAINT "${c.constraint_name}" UNIQUE (${cols});\n`;
+          sql += `  END IF;\nEND $$;\n`;
         } else if (c.constraint_type === "FOREIGN KEY" && c.foreign_table) {
           const fCols = c.foreign_columns.split(", ").map((col: string) => `"${col.trim()}"`).join(", ");
-          sql += `ALTER TABLE public.${table} ADD CONSTRAINT "${c.constraint_name}" FOREIGN KEY (${cols}) REFERENCES public.${c.foreign_table} (${fCols});\n`;
+          sql += `DO $$ BEGIN\n`;
+          sql += `  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '${c.constraint_name}') THEN\n`;
+          sql += `    ALTER TABLE public.${table} ADD CONSTRAINT "${c.constraint_name}" FOREIGN KEY (${cols}) REFERENCES public.${c.foreign_table} (${fCols});\n`;
+          sql += `  END IF;\nEND $$;\n`;
         }
       }
 
