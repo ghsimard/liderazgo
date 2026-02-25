@@ -42,17 +42,13 @@ interface AppImagesState {
 let cachedImages: Record<string, string> | null = null;
 let cachePromise: Promise<Record<string, string>> | null = null;
 
-function buildPublicUrl(storagePath: string): string {
-  const { data } = supabase.storage.from("app-images").getPublicUrl(storagePath);
-  return data.publicUrl;
-}
-
 async function fetchImages(): Promise<Record<string, string>> {
   const result = { ...FALLBACK_MAP };
   const { data } = await supabase.from("app_images").select("image_key, storage_path");
   if (data) {
     for (const row of data) {
-      result[row.image_key] = buildPublicUrl(row.storage_path);
+      // storage_path now contains the direct URL or relative path
+      result[row.image_key] = row.storage_path;
     }
   }
   return result;
