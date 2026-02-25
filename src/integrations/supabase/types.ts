@@ -669,6 +669,17 @@ export type Database = {
           udt_name_full: string
         }[]
       }
+      get_table_constraints: {
+        Args: { table_names: string[] }
+        Returns: {
+          column_names: string
+          constraint_name: string
+          constraint_type: string
+          foreign_columns: string
+          foreign_table: string
+          table_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
