@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { apiFetch, getToken } from "@/utils/apiFetch";
 import { useAppImages } from "@/hooks/useAppImages";
 import AdminFichasTab from "@/components/admin/AdminFichasTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
@@ -108,16 +108,14 @@ export default function AdminPage() {
   const handleExportDB = async () => {
     setExporting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const token = getToken();
+      if (!token) return;
 
-      const res = await supabase.functions.invoke("export-database", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
+      const { data, error } = await apiFetch<string>("/api/export");
 
-      if (res.error) throw res.error;
+      if (error) throw new Error(error);
 
-      const blob = new Blob([res.data], { type: "application/sql" });
+      const blob = new Blob([data as string], { type: "application/sql" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
