@@ -19,23 +19,26 @@ export default function AdminImagesTab() {
       const ext = file.name.split(".").pop() || "png";
       const storagePath = `${imageKey}.${ext}`;
 
-      // Upload to storage (upsert)
+      // Upload to storage bucket
       const { error: uploadError } = await supabase.storage
         .from("app-images")
         .upload(storagePath, file, { upsert: true, cacheControl: "0" });
 
       if (uploadError) throw uploadError;
 
-      // Upsert metadata row
+      // Get the full public URL to store in DB
+      const { data: urlData } = supabase.storage.from("app-images").getPublicUrl(storagePath);
+      const publicUrl = urlData.publicUrl;
+
+      // Upsert metadata row with the full URL as the path
       const { error: dbError } = await supabase
         .from("app_images")
-        .upsert({ image_key: imageKey, storage_path: storagePath, updated_at: new Date().toISOString() }, { onConflict: "image_key" });
+        .upsert({ image_key: imageKey, storage_path: publicUrl, updated_at: new Date().toISOString() }, { onConflict: "image_key" });
 
       if (dbError) throw dbError;
 
       // Show new image locally
-      const { data } = supabase.storage.from("app-images").getPublicUrl(storagePath);
-      setLocalOverrides((prev) => ({ ...prev, [imageKey]: `${data.publicUrl}?t=${Date.now()}` }));
+      setLocalOverrides((prev) => ({ ...prev, [imageKey]: `${publicUrl}?t=${Date.now()}` }));
       invalidateAppImagesCache();
 
       toast({ title: "Image mise à jour", description: `${imageKey} a été remplacée.` });

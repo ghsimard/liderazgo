@@ -271,93 +271,17 @@ Deno.serve(async (req) => {
     }
 
     // ════════════════════════════════════════════════════════
-    // STORAGE EXPORT
+    // STORAGE / IMAGES NOTE
     // ════════════════════════════════════════════════════════
     sql += `-- ========================\n`;
-    sql += `-- STORAGE FILES\n`;
-    sql += `-- ========================\n\n`;
-
-    try {
-      const { data: buckets } = await supabaseAdmin.storage.listBuckets();
-
-      if (buckets && buckets.length > 0) {
-        for (const bucket of buckets) {
-          sql += `-- Bucket: ${bucket.name} (public: ${bucket.public})\n`;
-
-          const { data: files, error: listErr } = await supabaseAdmin.storage
-            .from(bucket.name)
-            .list("", { limit: 500 });
-
-          if (listErr || !files || files.length === 0) {
-            sql += `-- No files in bucket ${bucket.name}\n\n`;
-            continue;
-          }
-
-          sql += `-- ${files.length} file(s)\n\n`;
-
-          // Section 1: Download URLs
-          sql += `-- === Download URLs ===\n`;
-          for (const file of files) {
-            if (!file.name || file.name === ".emptyFolderPlaceholder") continue;
-            const { data: urlData } = supabaseAdmin.storage
-              .from(bucket.name)
-              .getPublicUrl(file.name);
-            sql += `-- File: ${file.name}\n`;
-            sql += `--   URL: ${urlData.publicUrl}\n`;
-            sql += `--   Size: ${file.metadata?.size || "unknown"} bytes\n`;
-            sql += `--   Type: ${file.metadata?.mimetype || "unknown"}\n\n`;
-          }
-
-          // Section 2: Base64 encoded files
-          sql += `-- === Base64 Encoded Files ===\n`;
-          sql += `-- Decode with: echo "<base64>" | base64 -d > filename\n\n`;
-          for (const file of files) {
-            if (!file.name || file.name === ".emptyFolderPlaceholder") continue;
-            try {
-              const { data: fileData, error: dlErr } = await supabaseAdmin.storage
-                .from(bucket.name)
-                .download(file.name);
-
-              if (dlErr || !fileData) {
-                sql += `-- Could not download ${file.name}: ${dlErr?.message || "unknown error"}\n\n`;
-                continue;
-              }
-
-              const arrayBuffer = await fileData.arrayBuffer();
-              const bytes = new Uint8Array(arrayBuffer);
-
-              // Manual base64 encoding for Deno
-              const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-              let b64 = "";
-              for (let i = 0; i < bytes.length; i += 3) {
-                const b0 = bytes[i];
-                const b1 = i + 1 < bytes.length ? bytes[i + 1] : 0;
-                const b2 = i + 2 < bytes.length ? bytes[i + 2] : 0;
-                b64 += chars[b0 >> 2];
-                b64 += chars[((b0 & 3) << 4) | (b1 >> 4)];
-                b64 += i + 1 < bytes.length ? chars[((b1 & 15) << 2) | (b2 >> 6)] : "=";
-                b64 += i + 2 < bytes.length ? chars[b2 & 63] : "=";
-              }
-
-              // Split base64 into lines of 76 chars
-              sql += `-- FILE: ${bucket.name}/${file.name}\n`;
-              sql += `-- DECODE: echo "..." | base64 -d > ${file.name}\n`;
-              sql += `-- BEGIN BASE64\n`;
-              for (let i = 0; i < b64.length; i += 76) {
-                sql += `-- ${b64.slice(i, i + 76)}\n`;
-              }
-              sql += `-- END BASE64\n\n`;
-            } catch (fileErr: any) {
-              sql += `-- Error downloading ${file.name}: ${fileErr.message}\n\n`;
-            }
-          }
-        }
-      } else {
-        sql += `-- No storage buckets found\n\n`;
-      }
-    } catch (storageErr: any) {
-      sql += `-- Error exporting storage: ${storageErr.message}\n\n`;
-    }
+    sql += `-- IMAGES\n`;
+    sql += `-- ========================\n`;
+    sql += `-- Images are referenced by URL/path in the app_images table (storage_path column).\n`;
+    sql += `-- For migration to a standard server (e.g. Render):\n`;
+    sql += `--   1. Download each image from its storage_path URL\n`;
+    sql += `--   2. Place them in your public/images/ folder\n`;
+    sql += `--   3. UPDATE app_images SET storage_path = '/images/<filename>' WHERE image_key = '<key>';\n`;
+    sql += `-- The app reads storage_path directly as the image source.\n\n`;
 
     return new Response(sql, {
       headers: {
