@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Trash2, KeyRound, RefreshCw } from "lucide-react";
+import { UserPlus, Trash2, KeyRound, RefreshCw, Eye, EyeOff } from "lucide-react";
 
 const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
@@ -55,7 +55,9 @@ export default function AdminUsersTab() {
   // Password dialog
   const [pwUser, setPwUser] = useState<AdminUser | null>(null);
   const [newPw, setNewPw] = useState("");
-  const [pwLoading, setPwLoading] = useState(false);
+const [pwLoading, setPwLoading] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showPwPassword, setShowPwPassword] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -207,7 +209,7 @@ export default function AdminUsersTab() {
       </div>
 
       {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setNewEmail(""); setNewPassword(""); } }}>
+      <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setNewEmail(""); setNewPassword(""); setShowNewPassword(false); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Crear administrador</DialogTitle>
@@ -215,7 +217,12 @@ export default function AdminUsersTab() {
           </DialogHeader>
           <div className="flex flex-col gap-3 py-2">
             <Input type="email" placeholder="Correo electrónico" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
-            <Input type="password" placeholder="Contraseña (mín. 6 caracteres)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+            <div className="relative">
+              <Input type={showNewPassword ? "text" : "password"} placeholder="Contraseña (mín. 6 caracteres)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="pr-10" />
+              <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-10" onClick={() => setShowNewPassword(!showNewPassword)} tabIndex={-1}>
+                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
@@ -241,13 +248,18 @@ export default function AdminUsersTab() {
       </AlertDialog>
 
       {/* Password Dialog */}
-      <Dialog open={!!pwUser} onOpenChange={(o) => { if (!o) { setPwUser(null); setNewPw(""); } }}>
+      <Dialog open={!!pwUser} onOpenChange={(o) => { if (!o) { setPwUser(null); setNewPw(""); setShowPwPassword(false); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Cambiar contraseña</DialogTitle>
             <DialogDescription>Nueva contraseña para {pwUser?.email}</DialogDescription>
           </DialogHeader>
-          <Input type="password" placeholder="Nueva contraseña" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+          <div className="relative">
+            <Input type={showPwPassword ? "text" : "password"} placeholder="Nueva contraseña" value={newPw} onChange={(e) => setNewPw(e.target.value)} className="pr-10" />
+            <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-10" onClick={() => setShowPwPassword(!showPwPassword)} tabIndex={-1}>
+              {showPwPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </Button>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPwUser(null)}>Cancelar</Button>
             <Button onClick={handleUpdatePassword} disabled={pwLoading || !newPw}>{pwLoading ? "Guardando…" : "Guardar"}</Button>
