@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/utils/dbClient";
 import {
   FORM_TYPE_TO_ROLE,
   ROLE_LABELS,

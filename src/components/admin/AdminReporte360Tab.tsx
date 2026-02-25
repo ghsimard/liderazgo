@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -53,7 +53,7 @@ export default function AdminReporte360Tab() {
       region: f.region,
     }));
     setDirectivos(list);
-    setRegions([...new Set(list.map((d) => d.region).filter(Boolean))]);
+    setRegions([...new Set(list.map((d) => d.region).filter(Boolean))] as string[]);
     setLoading(false);
   };
 

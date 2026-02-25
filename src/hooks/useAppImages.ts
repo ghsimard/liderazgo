@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiFetch } from "@/utils/apiFetch";
 
 // Static fallback imports
 import staticLogoRlt from "@/assets/logo_rlt.png";
@@ -44,10 +44,9 @@ let cachePromise: Promise<Record<string, string>> | null = null;
 
 async function fetchImages(): Promise<Record<string, string>> {
   const result = { ...FALLBACK_MAP };
-  const { data } = await supabase.from("app_images").select("image_key, storage_path");
-  if (data) {
-    for (const row of data) {
-      // storage_path now contains the direct URL or relative path
+  const { data } = await apiFetch<{ images: { image_key: string; storage_path: string }[] }>("/api/images");
+  if (data?.images) {
+    for (const row of data.images) {
       result[row.image_key] = row.storage_path;
     }
   }
