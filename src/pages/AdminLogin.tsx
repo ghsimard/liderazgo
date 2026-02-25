@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { apiLogin } from "@/utils/apiFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,31 +17,15 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: loginError } = await apiLogin(email, password);
 
-    if (authError) {
-      setError("Correo o contraseña incorrectos.");
-      setLoading(false);
-      return;
-    }
-
-    // Verificar que sea admin
-    const { data: roleData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (!roleData) {
-      await supabase.auth.signOut();
-      setError("No tienes permisos de administrador.");
+    if (loginError || !data) {
+      setError(loginError || "Correo o contraseña incorrectos.");
       setLoading(false);
       return;
     }

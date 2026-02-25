@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { apiGetMe, apiLogout, isAuthenticated } from "@/utils/apiFetch";
 
 export function useAdminAuth() {
   const navigate = useNavigate();
@@ -9,34 +9,28 @@ export function useAdminAuth() {
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!isAuthenticated()) {
         navigate("/admin/login");
         return;
       }
 
-      const { data: roleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+      const { data, error } = await apiGetMe();
 
-      if (!roleData) {
-        await supabase.auth.signOut();
+      if (error || !data?.user) {
+        apiLogout();
         navigate("/admin/login");
         return;
       }
 
       setIsAdmin(true);
-      setUserId(session.user.id);
+      setUserId(data.user.id);
     };
 
     checkAdmin();
   }, [navigate]);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const signOut = () => {
+    apiLogout();
     navigate("/admin/login");
   };
 
