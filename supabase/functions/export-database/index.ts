@@ -133,6 +133,7 @@ Deno.serve(async (req) => {
 
       for (const c of tableConstraints) {
         const cols = c.column_names.split(", ").map((col: string) => `"${col.trim()}"`).join(", ");
+        sql += `ALTER TABLE public.${table} DROP CONSTRAINT IF EXISTS "${c.constraint_name}";\n`;
         if (c.constraint_type === "PRIMARY KEY") {
           sql += `ALTER TABLE public.${table} ADD CONSTRAINT "${c.constraint_name}" PRIMARY KEY (${cols});\n`;
         } else if (c.constraint_type === "UNIQUE") {
