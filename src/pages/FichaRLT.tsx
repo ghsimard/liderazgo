@@ -447,6 +447,13 @@ export default function FichaRLTForm() {
   })();
   const tienesMunicipios = municipiosRegion.length > 1;
   const municipios = tienesMunicipios ? municipiosRegion : [];
+
+  // Auto-select single municipio when filtered list has exactly 1
+  if (municipiosRegion.length === 1 && municipioSeleccionado !== municipiosRegion[0]) {
+    // Use setTimeout to avoid setState during render
+    setTimeout(() => setMunicipioSeleccionado(municipiosRegion[0]), 0);
+  }
+
   const instituciones = tienesMunicipios && municipioSeleccionado
     ? geo.getInstitucionesForMunicipio(regionActual ?? "", municipioSeleccionado)
     : (regionActual ? geo.getInstitucionesForRegion(regionActual) : []);
