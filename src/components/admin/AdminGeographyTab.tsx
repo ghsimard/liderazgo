@@ -39,9 +39,13 @@ interface Institucion {
 interface Region {
   id: string;
   nombre: string;
-  entidad_territorial_id: string;
   mostrar_logo_rlt: boolean;
   mostrar_logo_clt: boolean;
+}
+
+interface RegionEntidad {
+  region_id: string;
+  entidad_territorial_id: string;
 }
 
 export default function AdminGeographyTab() {
@@ -53,6 +57,7 @@ export default function AdminGeographyTab() {
   const [regiones, setRegiones] = useState<Region[]>([]);
   const [regionMunicipios, setRegionMunicipios] = useState<{ region_id: string; municipio_id: string }[]>([]);
   const [regionInstituciones, setRegionInstituciones] = useState<{ region_id: string; institucion_id: string }[]>([]);
+  const [regionEntidades, setRegionEntidades] = useState<RegionEntidad[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Dialogs
@@ -72,7 +77,7 @@ export default function AdminGeographyTab() {
 
   // Region dialog
   const [regionName, setRegionName] = useState("");
-  const [regionEntidad, setRegionEntidad] = useState("");
+  const [regionSelectedEntidades, setRegionSelectedEntidades] = useState<string[]>([]);
   const [regionSelectedMunicipios, setRegionSelectedMunicipios] = useState<string[]>([]);
   const [regionSelectedInstituciones, setRegionSelectedInstituciones] = useState<string[]>([]);
   const [regionMostrarLogoRlt, setRegionMostrarLogoRlt] = useState(true);
@@ -89,11 +94,12 @@ export default function AdminGeographyTab() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [e, m, i, r, rm, ri] = await Promise.all([
+    const [e, m, i, r, re, rm, ri] = await Promise.all([
       supabase.from("entidades_territoriales").select("*").order("nombre"),
       supabase.from("municipios").select("*").order("nombre"),
       supabase.from("instituciones").select("*").order("nombre"),
       supabase.from("regiones").select("*").order("nombre"),
+      supabase.from("region_entidades").select("*"),
       supabase.from("region_municipios").select("*"),
       supabase.from("region_instituciones").select("*"),
     ]);
@@ -101,6 +107,7 @@ export default function AdminGeographyTab() {
     setMunicipios(m.data ?? []);
     setInstituciones(i.data ?? []);
     setRegiones(r.data ?? []);
+    setRegionEntidades((re.data ?? []) as RegionEntidad[]);
     setRegionMunicipios(rm.data ?? []);
     setRegionInstituciones(ri.data ?? []);
     setLoading(false);
@@ -188,7 +195,7 @@ export default function AdminGeographyTab() {
     if (region) {
       setEditRegion(region);
       setRegionName(region.nombre);
-      setRegionEntidad(region.entidad_territorial_id);
+      setRegionSelectedEntidades(regionEntidades.filter(re => re.region_id === region.id).map(re => re.entidad_territorial_id));
       setRegionMostrarLogoRlt(region.mostrar_logo_rlt);
       setRegionMostrarLogoClt(region.mostrar_logo_clt);
       setRegionSelectedMunicipios(regionMunicipios.filter(rm => rm.region_id === region.id).map(rm => rm.municipio_id));
@@ -196,7 +203,7 @@ export default function AdminGeographyTab() {
     } else {
       setEditRegion(null);
       setRegionName("");
-      setRegionEntidad("");
+      setRegionSelectedEntidades([]);
       setRegionMostrarLogoRlt(true);
       setRegionMostrarLogoClt(true);
       setRegionSelectedMunicipios([]);
@@ -206,8 +213,17 @@ export default function AdminGeographyTab() {
   };
 
   const saveRegion = async () => {
-    if (!regionName.trim() || !regionEntidad) return;
+    if (!regionName.trim() || regionSelectedEntidades.length === 0) return;
     setSaving(true);
+
+    const syncEntidades = async (regionId: string) => {
+      await supabase.from("region_entidades").delete().eq("region_id", regionId);
+      if (regionSelectedEntidades.length > 0) {
+        await supabase.from("region_entidades").insert(
+          regionSelectedEntidades.map(eid => ({ region_id: regionId, entidad_territorial_id: eid }))
+        );
+      }
+    };
 
     const syncInstituciones = async (regionId: string) => {
       await supabase.from("region_instituciones").delete().eq("region_id", regionId);
@@ -219,7 +235,8 @@ export default function AdminGeographyTab() {
     };
 
     if (editRegion) {
-      await supabase.from("regiones").update({ nombre: regionName.trim(), entidad_territorial_id: regionEntidad, mostrar_logo_rlt: regionMostrarLogoRlt, mostrar_logo_clt: regionMostrarLogoClt }).eq("id", editRegion.id);
+      await supabase.from("regiones").update({ nombre: regionName.trim(), mostrar_logo_rlt: regionMostrarLogoRlt, mostrar_logo_clt: regionMostrarLogoClt }).eq("id", editRegion.id);
+      await syncEntidades(editRegion.id);
       await supabase.from("region_municipios").delete().eq("region_id", editRegion.id);
       if (regionSelectedMunicipios.length > 0) {
         await supabase.from("region_municipios").insert(
@@ -229,9 +246,10 @@ export default function AdminGeographyTab() {
       await syncInstituciones(editRegion.id);
       toast({ title: "Región actualizada" });
     } else {
-      const { data, error } = await supabase.from("regiones").insert({ nombre: regionName.trim(), entidad_territorial_id: regionEntidad, mostrar_logo_rlt: regionMostrarLogoRlt, mostrar_logo_clt: regionMostrarLogoClt }).select().single();
+      const { data, error } = await supabase.from("regiones").insert({ nombre: regionName.trim(), mostrar_logo_rlt: regionMostrarLogoRlt, mostrar_logo_clt: regionMostrarLogoClt }).select().single();
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
       if (data) {
+        await syncEntidades(data.id);
         if (regionSelectedMunicipios.length > 0) {
           await supabase.from("region_municipios").insert(
             regionSelectedMunicipios.map(mid => ({ region_id: data.id, municipio_id: mid }))
@@ -483,14 +501,15 @@ export default function AdminGeographyTab() {
               {regiones.length === 0 ? (
                 <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Sin regiones</TableCell></TableRow>
               ) : regiones.map((r) => {
-                const entidad = entidades.find(e => e.id === r.entidad_territorial_id);
+                const rEnts = regionEntidades.filter(re => re.region_id === r.id);
+                const entNames = rEnts.map(re => entidades.find(e => e.id === re.entidad_territorial_id)?.nombre).filter(Boolean);
                 const rMunis = regionMunicipios.filter(rm => rm.region_id === r.id);
                 const muniNames = rMunis.map(rm => municipios.find(m => m.id === rm.municipio_id)?.nombre).filter(Boolean);
                 const logos = [r.mostrar_logo_rlt && "RLT", r.mostrar_logo_clt && "CLT"].filter(Boolean).join(" + ") || "—";
                 return (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.nombre}</TableCell>
-                    <TableCell className="text-sm">{entidad?.nombre ?? "—"}</TableCell>
+                    <TableCell className="text-sm">{entNames.length > 0 ? entNames.join(", ") : "—"}</TableCell>
                     <TableCell className="text-sm">{logos}</TableCell>
                     <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate" title={muniNames.join(", ")}>
                       {muniNames.length > 0 ? muniNames.join(", ") : "—"}
@@ -675,125 +694,153 @@ export default function AdminGeographyTab() {
               </label>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Entidad Territorial</label>
-              <select
-                value={regionEntidad}
-                onChange={(e) => { setRegionEntidad(e.target.value); setRegionSelectedMunicipios([]); }}
-                className="w-full border rounded-md px-3 py-2 text-sm bg-background"
-              >
-                <option value="">Seleccionar…</option>
-                {entidades.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-              </select>
-            </div>
-            {regionEntidad && (
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium">Municipios incluidos</label>
-                  {municipiosByEntidad(regionEntidad).length > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-6 px-2"
-                      onClick={() => {
-                        const allMuniIds = municipiosByEntidad(regionEntidad).map(m => m.id);
-                        const allSelected = allMuniIds.every(id => regionSelectedMunicipios.includes(id));
-                        if (allSelected) {
-                          setRegionSelectedMunicipios([]);
-                          setRegionSelectedInstituciones([]);
+              <label className="text-sm font-medium mb-1 block">Entidades Territoriales</label>
+              <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-0.5">
+                {entidades.map(ent => (
+                  <label key={ent.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">
+                    <input
+                      type="checkbox"
+                      checked={regionSelectedEntidades.includes(ent.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setRegionSelectedEntidades(prev => [...prev, ent.id]);
                         } else {
-                          setRegionSelectedMunicipios(allMuniIds);
-                          const allInstIds = allMuniIds.flatMap(mid => institucionesByMunicipio(mid).map(i => i.id));
-                          setRegionSelectedInstituciones(prev => [...new Set([...prev, ...allInstIds])]);
+                          setRegionSelectedEntidades(prev => prev.filter(id => id !== ent.id));
+                          // Remove municipios that belong to this entidad
+                          const muniIdsToRemove = new Set(municipiosByEntidad(ent.id).map(m => m.id));
+                          setRegionSelectedMunicipios(prev => prev.filter(id => !muniIdsToRemove.has(id)));
+                          // Remove instituciones of those municipios
+                          const instIdsToRemove = new Set(
+                            municipiosByEntidad(ent.id).flatMap(m => institucionesByMunicipio(m.id).map(i => i.id))
+                          );
+                          setRegionSelectedInstituciones(prev => prev.filter(id => !instIdsToRemove.has(id)));
                         }
                       }}
-                    >
-                      {municipiosByEntidad(regionEntidad).every(m => regionSelectedMunicipios.includes(m.id)) ? "Deseleccionar todo" : "Seleccionar todo"}
-                    </Button>
-                  )}
-                </div>
-                <div className="max-h-64 overflow-y-auto border rounded-md p-2 space-y-0.5">
-                  {municipiosByEntidad(regionEntidad).length === 0 ? (
-                    <p className="text-xs text-muted-foreground">Esta entidad no tiene municipios</p>
-                  ) : (
-                    municipiosByEntidad(regionEntidad).map(m => {
-                      const isChecked = regionSelectedMunicipios.includes(m.id);
-                      const muniInstituciones = institucionesByMunicipio(m.id);
-                      return (
-                        <div key={m.id}>
-                          <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setRegionSelectedMunicipios(prev => [...prev, m.id]);
-                                  // Auto-select all instituciones of this municipio
-                                  const instIds = muniInstituciones.map(i => i.id);
-                                  setRegionSelectedInstituciones(prev => [...new Set([...prev, ...instIds])]);
+                      className="accent-primary w-4 h-4"
+                    />
+                    <span>{ent.nombre}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            {regionSelectedEntidades.length > 0 && (
+              <div>
+                <label className="text-sm font-medium mb-1 block">Municipios incluidos</label>
+                <div className="max-h-64 overflow-y-auto border rounded-md p-2 space-y-2">
+                  {regionSelectedEntidades.map(eid => {
+                    const ent = entidades.find(e => e.id === eid);
+                    const munis = municipiosByEntidad(eid);
+                    return (
+                      <div key={eid}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase">{ent?.nombre}</span>
+                          {munis.length > 0 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs h-5 px-1.5"
+                              onClick={() => {
+                                const allMuniIds = munis.map(m => m.id);
+                                const allSelected = allMuniIds.every(id => regionSelectedMunicipios.includes(id));
+                                if (allSelected) {
+                                  const toRemove = new Set(allMuniIds);
+                                  setRegionSelectedMunicipios(prev => prev.filter(id => !toRemove.has(id)));
+                                  const instToRemove = new Set(allMuniIds.flatMap(mid => institucionesByMunicipio(mid).map(i => i.id)));
+                                  setRegionSelectedInstituciones(prev => prev.filter(id => !instToRemove.has(id)));
                                 } else {
-                                  setRegionSelectedMunicipios(prev => prev.filter(id => id !== m.id));
-                                  // Deselect all instituciones of this municipio
-                                  const instIds = new Set(muniInstituciones.map(i => i.id));
-                                  setRegionSelectedInstituciones(prev => prev.filter(id => !instIds.has(id)));
+                                  setRegionSelectedMunicipios(prev => [...new Set([...prev, ...allMuniIds])]);
+                                  const allInstIds = allMuniIds.flatMap(mid => institucionesByMunicipio(mid).map(i => i.id));
+                                  setRegionSelectedInstituciones(prev => [...new Set([...prev, ...allInstIds])]);
                                 }
                               }}
-                              className="accent-primary w-4 h-4"
-                            />
-                            <span className="font-medium">{m.nombre}</span>
-                            {muniInstituciones.length > 0 && (
-                              <span className="text-xs text-muted-foreground ml-auto">
-                                {muniInstituciones.filter(i => regionSelectedInstituciones.includes(i.id)).length}/{muniInstituciones.length} inst.
-                              </span>
-                            )}
-                          </label>
-                          {isChecked && muniInstituciones.length > 0 && (
-                            <div className="ml-8 pl-2 border-l border-muted space-y-0.5 mb-1">
-                              <label className="flex items-center gap-1.5 text-xs text-primary cursor-pointer py-0.5 px-1 hover:bg-muted/50 rounded">
-                                <input
-                                  type="checkbox"
-                                  checked={muniInstituciones.every(i => regionSelectedInstituciones.includes(i.id))}
-                                  onChange={(e) => {
-                                    const instIds = muniInstituciones.map(i => i.id);
-                                    if (e.target.checked) {
-                                      setRegionSelectedInstituciones(prev => [...new Set([...prev, ...instIds])]);
-                                    } else {
-                                      const toRemove = new Set(instIds);
-                                      setRegionSelectedInstituciones(prev => prev.filter(id => !toRemove.has(id)));
-                                    }
-                                  }}
-                                  className="accent-primary w-3.5 h-3.5"
-                                />
-                                <span className="font-medium">Todas</span>
-                              </label>
-                              {muniInstituciones.map(inst => (
-                                <label key={inst.id} className="flex items-center gap-1.5 text-xs cursor-pointer py-0.5 px-1 hover:bg-muted/50 rounded">
-                                  <input
-                                    type="checkbox"
-                                    checked={regionSelectedInstituciones.includes(inst.id)}
-                                    onChange={(e) => {
-                                      if (e.target.checked) setRegionSelectedInstituciones(prev => [...prev, inst.id]);
-                                      else setRegionSelectedInstituciones(prev => prev.filter(id => id !== inst.id));
-                                    }}
-                                    className="accent-primary w-3.5 h-3.5"
-                                  />
-                                  <School className="w-3 h-3 shrink-0 text-muted-foreground" />
-                                  {inst.nombre}
-                                </label>
-                              ))}
-                            </div>
+                            >
+                              {munis.every(m => regionSelectedMunicipios.includes(m.id)) ? "Deseleccionar" : "Seleccionar todo"}
+                            </Button>
                           )}
                         </div>
-                      );
-                    })
-                  )}
+                        {munis.length === 0 ? (
+                          <p className="text-xs text-muted-foreground ml-2">Sin municipios</p>
+                        ) : (
+                          munis.map(m => {
+                            const isChecked = regionSelectedMunicipios.includes(m.id);
+                            const muniInstituciones = institucionesByMunicipio(m.id);
+                            return (
+                              <div key={m.id}>
+                                <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setRegionSelectedMunicipios(prev => [...prev, m.id]);
+                                        const instIds = muniInstituciones.map(i => i.id);
+                                        setRegionSelectedInstituciones(prev => [...new Set([...prev, ...instIds])]);
+                                      } else {
+                                        setRegionSelectedMunicipios(prev => prev.filter(id => id !== m.id));
+                                        const instIds = new Set(muniInstituciones.map(i => i.id));
+                                        setRegionSelectedInstituciones(prev => prev.filter(id => !instIds.has(id)));
+                                      }
+                                    }}
+                                    className="accent-primary w-4 h-4"
+                                  />
+                                  <span className="font-medium">{m.nombre}</span>
+                                  {muniInstituciones.length > 0 && (
+                                    <span className="text-xs text-muted-foreground ml-auto">
+                                      {muniInstituciones.filter(i => regionSelectedInstituciones.includes(i.id)).length}/{muniInstituciones.length} inst.
+                                    </span>
+                                  )}
+                                </label>
+                                {isChecked && muniInstituciones.length > 0 && (
+                                  <div className="ml-8 pl-2 border-l border-muted space-y-0.5 mb-1">
+                                    <label className="flex items-center gap-1.5 text-xs text-primary cursor-pointer py-0.5 px-1 hover:bg-muted/50 rounded">
+                                      <input
+                                        type="checkbox"
+                                        checked={muniInstituciones.every(i => regionSelectedInstituciones.includes(i.id))}
+                                        onChange={(e) => {
+                                          const instIds = muniInstituciones.map(i => i.id);
+                                          if (e.target.checked) {
+                                            setRegionSelectedInstituciones(prev => [...new Set([...prev, ...instIds])]);
+                                          } else {
+                                            const toRemove = new Set(instIds);
+                                            setRegionSelectedInstituciones(prev => prev.filter(id => !toRemove.has(id)));
+                                          }
+                                        }}
+                                        className="accent-primary w-3.5 h-3.5"
+                                      />
+                                      <span className="font-medium">Todas</span>
+                                    </label>
+                                    {muniInstituciones.map(inst => (
+                                      <label key={inst.id} className="flex items-center gap-1.5 text-xs cursor-pointer py-0.5 px-1 hover:bg-muted/50 rounded">
+                                        <input
+                                          type="checkbox"
+                                          checked={regionSelectedInstituciones.includes(inst.id)}
+                                          onChange={(e) => {
+                                            if (e.target.checked) setRegionSelectedInstituciones(prev => [...prev, inst.id]);
+                                            else setRegionSelectedInstituciones(prev => prev.filter(id => id !== inst.id));
+                                          }}
+                                          className="accent-primary w-3.5 h-3.5"
+                                        />
+                                        <School className="w-3 h-3 shrink-0 text-muted-foreground" />
+                                        {inst.nombre}
+                                      </label>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddRegionOpen(false)}>Cancelar</Button>
-            <Button onClick={saveRegion} disabled={saving || !regionName || !regionEntidad}>{saving ? "Guardando…" : editRegion ? "Guardar" : "Crear"}</Button>
+            <Button onClick={saveRegion} disabled={saving || !regionName || regionSelectedEntidades.length === 0}>{saving ? "Guardando…" : editRegion ? "Guardar" : "Crear"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

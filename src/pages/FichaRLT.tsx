@@ -524,9 +524,13 @@ export default function FichaRLTForm() {
     setRegionSeleccionada(region);
     setValue("region", region);
 
-    // Auto-remplir l'Entidad Territorial depuis la DB
-    const et = geo.getEntidadForRegion(region);
-    setValue("entidad_territorial", et, { shouldValidate: true });
+    // Auto-remplir l'Entidad Territorial si une seule, sinon vider pour sélection manuelle
+    const ets = geo.getEntidadesForRegion(region);
+    if (ets.length === 1) {
+      setValue("entidad_territorial", ets[0], { shouldValidate: true });
+    } else {
+      setValue("entidad_territorial", "", { shouldValidate: false });
+    }
 
     // Auto-sélectionner le municipio unique, sinon vider
     const munis = geo.getMunicipiosForRegion(region);
@@ -911,20 +915,41 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 4: Institución */}
             <FormSection number={4} title="Información Institucional">
-              {/* Entidad Territorial — auto-rempli et verrouillé */}
+              {/* Entidad Territorial — auto si una sola, select si varias */}
               <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial" required>
-                <input
-                  id="entidad_territorial"
-                  value={geo.getEntidadForRegion(regionSeleccionada ?? "")}
-                  readOnly
-                  disabled
-                  className="form-input floating-input opacity-75 cursor-not-allowed"
-                 />
+                {(() => {
+                  const ets = geo.getEntidadesForRegion(regionSeleccionada ?? "");
+                  if (ets.length <= 1) {
+                    return (
+                      <input
+                        id="entidad_territorial"
+                        value={ets[0] ?? ""}
+                        readOnly
+                        disabled
+                        className="form-input floating-input opacity-75 cursor-not-allowed"
+                      />
+                    );
+                  }
+                  return (
+                    <select
+                      id="entidad_territorial"
+                      value={watch("entidad_territorial") ?? ""}
+                      onChange={(e) => {
+                        setValue("entidad_territorial", e.target.value, { shouldValidate: true });
+                      }}
+                      className="form-input floating-input"
+                    >
+                      <option value="">Seleccionar…</option>
+                      {ets.map((et) => (
+                        <option key={et} value={et}>{et}</option>
+                      ))}
+                    </select>
+                  );
+                })()}
               </FormFieldWrapper>
 
-              {/* Municipio — verrouillé (Quibdó) ou liste déroulante (Oriente) */}
+              {/* Municipio — verrouillé ou liste déroulante */}
               {(() => {
-                const et = geo.getEntidadForRegion(regionSeleccionada ?? "");
                 return (
                   <div className="flex flex-col gap-1">
                     <div className={cn("floating-field-wrapper", !!municipioSeleccionado && "field-has-value")}>
