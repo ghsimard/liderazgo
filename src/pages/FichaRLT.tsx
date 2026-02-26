@@ -1022,7 +1022,7 @@ export default function FichaRLTForm() {
               <InstitutionSearchField
                 instituciones={instituciones}
                 municipioSeleccionado={municipioSeleccionado}
-                disabled={tienesMunicipios && !municipioSeleccionado}
+                disabled={(tienesMunicipios && !municipioSeleccionado) || instituciones.length === 0}
                 value={watch("nombre_ie") ?? ""}
                 onChange={(val) => setValue("nombre_ie", val, { shouldValidate: true })}
                 hasError={!!err("nombre_ie")}
