@@ -443,12 +443,13 @@ export default function AdminEditFicha() {
       setFicha(data);
       const formData = fichaToFormData(data);
 
-      // Use entidad from DB via region mapping
+      // Use entidad from DB via region mapping (keep existing value if multi-entidad)
       const region = data.region ?? "";
-      const etMapped = geo.getEntidadForRegion(region);
-      if (etMapped) {
-        formData.entidad_territorial = etMapped;
+      const ets = geo.getEntidadesForRegion(region);
+      if (ets.length === 1) {
+        formData.entidad_territorial = ets[0];
       }
+      // If multiple entidades, keep the stored value from ficha
 
       reset(formData);
 
@@ -800,8 +801,12 @@ export default function AdminEditFicha() {
                   onChange={(e) => {
                     const val = e.target.value;
                     setValue("region", val, { shouldValidate: true });
-                    const et = geo.getEntidadForRegion(val);
-                    setValue("entidad_territorial", et);
+                    const ets = geo.getEntidadesForRegion(val);
+                    if (ets.length === 1) {
+                      setValue("entidad_territorial", ets[0]);
+                    } else {
+                      setValue("entidad_territorial", "");
+                    }
                     const munis = geo.getMunicipiosForRegion(val);
                     if (munis.length === 1) {
                       setMunicipioSeleccionado(munis[0]);
@@ -813,16 +818,31 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              {/* Entidad Territorial — read-only, driven by region */}
+              {/* Entidad Territorial — auto si una sola, select si varias */}
               <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial">
-                <input
-                  id="entidad_territorial"
-                  value={watch("entidad_territorial") ?? ""}
-                  readOnly
-                  disabled
-                  className="form-input floating-input opacity-75 cursor-not-allowed"
-                  placeholder=" "
-                />
+                {(() => {
+                  const ets = geo.getEntidadesForRegion(regionSeleccionada ?? "");
+                  if (ets.length <= 1) {
+                    return (
+                      <input
+                        id="entidad_territorial"
+                        value={watch("entidad_territorial") ?? ""}
+                        readOnly
+                        disabled
+                        className="form-input floating-input opacity-75 cursor-not-allowed"
+                        placeholder=" "
+                      />
+                    );
+                  }
+                  return (
+                    <FormSelect
+                      id="entidad_territorial"
+                      value={watch("entidad_territorial") ?? ""}
+                      options={ets.map((et) => ({ value: et, label: et }))}
+                      onChange={(e) => setValue("entidad_territorial", e.target.value)}
+                    />
+                  );
+                })()}
               </FormFieldWrapper>
 
               {/* Municipio — field-has-value basé sur la valeur effective (state OU valeur fixe Quibdó) */}

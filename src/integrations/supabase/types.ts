@@ -511,6 +511,39 @@ export type Database = {
           },
         ]
       }
+      region_entidades: {
+        Row: {
+          entidad_territorial_id: string
+          id: string
+          region_id: string
+        }
+        Insert: {
+          entidad_territorial_id: string
+          id?: string
+          region_id: string
+        }
+        Update: {
+          entidad_territorial_id?: string
+          id?: string
+          region_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "region_entidades_entidad_territorial_id_fkey"
+            columns: ["entidad_territorial_id"]
+            isOneToOne: false
+            referencedRelation: "entidades_territoriales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "region_entidades_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       region_instituciones: {
         Row: {
           id: string
@@ -580,7 +613,6 @@ export type Database = {
       regiones: {
         Row: {
           created_at: string
-          entidad_territorial_id: string
           id: string
           mostrar_logo_clt: boolean
           mostrar_logo_rlt: boolean
@@ -588,7 +620,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          entidad_territorial_id: string
           id?: string
           mostrar_logo_clt?: boolean
           mostrar_logo_rlt?: boolean
@@ -596,21 +627,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          entidad_territorial_id?: string
           id?: string
           mostrar_logo_clt?: boolean
           mostrar_logo_rlt?: boolean
           nombre?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "regiones_entidad_territorial_id_fkey"
-            columns: ["entidad_territorial_id"]
-            isOneToOne: false
-            referencedRelation: "entidades_territoriales"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_roles: {
         Row: {
