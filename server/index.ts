@@ -36,6 +36,32 @@ app.use("/api/rpc", rpcRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/api/storage", storageRoutes);
 
+// ─── Public form submission (no auth required) ───────
+import { query as dbQuery } from "./db";
+app.post("/api/encuestas", async (req, res) => {
+  try {
+    const d = req.body;
+    const result = await dbQuery(
+      `INSERT INTO encuestas_360 (tipo_formulario, institucion_educativa, cargo_directivo, nombre_directivo, cedula_directivo, dias_contacto, nombre_completo, cedula, grado_estudiante, cargo_evaluador, respuestas)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+      [d.tipo_formulario, d.institucion_educativa, d.cargo_directivo, d.nombre_directivo||null, d.cedula_directivo||null, d.dias_contacto||null, d.nombre_completo||null, d.cedula||null, d.grado_estudiante||null, d.cargo_evaluador||null, JSON.stringify(d.respuestas||{})]
+    );
+    res.json(result[0]);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Public geography (no auth required) ──────────────
+app.get("/api/geography/instituciones", async (_req, res) => {
+  try {
+    const rows = await dbQuery(`SELECT id, nombre FROM instituciones ORDER BY nombre`);
+    res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Health check
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
