@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiLogin } from "@/utils/apiFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,14 +8,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Lock } from "lucide-react";
 import { useAppImages } from "@/hooks/useAppImages";
 
+const authErrors: Record<string, string> = {
+  session_missing: "Session absente. Veuillez vous reconnecter.",
+  session_invalid: "Session expirée ou invalide. Veuillez vous reconnecter.",
+  role_missing: "Votre compte n'a pas le rôle administrateur requis.",
+  user_not_found: "Compte introuvable sur le backend.",
+  auth_check_failed: "Impossible de valider la session. Réessayez.",
+};
+
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const reason = searchParams.get("reason");
+    if (!reason) return;
+    setError(authErrors[reason] ?? "Accès refusé. Vérifiez votre session.");
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +45,7 @@ export default function AdminLogin() {
       return;
     }
 
-    navigate("/admin");
+    navigate("/admin", { replace: true });
   };
 
   return (
