@@ -454,8 +454,8 @@ export default function FichaRLTForm() {
     setTimeout(() => setMunicipioSeleccionado(municipiosRegion[0]), 0);
   }
 
-  const instituciones = tienesMunicipios && municipioSeleccionado
-    ? geo.getInstitucionesForMunicipio(regionActual ?? "", municipioSeleccionado)
+  const instituciones = municipioSeleccionado && regionActual
+    ? geo.getInstitucionesForMunicipio(regionActual, municipioSeleccionado)
     : (regionActual ? geo.getInstitucionesForRegion(regionActual) : []);
 
   const onSubmit = async (data: FormData) => {
