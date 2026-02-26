@@ -84,22 +84,20 @@ export function MultiSelect({
             {selected.length === options.length ? "Deseleccionar todo" : "Seleccionar todo"}
           </button>
         </div>
-        <ScrollArea className="max-h-[220px]">
-          <div className="p-2 space-y-1">
-            {options.map((option) => (
-              <label
-                key={option.value}
-                className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs"
-              >
-                <Checkbox
-                  checked={selected.includes(option.value)}
-                  onCheckedChange={() => toggleOption(option.value)}
-                />
-                <span className="truncate">{option.label}</span>
-              </label>
-            ))}
-          </div>
-        </ScrollArea>
+        <div className="max-h-[220px] overflow-y-auto p-2 space-y-1">
+          {options.map((option) => (
+            <label
+              key={option.value}
+              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs"
+            >
+              <Checkbox
+                checked={selected.includes(option.value)}
+                onCheckedChange={() => toggleOption(option.value)}
+              />
+              <span className="truncate">{option.label}</span>
+            </label>
+          ))}
+        </div>
       </PopoverContent>
     </Popover>
   );
