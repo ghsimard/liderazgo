@@ -269,7 +269,7 @@ router.post("/:table", async (req: Request, res: Response) => {
         // Check admin role
         const { queryOne } = await import("../db");
         const role = await queryOne(
-          "SELECT role FROM user_roles WHERE user_id = $1 AND role = 'admin'",
+          "SELECT role FROM user_roles WHERE user_id = $1 AND role IN ('admin', 'superadmin')",
           [decoded.userId]
         );
         if (!role) {
