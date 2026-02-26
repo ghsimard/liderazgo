@@ -47,6 +47,16 @@ const ALLOWED_TABLES = new Set([
 
 // ── Helpers ────────────────────────────────────────────
 
+/** Validate column/table names to prevent SQL injection via identifiers */
+const VALID_IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+function sanitizeIdentifier(name: string): string {
+  if (!VALID_IDENTIFIER.test(name)) {
+    throw new Error(`Invalid identifier: "${name}"`);
+  }
+  return `"${name}"`;
+}
+
 interface Filter {
   type: string;
   col: string;
@@ -59,65 +69,66 @@ function buildWhereClause(filters: Filter[], params: any[]): string {
   const clauses: string[] = [];
   for (const f of filters) {
     if (f.type === "or" && f.col === "_expr") {
-      // Parse or expressions like "col1.eq.val1,col2.eq.val2"
       const orParts = parseOrExpression(f.val, params);
       if (orParts) clauses.push(`(${orParts})`);
       continue;
     }
 
+    // Validate column name
+    const safeCol = sanitizeIdentifier(f.col);
     const idx = params.length + 1;
     switch (f.type) {
       case "eq":
         params.push(f.val);
-        clauses.push(`"${f.col}" = $${idx}`);
+        clauses.push(`${safeCol} = $${idx}`);
         break;
       case "neq":
         params.push(f.val);
-        clauses.push(`"${f.col}" != $${idx}`);
+        clauses.push(`${safeCol} != $${idx}`);
         break;
       case "gt":
         params.push(f.val);
-        clauses.push(`"${f.col}" > $${idx}`);
+        clauses.push(`${safeCol} > $${idx}`);
         break;
       case "gte":
         params.push(f.val);
-        clauses.push(`"${f.col}" >= $${idx}`);
+        clauses.push(`${safeCol} >= $${idx}`);
         break;
       case "lt":
         params.push(f.val);
-        clauses.push(`"${f.col}" < $${idx}`);
+        clauses.push(`${safeCol} < $${idx}`);
         break;
       case "lte":
         params.push(f.val);
-        clauses.push(`"${f.col}" <= $${idx}`);
+        clauses.push(`${safeCol} <= $${idx}`);
         break;
       case "like":
         params.push(f.val);
-        clauses.push(`"${f.col}" LIKE $${idx}`);
+        clauses.push(`${safeCol} LIKE $${idx}`);
         break;
       case "ilike":
         params.push(f.val);
-        clauses.push(`"${f.col}" ILIKE $${idx}`);
+        clauses.push(`${safeCol} ILIKE $${idx}`);
         break;
       case "in":
         if (Array.isArray(f.val) && f.val.length > 0) {
           const placeholders = f.val.map((_: any, i: number) => `$${params.length + i + 1}`);
           params.push(...f.val);
-          clauses.push(`"${f.col}" IN (${placeholders.join(",")})`);
+          clauses.push(`${safeCol} IN (${placeholders.join(",")})`);
         } else if (typeof f.val === "string") {
           const vals = f.val.split(",");
           const placeholders = vals.map((_: any, i: number) => `$${params.length + i + 1}`);
           params.push(...vals);
-          clauses.push(`"${f.col}" IN (${placeholders.join(",")})`);
+          clauses.push(`${safeCol} IN (${placeholders.join(",")})`);
         }
         break;
       case "is":
         if (f.val === null || f.val === "null") {
-          clauses.push(`"${f.col}" IS NULL`);
+          clauses.push(`${safeCol} IS NULL`);
         } else if (f.val === true || f.val === "true") {
-          clauses.push(`"${f.col}" IS TRUE`);
+          clauses.push(`${safeCol} IS TRUE`);
         } else if (f.val === false || f.val === "false") {
-          clauses.push(`"${f.col}" IS FALSE`);
+          clauses.push(`${safeCol} IS FALSE`);
         }
         break;
     }
@@ -127,17 +138,17 @@ function buildWhereClause(filters: Filter[], params: any[]): string {
 }
 
 function parseOrExpression(expr: string, params: any[]): string | null {
-  // Parse expressions like "col1.eq.val1,col2.ilike.%val2%"
   const parts = expr.split(",");
   const orClauses: string[] = [];
   for (const part of parts) {
     const match = part.match(/^(.+?)\.(eq|neq|ilike|like|gt|gte|lt|lte)\.(.+)$/);
     if (match) {
       const [, col, op, val] = match;
+      const safeCol = sanitizeIdentifier(col);
       const idx = params.length + 1;
       params.push(val);
       const sqlOp = { eq: "=", neq: "!=", ilike: "ILIKE", like: "LIKE", gt: ">", gte: ">=", lt: "<", lte: "<=" }[op] || "=";
-      orClauses.push(`"${col}" ${sqlOp} $${idx}`);
+      orClauses.push(`${safeCol} ${sqlOp} $${idx}`);
     }
   }
   return orClauses.length > 0 ? orClauses.join(" OR ") : null;
@@ -174,7 +185,21 @@ router.get("/:table", async (req: Request, res: Response) => {
       }
     }
 
-    const selectCols = (req.query.select as string) || "*";
+    // Sanitize select columns
+    const rawSelect = (req.query.select as string) || "*";
+    const selectCols = rawSelect === "*" ? "*" : rawSelect.split(",").map(c => {
+      const trimmed = c.trim();
+      // Allow "table.col" and "col" patterns, plus aggregate functions
+      if (trimmed === "*") return "*";
+      // Handle "relation(cols)" for joins — pass through if valid identifiers
+      const joinMatch = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\((.+)\)$/);
+      if (joinMatch) {
+        sanitizeIdentifier(joinMatch[1]);
+        return trimmed; // relation selects
+      }
+      sanitizeIdentifier(trimmed.replace(/^.*\./, "")); // validate last part
+      return trimmed;
+    }).join(",");
     const isHead = req.query.head === "true";
     const countMode = req.query.count as string;
     const isSingle = req.query.single === "true";
@@ -190,7 +215,7 @@ router.get("/:table", async (req: Request, res: Response) => {
       const orders = Array.isArray(orderParam) ? orderParam : [orderParam];
       const orderParts = (orders as string[]).map((o: string) => {
         const [col, dir] = o.split(".");
-        return `"${col}" ${dir === "desc" ? "DESC" : "ASC"}`;
+        return `${sanitizeIdentifier(col)} ${dir === "desc" ? "DESC" : "ASC"}`;
       });
       orderClause = ` ORDER BY ${orderParts.join(", ")}`;
     }
@@ -211,20 +236,20 @@ router.get("/:table", async (req: Request, res: Response) => {
 
     if (isHead && countMode) {
       // COUNT only
-      const countSql = `SELECT COUNT(*) as count FROM "${table}"${where}`;
+      const countSql = `SELECT COUNT(*) as count FROM ${sanitizeIdentifier(table)}${where}`;
       const result = await pool.query(countSql, params);
       res.json({ count: parseInt(result.rows[0].count, 10) });
       return;
     }
 
-    const sql = `SELECT ${selectCols} FROM "${table}"${where}${orderClause}${limitClause}${offsetClause}`;
+    const sql = `SELECT ${selectCols} FROM ${sanitizeIdentifier(table)}${where}${orderClause}${limitClause}${offsetClause}`;
     const result = await pool.query(sql, params);
 
     if (isSingle) {
       res.json({ data: result.rows[0] ?? null });
     } else if (countMode) {
       // Return data + count
-      const countSql = `SELECT COUNT(*) as count FROM "${table}"${where}`;
+      const countSql = `SELECT COUNT(*) as count FROM ${sanitizeIdentifier(table)}${where}`;
       const countResult = await pool.query(countSql, params);
       res.json({ data: result.rows, count: parseInt(countResult.rows[0].count, 10) });
     } else {
@@ -303,18 +328,22 @@ router.post("/:table", async (req: Request, res: Response) => {
       }
 
       const cols = Object.keys(rows[0]);
+      // Validate all column names
+      cols.forEach(c => sanitizeIdentifier(c));
       const insertedRows: any[] = [];
 
       for (const row of rows) {
         const vals = cols.map((c) => row[c]);
         const placeholders = cols.map((_, i) => `$${i + 1}`);
-        let sql = `INSERT INTO "${table}" (${cols.map(c => `"${c}"`).join(",")}) VALUES (${placeholders.join(",")})`;
+        let sql = `INSERT INTO ${sanitizeIdentifier(table)} (${cols.map(c => sanitizeIdentifier(c)).join(",")}) VALUES (${placeholders.join(",")})`;
 
         if (isUpsert && onConflict) {
+          const conflictCols = onConflict.split(",").map((c: string) => c.trim());
+          conflictCols.forEach((c: string) => sanitizeIdentifier(c));
           const updateParts = cols
-            .filter((c) => c !== onConflict && !onConflict.split(",").includes(c))
-            .map((c) => `"${c}" = EXCLUDED."${c}"`);
-          sql += ` ON CONFLICT (${onConflict.split(",").map((c: string) => `"${c.trim()}"`).join(",")}) DO UPDATE SET ${updateParts.join(",")}`;
+            .filter((c) => !conflictCols.includes(c))
+            .map((c) => `${sanitizeIdentifier(c)} = EXCLUDED.${sanitizeIdentifier(c)}`);
+          sql += ` ON CONFLICT (${conflictCols.map((c: string) => sanitizeIdentifier(c)).join(",")}) DO UPDATE SET ${updateParts.join(",")}`;
         } else if (isUpsert) {
           sql += ` ON CONFLICT DO NOTHING`;
         }
@@ -333,21 +362,23 @@ router.post("/:table", async (req: Request, res: Response) => {
         res.json({ data: null });
         return;
       }
+      // Validate column names
+      setCols.forEach(c => sanitizeIdentifier(c));
 
       const params: any[] = [];
       const setParts = setCols.map((col) => {
         params.push(body[col]);
-        return `"${col}" = $${params.length}`;
+        return `${sanitizeIdentifier(col)} = $${params.length}`;
       });
 
       const where = buildWhereClause(filters, params);
-      const sql = `UPDATE "${table}" SET ${setParts.join(",")}${where} RETURNING *`;
+      const sql = `UPDATE ${sanitizeIdentifier(table)} SET ${setParts.join(",")}${where} RETURNING *`;
       const result = await pool.query(sql, params);
       res.json({ data: result.rows });
     } else if (method === "DELETE") {
       const params: any[] = [];
       const where = buildWhereClause(filters, params);
-      const sql = `DELETE FROM "${table}"${where} RETURNING *`;
+      const sql = `DELETE FROM ${sanitizeIdentifier(table)}${where} RETURNING *`;
       const result = await pool.query(sql, params);
       res.json({ data: result.rows });
     } else {

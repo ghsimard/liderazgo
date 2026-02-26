@@ -56,18 +56,6 @@ CREATE TABLE IF NOT EXISTS public.app_images (
 
 -- ============================================================
 -- SEED: Create initial admin user
--- Password: "admin123" (CHANGE THIS IMMEDIATELY)
--- Hash generated with bcrypt, 12 rounds
+-- DO NOT hardcode passwords here. Use the secure setup script:
+--   node server/create-admin.js
 -- ============================================================
--- To generate a new hash:
---   node -e "require('bcryptjs').hash('YOUR_PASSWORD', 12).then(console.log)"
---
--- INSERT INTO public.users (id, email, password_hash)
--- VALUES (
---   gen_random_uuid(),
---   'admin@example.com',
---   '$2a$12$REPLACE_WITH_BCRYPT_HASH'
--- );
---
--- INSERT INTO public.user_roles (user_id, role)
--- SELECT id, 'admin' FROM public.users WHERE email = 'admin@example.com';

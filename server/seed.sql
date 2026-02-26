@@ -7,19 +7,13 @@ BEGIN;
 
 -- ============================================================
 -- 1. ADMIN USER
--- Password: "admin123" — CHANGE IMMEDIATELY after first login
--- Generate new hash: node -e "require('bcryptjs').hash('NEW_PASSWORD', 12).then(console.log)"
+-- The admin user MUST be created via the setup script, NOT hardcoded here.
+-- Run the following command to create your first admin:
+--
+--   node server/create-admin.js
+--
+-- This will prompt for email and password securely.
 -- ============================================================
-INSERT INTO public.users (id, email, password_hash)
-VALUES (
-  'a0000000-0000-0000-0000-000000000001',
-  'admin@cosmo.edu.co',
-  '$2a$12$LJ3a4VxTOy6ZQkFqHfE1G.1RxQ7MxJFdVPYhXJN1JwB5v0vPkHSXS'
-) ON CONFLICT (email) DO NOTHING;
-
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('a0000000-0000-0000-0000-000000000001', 'admin')
-ON CONFLICT (user_id, role) DO NOTHING;
 
 -- ============================================================
 -- 2. DOMAINS 360
