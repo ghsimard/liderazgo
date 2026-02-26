@@ -23,7 +23,6 @@ export function useAdminAuth() {
         }
 
         const { data, error, status } = await apiGetMe();
-        console.log("[useAdminAuth] apiGetMe response:", { data, error, status });
 
         if (error || !data?.user) {
           await apiLogout();
@@ -32,7 +31,6 @@ export function useAdminAuth() {
         }
 
         const uid = data.user.id;
-        console.log("[useAdminAuth] USE_EXPRESS:", USE_EXPRESS, "roles:", (data.user as any).roles);
 
         if (USE_EXPRESS) {
           // On Render, roles come from the /api/auth/me response
