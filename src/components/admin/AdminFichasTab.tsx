@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -12,9 +13,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Download, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight, Plus, FileDown, Files } from "lucide-react";
+import { Search, Download, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight, Plus, FileDown, Files, Filter } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
+import { MultiSelect } from "@/components/ui/multi-select";
 import JSZip from "jszip";
 import logoRLTWhite from "@/assets/logo_rlt_white.jpeg";
 import logoCLTWhite from "@/assets/logo_clt_white.jpeg";
@@ -28,6 +30,13 @@ const formatDateTime = (d: string | null) => {
   return new Date(d).toLocaleString("es-CO", { timeZone: "America/Bogota" });
 };
 
+interface FichaFilterData {
+  region: string;
+  entidad_territorial: string;
+  municipio: string;
+  institucion: string;
+}
+
 export default function AdminFichasTab() {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -37,18 +46,89 @@ export default function AdminFichasTab() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
-  const [regionFilter, setRegionFilter] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [regiones, setRegiones] = useState<string[]>([]);
 
+  // Filter data derived from fichas
+  const [filterData, setFilterData] = useState<FichaFilterData[]>([]);
+
+  // Multi-select filter state
+  const [selRegions, setSelRegions] = useState<string[]>([]);
+  const [selEntidades, setSelEntidades] = useState<string[]>([]);
+  const [selMunicipios, setSelMunicipios] = useState<string[]>([]);
+  const [selInstituciones, setSelInstituciones] = useState<string[]>([]);
+
+  // Load filter options from fichas data
   useEffect(() => {
-    supabase.from("regiones").select("nombre").order("nombre").then(({ data }) => {
-      setRegiones((data ?? []).map(r => r.nombre));
-    });
+    const loadFilterData = async () => {
+      const { data: allFichas } = await supabase
+        .from("fichas_rlt")
+        .select("region, entidad_territorial, nombre_ie");
+
+      const { data: instituciones } = await supabase.from("instituciones").select("nombre, municipio_id");
+      const { data: municipios } = await supabase.from("municipios").select("id, nombre");
+
+      const munMap = new Map((municipios ?? []).map((m) => [m.id, m.nombre]));
+      const instMunMap = new Map((instituciones ?? []).map((i) => [i.nombre, munMap.get(i.municipio_id) ?? ""]));
+
+      setFilterData(
+        (allFichas ?? []).map((f) => ({
+          region: f.region ?? "",
+          entidad_territorial: f.entidad_territorial ?? "",
+          municipio: instMunMap.get(f.nombre_ie) ?? "",
+          institucion: f.nombre_ie ?? "",
+        }))
+      );
+    };
+    loadFilterData();
   }, []);
 
-  const fetchFichas = async () => {
+  // Clear downstream filters
+  useEffect(() => { setSelEntidades([]); setSelMunicipios([]); setSelInstituciones([]); }, [selRegions]);
+  useEffect(() => { setSelMunicipios([]); setSelInstituciones([]); }, [selEntidades]);
+  useEffect(() => { setSelInstituciones([]); }, [selMunicipios]);
+
+  // Cascade filter options
+  const regionOptions = useMemo(() => {
+    const vals = [...new Set(filterData.map((d) => d.region).filter(Boolean))].sort();
+    return vals.map((v) => ({ value: v, label: v }));
+  }, [filterData]);
+
+  const entidadOptions = useMemo(() => {
+    let pool = filterData;
+    if (selRegions.length > 0) pool = pool.filter((d) => selRegions.includes(d.region));
+    const vals = [...new Set(pool.map((d) => d.entidad_territorial).filter(Boolean))].sort();
+    return vals.map((v) => ({ value: v, label: v }));
+  }, [filterData, selRegions]);
+
+  const municipioOptions = useMemo(() => {
+    let pool = filterData;
+    if (selRegions.length > 0) pool = pool.filter((d) => selRegions.includes(d.region));
+    if (selEntidades.length > 0) pool = pool.filter((d) => selEntidades.includes(d.entidad_territorial));
+    const vals = [...new Set(pool.map((d) => d.municipio).filter(Boolean))].sort();
+    return vals.map((v) => ({ value: v, label: v }));
+  }, [filterData, selRegions, selEntidades]);
+
+  const institucionOptions = useMemo(() => {
+    let pool = filterData;
+    if (selRegions.length > 0) pool = pool.filter((d) => selRegions.includes(d.region));
+    if (selEntidades.length > 0) pool = pool.filter((d) => selEntidades.includes(d.entidad_territorial));
+    if (selMunicipios.length > 0) pool = pool.filter((d) => selMunicipios.includes(d.municipio));
+    const vals = [...new Set(pool.map((d) => d.institucion).filter(Boolean))].sort();
+    return vals.map((v) => ({ value: v, label: v }));
+  }, [filterData, selRegions, selEntidades, selMunicipios]);
+
+  // Build set of matching institution names for DB query
+  const activeInstFilter = useMemo(() => {
+    if (selInstituciones.length > 0) return selInstituciones;
+    if (selMunicipios.length > 0) return institucionOptions.map((o) => o.value);
+    if (selEntidades.length > 0) return institucionOptions.map((o) => o.value);
+    return null; // no institution-level filter
+  }, [selInstituciones, selMunicipios, selEntidades, institucionOptions]);
+
+  const hasFilters = selRegions.length > 0 || selEntidades.length > 0 || selMunicipios.length > 0 || selInstituciones.length > 0;
+
+  const fetchFichas = useCallback(async () => {
     setLoading(true);
     let query = supabase
       .from("fichas_rlt")
@@ -56,7 +136,16 @@ export default function AdminFichasTab() {
       .order("created_at", { ascending: false })
       .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
-    if (regionFilter) query = query.eq("region", regionFilter);
+    // Apply region filter (multiple)
+    if (selRegions.length > 0 && !activeInstFilter) {
+      query = query.in("region", selRegions);
+    }
+
+    // Apply institution filter (derived from cascade)
+    if (activeInstFilter && activeInstFilter.length > 0) {
+      query = query.in("nombre_ie", activeInstFilter);
+    }
+
     if (search) {
       query = query.or(
         `nombres_apellidos.ilike.%${search}%,nombre_ie.ilike.%${search}%,correo_personal.ilike.%${search}%`
@@ -71,12 +160,14 @@ export default function AdminFichasTab() {
       setTotal(count ?? 0);
     }
     setLoading(false);
-  };
+  }, [page, selRegions, activeInstFilter, search, toast]);
 
   useEffect(() => {
     fetchFichas();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, regionFilter]);
+  }, [fetchFichas]);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(0); }, [selRegions, selEntidades, selMunicipios, selInstituciones]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +177,8 @@ export default function AdminFichasTab() {
 
   const exportCSV = async () => {
     let query = supabase.from("fichas_rlt").select("*").order("created_at", { ascending: false });
-    if (regionFilter) query = query.eq("region", regionFilter);
+    if (selRegions.length > 0 && !activeInstFilter) query = query.in("region", selRegions);
+    if (activeInstFilter && activeInstFilter.length > 0) query = query.in("nombre_ie", activeInstFilter);
     if (search) query = query.or(`nombres_apellidos.ilike.%${search}%,nombre_ie.ilike.%${search}%,correo_personal.ilike.%${search}%`);
 
     const { data, error } = await query;
@@ -124,34 +216,20 @@ export default function AdminFichasTab() {
       const nombre = ficha.nombres_apellidos;
       const ie = ficha.nombre_ie;
 
-      // Fetch related encuestas before deleting
       const { data: relatedEncuestas } = await supabase
         .from("encuestas_360")
         .select("*")
         .eq("institucion_educativa", ie)
         .or(`nombre_directivo.eq.${nombre},and(nombre_completo.eq.${nombre},tipo_formulario.eq.autoevaluacion)`);
 
-      // Save ficha + related encuestas to trash
       await supabase.from("deleted_records").insert([{
         record_type: "ficha_rlt",
         record_label: `${nombre} — ${ie}`,
         deleted_data: { ficha, encuestas: relatedEncuestas ?? [] } as any,
       }]);
 
-      // Delete encuestas where this directivo is evaluated (observer responses)
-      await supabase
-        .from("encuestas_360")
-        .delete()
-        .eq("nombre_directivo", nombre)
-        .eq("institucion_educativa", ie);
-
-      // Delete autoevaluacion by this directivo
-      await supabase
-        .from("encuestas_360")
-        .delete()
-        .eq("nombre_completo", nombre)
-        .eq("institucion_educativa", ie)
-        .eq("tipo_formulario", "autoevaluacion");
+      await supabase.from("encuestas_360").delete().eq("nombre_directivo", nombre).eq("institucion_educativa", ie);
+      await supabase.from("encuestas_360").delete().eq("nombre_completo", nombre).eq("institucion_educativa", ie).eq("tipo_formulario", "autoevaluacion");
     }
 
     const { error } = await supabase.from("fichas_rlt").delete().eq("id", deleteId);
@@ -169,54 +247,41 @@ export default function AdminFichasTab() {
     const cargo = (f.cargo_actual ?? "").toLowerCase();
     const isRector = cargo.includes("rector");
     const isCoordinador = cargo.includes("coordinador");
-
     const datosPDF: Record<string, unknown> = { ...f };
-    generarPDFFicha(
-      datosPDF,
-      { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite },
-      { showLogoRlt: isRector, showLogoClt: isCoordinador }
-    );
+    generarPDFFicha(datosPDF, { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite }, { showLogoRlt: isRector, showLogoClt: isCoordinador });
   };
 
   const [batchLoading, setBatchLoading] = useState(false);
 
   const handleBatchPdf = async () => {
-    if (!regionFilter) {
-      toast({ title: "Seleccione una región primero", variant: "destructive" });
+    if (!hasFilters) {
+      toast({ title: "Seleccione al menos un filtro", variant: "destructive" });
       return;
     }
     setBatchLoading(true);
     try {
-      let query = supabase.from("fichas_rlt").select("*").eq("region", regionFilter).order("nombres_apellidos");
-      if (search) {
-        query = query.or(`nombres_apellidos.ilike.%${search}%,nombre_ie.ilike.%${search}%,correo_personal.ilike.%${search}%`);
-      }
+      let query = supabase.from("fichas_rlt").select("*").order("nombres_apellidos");
+      if (selRegions.length > 0 && !activeInstFilter) query = query.in("region", selRegions);
+      if (activeInstFilter && activeInstFilter.length > 0) query = query.in("nombre_ie", activeInstFilter);
+      if (search) query = query.or(`nombres_apellidos.ilike.%${search}%,nombre_ie.ilike.%${search}%,correo_personal.ilike.%${search}%`);
+
       const { data, error } = await query;
       if (error || !data?.length) {
-        toast({ title: "No hay fichas para esta región", variant: "destructive" });
+        toast({ title: "No hay fichas para estos filtros", variant: "destructive" });
         setBatchLoading(false);
         return;
       }
 
       const zip = new JSZip();
-      const folderName = regionFilter.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ _-]/g, "").replace(/\s+/g, "_");
-      const folder = zip.folder(folderName)!;
-
-      for (let i = 0; i < data.length; i++) {
-        const f = data[i];
+      for (const f of data) {
         const cargo = (f.cargo_actual ?? "").toLowerCase();
         const isRector = cargo.includes("rector");
         const isCoordinador = cargo.includes("coordinador");
         const datosPDF: Record<string, unknown> = { ...f };
-        const blob = await generarPDFFicha(
-          datosPDF,
-          { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite },
-          { showLogoRlt: isRector, showLogoClt: isCoordinador },
-          { returnBlob: true }
-        );
+        const blob = await generarPDFFicha(datosPDF, { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite }, { showLogoRlt: isRector, showLogoClt: isCoordinador }, { returnBlob: true });
         if (blob) {
           const fileName = `Ficha_${String(f.apellidos ?? f.nombres ?? "ficha").replace(/\s+/g, "_")}_${String(f.nombres ?? "").replace(/\s+/g, "_")}.pdf`;
-          folder.file(fileName, blob);
+          zip.file(fileName, blob);
         }
       }
 
@@ -224,7 +289,7 @@ export default function AdminFichasTab() {
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Fichas_${folderName}_${new Date().toISOString().slice(0, 10)}.zip`;
+      a.download = `Fichas_${new Date().toISOString().slice(0, 10)}.zip`;
       a.click();
       URL.revokeObjectURL(url);
       toast({ title: `${data.length} PDF(s) empaquetado(s) en ZIP` });
@@ -234,10 +299,53 @@ export default function AdminFichasTab() {
     setBatchLoading(false);
   };
 
+  const clearAllFilters = () => {
+    setSelRegions([]);
+    setSelEntidades([]);
+    setSelMunicipios([]);
+    setSelInstituciones([]);
+    setSearch("");
+    setPage(0);
+  };
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Cascade filters */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Filter className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Filtros</span>
+            {hasFilters && (
+              <button onClick={clearAllFilters} className="text-xs text-muted-foreground hover:text-foreground underline ml-auto">
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Región</label>
+              <MultiSelect options={regionOptions} selected={selRegions} onChange={setSelRegions} placeholder="Todas las regiones" className="w-full" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Entidad Territorial</label>
+              <MultiSelect options={entidadOptions} selected={selEntidades} onChange={setSelEntidades} placeholder="Todas las entidades" className="w-full" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Municipio</label>
+              <MultiSelect options={municipioOptions} selected={selMunicipios} onChange={setSelMunicipios} placeholder="Todos los municipios" className="w-full" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Institución</label>
+              <MultiSelect options={institucionOptions} selected={selInstituciones} onChange={setSelInstituciones} placeholder="Todas las instituciones" className="w-full" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Actions bar */}
       <div className="flex flex-wrap gap-3">
         <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-[260px]">
           <div className="relative flex-1">
@@ -246,22 +354,11 @@ export default function AdminFichasTab() {
           </div>
           <Button type="submit" size="sm">Buscar</Button>
         </form>
-        <select
-          value={regionFilter}
-          onChange={(e) => { setRegionFilter(e.target.value); setPage(0); }}
-          className="border rounded-md px-3 py-2 text-sm bg-background"
-        >
-          <option value="">Todas las regiones</option>
-          {regiones.map((r) => <option key={r} value={r}>{r}</option>)}
-        </select>
         <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
           <Download className="w-4 h-4" /> Exportar CSV
         </Button>
-        <Button variant="outline" size="sm" onClick={handleBatchPdf} disabled={batchLoading || !regionFilter} className="gap-1.5">
-          <Files className="w-4 h-4" /> {batchLoading ? "Generando…" : "PDFs región"}
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => { setSearch(""); setRegionFilter(""); setPage(0); }} className="gap-1.5">
-          <RefreshCw className="w-4 h-4" /> Limpiar
+        <Button variant="outline" size="sm" onClick={handleBatchPdf} disabled={batchLoading || !hasFilters} className="gap-1.5">
+          <Files className="w-4 h-4" /> {batchLoading ? "Generando…" : "PDFs filtrados"}
         </Button>
         <Button size="sm" onClick={() => navigate("/admin/ficha/new")} className="gap-1.5">
           <Plus className="w-4 h-4" /> Crear ficha
@@ -273,7 +370,7 @@ export default function AdminFichasTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
-              <TableHead>Entidad Territorial</TableHead>
+              <TableHead>Región</TableHead>
               <TableHead>Institución</TableHead>
               <TableHead>Cargo</TableHead>
               <TableHead>Correo</TableHead>
@@ -323,7 +420,7 @@ export default function AdminFichasTab() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Página {page + 1} de {totalPages}</span>
+          <span>Página {page + 1} de {totalPages} ({total} fichas)</span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
               <ChevronLeft className="w-4 h-4" />
