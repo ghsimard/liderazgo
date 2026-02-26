@@ -40,8 +40,22 @@ function InstitutionSearch({
         const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
         if (USE_EXPRESS) {
           if (onlyWithFichas) {
-            const { data } = await apiFetch<any[]>("/api/rpc/instituciones-ficha");
-            setInstituciones((data ?? []).map((r: any) => r.nombre_ie));
+            // Backward-compatible Render routes: try canonical RPC first, then alias.
+            const endpoints = [
+              "/api/rpc/get_instituciones_con_ficha",
+              "/api/rpc/instituciones-ficha",
+            ];
+
+            let rows: any[] = [];
+            for (const endpoint of endpoints) {
+              const { data, error } = await apiFetch<any>(endpoint);
+              if (!error && Array.isArray(data)) {
+                rows = data;
+                break;
+              }
+            }
+
+            setInstituciones(rows.map((r: any) => r.nombre_ie).filter(Boolean));
           } else {
             const { data } = await apiFetch<any[]>("/api/geography/instituciones");
             setInstituciones((data ?? []).map((i: any) => i.nombre));
