@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useAppImages } from "@/hooks/useAppImages";
 import { useForm, FormProvider } from "react-hook-form";
@@ -18,6 +18,7 @@ import {
   FormSection,
 } from "@/components/FormComponents";
 import { cn } from "@/lib/utils";
+import { PhoneInputWithCountry } from "@/components/PhoneInputWithCountry";
 import { CheckCircle, Download, RefreshCw, Send, AlertCircle } from "lucide-react";
 
 // ── Schema de validación ─────────────────────────────────────
@@ -39,7 +40,8 @@ const schema = z.object({
   lugar_nacimiento: z.string().optional(),
   lengua_materna: z.string().min(1, "Seleccione una lengua materna"),
   lengua_otra: z.string().optional(),
-  celular_personal: z.string().regex(/^\+57\s?\d{3}\s?\d{4}\s?\d{3}$|^\d{10}$|^\+57\d{10}$/, "Ingrese un número celular válido de Colombia"),
+  celular_personal: z.string().min(7, "Ingrese un número celular válido"),
+  codigo_pais_celular: z.string().default("+57"),
   correo_personal: z.string().email("Ingrese un correo electrónico válido"),
   correo_institucional: z.string().email("Ingrese un correo institucional válido").optional().or(z.literal("")),
   prefiere_correo: z.string().min(1, "Seleccione dónde prefiere recibir comunicaciones"),
@@ -47,6 +49,7 @@ const schema = z.object({
   enfermedad_detalle: z.string().optional(),
   contacto_emergencia: z.string().optional(),
   telefono_emergencia: z.string().optional(),
+  codigo_pais_telefono_emergencia: z.string().default("+57"),
   discapacidad: z.string().min(1, "Seleccione una opción"),
   discapacidad_detalle: z.string().optional(),
   tipo_formacion: z.string().min(1, "Seleccione el tipo de formación"),
@@ -73,6 +76,7 @@ const schema = z.object({
   direccion_sede_principal: z.string().optional(),
   sitio_web: z.string().optional(),
   telefono_ie: z.string().optional(),
+  codigo_pais_telefono_ie: z.string().default("+57"),
   zona_sede: z.string().min(1, "Seleccione la zona de sede"),
   sedes_rural: z.string().min(1, "Ingrese el número de sedes rurales"),
   sedes_urbana: z.string().min(1, "Ingrese el número de sedes urbanas"),
@@ -105,6 +109,9 @@ const defaultValues: Partial<FormData> = {
   cargo_actual: "Rector/a",
   jornadas: [],
   niveles_educativos: [],
+  codigo_pais_celular: "+57",
+  codigo_pais_telefono_emergencia: "+57",
+  codigo_pais_telefono_ie: "+57",
 };
 
 // ── DatePicker convivial ──────────────────────────────────────
@@ -476,6 +483,7 @@ export default function FichaRLTForm() {
       lengua_materna: data.lengua_materna,
       lengua_otra: data.lengua_otra ?? null,
       celular_personal: data.celular_personal,
+      codigo_pais_celular: data.codigo_pais_celular ?? "+57",
       correo_personal: data.correo_personal,
       correo_institucional: data.correo_institucional || null,
       prefiere_correo: data.prefiere_correo,
@@ -483,6 +491,7 @@ export default function FichaRLTForm() {
       enfermedad_detalle: data.enfermedad_detalle ?? null,
       contacto_emergencia: data.contacto_emergencia ?? null,
       telefono_emergencia: data.telefono_emergencia ?? null,
+      codigo_pais_telefono_emergencia: data.codigo_pais_telefono_emergencia ?? "+57",
       discapacidad: data.discapacidad,
       discapacidad_detalle: data.discapacidad_detalle ?? null,
       tipo_formacion: data.tipo_formacion ?? null,
@@ -506,6 +515,7 @@ export default function FichaRLTForm() {
       direccion_sede_principal: data.direccion_sede_principal ?? null,
       sitio_web: data.sitio_web ?? null,
       telefono_ie: data.telefono_ie ?? null,
+      codigo_pais_telefono_ie: data.codigo_pais_telefono_ie ?? "+57",
       zona_sede: data.zona_sede ?? null,
       sedes_rural: toInt(data.sedes_rural),
       sedes_urbana: toInt(data.sedes_urbana),
@@ -814,12 +824,14 @@ export default function FichaRLTForm() {
                 </FormFieldWrapper>
               )}
 
-              <FormFieldWrapper name="celular_personal" label="Número de celular personal" required>
-                <FormInput
+              <FormFieldWrapper name="celular_personal" label="Número de celular personal" required staticLabel>
+                <PhoneInputWithCountry
                   id="celular_personal"
-                  {...register("celular_personal")}
-                  placeholder="+57 300 0000 000"
-                  type="tel"
+                  phoneValue={watch("celular_personal") ?? ""}
+                  onPhoneChange={(v) => setValue("celular_personal", v, { shouldValidate: true })}
+                  countryCode={watch("codigo_pais_celular") ?? "+57"}
+                  onCountryCodeChange={(v) => setValue("codigo_pais_celular", v)}
+                  placeholder="300 000 0000"
                   hasError={!!err("celular_personal")}
                 />
               </FormFieldWrapper>
@@ -883,8 +895,15 @@ export default function FichaRLTForm() {
                 <FormInput id="contacto_emergencia" {...register("contacto_emergencia")} placeholder="Nombre completo del contacto" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="telefono_emergencia" label="¿Cuál es el número de contacto de emergencia?">
-                <FormInput id="telefono_emergencia" type="tel" {...register("telefono_emergencia")} placeholder="+57 300 0000 000" />
+              <FormFieldWrapper name="telefono_emergencia" label="¿Cuál es el número de contacto de emergencia?" staticLabel>
+                <PhoneInputWithCountry
+                  id="telefono_emergencia"
+                  phoneValue={watch("telefono_emergencia") ?? ""}
+                  onPhoneChange={(v) => setValue("telefono_emergencia", v)}
+                  countryCode={watch("codigo_pais_telefono_emergencia") ?? "+57"}
+                  onCountryCodeChange={(v) => setValue("codigo_pais_telefono_emergencia", v)}
+                  placeholder="300 000 0000"
+                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="discapacidad" label="¿Tiene alguna discapacidad?" required className="md:col-span-2" staticLabel>
@@ -1117,8 +1136,15 @@ export default function FichaRLTForm() {
                 <FormInput id="direccion_sede_principal" {...register("direccion_sede_principal")} placeholder="Ej: Calle 10 # 20-30" />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="telefono_ie" label="Teléfono de la IE">
-                <FormInput id="telefono_ie" type="tel" {...register("telefono_ie")} placeholder="Ej: +57 604 1234567" />
+              <FormFieldWrapper name="telefono_ie" label="Teléfono de la IE" staticLabel>
+                <PhoneInputWithCountry
+                  id="telefono_ie"
+                  phoneValue={watch("telefono_ie") ?? ""}
+                  onPhoneChange={(v) => setValue("telefono_ie", v)}
+                  countryCode={watch("codigo_pais_telefono_ie") ?? "+57"}
+                  onCountryCodeChange={(v) => setValue("codigo_pais_telefono_ie", v)}
+                  placeholder="604 123 4567"
+                />
               </FormFieldWrapper>
 
               <FormFieldWrapper name="sitio_web" label="Sitio web de la IE">

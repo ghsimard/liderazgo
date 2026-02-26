@@ -212,6 +212,9 @@ export type Database = {
           cargo_actual: string
           celular_personal: string
           codigo_dane: string | null
+          codigo_pais_celular: string
+          codigo_pais_telefono_emergencia: string | null
+          codigo_pais_telefono_ie: string | null
           comuna_barrio: string | null
           contacto_emergencia: string | null
           correo_institucional: string | null
@@ -276,6 +279,9 @@ export type Database = {
           cargo_actual: string
           celular_personal: string
           codigo_dane?: string | null
+          codigo_pais_celular?: string
+          codigo_pais_telefono_emergencia?: string | null
+          codigo_pais_telefono_ie?: string | null
           comuna_barrio?: string | null
           contacto_emergencia?: string | null
           correo_institucional?: string | null
@@ -340,6 +346,9 @@ export type Database = {
           cargo_actual?: string
           celular_personal?: string
           codigo_dane?: string | null
+          codigo_pais_celular?: string
+          codigo_pais_telefono_emergencia?: string | null
+          codigo_pais_telefono_ie?: string | null
           comuna_barrio?: string | null
           contacto_emergencia?: string | null
           correo_institucional?: string | null
