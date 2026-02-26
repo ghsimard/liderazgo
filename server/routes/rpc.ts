@@ -132,4 +132,38 @@ router.get("/get_enum_types", async (_req: Request, res: Response) => {
   }
 });
 
+/** GET /api/rpc/instituciones-ficha — alias used by Encuesta360Form */
+router.get("/instituciones-ficha", async (_req: Request, res: Response) => {
+  try {
+    const rows = await query(
+      `SELECT DISTINCT nombre_ie FROM fichas_rlt ORDER BY nombre_ie`
+    );
+    res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** GET /api/rpc/directivos?institucion=... — alias used by Encuesta360Form */
+router.get("/directivos", async (req: Request, res: Response) => {
+  try {
+    const { institucion } = req.query;
+    if (!institucion) {
+      res.status(400).json({ error: "institucion required" });
+      return;
+    }
+    const rows = await query(
+      `SELECT nombres_apellidos, numero_cedula, cargo_actual
+       FROM fichas_rlt
+       WHERE nombre_ie = $1
+         AND cargo_actual IN ('Rector/a', 'Coordinador/a')
+       ORDER BY nombres_apellidos`,
+      [institucion]
+    );
+    res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
