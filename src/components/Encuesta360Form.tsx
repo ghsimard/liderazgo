@@ -308,9 +308,20 @@ function DirectivoSelect({
     }
     setLoading(true);
     (async () => {
-      const { data } = await apiFetch<DirectivoOption[]>(`/api/rpc/directivos?institucion=${encodeURIComponent(institucion)}`);
-      setDirectivos(data ?? []);
-      setLoading(false);
+      try {
+        const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
+        if (USE_EXPRESS) {
+          const { data } = await apiFetch<DirectivoOption[]>(`/api/rpc/directivos?institucion=${encodeURIComponent(institucion)}`);
+          setDirectivos(data ?? []);
+        } else {
+          const { data } = await supabase.rpc("get_directivos_por_institucion", { p_nombre_ie: institucion });
+          setDirectivos((data ?? []) as DirectivoOption[]);
+        }
+      } catch (err) {
+        console.error("Error loading directivos:", err);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [institucion]);
 
