@@ -430,7 +430,18 @@ export default function FichaRLTForm() {
   const totalSedes = sedesRural + sedesUrbana;
 
   // Geographic data from DB
-  const municipiosRegion = regionActual ? geo.getMunicipiosForRegion(regionActual) : [];
+  const entidadSeleccionada = watch("entidad_territorial") ?? "";
+  const entidadesRegion = regionActual ? geo.getEntidadesForRegion(regionActual) : [];
+  const hasMultipleEntidades = entidadesRegion.length > 1;
+
+  // If multiple entidades and one is selected, filter municipios by that entidad
+  // Otherwise fall back to region-level municipios
+  const municipiosRegion = (() => {
+    if (hasMultipleEntidades && entidadSeleccionada) {
+      return geo.getMunicipiosForEntidad(entidadSeleccionada);
+    }
+    return regionActual ? geo.getMunicipiosForRegion(regionActual) : [];
+  })();
   const tienesMunicipios = municipiosRegion.length > 1;
   const municipios = tienesMunicipios ? municipiosRegion : [];
   const instituciones = tienesMunicipios && municipioSeleccionado
@@ -936,6 +947,9 @@ export default function FichaRLTForm() {
                           value={watch("entidad_territorial") ?? ""}
                           onChange={(e) => {
                             setValue("entidad_territorial", e.target.value, { shouldValidate: true });
+                            // Reset municipio and institution when entidad changes
+                            setMunicipioSeleccionado("");
+                            setValue("nombre_ie", "");
                           }}
                           className="form-input floating-input"
                         >
