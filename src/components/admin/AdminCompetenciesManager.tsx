@@ -56,6 +56,13 @@ export default function AdminCompetenciesManager() {
         if (error) throw error;
         toast({ title: "Competencia actualizada" });
       } else {
+        // Check for duplicate key before inserting
+        const existing = competencies.find(c => c.key === editComp.key);
+        if (existing) {
+          toast({ title: "Error", description: `La clave "${editComp.key}" ya existe. Por favor use una clave diferente.`, variant: "destructive" });
+          setSaving(false);
+          return;
+        }
         const { error } = await supabase.from("competencies_360").insert({
           key: editComp.key, label: editComp.label, domain_id: editComp.domain_id, sort_order: editComp.sort_order ?? competencies.length + 1,
         });
