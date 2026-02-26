@@ -434,13 +434,16 @@ export default function FichaRLTForm() {
   const entidadesRegion = regionActual ? geo.getEntidadesForRegion(regionActual) : [];
   const hasMultipleEntidades = entidadesRegion.length > 1;
 
-  // If multiple entidades and one is selected, filter municipios by that entidad
+  // If multiple entidades and one is selected, intersect region municipios with entidad municipios
   // Otherwise fall back to region-level municipios
   const municipiosRegion = (() => {
+    if (!regionActual) return [];
+    const regionMunis = geo.getMunicipiosForRegion(regionActual);
     if (hasMultipleEntidades && entidadSeleccionada) {
-      return geo.getMunicipiosForEntidad(entidadSeleccionada);
+      const entidadMunis = geo.getMunicipiosForEntidad(entidadSeleccionada);
+      return regionMunis.filter((m) => entidadMunis.includes(m));
     }
-    return regionActual ? geo.getMunicipiosForRegion(regionActual) : [];
+    return regionMunis;
   })();
   const tienesMunicipios = municipiosRegion.length > 1;
   const municipios = tienesMunicipios ? municipiosRegion : [];
