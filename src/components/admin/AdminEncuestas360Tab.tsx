@@ -94,18 +94,22 @@ export default function AdminEncuestas360Tab() {
     setSelectedEncuesta(enc);
     setLoadingTexts(true);
 
-    const { data } = await supabase
-      .from("item_texts_360")
-      .select("item_id, form_type, text, items_360!inner(item_number, competency_key, response_type)")
-      .eq("form_type", enc.tipo_formulario)
-      .order("items_360(item_number)");
+    // Fetch items and texts separately (join syntax not supported by dbClient shim on Render)
+    const [{ data: itemsData }, { data: textsData }] = await Promise.all([
+      supabase.from("items_360").select("id, item_number, competency_key, response_type").order("item_number"),
+      supabase.from("item_texts_360").select("item_id, form_type, text").eq("form_type", enc.tipo_formulario),
+    ]);
 
-    const texts: ItemText[] = (data ?? []).map((row: any) => ({
-      item_number: row.items_360.item_number,
-      competency_key: row.items_360.competency_key,
-      response_type: row.items_360.response_type,
-      text: row.text,
-    }));
+    const itemsMap = new Map<string, { item_number: number; competency_key: string; response_type: string }>();
+    (itemsData ?? []).forEach((i: any) => itemsMap.set(i.id, { item_number: i.item_number, competency_key: i.competency_key, response_type: i.response_type }));
+
+    const texts: ItemText[] = (textsData ?? [])
+      .map((row: any) => {
+        const item = itemsMap.get(row.item_id);
+        if (!item) return null;
+        return { item_number: item.item_number, competency_key: item.competency_key, response_type: item.response_type, text: row.text };
+      })
+      .filter(Boolean) as ItemText[];
     texts.sort((a, b) => a.item_number - b.item_number);
 
     setItemTexts(texts);
