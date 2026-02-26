@@ -94,6 +94,9 @@ export default function AdminLogin() {
             <p className="text-xs text-muted-foreground text-center">
               ¿Olvidaste tu contraseña? Contacta al administrador.
             </p>
+            <p className="text-[10px] text-muted-foreground/50 text-center mt-2">
+              Mode: {import.meta.env.VITE_API_URL ? `Express (${import.meta.env.VITE_API_URL})` : "Cloud"}
+            </p>
           </form>
         </CardContent>
       </Card>
