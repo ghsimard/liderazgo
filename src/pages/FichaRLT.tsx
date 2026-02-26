@@ -916,37 +916,42 @@ export default function FichaRLTForm() {
             {/* SECCIÓN 4: Institución */}
             <FormSection number={4} title="Información Institucional">
               {/* Entidad Territorial — auto si una sola, select si varias */}
-              <FormFieldWrapper name="entidad_territorial" label="Entidad Territorial" required>
-                {(() => {
-                  const ets = geo.getEntidadesForRegion(regionSeleccionada ?? "");
-                  if (ets.length <= 1) {
-                    return (
-                      <input
-                        id="entidad_territorial"
-                        value={ets[0] ?? ""}
-                        readOnly
-                        disabled
-                        className="form-input floating-input opacity-75 cursor-not-allowed"
-                      />
-                    );
-                  }
-                  return (
-                    <select
-                      id="entidad_territorial"
-                      value={watch("entidad_territorial") ?? ""}
-                      onChange={(e) => {
-                        setValue("entidad_territorial", e.target.value, { shouldValidate: true });
-                      }}
-                      className="form-input floating-input"
-                    >
-                      <option value="">Seleccionar…</option>
-                      {ets.map((et) => (
-                        <option key={et} value={et}>{et}</option>
-                      ))}
-                    </select>
-                  );
-                })()}
-              </FormFieldWrapper>
+              {(() => {
+                const ets = geo.getEntidadesForRegion(regionSeleccionada ?? "");
+                const etValue = ets.length <= 1 ? (ets[0] ?? "") : (watch("entidad_territorial") ?? "");
+                return (
+                  <div className="flex flex-col gap-1">
+                    <div className={cn("floating-field-wrapper", !!etValue && "field-has-value")}>
+                      {ets.length <= 1 ? (
+                        <input
+                          id="entidad_territorial"
+                          value={ets[0] ?? ""}
+                          readOnly
+                          disabled
+                          className="form-input floating-input opacity-75 cursor-not-allowed"
+                        />
+                      ) : (
+                        <select
+                          id="entidad_territorial"
+                          value={watch("entidad_territorial") ?? ""}
+                          onChange={(e) => {
+                            setValue("entidad_territorial", e.target.value, { shouldValidate: true });
+                          }}
+                          className="form-input floating-input"
+                        >
+                          <option value=""></option>
+                          {ets.map((et) => (
+                            <option key={et} value={et}>{et}</option>
+                          ))}
+                        </select>
+                      )}
+                      <label className="floating-label" htmlFor="entidad_territorial">
+                        Entidad Territorial<span className="required-star ml-0.5">*</span>
+                      </label>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Municipio — verrouillé ou liste déroulante */}
               {(() => {
