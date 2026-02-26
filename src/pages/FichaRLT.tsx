@@ -86,7 +86,7 @@ const schema = z.object({
   
   desplazamiento: z.string().optional(),
   niveles_educativos: z.array(z.string()).min(1, "Seleccione al menos un nivel educativo"),
-  tipo_bachillerato: z.array(z.string()).optional(),
+  tipo_bachillerato: z.array(z.string()).min(1, "Seleccione al menos un tipo de bachillerato"),
   modelo_pedagogico: z.string().optional(),
   num_docentes: z.string().min(1, "Ingrese el número de docentes"),
   num_coordinadores: z.string().min(1, "Ingrese el número de coordinadores"),
@@ -621,6 +621,7 @@ export default function FichaRLTForm() {
     sedes_urbana: "Sedes urbanas",
     jornadas: "Jornadas",
     niveles_educativos: "Niveles educativos",
+    tipo_bachillerato: "Tipo de bachillerato",
     num_docentes: "Número de docentes",
     num_coordinadores: "Número de coordinadores",
     num_administrativos: "Número de administrativos",
@@ -1234,7 +1235,7 @@ export default function FichaRLTForm() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="tipo_bachillerato" label="Tipo de bachillerato que ofrece la IE" staticLabel>
+              <FormFieldWrapper name="tipo_bachillerato" label="Tipo de bachillerato que ofrece la IE" staticLabel required>
                 <FormCheckboxGroup
                   name="tipo_bachillerato"
                   options={[

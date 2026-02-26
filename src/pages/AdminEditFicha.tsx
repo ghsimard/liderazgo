@@ -76,7 +76,7 @@ const schema = z.object({
   
   desplazamiento: z.string().optional(),
   niveles_educativos: z.array(z.string()).optional(),
-  tipo_bachillerato: z.array(z.string()).optional(),
+  tipo_bachillerato: z.array(z.string()).min(1, "Seleccione al menos un tipo de bachillerato"),
   modelo_pedagogico: z.string().optional(),
   num_docentes: z.string().optional(),
   num_coordinadores: z.string().optional(),
@@ -1067,7 +1067,7 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="tipo_bachillerato" label="Tipo de bachillerato que ofrece la IE" staticLabel>
+              <FormFieldWrapper name="tipo_bachillerato" label="Tipo de bachillerato que ofrece la IE" staticLabel required>
                 <FormCheckboxGroup
                   name="tipo_bachillerato"
                   options={[
