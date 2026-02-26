@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/utils/apiFetch";
+import { supabase } from "@/utils/dbClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, CheckCircle2, Info } from "lucide-react";
@@ -35,14 +36,30 @@ function InstitutionSearch({
 
   useEffect(() => {
     (async () => {
-      if (onlyWithFichas) {
-        const { data } = await apiFetch<any[]>("/api/rpc/instituciones-ficha");
-        setInstituciones((data ?? []).map((r: any) => r.nombre_ie));
-      } else {
-        const { data } = await apiFetch<any[]>("/api/geography/instituciones");
-        setInstituciones((data ?? []).map((i: any) => i.nombre));
+      try {
+        const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
+        if (USE_EXPRESS) {
+          if (onlyWithFichas) {
+            const { data } = await apiFetch<any[]>("/api/rpc/instituciones-ficha");
+            setInstituciones((data ?? []).map((r: any) => r.nombre_ie));
+          } else {
+            const { data } = await apiFetch<any[]>("/api/geography/instituciones");
+            setInstituciones((data ?? []).map((i: any) => i.nombre));
+          }
+        } else {
+          if (onlyWithFichas) {
+            const { data } = await supabase.rpc("get_instituciones_con_ficha");
+            setInstituciones((data ?? []).map((r: any) => r.nombre_ie));
+          } else {
+            const { data } = await supabase.from("instituciones").select("id, nombre").order("nombre");
+            setInstituciones((data ?? []).map((i: any) => i.nombre));
+          }
+        }
+      } catch (err) {
+        console.error("Error loading instituciones:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     })();
   }, [onlyWithFichas]);
 
