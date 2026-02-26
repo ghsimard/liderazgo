@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { queryOne } from "../db";
+import { query, queryOne } from "../db";
 import { signToken, requireAuth } from "../middleware/auth";
 
 const router = Router();
@@ -45,7 +45,7 @@ router.post("/login", async (req: Request, res: Response) => {
   }
 });
 
-/** GET /api/auth/me — return current user info */
+/** GET /api/auth/me — return current user info + roles */
 router.get("/me", requireAuth, async (req: Request, res: Response) => {
   try {
     const user = await queryOne<{ id: string; email: string; created_at: string }>(
@@ -58,7 +58,13 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    res.json({ user });
+    // Fetch all roles for this user
+    const roles = await query<{ role: string }>(
+      "SELECT role FROM user_roles WHERE user_id = $1",
+      [user.id]
+    );
+
+    res.json({ user: { ...user, roles: roles.map((r) => r.role) } });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

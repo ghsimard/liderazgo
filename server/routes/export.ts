@@ -7,7 +7,7 @@
 
 import { Router, Request, Response } from "express";
 import { pool, query } from "../db";
-import { requireAuth, requireAdmin } from "../middleware/auth";
+import { requireAuth, requireSuperAdmin } from "../middleware/auth";
 import fs from "fs";
 import path from "path";
 
@@ -31,7 +31,7 @@ const EXPORT_TABLES = [
   "app_images",
 ];
 
-router.get("/", requireAuth, requireAdmin, async (_req: Request, res: Response) => {
+router.get("/", requireAuth, requireSuperAdmin, async (_req: Request, res: Response) => {
   try {
     let sql = `-- Database Export\n-- Generated: ${new Date().toISOString()}\n\n`;
 

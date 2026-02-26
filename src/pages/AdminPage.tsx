@@ -100,7 +100,7 @@ function FormCard({ form }: { form: FormItem }) {
 }
 
 export default function AdminPage() {
-  const { isAdmin, signOut } = useAdminAuth();
+  const { isAdmin, isSuperAdmin, signOut } = useAdminAuth();
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt;
@@ -164,9 +164,11 @@ export default function AdminPage() {
             <h1 className="font-semibold text-base leading-tight">Panel de Administración</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5">
-              <DatabaseBackup className="w-4 h-4" /> {exporting ? "Exportando…" : "Export SQL"}
-            </Button>
+            {isSuperAdmin && (
+              <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5">
+                <DatabaseBackup className="w-4 h-4" /> {exporting ? "Exportando…" : "Export SQL"}
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5">
               <LogOut className="w-4 h-4" /> Salir
             </Button>
