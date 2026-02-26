@@ -145,8 +145,13 @@ class QueryBuilder<T = any> {
       };
 
       const result = await apiFetch<any>(path, { method: "POST", body });
+      let data = result.data?.rows ?? result.data?.data ?? result.data;
+      // Handle .single() / .maybeSingle() for mutations — extract first element
+      if ((this._single || this._maybeSingle) && Array.isArray(data)) {
+        data = data[0] ?? null;
+      }
       return resolve({
-        data: result.data?.rows ?? result.data?.data ?? result.data,
+        data,
         error: result.error ? { message: result.error } : null,
       });
     } catch (err: any) {
