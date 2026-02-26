@@ -8,6 +8,7 @@ const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 export function useAdminAuth() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,21 +26,37 @@ export function useAdminAuth() {
         return;
       }
 
-      // In Supabase mode, verify admin role via RPC
-      if (!USE_EXPRESS) {
-        const { data: hasRole } = await supabase.rpc("has_role", {
-          _user_id: data.user.id,
-          _role: "admin",
-        });
-        if (!hasRole) {
+      const uid = data.user.id;
+
+      if (USE_EXPRESS) {
+        // On Render, roles come from the /api/auth/me response
+        const roles: string[] = (data.user as any).roles ?? [];
+        if (!roles.includes("admin") && !roles.includes("superadmin")) {
           await apiLogout();
           navigate("/admin/login");
           return;
         }
+        setIsSuperAdmin(roles.includes("superadmin"));
+      } else {
+        // On Lovable/Supabase, check via RPC
+        const { data: hasAdmin } = await supabase.rpc("has_role", {
+          _user_id: uid,
+          _role: "admin",
+        });
+        const { data: hasSuperAdmin } = await supabase.rpc("has_role", {
+          _user_id: uid,
+          _role: "superadmin",
+        });
+        if (!hasAdmin && !hasSuperAdmin) {
+          await apiLogout();
+          navigate("/admin/login");
+          return;
+        }
+        setIsSuperAdmin(!!hasSuperAdmin);
       }
 
       setIsAdmin(true);
-      setUserId(data.user.id);
+      setUserId(uid);
     };
 
     checkAdmin();
@@ -50,5 +67,5 @@ export function useAdminAuth() {
     navigate("/admin/login");
   };
 
-  return { isAdmin, userId, signOut };
+  return { isAdmin, isSuperAdmin, userId, signOut };
 }

@@ -130,7 +130,7 @@ export async function apiGetMe() {
     };
   }
 
-  return apiFetch<{ user: { id: string; email: string; created_at: string } }>("/api/auth/me");
+  return apiFetch<{ user: { id: string; email: string; created_at: string; roles?: string[] } }>("/api/auth/me");
 }
 
 /** Logout */

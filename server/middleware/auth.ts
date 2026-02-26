@@ -49,12 +49,32 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
   }
 
   const role = await queryOne<{ role: string }>(
-    `SELECT role FROM user_roles WHERE user_id = $1 AND role = 'admin'`,
+    `SELECT role FROM user_roles WHERE user_id = $1 AND role IN ('admin', 'superadmin')`,
     [req.user.userId]
   );
 
   if (!role) {
     res.status(403).json({ error: "Accès interdit — rôle admin requis" });
+    return;
+  }
+
+  next();
+}
+
+/** Middleware: require superadmin role (must be used AFTER requireAuth) */
+export async function requireSuperAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ error: "Non authentifié" });
+    return;
+  }
+
+  const role = await queryOne<{ role: string }>(
+    `SELECT role FROM user_roles WHERE user_id = $1 AND role = 'superadmin'`,
+    [req.user.userId]
+  );
+
+  if (!role) {
+    res.status(403).json({ error: "Accès interdit — rôle superadmin requis" });
     return;
   }
 
