@@ -311,8 +311,21 @@ function DirectivoSelect({
       try {
         const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
         if (USE_EXPRESS) {
-          const { data } = await apiFetch<DirectivoOption[]>(`/api/rpc/directivos?institucion=${encodeURIComponent(institucion)}`);
-          setDirectivos(data ?? []);
+          const endpoints = [
+            `/api/rpc/get_directivos_por_institucion?p_nombre_ie=${encodeURIComponent(institucion)}`,
+            `/api/rpc/directivos?institucion=${encodeURIComponent(institucion)}`,
+          ];
+
+          let rows: DirectivoOption[] = [];
+          for (const endpoint of endpoints) {
+            const { data, error } = await apiFetch<any>(endpoint);
+            if (!error && Array.isArray(data)) {
+              rows = data as DirectivoOption[];
+              break;
+            }
+          }
+
+          setDirectivos(rows);
         } else {
           const { data } = await supabase.rpc("get_directivos_por_institucion", { p_nombre_ie: institucion });
           setDirectivos((data ?? []) as DirectivoOption[]);
