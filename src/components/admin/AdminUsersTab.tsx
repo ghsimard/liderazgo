@@ -26,6 +26,8 @@ interface AdminUser {
   email: string;
   created_at: string;
   last_sign_in_at?: string | null;
+  role?: string;
+  roles?: string[];
 }
 
 async function invokeManageUsers(action: string, params: Record<string, unknown> = {}) {
@@ -182,6 +184,7 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
+              <TableHead>Rol</TableHead>
               <TableHead>Creado</TableHead>
               <TableHead>Último acceso</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
@@ -190,18 +193,25 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                   <RefreshCw className="animate-spin w-5 h-5 mx-auto" />
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">No hay administradores.</TableCell>
+                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">No hay administradores.</TableCell>
               </TableRow>
             ) : (
-              users.map((u) => (
+              users.map((u) => {
+                const displayRole = u.role || (u.roles?.includes("superadmin") ? "superadmin" : "admin");
+                return (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">{u.email}</TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${displayRole === "superadmin" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {displayRole}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(u.created_at)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(u.last_sign_in_at)}</TableCell>
                   <TableCell className="text-right">
@@ -215,7 +225,8 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
