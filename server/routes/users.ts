@@ -47,6 +47,19 @@ router.post("/", async (req: Request, res: Response) => {
       return;
     }
 
+    // Only superadmins can create superadmins
+    if (role === "superadmin") {
+      const callerRoles = await query<{ role: string }>(
+        "SELECT role FROM user_roles WHERE user_id = $1",
+        [req.user!.userId]
+      );
+      const isSuperAdmin = callerRoles.some((r) => r.role === "superadmin");
+      if (!isSuperAdmin) {
+        res.status(403).json({ error: "Seul un superadmin peut créer un autre superadmin" });
+        return;
+      }
+    }
+
     // Check duplicate
     const existing = await queryOne("SELECT id FROM users WHERE email = $1", [email.toLowerCase().trim()]);
     if (existing) {
@@ -63,12 +76,11 @@ router.post("/", async (req: Request, res: Response) => {
     );
 
     // Assign role if specified
-    if (role) {
-      await queryOne(
-        "INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-        [id, role]
-      );
-    }
+    const assignedRole = role || "admin";
+    await queryOne(
+      "INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+      [id, assignedRole]
+    );
 
     res.status(201).json({ id, email: email.toLowerCase().trim() });
   } catch (err: any) {

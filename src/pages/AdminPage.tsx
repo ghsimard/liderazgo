@@ -249,7 +249,7 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="encuestas360"><AdminEncuestas360Tab /></TabsContent>
           <TabsContent value="reportes360"><AdminReporte360Tab /></TabsContent>
-          <TabsContent value="users"><AdminUsersTab /></TabsContent>
+          <TabsContent value="users"><AdminUsersTab isSuperAdmin={isSuperAdmin} /></TabsContent>
           <TabsContent value="images"><AdminImagesTab /></TabsContent>
         </Tabs>
       </div>

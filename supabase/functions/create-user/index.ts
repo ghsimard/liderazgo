@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, makeAdmin } = body as Record<string, unknown>;
+    const { email, password, makeAdmin, makeSuperAdmin } = body as Record<string, unknown>;
 
     if (typeof email !== "string" || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       return new Response(JSON.stringify({ error: "Email invalide" }), {
@@ -78,9 +78,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (makeAdmin !== undefined && typeof makeAdmin !== "boolean") {
-      return new Response(JSON.stringify({ error: "makeAdmin doit être un booléen" }), {
-        status: 400,
+    // Only superadmins can create superadmins
+    if (makeSuperAdmin && roleData.role !== "superadmin") {
+      return new Response(JSON.stringify({ error: "Seul un superadmin peut créer un autre superadmin" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -100,11 +101,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Optionally assign admin role
-    if (makeAdmin && newUser.user) {
+    // Assign role
+    if (newUser.user) {
+      const assignedRole = makeSuperAdmin ? "superadmin" : "admin";
       await adminClient.from("user_roles").insert({
         user_id: newUser.user.id,
-        role: "admin",
+        role: assignedRole,
       });
     }
 
