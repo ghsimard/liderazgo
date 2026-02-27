@@ -136,11 +136,15 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
         created_at: deleteUser.created_at,
         last_sign_in_at: deleteUser.last_sign_in_at,
       };
-      await supabase.from("deleted_records").insert([{
+      const trashResult = await supabase.from("deleted_records").insert([{
         record_type: "admin_user",
         record_label: `${deleteUser.email} (${displayRole})`,
         deleted_data: trashData,
       }]);
+      console.log("Trash insert result:", JSON.stringify(trashResult));
+      if (trashResult.error) {
+        toast({ title: "Error papelera", description: JSON.stringify(trashResult.error), variant: "destructive" });
+      }
 
       if (USE_EXPRESS) {
         const { error } = await apiFetch(`/api/users/${deleteUser.id}`, { method: "DELETE" });
