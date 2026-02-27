@@ -180,6 +180,14 @@ export default function AdminGeographyTab() {
   const handleDelete = async () => {
     if (!deleteItem) return;
     setDeleteLoading(true);
+
+    // For regions, delete junction table rows first to avoid FK errors
+    if (deleteItem.type === "region") {
+      await supabase.from("region_entidades").delete().eq("region_id", deleteItem.id);
+      await supabase.from("region_municipios").delete().eq("region_id", deleteItem.id);
+      await supabase.from("region_instituciones").delete().eq("region_id", deleteItem.id);
+    }
+
     const table = deleteItem.type === "entidad" ? "entidades_territoriales"
       : deleteItem.type === "municipio" ? "municipios"
       : deleteItem.type === "institucion" ? "instituciones"
