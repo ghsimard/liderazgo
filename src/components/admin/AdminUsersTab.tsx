@@ -4,6 +4,9 @@ import { apiFetch } from "@/utils/apiFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
@@ -25,7 +28,6 @@ interface AdminUser {
   last_sign_in_at?: string | null;
 }
 
-// ─── Supabase mode helpers ────────────────────────────
 async function invokeManageUsers(action: string, params: Record<string, unknown> = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   const { data, error } = await supabase.functions.invoke("manage-users", {
@@ -37,7 +39,11 @@ async function invokeManageUsers(action: string, params: Record<string, unknown>
   return data;
 }
 
-export default function AdminUsersTab() {
+interface AdminUsersTabProps {
+  isSuperAdmin?: boolean;
+}
+
+export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabProps) {
   const { toast } = useToast();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +52,7 @@ export default function AdminUsersTab() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState<string>("admin");
   const [createLoading, setCreateLoading] = useState(false);
 
   // Delete dialog
@@ -55,7 +62,7 @@ export default function AdminUsersTab() {
   // Password dialog
   const [pwUser, setPwUser] = useState<AdminUser | null>(null);
   const [newPw, setNewPw] = useState("");
-const [pwLoading, setPwLoading] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showPwPassword, setShowPwPassword] = useState(false);
 
@@ -88,20 +95,26 @@ const [pwLoading, setPwLoading] = useState(false);
       if (USE_EXPRESS) {
         const { error } = await apiFetch("/api/users", {
           method: "POST",
-          body: { email: newEmail, password: newPassword, role: "admin" },
+          body: { email: newEmail, password: newPassword, role: newRole },
         });
         if (error) throw new Error(error);
       } else {
         const { data: { session } } = await supabase.auth.getSession();
         await supabase.functions.invoke("create-user", {
-          body: { email: newEmail, password: newPassword, makeAdmin: true },
+          body: {
+            email: newEmail,
+            password: newPassword,
+            makeAdmin: true,
+            makeSuperAdmin: newRole === "superadmin",
+          },
           headers: { Authorization: `Bearer ${session?.access_token}` },
         });
       }
-      toast({ title: "Administrador creado", description: newEmail });
+      toast({ title: "Administrador creado", description: `${newEmail} (${newRole})` });
       setCreateOpen(false);
       setNewEmail("");
       setNewPassword("");
+      setNewRole("admin");
       fetchUsers();
     } catch (err: unknown) {
       toast({ title: "Error", description: err instanceof Error ? err.message : "Error desconocido", variant: "destructive" });
@@ -209,7 +222,7 @@ const [pwLoading, setPwLoading] = useState(false);
       </div>
 
       {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setNewEmail(""); setNewPassword(""); setShowNewPassword(false); } }}>
+      <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setNewEmail(""); setNewPassword(""); setNewRole("admin"); setShowNewPassword(false); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Crear administrador</DialogTitle>
@@ -223,6 +236,17 @@ const [pwLoading, setPwLoading] = useState(false);
                 {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </Button>
             </div>
+            {isSuperAdmin && (
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="superadmin">Superadmin</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
