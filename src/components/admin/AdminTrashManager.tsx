@@ -22,6 +22,10 @@ const TYPE_LABELS: Record<string, string> = {
   item: "Ítem",
   encuesta_360: "Encuesta 360",
   ficha_rlt: "Ficha RLT",
+  region: "Región",
+  entidad_territorial: "Entidad Territorial",
+  municipio: "Municipio",
+  institucion: "Institución",
 };
 
 export default function AdminTrashManager() {
@@ -68,13 +72,32 @@ export default function AdminTrashManager() {
         const { id, ...rest } = d;
         await supabase.from("encuestas_360").insert([{ id, ...rest }]);
       } else if (record.record_type === "ficha_rlt") {
-        // Restore ficha first
         const { ficha, encuestas } = d;
         await supabase.from("fichas_rlt").insert([ficha]);
-        // Restore associated encuestas
         if (encuestas?.length > 0) {
           await supabase.from("encuestas_360").insert(encuestas);
         }
+      } else if (record.record_type === "region") {
+        // Restore region first, then junction tables
+        if (d.region) await supabase.from("regiones").insert([d.region]);
+        if (d.entidades?.length > 0) await supabase.from("region_entidades").insert(d.entidades.map(({ id, ...rest }: any) => rest));
+        if (d.municipios?.length > 0) await supabase.from("region_municipios").insert(d.municipios.map(({ id, ...rest }: any) => rest));
+        if (d.instituciones?.length > 0) await supabase.from("region_instituciones").insert(d.instituciones.map(({ id, ...rest }: any) => rest));
+      } else if (record.record_type === "entidad_territorial") {
+        if (d.entidad) await supabase.from("entidades_territoriales").insert([d.entidad]);
+        if (d.municipios?.length > 0) await supabase.from("municipios").insert(d.municipios);
+        if (d.instituciones?.length > 0) await supabase.from("instituciones").insert(d.instituciones);
+        if (d.region_entidades?.length > 0) await supabase.from("region_entidades").insert(d.region_entidades.map(({ id, ...rest }: any) => rest));
+        if (d.region_municipios?.length > 0) await supabase.from("region_municipios").insert(d.region_municipios.map(({ id, ...rest }: any) => rest));
+        if (d.region_instituciones?.length > 0) await supabase.from("region_instituciones").insert(d.region_instituciones.map(({ id, ...rest }: any) => rest));
+      } else if (record.record_type === "municipio") {
+        if (d.municipio) await supabase.from("municipios").insert([d.municipio]);
+        if (d.instituciones?.length > 0) await supabase.from("instituciones").insert(d.instituciones);
+        if (d.region_municipios?.length > 0) await supabase.from("region_municipios").insert(d.region_municipios.map(({ id, ...rest }: any) => rest));
+        if (d.region_instituciones?.length > 0) await supabase.from("region_instituciones").insert(d.region_instituciones.map(({ id, ...rest }: any) => rest));
+      } else if (record.record_type === "institucion") {
+        if (d.institucion) await supabase.from("instituciones").insert([d.institucion]);
+        if (d.region_instituciones?.length > 0) await supabase.from("region_instituciones").insert(d.region_instituciones.map(({ id, ...rest }: any) => rest));
       }
 
       // Remove from trash
