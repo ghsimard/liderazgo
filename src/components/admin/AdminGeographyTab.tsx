@@ -181,20 +181,60 @@ export default function AdminGeographyTab() {
     if (!deleteItem) return;
     setDeleteLoading(true);
 
-    // For regions, delete junction table rows first to avoid FK errors
-    if (deleteItem.type === "region") {
-      await supabase.from("region_entidades").delete().eq("region_id", deleteItem.id);
-      await supabase.from("region_municipios").delete().eq("region_id", deleteItem.id);
-      await supabase.from("region_instituciones").delete().eq("region_id", deleteItem.id);
-    }
+    try {
+      let deletedData: any = {};
 
-    const table = deleteItem.type === "entidad" ? "entidades_territoriales"
-      : deleteItem.type === "municipio" ? "municipios"
-      : deleteItem.type === "institucion" ? "instituciones"
-      : "regiones";
-    const { error } = await supabase.from(table).delete().eq("id", deleteItem.id);
-    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Eliminado" }); setDeleteItem(null); fetchAllKeepScroll(); }
+      if (deleteItem.type === "region") {
+        // Collect all related data before deleting
+        const region = regiones.find(r => r.id === deleteItem.id);
+        const relEntidades = regionEntidades.filter(re => re.region_id === deleteItem.id);
+        const relMunicipios = regionMunicipios.filter(rm => rm.region_id === deleteItem.id);
+        const relInstituciones = regionInstituciones.filter(ri => ri.region_id === deleteItem.id);
+        deletedData = { region, entidades: relEntidades, municipios: relMunicipios, instituciones: relInstituciones };
+
+        await supabase.from("region_entidades").delete().eq("region_id", deleteItem.id);
+        await supabase.from("region_municipios").delete().eq("region_id", deleteItem.id);
+        await supabase.from("region_instituciones").delete().eq("region_id", deleteItem.id);
+      } else if (deleteItem.type === "entidad") {
+        // Collect child municipios and their instituciones
+        const childMunis = municipios.filter(m => m.entidad_territorial_id === deleteItem.id);
+        const childInsIds = childMunis.flatMap(m => instituciones.filter(i => i.municipio_id === m.id));
+        const relRE = regionEntidades.filter(re => re.entidad_territorial_id === deleteItem.id);
+        const relRM = childMunis.flatMap(m => regionMunicipios.filter(rm => rm.municipio_id === m.id));
+        const relRI = childInsIds.flatMap(i => regionInstituciones.filter(ri => ri.institucion_id === i.id));
+        deletedData = { entidad: { id: deleteItem.id, nombre: deleteItem.nombre }, municipios: childMunis, instituciones: childInsIds, region_entidades: relRE, region_municipios: relRM, region_instituciones: relRI };
+      } else if (deleteItem.type === "municipio") {
+        const childIns = instituciones.filter(i => i.municipio_id === deleteItem.id);
+        const muni = municipios.find(m => m.id === deleteItem.id);
+        const relRM = regionMunicipios.filter(rm => rm.municipio_id === deleteItem.id);
+        const relRI = childIns.flatMap(i => regionInstituciones.filter(ri => ri.institucion_id === i.id));
+        deletedData = { municipio: muni, instituciones: childIns, region_municipios: relRM, region_instituciones: relRI };
+      } else if (deleteItem.type === "institucion") {
+        const inst = instituciones.find(i => i.id === deleteItem.id);
+        const relRI = regionInstituciones.filter(ri => ri.institucion_id === deleteItem.id);
+        deletedData = { institucion: inst, region_instituciones: relRI };
+      }
+
+      // Save to trash
+      await supabase.from("deleted_records").insert({
+        record_type: deleteItem.type === "entidad" ? "entidad_territorial" : deleteItem.type,
+        record_label: deleteItem.nombre,
+        deleted_data: deletedData,
+      });
+
+      const table = deleteItem.type === "entidad" ? "entidades_territoriales"
+        : deleteItem.type === "municipio" ? "municipios"
+        : deleteItem.type === "institucion" ? "instituciones"
+        : "regiones";
+      const { error } = await supabase.from(table).delete().eq("id", deleteItem.id);
+      if (error) throw error;
+
+      toast({ title: "Enviado a la papelera" });
+      setDeleteItem(null);
+      fetchAllKeepScroll();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
     setDeleteLoading(false);
   };
 
