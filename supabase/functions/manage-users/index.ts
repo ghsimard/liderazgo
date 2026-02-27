@@ -80,6 +80,12 @@ Deno.serve(async (req) => {
           });
         }
 
+        // Build a map of user_id -> role
+        const roleMap: Record<string, string> = {};
+        for (const r of roles) {
+          roleMap[r.user_id] = r.role;
+        }
+
         const userIds = roles.map((r: { user_id: string }) => r.user_id);
         const users = [];
 
@@ -91,6 +97,7 @@ Deno.serve(async (req) => {
               email: data.user.email,
               created_at: data.user.created_at,
               last_sign_in_at: data.user.last_sign_in_at,
+              role: roleMap[uid] ?? "admin",
             });
           }
         }
