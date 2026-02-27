@@ -95,6 +95,21 @@ BEGIN
 END $$;
 
 -- ============================================================
+-- Deleted records (trash / papelera)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.deleted_records (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  record_type TEXT NOT NULL,
+  record_label TEXT NOT NULL,
+  deleted_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  deleted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deleted_by UUID
+);
+
+CREATE INDEX IF NOT EXISTS idx_deleted_records_type ON public.deleted_records (record_type);
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js
