@@ -34,6 +34,9 @@ router.post("/login", async (req: Request, res: Response) => {
       return;
     }
 
+    // Update last sign-in timestamp
+    await queryOne("UPDATE users SET last_sign_in_at = now() WHERE id = $1", [user.id]);
+
     const token = signToken({ userId: user.id, email: user.email });
 
     res.json({

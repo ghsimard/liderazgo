@@ -13,7 +13,7 @@ router.use(requireAuth, requireAdmin);
 router.get("/", async (_req: Request, res: Response) => {
   try {
     const users = await query(`
-      SELECT u.id, u.email, u.created_at,
+      SELECT u.id, u.email, u.created_at, u.last_sign_in_at,
              COALESCE(json_agg(ur.role) FILTER (WHERE ur.role IS NOT NULL), '[]') AS roles
       FROM users u
       LEFT JOIN user_roles ur ON ur.user_id = u.id
