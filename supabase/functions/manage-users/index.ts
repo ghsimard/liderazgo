@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    await verifyAdmin(authHeader);
+    const caller = await verifyAdmin(authHeader);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -137,6 +137,31 @@ Deno.serve(async (req) => {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
+        }
+
+        // Check if target is superadmin — only superadmins can delete superadmins
+        const { data: targetRole } = await adminClient
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user_id)
+          .eq("role", "superadmin")
+          .maybeSingle();
+
+        if (targetRole) {
+          // Caller must also be superadmin
+          const { data: callerRole } = await adminClient
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", caller.id)
+            .eq("role", "superadmin")
+            .maybeSingle();
+
+          if (!callerRole) {
+            return new Response(JSON.stringify({ error: "Seul un superadmin peut supprimer un autre superadmin" }), {
+              status: 403,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
         }
 
         // Remove role first

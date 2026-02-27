@@ -127,6 +127,22 @@ router.delete("/:id", async (req: Request, res: Response) => {
       return;
     }
 
+    // Check if target is superadmin — only superadmins can delete superadmins
+    const targetRoles = await query<{ role: string }>(
+      "SELECT role FROM user_roles WHERE user_id = $1",
+      [id]
+    );
+    if (targetRoles.some((r) => r.role === "superadmin")) {
+      const callerRoles = await query<{ role: string }>(
+        "SELECT role FROM user_roles WHERE user_id = $1",
+        [req.user!.userId]
+      );
+      if (!callerRoles.some((r) => r.role === "superadmin")) {
+        res.status(403).json({ error: "Seul un superadmin peut supprimer un autre superadmin" });
+        return;
+      }
+    }
+
     await query("DELETE FROM user_roles WHERE user_id = $1", [id]);
     const user = await queryOne("DELETE FROM users WHERE id = $1 RETURNING id", [id]);
 
