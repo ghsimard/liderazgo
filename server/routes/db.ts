@@ -43,6 +43,9 @@ const ALLOWED_TABLES = new Set([
   "encuestas_360",
   "deleted_records",
   "user_roles",
+  "region_entidades",
+  "region_municipios",
+  "region_instituciones",
 ]);
 
 // ── Helpers ────────────────────────────────────────────
