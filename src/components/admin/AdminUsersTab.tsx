@@ -128,13 +128,27 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
     if (!deleteUser) return;
     setDeleteLoading(true);
     try {
+      // Save to trash before deleting
+      const displayRole = deleteUser.role || (deleteUser.roles?.includes("superadmin") ? "superadmin" : "admin");
+      const trashData = {
+        email: deleteUser.email,
+        role: displayRole,
+        created_at: deleteUser.created_at,
+        last_sign_in_at: deleteUser.last_sign_in_at,
+      };
+      await supabase.from("deleted_records").insert([{
+        record_type: "admin_user",
+        record_label: `${deleteUser.email} (${displayRole})`,
+        deleted_data: trashData,
+      }]);
+
       if (USE_EXPRESS) {
         const { error } = await apiFetch(`/api/users/${deleteUser.id}`, { method: "DELETE" });
         if (error) throw new Error(error);
       } else {
         await invokeManageUsers("delete", { user_id: deleteUser.id });
       }
-      toast({ title: "Administrador eliminado" });
+      toast({ title: "Administrador movido a la papelera" });
       setDeleteUser(null);
       fetchUsers();
     } catch (err: unknown) {

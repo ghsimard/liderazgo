@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/utils/dbClient";
+import { apiFetch } from "@/utils/apiFetch";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Undo2, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { RefreshCw, Undo2, Trash2, Eye, EyeOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
+
+const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
 interface DeletedRecord {
   id: string;
@@ -26,6 +30,7 @@ const TYPE_LABELS: Record<string, string> = {
   entidad_territorial: "Entidad Territorial",
   municipio: "Municipio",
   institucion: "Institución",
+  admin_user: "Administrador",
 };
 
 export default function AdminTrashManager() {
@@ -34,6 +39,12 @@ export default function AdminTrashManager() {
   const [loading, setLoading] = useState(true);
   const [restoring, setRestoring] = useState<string | null>(null);
   const [purgeId, setPurgeId] = useState<string | null>(null);
+
+  // User restore dialog (needs new password)
+  const [userRestoreRecord, setUserRestoreRecord] = useState<DeletedRecord | null>(null);
+  const [restorePassword, setRestorePassword] = useState("");
+  const [showRestorePassword, setShowRestorePassword] = useState(false);
+  const [userRestoreLoading, setUserRestoreLoading] = useState(false);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -49,6 +60,14 @@ export default function AdminTrashManager() {
   useEffect(() => { fetchAll(); }, []);
 
   const handleRestore = async (record: DeletedRecord) => {
+    // Admin users need a password — show dialog instead
+    if (record.record_type === "admin_user") {
+      setUserRestoreRecord(record);
+      setRestorePassword("");
+      setShowRestorePassword(false);
+      return;
+    }
+
     setRestoring(record.id);
     try {
       const d = record.deleted_data;
@@ -78,7 +97,6 @@ export default function AdminTrashManager() {
           await supabase.from("encuestas_360").insert(encuestas);
         }
       } else if (record.record_type === "region") {
-        // Restore region first, then junction tables
         if (d.region) await supabase.from("regiones").insert([d.region]);
         if (d.entidades?.length > 0) await supabase.from("region_entidades").insert(d.entidades.map(({ id, ...rest }: any) => rest));
         if (d.municipios?.length > 0) await supabase.from("region_municipios").insert(d.municipios.map(({ id, ...rest }: any) => rest));
@@ -100,7 +118,6 @@ export default function AdminTrashManager() {
         if (d.region_instituciones?.length > 0) await supabase.from("region_instituciones").insert(d.region_instituciones.map(({ id, ...rest }: any) => rest));
       }
 
-      // Remove from trash
       await supabase.from("deleted_records").delete().eq("id", record.id);
       toast({ title: "Restaurado", description: `${TYPE_LABELS[record.record_type]} "${record.record_label}" restaurado(a) correctamente.` });
       fetchAll();
@@ -108,6 +125,41 @@ export default function AdminTrashManager() {
       toast({ title: "Error al restaurar", description: err.message, variant: "destructive" });
     }
     setRestoring(null);
+  };
+
+  const handleRestoreUser = async () => {
+    if (!userRestoreRecord || !restorePassword) return;
+    setUserRestoreLoading(true);
+    try {
+      const d = userRestoreRecord.deleted_data;
+      if (USE_EXPRESS) {
+        const { error } = await apiFetch("/api/users", {
+          method: "POST",
+          body: { email: d.email, password: restorePassword, role: d.role || "admin" },
+        });
+        if (error) throw new Error(error);
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        await supabase.functions.invoke("create-user", {
+          body: {
+            email: d.email,
+            password: restorePassword,
+            makeAdmin: true,
+            makeSuperAdmin: d.role === "superadmin",
+          },
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+      }
+
+      await supabase.from("deleted_records").delete().eq("id", userRestoreRecord.id);
+      toast({ title: "Administrador restaurado", description: `${d.email} ha sido recreado con una nueva contraseña.` });
+      setUserRestoreRecord(null);
+      setRestorePassword("");
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "Error al restaurar", description: err.message, variant: "destructive" });
+    }
+    setUserRestoreLoading(false);
   };
 
   const handlePurge = async () => {
@@ -179,6 +231,36 @@ export default function AdminTrashManager() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setPurgeId(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handlePurge}>Eliminar definitivamente</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Restore user dialog (needs new password) */}
+      <Dialog open={!!userRestoreRecord} onOpenChange={(o) => { if (!o) { setUserRestoreRecord(null); setRestorePassword(""); setShowRestorePassword(false); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Restaurar administrador</DialogTitle>
+            <DialogDescription>
+              Se recreará la cuenta <strong>{userRestoreRecord?.deleted_data?.email}</strong> con el rol <strong>{userRestoreRecord?.deleted_data?.role}</strong>. Ingresa una nueva contraseña.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative">
+            <Input
+              type={showRestorePassword ? "text" : "password"}
+              placeholder="Nueva contraseña (mín. 6 caracteres)"
+              value={restorePassword}
+              onChange={(e) => setRestorePassword(e.target.value)}
+              className="pr-10"
+            />
+            <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-10" onClick={() => setShowRestorePassword(!showRestorePassword)} tabIndex={-1}>
+              {showRestorePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserRestoreRecord(null)}>Cancelar</Button>
+            <Button onClick={handleRestoreUser} disabled={userRestoreLoading || restorePassword.length < 6}>
+              {userRestoreLoading ? "Restaurando…" : "Restaurar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
