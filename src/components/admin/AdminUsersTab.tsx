@@ -215,6 +215,7 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
                   <TableCell className="text-sm text-muted-foreground">{formatDate(u.created_at)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(u.last_sign_in_at)}</TableCell>
                   <TableCell className="text-right">
+                    {(isSuperAdmin || displayRole !== "superadmin") && (
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="icon" onClick={() => { setPwUser(u); setNewPw(""); }} title="Cambiar contraseña">
                         <KeyRound className="w-4 h-4" />
@@ -223,6 +224,7 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
+                    )}
                   </TableCell>
                 </TableRow>
                 );
