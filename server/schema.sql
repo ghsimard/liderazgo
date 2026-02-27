@@ -58,6 +58,42 @@ CREATE TABLE IF NOT EXISTS public.app_images (
   updated_by UUID REFERENCES public.users(id)
 );
 
+-- 6. Region ↔ Entidad junction table (only if core geography tables exist)
+DO $$
+BEGIN
+  IF to_regclass('public.regiones') IS NOT NULL
+     AND to_regclass('public.entidades_territoriales') IS NOT NULL THEN
+    CREATE TABLE IF NOT EXISTS public.region_entidades (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      region_id UUID NOT NULL REFERENCES public.regiones(id) ON DELETE CASCADE,
+      entidad_territorial_id UUID NOT NULL REFERENCES public.entidades_territoriales(id) ON DELETE CASCADE,
+      UNIQUE (region_id, entidad_territorial_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_region_entidades_region_id
+      ON public.region_entidades(region_id);
+    CREATE INDEX IF NOT EXISTS idx_region_entidades_entidad_id
+      ON public.region_entidades(entidad_territorial_id);
+  END IF;
+END $$;
+
+-- Optional backfill when region_municipios + municipios already contain data
+DO $$
+BEGIN
+  IF to_regclass('public.region_entidades') IS NOT NULL
+     AND to_regclass('public.region_municipios') IS NOT NULL
+     AND to_regclass('public.municipios') IS NOT NULL THEN
+    INSERT INTO public.region_entidades (region_id, entidad_territorial_id)
+    SELECT DISTINCT rm.region_id, m.entidad_territorial_id
+    FROM public.region_municipios rm
+    JOIN public.municipios m ON m.id = rm.municipio_id
+    LEFT JOIN public.region_entidades re
+      ON re.region_id = rm.region_id
+     AND re.entidad_territorial_id = m.entidad_territorial_id
+    WHERE re.id IS NULL;
+  END IF;
+END $$;
+
 -- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:

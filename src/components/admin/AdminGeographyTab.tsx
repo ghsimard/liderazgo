@@ -224,53 +224,88 @@ export default function AdminGeographyTab() {
     if (!regionName.trim() || regionSelectedEntidades.length === 0) return;
     setSaving(true);
 
+    const assertNoError = (error: any, context: string) => {
+      if (error) throw new Error(`${context}: ${error.message}`);
+    };
+
     const syncEntidades = async (regionId: string) => {
-      await supabase.from("region_entidades").delete().eq("region_id", regionId);
+      const del = await supabase.from("region_entidades").delete().eq("region_id", regionId);
+      assertNoError(del.error, "Error limpiando entidades de la región");
+
       if (regionSelectedEntidades.length > 0) {
-        await supabase.from("region_entidades").insert(
+        const ins = await supabase.from("region_entidades").insert(
           regionSelectedEntidades.map(eid => ({ region_id: regionId, entidad_territorial_id: eid }))
         );
+        assertNoError(ins.error, "Error guardando entidades de la región");
       }
     };
 
     const syncInstituciones = async (regionId: string) => {
-      await supabase.from("region_instituciones").delete().eq("region_id", regionId);
+      const del = await supabase.from("region_instituciones").delete().eq("region_id", regionId);
+      assertNoError(del.error, "Error limpiando instituciones de la región");
+
       if (regionSelectedInstituciones.length > 0) {
-        await supabase.from("region_instituciones").insert(
+        const ins = await supabase.from("region_instituciones").insert(
           regionSelectedInstituciones.map(iid => ({ region_id: regionId, institucion_id: iid }))
         );
+        assertNoError(ins.error, "Error guardando instituciones de la región");
       }
     };
 
-    if (editRegion) {
-      await supabase.from("regiones").update({ nombre: regionName.trim(), mostrar_logo_rlt: regionMostrarLogoRlt, mostrar_logo_clt: regionMostrarLogoClt }).eq("id", editRegion.id);
-      await syncEntidades(editRegion.id);
-      await supabase.from("region_municipios").delete().eq("region_id", editRegion.id);
-      if (regionSelectedMunicipios.length > 0) {
-        await supabase.from("region_municipios").insert(
-          regionSelectedMunicipios.map(mid => ({ region_id: editRegion.id, municipio_id: mid }))
-        );
-      }
-      await syncInstituciones(editRegion.id);
-      toast({ title: "Región actualizada" });
-    } else {
-      const { data, error } = await supabase.from("regiones").insert({ nombre: regionName.trim(), mostrar_logo_rlt: regionMostrarLogoRlt, mostrar_logo_clt: regionMostrarLogoClt }).select().single();
-      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
-      if (data) {
-        await syncEntidades(data.id);
-        if (regionSelectedMunicipios.length > 0) {
-          await supabase.from("region_municipios").insert(
-            regionSelectedMunicipios.map(mid => ({ region_id: data.id, municipio_id: mid }))
-          );
-        }
-        await syncInstituciones(data.id);
-      }
-      toast({ title: "Región creada" });
-    }
+    try {
+      if (editRegion) {
+        const upd = await supabase
+          .from("regiones")
+          .update({ nombre: regionName.trim(), mostrar_logo_rlt: regionMostrarLogoRlt, mostrar_logo_clt: regionMostrarLogoClt })
+          .eq("id", editRegion.id);
+        assertNoError(upd.error, "Error actualizando región");
 
-    setAddRegionOpen(false);
-    fetchAll();
-    setSaving(false);
+        await syncEntidades(editRegion.id);
+
+        const delMun = await supabase.from("region_municipios").delete().eq("region_id", editRegion.id);
+        assertNoError(delMun.error, "Error limpiando municipios de la región");
+
+        if (regionSelectedMunicipios.length > 0) {
+          const insMun = await supabase.from("region_municipios").insert(
+            regionSelectedMunicipios.map(mid => ({ region_id: editRegion.id, municipio_id: mid }))
+          );
+          assertNoError(insMun.error, "Error guardando municipios de la región");
+        }
+
+        await syncInstituciones(editRegion.id);
+        toast({ title: "Región actualizada" });
+      } else {
+        const { data, error } = await supabase
+          .from("regiones")
+          .insert({ nombre: regionName.trim(), mostrar_logo_rlt: regionMostrarLogoRlt, mostrar_logo_clt: regionMostrarLogoClt })
+          .select()
+          .single();
+
+        assertNoError(error, "Error creando región");
+
+        if (data) {
+          await syncEntidades(data.id);
+
+          if (regionSelectedMunicipios.length > 0) {
+            const insMun = await supabase.from("region_municipios").insert(
+              regionSelectedMunicipios.map(mid => ({ region_id: data.id, municipio_id: mid }))
+            );
+            assertNoError(insMun.error, "Error guardando municipios de la región");
+          }
+
+          await syncInstituciones(data.id);
+        }
+
+        toast({ title: "Región creada" });
+      }
+
+      setAddRegionOpen(false);
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "No se pudo guardar la región", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ── CSV helpers ────────────────────────────────────────────────
