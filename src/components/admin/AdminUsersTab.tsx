@@ -136,15 +136,11 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
         created_at: deleteUser.created_at,
         last_sign_in_at: deleteUser.last_sign_in_at,
       };
-      const trashResult = await supabase.from("deleted_records").insert([{
+      await supabase.from("deleted_records").insert([{
         record_type: "admin_user",
         record_label: `${deleteUser.email} (${displayRole})`,
         deleted_data: trashData,
       }]);
-      if (trashResult.error) {
-        console.error("Trash insert error:", trashResult.error);
-        toast({ title: "Error al guardar en papelera", description: trashResult.error.message || JSON.stringify(trashResult.error), variant: "destructive" });
-      }
 
       if (USE_EXPRESS) {
         const { error } = await apiFetch(`/api/users/${deleteUser.id}`, { method: "DELETE" });
