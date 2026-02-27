@@ -24,6 +24,7 @@ const PUBLIC_READ_TABLES = new Set([
   "municipios",
   "instituciones",
   "regiones",
+  "region_entidades",
   "region_municipios",
   "region_instituciones",
   "app_images",
