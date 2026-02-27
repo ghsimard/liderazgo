@@ -519,7 +519,7 @@ export default function AdminGeographyTab() {
           <Plus className="w-4 h-4" /> Entidad
         </Button>
         <Button size="sm" variant="outline" onClick={() => openRegionDialog()} className="gap-1.5">
-          <MapPin className="w-4 h-4" /> Región
+          <MapPin className="w-4 h-4" /> Crear Región
         </Button>
         <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
           <Upload className="w-4 h-4" /> Importar CSV
