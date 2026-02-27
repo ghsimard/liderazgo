@@ -8,8 +8,12 @@ CREATE TABLE IF NOT EXISTS public.users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_sign_in_at TIMESTAMPTZ
 );
+
+-- Add column if table already exists
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_sign_in_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users (email);
 
