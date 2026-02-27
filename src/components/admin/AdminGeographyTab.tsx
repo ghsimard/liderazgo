@@ -516,7 +516,7 @@ export default function AdminGeographyTab() {
       {/* Actions bar */}
       <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={() => { setNewName(""); setAddEntidadOpen(true); }} className="gap-1.5">
-          <Plus className="w-4 h-4" /> Entidad
+          <Plus className="w-4 h-4" /> Crear Entidad Territorial
         </Button>
         <Button size="sm" variant="outline" onClick={() => openRegionDialog()} className="gap-1.5">
           <MapPin className="w-4 h-4" /> Crear Región
