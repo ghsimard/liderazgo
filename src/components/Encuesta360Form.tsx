@@ -304,6 +304,7 @@ function DirectivoSelect({
   useEffect(() => {
     if (!institucion) {
       setDirectivos([]);
+      onChange("", "", "");
       return;
     }
     setLoading(true);
@@ -326,9 +327,18 @@ function DirectivoSelect({
           }
 
           setDirectivos(rows);
+          // Auto-select if only one directivo
+          if (rows.length === 1) {
+            onChange(rows[0].nombres_apellidos, rows[0].numero_cedula ?? "", rows[0].cargo_actual);
+          }
         } else {
           const { data } = await supabase.rpc("get_directivos_por_institucion", { p_nombre_ie: institucion });
-          setDirectivos((data ?? []) as DirectivoOption[]);
+          const rows = (data ?? []) as DirectivoOption[];
+          setDirectivos(rows);
+          // Auto-select if only one directivo
+          if (rows.length === 1) {
+            onChange(rows[0].nombres_apellidos, rows[0].numero_cedula ?? "", rows[0].cargo_actual);
+          }
         }
       } catch (err) {
         console.error("Error loading directivos:", err);
@@ -345,7 +355,7 @@ function DirectivoSelect({
       </label>
       <select
         value={value}
-        disabled={!institucion || loading}
+        disabled={!institucion || loading || directivos.length === 1}
         onChange={(e) => {
           const selected = directivos.find((d) => d.nombres_apellidos === e.target.value);
           if (selected) {
