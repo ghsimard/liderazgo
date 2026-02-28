@@ -28,12 +28,14 @@ const PUBLIC_READ_TABLES = new Set([
   "region_municipios",
   "region_instituciones",
   "app_images",
+  "rubrica_submission_dates",
 ]);
 
 // Tables that allow public inserts (no auth required for POST without _method)
 const PUBLIC_INSERT_TABLES = new Set([
   "fichas_rlt",
   "encuestas_360",
+  "rubrica_submission_dates",
 ]);
 
 // Whitelist of allowed tables

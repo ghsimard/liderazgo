@@ -243,6 +243,33 @@ export default function RubricaEvaluacion() {
           await supabase.from("rubrica_evaluaciones").insert(payload);
         }
       }
+
+      // Determine submission type and record the date
+      const currentModule = modules.find(m => m.id === activeModule);
+      if (currentModule) {
+        let submissionType: string;
+        if (detectedRole === "directivo") {
+          submissionType = "autoevaluacion";
+        } else {
+          // Check if this is a nivel_acordado submission (all items have acordado_nivel)
+          const moduleItems = items.filter(i => i.module_id === activeModule);
+          const allHaveAcordado = moduleItems.every(item => {
+            const ev = evaluaciones[item.id];
+            return ev?.acordado_nivel;
+          });
+          submissionType = allHaveAcordado ? "nivel_acordado" : "evaluacion";
+        }
+
+        await supabase
+          .from("rubrica_submission_dates")
+          .upsert({
+            directivo_cedula: directivoInfo.cedula,
+            module_number: currentModule.module_number,
+            submission_type: submissionType,
+            submitted_at: new Date().toISOString(),
+          }, { onConflict: "directivo_cedula,module_number,submission_type" });
+      }
+
       toast({ title: "Guardado exitoso", description: "Las evaluaciones han sido guardadas." });
       setSubmitted(true);
     } catch (err: any) {
