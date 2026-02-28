@@ -335,7 +335,9 @@ export default function RubricaEvaluacion() {
 
   const nivelField = role === "directivo" ? "directivo_nivel" : "equipo_nivel";
   const comentarioField = role === "directivo" ? "directivo_comentario" : "equipo_comentario";
-  const isReadOnly = detectedRole === "directivo" && directivoReadOnly;
+  // Per-module read-only for directivo (only modules with submitted autoevaluación are locked)
+  const isDirectivoModuleReadOnly = (moduleNumber: number) =>
+    detectedRole === "directivo" && hasSubmission(moduleNumber, "autoevaluacion");
 
   // Show form when we have a directivoInfo selected (either as directivo or evaluador who picked one)
   const showForm = directivoInfo !== null && (detectedRole === "directivo" || selectedDirectivo !== null);
@@ -479,7 +481,7 @@ export default function RubricaEvaluacion() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {isReadOnly && (
+                    {detectedRole === "directivo" && (
                       <Badge variant="secondary" className="gap-1">
                         <Lock className="w-3 h-3" /> Solo lectura
                       </Badge>
@@ -521,7 +523,8 @@ export default function RubricaEvaluacion() {
                 const evaluadorStep = role === "equipo" ? getEvaluadorStep(m.module_number) : null;
                 const isEvalReadOnly = role === "equipo" && (evaluadorStep === "nivel_acordado" || evaluadorStep === "completed");
                 const isAcordadoReadOnly = role === "equipo" && evaluadorStep === "completed";
-                const isModuleFullyReadOnly = isReadOnly || (role === "equipo" && evaluadorStep === "completed");
+                const isModuleReadOnly = isDirectivoModuleReadOnly(m.module_number);
+                const isModuleFullyReadOnly = isModuleReadOnly || (role === "equipo" && evaluadorStep === "completed");
 
                 return (
                   <TabsContent key={m.id} value={m.id} className="space-y-4 mt-4">
@@ -577,7 +580,7 @@ export default function RubricaEvaluacion() {
                           </CardHeader>
                           <CardContent className="space-y-4">
                             {/* Evaluación section (directivo or equipo) */}
-                            {(isReadOnly || isEvalReadOnly) ? (
+                            {(isModuleReadOnly || isEvalReadOnly) ? (
                               <div className="space-y-3">
                                 {/* For evaluador: always show all nivel descriptions for reference */}
                                 {role === "equipo" ? (
@@ -722,7 +725,8 @@ export default function RubricaEvaluacion() {
               const activeStep = activeModuleObj && role === "equipo" ? getEvaluadorStep(activeModuleObj.module_number) : null;
               const activeAutoevDone = activeModuleObj ? hasSubmission(activeModuleObj.module_number, "autoevaluacion") : true;
               const activeBlocked = role === "equipo" && !activeAutoevDone;
-              const canSave = !isReadOnly && activeStep !== "completed" && !activeBlocked;
+              const activeModuleReadOnly = activeModuleObj ? isDirectivoModuleReadOnly(activeModuleObj.module_number) : false;
+              const canSave = !activeModuleReadOnly && activeStep !== "completed" && !activeBlocked;
               if (!canSave) return null;
 
               const buttonLabel = role === "directivo"
