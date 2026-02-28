@@ -110,6 +110,73 @@ CREATE TABLE IF NOT EXISTS public.deleted_records (
 CREATE INDEX IF NOT EXISTS idx_deleted_records_type ON public.deleted_records (record_type);
 
 -- ============================================================
+-- Rubrica tables
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.rubrica_modules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  module_number INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  objective TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.rubrica_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  module_id UUID NOT NULL REFERENCES public.rubrica_modules(id) ON DELETE CASCADE,
+  item_type TEXT NOT NULL,
+  item_label TEXT NOT NULL,
+  desc_avanzado TEXT NOT NULL DEFAULT '',
+  desc_intermedio TEXT NOT NULL DEFAULT '',
+  desc_basico TEXT NOT NULL DEFAULT '',
+  desc_sin_evidencia TEXT NOT NULL DEFAULT '',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.rubrica_evaluadores (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre TEXT NOT NULL,
+  cedula TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.rubrica_asignaciones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  evaluador_id UUID NOT NULL REFERENCES public.rubrica_evaluadores(id) ON DELETE CASCADE,
+  directivo_cedula TEXT NOT NULL,
+  directivo_nombre TEXT NOT NULL,
+  institucion TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.rubrica_evaluaciones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  item_id UUID NOT NULL REFERENCES public.rubrica_items(id) ON DELETE CASCADE,
+  directivo_cedula TEXT NOT NULL,
+  directivo_nivel TEXT,
+  directivo_comentario TEXT,
+  equipo_nivel TEXT,
+  equipo_comentario TEXT,
+  acordado_nivel TEXT,
+  acordado_comentario TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.rubrica_seguimientos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  item_id UUID NOT NULL REFERENCES public.rubrica_items(id) ON DELETE CASCADE,
+  directivo_cedula TEXT NOT NULL,
+  module_number INTEGER NOT NULL,
+  nivel TEXT,
+  comentario TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js
