@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, UserPlus, Search, Users, Link } from "lucide-react";
 
@@ -50,7 +50,8 @@ export default function AdminEvaluadoresTab() {
   // Assign dialog
   const [showAssign, setShowAssign] = useState(false);
   const [assignEvaluadorId, setAssignEvaluadorId] = useState<string | null>(null);
-  const [selectedDirectivoCedula, setSelectedDirectivoCedula] = useState("");
+  const [selectedCedulas, setSelectedCedulas] = useState<string[]>([]);
+  const [assignSearch, setAssignSearch] = useState("");
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -100,36 +101,54 @@ export default function AdminEvaluadoresTab() {
   };
 
   const handleAssign = async () => {
-    if (!assignEvaluadorId || !selectedDirectivoCedula) return;
-    const dir = directivos.find(d => d.numero_cedula === selectedDirectivoCedula);
-    if (!dir) return;
+    if (!assignEvaluadorId || selectedCedulas.length === 0) return;
 
-    // Check if already assigned
-    const existing = asignaciones.find(
-      a => a.evaluador_id === assignEvaluadorId && a.directivo_cedula === selectedDirectivoCedula
-    );
-    if (existing) {
-      toast({ title: "Ya existe", description: "Esta asignación ya existe.", variant: "destructive" });
-      return;
-    }
+    const rows = selectedCedulas
+      .map(ced => {
+        const dir = directivos.find(d => d.numero_cedula === ced);
+        if (!dir) return null;
+        return {
+          evaluador_id: assignEvaluadorId,
+          directivo_cedula: dir.numero_cedula,
+          directivo_nombre: dir.nombres_apellidos,
+          institucion: dir.nombre_ie,
+        };
+      })
+      .filter(Boolean);
+
+    if (rows.length === 0) return;
 
     setSaving(true);
-    const { error } = await supabase.from("rubrica_asignaciones").insert({
-      evaluador_id: assignEvaluadorId,
-      directivo_cedula: dir.numero_cedula,
-      directivo_nombre: dir.nombres_apellidos,
-      institucion: dir.nombre_ie,
-    });
+    const { error } = await supabase.from("rubrica_asignaciones").insert(rows);
     setSaving(false);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Asignación creada" });
+      toast({ title: `${rows.length} asignación(es) creada(s)` });
       setShowAssign(false);
-      setSelectedDirectivoCedula("");
+      setSelectedCedulas([]);
+      setAssignSearch("");
       loadData();
     }
   };
+
+  // Available directivos = not already assigned to this evaluador
+  const availableDirectivos = assignEvaluadorId
+    ? directivos.filter(d => {
+        const alreadyAssigned = asignaciones.some(
+          a => a.evaluador_id === assignEvaluadorId && a.directivo_cedula === d.numero_cedula
+        );
+        return !alreadyAssigned && d.numero_cedula;
+      })
+    : [];
+
+  const filteredAvailable = assignSearch
+    ? availableDirectivos.filter(d =>
+        d.nombres_apellidos.toLowerCase().includes(assignSearch.toLowerCase()) ||
+        d.numero_cedula?.includes(assignSearch) ||
+        d.nombre_ie.toLowerCase().includes(assignSearch.toLowerCase())
+      )
+    : availableDirectivos;
 
   const handleDeleteAsignacion = async (id: string) => {
     const { error } = await supabase.from("rubrica_asignaciones").delete().eq("id", id);
@@ -274,10 +293,13 @@ export default function AdminEvaluadoresTab() {
       </Dialog>
 
       {/* Assign Directivo Dialog */}
-      <Dialog open={showAssign} onOpenChange={setShowAssign}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={showAssign} onOpenChange={(open) => {
+        setShowAssign(open);
+        if (!open) { setSelectedCedulas([]); setAssignSearch(""); }
+      }}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Asignar directivo</DialogTitle>
+            <DialogTitle>Asignar directivos</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
@@ -287,29 +309,66 @@ export default function AdminEvaluadoresTab() {
               </p>
             </div>
             <div>
-              <Label>Directivo (Rector/a o Coordinador/a)</Label>
-              {directivos.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No hay directivos en fichas RLT.</p>
+              <Label>Directivos disponibles (Rector/a o Coordinador/a)</Label>
+              <Input
+                placeholder="Buscar por nombre, cédula o institución…"
+                value={assignSearch}
+                onChange={e => setAssignSearch(e.target.value)}
+                className="mt-1 mb-2"
+              />
+              {availableDirectivos.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Todos los directivos ya están asignados a este evaluador.</p>
               ) : (
-                <Select value={selectedDirectivoCedula} onValueChange={setSelectedDirectivoCedula}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar directivo…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {directivos.map(d => (
-                      <SelectItem key={d.numero_cedula} value={d.numero_cedula || ""}>
-                        {d.nombres_apellidos} — {d.nombre_ie}
-                      </SelectItem>
+                <>
+                  <div className="flex items-center justify-between mb-1">
+                    <button
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => {
+                        setSelectedCedulas(
+                          selectedCedulas.length === filteredAvailable.length
+                            ? []
+                            : filteredAvailable.map(d => d.numero_cedula!)
+                        );
+                      }}
+                    >
+                      {selectedCedulas.length === filteredAvailable.length ? "Deseleccionar todo" : "Seleccionar todo"}
+                    </button>
+                    {selectedCedulas.length > 0 && (
+                      <Badge variant="secondary" className="text-xs">{selectedCedulas.length} seleccionado(s)</Badge>
+                    )}
+                  </div>
+                  <div className="max-h-[220px] overflow-y-auto border rounded-md p-1 space-y-0.5">
+                    {filteredAvailable.map(d => (
+                      <label
+                        key={d.numero_cedula}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs"
+                      >
+                        <Checkbox
+                          checked={selectedCedulas.includes(d.numero_cedula!)}
+                          onCheckedChange={() => {
+                            setSelectedCedulas(prev =>
+                              prev.includes(d.numero_cedula!)
+                                ? prev.filter(c => c !== d.numero_cedula)
+                                : [...prev, d.numero_cedula!]
+                            );
+                          }}
+                        />
+                        <span className="truncate flex-1">{d.nombres_apellidos}</span>
+                        <span className="text-muted-foreground shrink-0">{d.nombre_ie}</span>
+                      </label>
                     ))}
-                  </SelectContent>
-                </Select>
+                    {filteredAvailable.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-2">Sin resultados.</p>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAssign(false)}>Cancelar</Button>
-            <Button onClick={handleAssign} disabled={saving || !selectedDirectivoCedula}>
-              {saving ? "Guardando…" : "Asignar"}
+            <Button onClick={handleAssign} disabled={saving || selectedCedulas.length === 0}>
+              {saving ? "Guardando…" : `Asignar (${selectedCedulas.length})`}
             </Button>
           </DialogFooter>
         </DialogContent>
