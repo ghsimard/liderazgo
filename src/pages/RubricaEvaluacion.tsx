@@ -256,6 +256,31 @@ export default function RubricaEvaluacion() {
       const moduleItems = items.filter(i => i.module_id === activeModule);
       const evaluadorStep = role === "equipo" ? getEvaluadorStep(currentModule.module_number) : null;
 
+      // Validate: all items must have nivel and comment
+      const missing: string[] = [];
+      for (const item of moduleItems) {
+        const ev = evaluaciones[item.id];
+        if (role === "directivo") {
+          if (!ev?.directivo_nivel) missing.push(`${item.item_label}: nivel`);
+          if (!ev?.directivo_comentario?.trim()) missing.push(`${item.item_label}: comentario`);
+        } else if (evaluadorStep === "evaluacion") {
+          if (!ev?.equipo_nivel) missing.push(`${item.item_label}: nivel`);
+          if (!ev?.equipo_comentario?.trim()) missing.push(`${item.item_label}: comentario`);
+        } else if (evaluadorStep === "nivel_acordado") {
+          if (!ev?.acordado_nivel) missing.push(`${item.item_label}: nivel acordado`);
+          if (!ev?.acordado_comentario?.trim()) missing.push(`${item.item_label}: comentario acordado`);
+        }
+      }
+      if (missing.length > 0) {
+        toast({
+          title: "Campos incompletos",
+          description: `Faltan campos obligatorios:\n${missing.slice(0, 5).join(", ")}${missing.length > 5 ? ` y ${missing.length - 5} más` : ""}`,
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
       for (const item of moduleItems) {
         const ev = evaluaciones[item.id];
         if (!ev) continue;
@@ -653,7 +678,7 @@ export default function RubricaEvaluacion() {
                                 </RadioGroup>
 
                                 <div>
-                                  <Label className="text-xs text-muted-foreground">Comentario (opcional)</Label>
+                                  <Label className="text-xs text-muted-foreground">Comentario <span className="text-destructive">*</span></Label>
                                   <Textarea
                                     value={comment}
                                     onChange={e => updateEval(item.id, comentarioField as keyof Evaluacion, e.target.value)}
@@ -699,13 +724,16 @@ export default function RubricaEvaluacion() {
                                     </label>
                                   ))}
                                 </RadioGroup>
-                                <Textarea
+                                <div>
+                                  <Label className="text-xs text-muted-foreground">Comentario acordado <span className="text-destructive">*</span></Label>
+                                  <Textarea
                                   value={ev?.acordado_comentario || ""}
                                   onChange={e => updateEval(item.id, "acordado_comentario", e.target.value)}
                                   placeholder="Comentario acordado…"
                                   className="text-sm"
                                   rows={2}
                                 />
+                                </div>
                               </div>
                             )}
 
