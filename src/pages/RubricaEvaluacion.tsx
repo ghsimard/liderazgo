@@ -500,8 +500,17 @@ export default function RubricaEvaluacion() {
             {/* Module Tabs */}
             <Tabs value={activeModule} onValueChange={setActiveModule}>
               <TabsList className="flex-wrap h-auto gap-1">
-                {modules.map(m => {
-                  const blocked = role === "equipo" && !hasSubmission(m.module_number, "autoevaluacion");
+                {modules.map((m, idx) => {
+                  // Sequential lock: previous module must be completed before accessing the next
+                  const prevModuleNumber = idx > 0 ? modules[idx - 1].module_number : null;
+                  const prevModuleDone = prevModuleNumber === null || (
+                    role === "directivo"
+                      ? hasSubmission(prevModuleNumber, "autoevaluacion")
+                      : hasSubmission(prevModuleNumber, "autoevaluacion") // evaluator also needs autoev done
+                  );
+                  // Evaluator-specific: autoev must be done for THIS module too
+                  const evalBlocked = role === "equipo" && !hasSubmission(m.module_number, "autoevaluacion");
+                  const blocked = !prevModuleDone || evalBlocked;
                   return (
                     <TabsTrigger
                       key={m.id}
