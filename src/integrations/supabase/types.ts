@@ -643,6 +643,227 @@ export type Database = {
         }
         Relationships: []
       }
+      rubrica_asignaciones: {
+        Row: {
+          created_at: string
+          directivo_cedula: string
+          directivo_nombre: string
+          evaluador_id: string
+          id: string
+          institucion: string
+        }
+        Insert: {
+          created_at?: string
+          directivo_cedula: string
+          directivo_nombre: string
+          evaluador_id: string
+          id?: string
+          institucion: string
+        }
+        Update: {
+          created_at?: string
+          directivo_cedula?: string
+          directivo_nombre?: string
+          evaluador_id?: string
+          id?: string
+          institucion?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rubrica_asignaciones_evaluador_id_fkey"
+            columns: ["evaluador_id"]
+            isOneToOne: false
+            referencedRelation: "rubrica_evaluadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rubrica_evaluaciones: {
+        Row: {
+          acordado_comentario: string | null
+          acordado_nivel: string | null
+          created_at: string
+          directivo_cedula: string
+          directivo_comentario: string | null
+          directivo_nivel: string | null
+          equipo_comentario: string | null
+          equipo_nivel: string | null
+          id: string
+          item_id: string
+          updated_at: string
+        }
+        Insert: {
+          acordado_comentario?: string | null
+          acordado_nivel?: string | null
+          created_at?: string
+          directivo_cedula: string
+          directivo_comentario?: string | null
+          directivo_nivel?: string | null
+          equipo_comentario?: string | null
+          equipo_nivel?: string | null
+          id?: string
+          item_id: string
+          updated_at?: string
+        }
+        Update: {
+          acordado_comentario?: string | null
+          acordado_nivel?: string | null
+          created_at?: string
+          directivo_cedula?: string
+          directivo_comentario?: string | null
+          directivo_nivel?: string | null
+          equipo_comentario?: string | null
+          equipo_nivel?: string | null
+          id?: string
+          item_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rubrica_evaluaciones_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "rubrica_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rubrica_evaluadores: {
+        Row: {
+          cedula: string
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          cedula: string
+          created_at?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          cedula?: string
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      rubrica_items: {
+        Row: {
+          created_at: string
+          desc_avanzado: string
+          desc_basico: string
+          desc_intermedio: string
+          desc_sin_evidencia: string
+          id: string
+          item_label: string
+          item_type: string
+          module_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          desc_avanzado?: string
+          desc_basico?: string
+          desc_intermedio?: string
+          desc_sin_evidencia?: string
+          id?: string
+          item_label: string
+          item_type: string
+          module_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          desc_avanzado?: string
+          desc_basico?: string
+          desc_intermedio?: string
+          desc_sin_evidencia?: string
+          id?: string
+          item_label?: string
+          item_type?: string
+          module_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rubrica_items_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "rubrica_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rubrica_modules: {
+        Row: {
+          created_at: string
+          id: string
+          module_number: number
+          objective: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module_number: number
+          objective: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module_number?: number
+          objective?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      rubrica_seguimientos: {
+        Row: {
+          comentario: string | null
+          created_at: string
+          directivo_cedula: string
+          id: string
+          item_id: string
+          module_number: number
+          nivel: string | null
+          updated_at: string
+        }
+        Insert: {
+          comentario?: string | null
+          created_at?: string
+          directivo_cedula: string
+          id?: string
+          item_id: string
+          module_number: number
+          nivel?: string | null
+          updated_at?: string
+        }
+        Update: {
+          comentario?: string | null
+          created_at?: string
+          directivo_cedula?: string
+          id?: string
+          item_id?: string
+          module_number?: number
+          nivel?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rubrica_seguimientos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "rubrica_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
