@@ -498,11 +498,20 @@ export default function RubricaEvaluacion() {
             {/* Module Tabs */}
             <Tabs value={activeModule} onValueChange={setActiveModule}>
               <TabsList className="flex-wrap h-auto gap-1">
-                {modules.map(m => (
-                  <TabsTrigger key={m.id} value={m.id} className="gap-1 text-xs sm:text-sm">
-                    <BookOpen className="w-3.5 h-3.5" /> Módulo {m.module_number}
-                  </TabsTrigger>
-                ))}
+                {modules.map(m => {
+                  const blocked = role === "equipo" && !hasSubmission(m.module_number, "autoevaluacion");
+                  return (
+                    <TabsTrigger
+                      key={m.id}
+                      value={m.id}
+                      disabled={blocked}
+                      className={`gap-1 text-xs sm:text-sm ${blocked ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                      {blocked ? <Lock className="w-3.5 h-3.5" /> : <BookOpen className="w-3.5 h-3.5" />}
+                      Módulo {m.module_number}
+                    </TabsTrigger>
+                  );
+                })}
               </TabsList>
 
               {modules.map(m => {
