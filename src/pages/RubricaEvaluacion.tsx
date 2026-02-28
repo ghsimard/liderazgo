@@ -828,11 +828,14 @@ export default function RubricaEvaluacion() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {detectedRole === "directivo" && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Lock className="w-3 h-3" /> Solo lectura
-                      </Badge>
-                    )}
+                    {detectedRole === "directivo" && (() => {
+                      const activeMod = modules.find(mod => mod.id === activeModule);
+                      return activeMod && isDirectivoModuleReadOnly(activeMod.module_number) ? (
+                        <Badge variant="secondary" className="gap-1">
+                          <Lock className="w-3 h-3" /> Solo lectura
+                        </Badge>
+                      ) : null;
+                    })()}
                     <Badge variant={detectedRole === "directivo" ? "default" : "outline"}>
                       {detectedRole === "directivo" ? "Autoevaluación" : `Evaluador: ${userName}`}
                     </Badge>
