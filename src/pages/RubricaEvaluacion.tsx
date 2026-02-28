@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
-import { Search, CheckCircle, BookOpen, Target, FileText, Users, Lock, ArrowLeft } from "lucide-react";
+import { Search, CheckCircle, BookOpen, Target, FileText, Users, Lock, ArrowLeft, ArrowUp, History, Clock } from "lucide-react";
 
 interface RubricaModule {
   id: string;
@@ -41,6 +41,16 @@ interface Evaluacion {
   acordado_comentario: string | null;
 }
 
+interface Seguimiento {
+  id: string;
+  item_id: string;
+  directivo_cedula: string;
+  module_number: number;
+  nivel: string | null;
+  comentario: string | null;
+  created_at: string;
+}
+
 interface Asignacion {
   directivo_cedula: string;
   directivo_nombre: string;
@@ -53,6 +63,14 @@ const NIVELES = [
   { value: "basico", label: "Básico", color: "bg-amber-100 text-amber-800 border-amber-300" },
   { value: "sin_evidencia", label: "Sin evidencia", color: "bg-red-100 text-red-800 border-red-300" },
 ];
+
+// Nivel ranking: higher index = higher level
+const NIVEL_RANK: Record<string, number> = {
+  sin_evidencia: 0,
+  basico: 1,
+  intermedio: 2,
+  avanzado: 3,
+};
 
 type DetectedRole = "directivo" | "evaluador" | null;
 
@@ -85,6 +103,12 @@ export default function RubricaEvaluacion() {
 
   // Submission dates tracking: key = "module_number:submission_type" → submitted_at
   const [submissionDates, setSubmissionDates] = useState<Record<string, string>>({});
+
+  // Seguimiento state
+  const [seguimientos, setSeguimientos] = useState<Seguimiento[]>([]);
+  // Pending seguimiento edits: key = item_id → { nivel, comentario }
+  const [pendingSeguimientos, setPendingSeguimientos] = useState<Record<string, { nivel: string; comentario: string }>>({});
+  const [savingSeguimiento, setSavingSeguimiento] = useState(false);
 
   // The active role for saving (directivo or equipo)
   const role: "directivo" | "equipo" = detectedRole === "directivo" ? "directivo" : "equipo";
@@ -135,6 +159,62 @@ export default function RubricaEvaluacion() {
     return {};
   };
 
+  const loadSeguimientos = async (directivoCedula: string) => {
+    const { data } = await supabase
+      .from("rubrica_seguimientos")
+      .select("*")
+      .eq("directivo_cedula", directivoCedula)
+      .order("created_at", { ascending: true });
+    if (data) {
+      setSeguimientos(data as Seguimiento[]);
+    }
+  };
+
+  // Get the evaluator's current working module number (highest module where they are actively working)
+  const getEvaluadorCurrentWorkingModuleNumber = (): number => {
+    if (role !== "equipo" || modules.length === 0) return 1;
+    // Find the highest module where evaluator has access (autoev done) and hasn't fully completed
+    let currentWorking = 1;
+    for (const m of modules) {
+      const autoevDone = hasSubmission(m.module_number, "autoevaluacion");
+      if (!autoevDone) break;
+      currentWorking = m.module_number;
+    }
+    return currentWorking;
+  };
+
+  // Get the current "effective" nivel for an item considering seguimientos
+  const getEffectiveNivel = (itemId: string): string | null => {
+    // Start from the acordado_nivel in evaluaciones
+    const ev = evaluaciones[itemId];
+    let currentNivel = ev?.acordado_nivel || ev?.equipo_nivel || null;
+    
+    // Apply seguimientos in chronological order
+    const itemSeguimientos = seguimientos
+      .filter(s => s.item_id === itemId)
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    
+    for (const seg of itemSeguimientos) {
+      if (seg.nivel) {
+        currentNivel = seg.nivel;
+      }
+    }
+    return currentNivel;
+  };
+
+  // Get the minimum allowed nivel for an item (the acordado_nivel — can never go below this)
+  const getMinNivel = (itemId: string): string | null => {
+    const ev = evaluaciones[itemId];
+    return ev?.acordado_nivel || null;
+  };
+
+  // Check if a nivel selection is allowed (must be >= acordado_nivel)
+  const isNivelAllowed = (itemId: string, candidateNivel: string): boolean => {
+    const minNivel = getMinNivel(itemId);
+    if (!minNivel) return true; // No acordado yet, any level allowed
+    return NIVEL_RANK[candidateNivel] >= NIVEL_RANK[minNivel];
+  };
+
   const handleSearch = async () => {
     if (!cedula.trim()) return;
     setSearching(true);
@@ -163,6 +243,7 @@ export default function RubricaEvaluacion() {
 
         const evMap = await loadEvaluaciones(f.numero_cedula);
         await loadSubmissionDates(f.numero_cedula);
+        await loadSeguimientos(f.numero_cedula);
         // Check if directivo already submitted (has at least one directivo_nivel)
         const hasSubmitted = Object.values(evMap).some(e => e.directivo_nivel);
         setDirectivoReadOnly(hasSubmitted);
@@ -198,6 +279,7 @@ export default function RubricaEvaluacion() {
     setDirectivoInfo({ nombre: asig.directivo_nombre, cedula: asig.directivo_cedula, institucion: asig.institucion });
     await loadEvaluaciones(asig.directivo_cedula);
     await loadSubmissionDates(asig.directivo_cedula);
+    await loadSeguimientos(asig.directivo_cedula);
   };
 
   const handleBack = () => {
@@ -206,6 +288,8 @@ export default function RubricaEvaluacion() {
       setDirectivoInfo(null);
       setEvaluaciones({});
       setSubmissionDates({});
+      setSeguimientos([]);
+      setPendingSeguimientos({});
     } else {
       setCedula("");
       setDetectedRole(null);
@@ -217,6 +301,8 @@ export default function RubricaEvaluacion() {
       setSelectedDirectivo(null);
       setEvaluaciones({});
       setSubmissionDates({});
+      setSeguimientos([]);
+      setPendingSeguimientos({});
     }
   };
 
@@ -348,6 +434,66 @@ export default function RubricaEvaluacion() {
     }
   };
 
+  // Save a single seguimiento for one item
+  const handleSaveSeguimiento = async (itemId: string) => {
+    if (!directivoInfo) return;
+    const pending = pendingSeguimientos[itemId];
+    if (!pending) return;
+
+    if (!pending.nivel) {
+      toast({ title: "Nivel requerido", description: "Debe seleccionar un nivel.", variant: "destructive" });
+      return;
+    }
+    if (!pending.comentario?.trim()) {
+      toast({ title: "Comentario requerido", description: "Debe ingresar un comentario para justificar el cambio.", variant: "destructive" });
+      return;
+    }
+
+    // Validate: can't lower below acordado
+    if (!isNivelAllowed(itemId, pending.nivel)) {
+      toast({ title: "Nivel no permitido", description: "No puede establecer un nivel inferior al nivel acordado.", variant: "destructive" });
+      return;
+    }
+
+    // Validate: must be higher than current effective nivel
+    const effectiveNivel = getEffectiveNivel(itemId);
+    if (effectiveNivel && NIVEL_RANK[pending.nivel] <= NIVEL_RANK[effectiveNivel]) {
+      toast({ title: "Nivel no permitido", description: "Solo puede subir el nivel, no mantenerlo igual o bajarlo.", variant: "destructive" });
+      return;
+    }
+
+    setSavingSeguimiento(true);
+    try {
+      const currentWorkingModule = getEvaluadorCurrentWorkingModuleNumber();
+
+      const { error } = await supabase.from("rubrica_seguimientos").insert({
+        item_id: itemId,
+        directivo_cedula: directivoInfo.cedula,
+        module_number: currentWorkingModule,
+        nivel: pending.nivel,
+        comentario: pending.comentario,
+      });
+
+      if (error) throw error;
+
+      // Reload seguimientos
+      await loadSeguimientos(directivoInfo.cedula);
+
+      // Clear pending
+      setPendingSeguimientos(prev => {
+        const next = { ...prev };
+        delete next[itemId];
+        return next;
+      });
+
+      toast({ title: "Seguimiento guardado", description: `Nivel actualizado. Cambio registrado en el Módulo ${currentWorkingModule}.` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingSeguimiento(false);
+    }
+  };
+
   const getDescForNivel = (item: RubricaItem, nivel: string) => {
     switch (nivel) {
       case "avanzado": return item.desc_avanzado;
@@ -382,6 +528,8 @@ export default function RubricaEvaluacion() {
                 setDirectivoInfo(null);
                 setEvaluaciones({});
                 setSubmissionDates({});
+                setSeguimientos([]);
+                setPendingSeguimientos({});
               } else {
                 setCedula("");
                 setDetectedRole(null);
@@ -390,6 +538,8 @@ export default function RubricaEvaluacion() {
                 setDirectivoReadOnly(false);
                 setEvaluaciones({});
                 setSubmissionDates({});
+                setSeguimientos([]);
+                setPendingSeguimientos({});
               }
             }}>
               {detectedRole === "evaluador" ? "Evaluar otro directivo" : "Nueva evaluación"}
@@ -399,6 +549,158 @@ export default function RubricaEvaluacion() {
       </div>
     );
   }
+
+  // Render seguimiento section for a completed module item (evaluator only)
+  const renderSeguimientoSection = (item: RubricaItem, moduleNumber: number) => {
+    const currentWorkingModule = getEvaluadorCurrentWorkingModuleNumber();
+    // Only show seguimiento if evaluator is on a module higher than this one
+    if (currentWorkingModule <= moduleNumber) return null;
+    // Only for completed modules (nivel acordado submitted)
+    if (!hasSubmission(moduleNumber, "nivel_acordado")) return null;
+
+    const effectiveNivel = getEffectiveNivel(item.id);
+    const minNivel = getMinNivel(item.id);
+    const itemSeguimientos = seguimientos
+      .filter(s => s.item_id === item.id)
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    const pending = pendingSeguimientos[item.id];
+    const isEditing = !!pending;
+    
+    // Can't upgrade further if already at avanzado
+    const isAtMax = effectiveNivel === "avanzado";
+
+    return (
+      <div className="border-t-2 border-dashed border-primary/30 pt-4 mt-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <ArrowUp className="w-4 h-4 text-primary" />
+          <p className="text-sm font-medium text-primary">Seguimiento</p>
+          <Badge variant="outline" className="text-xs">
+            Nivel actual: {NIVELES.find(n => n.value === effectiveNivel)?.label || "—"}
+          </Badge>
+        </div>
+
+        {/* History of past seguimientos */}
+        {itemSeguimientos.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <History className="w-3.5 h-3.5" />
+              <span className="font-medium">Historial de cambios:</span>
+            </div>
+            {itemSeguimientos.map((seg) => (
+              <div key={seg.id} className="bg-muted/30 rounded-lg p-2.5 text-xs space-y-1 border-l-2 border-primary/40">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="secondary" className="text-xs">
+                    {NIVELES.find(n => n.value === seg.nivel)?.label}
+                  </Badge>
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Módulo {seg.module_number} — {new Date(seg.created_at).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}
+                  </span>
+                </div>
+                {seg.comentario && <p className="italic text-muted-foreground">{seg.comentario}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Upgrade form */}
+        {!isAtMax && !isEditing && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs"
+            onClick={() => setPendingSeguimientos(prev => ({
+              ...prev,
+              [item.id]: { nivel: "", comentario: "" },
+            }))}
+          >
+            <ArrowUp className="w-3.5 h-3.5" />
+            Subir nivel
+          </Button>
+        )}
+
+        {isAtMax && !isEditing && (
+          <p className="text-xs text-muted-foreground italic">Nivel máximo alcanzado (Avanzado).</p>
+        )}
+
+        {isEditing && (
+          <div className="space-y-3 bg-primary/5 rounded-lg p-3 border border-primary/20">
+            <p className="text-xs font-medium text-primary">
+              Cambio desde Módulo {currentWorkingModule}
+            </p>
+            <RadioGroup
+              value={pending.nivel}
+              onValueChange={(v) => setPendingSeguimientos(prev => ({
+                ...prev,
+                [item.id]: { ...prev[item.id], nivel: v },
+              }))}
+              className="flex flex-wrap gap-2"
+            >
+              {NIVELES.map(n => {
+                const allowed = isNivelAllowed(item.id, n.value);
+                const isHigher = effectiveNivel ? NIVEL_RANK[n.value] > NIVEL_RANK[effectiveNivel] : true;
+                const disabled = !allowed || !isHigher;
+                return (
+                  <label
+                    key={n.value}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs transition-all ${
+                      pending.nivel === n.value
+                        ? n.color
+                        : disabled
+                          ? "opacity-30 cursor-not-allowed"
+                          : "hover:bg-muted/50 cursor-pointer"
+                    }`}
+                  >
+                    <RadioGroupItem value={n.value} className="w-3 h-3" disabled={disabled} />
+                    {n.label}
+                  </label>
+                );
+              })}
+            </RadioGroup>
+            <div>
+              <Label className="text-xs text-muted-foreground">
+                Justificación del cambio <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                value={pending.comentario}
+                onChange={e => setPendingSeguimientos(prev => ({
+                  ...prev,
+                  [item.id]: { ...prev[item.id], comentario: e.target.value },
+                }))}
+                placeholder="Explique la raison du changement de niveau…"
+                className="text-sm mt-1"
+                rows={2}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => handleSaveSeguimiento(item.id)}
+                disabled={savingSeguimiento}
+                className="gap-1 text-xs"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                {savingSeguimiento ? "Guardando…" : "Guardar seguimiento"}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setPendingSeguimientos(prev => {
+                  const next = { ...prev };
+                  delete next[item.id];
+                  return next;
+                })}
+                className="text-xs"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -747,6 +1049,9 @@ export default function RubricaEvaluacion() {
                                 {ev.acordado_comentario && <p className="text-sm mt-1 italic">{ev.acordado_comentario}</p>}
                               </div>
                             )}
+
+                            {/* Seguimiento section — evaluator can upgrade completed module items */}
+                            {role === "equipo" && renderSeguimientoSection(item, m.module_number)}
                           </CardContent>
                         </Card>
                       );
