@@ -20,6 +20,7 @@ import AdminTrashManager from "@/components/admin/AdminTrashManager";
 import AdminReporte360Tab from "@/components/admin/AdminReporte360Tab";
 import AdminEncuestas360Tab from "@/components/admin/AdminEncuestas360Tab";
 import AdminImagesTab from "@/components/admin/AdminImagesTab";
+import AdminRubricasTab from "@/components/admin/AdminRubricasTab";
 
 interface FormItem {
   name: string;
@@ -43,6 +44,7 @@ const categories: FormCategory[] = [
       { name: "Formulario Directivo", path: "/formulario-360-directivo", icon: School },
       { name: "Formulario Docente", path: "/formulario-360-docente", icon: BookOpen },
       { name: "Formulario Estudiante", path: "/formulario-360-estudiante", icon: GraduationCap },
+      { name: "Rúbrica de Evaluación", path: "/rubrica-evaluacion", icon: ClipboardList },
     ],
   },
   {
@@ -186,6 +188,7 @@ export default function AdminPage() {
             <TabsTrigger value="reportes360" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Informes 360°</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
             <TabsTrigger value="images" className="gap-1.5"><ImageIcon className="w-4 h-4" /> Images</TabsTrigger>
+            <TabsTrigger value="rubricas" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Rúbricas</TabsTrigger>
           </TabsList>
           <TabsContent value="formularios">
             <div className="space-y-8">
@@ -251,6 +254,7 @@ export default function AdminPage() {
           <TabsContent value="reportes360"><AdminReporte360Tab /></TabsContent>
           <TabsContent value="users"><AdminUsersTab isSuperAdmin={isSuperAdmin} /></TabsContent>
           <TabsContent value="images"><AdminImagesTab /></TabsContent>
+          <TabsContent value="rubricas"><AdminRubricasTab /></TabsContent>
         </Tabs>
       </div>
     </div>
