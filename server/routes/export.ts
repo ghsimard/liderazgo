@@ -29,6 +29,12 @@ const EXPORT_TABLES = [
   "competency_weights",
   "deleted_records",
   "app_images",
+  "rubrica_modules",
+  "rubrica_items",
+  "rubrica_evaluadores",
+  "rubrica_asignaciones",
+  "rubrica_evaluaciones",
+  "rubrica_seguimientos",
 ];
 
 router.get("/", requireAuth, requireSuperAdmin, async (_req: Request, res: Response) => {
