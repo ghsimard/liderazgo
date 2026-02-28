@@ -3,11 +3,11 @@ import { supabase } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Search, BookOpen, Users, ClipboardList, Eye } from "lucide-react";
+import { Search, BookOpen, Users, ClipboardList, UserCheck } from "lucide-react";
+import AdminEvaluadoresTab from "./AdminEvaluadoresTab";
 
 interface Evaluacion {
   id: string;
@@ -67,7 +67,6 @@ export default function AdminRubricasTab() {
     setLoading(false);
   };
 
-  // Get unique cedulas
   const uniqueCedulas = [...new Set(evaluaciones.map(e => e.directivo_cedula))];
   const filteredCedulas = searchCedula
     ? uniqueCedulas.filter(c => c.includes(searchCedula))
@@ -87,111 +86,126 @@ export default function AdminRubricasTab() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="flex-1 flex items-center gap-2">
-          <Search className="w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por cédula…"
-            value={searchCedula}
-            onChange={e => setSearchCedula(e.target.value)}
-            className="max-w-xs"
-          />
-        </div>
-        <Badge variant="secondary">{uniqueCedulas.length} directivos evaluados</Badge>
-      </div>
+    <Tabs defaultValue="evaluadores">
+      <TabsList className="mb-4">
+        <TabsTrigger value="evaluadores" className="gap-1.5">
+          <UserCheck className="w-4 h-4" /> Evaluadores y asignaciones
+        </TabsTrigger>
+        <TabsTrigger value="resultados" className="gap-1.5">
+          <ClipboardList className="w-4 h-4" /> Resultados
+        </TabsTrigger>
+      </TabsList>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left: Directivos list */}
-        <Card className="lg:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Users className="w-4 h-4" /> Directivos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 max-h-[500px] overflow-y-auto">
-            {loading ? (
-              <p className="text-sm text-muted-foreground">Cargando…</p>
-            ) : filteredCedulas.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No hay evaluaciones registradas.</p>
-            ) : (
-              filteredCedulas.map(ced => {
-                const evalCount = evaluaciones.filter(e => e.directivo_cedula === ced).length;
-                return (
-                  <button
-                    key={ced}
-                    onClick={() => setSelectedCedula(ced)}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
-                      selectedCedula === ced ? "bg-primary/10 text-primary" : "hover:bg-muted"
-                    }`}
-                  >
-                    <span>CC: {ced}</span>
-                    <Badge variant="outline" className="text-xs">{evalCount} ítems</Badge>
-                  </button>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
+      <TabsContent value="evaluadores">
+        <AdminEvaluadoresTab />
+      </TabsContent>
 
-        {/* Right: Detail */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <ClipboardList className="w-4 h-4" /> Detalle de evaluación
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!selectedCedula ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">Seleccione un directivo para ver sus evaluaciones.</p>
-            ) : (
-              <div className="space-y-4">
-                {modules.map(m => {
-                  const modItems = items.filter(i => i.module_id === m.id);
-                  const modEvals = selectedEvals.filter(e => modItems.some(i => i.id === e.item_id));
-                  if (modEvals.length === 0) return null;
+      <TabsContent value="resultados">
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="flex-1 flex items-center gap-2">
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por cédula…"
+                value={searchCedula}
+                onChange={e => setSearchCedula(e.target.value)}
+                className="max-w-xs"
+              />
+            </div>
+            <Badge variant="secondary">{uniqueCedulas.length} directivos evaluados</Badge>
+          </div>
 
-                  return (
-                    <div key={m.id}>
-                      <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                        <BookOpen className="w-3.5 h-3.5" />
-                        Módulo {m.module_number}: {m.title}
-                      </h4>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-xs">Ítem</TableHead>
-                            <TableHead className="text-xs">Directivo</TableHead>
-                            <TableHead className="text-xs">Equipo</TableHead>
-                            <TableHead className="text-xs">Acordado</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {modItems.map(item => {
-                            const ev = modEvals.find(e => e.item_id === item.id);
-                            if (!ev) return null;
-                            return (
-                              <TableRow key={item.id}>
-                                <TableCell className="text-xs">
-                                  <Badge variant="outline" className="text-[10px] mr-1">{item.item_type}</Badge>
-                                  {item.item_label}
-                                </TableCell>
-                                <TableCell><NivelBadge nivel={ev.directivo_nivel} /></TableCell>
-                                <TableCell><NivelBadge nivel={ev.equipo_nivel} /></TableCell>
-                                <TableCell><NivelBadge nivel={ev.acordado_nivel} /></TableCell>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Card className="lg:col-span-1">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4" /> Directivos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1 max-h-[500px] overflow-y-auto">
+                {loading ? (
+                  <p className="text-sm text-muted-foreground">Cargando…</p>
+                ) : filteredCedulas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No hay evaluaciones registradas.</p>
+                ) : (
+                  filteredCedulas.map(ced => {
+                    const evalCount = evaluaciones.filter(e => e.directivo_cedula === ced).length;
+                    return (
+                      <button
+                        key={ced}
+                        onClick={() => setSelectedCedula(ced)}
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
+                          selectedCedula === ced ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        }`}
+                      >
+                        <span>CC: {ced}</span>
+                        <Badge variant="outline" className="text-xs">{evalCount} ítems</Badge>
+                      </button>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4" /> Detalle de evaluación
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!selectedCedula ? (
+                  <p className="text-sm text-muted-foreground py-8 text-center">Seleccione un directivo para ver sus evaluaciones.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {modules.map(m => {
+                      const modItems = items.filter(i => i.module_id === m.id);
+                      const modEvals = selectedEvals.filter(e => modItems.some(i => i.id === e.item_id));
+                      if (modEvals.length === 0) return null;
+
+                      return (
+                        <div key={m.id}>
+                          <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                            <BookOpen className="w-3.5 h-3.5" />
+                            Módulo {m.module_number}: {m.title}
+                          </h4>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-xs">Ítem</TableHead>
+                                <TableHead className="text-xs">Directivo</TableHead>
+                                <TableHead className="text-xs">Equipo</TableHead>
+                                <TableHead className="text-xs">Acordado</TableHead>
                               </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+                            </TableHeader>
+                            <TableBody>
+                              {modItems.map(item => {
+                                const ev = modEvals.find(e => e.item_id === item.id);
+                                if (!ev) return null;
+                                return (
+                                  <TableRow key={item.id}>
+                                    <TableCell className="text-xs">
+                                      <Badge variant="outline" className="text-[10px] mr-1">{item.item_type}</Badge>
+                                      {item.item_label}
+                                    </TableCell>
+                                    <TableCell><NivelBadge nivel={ev.directivo_nivel} /></TableCell>
+                                    <TableCell><NivelBadge nivel={ev.equipo_nivel} /></TableCell>
+                                    <TableCell><NivelBadge nivel={ev.acordado_nivel} /></TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 }
