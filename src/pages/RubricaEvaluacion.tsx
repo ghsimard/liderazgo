@@ -555,13 +555,34 @@ export default function RubricaEvaluacion() {
                             {/* Evaluación section (directivo or equipo) */}
                             {(isReadOnly || isEvalReadOnly) ? (
                               <div className="space-y-3">
-                                {selectedNivel ? (
-                                  <div className={`p-3 rounded-lg border-2 ${NIVELES.find(n => n.value === selectedNivel)?.color || ""}`}>
-                                    <span className="font-medium text-sm">{NIVELES.find(n => n.value === selectedNivel)?.label}</span>
-                                    <p className="text-xs mt-1 opacity-80">{getDescForNivel(item, selectedNivel)}</p>
+                                {/* For evaluador: always show all nivel descriptions for reference */}
+                                {role === "equipo" ? (
+                                  <div className="space-y-2">
+                                    {NIVELES.map(n => (
+                                      <div
+                                        key={n.value}
+                                        className={`p-3 rounded-lg border-2 ${
+                                          selectedNivel === n.value
+                                            ? n.color + " border-current"
+                                            : "border-transparent bg-muted/20 opacity-70"
+                                        }`}
+                                      >
+                                        <span className="font-medium text-sm">{n.label}</span>
+                                        {selectedNivel === n.value && <Badge variant="secondary" className="ml-2 text-xs">Seleccionado</Badge>}
+                                        <p className="text-xs mt-1 opacity-80">{getDescForNivel(item, n.value)}</p>
+                                      </div>
+                                    ))}
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-muted-foreground italic">Sin evaluar</p>
+                                  /* Directivo read-only: only show selected */
+                                  selectedNivel ? (
+                                    <div className={`p-3 rounded-lg border-2 ${NIVELES.find(n => n.value === selectedNivel)?.color || ""}`}>
+                                      <span className="font-medium text-sm">{NIVELES.find(n => n.value === selectedNivel)?.label}</span>
+                                      <p className="text-xs mt-1 opacity-80">{getDescForNivel(item, selectedNivel)}</p>
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground italic">Sin evaluar</p>
+                                  )
                                 )}
                                 {comment && (
                                   <div className="bg-muted/30 rounded-lg p-3">
