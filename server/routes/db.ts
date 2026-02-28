@@ -29,6 +29,12 @@ const PUBLIC_READ_TABLES = new Set([
   "region_instituciones",
   "app_images",
   "rubrica_submission_dates",
+  "rubrica_modules",
+  "rubrica_items",
+  "rubrica_evaluadores",
+  "rubrica_asignaciones",
+  "rubrica_evaluaciones",
+  "rubrica_seguimientos",
 ]);
 
 // Tables that allow public inserts (no auth required for POST without _method)
@@ -36,6 +42,8 @@ const PUBLIC_INSERT_TABLES = new Set([
   "fichas_rlt",
   "encuestas_360",
   "rubrica_submission_dates",
+  "rubrica_evaluaciones",
+  "rubrica_seguimientos",
 ]);
 
 // Whitelist of allowed tables
@@ -49,6 +57,12 @@ const ALLOWED_TABLES = new Set([
   "region_entidades",
   "region_municipios",
   "region_instituciones",
+  "rubrica_evaluadores",
+  "rubrica_asignaciones",
+  "rubrica_evaluaciones",
+  "rubrica_seguimientos",
+  "rubrica_modules",
+  "rubrica_items",
 ]);
 
 // ── Helpers ────────────────────────────────────────────
