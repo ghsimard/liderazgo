@@ -83,6 +83,9 @@ export default function RubricaEvaluacion() {
   const [submitted, setSubmitted] = useState(false);
   const [activeModule, setActiveModule] = useState<string>("");
 
+  // Submission dates tracking: key = "module_number:submission_type" → submitted_at
+  const [submissionDates, setSubmissionDates] = useState<Record<string, string>>({});
+
   // The active role for saving (directivo or equipo)
   const role: "directivo" | "equipo" = detectedRole === "directivo" ? "directivo" : "equipo";
 
@@ -96,6 +99,25 @@ export default function RubricaEvaluacion() {
       if (mods?.length) setActiveModule(mods[0].id);
     })();
   }, []);
+
+  const loadSubmissionDates = async (directivoCedula: string) => {
+    const { data } = await supabase
+      .from("rubrica_submission_dates")
+      .select("*")
+      .eq("directivo_cedula", directivoCedula);
+    const map: Record<string, string> = {};
+    if (data) {
+      for (const d of data) {
+        map[`${d.module_number}:${d.submission_type}`] = d.submitted_at;
+      }
+    }
+    setSubmissionDates(map);
+    return map;
+  };
+
+  const hasSubmission = (moduleNumber: number, type: string) => {
+    return !!submissionDates[`${moduleNumber}:${type}`];
+  };
 
   const loadEvaluaciones = async (directivoCedula: string) => {
     const { data: evals } = await supabase
@@ -140,6 +162,7 @@ export default function RubricaEvaluacion() {
         setDirectivoInfo({ nombre: f.nombres_apellidos, cedula: f.numero_cedula, institucion: f.nombre_ie });
 
         const evMap = await loadEvaluaciones(f.numero_cedula);
+        await loadSubmissionDates(f.numero_cedula);
         // Check if directivo already submitted (has at least one directivo_nivel)
         const hasSubmitted = Object.values(evMap).some(e => e.directivo_nivel);
         setDirectivoReadOnly(hasSubmitted);
@@ -174,16 +197,16 @@ export default function RubricaEvaluacion() {
     setSelectedDirectivo(asig);
     setDirectivoInfo({ nombre: asig.directivo_nombre, cedula: asig.directivo_cedula, institucion: asig.institucion });
     await loadEvaluaciones(asig.directivo_cedula);
+    await loadSubmissionDates(asig.directivo_cedula);
   };
 
   const handleBack = () => {
     if (selectedDirectivo && detectedRole === "evaluador") {
-      // Go back to directivo selection
       setSelectedDirectivo(null);
       setDirectivoInfo(null);
       setEvaluaciones({});
+      setSubmissionDates({});
     } else {
-      // Go back to cédula input
       setCedula("");
       setDetectedRole(null);
       setUserName("");
@@ -193,6 +216,7 @@ export default function RubricaEvaluacion() {
       setAsignaciones([]);
       setSelectedDirectivo(null);
       setEvaluaciones({});
+      setSubmissionDates({});
     }
   };
 
@@ -213,22 +237,45 @@ export default function RubricaEvaluacion() {
     }));
   };
 
+  // Determine current step for evaluador on the active module
+  const getEvaluadorStep = (moduleNumber: number): "evaluacion" | "nivel_acordado" | "completed" => {
+    const evalSubmitted = hasSubmission(moduleNumber, "evaluacion");
+    const acordadoSubmitted = hasSubmission(moduleNumber, "nivel_acordado");
+    if (acordadoSubmitted) return "completed";
+    if (evalSubmitted) return "nivel_acordado";
+    return "evaluacion";
+  };
+
   const handleSave = async () => {
     if (!directivoInfo) return;
     setSaving(true);
     try {
-      const entries = Object.values(evaluaciones);
-      for (const ev of entries) {
-        const payload = {
+      const currentModule = modules.find(m => m.id === activeModule);
+      if (!currentModule) return;
+
+      const moduleItems = items.filter(i => i.module_id === activeModule);
+      const evaluadorStep = role === "equipo" ? getEvaluadorStep(currentModule.module_number) : null;
+
+      for (const item of moduleItems) {
+        const ev = evaluaciones[item.id];
+        if (!ev) continue;
+
+        const payload: any = {
           item_id: ev.item_id,
           directivo_cedula: directivoInfo.cedula,
-          directivo_nivel: ev.directivo_nivel,
-          directivo_comentario: ev.directivo_comentario,
-          equipo_nivel: ev.equipo_nivel,
-          equipo_comentario: ev.equipo_comentario,
-          acordado_nivel: ev.acordado_nivel,
-          acordado_comentario: ev.acordado_comentario,
         };
+
+        // Only include the fields relevant to the current step
+        if (role === "directivo") {
+          payload.directivo_nivel = ev.directivo_nivel;
+          payload.directivo_comentario = ev.directivo_comentario;
+        } else if (evaluadorStep === "evaluacion") {
+          payload.equipo_nivel = ev.equipo_nivel;
+          payload.equipo_comentario = ev.equipo_comentario;
+        } else if (evaluadorStep === "nivel_acordado") {
+          payload.acordado_nivel = ev.acordado_nivel;
+          payload.acordado_comentario = ev.acordado_comentario;
+        }
 
         const { data: existing } = await supabase
           .from("rubrica_evaluaciones")
@@ -244,31 +291,28 @@ export default function RubricaEvaluacion() {
         }
       }
 
-      // Determine submission type and record the date
-      const currentModule = modules.find(m => m.id === activeModule);
-      if (currentModule) {
-        let submissionType: string;
-        if (detectedRole === "directivo") {
-          submissionType = "autoevaluacion";
-        } else {
-          // Check if this is a nivel_acordado submission (all items have acordado_nivel)
-          const moduleItems = items.filter(i => i.module_id === activeModule);
-          const allHaveAcordado = moduleItems.every(item => {
-            const ev = evaluaciones[item.id];
-            return ev?.acordado_nivel;
-          });
-          submissionType = allHaveAcordado ? "nivel_acordado" : "evaluacion";
-        }
-
-        await supabase
-          .from("rubrica_submission_dates")
-          .upsert({
-            directivo_cedula: directivoInfo.cedula,
-            module_number: currentModule.module_number,
-            submission_type: submissionType,
-            submitted_at: new Date().toISOString(),
-          }, { onConflict: "directivo_cedula,module_number,submission_type" });
+      // Record submission date
+      let submissionType: string;
+      if (role === "directivo") {
+        submissionType = "autoevaluacion";
+      } else {
+        submissionType = evaluadorStep === "nivel_acordado" ? "nivel_acordado" : "evaluacion";
       }
+
+      await supabase
+        .from("rubrica_submission_dates")
+        .upsert({
+          directivo_cedula: directivoInfo.cedula,
+          module_number: currentModule.module_number,
+          submission_type: submissionType,
+          submitted_at: new Date().toISOString(),
+        }, { onConflict: "directivo_cedula,module_number,submission_type" });
+
+      // Update local submission dates
+      setSubmissionDates(prev => ({
+        ...prev,
+        [`${currentModule.module_number}:${submissionType}`]: new Date().toISOString(),
+      }));
 
       toast({ title: "Guardado exitoso", description: "Las evaluaciones han sido guardadas." });
       setSubmitted(true);
@@ -307,10 +351,10 @@ export default function RubricaEvaluacion() {
             <Button onClick={() => {
               setSubmitted(false);
               if (detectedRole === "evaluador") {
-                // Go back to directivo selection
                 setSelectedDirectivo(null);
                 setDirectivoInfo(null);
                 setEvaluaciones({});
+                setSubmissionDates({});
               } else {
                 setCedula("");
                 setDetectedRole(null);
@@ -318,6 +362,7 @@ export default function RubricaEvaluacion() {
                 setDirectivoInfo(null);
                 setDirectivoReadOnly(false);
                 setEvaluaciones({});
+                setSubmissionDates({});
               }
             }}>
               {detectedRole === "evaluador" ? "Evaluar otro directivo" : "Nueva evaluación"}
@@ -462,6 +507,11 @@ export default function RubricaEvaluacion() {
 
               {modules.map(m => {
                 const moduleItems = items.filter(i => i.module_id === m.id);
+                const evaluadorStep = role === "equipo" ? getEvaluadorStep(m.module_number) : null;
+                const isEvalReadOnly = role === "equipo" && (evaluadorStep === "nivel_acordado" || evaluadorStep === "completed");
+                const isAcordadoReadOnly = role === "equipo" && evaluadorStep === "completed";
+                const isModuleFullyReadOnly = isReadOnly || (role === "equipo" && evaluadorStep === "completed");
+
                 return (
                   <TabsContent key={m.id} value={m.id} className="space-y-4 mt-4">
                     <Card className="bg-primary/5 border-primary/20">
@@ -471,6 +521,20 @@ export default function RubricaEvaluacion() {
                           <Target className="w-4 h-4 mt-0.5 text-primary shrink-0" />
                           <p className="text-sm text-muted-foreground"><strong>Objetivo:</strong> {m.objective}</p>
                         </div>
+                        {/* Show submission status badges */}
+                        {role === "equipo" && (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {hasSubmission(m.module_number, "autoevaluacion") && (
+                              <Badge variant="secondary" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Autoevaluación</Badge>
+                            )}
+                            {hasSubmission(m.module_number, "evaluacion") && (
+                              <Badge variant="secondary" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Evaluación</Badge>
+                            )}
+                            {hasSubmission(m.module_number, "nivel_acordado") && (
+                              <Badge variant="secondary" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Nivel acordado</Badge>
+                            )}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
 
@@ -488,8 +552,8 @@ export default function RubricaEvaluacion() {
                             </div>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            {isReadOnly ? (
-                              /* Read-only view for directivo who already submitted */
+                            {/* Evaluación section (directivo or equipo) */}
+                            {(isReadOnly || isEvalReadOnly) ? (
                               <div className="space-y-3">
                                 {selectedNivel ? (
                                   <div className={`p-3 rounded-lg border-2 ${NIVELES.find(n => n.value === selectedNivel)?.color || ""}`}>
@@ -507,7 +571,6 @@ export default function RubricaEvaluacion() {
                                 )}
                               </div>
                             ) : (
-                              /* Editable form */
                               <>
                                 <RadioGroup
                                   value={selectedNivel}
@@ -561,8 +624,8 @@ export default function RubricaEvaluacion() {
                               </div>
                             )}
 
-                            {/* Acordado section */}
-                            {ev?.directivo_nivel && ev?.equipo_nivel && !isReadOnly && role === "equipo" && (
+                            {/* Acordado section — only shown when evaluador has submitted evaluación and comes back */}
+                            {ev?.directivo_nivel && ev?.equipo_nivel && role === "equipo" && evaluadorStep === "nivel_acordado" && (
                               <div className="border-t pt-4 space-y-3">
                                 <p className="text-sm font-medium text-primary">Nivel acordado</p>
                                 <RadioGroup
@@ -589,8 +652,8 @@ export default function RubricaEvaluacion() {
                               </div>
                             )}
 
-                            {/* Read-only acordado for directivo */}
-                            {ev?.acordado_nivel && role === "directivo" && (
+                            {/* Read-only acordado (for directivo or after acordado submitted) */}
+                            {ev?.acordado_nivel && (role === "directivo" || isAcordadoReadOnly) && (
                               <div className="border-t pt-4">
                                 <p className="text-sm font-medium text-primary mb-2">Nivel acordado</p>
                                 <Badge className={NIVELES.find(n => n.value === ev.acordado_nivel)?.color}>
@@ -608,15 +671,28 @@ export default function RubricaEvaluacion() {
               })}
             </Tabs>
 
-            {/* Save button — only if not read-only */}
-            {!isReadOnly && (
-              <div className="flex justify-end pb-8">
-                <Button size="lg" onClick={handleSave} disabled={saving} className="gap-2">
-                  <CheckCircle className="w-5 h-5" />
-                  {saving ? "Guardando…" : "Guardar evaluación"}
-                </Button>
-              </div>
-            )}
+            {/* Save button — only if not fully read-only for the active module */}
+            {(() => {
+              const activeModuleObj = modules.find(m => m.id === activeModule);
+              const activeStep = activeModuleObj && role === "equipo" ? getEvaluadorStep(activeModuleObj.module_number) : null;
+              const canSave = !isReadOnly && activeStep !== "completed";
+              if (!canSave) return null;
+
+              const buttonLabel = role === "directivo"
+                ? "Guardar autoevaluación"
+                : activeStep === "nivel_acordado"
+                  ? "Guardar nivel acordado"
+                  : "Guardar evaluación";
+
+              return (
+                <div className="flex justify-end pb-8">
+                  <Button size="lg" onClick={handleSave} disabled={saving} className="gap-2">
+                    <CheckCircle className="w-5 h-5" />
+                    {saving ? "Guardando…" : buttonLabel}
+                  </Button>
+                </div>
+              );
+            })()}
           </>
         )}
       </div>
