@@ -87,6 +87,7 @@ export default function RubricaEvaluacion() {
   // Directivo state
   const [directivoInfo, setDirectivoInfo] = useState<{ nombre: string; cedula: string; institucion: string } | null>(null);
   const [directivoReadOnly, setDirectivoReadOnly] = useState(false);
+  const [assignedEvaluadorNombre, setAssignedEvaluadorNombre] = useState<string | null>(null);
 
   // Evaluador state
   const [evaluadorId, setEvaluadorId] = useState<string>("");
@@ -244,6 +245,21 @@ export default function RubricaEvaluacion() {
         const evMap = await loadEvaluaciones(f.numero_cedula);
         await loadSubmissionDates(f.numero_cedula);
         await loadSeguimientos(f.numero_cedula);
+
+        // Load assigned evaluator name for this directivo
+        const { data: asigData } = await supabase
+          .from("rubrica_asignaciones")
+          .select("evaluador_id")
+          .eq("directivo_cedula", f.numero_cedula)
+          .limit(1);
+        if (asigData && asigData.length > 0) {
+          const { data: evalData } = await supabase
+            .from("rubrica_evaluadores")
+            .select("nombre")
+            .eq("id", asigData[0].evaluador_id)
+            .single();
+          if (evalData) setAssignedEvaluadorNombre(evalData.nombre);
+        }
         // Check if directivo already submitted (has at least one directivo_nivel)
         const hasSubmitted = Object.values(evMap).some(e => e.directivo_nivel);
         setDirectivoReadOnly(hasSubmitted);
@@ -296,6 +312,7 @@ export default function RubricaEvaluacion() {
       setUserName("");
       setDirectivoInfo(null);
       setDirectivoReadOnly(false);
+      setAssignedEvaluadorNombre(null);
       setEvaluadorId("");
       setAsignaciones([]);
       setSelectedDirectivo(null);
@@ -805,6 +822,9 @@ export default function RubricaEvaluacion() {
                     <div>
                       <p className="font-medium">{directivoInfo!.nombre}</p>
                       <p className="text-sm text-muted-foreground">CC: {directivoInfo!.cedula} — {directivoInfo!.institucion}</p>
+                      {detectedRole === "directivo" && assignedEvaluadorNombre && (
+                        <p className="text-xs text-muted-foreground">Evaluador asignado: <span className="font-medium text-foreground">{assignedEvaluadorNombre}</span></p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
