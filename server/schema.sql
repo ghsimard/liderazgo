@@ -177,6 +177,22 @@ CREATE TABLE IF NOT EXISTS public.rubrica_seguimientos (
 );
 
 -- ============================================================
+-- Submission dates tracking
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.rubrica_submission_dates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  directivo_cedula TEXT NOT NULL,
+  module_number INTEGER NOT NULL,
+  submission_type TEXT NOT NULL,
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (directivo_cedula, module_number, submission_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rubrica_submission_dates_cedula
+  ON public.rubrica_submission_dates(directivo_cedula);
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js

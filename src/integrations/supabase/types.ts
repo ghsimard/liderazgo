@@ -864,6 +864,30 @@ export type Database = {
           },
         ]
       }
+      rubrica_submission_dates: {
+        Row: {
+          directivo_cedula: string
+          id: string
+          module_number: number
+          submission_type: string
+          submitted_at: string
+        }
+        Insert: {
+          directivo_cedula: string
+          id?: string
+          module_number: number
+          submission_type: string
+          submitted_at?: string
+        }
+        Update: {
+          directivo_cedula?: string
+          id?: string
+          module_number?: number
+          submission_type?: string
+          submitted_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
