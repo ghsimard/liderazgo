@@ -507,6 +507,8 @@ export default function RubricaEvaluacion() {
 
               {modules.map(m => {
                 const moduleItems = items.filter(i => i.module_id === m.id);
+                const autoevDone = hasSubmission(m.module_number, "autoevaluacion");
+                const evaluadorBlocked = role === "equipo" && !autoevDone;
                 const evaluadorStep = role === "equipo" ? getEvaluadorStep(m.module_number) : null;
                 const isEvalReadOnly = role === "equipo" && (evaluadorStep === "nivel_acordado" || evaluadorStep === "completed");
                 const isAcordadoReadOnly = role === "equipo" && evaluadorStep === "completed";
@@ -538,7 +540,20 @@ export default function RubricaEvaluacion() {
                       </CardContent>
                     </Card>
 
-                    {moduleItems.map(item => {
+                    {evaluadorBlocked && (
+                      <Card className="border-amber-300 bg-amber-50">
+                        <CardContent className="pt-6 pb-6 text-center space-y-2">
+                          <Lock className="w-8 h-8 text-amber-500 mx-auto" />
+                          <p className="font-medium text-sm">Módulo no disponible</p>
+                          <p className="text-xs text-muted-foreground">
+                            El directivo aún no ha completado su autoevaluación para este módulo. 
+                            Podrá evaluar una vez que la autoevaluación haya sido enviada.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {!evaluadorBlocked && moduleItems.map(item => {
                       const ev = evaluaciones[item.id];
                       const selectedNivel = (role === "directivo" ? ev?.directivo_nivel : ev?.equipo_nivel) || "";
                       const comment = (role === "directivo" ? ev?.directivo_comentario : ev?.equipo_comentario) || "";
@@ -696,7 +711,9 @@ export default function RubricaEvaluacion() {
             {(() => {
               const activeModuleObj = modules.find(m => m.id === activeModule);
               const activeStep = activeModuleObj && role === "equipo" ? getEvaluadorStep(activeModuleObj.module_number) : null;
-              const canSave = !isReadOnly && activeStep !== "completed";
+              const activeAutoevDone = activeModuleObj ? hasSubmission(activeModuleObj.module_number, "autoevaluacion") : true;
+              const activeBlocked = role === "equipo" && !activeAutoevDone;
+              const canSave = !isReadOnly && activeStep !== "completed" && !activeBlocked;
               if (!canSave) return null;
 
               const buttonLabel = role === "directivo"
