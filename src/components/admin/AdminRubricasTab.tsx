@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Search, BookOpen, Users, ClipboardList, UserCheck, FileText } from "lucide-react";
+import { Search, BookOpen, Users, ClipboardList, UserCheck, FileText, BarChart3 } from "lucide-react";
 import AdminEvaluadoresTab from "./AdminEvaluadoresTab";
 import AdminRubricaModuleReport from "./AdminRubricaModuleReport";
+import AdminRubricaRegionalReport from "./AdminRubricaRegionalReport";
 
 interface Evaluacion {
   id: string;
@@ -97,6 +98,9 @@ export default function AdminRubricasTab() {
         </TabsTrigger>
         <TabsTrigger value="resultados" className="gap-1.5">
           <ClipboardList className="w-4 h-4" /> Resultados
+        </TabsTrigger>
+        <TabsTrigger value="regional" className="gap-1.5">
+          <BarChart3 className="w-4 h-4" /> Informe regional
         </TabsTrigger>
       </TabsList>
 
@@ -213,6 +217,10 @@ export default function AdminRubricasTab() {
             </Card>
           </div>
         </div>
+      </TabsContent>
+
+      <TabsContent value="regional">
+        <AdminRubricaRegionalReport />
       </TabsContent>
     </Tabs>
   );
