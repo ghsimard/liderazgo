@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
-import { Search, CheckCircle, BookOpen, Target, FileText, Users, Lock, ArrowLeft, ArrowUp, History, Clock, FileDown, Loader2 } from "lucide-react";
+import { Search, CheckCircle, BookOpen, Target, FileText, Users, Lock, ArrowLeft, ArrowUp, History, Clock, FileDown, Loader2, Eye, EyeOff } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { generarPDFRubricaModulo, type RubricaModuleReportData } from "@/utils/rubricaModulePdfGenerator";
 
@@ -113,6 +113,7 @@ export default function RubricaEvaluacion() {
   const [pendingSeguimientos, setPendingSeguimientos] = useState<Record<string, { nivel: string; comentario: string }>>({});
   const [savingSeguimiento, setSavingSeguimiento] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [showInlineReport, setShowInlineReport] = useState<string | null>(null); // module id
 
   // The active role for saving (directivo or equipo)
   const role: "directivo" | "equipo" = detectedRole === "directivo" ? "directivo" : "equipo";
@@ -997,7 +998,16 @@ export default function RubricaEvaluacion() {
                         )}
                         {/* PDF download button when module is completed */}
                         {hasSubmission(m.module_number, "nivel_acordado") && (
-                          <div className="mt-3">
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              variant={showInlineReport === m.id ? "default" : "outline"}
+                              onClick={() => setShowInlineReport(showInlineReport === m.id ? null : m.id)}
+                              className="gap-1.5 text-xs"
+                            >
+                              {showInlineReport === m.id ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              {showInlineReport === m.id ? "Ocultar informe" : "Ver informe"}
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
@@ -1006,8 +1016,83 @@ export default function RubricaEvaluacion() {
                               className="gap-1.5 text-xs"
                             >
                               {generatingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
-                              Descargar informe PDF
+                              Descargar PDF
                             </Button>
+                          </div>
+                        )}
+
+                        {/* Inline report view */}
+                        {showInlineReport === m.id && (
+                          <div className="mt-4 space-y-4 border-t pt-4">
+                            <h4 className="text-sm font-semibold">Informe detallado — Módulo {m.module_number}</h4>
+                            {items.filter(i => i.module_id === m.id).map(item => {
+                              const ev = evaluaciones[item.id];
+                              const itemSegs = seguimientos.filter(s => s.item_id === item.id);
+                              return (
+                                <div key={item.id} className="border rounded-lg p-3 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-[10px]">{item.item_type}</Badge>
+                                    <span className="text-xs font-medium">{item.item_label}</span>
+                                  </div>
+                                  <p className="text-[11px] italic text-muted-foreground">{item.desc_avanzado}</p>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    {/* Autoevaluación */}
+                                    <div className="space-y-1 bg-amber-50/50 dark:bg-amber-950/20 rounded p-2">
+                                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Autoevaluación</p>
+                                      {ev?.directivo_nivel ? (
+                                        <Badge className={`text-xs ${NIVELES.find(n => n.value === ev.directivo_nivel)?.color || ""}`}>
+                                          {NIVELES.find(n => n.value === ev.directivo_nivel)?.label}
+                                        </Badge>
+                                      ) : <span className="text-xs text-muted-foreground">—</span>}
+                                      <p className="text-xs text-muted-foreground">{ev?.directivo_comentario || "Sin comentario"}</p>
+                                    </div>
+
+                                    {/* Equipo */}
+                                    <div className="space-y-1 bg-blue-50/50 dark:bg-blue-950/20 rounded p-2">
+                                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Evaluación equipo</p>
+                                      {ev?.equipo_nivel ? (
+                                        <Badge className={`text-xs ${NIVELES.find(n => n.value === ev.equipo_nivel)?.color || ""}`}>
+                                          {NIVELES.find(n => n.value === ev.equipo_nivel)?.label}
+                                        </Badge>
+                                      ) : <span className="text-xs text-muted-foreground">—</span>}
+                                      <p className="text-xs text-muted-foreground">{ev?.equipo_comentario || "Sin comentario"}</p>
+                                    </div>
+
+                                    {/* Acordado */}
+                                    <div className="space-y-1 bg-emerald-50/50 dark:bg-emerald-950/20 rounded p-2">
+                                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Nivel acordado</p>
+                                      {ev?.acordado_nivel ? (
+                                        <Badge className={`text-xs ${NIVELES.find(n => n.value === ev.acordado_nivel)?.color || ""}`}>
+                                          {NIVELES.find(n => n.value === ev.acordado_nivel)?.label}
+                                        </Badge>
+                                      ) : <span className="text-xs text-muted-foreground">—</span>}
+                                      <p className="text-xs text-muted-foreground">{ev?.acordado_comentario || "Sin comentario"}</p>
+                                    </div>
+                                  </div>
+
+                                  {/* Seguimientos */}
+                                  {itemSegs.length > 0 && (
+                                    <div className="border-t pt-2">
+                                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Seguimientos</p>
+                                      {itemSegs.map((seg, idx) => (
+                                        <div key={idx} className="flex items-start gap-2 text-xs py-1">
+                                          <Badge variant="outline" className="text-[10px] shrink-0">
+                                            {new Date(seg.created_at).toLocaleDateString("es-CO")}
+                                          </Badge>
+                                          {seg.nivel && (
+                                            <Badge className={`text-[10px] ${NIVELES.find(n => n.value === seg.nivel)?.color || ""}`}>
+                                              {NIVELES.find(n => n.value === seg.nivel)?.label}
+                                            </Badge>
+                                          )}
+                                          <span className="text-muted-foreground">{seg.comentario}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </CardContent>
