@@ -855,11 +855,7 @@ export default function RubricaEvaluacion() {
                 {modules.map((m, idx) => {
                   // Sequential lock: previous module must be completed before accessing the next
                   const prevModuleNumber = idx > 0 ? modules[idx - 1].module_number : null;
-                  const prevModuleDone = prevModuleNumber === null || (
-                    role === "directivo"
-                      ? hasSubmission(prevModuleNumber, "nivel_acordado")
-                      : hasSubmission(prevModuleNumber, "autoevaluacion")
-                  );
+                  const prevModuleDone = prevModuleNumber === null || hasSubmission(prevModuleNumber, "nivel_acordado");
                   const evalBlocked = role === "equipo" && !hasSubmission(m.module_number, "autoevaluacion");
                   const blocked = !prevModuleDone || evalBlocked;
 
@@ -870,7 +866,7 @@ export default function RubricaEvaluacion() {
                       if (role === "directivo") {
                         lockReason = `El evaluador debe completar el nivel acordado del Módulo ${prevModuleNumber} antes de poder acceder a este módulo.`;
                       } else {
-                        lockReason = `El directivo debe completar la autoevaluación del Módulo ${prevModuleNumber} primero.`;
+                        lockReason = `Se debe completar el nivel acordado del Módulo ${prevModuleNumber} antes de avanzar.`;
                       }
                     } else if (evalBlocked) {
                       lockReason = `El directivo aún no ha completado la autoevaluación de este módulo.`;
