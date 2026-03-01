@@ -1006,28 +1006,33 @@ export default function RubricaEvaluacion() {
                               </div>
                             ) : (
                               <>
-                                <RadioGroup
-                                  value={selectedNivel}
-                                  onValueChange={(v) => updateEval(item.id, nivelField as keyof Evaluacion, v)}
-                                  className="space-y-3"
-                                >
+                                <div className="space-y-3">
                                   {NIVELES.map(n => (
-                                    <label
+                                    <button
+                                      type="button"
                                       key={n.value}
-                                      className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                      onClick={() => {
+                                        const newValue = selectedNivel === n.value ? "" : n.value;
+                                        updateEval(item.id, nivelField as keyof Evaluacion, newValue);
+                                      }}
+                                      className={`w-full text-left flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
                                         selectedNivel === n.value
                                           ? n.color + " border-current"
                                           : "border-transparent bg-muted/30 hover:bg-muted/50"
                                       }`}
                                     >
-                                      <RadioGroupItem value={n.value} className="mt-0.5" />
+                                      <div className={`mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                                        selectedNivel === n.value ? "border-current" : "border-muted-foreground/40"
+                                      }`}>
+                                        {selectedNivel === n.value && <div className="w-2 h-2 rounded-full bg-current" />}
+                                      </div>
                                       <div className="flex-1">
                                         <span className="font-medium text-sm">{n.label}</span>
                                         <p className="text-xs mt-1 opacity-80">{getDescForNivel(item, n.value)}</p>
                                       </div>
-                                    </label>
+                                    </button>
                                   ))}
-                                </RadioGroup>
+                                </div>
 
                                 <div>
                                   <Label className="text-xs text-muted-foreground">Comentario <span className="text-destructive">*</span></Label>
@@ -1062,20 +1067,28 @@ export default function RubricaEvaluacion() {
                             {ev?.directivo_nivel && ev?.equipo_nivel && role === "equipo" && evaluadorStep === "nivel_acordado" && (
                               <div className="border-t pt-4 space-y-3">
                                 <p className="text-sm font-medium text-primary">Nivel acordado</p>
-                                <RadioGroup
-                                  value={ev?.acordado_nivel || ""}
-                                  onValueChange={(v) => updateEval(item.id, "acordado_nivel", v)}
-                                  className="flex flex-wrap gap-2"
-                                >
+                                <div className="flex flex-wrap gap-2">
                                   {NIVELES.map(n => (
-                                    <label key={n.value} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border cursor-pointer text-xs ${
-                                      ev?.acordado_nivel === n.value ? n.color : "hover:bg-muted/50"
-                                    }`}>
-                                      <RadioGroupItem value={n.value} className="w-3 h-3" />
+                                    <button
+                                      type="button"
+                                      key={n.value}
+                                      onClick={() => {
+                                        const newValue = ev?.acordado_nivel === n.value ? "" : n.value;
+                                        updateEval(item.id, "acordado_nivel", newValue);
+                                      }}
+                                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border cursor-pointer text-xs transition-all ${
+                                        ev?.acordado_nivel === n.value ? n.color : "hover:bg-muted/50"
+                                      }`}
+                                    >
+                                      <div className={`w-3 h-3 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                                        ev?.acordado_nivel === n.value ? "border-current" : "border-muted-foreground/40"
+                                      }`}>
+                                        {ev?.acordado_nivel === n.value && <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+                                      </div>
                                       {n.label}
-                                    </label>
+                                    </button>
                                   ))}
-                                </RadioGroup>
+                                </div>
                                 <div>
                                   <Label className="text-xs text-muted-foreground">Comentario acordado <span className="text-destructive">*</span></Label>
                                   <Textarea
