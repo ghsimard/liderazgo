@@ -855,8 +855,8 @@ export default function RubricaEvaluacion() {
                   const prevModuleNumber = idx > 0 ? modules[idx - 1].module_number : null;
                   const prevModuleDone = prevModuleNumber === null || (
                     role === "directivo"
-                      ? hasSubmission(prevModuleNumber, "autoevaluacion")
-                      : hasSubmission(prevModuleNumber, "autoevaluacion") // evaluator also needs autoev done
+                      ? hasSubmission(prevModuleNumber, "nivel_acordado") // directivo can't advance until evaluator completes nivel acordado
+                      : hasSubmission(prevModuleNumber, "autoevaluacion") // evaluator needs autoev done
                   );
                   // Evaluator-specific: autoev must be done for THIS module too
                   const evalBlocked = role === "equipo" && !hasSubmission(m.module_number, "autoevaluacion");
