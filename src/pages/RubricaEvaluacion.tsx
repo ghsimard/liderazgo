@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
-import { Search, CheckCircle, BookOpen, Target, FileText, Users, Lock, ArrowLeft, ArrowUp, History, Clock } from "lucide-react";
+import { Search, CheckCircle, BookOpen, Target, FileText, Users, Lock, ArrowLeft, ArrowUp, History, Clock, FileDown, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { generarPDFRubricaModulo, type RubricaModuleReportData } from "@/utils/rubricaModulePdfGenerator";
 
 interface RubricaModule {
   id: string;
@@ -111,6 +112,7 @@ export default function RubricaEvaluacion() {
   // Pending seguimiento edits: key = item_id → { nivel, comentario }
   const [pendingSeguimientos, setPendingSeguimientos] = useState<Record<string, { nivel: string; comentario: string }>>({});
   const [savingSeguimiento, setSavingSeguimiento] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   // The active role for saving (directivo or equipo)
   const role: "directivo" | "equipo" = detectedRole === "directivo" ? "directivo" : "equipo";
@@ -509,6 +511,60 @@ export default function RubricaEvaluacion() {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setSavingSeguimiento(false);
+    }
+  };
+
+  const handleDownloadModulePdf = async (moduleId: string) => {
+    if (!directivoInfo) return;
+    const mod = modules.find(m => m.id === moduleId);
+    if (!mod) return;
+
+    setGeneratingPdf(true);
+    try {
+      const modItems = items.filter(i => i.module_id === moduleId);
+      const reportItems = modItems.map(item => {
+        const ev = evaluaciones[item.id];
+        return {
+          itemType: item.item_type,
+          itemLabel: item.item_label,
+          directivoNivel: ev?.directivo_nivel || null,
+          directivoComentario: ev?.directivo_comentario || null,
+          equipoNivel: ev?.equipo_nivel || null,
+          equipoComentario: ev?.equipo_comentario || null,
+          acordadoNivel: ev?.acordado_nivel || null,
+          acordadoComentario: ev?.acordado_comentario || null,
+        };
+      });
+
+      const modSegs = seguimientos
+        .filter(s => modItems.some(i => i.id === s.item_id))
+        .map(s => ({
+          itemLabel: modItems.find(i => i.id === s.item_id)?.item_label || "",
+          nivel: s.nivel,
+          comentario: s.comentario,
+          fecha: s.created_at,
+        }));
+
+      const reportData: RubricaModuleReportData = {
+        directivoNombre: directivoInfo.nombre,
+        directivoCedula: directivoInfo.cedula,
+        institucion: directivoInfo.institucion,
+        moduleNumber: mod.module_number,
+        moduleTitle: mod.title,
+        moduleObjective: mod.objective,
+        items: reportItems,
+        seguimientos: modSegs.length > 0 ? modSegs : undefined,
+      };
+
+      await generarPDFRubricaModulo(reportData, {
+        logoRLT: images.logo_rlt,
+        logoCosmo: images.logo_cosmo,
+      });
+      toast({ title: "PDF descargado" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setGeneratingPdf(false);
     }
   };
 
@@ -933,6 +989,21 @@ export default function RubricaEvaluacion() {
                             {hasSubmission(m.module_number, "nivel_acordado") && (
                               <Badge variant="secondary" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Nivel acordado</Badge>
                             )}
+                          </div>
+                        )}
+                        {/* PDF download button when module is completed */}
+                        {hasSubmission(m.module_number, "nivel_acordado") && (
+                          <div className="mt-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownloadModulePdf(m.id)}
+                              disabled={generatingPdf}
+                              className="gap-1.5 text-xs"
+                            >
+                              {generatingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                              Descargar informe PDF
+                            </Button>
                           </div>
                         )}
                       </CardContent>
