@@ -57,21 +57,36 @@ export default function AdminEvaluadoresTab() {
   // Detail dialog
   const [detailDirectivo, setDetailDirectivo] = useState<{ cedula: string; nombre: string } | null>(null);
   const [cedulasConEval, setCedulasConEval] = useState<Set<string>>(new Set());
+  const [modulosCompletados, setModulosCompletados] = useState<Record<string, number>>({});
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [{ data: evals }, { data: asigs }, { data: dirs }, { data: evalRows }] = await Promise.all([
+    const [{ data: evals }, { data: asigs }, { data: dirs }, { data: evalRows }, { data: subDates }] = await Promise.all([
       supabase.from("rubrica_evaluadores").select("*").order("nombre", { ascending: true }),
       supabase.from("rubrica_asignaciones").select("*").order("created_at", { ascending: false }),
       supabase.from("fichas_rlt").select("nombres_apellidos, numero_cedula, nombre_ie")
         .in("cargo_actual", ["Rector/a", "Coordinador/a"])
         .order("nombres_apellidos", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("directivo_cedula"),
+      supabase.from("rubrica_submission_dates").select("directivo_cedula, module_number, submission_type"),
     ]);
     if (evals) setEvaluadores(evals);
     if (asigs) setAsignaciones(asigs);
     if (dirs) setDirectivos(dirs);
     if (evalRows) setCedulasConEval(new Set(evalRows.map((r: any) => r.directivo_cedula)));
+    if (subDates) {
+      // Count unique modules where nivel_acordado has been submitted per directivo
+      const map: Record<string, Set<number>> = {};
+      for (const sd of subDates as any[]) {
+        if (sd.submission_type === "nivel_acordado") {
+          if (!map[sd.directivo_cedula]) map[sd.directivo_cedula] = new Set();
+          map[sd.directivo_cedula].add(sd.module_number);
+        }
+      }
+      const counts: Record<string, number> = {};
+      for (const [ced, mods] of Object.entries(map)) counts[ced] = mods.size;
+      setModulosCompletados(counts);
+    }
     setLoading(false);
   }, []);
 
@@ -253,7 +268,14 @@ export default function AdminEvaluadoresTab() {
                             className={cedulasConEval.has(a.directivo_cedula) ? "cursor-pointer hover:bg-muted/50" : ""}
                             onClick={() => cedulasConEval.has(a.directivo_cedula) && setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre })}
                           >
-                            <TableCell className="text-xs">{a.directivo_nombre}</TableCell>
+                            <TableCell className="text-xs">
+                              {a.directivo_nombre}
+                              {(modulosCompletados[a.directivo_cedula] ?? 0) > 0 && (
+                                <Badge variant="secondary" className="ml-2 text-[10px]">
+                                  {modulosCompletados[a.directivo_cedula]}/4 módulos
+                                </Badge>
+                              )}
+                            </TableCell>
                             <TableCell className="text-xs">{a.directivo_cedula}</TableCell>
                             <TableCell className="text-xs">{a.institucion}</TableCell>
                             <TableCell>
