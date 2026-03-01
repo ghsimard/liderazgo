@@ -35,6 +35,10 @@ export interface RubricaModuleReportData {
   items: {
     itemType: string;
     itemLabel: string;
+    descAvanzado: string;
+    descIntermedio: string;
+    descBasico: string;
+    descSinEvidencia: string;
     directivoNivel: string | null;
     directivoComentario: string | null;
     equipoNivel: string | null;
@@ -124,11 +128,7 @@ export async function generarPDFRubricaModulo(
     y += 7;
   }
 
-  y += 8;
-  doc.setFontSize(9);
-  doc.setTextColor(80, 80, 80);
-  const objLines = doc.splitTextToSize(`Objetivo: ${data.moduleObjective}`, contentW - 20);
-  doc.text(objLines, pageW / 2, y, { align: "center" });
+  y += 5;
 
   addFooter();
 
@@ -143,15 +143,23 @@ export async function generarPDFRubricaModulo(
   y += 10;
 
   for (const item of data.items) {
-    checkPageBreak(70);
+    checkPageBreak(90);
 
     // Item header
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    const typePrefix = item.itemType === "proceso" ? "Proceso" : "Producto";
+    const typePrefix = item.itemType === "PROCESO" || item.itemType === "proceso" ? "Proceso" : "Producto";
     doc.text(`${typePrefix}: ${item.itemLabel}`, margin, y);
-    y += 7;
+    y += 6;
+
+    // Item objective (desc_avanzado as reference description)
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(80, 80, 80);
+    const objText = doc.splitTextToSize(`Objetivo: ${item.descAvanzado}`, contentW);
+    doc.text(objText, margin, y);
+    y += objText.length * 3.5 + 4;
 
     // Three columns: Directivo, Equipo, Acordado
     const colW = (contentW - 6) / 3;

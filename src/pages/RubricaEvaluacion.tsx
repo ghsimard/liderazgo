@@ -527,6 +527,10 @@ export default function RubricaEvaluacion() {
         return {
           itemType: item.item_type,
           itemLabel: item.item_label,
+          descAvanzado: item.desc_avanzado || "",
+          descIntermedio: item.desc_intermedio || "",
+          descBasico: item.desc_basico || "",
+          descSinEvidencia: item.desc_sin_evidencia || "",
           directivoNivel: ev?.directivo_nivel || null,
           directivoComentario: ev?.directivo_comentario || null,
           equipoNivel: ev?.equipo_nivel || null,
