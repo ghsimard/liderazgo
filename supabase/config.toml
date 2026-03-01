@@ -2,3 +2,6 @@ project_id = "krqxzxhqjkpimscufxnc"
 
 [functions.export-database]
 verify_jwt = false
+
+[functions.rubrica-analysis]
+verify_jwt = false
