@@ -57,7 +57,7 @@ export default function AdminEvaluadoresTab() {
   // Detail dialog
   const [detailDirectivo, setDetailDirectivo] = useState<{ cedula: string; nombre: string } | null>(null);
   const [cedulasConEval, setCedulasConEval] = useState<Set<string>>(new Set());
-  const [modulosCompletados, setModulosCompletados] = useState<Record<string, number>>({});
+  const [modulosCompletados, setModulosCompletados] = useState<Record<string, { auto: number; equipo: number; acordado: number }>>({});
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -75,16 +75,17 @@ export default function AdminEvaluadoresTab() {
     if (dirs) setDirectivos(dirs);
     if (evalRows) setCedulasConEval(new Set(evalRows.map((r: any) => r.directivo_cedula)));
     if (subDates) {
-      // Count unique modules where nivel_acordado has been submitted per directivo
-      const map: Record<string, Set<number>> = {};
+      const map: Record<string, { auto: Set<number>; equipo: Set<number>; acordado: Set<number> }> = {};
       for (const sd of subDates as any[]) {
-        if (sd.submission_type === "nivel_acordado") {
-          if (!map[sd.directivo_cedula]) map[sd.directivo_cedula] = new Set();
-          map[sd.directivo_cedula].add(sd.module_number);
-        }
+        if (!map[sd.directivo_cedula]) map[sd.directivo_cedula] = { auto: new Set(), equipo: new Set(), acordado: new Set() };
+        if (sd.submission_type === "autoevaluacion") map[sd.directivo_cedula].auto.add(sd.module_number);
+        else if (sd.submission_type === "evaluacion") map[sd.directivo_cedula].equipo.add(sd.module_number);
+        else if (sd.submission_type === "nivel_acordado") map[sd.directivo_cedula].acordado.add(sd.module_number);
       }
-      const counts: Record<string, number> = {};
-      for (const [ced, mods] of Object.entries(map)) counts[ced] = mods.size;
+      const counts: Record<string, { auto: number; equipo: number; acordado: number }> = {};
+      for (const [ced, sets] of Object.entries(map)) {
+        counts[ced] = { auto: sets.auto.size, equipo: sets.equipo.size, acordado: sets.acordado.size };
+      }
       setModulosCompletados(counts);
     }
     setLoading(false);
@@ -269,12 +270,20 @@ export default function AdminEvaluadoresTab() {
                             onClick={() => cedulasConEval.has(a.directivo_cedula) && setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre })}
                           >
                             <TableCell className="text-xs">
-                              {a.directivo_nombre}
-                              {(modulosCompletados[a.directivo_cedula] ?? 0) > 0 && (
-                                <Badge variant="secondary" className="ml-2 text-[10px]">
-                                  {modulosCompletados[a.directivo_cedula]}/4 módulos
-                                </Badge>
-                              )}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {a.directivo_nombre}
+                                {(() => {
+                                  const m = modulosCompletados[a.directivo_cedula];
+                                  if (!m) return null;
+                                  return (
+                                    <>
+                                      {m.auto > 0 && <Badge className="text-[10px] bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">Auto {m.auto}/4</Badge>}
+                                      {m.equipo > 0 && <Badge className="text-[10px] bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Equipo {m.equipo}/4</Badge>}
+                                      {m.acordado > 0 && <Badge className="text-[10px] bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Acordado {m.acordado}/4</Badge>}
+                                    </>
+                                  );
+                                })()}
+                              </div>
                             </TableCell>
                             <TableCell className="text-xs">{a.directivo_cedula}</TableCell>
                             <TableCell className="text-xs">{a.institucion}</TableCell>
