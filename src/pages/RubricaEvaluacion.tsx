@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
 import { Search, CheckCircle, BookOpen, Target, FileText, Users, Lock, ArrowLeft, ArrowUp, History, Clock } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface RubricaModule {
   id: string;
@@ -849,19 +850,34 @@ export default function RubricaEvaluacion() {
 
             {/* Module Tabs */}
             <Tabs value={activeModule} onValueChange={setActiveModule}>
+              <TooltipProvider delayDuration={200}>
               <TabsList className="flex-wrap h-auto gap-1">
                 {modules.map((m, idx) => {
                   // Sequential lock: previous module must be completed before accessing the next
                   const prevModuleNumber = idx > 0 ? modules[idx - 1].module_number : null;
                   const prevModuleDone = prevModuleNumber === null || (
                     role === "directivo"
-                      ? hasSubmission(prevModuleNumber, "nivel_acordado") // directivo can't advance until evaluator completes nivel acordado
-                      : hasSubmission(prevModuleNumber, "autoevaluacion") // evaluator needs autoev done
+                      ? hasSubmission(prevModuleNumber, "nivel_acordado")
+                      : hasSubmission(prevModuleNumber, "autoevaluacion")
                   );
-                  // Evaluator-specific: autoev must be done for THIS module too
                   const evalBlocked = role === "equipo" && !hasSubmission(m.module_number, "autoevaluacion");
                   const blocked = !prevModuleDone || evalBlocked;
-                  return (
+
+                  // Build lock reason message
+                  let lockReason = "";
+                  if (blocked) {
+                    if (!prevModuleDone && prevModuleNumber !== null) {
+                      if (role === "directivo") {
+                        lockReason = `El evaluador debe completar el nivel acordado del Módulo ${prevModuleNumber} antes de poder acceder a este módulo.`;
+                      } else {
+                        lockReason = `El directivo debe completar la autoevaluación del Módulo ${prevModuleNumber} primero.`;
+                      }
+                    } else if (evalBlocked) {
+                      lockReason = `El directivo aún no ha completado la autoevaluación de este módulo.`;
+                    }
+                  }
+
+                  const trigger = (
                     <TabsTrigger
                       key={m.id}
                       value={m.id}
@@ -872,8 +888,23 @@ export default function RubricaEvaluacion() {
                       Módulo {m.module_number}
                     </TabsTrigger>
                   );
+
+                  if (blocked && lockReason) {
+                    return (
+                      <Tooltip key={m.id}>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex">{trigger}</span>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-[250px] text-center text-xs">
+                          <p>{lockReason}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  }
+                  return trigger;
                 })}
               </TabsList>
+              </TooltipProvider>
 
               {modules.map(m => {
                 const moduleItems = items.filter(i => i.module_id === m.id);
