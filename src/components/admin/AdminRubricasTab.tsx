@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Search, BookOpen, Users, ClipboardList, UserCheck } from "lucide-react";
+import { Search, BookOpen, Users, ClipboardList, UserCheck, FileText } from "lucide-react";
 import AdminEvaluadoresTab from "./AdminEvaluadoresTab";
+import AdminRubricaModuleReport from "./AdminRubricaModuleReport";
 
 interface Evaluacion {
   id: string;
@@ -91,6 +92,9 @@ export default function AdminRubricasTab() {
         <TabsTrigger value="evaluadores" className="gap-1.5">
           <UserCheck className="w-4 h-4" /> Evaluadores y asignaciones
         </TabsTrigger>
+        <TabsTrigger value="informes" className="gap-1.5">
+          <FileText className="w-4 h-4" /> Informes por módulo
+        </TabsTrigger>
         <TabsTrigger value="resultados" className="gap-1.5">
           <ClipboardList className="w-4 h-4" /> Resultados
         </TabsTrigger>
@@ -98,6 +102,10 @@ export default function AdminRubricasTab() {
 
       <TabsContent value="evaluadores">
         <AdminEvaluadoresTab />
+      </TabsContent>
+
+      <TabsContent value="informes">
+        <AdminRubricaModuleReport />
       </TabsContent>
 
       <TabsContent value="resultados">
