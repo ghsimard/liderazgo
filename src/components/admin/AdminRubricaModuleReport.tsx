@@ -23,6 +23,10 @@ interface RubricaItem {
   item_type: string;
   item_label: string;
   sort_order: number;
+  desc_avanzado: string;
+  desc_intermedio: string;
+  desc_basico: string;
+  desc_sin_evidencia: string;
 }
 
 interface Evaluacion {
@@ -149,6 +153,10 @@ export default function AdminRubricaModuleReport() {
       return {
         itemType: item.item_type,
         itemLabel: item.item_label,
+        descAvanzado: item.desc_avanzado || "",
+        descIntermedio: item.desc_intermedio || "",
+        descBasico: item.desc_basico || "",
+        descSinEvidencia: item.desc_sin_evidencia || "",
         directivoNivel: ev?.directivo_nivel || null,
         directivoComentario: ev?.directivo_comentario || null,
         equipoNivel: ev?.equipo_nivel || null,
