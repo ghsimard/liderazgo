@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, UserPlus, Search, Users, Link } from "lucide-react";
+import { Plus, Trash2, UserPlus, Search, Users, Link, Eye } from "lucide-react";
+import AdminEvalDetailDialog from "./AdminEvalDetailDialog";
 
 interface Evaluador {
   id: string;
@@ -52,6 +53,9 @@ export default function AdminEvaluadoresTab() {
   const [assignEvaluadorId, setAssignEvaluadorId] = useState<string | null>(null);
   const [selectedCedulas, setSelectedCedulas] = useState<string[]>([]);
   const [assignSearch, setAssignSearch] = useState("");
+
+  // Detail dialog
+  const [detailDirectivo, setDetailDirectivo] = useState<{ cedula: string; nombre: string } | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -241,19 +245,33 @@ export default function AdminEvaluadoresTab() {
                       </TableHeader>
                       <TableBody>
                         {evAsignaciones.map(a => (
-                          <TableRow key={a.id}>
+                          <TableRow
+                            key={a.id}
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre })}
+                          >
                             <TableCell className="text-xs">{a.directivo_nombre}</TableCell>
                             <TableCell className="text-xs">{a.directivo_cedula}</TableCell>
                             <TableCell className="text-xs">{a.institucion}</TableCell>
                             <TableCell>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-destructive"
-                                onClick={() => handleDeleteAsignacion(a.id)}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-primary"
+                                  onClick={(e) => { e.stopPropagation(); setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre }); }}
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-destructive"
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteAsignacion(a.id); }}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -373,6 +391,16 @@ export default function AdminEvaluadoresTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Evaluation Detail Dialog */}
+      {detailDirectivo && (
+        <AdminEvalDetailDialog
+          open={!!detailDirectivo}
+          onOpenChange={(open) => { if (!open) setDetailDirectivo(null); }}
+          directivoCedula={detailDirectivo.cedula}
+          directivoNombre={detailDirectivo.nombre}
+        />
+      )}
     </div>
   );
 }
