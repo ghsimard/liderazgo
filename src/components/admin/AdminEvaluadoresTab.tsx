@@ -56,19 +56,22 @@ export default function AdminEvaluadoresTab() {
 
   // Detail dialog
   const [detailDirectivo, setDetailDirectivo] = useState<{ cedula: string; nombre: string } | null>(null);
+  const [cedulasConEval, setCedulasConEval] = useState<Set<string>>(new Set());
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [{ data: evals }, { data: asigs }, { data: dirs }] = await Promise.all([
+    const [{ data: evals }, { data: asigs }, { data: dirs }, { data: evalRows }] = await Promise.all([
       supabase.from("rubrica_evaluadores").select("*").order("nombre", { ascending: true }),
       supabase.from("rubrica_asignaciones").select("*").order("created_at", { ascending: false }),
       supabase.from("fichas_rlt").select("nombres_apellidos, numero_cedula, nombre_ie")
         .in("cargo_actual", ["Rector/a", "Coordinador/a"])
         .order("nombres_apellidos", { ascending: true }),
+      supabase.from("rubrica_evaluaciones").select("directivo_cedula"),
     ]);
     if (evals) setEvaluadores(evals);
     if (asigs) setAsignaciones(asigs);
     if (dirs) setDirectivos(dirs);
+    if (evalRows) setCedulasConEval(new Set(evalRows.map((r: any) => r.directivo_cedula)));
     setLoading(false);
   }, []);
 
@@ -247,22 +250,24 @@ export default function AdminEvaluadoresTab() {
                         {evAsignaciones.map(a => (
                           <TableRow
                             key={a.id}
-                            className="cursor-pointer hover:bg-muted/50"
-                            onClick={() => setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre })}
+                            className={cedulasConEval.has(a.directivo_cedula) ? "cursor-pointer hover:bg-muted/50" : ""}
+                            onClick={() => cedulasConEval.has(a.directivo_cedula) && setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre })}
                           >
                             <TableCell className="text-xs">{a.directivo_nombre}</TableCell>
                             <TableCell className="text-xs">{a.directivo_cedula}</TableCell>
                             <TableCell className="text-xs">{a.institucion}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-1">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 text-primary"
-                                  onClick={(e) => { e.stopPropagation(); setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre }); }}
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </Button>
+                                {cedulasConEval.has(a.directivo_cedula) && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 text-primary"
+                                    onClick={(e) => { e.stopPropagation(); setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre }); }}
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
                                 <Button
                                   size="icon"
                                   variant="ghost"
