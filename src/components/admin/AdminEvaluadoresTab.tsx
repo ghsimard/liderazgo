@@ -183,11 +183,19 @@ export default function AdminEvaluadoresTab() {
     }
   };
 
+  const searchLower = search.toLowerCase();
   const filtered = search
-    ? evaluadores.filter(e =>
-        e.nombre.toLowerCase().includes(search.toLowerCase()) ||
-        e.cedula.includes(search)
-      )
+    ? evaluadores.filter(e => {
+        const matchEval = e.nombre.toLowerCase().includes(searchLower) || e.cedula.includes(search);
+        const matchAsig = asignaciones.some(a =>
+          a.evaluador_id === e.id && (
+            a.directivo_nombre.toLowerCase().includes(searchLower) ||
+            a.directivo_cedula.includes(search) ||
+            a.institucion.toLowerCase().includes(searchLower)
+          )
+        );
+        return matchEval || matchAsig;
+      })
     : evaluadores;
 
   return (
@@ -197,7 +205,7 @@ export default function AdminEvaluadoresTab() {
         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
           <Search className="w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar evaluador…"
+            placeholder="Buscar evaluador o directivo…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="max-w-xs"
