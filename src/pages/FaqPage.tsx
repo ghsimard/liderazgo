@@ -1,5 +1,6 @@
+import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, HelpCircle, FileText, ClipboardList, BarChart3, Mail, Shield, ExternalLink } from "lucide-react";
+import { ArrowLeft, HelpCircle, FileText, ClipboardList, BarChart3, Mail, Shield, ExternalLink, Search, X } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { RefreshCw } from "lucide-react";
 import {
@@ -206,6 +207,18 @@ const faqSections: FaqSection[] = [
 export default function FaqPage() {
   const navigate = useNavigate();
   const { isAdmin } = useAdminAuth();
+  const [search, setSearch] = useState("");
+
+  const filteredSections = useMemo(() => {
+    if (!search.trim()) return faqSections;
+    const q = search.toLowerCase();
+    return faqSections
+      .map((section) => ({
+        ...section,
+        questions: section.questions.filter((faq) => faq.q.toLowerCase().includes(q)),
+      }))
+      .filter((section) => section.questions.length > 0);
+  }, [search]);
 
   if (!isAdmin) {
     return (
@@ -232,11 +245,29 @@ export default function FaqPage() {
           <p className="mt-2 text-primary-foreground/70 text-sm">
             Guía de uso de la plataforma Liderazgo
           </p>
+          <div className="relative mt-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-foreground/50" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar pregunta..."
+              className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-primary-foreground/10 text-primary-foreground placeholder:text-primary-foreground/40 border border-primary-foreground/20 focus:outline-none focus:border-primary-foreground/50 text-sm"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-foreground/50 hover:text-primary-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
-        {faqSections.map((section) => {
+        {filteredSections.length === 0 && (
+          <p className="text-center text-muted-foreground py-8">No se encontraron preguntas para "{search}"</p>
+        )}
+        {filteredSections.map((section) => {
           const Icon = section.icon;
           return (
             <section key={section.title} className="space-y-3">
