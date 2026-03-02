@@ -48,9 +48,10 @@ export default function AdminRubricasTab() {
   const [modules, setModules] = useState<RubricaModule[]>([]);
   const [items, setItems] = useState<RubricaItem[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<Evaluacion[]>([]);
-  const [searchCedula, setSearchCedula] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedCedula, setSelectedCedula] = useState<string | null>(null);
+  const [cedulaToName, setCedulaToName] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadData();
@@ -58,20 +59,30 @@ export default function AdminRubricasTab() {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: mods }, { data: its }, { data: evals }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: evals }, { data: asignaciones }] = await Promise.all([
       supabase.from("rubrica_modules").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("*").order("created_at", { ascending: false }),
+      supabase.from("rubrica_asignaciones").select("directivo_cedula, directivo_nombre"),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
     if (evals) setEvaluaciones(evals);
+    if (asignaciones) {
+      const map: Record<string, string> = {};
+      asignaciones.forEach(a => { map[a.directivo_cedula] = a.directivo_nombre; });
+      setCedulaToName(map);
+    }
     setLoading(false);
   };
 
   const uniqueCedulas = [...new Set(evaluaciones.map(e => e.directivo_cedula))];
-  const filteredCedulas = searchCedula
-    ? uniqueCedulas.filter(c => c.includes(searchCedula))
+  const filteredCedulas = searchTerm
+    ? uniqueCedulas.filter(c => {
+        const term = searchTerm.toLowerCase();
+        const name = (cedulaToName[c] || "").toLowerCase();
+        return c.includes(term) || name.includes(term);
+      })
     : uniqueCedulas;
 
   const selectedEvals = selectedCedula
@@ -118,9 +129,9 @@ export default function AdminRubricasTab() {
             <div className="flex-1 flex items-center gap-2">
               <Search className="w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por cédula…"
-                value={searchCedula}
-                onChange={e => setSearchCedula(e.target.value)}
+                placeholder="Buscar por cédula o nombre…"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="max-w-xs"
               />
             </div>
@@ -150,7 +161,9 @@ export default function AdminRubricasTab() {
                           selectedCedula === ced ? "bg-primary/10 text-primary" : "hover:bg-muted"
                         }`}
                       >
-                        <span>CC: {ced}</span>
+                        <span className="truncate">
+                          {cedulaToName[ced] ? `${cedulaToName[ced]}` : `CC: ${ced}`}
+                        </span>
                         <Badge variant="outline" className="text-xs">{evalCount} ítems</Badge>
                       </button>
                     );
