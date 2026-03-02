@@ -991,6 +991,7 @@ export type Database = {
           id: string
           nombre: string
           rating: number
+          rol_evaluador: string | null
           tipo_formulario: string | null
         }
         Insert: {
@@ -1000,6 +1001,7 @@ export type Database = {
           id?: string
           nombre: string
           rating: number
+          rol_evaluador?: string | null
           tipo_formulario?: string | null
         }
         Update: {
@@ -1009,6 +1011,7 @@ export type Database = {
           id?: string
           nombre?: string
           rating?: number
+          rol_evaluador?: string | null
           tipo_formulario?: string | null
         }
         Relationships: []

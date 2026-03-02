@@ -235,6 +235,7 @@ CREATE TABLE IF NOT EXISTS public.site_reviews (
   rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
   comentario TEXT,
   tipo_formulario TEXT,
+  rol_evaluador TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

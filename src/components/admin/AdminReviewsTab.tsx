@@ -16,6 +16,7 @@ interface SiteReview {
   rating: number;
   comentario: string | null;
   tipo_formulario: string | null;
+  rol_evaluador: string | null;
   created_at: string;
 }
 
@@ -31,6 +32,17 @@ const FORM_LABELS: Record<string, string> = {
 };
 
 const RATING_LABELS = ["", "Malo", "Regular", "Bueno", "Muy bueno", "Excelente"];
+
+const ROL_LABELS: Record<string, string> = {
+  rector: "Rector/a",
+  coordinador: "Coordinador/a",
+  docente: "Docente",
+  estudiante: "Estudiante",
+  acudiente: "Acudiente",
+  administrativo: "Administrativo/a",
+  admin: "Admin",
+  otro: "Otro",
+};
 
 const PIE_COLORS = [
   "hsl(var(--destructive))",
@@ -305,6 +317,11 @@ export default function AdminReviewsTab() {
                       {r.tipo_formulario && (
                         <Badge variant="outline" className="text-[10px]">
                           {FORM_LABELS[r.tipo_formulario] || r.tipo_formulario}
+                        </Badge>
+                      )}
+                      {r.rol_evaluador && (
+                        <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
+                          {ROL_LABELS[r.rol_evaluador] || r.rol_evaluador}
                         </Badge>
                       )}
                     </div>
