@@ -116,6 +116,7 @@ export type Database = {
           contactar_whatsapp: boolean
           created_at: string
           email: string
+          es_anonimo: boolean
           id: string
           leido: boolean
           mensaje: string
@@ -130,6 +131,7 @@ export type Database = {
           contactar_whatsapp?: boolean
           created_at?: string
           email: string
+          es_anonimo?: boolean
           id?: string
           leido?: boolean
           mensaje: string
@@ -144,6 +146,7 @@ export type Database = {
           contactar_whatsapp?: boolean
           created_at?: string
           email?: string
+          es_anonimo?: boolean
           id?: string
           leido?: boolean
           mensaje?: string
@@ -988,6 +991,7 @@ export type Database = {
           comentario: string | null
           created_at: string
           email: string
+          es_anonimo: boolean
           id: string
           nombre: string
           rating: number
@@ -998,6 +1002,7 @@ export type Database = {
           comentario?: string | null
           created_at?: string
           email: string
+          es_anonimo?: boolean
           id?: string
           nombre: string
           rating: number
@@ -1008,6 +1013,7 @@ export type Database = {
           comentario?: string | null
           created_at?: string
           email?: string
+          es_anonimo?: boolean
           id?: string
           nombre?: string
           rating?: number

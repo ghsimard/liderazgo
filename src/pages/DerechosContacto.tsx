@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { ArrowLeft, Send, Shield, Scale, Mail } from "lucide-react";
+import { ArrowLeft, Send, Shield, Scale, Mail, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { PhoneInputWithCountry } from "@/components/PhoneInputWithCountry";
+import { useAutoFillUserInfo } from "@/hooks/useAutoFillUserInfo";
 
 const contactSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio").max(100),
@@ -27,43 +28,72 @@ type ContactFormData = z.infer<typeof contactSchema>;
 export default function DerechosContacto() {
   const navigate = useNavigate();
   const [sending, setSending] = useState(false);
+  const [esAnonimo, setEsAnonimo] = useState(false);
+  const { info, loading: infoLoading } = useAutoFillUserInfo();
 
   const {
     register,
     handleSubmit,
     reset,
     control,
+    setValue,
     formState: { errors },
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
     defaultValues: { codigo_pais: "+57", contactar_whatsapp: false },
   });
 
+  useEffect(() => {
+    if (!infoLoading && info.source && !esAnonimo) {
+      if (info.nombre) setValue("nombre", info.nombre);
+      if (info.email) setValue("email", info.email);
+      if (info.telefono) setValue("telefono", info.telefono);
+      if (info.codigo_pais) setValue("codigo_pais", info.codigo_pais);
+    }
+  }, [infoLoading, info, setValue, esAnonimo]);
+
   const onSubmit = async (data: ContactFormData) => {
     setSending(true);
     try {
       const { error } = await supabase.from("contact_messages").insert({
-        nombre: data.nombre,
-        email: data.email,
+        nombre: esAnonimo ? "Anónimo" : data.nombre,
+        email: esAnonimo ? "anonimo@anonimo.com" : data.email,
         codigo_pais: data.codigo_pais,
         telefono: data.telefono || null,
         contactar_whatsapp: data.contactar_whatsapp,
         asunto: data.asunto,
         mensaje: data.mensaje,
         tipo_contacto: "derecho",
+        es_anonimo: esAnonimo,
       } as any);
       if (error) throw error;
       toast.success("Mensaje enviado correctamente. Gracias por contactarnos.");
       reset();
+      setEsAnonimo(false);
     } catch {
       toast.error("Error al enviar el mensaje. Intente de nuevo.");
     } finally {
       setSending(false);
     }
   };
+
+  const toggleAnonimo = () => {
+    const next = !esAnonimo;
+    setEsAnonimo(next);
+    if (next) {
+      setValue("nombre", "Anónimo");
+      setValue("email", "anonimo@anonimo.com");
+    } else if (info.source) {
+      setValue("nombre", info.nombre || "");
+      setValue("email", info.email || "");
+    } else {
+      setValue("nombre", "");
+      setValue("email", "");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="bg-primary text-primary-foreground py-8">
         <div className="max-w-4xl mx-auto px-4">
           <button
@@ -94,23 +124,18 @@ export default function DerechosContacto() {
             <p>
               <strong className="text-foreground">Propiedad intelectual:</strong> Todo el contenido de esta plataforma, incluyendo pero no limitado a textos, diseños, logotipos, formularios, rúbricas, instrumentos de evaluación y código fuente, es propiedad exclusiva de <strong className="text-foreground">Ghislain Simard</strong> (CE 6798900) y está protegido por las leyes de propiedad intelectual aplicables.
             </p>
-
             <p>
               <strong className="text-foreground">Uso autorizado:</strong> Esta plataforma ha sido desarrollada exclusivamente para el uso dentro del marco del <strong className="text-foreground">Programa de Rectores Líderes Transformadores (RLT)</strong> y el <strong className="text-foreground">Programa de Coordinadores Líderes Transformadores (CLT)</strong> en Colombia. Cualquier uso fuera de este contexto requiere autorización expresa y por escrito del titular de los derechos.
             </p>
-
             <p>
               <strong className="text-foreground">Restricciones:</strong> Queda prohibida la reproducción, distribución, modificación, ingeniería inversa o cualquier uso no autorizado del contenido y las herramientas disponibles en esta plataforma, ya sea total o parcialmente, sin la autorización previa y por escrito de Ghislain Simard.
             </p>
-
             <p>
               <strong className="text-foreground">Datos personales:</strong> Los datos recopilados a través de los formularios de esta plataforma son tratados de conformidad con la legislación colombiana vigente en materia de protección de datos personales (Ley 1581 de 2012). Los datos serán utilizados exclusivamente para los fines del programa y no serán compartidos con terceros sin el consentimiento del titular.
             </p>
-
             <p>
               <strong className="text-foreground">Responsabilidad:</strong> Ghislain Simard no se hace responsable por el uso indebido de la información proporcionada por los usuarios a través de esta plataforma, ni por daños derivados del acceso o la imposibilidad de acceso a la misma.
             </p>
-
             <p className="text-xs text-muted-foreground/70 pt-2 border-t border-border">
               © {new Date().getFullYear()} Ghislain Simard. Todos los derechos reservados.
             </p>
@@ -125,64 +150,87 @@ export default function DerechosContacto() {
           </div>
 
           <div className="bg-card border border-border rounded-lg p-6">
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-sm text-muted-foreground mb-4">
               Si tiene preguntas, solicitudes o comentarios relacionados con los derechos de uso o el funcionamiento de esta plataforma, puede comunicarse a través del siguiente formulario.
             </p>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-foreground">Nombre completo *</label>
-                  <Input {...register("nombre")} placeholder="Su nombre" />
-                  {errors.nombre && <p className="text-xs text-destructive">{errors.nombre.message}</p>}
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-foreground">Correo electrónico *</label>
-                  <Input {...register("email")} type="email" placeholder="correo@ejemplo.com" />
-                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-                </div>
-              </div>
+            {/* Anonymous toggle */}
+            <div className="mb-6">
+              <Button
+                type="button"
+                variant={esAnonimo ? "default" : "outline"}
+                size="sm"
+                onClick={toggleAnonimo}
+                className="gap-2"
+              >
+                <EyeOff className="w-4 h-4" />
+                {esAnonimo ? "Modo anónimo activado" : "Enviar de forma anónima"}
+              </Button>
+              {esAnonimo && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Su identidad será protegida. Solo el contenido del mensaje será visible.
+                </p>
+              )}
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-foreground">Teléfono</label>
-                  <Controller
-                    name="codigo_pais"
-                    control={control}
-                    render={({ field: codeField }) => (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {!esAnonimo && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-foreground">Nombre completo *</label>
+                      <Input {...register("nombre")} placeholder="Su nombre" />
+                      {errors.nombre && <p className="text-xs text-destructive">{errors.nombre.message}</p>}
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-foreground">Correo electrónico *</label>
+                      <Input {...register("email")} type="email" placeholder="correo@ejemplo.com" />
+                      {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-foreground">Teléfono</label>
                       <Controller
-                        name="telefono"
+                        name="codigo_pais"
                         control={control}
-                        render={({ field: phoneField }) => (
-                          <PhoneInputWithCountry
-                            id="contact-phone"
-                            countryCode={codeField.value}
-                            onCountryCodeChange={codeField.onChange}
-                            phoneValue={phoneField.value || ""}
-                            onPhoneChange={phoneField.onChange}
-                            placeholder="Número de teléfono"
+                        render={({ field: codeField }) => (
+                          <Controller
+                            name="telefono"
+                            control={control}
+                            render={({ field: phoneField }) => (
+                              <PhoneInputWithCountry
+                                id="contact-phone"
+                                countryCode={codeField.value}
+                                onCountryCodeChange={codeField.onChange}
+                                phoneValue={phoneField.value || ""}
+                                onPhoneChange={phoneField.onChange}
+                                placeholder="Número de teléfono"
+                              />
+                            )}
                           />
                         )}
                       />
-                    )}
-                  />
-                </div>
-                <div className="flex items-end pb-1">
-                  <Controller
-                    name="contactar_whatsapp"
-                    control={control}
-                    render={({ field }) => (
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                        Puede contactarme por WhatsApp
-                      </label>
-                    )}
-                  />
-                </div>
-              </div>
+                    </div>
+                    <div className="flex items-end pb-1">
+                      <Controller
+                        name="contactar_whatsapp"
+                        control={control}
+                        render={({ field }) => (
+                          <label className="flex items-center gap-2 cursor-pointer text-sm">
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                            Puede contactarme por WhatsApp
+                          </label>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">Asunto *</label>
