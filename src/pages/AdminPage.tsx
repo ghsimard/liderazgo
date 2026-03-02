@@ -4,7 +4,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, ImageIcon, MessageSquare } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, ImageIcon, MessageSquare, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, getToken } from "@/utils/apiFetch";
 import { supabase as cloudClient } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ import AdminEncuestas360Tab from "@/components/admin/AdminEncuestas360Tab";
 import AdminImagesTab from "@/components/admin/AdminImagesTab";
 import AdminRubricasTab from "@/components/admin/AdminRubricasTab";
 import AdminMensajesTab from "@/components/admin/AdminMensajesTab";
+import AdminReviewsTab from "@/components/admin/AdminReviewsTab";
 
 interface FormItem {
   name: string;
@@ -201,6 +202,9 @@ export default function AdminPage() {
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
             <TabsTrigger value="images" className="gap-1.5"><ImageIcon className="w-4 h-4" /> Images</TabsTrigger>
             <TabsTrigger value="rubricas" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Rúbricas</TabsTrigger>
+            {isSuperAdmin && (
+              <TabsTrigger value="reviews" className="gap-1.5"><Star className="w-4 h-4" /> Apreciaciones</TabsTrigger>
+            )}
           </TabsList>
           <TabsContent value="formularios">
             <div className="space-y-8">
@@ -267,7 +271,9 @@ export default function AdminPage() {
           <TabsContent value="users"><AdminUsersTab isSuperAdmin={isSuperAdmin} /></TabsContent>
           <TabsContent value="images"><AdminImagesTab /></TabsContent>
           <TabsContent value="rubricas"><AdminRubricasTab /></TabsContent>
-          <TabsContent value="rubricas"><AdminRubricasTab /></TabsContent>
+          {isSuperAdmin && (
+            <TabsContent value="reviews"><AdminReviewsTab /></TabsContent>
+          )}
         </Tabs>
 
         {/* Mensajes panel — shown/hidden via header button */}

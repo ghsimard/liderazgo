@@ -64,6 +64,7 @@ const ALLOWED_TABLES = new Set([
   "rubrica_seguimientos",
   "rubrica_modules",
   "rubrica_items",
+  "site_reviews",
 ]);
 
 // ── Helpers ────────────────────────────────────────────
