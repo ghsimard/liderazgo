@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb } from "lucide-react";
 import type { Reporte360Data, DomainScore, CompetencyScore } from "@/utils/reporte360Calculator";
+import { genderizeRole } from "@/utils/genderizeRole";
 import {
   DOMAIN_ORDER,
   COMPETENCIES_BY_DOMAIN,
@@ -148,8 +149,8 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
           <section>
             <h3 className={sectionTitleClass}>RESUMEN GENERAL</h3>
             <div className="flex gap-4 text-xs mb-2 justify-center">
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AUTO }} /> Directivo</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_INTERNOS }} /> Administrativo(a), coordinador(a) y docente</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AUTO }} /> {genderizeRole("Directivo", data.directivo.genero)}</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_INTERNOS }} /> {genderizeRole("Administrativo(a), coordinador(a) y docente", data.directivo.genero)}</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_EXTERNOS }} /> Acudiente y estudiante</span>
             </div>
             <ResponsiveContainer width="100%" height={220}>
@@ -229,7 +230,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
           <section>
             <h3 className={sectionTitleClass}>ANÁLISIS DE OBSERVADORES</h3>
             <div className="flex gap-4 text-xs mb-2 justify-center">
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_INTERNOS }} /> Administrativo(a), coordinador(a) y docente</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_INTERNOS }} /> {genderizeRole("Administrativo(a), coordinador(a) y docente", data.directivo.genero)}</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_EXTERNOS }} /> Acudiente y estudiante</span>
             </div>
             <ResponsiveContainer width="100%" height={320}>
