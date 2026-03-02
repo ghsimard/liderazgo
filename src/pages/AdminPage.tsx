@@ -97,7 +97,9 @@ function FormCard({ form }: { form: FormItem }) {
         <div className="rounded-lg bg-primary/10 p-2.5">
           <Icon className="w-5 h-5 text-primary" />
         </div>
-        <span className="text-sm font-medium flex-1">{form.name}</span>
+        <a href={form.path} target="_blank" rel="noopener noreferrer" className="text-sm font-medium flex-1 hover:underline hover:text-primary transition-colors">
+          {form.name}
+        </a>
         <CopyLinkButton path={form.path} />
       </CardContent>
     </Card>
