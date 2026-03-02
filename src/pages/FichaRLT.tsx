@@ -347,19 +347,25 @@ function InstitutionSearchField({
 
 function RegionSelector({ onSelect, regionNames }: { onSelect: (region: string) => void; regionNames: string[] }) {
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt_noletters;
-  const logoCLTDark = images.logo_clt_noletters;
+  const logoRLT = images.logo_rlt_white;
+  const logoCLT = images.logo_clt_white;
   const logoCosmo = images.logo_cosmo;
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-sm text-center">
-        {/* Logos */}
-        <div className="flex justify-center gap-4 mb-6 items-center">
-          <div className="rounded-xl p-3 flex items-center justify-center" style={{ background: "var(--gradient-header)" }}>
-            <img src={logoRLT} alt="RLT" className="h-16 sm:h-24 w-auto object-contain" />
+        {/* Logos con descripción */}
+        <div className="flex justify-center gap-6 mb-6 items-start">
+          <div className="flex flex-col items-center gap-2">
+            <div className="rounded-xl p-3 flex items-center justify-center" style={{ background: "var(--gradient-header)" }}>
+              <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-16 sm:h-24 w-auto object-contain" />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground leading-tight max-w-[120px]">Rectores Líderes Transformadores</span>
           </div>
-          <div className="rounded-xl p-3 flex items-center justify-center" style={{ background: "var(--gradient-header)" }}>
-            <img src={logoCLTDark} alt="CLT" className="h-16 sm:h-24 w-auto object-contain" />
+          <div className="flex flex-col items-center gap-2">
+            <div className="rounded-xl p-3 flex items-center justify-center" style={{ background: "var(--gradient-header)" }}>
+              <img src={logoCLT} alt="Coordinadores Líderes Transformadores" className="h-16 sm:h-24 w-auto object-contain" />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground leading-tight max-w-[120px]">Coordinadores Líderes Transformadores</span>
           </div>
         </div>
         <h1 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: "hsl(var(--primary))" }}>
