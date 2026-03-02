@@ -628,6 +628,13 @@ ON CONFLICT (image_key) DO NOTHING;
 COMMIT;
 
 -- ============================================================
+-- APP SETTINGS
+-- ============================================================
+INSERT INTO app_settings (key, value) VALUES
+  ('review_modal_enabled', 'true')
+ON CONFLICT (key) DO NOTHING;
+
+-- ============================================================
 -- POST-SEED INSTRUCTIONS
 -- ============================================================
 -- 1. Change admin password immediately:

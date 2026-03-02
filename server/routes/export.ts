@@ -20,6 +20,7 @@ const EXPORT_TABLES = [
   "regiones",
   "region_municipios",
   "region_instituciones",
+  "region_entidades",
   "fichas_rlt",
   "encuestas_360",
   "domains_360",
@@ -29,12 +30,16 @@ const EXPORT_TABLES = [
   "competency_weights",
   "deleted_records",
   "app_images",
+  "app_settings",
   "rubrica_modules",
   "rubrica_items",
   "rubrica_evaluadores",
   "rubrica_asignaciones",
   "rubrica_evaluaciones",
   "rubrica_seguimientos",
+  "rubrica_submission_dates",
+  "rubrica_regional_analyses",
+  "site_reviews",
 ];
 
 router.get("/", requireAuth, requireSuperAdmin, async (_req: Request, res: Response) => {

@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
       "instituciones",
       "region_municipios",
       "region_instituciones",
+      "region_entidades",
       "domains_360",
       "competencies_360",
       "items_360",
@@ -74,12 +75,16 @@ Deno.serve(async (req) => {
       "deleted_records",
       "user_roles",
       "app_images",
+      "app_settings",
       "rubrica_modules",
       "rubrica_items",
       "rubrica_evaluadores",
       "rubrica_asignaciones",
       "rubrica_evaluaciones",
       "rubrica_seguimientos",
+      "rubrica_submission_dates",
+      "rubrica_regional_analyses",
+      "site_reviews",
     ];
 
     let sql = `-- Database export generated on ${new Date().toISOString()}\n`;
