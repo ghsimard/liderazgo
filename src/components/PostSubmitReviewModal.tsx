@@ -12,6 +12,7 @@ interface PostSubmitReviewModalProps {
   nombre: string;
   email?: string;
   tipoFormulario: string;
+  rolEvaluador?: string;
 }
 
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -57,6 +58,7 @@ export default function PostSubmitReviewModal({
   nombre,
   email,
   tipoFormulario,
+  rolEvaluador,
 }: PostSubmitReviewModalProps) {
   const [step, setStep] = useState<"invite" | "form">("invite");
   const [rating, setRating] = useState(0);
@@ -104,12 +106,25 @@ export default function PostSubmitReviewModal({
     }
     setSending(true);
     try {
+      // Auto-detect role: use explicit prop, or infer from form type
+      const rolMap: Record<string, string> = {
+        autoevaluacion: "directivo",
+        docente: "docente",
+        estudiante: "estudiante",
+        acudiente: "acudiente",
+        administrativo: "administrativo",
+        directivo: "directivo",
+        rubrica_evaluacion: "evaluador",
+      };
+      const detectedRol = rolEvaluador || rolMap[tipoFormulario] || null;
+
       const { error } = await supabase.from("site_reviews" as any).insert({
         nombre,
         email: emailInput.trim() || "no-email@anonimo.com",
         rating,
         comentario: comentario.trim() || null,
         tipo_formulario: tipoFormulario,
+        rol_evaluador: detectedRol,
       } as any);
       if (error) throw error;
       toast.success("¡Gracias por su evaluación!");

@@ -40,6 +40,8 @@ const ROL_LABELS: Record<string, string> = {
   estudiante: "Estudiante",
   acudiente: "Acudiente",
   administrativo: "Administrativo/a",
+  directivo: "Directivo/a",
+  evaluador: "Evaluador",
   admin: "Admin",
   otro: "Otro",
 };

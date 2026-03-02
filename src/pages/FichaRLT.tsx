@@ -397,7 +397,7 @@ export default function FichaRLTForm() {
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reviewUserData, setReviewUserData] = useState<{ nombre: string; email: string }>({ nombre: "", email: "" });
+  const [reviewUserData, setReviewUserData] = useState<{ nombre: string; email: string; cargo: string }>({ nombre: "", email: "", cargo: "" });
   const [camposFaltantes, setCamposFaltantes] = useState<string[]>([]);
   const [mostrarModalErrores, setMostrarModalErrores] = useState(false);
   const [cedulaVerificada, setCedulaVerificada] = useState(false);
@@ -580,7 +580,7 @@ export default function FichaRLTForm() {
     }
 
     setDatosPDF(payload as unknown as Record<string, unknown>);
-    setReviewUserData({ nombre: `${data.nombres} ${data.apellidos}`, email: data.correo_personal });
+    setReviewUserData({ nombre: `${data.nombres} ${data.apellidos}`, email: data.correo_personal, cargo: data.cargo_actual });
     setEnviado(true);
     setEnviando(false);
     setShowReviewModal(true);
@@ -717,6 +717,7 @@ export default function FichaRLTForm() {
           nombre={reviewUserData.nombre}
           email={reviewUserData.email}
           tipoFormulario="ficha_rlt"
+          rolEvaluador={reviewUserData.cargo.toLowerCase().includes("rector") ? "rector" : "coordinador"}
         />
       </div>
     );
