@@ -25,6 +25,10 @@ const faqSections: FaqSection[] = [
         a: "Es el formulario principal para recopilar los datos personales, profesionales e institucionales de cada directivo participante en el programa RLT o CLT.",
       },
       {
+        q: "¿Qué debe configurar el administrador antes de que funcione?",
+        a: "1) Ir a la pestaña 'Fichas Gestión' → 'Configuración de Región' y crear al menos una región.\n2) Dentro de cada región, asignar las entidades territoriales, municipios e instituciones educativas correspondientes.\n3) Sin estas configuraciones, los formularios de ficha no mostrarán opciones de selección para región, entidad territorial, municipio ni institución.",
+      },
+      {
         q: "¿Qué campos son obligatorios?",
         a: "Los campos obligatorios incluyen: nombre completo, fecha de nacimiento, cédula, género, celular, correo personal, región, institución educativa, cargo actual, tipo de formación, título de pregrado, tipo de vinculación, código DANE (12 dígitos), entidad territorial, municipio, tipo de bachillerato, zona de sede, sedes (rural/urbana), jornadas, niveles educativos, y los datos del personal y estudiantes por nivel.",
       },
@@ -45,6 +49,10 @@ const faqSections: FaqSection[] = [
       {
         q: "¿Qué es la Encuesta 360°?",
         a: "Es un instrumento de evaluación que permite recoger la percepción de múltiples actores (docentes, estudiantes, acudientes, administrativos, directivos y autoevaluación) sobre las competencias de liderazgo de un directivo.",
+      },
+      {
+        q: "¿Qué debe configurar el administrador antes de que funcione?",
+        a: "1) Ir a la pestaña 'Config 360°' y verificar que existan dominios, competencias e ítems. Si están vacíos, usar el botón 'Asistente de creación' para generar la estructura completa.\n2) En la sub-pestaña 'Ponderaciones', asignar los pesos por competencia y por tipo de evaluador (docente, estudiante, acudiente, etc.). Sin ponderaciones, los informes 360° no podrán calcularse.\n3) Asegurarse de que al menos una ficha de directivo haya sido registrada, ya que los formularios 360° requieren seleccionar una institución y un directivo existente.",
       },
       {
         q: "¿Cuántos formularios existen?",
@@ -69,8 +77,16 @@ const faqSections: FaqSection[] = [
         a: "Es un instrumento de evaluación basado en módulos temáticos con ítems específicos. Cada ítem se evalúa en cuatro niveles: Avanzado, Intermedio, Básico y Sin evidencia.",
       },
       {
+        q: "¿Qué debe configurar el administrador antes de que funcione?",
+        a: "1) Ir a la pestaña 'Rúbricas' del panel de administración.\n2) En la sub-pestaña 'Evaluadores', crear al menos un evaluador (nombre y cédula).\n3) En la sub-pestaña 'Asignaciones', asignar a cada evaluador los directivos que debe evaluar (nombre, cédula e institución del directivo).\n4) Verificar que los módulos y sus ítems existent (se cargan automáticamente al inicio). Sin evaluadores ni asignaciones, la rúbrica no será accesible.",
+      },
+      {
         q: "¿Quién evalúa con la rúbrica?",
         a: "La rúbrica es utilizada por evaluadores asignados por el administrador. Cada evaluador tiene directivos asignados para evaluar.",
+      },
+      {
+        q: "¿Cómo funciona el proceso de evaluación paso a paso?",
+        a: "1) El directivo accede primero y completa su autoevaluación (columna 'Directivo') para el Módulo 1.\n2) Una vez enviada, l'évaluateur peut accéder y completar su evaluación (columna 'Equipo').\n3) Ambos acuerdan un nivel final (columna 'Acordado') y lo envían.\n4) Solo cuando el 'nivel acordado' del Módulo 1 está completo, se desbloquea el Módulo 2, y así sucesivamente.\n5) Después de la evaluación inicial, se puede registrar un seguimiento para cada módulo.",
       },
       {
         q: "¿Qué son las tres columnas de evaluación?",
@@ -86,6 +102,10 @@ const faqSections: FaqSection[] = [
     title: "Contacto y Sugerencias",
     icon: Mail,
     questions: [
+      {
+        q: "¿Qué debe configurar el administrador?",
+        a: "No se requiere configuración previa. Los formularios de contacto y sugerencias funcionan de inmediato. Los mensajes enviados se almacenan automáticamente y son visibles para los superadmins a través del botón 'Mensajes' en el encabezado del panel de administración.",
+      },
       {
         q: "¿Cómo puedo enviar una sugerencia?",
         a: "Puede acceder al formulario de sugerencias desde el enlace 'Sugerencias' en el pie de página del sitio. Allí podrá evaluar la plataforma con estrellas y dejar sus comentarios.",
@@ -104,6 +124,10 @@ const faqSections: FaqSection[] = [
     title: "Administración",
     icon: Shield,
     questions: [
+      {
+        q: "¿Qué configuración inicial es necesaria?",
+        a: "1) Un superadmin debe ser creado inicialmente (vía línea de comandos o base de datos directa).\n2) Desde el panel, el superadmin puede crear otros administradores en la pestaña 'Administradores'.\n3) En la pestaña 'Images', el administrador puede personalizar los logos que aparecen en la plataforma (logos RLT, CLT, Cosmo).\n4) Se recomienda configurar las regiones geográficas antes de compartir los formularios.",
+      },
       {
         q: "¿Cómo accedo al panel de administración?",
         a: "El acceso se realiza a través de /admin/login con sus credenciales de administrador. Solo los usuarios con rol 'admin' o 'superadmin' pueden ingresar.",
