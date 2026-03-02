@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, CheckCircle2, Info } from "lucide-react";
 import { useAppImages } from "@/hooks/useAppImages";
+import PostSubmitReviewModal from "@/components/PostSubmitReviewModal";
 import {
   type SurveyFormConfig,
   GLOSSARY,
@@ -401,6 +402,7 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   // Header fields
   const [institucion, setInstitucion] = useState("");
@@ -495,6 +497,7 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
       if (error) throw new Error(error);
 
       setSubmitted(true);
+      setShowReviewModal(true);
     } catch (err: any) {
       toast({
         title: "Error al enviar",
@@ -514,6 +517,12 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
           <p className="text-muted-foreground">{config.closingMessage}</p>
           <p className="text-sm text-muted-foreground">Programa Rectores Líderes Transformadores</p>
         </div>
+        <PostSubmitReviewModal
+          open={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          nombre={config.isAutoeval ? nombreCompleto : (nombreDirectivo || "")}
+          tipoFormulario={config.tipo}
+        />
       </div>
     );
   }

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { supabase } from "@/utils/dbClient";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
 import { useGeographicData } from "@/hooks/useGeographicData";
+import PostSubmitReviewModal from "@/components/PostSubmitReviewModal";
 import {
   FormFieldWrapper,
   FormInput,
@@ -395,6 +396,8 @@ export default function FichaRLTForm() {
   const [datosPDF, setDatosPDF] = useState<Record<string, unknown> | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewUserData, setReviewUserData] = useState<{ nombre: string; email: string }>({ nombre: "", email: "" });
   const [camposFaltantes, setCamposFaltantes] = useState<string[]>([]);
   const [mostrarModalErrores, setMostrarModalErrores] = useState(false);
 
@@ -547,8 +550,10 @@ export default function FichaRLTForm() {
     }
 
     setDatosPDF(payload as unknown as Record<string, unknown>);
+    setReviewUserData({ nombre: `${data.nombres} ${data.apellidos}`, email: data.correo_personal });
     setEnviado(true);
     setEnviando(false);
+    setShowReviewModal(true);
   };
 
   const handleRegionSelect = (region: string) => {
@@ -674,6 +679,13 @@ export default function FichaRLTForm() {
             </button>
           </div>
         </div>
+        <PostSubmitReviewModal
+          open={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          nombre={reviewUserData.nombre}
+          email={reviewUserData.email}
+          tipoFormulario="ficha_rlt"
+        />
       </div>
     );
   }
