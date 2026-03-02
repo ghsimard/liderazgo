@@ -14,6 +14,7 @@ import { Search, CheckCircle, BookOpen, Target, FileText, Users, Lock, ArrowLeft
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { generarPDFRubricaModulo, type RubricaModuleReportData } from "@/utils/rubricaModulePdfGenerator";
 import PostSubmitReviewModal from "@/components/PostSubmitReviewModal";
+import { genderizeRole } from "@/utils/genderizeRole";
 
 interface RubricaModule {
   id: string;
@@ -633,7 +634,7 @@ export default function RubricaEvaluacion() {
                 setPendingSeguimientos({});
               }
             }}>
-              {detectedRole === "evaluador" ? "Evaluar otro directivo" : "Nueva evaluación"}
+              {detectedRole === "evaluador" ? `Evaluar ${genderizeRole("otro directivo", directivoInfo?.genero).toLowerCase()}` : "Nueva evaluación"}
             </Button>
           </CardContent>
         </Card>
@@ -854,7 +855,7 @@ export default function RubricaEvaluacion() {
                     <Users className="w-5 h-5 text-primary" />
                     <div>
                       <p className="font-medium">{userName}</p>
-                      <p className="text-sm text-muted-foreground">Evaluador — Equipo local</p>
+                      <p className="text-sm text-muted-foreground">{genderizeRole("Evaluador", directivoInfo?.genero)} — Equipo local</p>
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1">
@@ -866,7 +867,7 @@ export default function RubricaEvaluacion() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Seleccione el directivo a evaluar</CardTitle>
+                <CardTitle className="text-base">{`Seleccione ${genderizeRole("el directivo", null).toLowerCase()} a evaluar`}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {asignaciones.length === 0 && (
@@ -904,7 +905,7 @@ export default function RubricaEvaluacion() {
                       <p className="font-medium">{directivoInfo!.nombre}</p>
                       <p className="text-sm text-muted-foreground">CC: {directivoInfo!.cedula} — {directivoInfo!.institucion}</p>
                       {detectedRole === "directivo" && assignedEvaluadorNombre && (
-                        <p className="text-xs text-muted-foreground">Evaluador asignado: <span className="font-medium text-foreground">{assignedEvaluadorNombre}</span></p>
+                        <p className="text-xs text-muted-foreground">{genderizeRole("Evaluador", directivoInfo?.genero)} asignado: <span className="font-medium text-foreground">{assignedEvaluadorNombre}</span></p>
                       )}
                     </div>
                   </div>
@@ -918,7 +919,7 @@ export default function RubricaEvaluacion() {
                       ) : null;
                     })()}
                     <Badge variant={detectedRole === "directivo" ? "default" : "outline"}>
-                      {detectedRole === "directivo" ? "Autoevaluación" : `Evaluador: ${userName}`}
+                      {detectedRole === "directivo" ? "Autoevaluación" : `${genderizeRole("Evaluador", directivoInfo?.genero)}: ${userName}`}
                     </Badge>
                     <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1">
                       <ArrowLeft className="w-4 h-4" /> Volver
@@ -949,7 +950,7 @@ export default function RubricaEvaluacion() {
                         lockReason = `Se debe completar el nivel acordado del Módulo ${prevModuleNumber} antes de avanzar.`;
                       }
                     } else if (evalBlocked) {
-                      lockReason = `El directivo aún no ha completado la autoevaluación de este módulo.`;
+                      lockReason = `${genderizeRole("El directivo", directivoInfo?.genero)} aún no ha completado la autoevaluación de este módulo.`;
                     }
                   }
 
