@@ -1,0 +1,1 @@
+ALTER TABLE public.site_reviews ADD COLUMN tipo_formulario TEXT;

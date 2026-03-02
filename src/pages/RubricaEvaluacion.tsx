@@ -13,6 +13,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { Search, CheckCircle, BookOpen, Target, FileText, Users, Lock, ArrowLeft, ArrowUp, History, Clock, FileDown, Loader2, Eye, EyeOff } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { generarPDFRubricaModulo, type RubricaModuleReportData } from "@/utils/rubricaModulePdfGenerator";
+import PostSubmitReviewModal from "@/components/PostSubmitReviewModal";
 
 interface RubricaModule {
   id: string;
@@ -104,6 +105,7 @@ export default function RubricaEvaluacion() {
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [activeModule, setActiveModule] = useState<string>("");
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   // Submission dates tracking: key = "module_number:submission_type" → submitted_at
   const [submissionDates, setSubmissionDates] = useState<Record<string, string>>({});
@@ -449,6 +451,7 @@ export default function RubricaEvaluacion() {
 
       toast({ title: "Guardado exitoso", description: "Las evaluaciones han sido guardadas." });
       setSubmitted(true);
+      setShowReviewModal(true);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -627,6 +630,12 @@ export default function RubricaEvaluacion() {
             </Button>
           </CardContent>
         </Card>
+        <PostSubmitReviewModal
+          open={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          nombre={directivoInfo?.nombre || userName || ""}
+          tipoFormulario="rubrica_evaluacion"
+        />
       </div>
     );
   }

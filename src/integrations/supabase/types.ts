@@ -973,6 +973,7 @@ export type Database = {
           id: string
           nombre: string
           rating: number
+          tipo_formulario: string | null
         }
         Insert: {
           comentario?: string | null
@@ -981,6 +982,7 @@ export type Database = {
           id?: string
           nombre: string
           rating: number
+          tipo_formulario?: string | null
         }
         Update: {
           comentario?: string | null
@@ -989,6 +991,7 @@ export type Database = {
           id?: string
           nombre?: string
           rating?: number
+          tipo_formulario?: string | null
         }
         Relationships: []
       }
