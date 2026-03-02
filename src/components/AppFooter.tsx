@@ -79,7 +79,13 @@ export default function AppFooter() {
             to="/derechos-contacto"
             className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity underline underline-offset-2"
           >
-            Derechos y Contacto
+            Derechos
+          </Link>
+          <Link
+            to="/derechos-contacto#contacto"
+            className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity underline underline-offset-2"
+          >
+            Contacto
           </Link>
         </div>
       </div>
