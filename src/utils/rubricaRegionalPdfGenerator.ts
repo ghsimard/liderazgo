@@ -114,10 +114,10 @@ export async function generarPDFRegionalRubricas(
   // ── COVER PAGE ──
   y = 30;
 
-  // Show logos based on region configuration — 75% of natural size (96 DPI → mm)
+  // Show logos based on region configuration — 50% of natural size (96 DPI → mm)
   const DPI = 96;
   const PX_TO_MM = 25.4 / DPI;
-  const SCALE = 0.75;
+  const SCALE = 0.5;
 
   const logosToDraw: { b64: string; wMm: number; hMm: number }[] = [];
   if (logoSources.showLogoRLT && imgMap.rlt) {
