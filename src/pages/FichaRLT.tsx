@@ -943,9 +943,10 @@ export default function FichaRLTForm() {
 
         {/* Formulario */}
         <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-          <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate>
+          <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate className={isReadOnly ? "ficha-readonly" : ""}>
 
-            {/* Consentimiento */}
+            {/* Consentimiento — hide in view mode */}
+            {!viewMode && (
             <div className="form-section border-l-4" style={{ borderLeftColor: "hsl(var(--primary))" }}>
               <div className="space-y-3">
                 <p className="text-sm leading-relaxed">
@@ -975,8 +976,10 @@ export default function FichaRLTForm() {
                 )}
               </div>
             </div>
+            )}
 
-            {/* Verificación de cédula — paso obligatorio */}
+            {/* Verificación de cédula — hide in view mode */}
+            {!viewMode && (
             <div className="form-section border-l-4" style={{ borderLeftColor: "hsl(var(--accent))" }}>
               <h2 className="section-title">
                 <span className="section-icon">
@@ -1037,6 +1040,7 @@ export default function FichaRLTForm() {
                 </button>
               )}
             </div>
+            )}
 
             {/* El resto del formulario solo se muestra si la cédula fue verificada */}
             {cedulaVerificada && (<>
@@ -1616,7 +1620,8 @@ export default function FichaRLTForm() {
               </div>
             )}
 
-            {/* Botón de envío */}
+            {/* Botón de envío — hidden in read-only mode */}
+            {!isReadOnly && (
             <div className="text-center pb-8">
               <button
                 type="submit"
@@ -1627,12 +1632,12 @@ export default function FichaRLTForm() {
                 {enviando ? (
                   <>
                     <RefreshCw className="w-5 h-5 animate-spin" />
-                    Enviando ficha...
+                    {viewMode && editMode ? "Guardando cambios..." : "Enviando ficha..."}
                   </>
                 ) : (
                   <>
-                    <Send className="w-5 h-5" />
-                    Enviar Ficha de Información
+                    {viewMode && editMode ? <Save className="w-5 h-5" /> : <Send className="w-5 h-5" />}
+                    {viewMode && editMode ? "Guardar Cambios" : "Enviar Ficha de Información"}
                   </>
                 )}
               </button>
@@ -1640,6 +1645,7 @@ export default function FichaRLTForm() {
                 Los campos marcados con <span className="required-star font-bold">*</span> son obligatorios
               </p>
             </div>
+            )}
             </>)}
           </form>
         </main>

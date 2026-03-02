@@ -212,3 +212,20 @@
     @apply rounded-xl p-6 text-center;
   }
 }
+
+/* ── Ficha read-only mode ─────────────────────────────────── */
+.ficha-readonly input,
+.ficha-readonly select,
+.ficha-readonly textarea,
+.ficha-readonly .form-input {
+  pointer-events: none;
+  opacity: 0.75;
+  user-select: text;
+  cursor: default;
+}
+
+.ficha-readonly input[type="radio"],
+.ficha-readonly input[type="checkbox"] {
+  pointer-events: none;
+  opacity: 0.6;
+}
