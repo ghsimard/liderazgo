@@ -80,7 +80,7 @@ export default function RubricaEvaluacion() {
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_white;
-  const logoCLT = images.logo_clt;
+  const logoCLT = images.logo_clt_white;
 
   const [cedula, setCedula] = useState("");
   const [searching, setSearching] = useState(false);
@@ -786,13 +786,13 @@ export default function RubricaEvaluacion() {
   return (
     <div className="min-h-screen bg-muted/20">
       {/* Header */}
-      <header className="bg-background border-b">
+      <header className="bg-primary text-primary-foreground">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
           <img src={logoRLT} alt="RLT" className="h-10" />
           <img src={logoCLT} alt="CLT" className="h-10" />
           <div>
             <h1 className="font-semibold text-lg">Rúbrica de Evaluación por Módulo</h1>
-            <p className="text-sm text-muted-foreground">Programa de Liderazgo Directivo</p>
+            <p className="text-sm text-primary-foreground/70">Programa de Liderazgo Directivo</p>
           </div>
         </div>
       </header>
