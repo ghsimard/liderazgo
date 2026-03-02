@@ -554,6 +554,7 @@ export default function RubricaEvaluacion() {
         directivoNombre: directivoInfo.nombre,
         directivoCedula: directivoInfo.cedula,
         institucion: directivoInfo.institucion,
+        evaluadorNombre: assignedEvaluadorNombre || (detectedRole === "evaluador" ? userName : undefined) || undefined,
         moduleNumber: mod.module_number,
         moduleTitle: mod.title,
         moduleObjective: mod.objective,
