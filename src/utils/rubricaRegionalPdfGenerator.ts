@@ -137,7 +137,80 @@ export async function generarPDFRegionalRubricas(
     doc.text(objLines, margin, y);
     y += objLines.length * 4 + 6;
 
+    // ── Bar Chart (horizontal stacked bars) ──
+    const barMaxW = contentW * 0.55;
+    const labelW = contentW * 0.35;
+    const barH = 3;
+    const barGap = 10;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text("DISTRIBUCIÓN POR ÍTEM", margin, y);
+    y += 8;
+
+    for (const d of mod.distribution) {
+      if (d.total === 0) continue;
+      checkPageBreak(barGap + 4);
+
+      // Label
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(60, 60, 60);
+      const itemName = d.itemLabel.length > 35 ? d.itemLabel.substring(0, 32) + "…" : d.itemLabel;
+      doc.text(itemName, margin, y + 2);
+
+      // Stacked bar
+      const barX = margin + labelW;
+      let bx = barX;
+
+      const segments = [
+        { pct: d.avanzado, color: NIVEL_COLORS.avanzado },
+        { pct: d.intermedio, color: NIVEL_COLORS.intermedio },
+        { pct: d.basico, color: NIVEL_COLORS.basico },
+        { pct: d.sinEvidencia, color: NIVEL_COLORS.sinEvidencia },
+      ];
+
+      for (const seg of segments) {
+        if (seg.pct <= 0) continue;
+        const w = (seg.pct / 100) * barMaxW;
+        doc.setFillColor(seg.color.r, seg.color.g, seg.color.b);
+        doc.rect(bx, y - 1, w, barH, "F");
+        bx += w;
+      }
+
+      y += barGap;
+    }
+
+    // Legend
+    y += 4;
+    checkPageBreak(10);
+    const legendItems = [
+      { label: "Avanzado", color: NIVEL_COLORS.avanzado },
+      { label: "Intermedio", color: NIVEL_COLORS.intermedio },
+      { label: "Básico", color: NIVEL_COLORS.basico },
+      { label: "Sin evidencia", color: NIVEL_COLORS.sinEvidencia },
+    ];
+    let lx = margin;
+    for (const li of legendItems) {
+      doc.setFillColor(li.color.r, li.color.g, li.color.b);
+      doc.rect(lx, y, 3, 3, "F");
+      doc.setFontSize(7);
+      doc.setTextColor(60, 60, 60);
+      doc.text(li.label, lx + 5, y + 2.5);
+      lx += 35;
+    }
+    y += 10;
+
     // ── Distribution Table ──
+    checkPageBreak(mod.distribution.length * 7 + 15);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text("TABLA DE DISTRIBUCIÓN", margin, y);
+    y += 6;
+
     const colWidths = [contentW * 0.40, contentW * 0.08, contentW * 0.13, contentW * 0.13, contentW * 0.13, contentW * 0.13];
     const headers = ["Ítem", "n", "Avanzado", "Intermedio", "Básico", "Sin evid."];
     const headerColors = [
@@ -202,73 +275,6 @@ export async function generarPDFRegionalRubricas(
     }
 
     y += 6;
-
-    // ── Bar Chart (simplified horizontal bars) ──
-    checkPageBreak(mod.distribution.length * 14 + 30);
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 30, 30);
-    doc.text("DISTRIBUCIÓN POR ÍTEM", margin, y);
-    y += 8;
-
-    const barMaxW = contentW * 0.55;
-    const labelW = contentW * 0.35;
-    const barH = 3;
-    const barGap = 10;
-
-    for (const d of mod.distribution) {
-      if (d.total === 0) continue;
-      checkPageBreak(barGap + 4);
-
-      // Label
-      doc.setFontSize(7);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(60, 60, 60);
-      const itemName = d.itemLabel.length > 35 ? d.itemLabel.substring(0, 32) + "…" : d.itemLabel;
-      doc.text(itemName, margin, y + 2);
-
-      // Stacked bar
-      const barX = margin + labelW;
-      let bx = barX;
-
-      const segments = [
-        { pct: d.avanzado, color: NIVEL_COLORS.avanzado },
-        { pct: d.intermedio, color: NIVEL_COLORS.intermedio },
-        { pct: d.basico, color: NIVEL_COLORS.basico },
-        { pct: d.sinEvidencia, color: NIVEL_COLORS.sinEvidencia },
-      ];
-
-      for (const seg of segments) {
-        if (seg.pct <= 0) continue;
-        const w = (seg.pct / 100) * barMaxW;
-        doc.setFillColor(seg.color.r, seg.color.g, seg.color.b);
-        doc.rect(bx, y - 1, w, barH, "F");
-        bx += w;
-      }
-
-      y += barGap;
-    }
-
-    // Legend
-    y += 4;
-    checkPageBreak(10);
-    const legendItems = [
-      { label: "Avanzado", color: NIVEL_COLORS.avanzado },
-      { label: "Intermedio", color: NIVEL_COLORS.intermedio },
-      { label: "Básico", color: NIVEL_COLORS.basico },
-      { label: "Sin evidencia", color: NIVEL_COLORS.sinEvidencia },
-    ];
-    let lx = margin;
-    for (const li of legendItems) {
-      doc.setFillColor(li.color.r, li.color.g, li.color.b);
-      doc.rect(lx, y, 3, 3, "F");
-      doc.setFontSize(7);
-      doc.setTextColor(60, 60, 60);
-      doc.text(li.label, lx + 5, y + 2.5);
-      lx += 35;
-    }
-    y += 10;
 
     // ── AI Analysis ──
     if (mod.analysis) {
