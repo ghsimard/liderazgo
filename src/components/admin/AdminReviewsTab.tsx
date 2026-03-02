@@ -59,6 +59,7 @@ export default function AdminReviewsTab() {
   const [reviews, setReviews] = useState<SiteReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterForm, setFilterForm] = useState<string>("all");
+  const [filterRol, setFilterRol] = useState<string>("all");
   const [reviewEnabled, setReviewEnabled] = useState(true);
   const [togglingReview, setTogglingReview] = useState(false);
 
@@ -99,10 +100,19 @@ export default function AdminReviewsTab() {
   useEffect(() => { fetchReviews(); fetchSetting(); }, []);
 
   const filtered = useMemo(() => {
-    if (filterForm === "all") return reviews;
-    if (filterForm === "general") return reviews.filter(r => !r.tipo_formulario);
-    return reviews.filter(r => r.tipo_formulario === filterForm);
-  }, [reviews, filterForm]);
+    let result = reviews;
+    if (filterForm !== "all") {
+      result = filterForm === "general"
+        ? result.filter(r => !r.tipo_formulario)
+        : result.filter(r => r.tipo_formulario === filterForm);
+    }
+    if (filterRol !== "all") {
+      result = filterRol === "sin_rol"
+        ? result.filter(r => !r.rol_evaluador)
+        : result.filter(r => r.rol_evaluador === filterRol);
+    }
+    return result;
+  }, [reviews, filterForm, filterRol]);
 
   // Stats
   const stats = useMemo(() => {
@@ -135,6 +145,11 @@ export default function AdminReviewsTab() {
 
   const uniqueFormTypes = useMemo(() => {
     const set = new Set(reviews.map(r => r.tipo_formulario || "general"));
+    return Array.from(set).sort();
+  }, [reviews]);
+
+  const uniqueRoles = useMemo(() => {
+    const set = new Set(reviews.map(r => r.rol_evaluador || "sin_rol"));
     return Array.from(set).sort();
   }, [reviews]);
 
@@ -280,16 +295,28 @@ export default function AdminReviewsTab() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <CardTitle className="text-sm font-medium">Evaluaciones recibidas</CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Select value={filterForm} onValueChange={setFilterForm}>
-                <SelectTrigger className="w-[200px] h-8 text-xs">
-                  <SelectValue placeholder="Filtrar por formulario" />
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder="Formulario" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="all">Todos los formularios</SelectItem>
                   <SelectItem value="general">Evaluación general</SelectItem>
                   {uniqueFormTypes.filter(f => f !== "general").map(f => (
                     <SelectItem key={f} value={f}>{FORM_LABELS[f] || f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterRol} onValueChange={setFilterRol}>
+                <SelectTrigger className="w-[170px] h-8 text-xs">
+                  <SelectValue placeholder="Rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los roles</SelectItem>
+                  <SelectItem value="sin_rol">Sin rol</SelectItem>
+                  {uniqueRoles.filter(r => r !== "sin_rol").map(r => (
+                    <SelectItem key={r} value={r}>{ROL_LABELS[r] || r}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
