@@ -398,6 +398,11 @@ export default function AdminEditFicha() {
   const [saving, setSaving] = useState(false);
   const [municipioSeleccionado, setMunicipioSeleccionado] = useState("");
 
+  // Cedula verification (create mode only)
+  const [cedulaVerificada, setCedulaVerificada] = useState(false);
+  const [verificandoCedula, setVerificandoCedula] = useState(false);
+  const [cedulaError, setCedulaError] = useState<string | null>(null);
+
   const geo = useGeographicData();
 
   const methods = useForm<FormData>({
@@ -420,15 +425,31 @@ export default function AdminEditFicha() {
   const sedesUrbana = parseInt(watch("sedes_urbana") || "0") || 0;
   const totalSedes = sedesRural + sedesUrbana;
 
-  // Geographic data driven by region
-  const municipiosRegion = geo.getMunicipiosForRegion(regionSeleccionada ?? "");
+  // Geographic data driven by region — matching FichaRLT intersection logic
+  const entidadSeleccionada = watch("entidad_territorial") ?? "";
+  const entidadesRegion = geo.getEntidadesForRegion(regionSeleccionada ?? "");
+  const hasMultipleEntidades = entidadesRegion.length > 1;
+
+  const municipiosRegion = (() => {
+    if (!regionSeleccionada) return [];
+    const regionMunis = geo.getMunicipiosForRegion(regionSeleccionada);
+    if (hasMultipleEntidades && entidadSeleccionada) {
+      const entidadMunis = geo.getMunicipiosForEntidad(entidadSeleccionada);
+      return regionMunis.filter((m) => entidadMunis.includes(m));
+    }
+    return regionMunis;
+  })();
   const tienesMunicipios = municipiosRegion.length > 1;
   const municipios = tienesMunicipios ? municipiosRegion : [];
-  const instituciones = municipioSeleccionado
-    ? geo.getInstitucionesForMunicipio(regionSeleccionada ?? "", municipioSeleccionado)
-    : regionSeleccionada && municipiosRegion.length === 1
-      ? geo.getInstitucionesForMunicipio(regionSeleccionada, municipiosRegion[0])
-      : [];
+
+  // Auto-select single municipio
+  if (municipiosRegion.length === 1 && municipioSeleccionado !== municipiosRegion[0]) {
+    setTimeout(() => setMunicipioSeleccionado(municipiosRegion[0]), 0);
+  }
+
+  const instituciones = municipioSeleccionado && regionSeleccionada
+    ? geo.getInstitucionesForMunicipio(regionSeleccionada, municipioSeleccionado)
+    : (regionSeleccionada ? geo.getInstitucionesForRegion(regionSeleccionada) : []);
 
   // Load ficha and reset form
   useEffect(() => {
@@ -465,9 +486,39 @@ export default function AdminEditFicha() {
     })();
   }, [id, isAdmin]);
 
+  // Cedula verification (create mode)
+  const verificarCedula = async () => {
+    const cedula = getValues("numero_cedula")?.trim();
+    if (!cedula || cedula.length < 4) {
+      setCedulaError("Ingrese un número de cédula válido");
+      return;
+    }
+    setVerificandoCedula(true);
+    setCedulaError(null);
+    try {
+      const { data, error } = await supabase.rpc("check_cedula_exists", { p_cedula: cedula });
+      if (error) throw error;
+      if (data === true) {
+        setCedulaError("Ya existe una ficha registrada con este número de cédula.");
+      } else {
+        setCedulaVerificada(true);
+        toast({ title: "Cédula verificada", description: "No existe duplicado." });
+      }
+    } catch {
+      setCedulaError("Error al verificar la cédula. Intente de nuevo.");
+    } finally {
+      setVerificandoCedula(false);
+    }
+  };
+
   const err = (name: keyof FormData) => errors[name]?.message as string | undefined;
 
   const onSubmit = async (data: FormData) => {
+    // In create mode, require cedula verification
+    if (isCreateMode && data.numero_cedula?.trim() && !cedulaVerificada) {
+      toast({ title: "Verifique la cédula antes de guardar", variant: "destructive" });
+      return;
+    }
     if (!isCreateMode && !ficha) return;
     setSaving(true);
 
@@ -540,7 +591,12 @@ export default function AdminEditFicha() {
     if (isCreateMode) {
       const { error } = await supabase.from("fichas_rlt").insert(payload as any);
       if (error) {
-        toast({ title: "Error al crear", description: error.message, variant: "destructive" });
+        const isDuplicate = error.message?.includes("unique") || error.message?.includes("duplicate") || error.code === "23505";
+        toast({
+          title: isDuplicate ? "Cédula duplicada" : "Error al crear",
+          description: isDuplicate ? "Ya existe una ficha con este número de cédula." : error.message,
+          variant: "destructive",
+        });
       } else {
         toast({ title: "Ficha creada correctamente" });
         navigate("/admin");
@@ -658,8 +714,47 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              <FormFieldWrapper name="numero_cedula" label="Número de cédula">
-                <FormInput id="numero_cedula" {...register("numero_cedula")} placeholder="Ej: 1234567890" />
+              <FormFieldWrapper name="numero_cedula" label="Número de cédula" required={isCreateMode}>
+                {isCreateMode ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <FormInput
+                        id="numero_cedula"
+                        {...register("numero_cedula")}
+                        placeholder="Ej: 1234567890"
+                        disabled={cedulaVerificada}
+                        hasError={!!cedulaError}
+                        onChange={(e) => {
+                          register("numero_cedula").onChange(e);
+                          setCedulaVerificada(false);
+                          setCedulaError(null);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={verificarCedula}
+                        disabled={verificandoCedula || cedulaVerificada}
+                        className="px-3 py-2 rounded-md text-sm font-medium text-white whitespace-nowrap disabled:opacity-50"
+                        style={{ background: cedulaVerificada ? "hsl(var(--accent))" : "hsl(var(--primary))" }}
+                      >
+                        {verificandoCedula ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : cedulaVerificada ? (
+                          "✓ Verificada"
+                        ) : (
+                          "Verificar"
+                        )}
+                      </button>
+                    </div>
+                    {cedulaError && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5" /> {cedulaError}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <FormInput id="numero_cedula" {...register("numero_cedula")} placeholder="Ej: 1234567890" />
+                )}
               </FormFieldWrapper>
 
               <FormFieldWrapper name="fecha_nacimiento" label="Fecha de nacimiento" required staticLabel>
@@ -839,7 +934,11 @@ export default function AdminEditFicha() {
                       id="entidad_territorial"
                       value={watch("entidad_territorial") ?? ""}
                       options={ets.map((et) => ({ value: et, label: et }))}
-                      onChange={(e) => setValue("entidad_territorial", e.target.value)}
+                      onChange={(e) => {
+                        setValue("entidad_territorial", e.target.value);
+                        setMunicipioSeleccionado("");
+                        setValue("nombre_ie", "");
+                      }}
                     />
                   );
                 })()}
