@@ -272,8 +272,8 @@ export default function AdminReviewsTab() {
                     nameKey="name"
                     label={({ name, value }) => `${name} (${value})`}
                   >
-                    {stats.distribution.filter(d => d.value > 0).map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[stats.distribution.findIndex(d => d.value > 0 && stats.distribution.filter(dd => dd.value > 0).indexOf(d) === i) % PIE_COLORS.length]} />
+                    {stats.distribution.filter(d => d.value > 0).map((entry, i) => (
+                      <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Pie>
                   <Legend />
