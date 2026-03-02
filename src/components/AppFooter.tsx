@@ -5,7 +5,7 @@ export default function AppFooter() {
   const logoCosmo = images.logo_cosmo;
 
   return (
-    <footer className="py-5 text-center" style={{ background: "hsl(var(--primary))" }}>
+    <footer className="sticky bottom-0 z-50 py-3 text-center" style={{ background: "hsl(var(--primary))" }}>
       <div className="flex flex-col items-center gap-3">
         <div className="bg-white rounded-xl px-6 py-3 shadow-md inline-flex items-center justify-center">
           <img
