@@ -347,7 +347,7 @@ function InstitutionSearchField({
 
 function RegionSelector({ onSelect, regionNames }: { onSelect: (region: string) => void; regionNames: string[] }) {
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt;
+  const logoRLT = images.logo_rlt_white;
   const logoCLT = images.logo_clt;
   const logoCosmo = images.logo_cosmo;
   return (
