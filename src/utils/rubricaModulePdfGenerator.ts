@@ -113,9 +113,9 @@ export async function generarPDFRubricaModulo(
 
   // ── COVER PAGE ──
   y = 30;
-  const rltTargetH = 16;
+  const rltTargetH = 24;
   const rltW = rltTargetH * (rltSize.width / rltSize.height);
-  try { doc.addImage(rltB64, "PNG", margin, y, rltW, rltTargetH); } catch {}
+  try { doc.addImage(rltB64, "PNG", (pageW - rltW) / 2, y, rltW, rltTargetH); } catch {}
   y += 25;
 
   doc.setFontSize(18);
