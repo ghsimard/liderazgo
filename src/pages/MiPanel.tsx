@@ -43,6 +43,9 @@ export default function MiPanel() {
       }
       setRoleInfo(result);
 
+      // Store cedula in sessionStorage for auto-fill on downstream pages
+      sessionStorage.setItem("user_cedula", cedula);
+
       // Auto-select if only one role
       if (result.is_directivo && !result.is_evaluador) setSelectedRole("directivo");
       else if (result.is_evaluador && !result.is_directivo) setSelectedRole("evaluador");
