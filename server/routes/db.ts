@@ -69,6 +69,7 @@ const ALLOWED_TABLES = new Set([
   "site_reviews",
   "app_settings",
   "contact_messages",
+  "admin_cedulas",
 ]);
 
 // ── Helpers ────────────────────────────────────────────
