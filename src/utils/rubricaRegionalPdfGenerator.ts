@@ -275,11 +275,13 @@ export async function generarPDFRegionalRubricas(
     }
 
     // Source note under table
-    y += 2;
+    y += 5;
     doc.setFontSize(7);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(120, 120, 120);
-    doc.text("Fuente: Datos tomados de los Informes de Módulos del proceso RLT-CLT 2025", margin, y);
+    const sourceText = "Fuente: Datos tomados de los Informes de Módulos del proceso RLT-CLT 2025";
+    const sourceWidth = doc.getTextWidth(sourceText);
+    doc.text(sourceText, pageW - margin - sourceWidth, y);
     y += 6;
 
     // ── AI Analysis ──
