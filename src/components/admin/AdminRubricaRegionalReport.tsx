@@ -232,8 +232,8 @@ export default function AdminRubricaRegionalReport() {
       await generarPDFRegionalRubricas(
         { modules: reportModules, globalStats },
         {
-          logoRLT: images.logo_rlt,
-          logoCLT: images.logo_clt_dark,
+          logoRLT: images.logo_rlt_white,
+          logoCLT: images.logo_clt,
           logoCosmo: images.logo_cosmo,
           showLogoRLT: showRLT,
           showLogoCLT: showCLT,
