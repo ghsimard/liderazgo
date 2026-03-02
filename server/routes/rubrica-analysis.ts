@@ -12,9 +12,9 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
   try {
     const { moduleTitle, moduleNumber, moduleObjective, distribution } = req.body;
 
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-    if (!GEMINI_API_KEY) {
-      return res.status(500).json({ error: "GEMINI_API_KEY no está configurada en el servidor." });
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({ error: "OPENAI_API_KEY no está configurada en el servidor." });
     }
 
     // Build data summary
@@ -41,28 +41,29 @@ Objetivo: ${moduleObjective}
 Distribución de niveles por ítem (nivel acordado):
 ${dataSummary}`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            { role: "user", parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
-          ],
-        }),
-      }
-    );
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
 
     if (!response.ok) {
       const t = await response.text();
-      console.error("Gemini API error:", response.status, t);
+      console.error("OpenAI API error:", response.status, t);
       return res.status(500).json({ error: "Error del servicio de IA" });
     }
 
     const data = await response.json();
-    const analysis =
-      data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const analysis = data.choices?.[0]?.message?.content || "";
 
     res.json({ analysis });
   } catch (err: any) {
