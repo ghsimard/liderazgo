@@ -85,8 +85,8 @@ function FormCard({ form }: { form: FormItem }) {
 export default function AdminDashboard() {
   const { isAdmin, signOut } = useAdminAuth();
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt;
-  const logoCLT = images.logo_clt_dark;
+  const logoRLT = images.logo_rlt_noletters;
+  const logoCLT = images.logo_clt_noletters;
 
   if (!isAdmin) {
     return (

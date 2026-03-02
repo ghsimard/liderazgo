@@ -397,7 +397,7 @@ interface Encuesta360FormProps {
 
 export default function Encuesta360Form({ config }: Encuesta360FormProps) {
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt;
+  const logoRLT = images.logo_rlt_noletters;
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);

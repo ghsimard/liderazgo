@@ -10,6 +10,8 @@ import staticLogoCltDark from "@/assets/logo_clt_dark.png";
 import staticLogoCltWhite from "@/assets/logo_clt_white.png";
 import staticLogoCosmo from "@/assets/logo_cosmo.png";
 import staticLogoCosmoWhite from "@/assets/logo_cosmo_white.png";
+import staticLogoRltNoletters from "@/assets/logo_rlt_noletters.png";
+import staticLogoCltNoletters from "@/assets/logo_clt_noletters.png";
 
 const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
@@ -32,6 +34,8 @@ export const APP_IMAGE_CONFIGS: AppImageConfig[] = [
   { key: "logo_cosmo_white", label: "Logo Cosmo Schools (fond foncé)", description: "Footer PDF ficha (version impression, fond sombre)", fallback: staticLogoCosmoWhite },
   { key: "cover_bg", label: "Image couverture PDF", description: "Arrière-plan page 1 du rapport PDF 360° (derrière le titre principal)", fallback: "/images/cover-bg-logo.png", isPublic: true },
   { key: "lightbulb_icon", label: "Icône ampoule", description: "Boîtes d'information dans le rapport PDF 360° (sections conseils)", fallback: "/images/lightbulb-icon.png", isPublic: true },
+  { key: "logo_rlt_noletters", label: "Logo RLT (sans texte)", description: "En-tête web pages (icône seule)", fallback: staticLogoRltNoletters },
+  { key: "logo_clt_noletters", label: "Logo CLT (sans texte)", description: "En-tête web pages (icône seule)", fallback: staticLogoCltNoletters },
 ];
 
 const FALLBACK_MAP: Record<string, string> = {};

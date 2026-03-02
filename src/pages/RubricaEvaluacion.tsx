@@ -79,8 +79,8 @@ type DetectedRole = "directivo" | "evaluador" | null;
 export default function RubricaEvaluacion() {
   const { toast } = useToast();
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt;
-  const logoCLT = images.logo_clt_dark;
+  const logoRLT = images.logo_rlt_noletters;
+  const logoCLT = images.logo_clt_noletters;
 
   const [cedula, setCedula] = useState("");
   const [searching, setSearching] = useState(false);
