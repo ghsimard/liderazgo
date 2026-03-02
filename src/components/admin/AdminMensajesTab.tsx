@@ -40,6 +40,7 @@ import {
   MessageSquare,
   Phone,
   Calendar,
+  Shield,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -86,6 +87,13 @@ function TipoBadge({ tipo }: { tipo: string | undefined }) {
       </Badge>
     );
   }
+  if (t === "derecho") {
+    return (
+      <Badge variant="secondary" className="gap-1 text-xs border-primary/30 text-primary">
+        <Shield className="w-3 h-3" /> Derecho y contacto
+      </Badge>
+    );
+  }
   return (
     <Badge variant="outline" className="gap-1 text-xs">
       <Mail className="w-3 h-3" /> Contacto
@@ -96,7 +104,7 @@ function TipoBadge({ tipo }: { tipo: string | undefined }) {
 export default function AdminMensajesTab() {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"todos" | "contacto" | "sugerencia">("todos");
+  const [filter, setFilter] = useState<"todos" | "contacto" | "sugerencia" | "derecho">("todos");
   const [readFilter, setReadFilter] = useState<"todos" | "leido" | "no_leido">("todos");
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -208,9 +216,10 @@ export default function AdminMensajesTab() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="todos">Todos los tipos</SelectItem>
-            <SelectItem value="contacto">Contacto</SelectItem>
-            <SelectItem value="sugerencia">Sugerencia</SelectItem>
+             <SelectItem value="todos">Todos los tipos</SelectItem>
+             <SelectItem value="contacto">Contacto</SelectItem>
+             <SelectItem value="sugerencia">Sugerencia</SelectItem>
+             <SelectItem value="derecho">Derecho y contacto</SelectItem>
           </SelectContent>
         </Select>
 
