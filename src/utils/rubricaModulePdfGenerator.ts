@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { genderizeRole } from "@/utils/genderizeRole";
 
 function loadImageAsBase64(src: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -39,6 +40,7 @@ export interface RubricaModuleReportData {
   directivoNombre: string;
   directivoCedula: string;
   institucion: string;
+  genero?: string | null;
   evaluadorNombre?: string;
   moduleNumber: number;
   moduleTitle: string;
@@ -117,9 +119,9 @@ export async function generarPDFRubricaModulo(
   const rltTargetH = 24;
   const rltW = rltTargetH * (rltSize.width / rltSize.height);
   const infoLines = [
-    `Directivo: ${data.directivoNombre}`,
+    `${genderizeRole("Directivo", data.genero)}: ${data.directivoNombre}`,
     `Institución: ${data.institucion}`,
-    ...(data.evaluadorNombre ? [`Evaluador: ${data.evaluadorNombre}`] : []),
+    ...(data.evaluadorNombre ? [`${genderizeRole("Evaluador", data.genero)}: ${data.evaluadorNombre}`] : []),
     `Fecha: ${new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}`,
   ];
   const totalH = rltTargetH + 10 + 18 + 10 + 14 + 15 + infoLines.length * 7;

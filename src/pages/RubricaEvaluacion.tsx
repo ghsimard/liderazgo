@@ -89,7 +89,7 @@ export default function RubricaEvaluacion() {
   const [userName, setUserName] = useState("");
 
   // Directivo state
-  const [directivoInfo, setDirectivoInfo] = useState<{ nombre: string; cedula: string; institucion: string } | null>(null);
+  const [directivoInfo, setDirectivoInfo] = useState<{ nombre: string; cedula: string; institucion: string; genero?: string | null } | null>(null);
   const [directivoReadOnly, setDirectivoReadOnly] = useState(false);
   const [assignedEvaluadorNombre, setAssignedEvaluadorNombre] = useState<string | null>(null);
 
@@ -230,7 +230,7 @@ export default function RubricaEvaluacion() {
       // 1. Check if cédula is a directivo (in fichas_rlt with Rector/a or Coordinador/a)
       const { data: fichas } = await supabase
         .from("fichas_rlt")
-        .select("nombres_apellidos, numero_cedula, nombre_ie, cargo_actual")
+        .select("nombres_apellidos, numero_cedula, nombre_ie, cargo_actual, genero")
         .eq("numero_cedula", cedula.trim());
 
       // 2. Check if cédula is an evaluador
@@ -247,7 +247,7 @@ export default function RubricaEvaluacion() {
         const f = fichas[0];
         setDetectedRole("directivo");
         setUserName(f.nombres_apellidos);
-        setDirectivoInfo({ nombre: f.nombres_apellidos, cedula: f.numero_cedula, institucion: f.nombre_ie });
+        setDirectivoInfo({ nombre: f.nombres_apellidos, cedula: f.numero_cedula, institucion: f.nombre_ie, genero: f.genero });
 
         const evMap = await loadEvaluaciones(f.numero_cedula);
         await loadSubmissionDates(f.numero_cedula);
@@ -299,7 +299,13 @@ export default function RubricaEvaluacion() {
 
   const handleSelectDirectivo = async (asig: Asignacion) => {
     setSelectedDirectivo(asig);
-    setDirectivoInfo({ nombre: asig.directivo_nombre, cedula: asig.directivo_cedula, institucion: asig.institucion });
+    // Fetch genero for this directivo
+    const { data: fichaRows } = await supabase
+      .from("fichas_rlt")
+      .select("genero")
+      .eq("numero_cedula", asig.directivo_cedula)
+      .limit(1);
+    setDirectivoInfo({ nombre: asig.directivo_nombre, cedula: asig.directivo_cedula, institucion: asig.institucion, genero: fichaRows?.[0]?.genero ?? null });
     await loadEvaluaciones(asig.directivo_cedula);
     await loadSubmissionDates(asig.directivo_cedula);
     await loadSeguimientos(asig.directivo_cedula);
@@ -558,6 +564,7 @@ export default function RubricaEvaluacion() {
         directivoNombre: directivoInfo.nombre,
         directivoCedula: directivoInfo.cedula,
         institucion: directivoInfo.institucion,
+        genero: directivoInfo.genero,
         evaluadorNombre: assignedEvaluadorNombre || (detectedRole === "evaluador" ? userName : undefined) || undefined,
         moduleNumber: mod.module_number,
         moduleTitle: mod.title,
