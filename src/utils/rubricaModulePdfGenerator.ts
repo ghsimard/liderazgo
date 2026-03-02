@@ -136,7 +136,6 @@ export async function generarPDFRubricaModulo(
 
   const infoLines = [
     `Directivo: ${data.directivoNombre}`,
-    `Cédula: ${data.directivoCedula}`,
     `Institución: ${data.institucion}`,
     ...(data.evaluadorNombre ? [`Evaluador: ${data.evaluadorNombre}`] : []),
     `Fecha: ${new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}`,
