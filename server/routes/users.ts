@@ -88,6 +88,76 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
+/** PUT /api/users/:id — update user (email, role, cedula) */
+router.put("/:id", async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { email, role, cedula } = req.body;
+
+    // Check caller roles
+    const callerRoles = await query<{ role: string }>(
+      "SELECT role FROM user_roles WHERE user_id = $1",
+      [req.user!.userId]
+    );
+    const callerIsSuperAdmin = callerRoles.some((r) => r.role === "superadmin");
+
+    // Check target roles
+    const targetRoles = await query<{ role: string }>(
+      "SELECT role FROM user_roles WHERE user_id = $1",
+      [id]
+    );
+    const targetIsSuperAdmin = targetRoles.some((r) => r.role === "superadmin");
+
+    // Only superadmins can edit superadmins
+    if (targetIsSuperAdmin && !callerIsSuperAdmin) {
+      res.status(403).json({ error: "Seul un superadmin peut modifier un autre superadmin" });
+      return;
+    }
+
+    // Only superadmins can promote to superadmin
+    if (role === "superadmin" && !callerIsSuperAdmin) {
+      res.status(403).json({ error: "Seul un superadmin peut attribuer le rôle superadmin" });
+      return;
+    }
+
+    // Update email
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        res.status(400).json({ error: "Format d'email invalide" });
+        return;
+      }
+      await queryOne("UPDATE users SET email = $1 WHERE id = $2", [email.toLowerCase().trim(), id]);
+    }
+
+    // Update role
+    if (role) {
+      await query("DELETE FROM user_roles WHERE user_id = $1", [id]);
+      await queryOne(
+        "INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        [id, role]
+      );
+    }
+
+    // Update cedula
+    if (cedula !== undefined) {
+      if (cedula) {
+        await queryOne(
+          `INSERT INTO admin_cedulas (user_id, cedula) VALUES ($1, $2)
+           ON CONFLICT (user_id) DO UPDATE SET cedula = $2`,
+          [id, cedula]
+        );
+      } else {
+        await query("DELETE FROM admin_cedulas WHERE user_id = $1", [id]);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /** PUT /api/users/:id/password — reset password */
 router.put("/:id/password", async (req: Request, res: Response) => {
   try {
