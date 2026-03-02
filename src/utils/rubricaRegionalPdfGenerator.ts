@@ -132,7 +132,7 @@ export async function generarPDFRegionalRubricas(
   if (logosToDraw.length === 1) {
     const l = logosToDraw[0];
     try { doc.addImage(l.b64, "PNG", pageW / 2 - l.wMm / 2, y, l.wMm, l.hMm); } catch {}
-    y += l.hMm + 10;
+    y += l.hMm + 20;
   } else if (logosToDraw.length === 2) {
     const gap = 15;
     const totalW = logosToDraw[0].wMm + gap + logosToDraw[1].wMm;
@@ -140,7 +140,7 @@ export async function generarPDFRegionalRubricas(
     const maxH = Math.max(logosToDraw[0].hMm, logosToDraw[1].hMm);
     try { doc.addImage(logosToDraw[0].b64, "PNG", startX, y + (maxH - logosToDraw[0].hMm) / 2, logosToDraw[0].wMm, logosToDraw[0].hMm); } catch {}
     try { doc.addImage(logosToDraw[1].b64, "PNG", startX + logosToDraw[0].wMm + gap, y + (maxH - logosToDraw[1].hMm) / 2, logosToDraw[1].wMm, logosToDraw[1].hMm); } catch {}
-    y += maxH + 10;
+    y += maxH + 20;
   } else {
     y += 10;
   }
