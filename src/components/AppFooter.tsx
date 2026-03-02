@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import logoCosmoFooter from "@/assets/logo_cosmo_dark.png";
 
 export default function AppFooter() {
@@ -12,9 +13,12 @@ export default function AppFooter() {
         <p className="text-white text-xs opacity-60 flex-1 text-center">
           Programa RLT / CLT · Colombia · {new Date().getFullYear()}
         </p>
-        <p className="text-white text-xs opacity-60 shrink-0">
+        <Link
+          to="/derechos-contacto"
+          className="text-white text-xs opacity-60 hover:opacity-100 transition-opacity shrink-0 underline underline-offset-2"
+        >
           Todos los derechos reservados a Ghislain Simard
-        </p>
+        </Link>
       </div>
     </footer>
   );
