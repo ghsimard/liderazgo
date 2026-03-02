@@ -222,10 +222,12 @@ CREATE TABLE IF NOT EXISTS public.contact_messages (
   rating INTEGER,
   leido BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  es_anonimo BOOLEAN NOT NULL DEFAULT false
+  es_anonimo BOOLEAN NOT NULL DEFAULT false,
+  rol_remitente TEXT
 );
 
 ALTER TABLE public.contact_messages ADD COLUMN IF NOT EXISTS es_anonimo BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.contact_messages ADD COLUMN IF NOT EXISTS rol_remitente TEXT;
 
 -- ============================================================
 -- Site reviews (évaluations du site, séparées des sugerencias)

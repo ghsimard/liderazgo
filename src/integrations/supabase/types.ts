@@ -122,6 +122,7 @@ export type Database = {
           mensaje: string
           nombre: string
           rating: number | null
+          rol_remitente: string | null
           telefono: string | null
           tipo_contacto: string
         }
@@ -137,6 +138,7 @@ export type Database = {
           mensaje: string
           nombre: string
           rating?: number | null
+          rol_remitente?: string | null
           telefono?: string | null
           tipo_contacto?: string
         }
@@ -152,6 +154,7 @@ export type Database = {
           mensaje?: string
           nombre?: string
           rating?: number | null
+          rol_remitente?: string | null
           telefono?: string | null
           tipo_contacto?: string
         }
