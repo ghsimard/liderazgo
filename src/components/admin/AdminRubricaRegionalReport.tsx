@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
 import { Loader2, BarChart3, Sparkles, RefreshCw, FileDown, Save } from "lucide-react";
 import { useAppImages } from "@/hooks/useAppImages";
+import { useGeographicData } from "@/hooks/useGeographicData";
 import { generarPDFRegionalRubricas, type RegionalModuleData } from "@/utils/rubricaRegionalPdfGenerator";
 
 interface RubricaModule {
@@ -59,6 +60,7 @@ const NIVEL_LABELS: Record<string, string> = {
 export default function AdminRubricaRegionalReport() {
   const { toast } = useToast();
   const { images } = useAppImages();
+  const { regionNames, getShowLogoRlt, getShowLogoClt } = useGeographicData();
   const [modules, setModules] = useState<RubricaModule[]>([]);
   const [items, setItems] = useState<RubricaItem[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<Evaluacion[]>([]);
@@ -223,9 +225,19 @@ export default function AdminRubricaRegionalReport() {
           analysis: analyses[mod.id] || undefined,
         }));
 
+      // Determine logo visibility: show if ANY region has the flag enabled
+      const showRLT = regionNames.some((r) => getShowLogoRlt(r));
+      const showCLT = regionNames.some((r) => getShowLogoClt(r));
+
       await generarPDFRegionalRubricas(
         { modules: reportModules, globalStats },
-        { logoRLT: images.logo_rlt, logoCosmo: images.logo_cosmo },
+        {
+          logoRLT: images.logo_rlt,
+          logoCLT: images.logo_clt_dark,
+          logoCosmo: images.logo_cosmo,
+          showLogoRLT: showRLT,
+          showLogoCLT: showCLT,
+        },
       );
       toast({ title: "PDF generado", description: "El informe regional ha sido descargado." });
     } catch (err: any) {

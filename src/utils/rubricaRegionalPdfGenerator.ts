@@ -52,17 +52,33 @@ export interface RegionalReportData {
 
 export interface RegionalPdfLogos {
   logoRLT: string;
+  logoCLT: string;
   logoCosmo: string;
+  showLogoRLT: boolean;
+  showLogoCLT: boolean;
 }
 
 export async function generarPDFRegionalRubricas(
   data: RegionalReportData,
   logoSources: RegionalPdfLogos,
 ): Promise<void> {
-  const [rltB64, cosmoB64] = await Promise.all([
-    loadImageAsBase64(logoSources.logoRLT),
-    loadImageAsBase64(logoSources.logoCosmo),
-  ]);
+  const imagePromises: Promise<string>[] = [];
+  const imageKeys: string[] = [];
+
+  if (logoSources.showLogoRLT) {
+    imagePromises.push(loadImageAsBase64(logoSources.logoRLT));
+    imageKeys.push("rlt");
+  }
+  if (logoSources.showLogoCLT) {
+    imagePromises.push(loadImageAsBase64(logoSources.logoCLT));
+    imageKeys.push("clt");
+  }
+  imagePromises.push(loadImageAsBase64(logoSources.logoCosmo));
+  imageKeys.push("cosmo");
+
+  const loadedImages = await Promise.all(imagePromises);
+  const imgMap: Record<string, string> = {};
+  imageKeys.forEach((k, i) => { imgMap[k] = loadedImages[i]; });
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -73,7 +89,7 @@ export async function generarPDFRegionalRubricas(
 
   const addFooter = () => {
     const footerY = pageH - 15;
-    try { doc.addImage(cosmoB64, "PNG", margin, footerY - 4, 20, 8); } catch {}
+    try { doc.addImage(imgMap.cosmo, "PNG", margin, footerY - 4, 20, 8); } catch {}
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
     doc.text(`Página ${doc.getNumberOfPages()}`, pageW - margin, footerY, { align: "right" });
@@ -89,7 +105,24 @@ export async function generarPDFRegionalRubricas(
 
   // ── COVER PAGE ──
   y = 30;
-  try { doc.addImage(rltB64, "PNG", margin, y, 40, 16); } catch {}
+
+  // Show logos based on region configuration
+  const logosToDraw: { key: string; b64: string }[] = [];
+  if (logoSources.showLogoRLT && imgMap.rlt) logosToDraw.push({ key: "rlt", b64: imgMap.rlt });
+  if (logoSources.showLogoCLT && imgMap.clt) logosToDraw.push({ key: "clt", b64: imgMap.clt });
+
+  if (logosToDraw.length === 1) {
+    // Single logo centered
+    try { doc.addImage(logosToDraw[0].b64, "PNG", pageW / 2 - 25, y, 50, 20); } catch {}
+  } else if (logosToDraw.length === 2) {
+    // Two logos side by side
+    const gap = 15;
+    const logoW = 45;
+    const totalW = logoW * 2 + gap;
+    const startX = (pageW - totalW) / 2;
+    try { doc.addImage(logosToDraw[0].b64, "PNG", startX, y, logoW, 18); } catch {}
+    try { doc.addImage(logosToDraw[1].b64, "PNG", startX + logoW + gap, y, logoW, 18); } catch {}
+  }
   y += 30;
 
   doc.setFontSize(20);
