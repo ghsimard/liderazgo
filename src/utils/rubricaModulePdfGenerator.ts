@@ -113,11 +113,20 @@ export async function generarPDFRubricaModulo(
   };
 
   // ── COVER PAGE ──
-  y = 30;
+  // Calculate total content height to center vertically
   const rltTargetH = 24;
   const rltW = rltTargetH * (rltSize.width / rltSize.height);
+  const infoLines = [
+    `Directivo: ${data.directivoNombre}`,
+    `Institución: ${data.institucion}`,
+    ...(data.evaluadorNombre ? [`Evaluador: ${data.evaluadorNombre}`] : []),
+    `Fecha: ${new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}`,
+  ];
+  const totalH = rltTargetH + 10 + 18 + 10 + 14 + 15 + infoLines.length * 7;
+  y = (pageH - totalH) / 2;
+
   try { doc.addImage(rltB64, "PNG", (pageW - rltW) / 2, y, rltW, rltTargetH); } catch {}
-  y += 35;
+  y += rltTargetH + 10;
 
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
@@ -134,12 +143,6 @@ export async function generarPDFRubricaModulo(
   doc.setTextColor(30, 30, 30);
   doc.setFont("helvetica", "normal");
 
-  const infoLines = [
-    `Directivo: ${data.directivoNombre}`,
-    `Institución: ${data.institucion}`,
-    ...(data.evaluadorNombre ? [`Evaluador: ${data.evaluadorNombre}`] : []),
-    `Fecha: ${new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}`,
-  ];
   for (const line of infoLines) {
     doc.text(line, pageW / 2, y, { align: "center" });
     y += 7;
