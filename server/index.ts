@@ -18,7 +18,12 @@ const app = express();
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
 // ─── Middleware ────────────────────────────────────────
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 app.use(express.json({ limit: "10mb" }));
 
 // Serve uploaded images as static files
