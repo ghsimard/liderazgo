@@ -206,6 +206,25 @@ CREATE TABLE IF NOT EXISTS public.rubrica_regional_analyses (
 );
 
 -- ============================================================
+-- Contact messages (sugerencias / contacto)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.contact_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre TEXT NOT NULL,
+  email TEXT NOT NULL,
+  asunto TEXT NOT NULL,
+  mensaje TEXT NOT NULL,
+  tipo_contacto TEXT NOT NULL DEFAULT 'contacto',
+  telefono TEXT,
+  codigo_pais TEXT NOT NULL DEFAULT '+57',
+  contactar_whatsapp BOOLEAN NOT NULL DEFAULT false,
+  rating INTEGER,
+  leido BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ============================================================
 -- Site reviews (évaluations du site, séparées des sugerencias)
 -- ============================================================
 

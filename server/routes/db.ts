@@ -46,6 +46,7 @@ const PUBLIC_INSERT_TABLES = new Set([
   "rubrica_evaluaciones",
   "rubrica_seguimientos",
   "site_reviews",
+  "contact_messages",
 ]);
 
 // Whitelist of allowed tables
@@ -67,6 +68,7 @@ const ALLOWED_TABLES = new Set([
   "rubrica_items",
   "site_reviews",
   "app_settings",
+  "contact_messages",
 ]);
 
 // ── Helpers ────────────────────────────────────────────
