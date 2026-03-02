@@ -53,7 +53,7 @@ export function useAutoFillUserInfo() {
               setLoading(false);
               return;
             }
-          } else {
+        } else {
             const { supabase: sbClient } = await import("@/integrations/supabase/client");
             const { data: { user } } = await sbClient.auth.getUser();
             if (user) {
@@ -63,12 +63,16 @@ export function useAutoFillUserInfo() {
                 .eq("user_id", user.id)
                 .limit(1);
               if (roles && (roles as any[]).length > 0) {
+                const actualRole = (roles as any[])[0].role || "admin";
+                const metaName = (user.user_metadata as any)?.full_name
+                  || (user.user_metadata as any)?.name
+                  || "";
                 setInfo({
-                  nombre: "",
+                  nombre: metaName,
                   email: user.email || "",
                   telefono: "",
                   codigo_pais: "+57",
-                  rol: "admin",
+                  rol: actualRole,
                   source: "admin",
                 });
                 setLoading(false);
