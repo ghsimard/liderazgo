@@ -93,7 +93,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 ["Entidad Territorial", directivo.entidadTerritorial],
                 ["Institución Educativa", directivo.institucion],
                 ["Código DANE I.E.", directivo.codigoDane],
-                ["Cargo", directivo.cargo],
+                ["Cargo", genderizeRole(directivo.cargo, directivo.genero)],
               ].map(([label, val]) => (
                 <div key={label} className="flex gap-2">
                   <span className="font-medium text-muted-foreground whitespace-nowrap">{label}:</span>
