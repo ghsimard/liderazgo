@@ -198,7 +198,7 @@ export default function AdminRubricaModuleReport() {
     setGeneratingPdf(true);
     try {
       await generarPDFRubricaModulo(reportData, {
-        logoRLT: images.logo_rlt,
+        logoRLT: images.logo_rlt_white,
         logoCosmo: images.logo_cosmo,
       });
       toast({ title: "PDF descargado" });

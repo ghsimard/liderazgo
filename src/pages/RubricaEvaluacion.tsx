@@ -562,7 +562,7 @@ export default function RubricaEvaluacion() {
       };
 
       await generarPDFRubricaModulo(reportData, {
-        logoRLT: images.logo_rlt,
+        logoRLT: images.logo_rlt_white,
         logoCosmo: images.logo_cosmo,
       });
       toast({ title: "PDF descargado" });
