@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, Send, Lightbulb, Star } from "lucide-react";
+import { ArrowLeft, Send, Lightbulb } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PhoneInputWithCountry } from "@/components/PhoneInputWithCountry";
@@ -20,47 +20,10 @@ const sugerenciaSchema = z.object({
   contactar_whatsapp: z.boolean().default(false),
   asunto: z.string().trim().min(1, "El asunto es obligatorio").max(200),
   mensaje: z.string().trim().min(10, "El mensaje debe tener al menos 10 caracteres").max(2000),
-  rating: z.number().min(1, "Por favor seleccione una calificación").max(5),
 });
 
 type SugerenciaFormData = z.infer<typeof sugerenciaSchema>;
 
-function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const [hover, setHover] = useState(0);
-
-  return (
-    <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          onClick={() => onChange(star)}
-          onMouseEnter={() => setHover(star)}
-          onMouseLeave={() => setHover(0)}
-          className="p-0.5 transition-transform hover:scale-110 focus:outline-none"
-          aria-label={`${star} estrella${star > 1 ? "s" : ""}`}
-        >
-          <Star
-            className={`w-7 h-7 transition-colors ${
-              star <= (hover || value)
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-muted-foreground/40"
-            }`}
-          />
-        </button>
-      ))}
-      {value > 0 && (
-        <span className="ml-2 text-sm text-muted-foreground">
-          {value === 1 && "Malo"}
-          {value === 2 && "Regular"}
-          {value === 3 && "Bueno"}
-          {value === 4 && "Muy bueno"}
-          {value === 5 && "Excelente"}
-        </span>
-      )}
-    </div>
-  );
-}
 
 export default function Sugerencias() {
   const navigate = useNavigate();
@@ -74,7 +37,7 @@ export default function Sugerencias() {
     formState: { errors },
   } = useForm<SugerenciaFormData>({
     resolver: zodResolver(sugerenciaSchema),
-    defaultValues: { codigo_pais: "+57", contactar_whatsapp: false, rating: 0 },
+    defaultValues: { codigo_pais: "+57", contactar_whatsapp: false },
   });
 
   const onSubmit = async (data: SugerenciaFormData) => {
@@ -89,7 +52,6 @@ export default function Sugerencias() {
         asunto: data.asunto,
         mensaje: data.mensaje,
         tipo_contacto: "sugerencia",
-        rating: data.rating,
       } as any);
       if (error) throw error;
       toast.success("¡Gracias por su sugerencia! Su opinión es muy valiosa para nosotros.");
@@ -114,7 +76,7 @@ export default function Sugerencias() {
           </button>
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
             <Lightbulb className="w-7 h-7" />
-            Sugerencias y Evaluación
+            Sugerencias
           </h1>
           <p className="mt-2 text-primary-foreground/70 text-sm">
             Ayúdenos a mejorar esta plataforma con sus comentarios
@@ -125,28 +87,11 @@ export default function Sugerencias() {
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-sm text-muted-foreground mb-6">
-            Su opinión es fundamental para mejorar esta plataforma. Puede compartir sugerencias,
-            reportar problemas o evaluar su experiencia de uso. Todos los comentarios son revisados por el equipo.
+             Su opinión es fundamental para mejorar esta plataforma. Puede compartir sugerencias
+             o reportar problemas. Todos los comentarios son revisados por el equipo.
           </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Star Rating */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                ¿Cómo califica su experiencia con la plataforma? *
-              </label>
-              <Controller
-                name="rating"
-                control={control}
-                render={({ field }) => (
-                  <StarRating value={field.value} onChange={field.onChange} />
-                )}
-              />
-              {errors.rating && (
-                <p className="text-xs text-destructive">{errors.rating.message}</p>
-              )}
-            </div>
-
             {/* Name & Email */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
