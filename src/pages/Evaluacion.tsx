@@ -104,7 +104,7 @@ export default function Evaluacion() {
     }
   }, [infoLoading, info, setValue, esAnonimo]);
 
-  const detectedAdmin = info.rol === "admin";
+  
 
   const onSubmit = async (data: EvaluacionFormData) => {
     setSending(true);
@@ -209,26 +209,22 @@ export default function Evaluacion() {
             {/* Role selector */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground">¿Cuál es su rol? *</label>
-              {detectedAdmin ? (
-                <Input value="Administrador" readOnly className="bg-muted cursor-not-allowed" />
-              ) : (
-                <Controller
-                  name="rol_evaluador"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccione su rol" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROL_OPTIONS.map(o => (
-                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              )}
+              <Controller
+                name="rol_evaluador"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione su rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROL_OPTIONS.map(o => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.rol_evaluador && <p className="text-xs text-destructive">{errors.rol_evaluador.message}</p>}
             </div>
 
