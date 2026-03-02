@@ -74,9 +74,10 @@ export async function generarPDFRubricaModulo(
   logoSources: RubricaModulePdfLogos,
   options: { returnBlob?: boolean } = {}
 ): Promise<Blob | void> {
-  const [rltB64, cosmoB64, cosmoSize] = await Promise.all([
+  const [rltB64, cosmoB64, rltSize, cosmoSize] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
     loadImageAsBase64(logoSources.logoCosmo),
+    getImageNaturalSize(logoSources.logoRLT),
     getImageNaturalSize(logoSources.logoCosmo),
   ]);
 
@@ -112,7 +113,9 @@ export async function generarPDFRubricaModulo(
 
   // ── COVER PAGE ──
   y = 30;
-  try { doc.addImage(rltB64, "PNG", margin, y, 40, 16); } catch {}
+  const rltTargetH = 16;
+  const rltW = rltTargetH * (rltSize.width / rltSize.height);
+  try { doc.addImage(rltB64, "PNG", margin, y, rltW, rltTargetH); } catch {}
   y += 25;
 
   doc.setFontSize(18);
