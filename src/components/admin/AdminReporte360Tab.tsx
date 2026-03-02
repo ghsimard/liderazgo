@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { genderizeRole } from "@/utils/genderizeRole";
 import { supabase } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +17,7 @@ interface DirectivoOption {
   nombre: string;
   institucion: string;
   cargo: string;
+  genero: string | null;
   region: string;
   entidad_territorial: string;
   municipio: string;
@@ -50,7 +52,7 @@ export default function AdminReporte360Tab() {
     // Load fichas with institution join to get municipio name
     const { data: fichas } = await supabase
       .from("fichas_rlt")
-      .select("nombres_apellidos, nombre_ie, cargo_actual, region, entidad_territorial")
+      .select("nombres_apellidos, nombre_ie, cargo_actual, genero, region, entidad_territorial")
       .in("cargo_actual", ["Rector/a", "Coordinador/a"])
       .order("nombres_apellidos");
 
@@ -72,6 +74,7 @@ export default function AdminReporte360Tab() {
         nombre: f.nombres_apellidos,
         institucion: f.nombre_ie,
         cargo: f.cargo_actual,
+        genero: f.genero ?? null,
         region: f.region ?? "",
         entidad_territorial: f.entidad_territorial ?? "",
         municipio: instMunMap.get(f.nombre_ie) ?? "",
@@ -299,7 +302,7 @@ export default function AdminReporte360Tab() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{d.nombre}</p>
                   <p className="text-xs text-muted-foreground truncate">{d.institucion}</p>
-                  <p className="text-xs text-muted-foreground">{d.cargo} · {d.region}</p>
+                  <p className="text-xs text-muted-foreground">{genderizeRole(d.cargo, d.genero)} · {d.region}</p>
                 </div>
                 <div className="flex flex-col gap-1 shrink-0">
                   <Button variant="outline" size="sm" onClick={() => handleView(d)} disabled={viewing === d.nombre} className="gap-1 text-xs">
