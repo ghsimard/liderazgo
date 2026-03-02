@@ -94,19 +94,25 @@ export default function AdminRubricaModuleReport() {
 
   const loadInitialData = async () => {
     setLoading(true);
-    const [{ data: mods }, { data: its }, { data: asigs }, { data: subDates }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: asigs }, { data: evalores }, { data: subDates }] = await Promise.all([
       supabase.from("rubrica_modules").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("*").order("sort_order", { ascending: true }),
-      supabase.from("rubrica_asignaciones").select("directivo_cedula, directivo_nombre, institucion, evaluador_id, rubrica_evaluadores(nombre)"),
+      supabase.from("rubrica_asignaciones").select("directivo_cedula, directivo_nombre, institucion, evaluador_id"),
+      supabase.from("rubrica_evaluadores").select("id, nombre"),
       supabase.from("rubrica_submission_dates").select("directivo_cedula, module_number, submission_type"),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
     if (asigs) {
+      // Build evaluador lookup
+      const evalMap = new Map<string, string>();
+      if (evalores) {
+        for (const ev of evalores as any[]) evalMap.set(ev.id, ev.nombre);
+      }
       // Deduplicate by cedula
       const unique = new Map<string, Asignacion>();
       for (const a of asigs as any[]) {
-        const evalNombre = a.rubrica_evaluadores?.nombre || "";
+        const evalNombre = evalMap.get(a.evaluador_id) || "";
         unique.set(a.directivo_cedula, {
           directivo_cedula: a.directivo_cedula,
           directivo_nombre: a.directivo_nombre,
