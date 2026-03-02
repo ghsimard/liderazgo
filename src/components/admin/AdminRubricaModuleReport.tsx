@@ -157,7 +157,7 @@ export default function AdminRubricaModuleReport() {
     setLoadingDetail(false);
   };
 
-  const getReportData = (moduleId: string): RubricaModuleReportData | null => {
+  const getReportData = async (moduleId: string): Promise<RubricaModuleReportData | null> => {
     const mod = modules.find(m => m.id === moduleId);
     const directivo = asignaciones.find(a => a.directivo_cedula === selectedCedula);
     if (!mod || !directivo) return null;
@@ -193,10 +193,18 @@ export default function AdminRubricaModuleReport() {
         };
       });
 
+    // Fetch genero from fichas_rlt
+    const { data: fichaRows } = await supabase
+      .from("fichas_rlt")
+      .select("genero")
+      .eq("numero_cedula", directivo.directivo_cedula)
+      .limit(1);
+
     return {
       directivoNombre: directivo.directivo_nombre,
       directivoCedula: directivo.directivo_cedula,
       institucion: directivo.institucion,
+      genero: fichaRows?.[0]?.genero ?? null,
       evaluadorNombre: directivo.evaluador_nombre || undefined,
       moduleNumber: mod.module_number,
       moduleTitle: mod.title,
@@ -208,7 +216,7 @@ export default function AdminRubricaModuleReport() {
 
   const handleDownloadPdf = async () => {
     if (!selectedModuleId) return;
-    const reportData = getReportData(selectedModuleId);
+    const reportData = await getReportData(selectedModuleId);
     if (!reportData) return;
 
     setGeneratingPdf(true);
