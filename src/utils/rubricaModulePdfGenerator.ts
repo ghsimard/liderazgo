@@ -18,6 +18,16 @@ function loadImageAsBase64(src: string): Promise<string> {
   });
 }
 
+function getImageNaturalSize(src: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    img.src = src;
+  });
+}
+
 const NIVEL_LABELS: Record<string, string> = {
   avanzado: "Avanzado",
   intermedio: "Intermedio",
@@ -64,9 +74,10 @@ export async function generarPDFRubricaModulo(
   logoSources: RubricaModulePdfLogos,
   options: { returnBlob?: boolean } = {}
 ): Promise<Blob | void> {
-  const [rltB64, cosmoB64] = await Promise.all([
+  const [rltB64, cosmoB64, cosmoSize] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
     loadImageAsBase64(logoSources.logoCosmo),
+    getImageNaturalSize(logoSources.logoCosmo),
   ]);
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
@@ -78,7 +89,9 @@ export async function generarPDFRubricaModulo(
 
   const addFooter = () => {
     const footerY = pageH - 15;
-    try { doc.addImage(cosmoB64, "PNG", margin, footerY - 4, 20, 8); } catch {}
+    const cosmoTargetH = 8;
+    const cosmoW = cosmoTargetH * (cosmoSize.width / cosmoSize.height);
+    try { doc.addImage(cosmoB64, "PNG", margin, footerY - 4, cosmoW, cosmoTargetH); } catch {}
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
     doc.text(
