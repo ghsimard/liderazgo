@@ -1,6 +1,12 @@
 import jsPDF from "jspdf";
 
-function loadImageAsBase64(src: string): Promise<string> {
+interface LoadedImage {
+  b64: string;
+  widthPx: number;
+  heightPx: number;
+}
+
+function loadImageWithSize(src: string): Promise<LoadedImage> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -11,7 +17,7 @@ function loadImageAsBase64(src: string): Promise<string> {
       const ctx = canvas.getContext("2d");
       if (!ctx) return reject(new Error("Canvas not supported"));
       ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
+      resolve({ b64: canvas.toDataURL("image/png"), widthPx: img.naturalWidth, heightPx: img.naturalHeight });
     };
     img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
     img.src = src;
@@ -62,22 +68,22 @@ export async function generarPDFRegionalRubricas(
   data: RegionalReportData,
   logoSources: RegionalPdfLogos,
 ): Promise<void> {
-  const imagePromises: Promise<string>[] = [];
+  const imagePromises: Promise<LoadedImage>[] = [];
   const imageKeys: string[] = [];
 
   if (logoSources.showLogoRLT) {
-    imagePromises.push(loadImageAsBase64(logoSources.logoRLT));
+    imagePromises.push(loadImageWithSize(logoSources.logoRLT));
     imageKeys.push("rlt");
   }
   if (logoSources.showLogoCLT) {
-    imagePromises.push(loadImageAsBase64(logoSources.logoCLT));
+    imagePromises.push(loadImageWithSize(logoSources.logoCLT));
     imageKeys.push("clt");
   }
-  imagePromises.push(loadImageAsBase64(logoSources.logoCosmo));
+  imagePromises.push(loadImageWithSize(logoSources.logoCosmo));
   imageKeys.push("cosmo");
 
   const loadedImages = await Promise.all(imagePromises);
-  const imgMap: Record<string, string> = {};
+  const imgMap: Record<string, LoadedImage> = {};
   imageKeys.forEach((k, i) => { imgMap[k] = loadedImages[i]; });
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
@@ -89,7 +95,7 @@ export async function generarPDFRegionalRubricas(
 
   const addFooter = () => {
     const footerY = pageH - 15;
-    try { doc.addImage(imgMap.cosmo, "PNG", margin, footerY - 4, 20, 8); } catch {}
+    try { doc.addImage(imgMap.cosmo.b64, "PNG", margin, footerY - 4, 20, 8); } catch {}
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
     doc.text(`Página ${doc.getNumberOfPages()}`, pageW - margin, footerY, { align: "right" });
@@ -106,24 +112,36 @@ export async function generarPDFRegionalRubricas(
   // ── COVER PAGE ──
   y = 30;
 
-  // Show logos based on region configuration
-  const logosToDraw: { key: string; b64: string }[] = [];
-  if (logoSources.showLogoRLT && imgMap.rlt) logosToDraw.push({ key: "rlt", b64: imgMap.rlt });
-  if (logoSources.showLogoCLT && imgMap.clt) logosToDraw.push({ key: "clt", b64: imgMap.clt });
+  // Show logos based on region configuration — 75% of natural size (96 DPI → mm)
+  const DPI = 96;
+  const PX_TO_MM = 25.4 / DPI;
+  const SCALE = 0.75;
+
+  const logosToDraw: { b64: string; wMm: number; hMm: number }[] = [];
+  if (logoSources.showLogoRLT && imgMap.rlt) {
+    const li = imgMap.rlt;
+    logosToDraw.push({ b64: li.b64, wMm: li.widthPx * PX_TO_MM * SCALE, hMm: li.heightPx * PX_TO_MM * SCALE });
+  }
+  if (logoSources.showLogoCLT && imgMap.clt) {
+    const li = imgMap.clt;
+    logosToDraw.push({ b64: li.b64, wMm: li.widthPx * PX_TO_MM * SCALE, hMm: li.heightPx * PX_TO_MM * SCALE });
+  }
 
   if (logosToDraw.length === 1) {
-    // Single logo centered
-    try { doc.addImage(logosToDraw[0].b64, "PNG", pageW / 2 - 25, y, 50, 20); } catch {}
+    const l = logosToDraw[0];
+    try { doc.addImage(l.b64, "PNG", pageW / 2 - l.wMm / 2, y, l.wMm, l.hMm); } catch {}
+    y += l.hMm + 10;
   } else if (logosToDraw.length === 2) {
-    // Two logos side by side
     const gap = 15;
-    const logoW = 45;
-    const totalW = logoW * 2 + gap;
+    const totalW = logosToDraw[0].wMm + gap + logosToDraw[1].wMm;
     const startX = (pageW - totalW) / 2;
-    try { doc.addImage(logosToDraw[0].b64, "PNG", startX, y, logoW, 18); } catch {}
-    try { doc.addImage(logosToDraw[1].b64, "PNG", startX + logoW + gap, y, logoW, 18); } catch {}
+    const maxH = Math.max(logosToDraw[0].hMm, logosToDraw[1].hMm);
+    try { doc.addImage(logosToDraw[0].b64, "PNG", startX, y + (maxH - logosToDraw[0].hMm) / 2, logosToDraw[0].wMm, logosToDraw[0].hMm); } catch {}
+    try { doc.addImage(logosToDraw[1].b64, "PNG", startX + logosToDraw[0].wMm + gap, y + (maxH - logosToDraw[1].hMm) / 2, logosToDraw[1].wMm, logosToDraw[1].hMm); } catch {}
+    y += maxH + 10;
+  } else {
+    y += 10;
   }
-  y += 30;
 
   doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
