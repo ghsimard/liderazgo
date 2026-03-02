@@ -111,6 +111,7 @@ export default function AdminPage() {
   const [exporting, setExporting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
+  const [showMensajes, setShowMensajes] = useState(false);
 
   const handleExportDB = async () => {
     setExporting(true);
@@ -170,6 +171,11 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             {isSuperAdmin && (
+              <Button variant="outline" size="sm" onClick={() => setShowMensajes(!showMensajes)} className={`gap-1.5 border-primary-foreground !text-primary-foreground hover:bg-primary-foreground/20 ${showMensajes ? "bg-primary-foreground/20" : "bg-primary-foreground/10"}`}>
+                <MessageSquare className="w-4 h-4" /> Mensajes
+              </Button>
+            )}
+            {isSuperAdmin && (
               <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5 bg-primary-foreground/10 border-primary-foreground !text-primary-foreground hover:bg-primary-foreground/20">
                 <DatabaseBackup className="w-4 h-4" /> {exporting ? "Exportando…" : "Export SQL"}
               </Button>
@@ -192,9 +198,6 @@ export default function AdminPage() {
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
             <TabsTrigger value="images" className="gap-1.5"><ImageIcon className="w-4 h-4" /> Images</TabsTrigger>
             <TabsTrigger value="rubricas" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Rúbricas</TabsTrigger>
-            {isSuperAdmin && (
-              <TabsTrigger value="mensajes" className="gap-1.5"><MessageSquare className="w-4 h-4" /> Mensajes</TabsTrigger>
-            )}
           </TabsList>
           <TabsContent value="formularios">
             <div className="space-y-8">
@@ -261,10 +264,18 @@ export default function AdminPage() {
           <TabsContent value="users"><AdminUsersTab isSuperAdmin={isSuperAdmin} /></TabsContent>
           <TabsContent value="images"><AdminImagesTab /></TabsContent>
           <TabsContent value="rubricas"><AdminRubricasTab /></TabsContent>
-          {isSuperAdmin && (
-            <TabsContent value="mensajes"><AdminMensajesTab /></TabsContent>
-          )}
+          <TabsContent value="rubricas"><AdminRubricasTab /></TabsContent>
         </Tabs>
+
+        {/* Mensajes panel — shown/hidden via header button */}
+        {isSuperAdmin && showMensajes && (
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" /> Mensajes y Sugerencias
+            </h2>
+            <AdminMensajesTab />
+          </div>
+        )}
       </div>
     </div>
   );
