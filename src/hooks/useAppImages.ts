@@ -6,7 +6,7 @@ import staticLogoRlt from "@/assets/logo_rlt.png";
 import staticLogoRltWhite from "@/assets/logo_rlt_white.png";
 import staticLogoClt from "@/assets/logo_clt.png";
 import staticLogoCltDark from "@/assets/logo_clt_dark.png";
-import staticLogoCltWhite from "@/assets/logo_clt_white.jpeg";
+import staticLogoCltWhite from "@/assets/logo_clt_white.png";
 import staticLogoCosmo from "@/assets/logo_cosmo.png";
 import staticLogoCosmoWhite from "@/assets/logo_cosmo_white.png";
 
