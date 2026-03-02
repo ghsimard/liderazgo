@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Lightbulb, HelpCircle } from "lucide-react";
+import { Lightbulb, HelpCircle, Star, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { isAuthenticated, apiGetMe } from "@/utils/apiFetch";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,18 +48,32 @@ export default function AppFooter() {
         </p>
         <div className="flex items-center gap-3 sm:gap-4 shrink-0 flex-wrap justify-center">
           <Link
+            to="/evaluacion"
+            className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+          >
+            <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Evaluar
+          </Link>
+          <Link
             to="/sugerencias"
             className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
           >
             <Lightbulb className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Sugerencias
           </Link>
           {isAdmin && (
-            <Link
-              to="/faq"
-              className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
-            >
-              <HelpCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> FAQ
-            </Link>
+            <>
+              <Link
+                to="/faq"
+                className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+              >
+                <HelpCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> FAQ
+              </Link>
+              <Link
+                to="/admin"
+                className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+              >
+                <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Admin
+              </Link>
+            </>
           )}
           <Link
             to="/derechos-contacto"
