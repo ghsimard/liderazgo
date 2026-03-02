@@ -224,4 +224,22 @@ router.get("/check_cedula_role", async (req: Request, res: Response) => {
   }
 });
 
+/** GET /api/rpc/get_ficha_by_cedula?p_cedula=... */
+router.get("/get_ficha_by_cedula", async (req: Request, res: Response) => {
+  try {
+    const { p_cedula } = req.query;
+    if (!p_cedula) {
+      res.status(400).json({ error: "p_cedula required" });
+      return;
+    }
+    const rows = await query(
+      `SELECT * FROM fichas_rlt WHERE numero_cedula = $1 LIMIT 1`,
+      [p_cedula]
+    );
+    res.json(rows[0] ?? null);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
