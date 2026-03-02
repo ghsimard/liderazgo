@@ -307,6 +307,8 @@ CREATE OR REPLACE FUNCTION public.check_cedula_role(p_cedula text)
 RETURNS jsonb
 LANGUAGE sql
 STABLE
+SECURITY DEFINER
+SET search_path = public
 AS $$
   SELECT jsonb_build_object(
     'exists_ficha', EXISTS (SELECT 1 FROM fichas_rlt WHERE numero_cedula = p_cedula),
