@@ -449,11 +449,11 @@ export default function FichaRLTForm() {
     if (urlMode === "view") {
       // Load ficha data for viewing/editing
       const loadFicha = async () => {
-        const { data, error } = await supabase
-          .from("fichas_rlt")
-          .select("*")
-          .eq("numero_cedula", urlCedula)
-          .maybeSingle();
+        const { data: rawData, error } = await supabase.rpc("get_ficha_by_cedula", {
+          p_cedula: urlCedula,
+        });
+
+        const data = rawData as Record<string, any> | null;
 
         if (error || !data) {
           navigate("/");

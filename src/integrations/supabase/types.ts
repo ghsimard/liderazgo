@@ -1090,6 +1090,7 @@ export type Database = {
           type_name: string
         }[]
       }
+      get_ficha_by_cedula: { Args: { p_cedula: string }; Returns: Json }
       get_instituciones_con_ficha: {
         Args: never
         Returns: {
