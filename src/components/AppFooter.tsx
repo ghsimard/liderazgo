@@ -2,7 +2,10 @@ import { Link } from "react-router-dom";
 import { Lightbulb, HelpCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { isAuthenticated, apiGetMe } from "@/utils/apiFetch";
+import { supabase } from "@/integrations/supabase/client";
 import logoCosmoFooter from "@/assets/logo_cosmo_dark.png";
+
+const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
 export default function AppFooter() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -11,8 +14,20 @@ export default function AppFooter() {
     const check = async () => {
       try {
         if (!isAuthenticated()) return;
-        const { data } = await apiGetMe();
-        if (data?.user?.roles && data.user.roles.length > 0) setIsAdmin(true);
+
+        if (USE_EXPRESS) {
+          const { data } = await apiGetMe();
+          if (data?.user?.roles && data.user.roles.length > 0) setIsAdmin(true);
+        } else {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          const { data: roles } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", user.id)
+            .limit(1);
+          if (roles && roles.length > 0) setIsAdmin(true);
+        }
       } catch {}
     };
     check();
