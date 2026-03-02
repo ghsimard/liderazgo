@@ -85,7 +85,8 @@ function FormCard({ form }: { form: FormItem }) {
 export default function AdminDashboard() {
   const { isAdmin, signOut } = useAdminAuth();
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt;
+  const logoRLT = images.logo_rlt_white;
+  const logoCLT = images.logo_clt;
 
   if (!isAdmin) {
     return (
@@ -101,6 +102,7 @@ export default function AdminDashboard() {
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src={logoRLT} alt="RLT" className="h-9" />
+            <img src={logoCLT} alt="CLT" className="h-9" />
             <h1 className="font-semibold text-base leading-tight">Panel de Administración</h1>
           </div>
           <div className="flex items-center gap-2">
