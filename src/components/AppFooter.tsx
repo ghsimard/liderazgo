@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Lightbulb, HelpCircle } from "lucide-react";
 import logoCosmoFooter from "@/assets/logo_cosmo_dark.png";
 
 export default function AppFooter() {
@@ -10,15 +11,29 @@ export default function AppFooter() {
           alt="Cosmo Schools"
           className="h-8 w-auto object-contain shrink-0"
         />
-        <p className="text-white text-xs opacity-60 flex-1 text-center">
+        <p className="text-primary-foreground text-xs opacity-60 flex-1 text-center">
           Programa RLT / CLT · Colombia · {new Date().getFullYear()}
         </p>
-        <Link
-          to="/derechos-contacto"
-          className="text-white text-xs opacity-60 hover:opacity-100 transition-opacity shrink-0 underline underline-offset-2"
-        >
-          Todos los derechos reservados a Ghislain Simard
-        </Link>
+        <div className="flex items-center gap-4 shrink-0">
+          <Link
+            to="/sugerencias"
+            className="text-primary-foreground text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+          >
+            <Lightbulb className="w-3.5 h-3.5" /> Sugerencias
+          </Link>
+          <Link
+            to="/faq"
+            className="text-primary-foreground text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+          >
+            <HelpCircle className="w-3.5 h-3.5" /> FAQ
+          </Link>
+          <Link
+            to="/derechos-contacto"
+            className="text-primary-foreground text-xs opacity-60 hover:opacity-100 transition-opacity underline underline-offset-2"
+          >
+            Derechos y Contacto
+          </Link>
+        </div>
       </div>
     </footer>
   );
