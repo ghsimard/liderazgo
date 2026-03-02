@@ -59,6 +59,7 @@ interface ContactMessage {
   tipo_contacto?: string;
   rating?: number | null;
   es_anonimo?: boolean;
+  rol_remitente?: string | null;
 }
 
 function StarDisplay({ rating }: { rating: number | null | undefined }) {
@@ -299,6 +300,9 @@ export default function AdminMensajesTab() {
                           </Badge>
                         )}
                         {rating && <StarDisplay rating={rating} />}
+                        {msg.rol_remitente && (
+                          <Badge variant="secondary" className="text-xs">{msg.rol_remitente}</Badge>
+                        )}
                       </div>
 
                       <p className={`text-sm ${!msg.leido ? "font-medium text-foreground" : "text-muted-foreground"}`}>
@@ -393,6 +397,12 @@ export default function AdminMensajesTab() {
                         <Badge variant="secondary" className="text-[10px] ml-1">WhatsApp</Badge>
                       )}
                     </p>
+                  </div>
+                )}
+                {viewMsg.rol_remitente && (
+                  <div>
+                    <span className="text-muted-foreground">Rol:</span>
+                    <p className="font-medium">{viewMsg.rol_remitente}</p>
                   </div>
                 )}
                 <div>

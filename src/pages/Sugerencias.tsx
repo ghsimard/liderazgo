@@ -65,6 +65,7 @@ export default function Sugerencias() {
         mensaje: data.mensaje,
         tipo_contacto: "sugerencia",
         es_anonimo: esAnonimo,
+        rol_remitente: info.rol || null,
       } as any);
       if (error) throw error;
       toast.success("¡Gracias por su sugerencia! Su opinión es muy valiosa para nosotros.");

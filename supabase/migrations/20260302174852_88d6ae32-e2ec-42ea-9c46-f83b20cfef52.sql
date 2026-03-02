@@ -1,0 +1,1 @@
+ALTER TABLE public.contact_messages ADD COLUMN rol_remitente TEXT;

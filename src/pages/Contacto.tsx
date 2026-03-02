@@ -66,6 +66,7 @@ export default function Contacto() {
         mensaje: data.mensaje,
         tipo_contacto: "contacto",
         es_anonimo: esAnonimo,
+        rol_remitente: info.rol || null,
       } as any);
       if (error) throw error;
       toast.success("Mensaje enviado correctamente. Gracias por contactarnos.");

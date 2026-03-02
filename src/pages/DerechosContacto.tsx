@@ -65,6 +65,7 @@ export default function DerechosContacto() {
         mensaje: data.mensaje,
         tipo_contacto: "derecho",
         es_anonimo: esAnonimo,
+        rol_remitente: info.rol || null,
       } as any);
       if (error) throw error;
       toast.success("Mensaje enviado correctamente. Gracias por contactarnos.");
