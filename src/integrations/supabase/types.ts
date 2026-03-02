@@ -1039,6 +1039,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_cedula_exists: { Args: { p_cedula: string }; Returns: boolean }
       get_directivos_por_institucion: {
         Args: { p_nombre_ie: string }
         Returns: {
