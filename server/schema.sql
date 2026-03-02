@@ -193,6 +193,19 @@ CREATE INDEX IF NOT EXISTS idx_rubrica_submission_dates_cedula
   ON public.rubrica_submission_dates(directivo_cedula);
 
 -- ============================================================
+-- Regional analyses (persisted AI/admin text per module)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.rubrica_regional_analyses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  module_id UUID NOT NULL REFERENCES public.rubrica_modules(id) ON DELETE CASCADE,
+  analysis_text TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by UUID,
+  UNIQUE (module_id)
+);
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js
