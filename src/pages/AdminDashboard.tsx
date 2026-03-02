@@ -86,7 +86,7 @@ export default function AdminDashboard() {
   const { isAdmin, signOut } = useAdminAuth();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_white;
-  const logoCLT = images.logo_clt;
+  const logoCLT = images.logo_clt_white;
 
   if (!isAdmin) {
     return (
@@ -98,7 +98,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-muted/20">
-      <header className="bg-background border-b sticky top-0 z-10">
+      <header className="bg-primary text-primary-foreground sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src={logoRLT} alt="RLT" className="h-9" />
@@ -106,10 +106,10 @@ export default function AdminDashboard() {
             <h1 className="font-semibold text-base leading-tight">Panel de Administración</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
               <a href="/admin/gestion">Gestión</a>
             </Button>
-            <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5">
+            <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5 text-primary-foreground hover:bg-primary-foreground/10">
               <LogOut className="w-4 h-4" /> Salir
             </Button>
           </div>
