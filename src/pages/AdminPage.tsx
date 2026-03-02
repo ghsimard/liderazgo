@@ -105,7 +105,8 @@ export default function AdminPage() {
   const { isAdmin, isSuperAdmin, signOut } = useAdminAuth();
   const { toast } = useToast();
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt;
+  const logoRLT = images.logo_rlt_white;
+  const logoCLT = images.logo_clt;
   const [exporting, setExporting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
@@ -163,6 +164,7 @@ export default function AdminPage() {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src={logoRLT} alt="RLT" className="h-9" />
+            <img src={logoCLT} alt="CLT" className="h-9" />
             <h1 className="font-semibold text-base leading-tight">Panel de Administración</h1>
           </div>
           <div className="flex items-center gap-2">

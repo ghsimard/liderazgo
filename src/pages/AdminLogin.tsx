@@ -20,7 +20,8 @@ export default function AdminLogin() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt;
+  const logoRLT = images.logo_rlt_white;
+  const logoCLT = images.logo_clt;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,7 +53,10 @@ export default function AdminLogin() {
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-sm shadow-lg">
         <CardHeader className="text-center pb-4">
-          <img src={logoRLT} alt="RLT" className="h-14 mx-auto mb-3" />
+          <div className="flex items-center justify-center gap-4 mb-3">
+            <img src={logoRLT} alt="RLT" className="h-14" />
+            <img src={logoCLT} alt="CLT" className="h-14" />
+          </div>
           <CardTitle className="text-lg flex items-center justify-center gap-2">
             <Lock className="w-4 h-4" />
             Acceso Administrador
