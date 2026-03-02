@@ -85,6 +85,7 @@ Deno.serve(async (req) => {
       "rubrica_submission_dates",
       "rubrica_regional_analyses",
       "site_reviews",
+      "contact_messages",
     ];
 
     let sql = `-- Database export generated on ${new Date().toISOString()}\n`;
