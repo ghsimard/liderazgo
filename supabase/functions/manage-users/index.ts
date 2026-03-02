@@ -59,8 +59,8 @@ Deno.serve(async (req) => {
 
     const { action, ...params } = body as Record<string, unknown>;
 
-    if (typeof action !== "string" || !["list", "update_password", "delete"].includes(action)) {
-      return new Response(JSON.stringify({ error: `Invalid action. Must be one of: list, update_password, delete` }), {
+    if (typeof action !== "string" || !["list", "update_password", "delete", "update_user"].includes(action)) {
+      return new Response(JSON.stringify({ error: `Invalid action. Must be one of: list, update_password, delete, update_user` }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -87,6 +87,17 @@ Deno.serve(async (req) => {
         }
 
         const userIds = roles.map((r: { user_id: string }) => r.user_id);
+
+        // Fetch cedulas for all admin users
+        const { data: cedulaRows } = await adminClient
+          .from("admin_cedulas")
+          .select("user_id, cedula")
+          .in("user_id", userIds);
+        const cedulaMap: Record<string, string> = {};
+        for (const c of cedulaRows ?? []) {
+          cedulaMap[c.user_id] = c.cedula;
+        }
+
         const users = [];
 
         for (const uid of userIds) {
@@ -98,6 +109,7 @@ Deno.serve(async (req) => {
               created_at: data.user.created_at,
               last_sign_in_at: data.user.last_sign_in_at,
               role: roleMap[uid] ?? "admin",
+              cedula: cedulaMap[uid] ?? "",
             });
           }
         }
@@ -180,6 +192,67 @@ Deno.serve(async (req) => {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      case "update_user": {
+        const { user_id, email, role, cedula } = params as Record<string, unknown>;
+        const uuidRx = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (typeof user_id !== "string" || !uuidRx.test(user_id)) {
+          return new Response(JSON.stringify({ error: "user_id must be a valid UUID" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Permission check: only superadmin can edit superadmins
+        const { data: targetRole } = await adminClient
+          .from("user_roles").select("role").eq("user_id", user_id).eq("role", "superadmin").maybeSingle();
+        if (targetRole) {
+          const { data: callerRole } = await adminClient
+            .from("user_roles").select("role").eq("user_id", caller.id).eq("role", "superadmin").maybeSingle();
+          if (!callerRole) {
+            return new Response(JSON.stringify({ error: "Seul un superadmin peut modifier un autre superadmin" }), {
+              status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        }
+
+        // Update email if provided
+        if (typeof email === "string" && email.length > 0) {
+          const { error } = await adminClient.auth.admin.updateUserById(user_id, { email });
+          if (error) {
+            return new Response(JSON.stringify({ error: error.message }), {
+              status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        }
+
+        // Update role if provided and caller is superadmin
+        if (typeof role === "string" && ["admin", "superadmin"].includes(role)) {
+          const { data: callerRole } = await adminClient
+            .from("user_roles").select("role").eq("user_id", caller.id).eq("role", "superadmin").maybeSingle();
+          if (!callerRole && role === "superadmin") {
+            return new Response(JSON.stringify({ error: "Seul un superadmin peut promouvoir au rôle superadmin" }), {
+              status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          await adminClient.from("user_roles").update({ role }).eq("user_id", user_id);
+        }
+
+        // Update cedula if provided
+        if (typeof cedula === "string") {
+          if (cedula.trim()) {
+            await adminClient.from("admin_cedulas").upsert(
+              { user_id, cedula: cedula.trim() },
+              { onConflict: "user_id" }
+            );
+          } else {
+            await adminClient.from("admin_cedulas").delete().eq("user_id", user_id);
+          }
         }
 
         return new Response(JSON.stringify({ success: true }), {
