@@ -94,30 +94,39 @@ export type Database = {
       contact_messages: {
         Row: {
           asunto: string
+          codigo_pais: string
+          contactar_whatsapp: boolean
           created_at: string
           email: string
           id: string
           leido: boolean
           mensaje: string
           nombre: string
+          telefono: string | null
         }
         Insert: {
           asunto: string
+          codigo_pais?: string
+          contactar_whatsapp?: boolean
           created_at?: string
           email: string
           id?: string
           leido?: boolean
           mensaje: string
           nombre: string
+          telefono?: string | null
         }
         Update: {
           asunto?: string
+          codigo_pais?: string
+          contactar_whatsapp?: boolean
           created_at?: string
           email?: string
           id?: string
           leido?: boolean
           mensaje?: string
           nombre?: string
+          telefono?: string | null
         }
         Relationships: []
       }

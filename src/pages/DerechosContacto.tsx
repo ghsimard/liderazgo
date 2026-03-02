@@ -1,23 +1,28 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ArrowLeft, Send, Shield, Scale, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { PhoneInputWithCountry } from "@/components/PhoneInputWithCountry";
 
 const contactSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio").max(100),
   email: z.string().trim().email("Correo electrónico inválido").max(255),
+  codigo_pais: z.string().default("+57"),
+  telefono: z.string().trim().max(20).optional(),
+  contactar_whatsapp: z.boolean().default(false),
   asunto: z.string().trim().min(1, "El asunto es obligatorio").max(200),
   mensaje: z.string().trim().min(10, "El mensaje debe tener al menos 10 caracteres").max(2000),
 });
 
-type ContactForm = z.infer<typeof contactSchema>;
+type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function DerechosContacto() {
   const navigate = useNavigate();
@@ -27,17 +32,22 @@ export default function DerechosContacto() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
-  } = useForm<ContactForm>({
+  } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
+    defaultValues: { codigo_pais: "+57", contactar_whatsapp: false },
   });
 
-  const onSubmit = async (data: ContactForm) => {
+  const onSubmit = async (data: ContactFormData) => {
     setSending(true);
     try {
       const { error } = await supabase.from("contact_messages").insert({
         nombre: data.nombre,
         email: data.email,
+        codigo_pais: data.codigo_pais,
+        telefono: data.telefono || null,
+        contactar_whatsapp: data.contactar_whatsapp,
         asunto: data.asunto,
         mensaje: data.mensaje,
       });
@@ -50,7 +60,6 @@ export default function DerechosContacto() {
       setSending(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -125,7 +134,48 @@ export default function DerechosContacto() {
                   <label className="text-sm font-medium text-foreground">Nombre completo *</label>
                   <Input {...register("nombre")} placeholder="Su nombre" />
                   {errors.nombre && <p className="text-xs text-destructive">{errors.nombre.message}</p>}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Teléfono</label>
+                  <Controller
+                    name="codigo_pais"
+                    control={control}
+                    render={({ field: codeField }) => (
+                      <Controller
+                        name="telefono"
+                        control={control}
+                        render={({ field: phoneField }) => (
+                          <PhoneInputWithCountry
+                            id="contact-phone"
+                            countryCode={codeField.value}
+                            onCountryCodeChange={codeField.onChange}
+                            phoneValue={phoneField.value || ""}
+                            onPhoneChange={phoneField.onChange}
+                            placeholder="Número de teléfono"
+                          />
+                        )}
+                      />
+                    )}
+                  />
                 </div>
+                <div className="flex items-end pb-1">
+                  <Controller
+                    name="contactar_whatsapp"
+                    control={control}
+                    render={({ field }) => (
+                      <label className="flex items-center gap-2 cursor-pointer text-sm">
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        Puede contactarme por WhatsApp
+                      </label>
+                    )}
+                  />
+                </div>
+              </div>
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-foreground">Correo electrónico *</label>
                   <Input {...register("email")} type="email" placeholder="correo@ejemplo.com" />
