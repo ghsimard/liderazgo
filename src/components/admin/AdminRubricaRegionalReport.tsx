@@ -4,10 +4,11 @@ import { apiFetch } from "@/utils/apiFetch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
-import { Loader2, BarChart3, Sparkles, RefreshCw, FileDown, Save } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { Loader2, BarChart3, Sparkles, RefreshCw, FileDown } from "lucide-react";
 import { useAppImages } from "@/hooks/useAppImages";
 import { useGeographicData } from "@/hooks/useGeographicData";
 import { generarPDFRegionalRubricas, type RegionalModuleData } from "@/utils/rubricaRegionalPdfGenerator";
@@ -68,6 +69,8 @@ export default function AdminRubricaRegionalReport() {
   const [analyses, setAnalyses] = useState<Record<string, string>>({});
   const [loadingAnalysis, setLoadingAnalysis] = useState<string | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<string>("__all__");
+  const [cedulaRegionMap, setCedulaRegionMap] = useState<Record<string, string>>({});
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const saveAnalysis = useCallback(async (moduleId: string, text: string) => {
@@ -81,17 +84,19 @@ export default function AdminRubricaRegionalReport() {
     if (saveTimers.current[moduleId]) clearTimeout(saveTimers.current[moduleId]);
     saveTimers.current[moduleId] = setTimeout(() => saveAnalysis(moduleId, text), 1500);
   }, [saveAnalysis]);
+
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: mods }, { data: its }, { data: evals }, { data: saved }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: evals }, { data: saved }, { data: fichas }] = await Promise.all([
       supabase.from("rubrica_modules").select("id, module_number, title, objective").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("id, module_id, item_type, item_label, sort_order").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel"),
       supabase.from("rubrica_regional_analyses").select("module_id, analysis_text"),
+      supabase.from("fichas_rlt").select("numero_cedula, region"),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
@@ -101,8 +106,34 @@ export default function AdminRubricaRegionalReport() {
       for (const s of saved) loaded[s.module_id] = s.analysis_text;
       setAnalyses(loaded);
     }
+    if (fichas) {
+      const map: Record<string, string> = {};
+      for (const f of fichas) {
+        if (f.numero_cedula && f.region) map[f.numero_cedula] = f.region;
+      }
+      setCedulaRegionMap(map);
+    }
     setLoading(false);
   };
+
+  // Available regions from fichas data
+  const availableRegions = useMemo(() => {
+    const regions = new Set(Object.values(cedulaRegionMap));
+    return [...regions].sort();
+  }, [cedulaRegionMap]);
+
+  // Filter evaluaciones by selected region
+  const filteredEvaluaciones = useMemo(() => {
+    if (selectedRegion === "__all__") return evaluaciones;
+    const cedulasInRegion = new Set(
+      Object.entries(cedulaRegionMap)
+        .filter(([, region]) => region === selectedRegion)
+        .map(([cedula]) => cedula)
+    );
+    return evaluaciones.filter(e => cedulasInRegion.has(e.directivo_cedula));
+  }, [evaluaciones, selectedRegion, cedulaRegionMap]);
+
+  const displayRegionName = selectedRegion === "__all__" ? "Todas las regiones" : selectedRegion;
 
   // Compute distributions per module
   const moduleDistributions = useMemo(() => {
@@ -113,7 +144,7 @@ export default function AdminRubricaRegionalReport() {
       const distributions: ItemDistribution[] = [];
 
       for (const item of modItems) {
-        const itemEvals = evaluaciones.filter(e => e.item_id === item.id && e.acordado_nivel);
+        const itemEvals = filteredEvaluaciones.filter(e => e.item_id === item.id && e.acordado_nivel);
         const total = itemEvals.length;
         if (total === 0) {
           distributions.push({
@@ -145,11 +176,11 @@ export default function AdminRubricaRegionalReport() {
     }
 
     return result;
-  }, [modules, items, evaluaciones]);
+  }, [modules, items, filteredEvaluaciones]);
 
   // Global stats
   const globalStats = useMemo(() => {
-    const withAcordado = evaluaciones.filter(e => e.acordado_nivel);
+    const withAcordado = filteredEvaluaciones.filter(e => e.acordado_nivel);
     const totalEvals = withAcordado.length;
     const avanzadoCount = withAcordado.filter(e => e.acordado_nivel === "avanzado").length;
     const uniqueDirectivos = new Set(withAcordado.map(e => e.directivo_cedula)).size;
@@ -158,7 +189,7 @@ export default function AdminRubricaRegionalReport() {
       avanzadoRate: totalEvals > 0 ? Math.round((avanzadoCount / totalEvals) * 100) : 0,
       uniqueDirectivos,
     };
-  }, [evaluaciones]);
+  }, [filteredEvaluaciones]);
 
   const handleGenerateAnalysis = async (mod: RubricaModule) => {
     const dist = moduleDistributions[mod.id];
@@ -225,12 +256,19 @@ export default function AdminRubricaRegionalReport() {
           analysis: analyses[mod.id] || undefined,
         }));
 
-      // Determine logo visibility: show if ANY region has the flag enabled
-      const showRLT = regionNames.some((r) => getShowLogoRlt(r));
-      const showCLT = regionNames.some((r) => getShowLogoClt(r));
+      // Determine logo visibility based on selected region or all
+      let showRLT: boolean;
+      let showCLT: boolean;
+      if (selectedRegion === "__all__") {
+        showRLT = regionNames.some((r) => getShowLogoRlt(r));
+        showCLT = regionNames.some((r) => getShowLogoClt(r));
+      } else {
+        showRLT = getShowLogoRlt(selectedRegion);
+        showCLT = getShowLogoClt(selectedRegion);
+      }
 
       await generarPDFRegionalRubricas(
-        { modules: reportModules, globalStats, regionName: regionNames.join(", ") },
+        { modules: reportModules, globalStats, regionName: displayRegionName },
         {
           logoRLT: images.logo_rlt_white,
           logoCLT: images.logo_clt,
@@ -251,14 +289,27 @@ export default function AdminRubricaRegionalReport() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-base font-semibold">Informe Regional — Rúbricas</h3>
-          <p className="text-sm text-muted-foreground">
-            Distribución agregada de niveles por módulo (nivel acordado)
-          </p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div>
+            <h3 className="text-base font-semibold">Informe Regional — Rúbricas</h3>
+            <p className="text-sm text-muted-foreground">
+              Distribución agregada de niveles por módulo (nivel acordado)
+            </p>
+          </div>
+          <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="Seleccionar región" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas las regiones</SelectItem>
+              {availableRegions.map(r => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-3 items-center flex-wrap">
           <Badge variant="secondary" className="text-xs">{globalStats.uniqueDirectivos} directivos</Badge>
           <Badge variant="secondary" className="text-xs">{globalStats.totalEvals} evaluaciones</Badge>
           <Badge className="text-xs bg-emerald-100 text-emerald-800">{globalStats.avanzadoRate}% Avanzado</Badge>
@@ -274,6 +325,12 @@ export default function AdminRubricaRegionalReport() {
           </Button>
         </div>
       </div>
+
+      {selectedRegion !== "__all__" && (
+        <div className="text-sm font-medium text-primary">
+          Región: {selectedRegion}
+        </div>
+      )}
 
       {modules.map(mod => {
         const dist = moduleDistributions[mod.id];
