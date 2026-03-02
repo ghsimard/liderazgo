@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft, Send, Lightbulb } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/utils/dbClient";
 import { PhoneInputWithCountry } from "@/components/PhoneInputWithCountry";
 import { Checkbox } from "@/components/ui/checkbox";
 

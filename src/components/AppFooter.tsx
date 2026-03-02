@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Lightbulb, HelpCircle, Star, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { isAuthenticated, apiGetMe } from "@/utils/apiFetch";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/utils/dbClient";
 import logoCosmoFooter from "@/assets/logo_cosmo_dark.png";
 
 const USE_EXPRESS = !!import.meta.env.VITE_API_URL;

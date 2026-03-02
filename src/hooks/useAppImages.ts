@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/utils/apiFetch";
-import { supabase as cloudClient } from "@/integrations/supabase/client";
+import { supabase as cloudClient } from "@/utils/dbClient";
 
 // Static fallback imports
 import staticLogoRlt from "@/assets/logo_rlt.png";
