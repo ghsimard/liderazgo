@@ -44,10 +44,16 @@ let cachePromise: Promise<Record<string, string>> | null = null;
 
 async function fetchImages(): Promise<Record<string, string>> {
   const result = { ...FALLBACK_MAP };
+  const apiBase = import.meta.env.VITE_API_URL || "";
   const { data } = await apiFetch<{ images: { image_key: string; storage_path: string }[] }>("/api/images");
   if (data?.images) {
     for (const row of data.images) {
-      result[row.image_key] = row.storage_path;
+      // Relative paths like "/uploads/..." must be prefixed with the API URL
+      // so the browser fetches from the Express server, not the static site.
+      const src = row.storage_path.startsWith("/uploads/") && apiBase
+        ? `${apiBase}${row.storage_path}`
+        : row.storage_path;
+      result[row.image_key] = src;
     }
   }
   return result;
