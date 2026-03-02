@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft, Send, Shield, Scale, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const contactSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio").max(100),
@@ -34,14 +35,17 @@ export default function DerechosContacto() {
   const onSubmit = async (data: ContactForm) => {
     setSending(true);
     try {
-      const mailtoLink = `mailto:ghislain.simard@cosmoscools.com?subject=${encodeURIComponent(data.asunto)}&body=${encodeURIComponent(
-        `Nombre: ${data.nombre}\nCorreo: ${data.email}\n\n${data.mensaje}`
-      )}`;
-      window.open(mailtoLink, "_blank");
-      toast.success("Se abrió su cliente de correo para enviar el mensaje.");
+      const { error } = await supabase.from("contact_messages").insert({
+        nombre: data.nombre,
+        email: data.email,
+        asunto: data.asunto,
+        mensaje: data.mensaje,
+      });
+      if (error) throw error;
+      toast.success("Mensaje enviado correctamente. Gracias por contactarnos.");
       reset();
     } catch {
-      toast.error("Error al preparar el mensaje.");
+      toast.error("Error al enviar el mensaje. Intente de nuevo.");
     } finally {
       setSending(false);
     }
