@@ -1078,6 +1078,7 @@ export type Database = {
         Args: { p_nombre_ie: string }
         Returns: {
           cargo_actual: string
+          genero: string
           nombres_apellidos: string
           numero_cedula: string
         }[]

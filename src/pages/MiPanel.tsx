@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ClipboardList, FileText, Loader2, User } from "lucide-react";
 
+import { genderizeRole } from "@/utils/genderizeRole";
+
 interface CedulaRoleResult {
   exists_ficha: boolean;
   is_admin: boolean;
@@ -13,6 +15,7 @@ interface CedulaRoleResult {
   is_evaluador: boolean;
   cargo_actual: string | null;
   nombre: string | null;
+  genero: string | null;
 }
 
 export default function MiPanel() {
@@ -100,9 +103,9 @@ export default function MiPanel() {
               >
                 <User className="h-5 w-5 text-primary" />
                 <div className="text-left">
-                  <div className="font-semibold">Como Directivo</div>
+                  <div className="font-semibold">Como {genderizeRole("Directivo", roleInfo.genero)}</div>
                   <div className="text-xs text-muted-foreground">
-                    {roleInfo.cargo_actual ?? "Rector/a o Coordinador/a"}
+                    {genderizeRole(roleInfo.cargo_actual, roleInfo.genero) || "Rector/a o Coordinador/a"}
                   </div>
                 </div>
               </Button>
@@ -150,7 +153,7 @@ export default function MiPanel() {
             <p className="text-sm text-muted-foreground">
               {selectedRole === "evaluador"
                 ? "Panel de Evaluador"
-                : `${roleInfo.cargo_actual ?? "Directivo"}`}
+                : `${genderizeRole(roleInfo.cargo_actual, roleInfo.genero) ?? genderizeRole("Directivo", roleInfo.genero)}`}
             </p>
           </CardHeader>
           <CardContent className="space-y-3">

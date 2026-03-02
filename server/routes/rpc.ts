@@ -35,7 +35,7 @@ router.get("/get_directivos_por_institucion", async (req: Request, res: Response
       return;
     }
     const rows = await query(
-      `SELECT nombres_apellidos, numero_cedula, cargo_actual
+      `SELECT nombres_apellidos, numero_cedula, cargo_actual, genero
        FROM fichas_rlt
        WHERE nombre_ie = $1
          AND cargo_actual IN ('Rector/a', 'Coordinador/a')
@@ -206,8 +206,8 @@ router.get("/check_cedula_role", async (req: Request, res: Response) => {
     const is_evaluador = await query(
       `SELECT EXISTS (SELECT 1 FROM rubrica_evaluadores WHERE cedula = $1) AS v`, [p_cedula]
     );
-    const nombre_row = await query(
-      `SELECT nombres_apellidos FROM fichas_rlt WHERE numero_cedula = $1 LIMIT 1`, [p_cedula]
+    const ficha_row = await query(
+      `SELECT nombres_apellidos, genero FROM fichas_rlt WHERE numero_cedula = $1 LIMIT 1`, [p_cedula]
     );
 
     res.json({
@@ -216,7 +216,8 @@ router.get("/check_cedula_role", async (req: Request, res: Response) => {
       is_directivo: directivo.length > 0,
       is_evaluador: is_evaluador[0]?.v ?? false,
       cargo_actual: directivo[0]?.cargo_actual ?? null,
-      nombre: nombre_row[0]?.nombres_apellidos ?? null,
+      nombre: ficha_row[0]?.nombres_apellidos ?? null,
+      genero: ficha_row[0]?.genero ?? null,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
