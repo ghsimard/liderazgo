@@ -1361,19 +1361,6 @@ export default function FichaRLTForm() {
           </form>
         </main>
 
-        {/* Footer */}
-        <footer className="py-6 text-center" style={{ background: "hsl(var(--primary))" }}>
-          <div className="flex flex-col items-center gap-4">
-            <div className="bg-white rounded-xl px-6 py-3 shadow-md inline-flex items-center justify-center">
-              <img
-                src={logoCosmo}
-                alt="Cosmo Schools"
-                className="h-10 w-auto object-contain"
-              />
-            </div>
-            <p className="text-white text-xs opacity-60">Programa RLT / CLT · Colombia · {new Date().getFullYear()}</p>
-          </div>
-        </footer>
       </div>
 
       {/* Modal de campos faltantes */}

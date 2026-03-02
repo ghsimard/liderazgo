@@ -15,6 +15,7 @@ import Encuesta360Directivo from "./pages/Encuesta360Directivo";
 import Encuesta360Docente from "./pages/Encuesta360Docente";
 import Encuesta360Estudiante from "./pages/Encuesta360Estudiante";
 import RubricaEvaluacion from "./pages/RubricaEvaluacion";
+import AppFooter from "./components/AppFooter";
 
 const queryClient = new QueryClient();
 
@@ -24,26 +25,31 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="/admin/ficha/:id" element={<AdminEditFicha />} />
+        <div className="flex flex-col min-h-screen">
+          <div className="flex-1">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/ficha/:id" element={<AdminEditFicha />} />
 
-          {/* 360° Survey Forms */}
-          <Route path="/formulario-360-acudiente" element={<Encuesta360Acudiente />} />
-          <Route path="/formulario-360-administrativo" element={<Encuesta360Administrativo />} />
-          <Route path="/formulario-360-autoevaluacion" element={<Encuesta360Autoevaluacion />} />
-          <Route path="/formulario-360-directivo" element={<Encuesta360Directivo />} />
-          <Route path="/formulario-360-docente" element={<Encuesta360Docente />} />
-          <Route path="/formulario-360-estudiante" element={<Encuesta360Estudiante />} />
+              {/* 360° Survey Forms */}
+              <Route path="/formulario-360-acudiente" element={<Encuesta360Acudiente />} />
+              <Route path="/formulario-360-administrativo" element={<Encuesta360Administrativo />} />
+              <Route path="/formulario-360-autoevaluacion" element={<Encuesta360Autoevaluacion />} />
+              <Route path="/formulario-360-directivo" element={<Encuesta360Directivo />} />
+              <Route path="/formulario-360-docente" element={<Encuesta360Docente />} />
+              <Route path="/formulario-360-estudiante" element={<Encuesta360Estudiante />} />
 
-          {/* Rubrica Evaluation */}
-          <Route path="/rubrica-evaluacion" element={<RubricaEvaluacion />} />
+              {/* Rubrica Evaluation */}
+              <Route path="/rubrica-evaluacion" element={<RubricaEvaluacion />} />
 
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+          <AppFooter />
+        </div>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
