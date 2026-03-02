@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { ArrowLeft, Send, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
+import { isAuthenticated, apiGetMe } from "@/utils/apiFetch";
+
+const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
 const ROL_OPTIONS = [
   { value: "rector", label: "Rector/a" },
@@ -71,17 +74,48 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
 export default function Evaluacion() {
   const navigate = useNavigate();
   const [sending, setSending] = useState(false);
+  const [detectedAdmin, setDetectedAdmin] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
     control,
+    setValue,
     formState: { errors },
   } = useForm<EvaluacionFormData>({
     resolver: zodResolver(evaluacionSchema),
     defaultValues: { rating: 0, rol_evaluador: "" },
   });
+
+  // Auto-detect admin role
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        if (!isAuthenticated()) return;
+        if (USE_EXPRESS) {
+          const { data } = await apiGetMe();
+          if (data?.user?.roles?.length > 0) {
+            setValue("rol_evaluador", "admin");
+            setDetectedAdmin(true);
+          }
+        } else {
+          const { data: { user } } = await (await import("@/integrations/supabase/client")).supabase.auth.getUser();
+          if (!user) return;
+          const { data: roles } = await supabase
+            .from("user_roles" as any)
+            .select("role")
+            .eq("user_id", user.id)
+            .limit(1);
+          if (roles && (roles as any[]).length > 0) {
+            setValue("rol_evaluador", "admin");
+            setDetectedAdmin(true);
+          }
+        }
+      } catch {}
+    };
+    checkAdmin();
+  }, [setValue]);
 
   const onSubmit = async (data: EvaluacionFormData) => {
     setSending(true);
@@ -150,22 +184,26 @@ export default function Evaluacion() {
             {/* Role selector */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground">¿Cuál es su rol? *</label>
-              <Controller
-                name="rol_evaluador"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione su rol" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROL_OPTIONS.map(o => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+              {detectedAdmin ? (
+                <Input value="Administrador" readOnly className="bg-muted cursor-not-allowed" />
+              ) : (
+                <Controller
+                  name="rol_evaluador"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione su rol" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROL_OPTIONS.map(o => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              )}
               {errors.rol_evaluador && <p className="text-xs text-destructive">{errors.rol_evaluador.message}</p>}
             </div>
 
