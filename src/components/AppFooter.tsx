@@ -12,6 +12,9 @@ export default function AppFooter() {
         <p className="text-white text-xs opacity-60 flex-1 text-center">
           Programa RLT / CLT · Colombia · {new Date().getFullYear()}
         </p>
+        <p className="text-white text-xs opacity-60 shrink-0">
+          Todos los derechos reservados a Ghislain Simard
+        </p>
       </div>
     </footer>
   );
