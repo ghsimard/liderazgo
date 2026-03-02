@@ -13,6 +13,7 @@ import rpcRoutes from "./routes/rpc";
 import exportRoutes from "./routes/export";
 import storageRoutes from "./routes/storage";
 import rubricaAnalysisRoutes from "./routes/rubrica-analysis";
+import githubRoutes from "./routes/github";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3001", 10);
@@ -42,6 +43,7 @@ app.use("/api/rpc", rpcRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/api/storage", storageRoutes);
 app.use("/api/rubrica-analysis", rubricaAnalysisRoutes);
+app.use("/api/github", githubRoutes);
 
 // ─── Public form submission (no auth required) ───────
 import { query as dbQuery } from "./db";
