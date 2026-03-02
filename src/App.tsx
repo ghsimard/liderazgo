@@ -21,6 +21,7 @@ const Encuesta360Docente = lazy(() => import("./pages/Encuesta360Docente"));
 const Encuesta360Estudiante = lazy(() => import("./pages/Encuesta360Estudiante"));
 const RubricaEvaluacion = lazy(() => import("./pages/RubricaEvaluacion"));
 const DerechosContacto = lazy(() => import("./pages/DerechosContacto"));
+const Contacto = lazy(() => import("./pages/Contacto"));
 const Sugerencias = lazy(() => import("./pages/Sugerencias"));
 const Evaluacion = lazy(() => import("./pages/Evaluacion"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
@@ -61,6 +62,7 @@ const App = () => (
 
                 {/* Legal / Contact / Suggestions */}
                 <Route path="/derechos-contacto" element={<DerechosContacto />} />
+                <Route path="/contacto" element={<Contacto />} />
                 <Route path="/sugerencias" element={<Sugerencias />} />
                 <Route path="/evaluacion" element={<Evaluacion />} />
                 <Route path="/faq" element={<FaqPage />} />
