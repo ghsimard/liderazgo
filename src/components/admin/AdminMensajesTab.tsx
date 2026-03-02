@@ -90,7 +90,7 @@ function TipoBadge({ tipo }: { tipo: string | undefined }) {
   if (t === "derecho") {
     return (
       <Badge variant="secondary" className="gap-1 text-xs border-primary/30 text-primary">
-        <Shield className="w-3 h-3" /> Derecho y contacto
+        <Shield className="w-3 h-3" /> Derecho
       </Badge>
     );
   }
@@ -219,7 +219,7 @@ export default function AdminMensajesTab() {
              <SelectItem value="todos">Todos los tipos</SelectItem>
              <SelectItem value="contacto">Contacto</SelectItem>
              <SelectItem value="sugerencia">Sugerencia</SelectItem>
-             <SelectItem value="derecho">Derecho y contacto</SelectItem>
+             <SelectItem value="derecho">Derecho</SelectItem>
           </SelectContent>
         </Select>
 
