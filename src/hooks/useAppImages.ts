@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/utils/apiFetch";
+import { supabase as cloudClient } from "@/integrations/supabase/client";
 
 // Static fallback imports
 import staticLogoRlt from "@/assets/logo_rlt.png";
@@ -9,6 +10,8 @@ import staticLogoCltDark from "@/assets/logo_clt_dark.png";
 import staticLogoCltWhite from "@/assets/logo_clt_white.png";
 import staticLogoCosmo from "@/assets/logo_cosmo.png";
 import staticLogoCosmoWhite from "@/assets/logo_cosmo_white.png";
+
+const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
 export interface AppImageConfig {
   key: string;
@@ -44,18 +47,31 @@ let cachePromise: Promise<Record<string, string>> | null = null;
 
 async function fetchImages(): Promise<Record<string, string>> {
   const result = { ...FALLBACK_MAP };
-  const apiBase = import.meta.env.VITE_API_URL || "";
-  const { data } = await apiFetch<{ images: { image_key: string; storage_path: string }[] }>("/api/images");
-  if (data?.images) {
-    for (const row of data.images) {
-      // Relative paths like "/uploads/..." must be prefixed with the API URL
-      // so the browser fetches from the Express server, not the static site.
-      const src = row.storage_path.startsWith("/uploads/") && apiBase
-        ? `${apiBase}${row.storage_path}`
-        : row.storage_path;
-      result[row.image_key] = src;
+
+  if (USE_EXPRESS) {
+    // Express mode — fetch from API, prefix relative paths
+    const apiBase = import.meta.env.VITE_API_URL || "";
+    const { data } = await apiFetch<{ images: { image_key: string; storage_path: string }[] }>("/api/images");
+    if (data?.images) {
+      for (const row of data.images) {
+        const src = row.storage_path.startsWith("/uploads/") && apiBase
+          ? `${apiBase}${row.storage_path}`
+          : row.storage_path;
+        result[row.image_key] = src;
+      }
+    }
+  } else {
+    // Cloud / Supabase mode — query DB directly
+    const { data } = await cloudClient
+      .from("app_images")
+      .select("image_key, storage_path");
+    if (data) {
+      for (const row of data) {
+        result[row.image_key] = row.storage_path;
+      }
     }
   }
+
   return result;
 }
 
