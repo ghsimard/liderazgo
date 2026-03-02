@@ -165,7 +165,7 @@ export default function MiPanel() {
                   </div>
                 </Button>
 
-                {roleInfo.is_directivo && (
+                {roleInfo.is_directivo && roleInfo.exists_ficha && (
                   <Button
                     variant="outline"
                     className="w-full h-14 justify-start gap-3 text-base"
