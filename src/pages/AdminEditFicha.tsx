@@ -389,8 +389,8 @@ export default function AdminEditFicha() {
   const { isAdmin } = useAdminAuth();
   const { toast } = useToast();
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt;
-  const logoCLTDark = images.logo_clt_dark;
+  const logoRLT = images.logo_rlt_noletters;
+  const logoCLTDark = images.logo_clt_noletters;
   const logoCosmo = images.logo_cosmo;
 
   const [ficha, setFicha] = useState<Ficha | null>(null);

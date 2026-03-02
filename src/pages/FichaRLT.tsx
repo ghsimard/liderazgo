@@ -344,8 +344,8 @@ function InstitutionSearchField({
 
 function RegionSelector({ onSelect, regionNames }: { onSelect: (region: string) => void; regionNames: string[] }) {
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt;
-  const logoCLTDark = images.logo_clt_dark;
+  const logoRLT = images.logo_rlt_noletters;
+  const logoCLTDark = images.logo_clt_noletters;
   const logoCosmo = images.logo_cosmo;
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
@@ -399,8 +399,8 @@ export default function FichaRLTForm() {
   const [mostrarModalErrores, setMostrarModalErrores] = useState(false);
 
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt;
-  const logoCLTDark = images.logo_clt_dark;
+  const logoRLT = images.logo_rlt_noletters;
+  const logoCLTDark = images.logo_clt_noletters;
   const logoCosmo = images.logo_cosmo;
   const logoRLTWhite = images.logo_rlt_white;
   const logoCLTWhite = images.logo_clt_white;
