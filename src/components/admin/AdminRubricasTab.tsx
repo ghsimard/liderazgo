@@ -21,6 +21,14 @@ interface Evaluacion {
   created_at: string;
 }
 
+interface Seguimiento {
+  id: string;
+  item_id: string;
+  directivo_cedula: string;
+  nivel: string | null;
+  created_at: string;
+}
+
 interface RubricaModule {
   id: string;
   module_number: number;
@@ -48,6 +56,7 @@ export default function AdminRubricasTab() {
   const [modules, setModules] = useState<RubricaModule[]>([]);
   const [items, setItems] = useState<RubricaItem[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<Evaluacion[]>([]);
+  const [seguimientos, setSeguimientos] = useState<Seguimiento[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedCedula, setSelectedCedula] = useState<string | null>(null);
@@ -59,15 +68,17 @@ export default function AdminRubricasTab() {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: mods }, { data: its }, { data: evals }, { data: asignaciones }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: evals }, { data: asignaciones }, { data: segs }] = await Promise.all([
       supabase.from("rubrica_modules").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("*").order("created_at", { ascending: false }),
       supabase.from("rubrica_asignaciones").select("directivo_cedula, directivo_nombre"),
+      supabase.from("rubrica_seguimientos").select("id, item_id, directivo_cedula, nivel, created_at").order("created_at", { ascending: false }),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
     if (evals) setEvaluaciones(evals);
+    if (segs) setSeguimientos(segs);
     if (asignaciones) {
       const map: Record<string, string> = {};
       asignaciones.forEach(a => { map[a.directivo_cedula] = a.directivo_nombre; });
@@ -197,16 +208,18 @@ export default function AdminRubricasTab() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="text-xs">Ítem</TableHead>
+                              <TableHead className="text-xs">Ítem</TableHead>
                                 <TableHead className="text-xs">Directivo</TableHead>
                                 <TableHead className="text-xs">Equipo</TableHead>
                                 <TableHead className="text-xs">Acordado</TableHead>
+                                <TableHead className="text-xs">Seguimiento</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {modItems.map(item => {
                                 const ev = modEvals.find(e => e.item_id === item.id);
                                 if (!ev) return null;
+                                const lastSeg = seguimientos.find(s => s.item_id === item.id && s.directivo_cedula === selectedCedula);
                                 return (
                                   <TableRow key={item.id}>
                                     <TableCell className="text-xs">
@@ -216,6 +229,7 @@ export default function AdminRubricasTab() {
                                     <TableCell><NivelBadge nivel={ev.directivo_nivel} /></TableCell>
                                     <TableCell><NivelBadge nivel={ev.equipo_nivel} /></TableCell>
                                     <TableCell><NivelBadge nivel={ev.acordado_nivel} /></TableCell>
+                                    <TableCell><NivelBadge nivel={lastSeg?.nivel ?? null} /></TableCell>
                                   </TableRow>
                                 );
                               })}
