@@ -230,7 +230,7 @@ export default function AdminRubricaRegionalReport() {
       const showCLT = regionNames.some((r) => getShowLogoClt(r));
 
       await generarPDFRegionalRubricas(
-        { modules: reportModules, globalStats },
+        { modules: reportModules, globalStats, regionName: regionNames.join(", ") },
         {
           logoRLT: images.logo_rlt_white,
           logoCLT: images.logo_clt,

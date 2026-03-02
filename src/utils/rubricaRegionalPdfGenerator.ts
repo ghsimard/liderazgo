@@ -48,6 +48,7 @@ export interface RegionalModuleData {
 }
 
 export interface RegionalReportData {
+  regionName?: string;
   modules: RegionalModuleData[];
   globalStats: {
     uniqueDirectivos: number;
@@ -153,7 +154,15 @@ export async function generarPDFRegionalRubricas(
   doc.setFontSize(16);
   doc.setTextColor(80, 80, 80);
   doc.text("Rúbricas de Evaluación", pageW / 2, y, { align: "center" });
-  y += 15;
+  y += 12;
+
+  if (data.regionName) {
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text(`Región: ${data.regionName}`, pageW / 2, y, { align: "center" });
+    y += 12;
+  }
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
