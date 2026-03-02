@@ -4,7 +4,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, ImageIcon, MessageSquare, Star, GitCommit } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, getToken } from "@/utils/apiFetch";
 import { supabase as cloudClient } from "@/utils/dbClient";
@@ -20,7 +20,7 @@ import AdminCompetencyWizard from "@/components/admin/AdminCompetencyWizard";
 import AdminTrashManager from "@/components/admin/AdminTrashManager";
 import AdminReporte360Tab from "@/components/admin/AdminReporte360Tab";
 import AdminEncuestas360Tab from "@/components/admin/AdminEncuestas360Tab";
-import AdminImagesTab from "@/components/admin/AdminImagesTab";
+
 import AdminRubricasTab from "@/components/admin/AdminRubricasTab";
 import AdminMensajesTab from "@/components/admin/AdminMensajesTab";
 import AdminReviewsTab from "@/components/admin/AdminReviewsTab";
@@ -203,7 +203,7 @@ export default function AdminPage() {
             <TabsTrigger value="encuestas360" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Encuestas 360°</TabsTrigger>
             <TabsTrigger value="reportes360" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Informes 360°</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
-            <TabsTrigger value="images" className="gap-1.5"><ImageIcon className="w-4 h-4" /> Images</TabsTrigger>
+            
             <TabsTrigger value="rubricas" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Rúbricas</TabsTrigger>
             {isSuperAdmin && (
               <TabsTrigger value="reviews" className="gap-1.5"><Star className="w-4 h-4" /> Apreciaciones</TabsTrigger>
@@ -275,7 +275,7 @@ export default function AdminPage() {
           <TabsContent value="encuestas360"><AdminEncuestas360Tab /></TabsContent>
           <TabsContent value="reportes360"><AdminReporte360Tab /></TabsContent>
           <TabsContent value="users"><AdminUsersTab isSuperAdmin={isSuperAdmin} /></TabsContent>
-          <TabsContent value="images"><AdminImagesTab /></TabsContent>
+          
           <TabsContent value="rubricas"><AdminRubricasTab /></TabsContent>
           {isSuperAdmin && (
             <TabsContent value="reviews"><AdminReviewsTab /></TabsContent>
