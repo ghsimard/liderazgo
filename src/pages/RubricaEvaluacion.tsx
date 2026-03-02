@@ -1309,6 +1309,50 @@ export default function RubricaEvaluacion() {
 
                             {/* Seguimiento section — evaluator can upgrade completed module items */}
                             {role === "equipo" && renderSeguimientoSection(item, m.module_number)}
+
+                            {/* Seguimiento read-only for directivo */}
+                            {role === "directivo" && hasSubmission(m.module_number, "nivel_acordado") && (() => {
+                              const itemSegs = seguimientos
+                                .filter(s => s.item_id === item.id)
+                                .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                              if (itemSegs.length === 0) return null;
+                              const lastSeg = itemSegs[itemSegs.length - 1];
+                              return (
+                                <div className="border-t-2 border-dashed border-primary/30 pt-4 mt-4 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <ArrowUp className="w-4 h-4 text-primary" />
+                                    <p className="text-sm font-medium text-primary">Seguimiento</p>
+                                    {lastSeg.nivel && (
+                                      <Badge variant="outline" className="text-xs">
+                                        Nivel actual: {NIVELES.find(n => n.value === lastSeg.nivel)?.label || lastSeg.nivel}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                      <History className="w-3.5 h-3.5" />
+                                      <span className="font-medium">Historial de cambios:</span>
+                                    </div>
+                                    {itemSegs.map((seg) => (
+                                      <div key={seg.id} className="bg-muted/30 rounded-lg p-2.5 text-xs space-y-1 border-l-2 border-primary/40">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          {seg.nivel && (
+                                            <Badge variant="secondary" className="text-xs">
+                                              {NIVELES.find(n => n.value === seg.nivel)?.label}
+                                            </Badge>
+                                          )}
+                                          <span className="text-muted-foreground flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            Módulo {seg.module_number} — {new Date(seg.created_at).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}
+                                          </span>
+                                        </div>
+                                        {seg.comentario && <p className="italic text-muted-foreground">{seg.comentario}</p>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </CardContent>
                         </Card>
                       );
