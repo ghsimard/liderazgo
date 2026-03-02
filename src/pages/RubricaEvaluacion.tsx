@@ -84,8 +84,9 @@ export default function RubricaEvaluacion() {
   const logoRLT = images.logo_rlt_noletters;
   const logoCLT = images.logo_clt_noletters;
 
-  const [cedula, setCedula] = useState("");
-  const [searching, setSearching] = useState(false);
+  const hasStoredCedula = !!sessionStorage.getItem("user_cedula");
+  const [cedula, setCedula] = useState(sessionStorage.getItem("user_cedula") || "");
+  const [searching, setSearching] = useState(hasStoredCedula);
   const [detectedRole, setDetectedRole] = useState<DetectedRole>(null);
   const [userName, setUserName] = useState("");
   const autoSearchDone = useRef(false);
@@ -824,7 +825,12 @@ export default function RubricaEvaluacion() {
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Step 1: Cédula input */}
-        {!detectedRole && (
+        {!detectedRole && searching && hasStoredCedula && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
+          </div>
+        )}
+        {!detectedRole && !(searching && hasStoredCedula) && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
