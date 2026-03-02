@@ -88,6 +88,20 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
+/** GET /api/users/:id/cedula — get cedula for a user */
+router.get("/:id/cedula", async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const row = await queryOne<{ cedula: string }>(
+      "SELECT cedula FROM admin_cedulas WHERE user_id = $1",
+      [id]
+    );
+    res.json({ cedula: row?.cedula || null });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /** PUT /api/users/:id — update user (email, role, cedula) */
 router.put("/:id", async (req: Request, res: Response) => {
   try {
