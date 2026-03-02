@@ -314,7 +314,11 @@ export default function AdminRubricaRegionalReport() {
                       </Button>
                     </div>
                     {analyses[mod.id] ? (
-                      <p className="text-sm text-muted-foreground leading-relaxed">{analyses[mod.id]}</p>
+                      <textarea
+                        className="w-full min-h-[120px] text-sm text-muted-foreground leading-relaxed bg-transparent border border-input rounded-md p-2 resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+                        value={analyses[mod.id]}
+                        onChange={(e) => setAnalyses(prev => ({ ...prev, [mod.id]: e.target.value }))}
+                      />
                     ) : (
                       <p className="text-xs text-muted-foreground italic">
                         Haga clic en "Generar análisis" para obtener una interpretación automática de los resultados.
