@@ -3,7 +3,7 @@ import { apiFetch } from "@/utils/apiFetch";
 
 // Static fallback imports
 import staticLogoRlt from "@/assets/logo_rlt.png";
-import staticLogoRltWhite from "@/assets/logo_rlt_white.jpeg";
+import staticLogoRltWhite from "@/assets/logo_rlt_white.png";
 import staticLogoClt from "@/assets/logo_clt.png";
 import staticLogoCltDark from "@/assets/logo_clt_dark.png";
 import staticLogoCltWhite from "@/assets/logo_clt_white.jpeg";

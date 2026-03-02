@@ -18,7 +18,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
 import { MultiSelect } from "@/components/ui/multi-select";
 import JSZip from "jszip";
-import logoRLTWhite from "@/assets/logo_rlt_white.jpeg";
+import logoRLTWhite from "@/assets/logo_rlt_white.png";
 import logoCLTWhite from "@/assets/logo_clt_white.jpeg";
 import logoCosmoWhite from "@/assets/logo_cosmo_white.png";
 
