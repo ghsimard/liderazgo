@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { genderizeRole } from "@/utils/genderizeRole";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
@@ -395,7 +396,7 @@ export default function AdminFichasTab() {
                   <TableCell className="font-medium whitespace-nowrap">{f.nombres_apellidos}</TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{f.region}</Badge></TableCell>
                   <TableCell className="max-w-[200px] truncate" title={f.nombre_ie}>{f.nombre_ie}</TableCell>
-                  <TableCell className="text-sm">{f.cargo_actual}</TableCell>
+                  <TableCell className="text-sm">{genderizeRole(f.cargo_actual, f.genero)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{f.correo_personal}</TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(f.created_at)}</TableCell>
                   <TableCell className="text-right">
