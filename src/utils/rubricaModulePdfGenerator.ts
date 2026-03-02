@@ -39,6 +39,7 @@ export interface RubricaModuleReportData {
   directivoNombre: string;
   directivoCedula: string;
   institucion: string;
+  evaluadorNombre?: string;
   moduleNumber: number;
   moduleTitle: string;
   moduleObjective: string;
@@ -137,6 +138,7 @@ export async function generarPDFRubricaModulo(
     `Directivo: ${data.directivoNombre}`,
     `Cédula: ${data.directivoCedula}`,
     `Institución: ${data.institucion}`,
+    ...(data.evaluadorNombre ? [`Evaluador: ${data.evaluadorNombre}`] : []),
     `Fecha: ${new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}`,
   ];
   for (const line of infoLines) {
