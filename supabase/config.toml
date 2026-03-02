@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.rubrica-analysis]
 verify_jwt = false
+
+[functions.github-commits]
+verify_jwt = false

@@ -4,7 +4,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, ImageIcon, MessageSquare, Star } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, ImageIcon, MessageSquare, Star, GitCommit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, getToken } from "@/utils/apiFetch";
 import { supabase as cloudClient } from "@/utils/dbClient";
@@ -24,6 +24,7 @@ import AdminImagesTab from "@/components/admin/AdminImagesTab";
 import AdminRubricasTab from "@/components/admin/AdminRubricasTab";
 import AdminMensajesTab from "@/components/admin/AdminMensajesTab";
 import AdminReviewsTab from "@/components/admin/AdminReviewsTab";
+import AdminChangelogTab from "@/components/admin/AdminChangelogTab";
 
 interface FormItem {
   name: string;
@@ -207,6 +208,9 @@ export default function AdminPage() {
             {isSuperAdmin && (
               <TabsTrigger value="reviews" className="gap-1.5"><Star className="w-4 h-4" /> Apreciaciones</TabsTrigger>
             )}
+            {isSuperAdmin && (
+              <TabsTrigger value="changelog" className="gap-1.5"><GitCommit className="w-4 h-4" /> Changelog</TabsTrigger>
+            )}
           </TabsList>
           <TabsContent value="formularios">
             <div className="space-y-8">
@@ -275,6 +279,9 @@ export default function AdminPage() {
           <TabsContent value="rubricas"><AdminRubricasTab /></TabsContent>
           {isSuperAdmin && (
             <TabsContent value="reviews"><AdminReviewsTab /></TabsContent>
+          )}
+          {isSuperAdmin && (
+            <TabsContent value="changelog"><AdminChangelogTab /></TabsContent>
           )}
         </Tabs>
 
