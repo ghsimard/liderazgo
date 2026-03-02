@@ -12,9 +12,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { useAutoFillUserInfo } from "@/hooks/useAutoFillUserInfo";
 
-const ROL_OPTIONS = [
+const ADMIN_ROL_OPTIONS = [
   { value: "admin", label: "Administrador/a" },
   { value: "superadmin", label: "Super Administrador/a" },
+];
+
+const BASE_ROL_OPTIONS = [
   { value: "rector", label: "Rector/a" },
   { value: "coordinador", label: "Coordinador/a" },
   { value: "docente", label: "Docente" },
@@ -23,6 +26,8 @@ const ROL_OPTIONS = [
   { value: "administrativo", label: "Administrativo/a" },
   { value: "otro", label: "Otro" },
 ];
+
+const ALL_ROL_OPTIONS = [...ADMIN_ROL_OPTIONS, ...BASE_ROL_OPTIONS];
 
 const evaluacionSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio").max(100),
@@ -95,11 +100,11 @@ export default function Evaluacion() {
       if (info.email) setValue("email", info.email);
       if (info.rol) {
         // Direct match (admin, superadmin, etc.)
-        const directMatch = ROL_OPTIONS.find(o => o.value === info.rol);
+        const directMatch = ALL_ROL_OPTIONS.find(o => o.value === info.rol);
         if (directMatch) {
           setValue("rol_evaluador", directMatch.value);
         } else {
-          const fuzzyMatch = ROL_OPTIONS.find(o =>
+          const fuzzyMatch = ALL_ROL_OPTIONS.find(o =>
             info.rol.toLowerCase().includes(o.value) ||
             o.label.toLowerCase().includes(info.rol.toLowerCase())
           );
@@ -223,7 +228,7 @@ export default function Evaluacion() {
                       <SelectValue placeholder="Seleccione su rol" />
                     </SelectTrigger>
                     <SelectContent>
-                      {ROL_OPTIONS.map(o => (
+                      {(info.source === "admin" ? ALL_ROL_OPTIONS : BASE_ROL_OPTIONS).map(o => (
                         <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                       ))}
                     </SelectContent>
