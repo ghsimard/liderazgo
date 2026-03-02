@@ -91,6 +91,36 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_messages: {
+        Row: {
+          asunto: string
+          created_at: string
+          email: string
+          id: string
+          leido: boolean
+          mensaje: string
+          nombre: string
+        }
+        Insert: {
+          asunto: string
+          created_at?: string
+          email: string
+          id?: string
+          leido?: boolean
+          mensaje: string
+          nombre: string
+        }
+        Update: {
+          asunto?: string
+          created_at?: string
+          email?: string
+          id?: string
+          leido?: boolean
+          mensaje?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       deleted_records: {
         Row: {
           deleted_at: string
