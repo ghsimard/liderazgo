@@ -232,37 +232,33 @@ export default function RubricaEvaluacion() {
     setCedula(searchCedula);
     setSearching(true);
     try {
-      // 1. Check if cédula is a directivo (in fichas_rlt with Rector/a or Coordinador/a)
-      const { data: fichas } = await supabase
-        .from("fichas_rlt")
-        .select("nombres_apellidos, numero_cedula, nombre_ie, cargo_actual, genero")
-        .eq("numero_cedula", searchCedula);
+      // 1. Use RPC to check role and get ficha data (bypasses RLS)
+      const [{ data: roleData }, { data: fichaRaw }, { data: evaluadores }] = await Promise.all([
+        supabase.rpc("check_cedula_role", { p_cedula: searchCedula }),
+        supabase.rpc("get_ficha_by_cedula", { p_cedula: searchCedula }),
+        supabase.from("rubrica_evaluadores").select("id, nombre, cedula").eq("cedula", searchCedula),
+      ]);
 
-      // 2. Check if cédula is an evaluador
-      const { data: evaluadores } = await supabase
-        .from("rubrica_evaluadores")
-        .select("id, nombre, cedula")
-        .eq("cedula", searchCedula);
-
-      const isDirectivo = fichas && fichas.length > 0;
+      const roleInfo = roleData as { exists_ficha: boolean; is_directivo: boolean; is_evaluador: boolean; cargo_actual: string | null; nombre: string | null; genero: string | null } | null;
+      const fichaData = fichaRaw as Record<string, any> | null;
+      const isDirectivo = roleInfo?.is_directivo && fichaData;
       const isEvaluador = evaluadores && evaluadores.length > 0;
 
       if (isDirectivo && !isEvaluador) {
-        // Pure directivo
-        const f = fichas[0];
+        // Pure directivo — use fichaData from RPC
         setDetectedRole("directivo");
-        setUserName(f.nombres_apellidos);
-        setDirectivoInfo({ nombre: f.nombres_apellidos, cedula: f.numero_cedula, institucion: f.nombre_ie, genero: f.genero });
+        setUserName(fichaData.nombres_apellidos);
+        setDirectivoInfo({ nombre: fichaData.nombres_apellidos, cedula: fichaData.numero_cedula, institucion: fichaData.nombre_ie, genero: fichaData.genero });
 
-        const evMap = await loadEvaluaciones(f.numero_cedula);
-        await loadSubmissionDates(f.numero_cedula);
-        await loadSeguimientos(f.numero_cedula);
+        const evMap = await loadEvaluaciones(fichaData.numero_cedula);
+        await loadSubmissionDates(fichaData.numero_cedula);
+        await loadSeguimientos(fichaData.numero_cedula);
 
         // Load assigned evaluator name for this directivo
         const { data: asigData } = await supabase
           .from("rubrica_asignaciones")
           .select("evaluador_id")
-          .eq("directivo_cedula", f.numero_cedula)
+          .eq("directivo_cedula", fichaData.numero_cedula)
           .limit(1);
         if (asigData && asigData.length > 0) {
           const { data: evalData } = await supabase
@@ -315,13 +311,10 @@ export default function RubricaEvaluacion() {
 
   const handleSelectDirectivo = async (asig: Asignacion) => {
     setSelectedDirectivo(asig);
-    // Fetch genero for this directivo
-    const { data: fichaRows } = await supabase
-      .from("fichas_rlt")
-      .select("genero")
-      .eq("numero_cedula", asig.directivo_cedula)
-      .limit(1);
-    setDirectivoInfo({ nombre: asig.directivo_nombre, cedula: asig.directivo_cedula, institucion: asig.institucion, genero: fichaRows?.[0]?.genero ?? null });
+    // Fetch genero for this directivo via RPC (bypasses RLS)
+    const { data: fichaRaw } = await supabase.rpc("get_ficha_by_cedula", { p_cedula: asig.directivo_cedula });
+    const fichaRow = fichaRaw as Record<string, any> | null;
+    setDirectivoInfo({ nombre: asig.directivo_nombre, cedula: asig.directivo_cedula, institucion: asig.institucion, genero: fichaRow?.genero ?? null });
     await loadEvaluaciones(asig.directivo_cedula);
     await loadSubmissionDates(asig.directivo_cedula);
     await loadSeguimientos(asig.directivo_cedula);
