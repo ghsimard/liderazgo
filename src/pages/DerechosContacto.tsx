@@ -91,7 +91,7 @@ export default function DerechosContacto() {
 
           <div className="bg-card border border-border rounded-lg p-6 space-y-4 text-sm text-muted-foreground leading-relaxed">
             <p>
-              <strong className="text-foreground">Propiedad intelectual:</strong> Todo el contenido de esta plataforma, incluyendo pero no limitado a textos, diseños, logotipos, formularios, rúbricas, instrumentos de evaluación y código fuente, es propiedad exclusiva de <strong className="text-foreground">Ghislain Simard</strong> y está protegido por las leyes de propiedad intelectual aplicables.
+              <strong className="text-foreground">Propiedad intelectual:</strong> Todo el contenido de esta plataforma, incluyendo pero no limitado a textos, diseños, logotipos, formularios, rúbricas, instrumentos de evaluación y código fuente, es propiedad exclusiva de <strong className="text-foreground">Ghislain Simard</strong> (Cédula de Extranjería CE 6798900) y está protegido por las leyes de propiedad intelectual aplicables.
             </p>
 
             <p>
