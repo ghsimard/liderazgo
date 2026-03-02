@@ -222,6 +222,20 @@ CREATE TABLE IF NOT EXISTS public.site_reviews (
 CREATE INDEX IF NOT EXISTS idx_site_reviews_created_at ON public.site_reviews(created_at);
 
 -- ============================================================
+-- App settings (key-value store)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO public.app_settings (key, value)
+VALUES ('review_modal_enabled', 'true')
+ON CONFLICT (key) DO NOTHING;
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js

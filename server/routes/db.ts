@@ -28,6 +28,7 @@ const PUBLIC_READ_TABLES = new Set([
   "region_municipios",
   "region_instituciones",
   "app_images",
+  "app_settings",
   "rubrica_submission_dates",
   "rubrica_modules",
   "rubrica_items",
@@ -65,6 +66,7 @@ const ALLOWED_TABLES = new Set([
   "rubrica_modules",
   "rubrica_items",
   "site_reviews",
+  "app_settings",
 ]);
 
 // ── Helpers ────────────────────────────────────────────
