@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/utils/dbClient";
 import { useToast } from "@/hooks/use-toast";
 import { APP_IMAGE_CONFIGS, invalidateAppImagesCache, useAppImages } from "@/hooks/useAppImages";
@@ -86,10 +87,11 @@ export default function AdminImagesTab() {
           const currentSrc = localOverrides[config.key] || images[config.key];
           const isUploading = uploading === config.key;
           const hasCustom = localOverrides[config.key] || (images[config.key] !== config.fallback);
+          const isDarkBg = config.label.includes("fond foncé");
 
           return (
             <Card key={config.key} className="overflow-hidden">
-              <div className="bg-muted/50 flex items-center justify-center h-32 p-4">
+              <div className={cn("flex items-center justify-center h-32 p-4", isDarkBg ? "bg-gray-800" : "bg-muted/50")}>
                 <img
                   src={currentSrc}
                   alt={config.label}
