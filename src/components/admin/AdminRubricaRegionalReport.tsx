@@ -65,6 +65,7 @@ export default function AdminRubricaRegionalReport() {
   const [modules, setModules] = useState<RubricaModule[]>([]);
   const [items, setItems] = useState<RubricaItem[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<Evaluacion[]>([]);
+  const [seguimientos, setSeguimientos] = useState<{ item_id: string; directivo_cedula: string; nivel: string | null; created_at: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyses, setAnalyses] = useState<Record<string, string>>({});
   const [loadingAnalysis, setLoadingAnalysis] = useState<string | null>(null);
@@ -91,16 +92,18 @@ export default function AdminRubricaRegionalReport() {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: mods }, { data: its }, { data: evals }, { data: saved }, { data: fichas }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: evals }, { data: saved }, { data: fichas }, { data: segs }] = await Promise.all([
       supabase.from("rubrica_modules").select("id, module_number, title, objective").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("id, module_id, item_type, item_label, sort_order").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel"),
       supabase.from("rubrica_regional_analyses").select("module_id, analysis_text"),
       supabase.from("fichas_rlt").select("numero_cedula, region"),
+      supabase.from("rubrica_seguimientos").select("item_id, directivo_cedula, nivel, created_at").order("created_at", { ascending: false }),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
     if (evals) setEvaluaciones(evals);
+    if (segs) setSeguimientos(segs);
     if (saved) {
       const loaded: Record<string, string> = {};
       for (const s of saved) loaded[s.module_id] = s.analysis_text;
@@ -122,7 +125,7 @@ export default function AdminRubricaRegionalReport() {
     return [...regions].sort();
   }, [cedulaRegionMap]);
 
-  // Filter evaluaciones by selected region
+  // Filter evaluaciones and seguimientos by selected region
   const filteredEvaluaciones = useMemo(() => {
     if (selectedRegion === "__all__") return evaluaciones;
     const cedulasInRegion = new Set(
@@ -133,19 +136,49 @@ export default function AdminRubricaRegionalReport() {
     return evaluaciones.filter(e => cedulasInRegion.has(e.directivo_cedula));
   }, [evaluaciones, selectedRegion, cedulaRegionMap]);
 
+  const filteredSeguimientos = useMemo(() => {
+    if (selectedRegion === "__all__") return seguimientos;
+    const cedulasInRegion = new Set(
+      Object.entries(cedulaRegionMap)
+        .filter(([, region]) => region === selectedRegion)
+        .map(([cedula]) => cedula)
+    );
+    return seguimientos.filter(s => cedulasInRegion.has(s.directivo_cedula));
+  }, [seguimientos, selectedRegion, cedulaRegionMap]);
+
   const displayRegionName = selectedRegion === "__all__" ? "Todas las regiones" : selectedRegion;
 
   // Compute distributions per module
   const moduleDistributions = useMemo(() => {
     const result: Record<string, ItemDistribution[]> = {};
 
+    // Build a map: item_id+cedula -> latest seguimiento nivel
+    const segMap = new Map<string, string>();
+    for (const s of filteredSeguimientos) {
+      if (!s.nivel) continue;
+      const key = `${s.item_id}__${s.directivo_cedula}`;
+      if (!segMap.has(key)) segMap.set(key, s.nivel); // already sorted desc, first = latest
+    }
+
     for (const mod of modules) {
       const modItems = items.filter(i => i.module_id === mod.id);
       const distributions: ItemDistribution[] = [];
 
       for (const item of modItems) {
+        // Get all evaluaciones that have acordado_nivel for this item
         const itemEvals = filteredEvaluaciones.filter(e => e.item_id === item.id && e.acordado_nivel);
-        const total = itemEvals.length;
+        
+        // Also consider directivos that only have seguimientos but no acordado
+        const cedulasWithAcordado = new Set(itemEvals.map(e => e.directivo_cedula));
+        const extraCedulas: string[] = [];
+        for (const [key, nivel] of segMap) {
+          if (key.startsWith(`${item.id}__`)) {
+            const cedula = key.split("__")[1];
+            if (!cedulasWithAcordado.has(cedula)) extraCedulas.push(cedula);
+          }
+        }
+
+        const total = itemEvals.length + extraCedulas.length;
         if (total === 0) {
           distributions.push({
             itemLabel: item.item_label,
@@ -156,9 +189,18 @@ export default function AdminRubricaRegionalReport() {
         }
 
         const counts = { avanzado: 0, intermedio: 0, basico: 0, sin_evidencia: 0 };
+        
+        // For each eval, check if there's a seguimiento (priority), otherwise use acordado
         for (const ev of itemEvals) {
-          const n = ev.acordado_nivel as string;
-          if (n in counts) counts[n as keyof typeof counts]++;
+          const segKey = `${ev.item_id}__${ev.directivo_cedula}`;
+          const nivel = segMap.get(segKey) || (ev.acordado_nivel as string);
+          if (nivel in counts) counts[nivel as keyof typeof counts]++;
+        }
+        
+        // For extra cedulas (only seguimiento, no acordado)
+        for (const cedula of extraCedulas) {
+          const nivel = segMap.get(`${item.id}__${cedula}`)!;
+          if (nivel in counts) counts[nivel as keyof typeof counts]++;
         }
 
         distributions.push({
@@ -176,7 +218,7 @@ export default function AdminRubricaRegionalReport() {
     }
 
     return result;
-  }, [modules, items, filteredEvaluaciones]);
+  }, [modules, items, filteredEvaluaciones, filteredSeguimientos]);
 
   // Global stats
   const globalStats = useMemo(() => {
