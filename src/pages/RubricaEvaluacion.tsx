@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,6 +82,7 @@ type DetectedRole = "directivo" | "evaluador" | null;
 export default function RubricaEvaluacion() {
   const { toast } = useToast();
   const { images } = useAppImages();
+  const [searchParams] = useSearchParams();
   const logoRLT = images.logo_rlt_noletters;
   const logoCLT = images.logo_clt_noletters;
 
@@ -88,6 +90,7 @@ export default function RubricaEvaluacion() {
   const [searching, setSearching] = useState(false);
   const [detectedRole, setDetectedRole] = useState<DetectedRole>(null);
   const [userName, setUserName] = useState("");
+  const autoSearchDone = useRef(false);
 
   // Directivo state
   const [directivoInfo, setDirectivoInfo] = useState<{ nombre: string; cedula: string; institucion: string; genero?: string | null } | null>(null);
@@ -224,21 +227,24 @@ export default function RubricaEvaluacion() {
     return NIVEL_RANK[candidateNivel] >= NIVEL_RANK[minNivel];
   };
 
-  const handleSearch = async () => {
-    if (!cedula.trim()) return;
+  const handleSearch = async (overrideCedula?: string) => {
+    const searchCedula = (overrideCedula || cedula).trim();
+    if (!searchCedula) return;
+    setSearching(true);
+    setCedula(searchCedula);
     setSearching(true);
     try {
       // 1. Check if cédula is a directivo (in fichas_rlt with Rector/a or Coordinador/a)
       const { data: fichas } = await supabase
         .from("fichas_rlt")
         .select("nombres_apellidos, numero_cedula, nombre_ie, cargo_actual, genero")
-        .eq("numero_cedula", cedula.trim());
+        .eq("numero_cedula", searchCedula);
 
       // 2. Check if cédula is an evaluador
       const { data: evaluadores } = await supabase
         .from("rubrica_evaluadores")
         .select("id, nombre, cedula")
-        .eq("cedula", cedula.trim());
+        .eq("cedula", searchCedula);
 
       const isDirectivo = fichas && fichas.length > 0;
       const isEvaluador = evaluadores && evaluadores.length > 0;
@@ -297,6 +303,17 @@ export default function RubricaEvaluacion() {
       setSearching(false);
     }
   };
+
+  // Auto-search when arriving from MiPanel with cedula in URL params
+  useEffect(() => {
+    if (autoSearchDone.current) return;
+    const paramCedula = searchParams.get("cedula");
+    if (paramCedula && !detectedRole) {
+      autoSearchDone.current = true;
+      handleSearch(paramCedula);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const handleSelectDirectivo = async (asig: Asignacion) => {
     setSelectedDirectivo(asig);
@@ -833,7 +850,7 @@ export default function RubricaEvaluacion() {
                     placeholder="Número de cédula"
                     onKeyDown={e => e.key === "Enter" && handleSearch()}
                   />
-                  <Button onClick={handleSearch} disabled={searching}>
+                  <Button onClick={() => handleSearch()} disabled={searching}>
                     {searching ? "Buscando…" : "Ingresar"}
                   </Button>
                 </div>
