@@ -1,19 +1,14 @@
-import { useAppImages } from "@/hooks/useAppImages";
+import logoCosmoFooter from "@/assets/logo_cosmo_dark.png";
 
 export default function AppFooter() {
-  const { images } = useAppImages();
-  const logoCosmo = images.logo_cosmo;
-
   return (
     <footer className="sticky bottom-0 z-50 py-3 text-center" style={{ background: "hsl(var(--primary))" }}>
-      <div className="flex flex-col items-center gap-3">
-        <div className="bg-white rounded-xl px-6 py-3 shadow-md inline-flex items-center justify-center">
-          <img
-            src={logoCosmo}
-            alt="Cosmo Schools"
-            className="h-9 w-auto object-contain"
-          />
-        </div>
+      <div className="flex flex-col items-center gap-2">
+        <img
+          src={logoCosmoFooter}
+          alt="Cosmo Schools"
+          className="h-9 w-auto object-contain"
+        />
         <p className="text-white text-xs opacity-60">
           Programa RLT / CLT · Colombia · {new Date().getFullYear()}
         </p>
