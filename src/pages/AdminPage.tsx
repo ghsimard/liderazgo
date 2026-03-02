@@ -106,7 +106,7 @@ export default function AdminPage() {
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_white;
-  const logoCLT = images.logo_clt;
+  const logoCLT = images.logo_clt_white;
   const [exporting, setExporting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
@@ -160,7 +160,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-muted/20">
-      <header className="bg-background border-b sticky top-0 z-10">
+      <header className="bg-primary text-primary-foreground sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src={logoRLT} alt="RLT" className="h-9" />
@@ -169,11 +169,11 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             {isSuperAdmin && (
-              <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5">
+              <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
                 <DatabaseBackup className="w-4 h-4" /> {exporting ? "Exportando…" : "Export SQL"}
               </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5">
+            <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5 text-primary-foreground hover:bg-primary-foreground/10">
               <LogOut className="w-4 h-4" /> Salir
             </Button>
           </div>
