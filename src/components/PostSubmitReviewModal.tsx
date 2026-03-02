@@ -3,8 +3,31 @@ import { Star, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/utils/dbClient";
+
+const ROL_OPTIONS = [
+  { value: "rector", label: "Rector/a" },
+  { value: "coordinador", label: "Coordinador/a" },
+  { value: "docente", label: "Docente" },
+  { value: "estudiante", label: "Estudiante" },
+  { value: "acudiente", label: "Acudiente" },
+  { value: "administrativo", label: "Administrativo/a" },
+  { value: "directivo", label: "Directivo/a" },
+  { value: "evaluador", label: "Evaluador" },
+  { value: "otro", label: "Otro" },
+];
+
+const ROL_MAP: Record<string, string> = {
+  autoevaluacion: "directivo",
+  docente: "docente",
+  estudiante: "estudiante",
+  acudiente: "acudiente",
+  administrativo: "administrativo",
+  directivo: "directivo",
+  rubrica_evaluacion: "evaluador",
+};
 
 interface PostSubmitReviewModalProps {
   open: boolean;
@@ -66,6 +89,8 @@ export default function PostSubmitReviewModal({
   const [emailInput, setEmailInput] = useState(email || "");
   const [sending, setSending] = useState(false);
   const [visible, setVisible] = useState(false);
+  const autoRol = rolEvaluador || ROL_MAP[tipoFormulario] || "";
+  const [selectedRol, setSelectedRol] = useState(autoRol);
 
   useEffect(() => {
     if (open) {
@@ -73,6 +98,7 @@ export default function PostSubmitReviewModal({
       setRating(0);
       setComentario("");
       setEmailInput(email || "");
+      setSelectedRol(autoRol);
       // Check if review modal is enabled
       const checkEnabled = async () => {
         try {
@@ -106,25 +132,13 @@ export default function PostSubmitReviewModal({
     }
     setSending(true);
     try {
-      // Auto-detect role: use explicit prop, or infer from form type
-      const rolMap: Record<string, string> = {
-        autoevaluacion: "directivo",
-        docente: "docente",
-        estudiante: "estudiante",
-        acudiente: "acudiente",
-        administrativo: "administrativo",
-        directivo: "directivo",
-        rubrica_evaluacion: "evaluador",
-      };
-      const detectedRol = rolEvaluador || rolMap[tipoFormulario] || null;
-
       const { error } = await supabase.from("site_reviews" as any).insert({
         nombre,
         email: emailInput.trim() || "no-email@anonimo.com",
         rating,
         comentario: comentario.trim() || null,
         tipo_formulario: tipoFormulario,
-        rol_evaluador: detectedRol,
+        rol_evaluador: selectedRol || null,
       } as any);
       if (error) throw error;
       toast.success("¡Gracias por su evaluación!");
@@ -176,6 +190,23 @@ export default function PostSubmitReviewModal({
                 Calificación *
               </label>
               <StarRating value={rating} onChange={setRating} />
+            </div>
+
+            {/* Role selector - pre-filled but editable */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">
+                Su rol
+              </label>
+              <Select value={selectedRol} onValueChange={setSelectedRol}>
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Seleccione su rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROL_OPTIONS.map(o => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {!email && (
