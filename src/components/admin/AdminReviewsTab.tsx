@@ -143,6 +143,22 @@ export default function AdminReviewsTab() {
     })).sort((a, b) => b.cantidad - a.cantidad);
   }, [reviews]);
 
+  // By role chart
+  const byRolData = useMemo(() => {
+    const map: Record<string, { total: number; sum: number }> = {};
+    reviews.forEach(r => {
+      const key = r.rol_evaluador || "sin_rol";
+      if (!map[key]) map[key] = { total: 0, sum: 0 };
+      map[key].total++;
+      map[key].sum += r.rating;
+    });
+    return Object.entries(map).map(([key, v]) => ({
+      name: ROL_LABELS[key] || key,
+      cantidad: v.total,
+      promedio: Math.round((v.sum / v.total) * 10) / 10,
+    })).sort((a, b) => b.cantidad - a.cantidad);
+  }, [reviews]);
+
   const uniqueFormTypes = useMemo(() => {
     const set = new Set(reviews.map(r => r.tipo_formulario || "general"));
     return Array.from(set).sort();
@@ -233,7 +249,7 @@ export default function AdminReviewsTab() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Rating distribution */}
         <Card>
           <CardHeader className="pb-2">
@@ -283,6 +299,28 @@ export default function AdminReviewsTab() {
                   <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
                   <Tooltip formatter={(v: number) => `${v}/5`} />
                   <Bar dataKey="promedio" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* By role */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Distribución por rol</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {byRolData.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Sin datos</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={byRolData} margin={{ left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={50} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip formatter={(v: number, name: string) => [name === "promedio" ? `${v}/5` : v, name === "promedio" ? "Promedio" : "Cantidad"]} />
+                  <Bar dataKey="cantidad" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
