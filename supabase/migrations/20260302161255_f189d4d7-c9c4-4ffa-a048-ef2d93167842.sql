@@ -1,0 +1,1 @@
+ALTER TABLE public.site_reviews ADD COLUMN rol_evaluador text DEFAULT NULL;

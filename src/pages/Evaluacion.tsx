@@ -5,14 +5,26 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ArrowLeft, Send, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 
+const ROL_OPTIONS = [
+  { value: "rector", label: "Rector/a" },
+  { value: "coordinador", label: "Coordinador/a" },
+  { value: "docente", label: "Docente" },
+  { value: "estudiante", label: "Estudiante" },
+  { value: "acudiente", label: "Acudiente" },
+  { value: "administrativo", label: "Administrativo/a" },
+  { value: "otro", label: "Otro" },
+];
+
 const evaluacionSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio").max(100),
   email: z.string().trim().email("Correo electrónico inválido").max(255),
+  rol_evaluador: z.string().min(1, "Por favor seleccione su rol"),
   rating: z.number().min(1, "Por favor seleccione una calificación").max(5),
   comentario: z.string().trim().max(2000).optional(),
 });
@@ -68,7 +80,7 @@ export default function Evaluacion() {
     formState: { errors },
   } = useForm<EvaluacionFormData>({
     resolver: zodResolver(evaluacionSchema),
-    defaultValues: { rating: 0 },
+    defaultValues: { rating: 0, rol_evaluador: "" },
   });
 
   const onSubmit = async (data: EvaluacionFormData) => {
@@ -79,6 +91,7 @@ export default function Evaluacion() {
         email: data.email,
         rating: data.rating,
         comentario: data.comentario || null,
+        rol_evaluador: data.rol_evaluador,
       } as any);
       if (error) throw error;
       toast.success("¡Gracias por su evaluación! Su opinión nos ayuda a mejorar.");
@@ -132,6 +145,28 @@ export default function Evaluacion() {
               {errors.rating && (
                 <p className="text-xs text-destructive">{errors.rating.message}</p>
               )}
+            </div>
+
+            {/* Role selector */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">¿Cuál es su rol? *</label>
+              <Controller
+                name="rol_evaluador"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione su rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROL_OPTIONS.map(o => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.rol_evaluador && <p className="text-xs text-destructive">{errors.rol_evaluador.message}</p>}
             </div>
 
             {/* Name & Email */}
