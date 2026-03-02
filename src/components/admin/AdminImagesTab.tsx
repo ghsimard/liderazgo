@@ -6,6 +6,9 @@ import { APP_IMAGE_CONFIGS, invalidateAppImagesCache, useAppImages } from "@/hoo
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, RotateCcw, Loader2 } from "lucide-react";
+import { apiFetch, getToken } from "@/utils/apiFetch";
+
+const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
 export default function AdminImagesTab() {
   const { toast } = useToast();
@@ -17,28 +20,60 @@ export default function AdminImagesTab() {
   const handleUpload = async (imageKey: string, file: File) => {
     setUploading(imageKey);
     try {
-      const ext = file.name.split(".").pop() || "png";
-      const storagePath = `${imageKey}.${ext}`;
+      let publicUrl: string;
 
-      // Upload to storage bucket
-      const { error: uploadError } = await supabase.storage
-        .from("app-images")
-        .upload(storagePath, file, { upsert: true, cacheControl: "0" });
+      if (USE_EXPRESS) {
+        // ── Render / Express mode ──
+        // Use the dedicated /api/images/:imageKey endpoint which handles
+        // both file storage and DB upsert in a single call.
+        const token = getToken();
+        if (!token) throw new Error("Session admin expirée. Reconnectez-vous.");
 
-      if (uploadError) throw uploadError;
+        const formData = new FormData();
+        formData.append("file", file);
 
-      // Get the full public URL to store in DB
-      const { data: urlData } = supabase.storage.from("app-images").getPublicUrl(storagePath);
-      const publicUrl = urlData.publicUrl;
+        const apiUrl = import.meta.env.VITE_API_URL as string;
+        const resp = await fetch(`${apiUrl}/api/images/${imageKey}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
 
-      // Upsert metadata row with the full URL as the path
-      const { error: dbError } = await supabase
-        .from("app_images")
-        .upsert({ image_key: imageKey, storage_path: publicUrl, updated_at: new Date().toISOString() }, { onConflict: "image_key" });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ error: resp.statusText }));
+          throw new Error(err.error || resp.statusText);
+        }
 
-      if (dbError) throw dbError;
+        const result = await resp.json();
+        // The Express route returns { image_key, storage_path } where
+        // storage_path is like "/uploads/logo_rlt.png"
+        publicUrl = result.storage_path;
+      } else {
+        // ── Lovable Cloud / Supabase mode ──
+        const ext = file.name.split(".").pop() || "png";
+        const storagePath = `${imageKey}.${ext}`;
 
-      // Show new image locally
+        const { error: uploadError } = await supabase.storage
+          .from("app-images")
+          .upload(storagePath, file, { upsert: true, cacheControl: "0" });
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage.from("app-images").getPublicUrl(storagePath);
+        publicUrl = urlData.publicUrl;
+
+        // Upsert metadata row with the full URL
+        const { error: dbError } = await supabase
+          .from("app_images")
+          .upsert(
+            { image_key: imageKey, storage_path: publicUrl, updated_at: new Date().toISOString() },
+            { onConflict: "image_key" }
+          );
+
+        if (dbError) throw dbError;
+      }
+
+      // Show new image locally (bust cache)
       setLocalOverrides((prev) => ({ ...prev, [imageKey]: `${publicUrl}?t=${Date.now()}` }));
       invalidateAppImagesCache();
 
@@ -52,13 +87,34 @@ export default function AdminImagesTab() {
   const handleReset = async (imageKey: string) => {
     setUploading(imageKey);
     try {
-      // Delete from storage
-      const { data: existing } = await supabase.from("app_images").select("storage_path").eq("image_key", imageKey).maybeSingle();
-      if (existing) {
-        await supabase.storage.from("app-images").remove([existing.storage_path]);
+      if (USE_EXPRESS) {
+        // ── Render / Express mode ──
+        const token = getToken();
+        if (!token) throw new Error("Session admin expirée. Reconnectez-vous.");
+
+        const apiUrl = import.meta.env.VITE_API_URL as string;
+        const resp = await fetch(`${apiUrl}/api/images/${imageKey}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ error: resp.statusText }));
+          throw new Error(err.error || resp.statusText);
+        }
+      } else {
+        // ── Lovable Cloud / Supabase mode ──
+        const { data: existing } = await supabase
+          .from("app_images")
+          .select("storage_path")
+          .eq("image_key", imageKey)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase.storage.from("app-images").remove([existing.storage_path]);
+        }
+        await supabase.from("app_images").delete().eq("image_key", imageKey);
       }
-      // Delete metadata row
-      await supabase.from("app_images").delete().eq("image_key", imageKey);
 
       setLocalOverrides((prev) => {
         const copy = { ...prev };
