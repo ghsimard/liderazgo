@@ -17,7 +17,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Trash2, KeyRound, RefreshCw, Eye, EyeOff } from "lucide-react";
+import { UserPlus, Trash2, KeyRound, RefreshCw, Eye, EyeOff, Pencil } from "lucide-react";
 
 const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
@@ -28,6 +28,7 @@ interface AdminUser {
   last_sign_in_at?: string | null;
   role?: string;
   roles?: string[];
+  cedula?: string;
 }
 
 async function invokeManageUsers(action: string, params: Record<string, unknown> = {}) {
@@ -69,6 +70,12 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showPwPassword, setShowPwPassword] = useState(false);
 
+  // Edit dialog
+  const [editUser, setEditUser] = useState<AdminUser | null>(null);
+  const [editEmail, setEditEmail] = useState("");
+  const [editCedula, setEditCedula] = useState("");
+  const [editRole, setEditRole] = useState<string>("admin");
+  const [editLoading, setEditLoading] = useState(false);
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -193,6 +200,41 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
     setPwLoading(false);
   };
 
+  const openEditDialog = (u: AdminUser) => {
+    const displayRole = u.role || (u.roles?.includes("superadmin") ? "superadmin" : "admin");
+    setEditUser(u);
+    setEditEmail(u.email);
+    setEditCedula(u.cedula ?? "");
+    setEditRole(displayRole);
+  };
+
+  const handleEdit = async () => {
+    if (!editUser) return;
+    setEditLoading(true);
+    try {
+      if (USE_EXPRESS) {
+        const { error } = await apiFetch(`/api/users/${editUser.id}`, {
+          method: "PUT",
+          body: { email: editEmail, role: editRole, cedula: editCedula },
+        });
+        if (error) throw new Error(error);
+      } else {
+        await invokeManageUsers("update_user", {
+          user_id: editUser.id,
+          email: editEmail,
+          role: editRole,
+          cedula: editCedula,
+        });
+      }
+      toast({ title: "Administrador actualizado" });
+      setEditUser(null);
+      fetchUsers();
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Error desconocido", variant: "destructive" });
+    }
+    setEditLoading(false);
+  };
+
   const formatDate = (d: string | null | undefined) => {
     if (!d) return "—";
     return new Date(d).toLocaleString("es-CO", { timeZone: "America/Bogota" });
@@ -212,6 +254,7 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
+              <TableHead>Cédula</TableHead>
               <TableHead>Rol</TableHead>
               <TableHead>Creado</TableHead>
               <TableHead>Último acceso</TableHead>
@@ -221,13 +264,13 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
                   <RefreshCw className="animate-spin w-5 h-5 mx-auto" />
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">No hay administradores.</TableCell>
+                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">No hay administradores.</TableCell>
               </TableRow>
             ) : (
               users.map((u) => {
@@ -235,6 +278,7 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
                 return (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">{u.email}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{u.cedula || "—"}</TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${displayRole === "superadmin" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
                       {displayRole}
@@ -245,6 +289,9 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
                   <TableCell className="text-right">
                     {(isSuperAdmin || displayRole !== "superadmin") && (
                     <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(u)} title="Editar">
+                        <Pencil className="w-4 h-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => { setPwUser(u); setNewPw(""); }} title="Cambiar contraseña">
                         <KeyRound className="w-4 h-4" />
                       </Button>
@@ -335,6 +382,41 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
           <DialogFooter>
             <Button variant="outline" onClick={() => setPwUser(null)}>Cancelar</Button>
             <Button onClick={handleUpdatePassword} disabled={pwLoading || !newPw}>{pwLoading ? "Guardando…" : "Guardar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editUser} onOpenChange={(o) => { if (!o) setEditUser(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar administrador</DialogTitle>
+            <DialogDescription>Modifique los datos de {editUser?.email}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <Input type="email" placeholder="Correo electrónico" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder="Número de cédula"
+              value={editCedula}
+              onChange={(e) => setEditCedula(e.target.value.replace(/\D/g, ""))}
+            />
+            {isSuperAdmin && (
+              <Select value={editRole} onValueChange={setEditRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="superadmin">Superadmin</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditUser(null)}>Cancelar</Button>
+            <Button onClick={handleEdit} disabled={editLoading || !editEmail}>{editLoading ? "Guardando…" : "Guardar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
