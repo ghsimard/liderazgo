@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/utils/dbClient";
 import { apiFetch } from "@/utils/apiFetch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
-import { Loader2, BarChart3, Sparkles, RefreshCw, FileDown } from "lucide-react";
+import { Loader2, BarChart3, Sparkles, RefreshCw, FileDown, Save } from "lucide-react";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFRegionalRubricas, type RegionalModuleData } from "@/utils/rubricaRegionalPdfGenerator";
 
@@ -66,21 +66,39 @@ export default function AdminRubricaRegionalReport() {
   const [analyses, setAnalyses] = useState<Record<string, string>>({});
   const [loadingAnalysis, setLoadingAnalysis] = useState<string | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
+  const saveAnalysis = useCallback(async (moduleId: string, text: string) => {
+    await supabase
+      .from("rubrica_regional_analyses")
+      .upsert({ module_id: moduleId, analysis_text: text, updated_at: new Date().toISOString() }, { onConflict: "module_id" });
+  }, []);
+
+  const handleAnalysisChange = useCallback((moduleId: string, text: string) => {
+    setAnalyses(prev => ({ ...prev, [moduleId]: text }));
+    if (saveTimers.current[moduleId]) clearTimeout(saveTimers.current[moduleId]);
+    saveTimers.current[moduleId] = setTimeout(() => saveAnalysis(moduleId, text), 1500);
+  }, [saveAnalysis]);
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: mods }, { data: its }, { data: evals }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: evals }, { data: saved }] = await Promise.all([
       supabase.from("rubrica_modules").select("id, module_number, title, objective").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("id, module_id, item_type, item_label, sort_order").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel"),
+      supabase.from("rubrica_regional_analyses").select("module_id, analysis_text"),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
     if (evals) setEvaluaciones(evals);
+    if (saved) {
+      const loaded: Record<string, string> = {};
+      for (const s of saved) loaded[s.module_id] = s.analysis_text;
+      setAnalyses(loaded);
+    }
     setLoading(false);
   };
 
@@ -184,6 +202,7 @@ export default function AdminRubricaRegionalReport() {
       }
 
       setAnalyses(prev => ({ ...prev, [mod.id]: analysis }));
+      saveAnalysis(mod.id, analysis);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -356,7 +375,7 @@ export default function AdminRubricaRegionalReport() {
                       <textarea
                         className="w-full min-h-[120px] text-sm text-muted-foreground leading-relaxed bg-transparent border border-input rounded-md p-2 resize-y focus:outline-none focus:ring-2 focus:ring-ring"
                         value={analyses[mod.id]}
-                        onChange={(e) => setAnalyses(prev => ({ ...prev, [mod.id]: e.target.value }))}
+                        onChange={(e) => handleAnalysisChange(mod.id, e.target.value)}
                       />
                     ) : (
                       <p className="text-xs text-muted-foreground italic">

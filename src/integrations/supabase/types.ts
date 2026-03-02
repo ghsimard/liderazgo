@@ -823,6 +823,38 @@ export type Database = {
         }
         Relationships: []
       }
+      rubrica_regional_analyses: {
+        Row: {
+          analysis_text: string
+          id: string
+          module_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          analysis_text?: string
+          id?: string
+          module_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          analysis_text?: string
+          id?: string
+          module_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rubrica_regional_analyses_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: true
+            referencedRelation: "rubrica_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rubrica_seguimientos: {
         Row: {
           comentario: string | null
