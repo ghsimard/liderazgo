@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/utils/dbClient";
+import { apiFetch } from "@/utils/apiFetch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -143,28 +144,42 @@ export default function AdminRubricaRegionalReport() {
     }
 
     setLoadingAnalysis(mod.id);
+    const bodyPayload = {
+      moduleTitle: mod.title,
+      moduleNumber: mod.module_number,
+      moduleObjective: mod.objective,
+      distribution: dist.map(d => ({
+        itemLabel: d.itemLabel,
+        itemType: d.itemType,
+        avanzado: d.avanzado,
+        intermedio: d.intermedio,
+        basico: d.basico,
+        sinEvidencia: d.sinEvidencia,
+        total: d.total,
+      })),
+    };
+
     try {
-      const { data, error } = await supabase.functions.invoke("rubrica-analysis", {
-        body: {
-          moduleTitle: mod.title,
-          moduleNumber: mod.module_number,
-          moduleObjective: mod.objective,
-          distribution: dist.map(d => ({
-            itemLabel: d.itemLabel,
-            itemType: d.itemType,
-            avanzado: d.avanzado,
-            intermedio: d.intermedio,
-            basico: d.basico,
-            sinEvidencia: d.sinEvidencia,
-            total: d.total,
-          })),
-        },
-      });
+      const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
+      let analysis = "";
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (USE_EXPRESS) {
+        const result = await apiFetch<{ analysis: string }>("/api/rubrica-analysis", {
+          method: "POST",
+          body: bodyPayload,
+        });
+        if (result.error) throw new Error(result.error);
+        analysis = result.data?.analysis || "";
+      } else {
+        const { data, error } = await supabase.functions.invoke("rubrica-analysis", {
+          body: bodyPayload,
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        analysis = data.analysis;
+      }
 
-      setAnalyses(prev => ({ ...prev, [mod.id]: data.analysis }));
+      setAnalyses(prev => ({ ...prev, [mod.id]: analysis }));
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
