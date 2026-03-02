@@ -116,7 +116,7 @@ export async function generarPDFRubricaModulo(
   const rltTargetH = 24;
   const rltW = rltTargetH * (rltSize.width / rltSize.height);
   try { doc.addImage(rltB64, "PNG", (pageW - rltW) / 2, y, rltW, rltTargetH); } catch {}
-  y += 25;
+  y += 35;
 
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
