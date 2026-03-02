@@ -50,7 +50,8 @@ export default function DerechosContacto() {
         contactar_whatsapp: data.contactar_whatsapp,
         asunto: data.asunto,
         mensaje: data.mensaje,
-      });
+        tipo_contacto: "contacto",
+      } as any);
       if (error) throw error;
       toast.success("Mensaje enviado correctamente. Gracias por contactarnos.");
       reset();
