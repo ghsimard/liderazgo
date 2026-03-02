@@ -276,6 +276,29 @@ export default function AdminRubricaRegionalReport() {
                 </p>
               ) : (
                 <>
+                  {/* Bar chart */}
+                  <div className="w-full h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 50 }}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fontSize: 10 }}
+                          angle={-30}
+                          textAnchor="end"
+                          height={60}
+                        />
+                        <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} unit="%" />
+                        <Tooltip formatter={(value: number) => `${value}%`} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Bar dataKey="Avanzado" fill={NIVEL_COLORS.avanzado} radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="Intermedio" fill={NIVEL_COLORS.intermedio} radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="Básico" fill={NIVEL_COLORS.basico} radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="Sin evidencia" fill={NIVEL_COLORS.sinEvidencia} radius={[2, 2, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
                   {/* Distribution table */}
                   <Table>
                     <TableHeader>
@@ -304,29 +327,6 @@ export default function AdminRubricaRegionalReport() {
                       ))}
                     </TableBody>
                   </Table>
-
-                  {/* Bar chart */}
-                  <div className="w-full h-[280px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 50 }}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                        <XAxis
-                          dataKey="name"
-                          tick={{ fontSize: 10 }}
-                          angle={-30}
-                          textAnchor="end"
-                          height={60}
-                        />
-                        <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} unit="%" />
-                        <Tooltip formatter={(value: number) => `${value}%`} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} />
-                        <Bar dataKey="Avanzado" fill={NIVEL_COLORS.avanzado} radius={[2, 2, 0, 0]} />
-                        <Bar dataKey="Intermedio" fill={NIVEL_COLORS.intermedio} radius={[2, 2, 0, 0]} />
-                        <Bar dataKey="Básico" fill={NIVEL_COLORS.basico} radius={[2, 2, 0, 0]} />
-                        <Bar dataKey="Sin evidencia" fill={NIVEL_COLORS.sinEvidencia} radius={[2, 2, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
 
                   {/* AI Analysis */}
                   <div className="border rounded-lg p-4 bg-muted/20 space-y-2">
