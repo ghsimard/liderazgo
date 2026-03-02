@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, HelpCircle, FileText, ClipboardList, BarChart3, Mail, Shield } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { ArrowLeft, HelpCircle, FileText, ClipboardList, BarChart3, Mail, Shield, ExternalLink } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { RefreshCw } from "lucide-react";
 import {
@@ -9,10 +9,27 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+function AdminLink({ to, children }: { to: string; children: React.ReactNode }) {
+  return (
+    <Link
+      to={to}
+      className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+    >
+      {children}
+      <ExternalLink className="w-3 h-3" />
+    </Link>
+  );
+}
+
+interface FaqQuestion {
+  q: string;
+  a: React.ReactNode;
+}
+
 interface FaqSection {
   title: string;
   icon: React.ElementType;
-  questions: { q: string; a: string }[];
+  questions: FaqQuestion[];
 }
 
 const faqSections: FaqSection[] = [
@@ -26,7 +43,13 @@ const faqSections: FaqSection[] = [
       },
       {
         q: "¿Qué debe configurar el administrador antes de que funcione?",
-        a: "1) Ir a la pestaña 'Fichas Gestión' → 'Configuración de Región' y crear al menos una región.\n2) Dentro de cada región, asignar las entidades territoriales, municipios e instituciones educativas correspondientes.\n3) Sin estas configuraciones, los formularios de ficha no mostrarán opciones de selección para región, entidad territorial, municipio ni institución.",
+        a: (
+          <div className="space-y-2">
+            <p>1) Ir a <AdminLink to="/admin?tab=fichas">Fichas Gestión → Configuración de Región</AdminLink> y crear al menos una región.</p>
+            <p>2) Dentro de cada región, asignar las entidades territoriales, municipios e instituciones educativas correspondientes.</p>
+            <p>3) Sin estas configuraciones, los formularios de ficha no mostrarán opciones de selección para región, entidad territorial, municipio ni institución.</p>
+          </div>
+        ),
       },
       {
         q: "¿Qué campos son obligatorios?",
@@ -34,7 +57,9 @@ const faqSections: FaqSection[] = [
       },
       {
         q: "¿Puedo editar una ficha ya enviada?",
-        a: "Solo los administradores pueden editar las fichas desde el panel de administración, en la pestaña 'Fichas Gestión'.",
+        a: (
+          <span>Solo los administradores pueden editar las fichas desde el panel de administración, en la pestaña <AdminLink to="/admin?tab=fichas">Fichas Gestión</AdminLink>.</span>
+        ),
       },
       {
         q: "¿Qué formato tiene el código DANE?",
@@ -52,19 +77,31 @@ const faqSections: FaqSection[] = [
       },
       {
         q: "¿Qué debe configurar el administrador antes de que funcione?",
-        a: "1) Ir a la pestaña 'Config 360°' y verificar que existan dominios, competencias e ítems. Si están vacíos, usar el botón 'Asistente de creación' para generar la estructura completa.\n2) En la sub-pestaña 'Ponderaciones', asignar los pesos por competencia y por tipo de evaluador (docente, estudiante, acudiente, etc.). Sin ponderaciones, los informes 360° no podrán calcularse.\n3) Asegurarse de que al menos una ficha de directivo haya sido registrada, ya que los formularios 360° requieren seleccionar una institución y un directivo existente.",
+        a: (
+          <div className="space-y-2">
+            <p>1) Ir a <AdminLink to="/admin?tab=ponderaciones">Config 360°</AdminLink> y verificar que existan dominios, competencias e ítems. Si están vacíos, usar el botón 'Asistente de creación' para generar la estructura completa.</p>
+            <p>2) En la sub-pestaña <AdminLink to="/admin?tab=ponderaciones">Ponderaciones</AdminLink>, asignar los pesos por competencia y por tipo de evaluador (docente, estudiante, acudiente, etc.). Sin ponderaciones, los informes 360° no podrán calcularse.</p>
+            <p>3) Asegurarse de que al menos una ficha de directivo haya sido registrada en <AdminLink to="/admin?tab=fichas">Fichas Gestión</AdminLink>, ya que los formularios 360° requieren seleccionar una institución y un directivo existente.</p>
+          </div>
+        ),
       },
       {
         q: "¿Cuántos formularios existen?",
-        a: "Existen 6 formularios diferentes según el perfil del evaluador: Acudiente, Administrativo, Autoevaluación, Directivo, Docente y Estudiante.",
+        a: (
+          <span>Existen 6 formularios diferentes según el perfil del evaluador: Acudiente, Administrativo, Autoevaluación, Directivo, Docente y Estudiante. Los enlaces se encuentran en <AdminLink to="/admin?tab=formularios">Formularios</AdminLink>.</span>
+        ),
       },
       {
         q: "¿Cómo se calculan los resultados?",
-        a: "Los resultados se calculan aplicando ponderaciones específicas por competencia y por tipo de evaluador. Estas ponderaciones son configurables por el administrador desde la pestaña 'Config 360°'.",
+        a: (
+          <span>Los resultados se calculan aplicando ponderaciones específicas por competencia y por tipo de evaluador. Estas ponderaciones son configurables por el administrador desde <AdminLink to="/admin?tab=ponderaciones">Config 360° → Ponderaciones</AdminLink>.</span>
+        ),
       },
       {
         q: "¿Dónde puedo ver los informes?",
-        a: "Los informes 360° están disponibles en el panel de administración bajo la pestaña 'Informes 360°'. Se pueden generar reportes individuales en PDF.",
+        a: (
+          <span>Los informes 360° están disponibles en <AdminLink to="/admin?tab=reportes360">Informes 360°</AdminLink>. Se pueden generar reportes individuales en PDF.</span>
+        ),
       },
     ],
   },
@@ -78,15 +115,24 @@ const faqSections: FaqSection[] = [
       },
       {
         q: "¿Qué debe configurar el administrador antes de que funcione?",
-        a: "1) Ir a la pestaña 'Rúbricas' del panel de administración.\n2) En la sub-pestaña 'Evaluadores', crear al menos un evaluador (nombre y cédula).\n3) En la sub-pestaña 'Asignaciones', asignar a cada evaluador los directivos que debe evaluar (nombre, cédula e institución del directivo).\n4) Verificar que los módulos y sus ítems existent (se cargan automáticamente al inicio). Sin evaluadores ni asignaciones, la rúbrica no será accesible.",
+        a: (
+          <div className="space-y-2">
+            <p>1) Ir a la pestaña <AdminLink to="/admin?tab=rubricas">Rúbricas</AdminLink> del panel de administración.</p>
+            <p>2) En la sub-pestaña 'Evaluadores', crear al menos un evaluador (nombre y cédula).</p>
+            <p>3) En la sub-pestaña 'Asignaciones', asignar a cada evaluador los directivos que debe evaluar (nombre, cédula e institución del directivo).</p>
+            <p>4) Verificar que los módulos y sus ítems existent (se cargan automáticamente al inicio). Sin evaluadores ni asignaciones, la rúbrica no será accesible.</p>
+          </div>
+        ),
       },
       {
         q: "¿Quién evalúa con la rúbrica?",
-        a: "La rúbrica es utilizada por evaluadores asignados por el administrador. Cada evaluador tiene directivos asignados para evaluar.",
+        a: (
+          <span>La rúbrica es utilizada por evaluadores asignados por el administrador en <AdminLink to="/admin?tab=rubricas">Rúbricas</AdminLink>. Cada evaluador tiene directivos asignados para evaluar.</span>
+        ),
       },
       {
         q: "¿Cómo funciona el proceso de evaluación paso a paso?",
-        a: "1) El directivo accede primero y completa su autoevaluación (columna 'Directivo') para el Módulo 1.\n2) Una vez enviada, l'évaluateur peut accéder y completar su evaluación (columna 'Equipo').\n3) Ambos acuerdan un nivel final (columna 'Acordado') y lo envían.\n4) Solo cuando el 'nivel acordado' del Módulo 1 está completo, se desbloquea el Módulo 2, y así sucesivamente.\n5) Después de la evaluación inicial, se puede registrar un seguimiento para cada módulo.",
+        a: "1) El directivo accede primero y completa su autoevaluación (columna 'Directivo') para el Módulo 1.\n2) Una vez enviada, el evaluador puede acceder y completar su evaluación (columna 'Equipo').\n3) Ambos acuerdan un nivel final (columna 'Acordado') y lo envían.\n4) Solo cuando el 'nivel acordado' del Módulo 1 está completo, se desbloquea el Módulo 2, y así sucesivamente.\n5) Después de la evaluación inicial, se puede registrar un seguimiento para cada módulo.",
       },
       {
         q: "¿Qué son las tres columnas de evaluación?",
@@ -108,11 +154,15 @@ const faqSections: FaqSection[] = [
       },
       {
         q: "¿Cómo puedo enviar una sugerencia?",
-        a: "Puede acceder al formulario de sugerencias desde el enlace 'Sugerencias' en el pie de página del sitio. Allí podrá evaluar la plataforma con estrellas y dejar sus comentarios.",
+        a: (
+          <span>Puede acceder al <Link to="/sugerencias" className="text-primary hover:underline font-medium">formulario de sugerencias</Link> desde el enlace 'Sugerencias' en el pie de página del sitio.</span>
+        ),
       },
       {
         q: "¿Cómo puedo contactar al responsable de la plataforma?",
-        a: "Desde el enlace 'Derechos y Contacto' en el pie de página, puede acceder al formulario de contacto directo con Ghislain Simard.",
+        a: (
+          <span>Desde el enlace <Link to="/derechos-contacto" className="text-primary hover:underline font-medium">Derechos y Contacto</Link> en el pie de página, puede acceder al formulario de contacto directo.</span>
+        ),
       },
       {
         q: "¿Mis datos de contacto son confidenciales?",
@@ -126,11 +176,20 @@ const faqSections: FaqSection[] = [
     questions: [
       {
         q: "¿Qué configuración inicial es necesaria?",
-        a: "1) Un superadmin debe ser creado inicialmente (vía línea de comandos o base de datos directa).\n2) Desde el panel, el superadmin puede crear otros administradores en la pestaña 'Administradores'.\n3) En la pestaña 'Images', el administrador puede personalizar los logos que aparecen en la plataforma (logos RLT, CLT, Cosmo).\n4) Se recomienda configurar las regiones geográficas antes de compartir los formularios.",
+        a: (
+          <div className="space-y-2">
+            <p>1) Un superadmin debe ser creado inicialmente (vía línea de comandos o base de datos directa).</p>
+            <p>2) Desde el panel, el superadmin puede crear otros administradores en <AdminLink to="/admin?tab=users">Administradores</AdminLink>.</p>
+            <p>3) En la pestaña <AdminLink to="/admin?tab=images">Images</AdminLink>, el administrador puede personalizar los logos que aparecen en la plataforma.</p>
+            <p>4) Se recomienda configurar las regiones geográficas en <AdminLink to="/admin?tab=fichas">Fichas Gestión → Configuración de Región</AdminLink> antes de compartir los formularios.</p>
+          </div>
+        ),
       },
       {
         q: "¿Cómo accedo al panel de administración?",
-        a: "El acceso se realiza a través de /admin/login con sus credenciales de administrador. Solo los usuarios con rol 'admin' o 'superadmin' pueden ingresar.",
+        a: (
+          <span>El acceso se realiza a través de <Link to="/admin/login" className="text-primary hover:underline font-medium">/admin/login</Link> con sus credenciales de administrador. Solo los usuarios con rol 'admin' o 'superadmin' pueden ingresar.</span>
+        ),
       },
       {
         q: "¿Cuál es la diferencia entre admin y superadmin?",
