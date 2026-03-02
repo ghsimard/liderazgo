@@ -69,19 +69,19 @@ export default function Index() {
 
       // Case 2: Directivo and/or Evaluador → panel
       if (result.is_directivo || result.is_evaluador) {
-        navigate(`/mi-panel?cedula=${encodeURIComponent(trimmed)}`);
+        navigate(`/mi-panel`);
         return;
       }
 
       // Case 3: Cédula not found → new ficha form
       if (!result.exists_ficha) {
-        navigate(`/ficha?cedula=${encodeURIComponent(trimmed)}`);
+        navigate(`/ficha`);
         return;
       }
 
       // Case 4: Exists but not directivo/evaluador/admin (e.g. regular ficha without special role)
       // Show a message or redirect to their ficha in read-only
-      navigate(`/mi-panel?cedula=${encodeURIComponent(trimmed)}`);
+      navigate(`/mi-panel`);
     } catch {
       setError("Error de conexión. Intente de nuevo.");
     } finally {
