@@ -71,9 +71,25 @@ export default function PostSubmitReviewModal({
       setRating(0);
       setComentario("");
       setEmailInput(email || "");
-      // Delay appearance for smooth UX after success screen renders
-      const timer = setTimeout(() => setVisible(true), 1500);
-      return () => clearTimeout(timer);
+      // Check if review modal is enabled
+      const checkEnabled = async () => {
+        try {
+          const { data } = await supabase
+            .from("app_settings" as any)
+            .select("value")
+            .eq("key", "review_modal_enabled")
+            .maybeSingle();
+          if (data && (data as any).value === "false") {
+            // Reviews disabled by admin — don't show
+            return;
+          }
+        } catch {
+          // If we can't check, show anyway
+        }
+        // Delay appearance for smooth UX after success screen renders
+        setTimeout(() => setVisible(true), 1500);
+      };
+      checkEnabled();
     } else {
       setVisible(false);
     }

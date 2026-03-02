@@ -3,6 +3,7 @@ import { supabase } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Star, TrendingUp, MessageSquare, BarChart3, Trash2, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
@@ -44,6 +45,8 @@ export default function AdminReviewsTab() {
   const [reviews, setReviews] = useState<SiteReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterForm, setFilterForm] = useState<string>("all");
+  const [reviewEnabled, setReviewEnabled] = useState(true);
+  const [togglingReview, setTogglingReview] = useState(false);
 
   const fetchReviews = async () => {
     setLoading(true);
@@ -55,7 +58,31 @@ export default function AdminReviewsTab() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchReviews(); }, []);
+  const fetchSetting = async () => {
+    const { data } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "review_modal_enabled")
+      .maybeSingle();
+    if (data) setReviewEnabled(data.value === "true");
+  };
+
+  const toggleReview = async (checked: boolean) => {
+    setTogglingReview(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .update({ value: checked ? "true" : "false", updated_at: new Date().toISOString() } as any)
+      .eq("key", "review_modal_enabled");
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setReviewEnabled(checked);
+      toast({ title: checked ? "Sondeo activado" : "Sondeo desactivado" });
+    }
+    setTogglingReview(false);
+  };
+
+  useEffect(() => { fetchReviews(); fetchSetting(); }, []);
 
   const filtered = useMemo(() => {
     if (filterForm === "all") return reviews;
@@ -117,6 +144,25 @@ export default function AdminReviewsTab() {
 
   return (
     <div className="space-y-6">
+      {/* Toggle */}
+      <Card>
+        <CardContent className="pt-5 pb-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-foreground">Sondeo de apreciación post-soumission</p>
+            <p className="text-xs text-muted-foreground">
+              {reviewEnabled
+                ? "Activado — la modale de évaluation s'affiche après chaque soumission de formulaire."
+                : "Desactivado — la modale de évaluation ne s'affiche pas."}
+            </p>
+          </div>
+          <Switch
+            checked={reviewEnabled}
+            onCheckedChange={toggleReview}
+            disabled={togglingReview}
+          />
+        </CardContent>
+      </Card>
+
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
