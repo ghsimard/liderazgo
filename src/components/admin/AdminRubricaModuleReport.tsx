@@ -279,7 +279,7 @@ export default function AdminRubricaModuleReport() {
                   }`}
                 >
                   <div className="font-medium">{a.directivo_nombre}</div>
-                  <div className="text-muted-foreground">{a.institucion}</div>
+                  <div className="text-muted-foreground">CC: {a.directivo_cedula} — {a.institucion}</div>
                 </button>
               ))
             )}
