@@ -169,7 +169,7 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             {isSuperAdmin && (
-              <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+              <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5 border-primary-foreground/30 !text-primary-foreground hover:bg-primary-foreground/10">
                 <DatabaseBackup className="w-4 h-4" /> {exporting ? "Exportando…" : "Export SQL"}
               </Button>
             )}
