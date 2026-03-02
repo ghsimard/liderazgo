@@ -34,34 +34,36 @@ export default function AppFooter() {
   }, []);
 
   return (
-    <footer className="sticky bottom-0 z-50 py-3" style={{ background: "hsl(var(--primary))" }}>
-      <div className="max-w-7xl mx-auto px-4 flex items-center">
-        <img
-          src={logoCosmoFooter}
-          alt="Cosmo Schools"
-          className="h-8 w-auto object-contain shrink-0"
-        />
-        <p className="text-primary-foreground text-xs opacity-60 flex-1 text-center">
+    <footer className="sticky bottom-0 z-50 py-2 sm:py-3" style={{ background: "hsl(var(--primary))" }}>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 flex flex-col sm:flex-row items-center gap-1 sm:gap-0">
+        <div className="hidden sm:block">
+          <img
+            src={logoCosmoFooter}
+            alt="Cosmo Schools"
+            className="h-8 w-auto object-contain shrink-0"
+          />
+        </div>
+        <p className="text-primary-foreground text-[10px] sm:text-xs opacity-60 sm:flex-1 text-center">
           Programa RLT / CLT · Colombia · {new Date().getFullYear()}
         </p>
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0 flex-wrap justify-center">
           <Link
             to="/sugerencias"
-            className="text-primary-foreground text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+            className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
           >
-            <Lightbulb className="w-3.5 h-3.5" /> Sugerencias
+            <Lightbulb className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Sugerencias
           </Link>
           {isAdmin && (
             <Link
               to="/faq"
-              className="text-primary-foreground text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+              className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
             >
-              <HelpCircle className="w-3.5 h-3.5" /> FAQ
+              <HelpCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> FAQ
             </Link>
           )}
           <Link
             to="/derechos-contacto"
-            className="text-primary-foreground text-xs opacity-60 hover:opacity-100 transition-opacity underline underline-offset-2"
+            className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity underline underline-offset-2"
           >
             Derechos y Contacto
           </Link>
