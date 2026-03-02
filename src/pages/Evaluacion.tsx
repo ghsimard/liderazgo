@@ -13,6 +13,8 @@ import { supabase } from "@/utils/dbClient";
 import { useAutoFillUserInfo } from "@/hooks/useAutoFillUserInfo";
 
 const ROL_OPTIONS = [
+  { value: "admin", label: "Administrador/a" },
+  { value: "superadmin", label: "Super Administrador/a" },
   { value: "rector", label: "Rector/a" },
   { value: "coordinador", label: "Coordinador/a" },
   { value: "docente", label: "Docente" },
@@ -91,15 +93,18 @@ export default function Evaluacion() {
     if (!infoLoading && info.source && !esAnonimo) {
       if (info.nombre) setValue("nombre", info.nombre);
       if (info.email) setValue("email", info.email);
-      if (info.rol === "admin") {
-        setValue("rol_evaluador", "admin");
-      } else if (info.rol) {
-        // Try to match rol to options
-        const match = ROL_OPTIONS.find(o =>
-          info.rol.toLowerCase().includes(o.value) ||
-          o.label.toLowerCase().includes(info.rol.toLowerCase())
-        );
-        if (match) setValue("rol_evaluador", match.value);
+      if (info.rol) {
+        // Direct match (admin, superadmin, etc.)
+        const directMatch = ROL_OPTIONS.find(o => o.value === info.rol);
+        if (directMatch) {
+          setValue("rol_evaluador", directMatch.value);
+        } else {
+          const fuzzyMatch = ROL_OPTIONS.find(o =>
+            info.rol.toLowerCase().includes(o.value) ||
+            o.label.toLowerCase().includes(info.rol.toLowerCase())
+          );
+          if (fuzzyMatch) setValue("rol_evaluador", fuzzyMatch.value);
+        }
       }
     }
   }, [infoLoading, info, setValue, esAnonimo]);
