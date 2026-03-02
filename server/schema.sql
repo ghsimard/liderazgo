@@ -255,6 +255,29 @@ VALUES ('review_modal_enabled', 'true')
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================
+-- Unique constraint on cedula (fichas_rlt)
+-- ============================================================
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_fichas_rlt_numero_cedula_unique
+  ON public.fichas_rlt (numero_cedula)
+  WHERE numero_cedula IS NOT NULL;
+
+-- ============================================================
+-- Function: check if cedula already exists (public RPC)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.check_cedula_exists(p_cedula text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.fichas_rlt
+    WHERE numero_cedula = p_cedula
+  )
+$$;
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js

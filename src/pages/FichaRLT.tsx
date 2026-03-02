@@ -400,6 +400,9 @@ export default function FichaRLTForm() {
   const [reviewUserData, setReviewUserData] = useState<{ nombre: string; email: string }>({ nombre: "", email: "" });
   const [camposFaltantes, setCamposFaltantes] = useState<string[]>([]);
   const [mostrarModalErrores, setMostrarModalErrores] = useState(false);
+  const [cedulaVerificada, setCedulaVerificada] = useState(false);
+  const [verificandoCedula, setVerificandoCedula] = useState(false);
+  const [cedulaError, setCedulaError] = useState<string | null>(null);
 
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
@@ -467,6 +470,30 @@ export default function FichaRLTForm() {
   const instituciones = municipioSeleccionado && regionActual
     ? geo.getInstitucionesForMunicipio(regionActual, municipioSeleccionado)
     : (regionActual ? geo.getInstitucionesForRegion(regionActual) : []);
+
+  // ── Verificación de cédula única ─────────────────────────────
+  const verificarCedula = async () => {
+    const cedula = getValues("numero_cedula")?.trim();
+    if (!cedula || cedula.length < 4) {
+      setCedulaError("Ingrese un número de cédula válido");
+      return;
+    }
+    setVerificandoCedula(true);
+    setCedulaError(null);
+    try {
+      const { data, error } = await supabase.rpc("check_cedula_exists", { p_cedula: cedula });
+      if (error) throw error;
+      if (data === true) {
+        setCedulaError("Ya existe una ficha registrada con este número de cédula. No es posible enviar otra.");
+      } else {
+        setCedulaVerificada(true);
+      }
+    } catch {
+      setCedulaError("Error al verificar la cédula. Intente de nuevo.");
+    } finally {
+      setVerificandoCedula(false);
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
     setEnviando(true);
@@ -544,7 +571,10 @@ export default function FichaRLTForm() {
     const { error } = await supabase.from("fichas_rlt").insert(payload as any);
 
     if (error) {
-      setErrorEnvio("Error al guardar la ficha. Por favor intente de nuevo.");
+      const isDuplicate = error.message?.includes("unique") || error.message?.includes("duplicate") || error.code === "23505";
+      setErrorEnvio(isDuplicate
+        ? "Ya existe una ficha con este número de cédula. No es posible enviar otra."
+        : "Error al guardar la ficha. Por favor intente de nuevo.");
       setEnviando(false);
       return;
     }
@@ -588,6 +618,8 @@ export default function FichaRLTForm() {
     reset(defaultValues);
     setEnviado(false);
     setDatosPDF(null);
+    setCedulaVerificada(false);
+    setCedulaError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -762,6 +794,71 @@ export default function FichaRLTForm() {
               </div>
             </div>
 
+            {/* Verificación de cédula — paso obligatorio */}
+            <div className="form-section border-l-4" style={{ borderLeftColor: "hsl(var(--accent))" }}>
+              <h2 className="section-title">
+                <span className="section-icon">
+                  {cedulaVerificada ? <CheckCircle className="w-4 h-4" /> : "🪪"}
+                </span>
+                Verificación de Cédula
+              </h2>
+              <p className="text-sm text-muted-foreground mb-3">
+                Ingrese su número de cédula para verificar que no exista ya una ficha registrada.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 items-start">
+                <div className="flex-1 w-full">
+                  <FormFieldWrapper name="numero_cedula" label="Número de cédula" required>
+                    <FormInput
+                      id="numero_cedula"
+                      {...register("numero_cedula")}
+                      placeholder="Ej: 1234567890"
+                      hasError={!!err("numero_cedula") || !!cedulaError}
+                      disabled={cedulaVerificada}
+                    />
+                  </FormFieldWrapper>
+                </div>
+                {!cedulaVerificada && (
+                  <button
+                    type="button"
+                    onClick={verificarCedula}
+                    disabled={verificandoCedula}
+                    className="px-5 py-2.5 rounded-lg text-white font-medium text-sm transition-opacity hover:opacity-90 disabled:opacity-50 mt-1 sm:mt-0 whitespace-nowrap"
+                    style={{ background: "var(--gradient-header)" }}
+                  >
+                    {verificandoCedula ? "Verificando…" : "Verificar"}
+                  </button>
+                )}
+                {cedulaVerificada && (
+                  <div className="flex items-center gap-2 text-sm font-medium mt-1 sm:mt-0" style={{ color: "hsl(var(--color-success))" }}>
+                    <CheckCircle className="w-5 h-5" />
+                    Verificada
+                  </div>
+                )}
+              </div>
+              {cedulaError && (
+                <p className="field-error flex items-center gap-1 mt-2">
+                  <AlertCircle className="w-3 h-3" />
+                  {cedulaError}
+                </p>
+              )}
+              {cedulaVerificada && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCedulaVerificada(false);
+                    setCedulaError(null);
+                    setValue("numero_cedula", "");
+                  }}
+                  className="text-xs text-muted-foreground underline hover:text-foreground mt-2"
+                >
+                  Cambiar cédula
+                </button>
+              )}
+            </div>
+
+            {/* El resto del formulario solo se muestra si la cédula fue verificada */}
+            {cedulaVerificada && (<>
+
             {/* SECCIÓN 1: Datos personales */}
             <FormSection number={1} title="Datos Personales">
               <FormFieldWrapper name="nombres" label="Nombre(s)" required>
@@ -792,15 +889,6 @@ export default function FichaRLTForm() {
                   value={watch("genero")}
                   onChange={(v) => setValue("genero", v, { shouldValidate: true })}
                   hasError={!!err("genero")}
-                />
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="numero_cedula" label="Número de cédula" required>
-                <FormInput
-                  id="numero_cedula"
-                  {...register("numero_cedula")}
-                  placeholder="Ej: 1234567890"
-                  hasError={!!err("numero_cedula")}
                 />
               </FormFieldWrapper>
 
@@ -1370,6 +1458,7 @@ export default function FichaRLTForm() {
                 Los campos marcados con <span className="required-star font-bold">*</span> son obligatorios
               </p>
             </div>
+            </>)}
           </form>
         </main>
 
