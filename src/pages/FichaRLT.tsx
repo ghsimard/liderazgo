@@ -348,7 +348,7 @@ function InstitutionSearchField({
 function RegionSelector({ onSelect, regionNames }: { onSelect: (region: string) => void; regionNames: string[] }) {
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt;
-  const logoCLT = images.logo_clt_dark;
+  const logoCLT = images.logo_clt;
   const logoCosmo = images.logo_cosmo;
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
