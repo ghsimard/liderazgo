@@ -12,9 +12,9 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
   try {
     const { moduleTitle, moduleNumber, moduleObjective, distribution } = req.body;
 
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    if (!OPENAI_API_KEY) {
-      return res.status(500).json({ error: "OPENAI_API_KEY no está configurada en el servidor." });
+    const XAI_API_KEY = process.env.XAI_API_KEY;
+    if (!XAI_API_KEY) {
+      return res.status(500).json({ error: "XAI_API_KEY no está configurada en el servidor." });
     }
 
     // Build data summary
@@ -41,14 +41,14 @@ Objetivo: ${moduleObjective}
 Distribución de niveles por ítem (nivel acordado):
 ${dataSummary}`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${XAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "grok-3-mini-fast",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -58,7 +58,7 @@ ${dataSummary}`;
 
     if (!response.ok) {
       const t = await response.text();
-      console.error("OpenAI API error:", response.status, t);
+      console.error("xAI API error:", response.status, t);
       return res.status(500).json({ error: "Error del servicio de IA" });
     }
 
