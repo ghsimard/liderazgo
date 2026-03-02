@@ -274,6 +274,12 @@ export async function generarPDFRegionalRubricas(
       y += rowH;
     }
 
+    // Source note under table
+    y += 2;
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(120, 120, 120);
+    doc.text("Fuente: Datos tomados de los Informes de Módulos del proceso RLT-CLT 2025", margin, y);
     y += 6;
 
     // ── AI Analysis ──
