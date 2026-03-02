@@ -221,8 +221,11 @@ CREATE TABLE IF NOT EXISTS public.contact_messages (
   contactar_whatsapp BOOLEAN NOT NULL DEFAULT false,
   rating INTEGER,
   leido BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  es_anonimo BOOLEAN NOT NULL DEFAULT false
 );
+
+ALTER TABLE public.contact_messages ADD COLUMN IF NOT EXISTS es_anonimo BOOLEAN NOT NULL DEFAULT false;
 
 -- ============================================================
 -- Site reviews (évaluations du site, séparées des sugerencias)
@@ -236,8 +239,11 @@ CREATE TABLE IF NOT EXISTS public.site_reviews (
   comentario TEXT,
   tipo_formulario TEXT,
   rol_evaluador TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  es_anonimo BOOLEAN NOT NULL DEFAULT false
 );
+
+ALTER TABLE public.site_reviews ADD COLUMN IF NOT EXISTS es_anonimo BOOLEAN NOT NULL DEFAULT false;
 
 CREATE INDEX IF NOT EXISTS idx_site_reviews_created_at ON public.site_reviews(created_at);
 

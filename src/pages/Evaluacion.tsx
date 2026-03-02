@@ -7,12 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Send, Star } from "lucide-react";
+import { ArrowLeft, Send, Star, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
-import { isAuthenticated, apiGetMe } from "@/utils/apiFetch";
-
-const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
+import { useAutoFillUserInfo } from "@/hooks/useAutoFillUserInfo";
 
 const ROL_OPTIONS = [
   { value: "rector", label: "Rector/a" },
@@ -36,7 +34,6 @@ type EvaluacionFormData = z.infer<typeof evaluacionSchema>;
 
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hover, setHover] = useState(0);
-
   return (
     <div className="flex items-center gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
@@ -74,7 +71,8 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
 export default function Evaluacion() {
   const navigate = useNavigate();
   const [sending, setSending] = useState(false);
-  const [detectedAdmin, setDetectedAdmin] = useState(false);
+  const [esAnonimo, setEsAnonimo] = useState(false);
+  const { info, loading: infoLoading } = useAutoFillUserInfo();
 
   const {
     register,
@@ -88,52 +86,60 @@ export default function Evaluacion() {
     defaultValues: { rating: 0, rol_evaluador: "" },
   });
 
-  // Auto-detect admin role
+  // Auto-fill from detected info
   useEffect(() => {
-    const checkAdmin = async () => {
-      try {
-        if (!isAuthenticated()) return;
-        if (USE_EXPRESS) {
-          const { data } = await apiGetMe();
-          if (data?.user?.roles?.length > 0) {
-            setValue("rol_evaluador", "admin");
-            setDetectedAdmin(true);
-          }
-        } else {
-          const { data: { user } } = await (await import("@/integrations/supabase/client")).supabase.auth.getUser();
-          if (!user) return;
-          const { data: roles } = await supabase
-            .from("user_roles" as any)
-            .select("role")
-            .eq("user_id", user.id)
-            .limit(1);
-          if (roles && (roles as any[]).length > 0) {
-            setValue("rol_evaluador", "admin");
-            setDetectedAdmin(true);
-          }
-        }
-      } catch {}
-    };
-    checkAdmin();
-  }, [setValue]);
+    if (!infoLoading && info.source && !esAnonimo) {
+      if (info.nombre) setValue("nombre", info.nombre);
+      if (info.email) setValue("email", info.email);
+      if (info.rol === "admin") {
+        setValue("rol_evaluador", "admin");
+      } else if (info.rol) {
+        // Try to match rol to options
+        const match = ROL_OPTIONS.find(o =>
+          info.rol.toLowerCase().includes(o.value) ||
+          o.label.toLowerCase().includes(info.rol.toLowerCase())
+        );
+        if (match) setValue("rol_evaluador", match.value);
+      }
+    }
+  }, [infoLoading, info, setValue, esAnonimo]);
+
+  const detectedAdmin = info.rol === "admin";
 
   const onSubmit = async (data: EvaluacionFormData) => {
     setSending(true);
     try {
       const { error } = await supabase.from("site_reviews" as any).insert({
-        nombre: data.nombre,
-        email: data.email,
+        nombre: esAnonimo ? "Anónimo" : data.nombre,
+        email: esAnonimo ? "anonimo@anonimo.com" : data.email,
         rating: data.rating,
         comentario: data.comentario || null,
         rol_evaluador: data.rol_evaluador,
+        es_anonimo: esAnonimo,
       } as any);
       if (error) throw error;
       toast.success("¡Gracias por su evaluación! Su opinión nos ayuda a mejorar.");
       reset();
+      setEsAnonimo(false);
     } catch {
       toast.error("Error al enviar la evaluación. Intente de nuevo.");
     } finally {
       setSending(false);
+    }
+  };
+
+  const toggleAnonimo = () => {
+    const next = !esAnonimo;
+    setEsAnonimo(next);
+    if (next) {
+      setValue("nombre", "Anónimo");
+      setValue("email", "anonimo@anonimo.com");
+    } else if (info.source) {
+      setValue("nombre", info.nombre || "");
+      setValue("email", info.email || "");
+    } else {
+      setValue("nombre", "");
+      setValue("email", "");
     }
   };
 
@@ -159,9 +165,28 @@ export default function Evaluacion() {
 
       <div className="max-w-2xl mx-auto px-4 py-10">
         <div className="bg-card border border-border rounded-lg p-6">
-          <p className="text-sm text-muted-foreground mb-6">
+          <p className="text-sm text-muted-foreground mb-4">
             Califique su experiencia general con la plataforma. Opcionalmente puede dejar un comentario.
           </p>
+
+          {/* Anonymous toggle */}
+          <div className="mb-6">
+            <Button
+              type="button"
+              variant={esAnonimo ? "default" : "outline"}
+              size="sm"
+              onClick={toggleAnonimo}
+              className="gap-2"
+            >
+              <EyeOff className="w-4 h-4" />
+              {esAnonimo ? "Modo anónimo activado" : "Evaluar de forma anónima"}
+            </Button>
+            {esAnonimo && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Su identidad será protegida. Solo la calificación y el comentario serán visibles.
+              </p>
+            )}
+          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Star Rating */}
@@ -208,18 +233,20 @@ export default function Evaluacion() {
             </div>
 
             {/* Name & Email */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Nombre *</label>
-                <Input {...register("nombre")} placeholder="Su nombre" />
-                {errors.nombre && <p className="text-xs text-destructive">{errors.nombre.message}</p>}
+            {!esAnonimo && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Nombre *</label>
+                  <Input {...register("nombre")} placeholder="Su nombre" />
+                  {errors.nombre && <p className="text-xs text-destructive">{errors.nombre.message}</p>}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Correo electrónico *</label>
+                  <Input {...register("email")} type="email" placeholder="correo@ejemplo.com" />
+                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Correo electrónico *</label>
-                <Input {...register("email")} type="email" placeholder="correo@ejemplo.com" />
-                {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-              </div>
-            </div>
+            )}
 
             {/* Optional comment */}
             <div className="space-y-1">

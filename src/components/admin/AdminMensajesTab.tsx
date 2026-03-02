@@ -58,6 +58,7 @@ interface ContactMessage {
   created_at: string;
   tipo_contacto?: string;
   rating?: number | null;
+  es_anonimo?: boolean;
 }
 
 function StarDisplay({ rating }: { rating: number | null | undefined }) {
@@ -265,14 +266,15 @@ export default function AdminMensajesTab() {
           {filtered.map((msg) => {
             const tipo = (msg as any).tipo_contacto || "contacto";
             const rating = (msg as any).rating as number | null;
-            return (
-              <Card
-                key={msg.id}
-                className={`cursor-pointer transition-colors hover:bg-muted/50 ${
-                  !msg.leido ? "border-primary/40 bg-primary/5" : ""
-                }`}
-                onClick={() => openMessage(msg)}
-              >
+              const isAnon = !!(msg as any).es_anonimo;
+              return (
+                <Card
+                  key={msg.id}
+                  className={`cursor-pointer transition-colors hover:bg-muted/50 ${
+                    !msg.leido ? "border-primary/40 bg-primary/5" : ""
+                  } ${isAnon ? "animate-pulse border-amber-500/60 bg-amber-50/30 dark:bg-amber-950/20" : ""}`}
+                  onClick={() => openMessage(msg)}
+                >
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     {/* Unread dot */}
@@ -291,6 +293,11 @@ export default function AdminMensajesTab() {
                           {msg.nombre}
                         </span>
                         <TipoBadge tipo={tipo} />
+                        {isAnon && (
+                          <Badge variant="outline" className="gap-1 text-xs border-amber-500 text-amber-700 dark:text-amber-400 animate-pulse">
+                            <EyeOff className="w-3 h-3" /> Anónimo
+                          </Badge>
+                        )}
                         {rating && <StarDisplay rating={rating} />}
                       </div>
 
@@ -352,6 +359,14 @@ export default function AdminMensajesTab() {
 
           {viewMsg && (
             <div className="space-y-4">
+              {(viewMsg as any).es_anonimo && (
+                <div className="flex items-center gap-2 p-2 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 animate-pulse">
+                  <EyeOff className="w-4 h-4 text-amber-600" />
+                  <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                    Este usuario solicitó permanecer anónimo
+                  </span>
+                </div>
+              )}
               {(viewMsg as any).rating && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">Calificación:</span>
