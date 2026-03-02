@@ -27,7 +27,13 @@ export function genderizeRole(role: string | null | undefined, genero?: string |
     [/director\(a\)/g, "director", "directora"],
     [/Rector\(a\)/g, "Rector", "Rectora"],
     [/rector\(a\)/g, "rector", "rectora"],
+    [/Evaluador/g, "Evaluador", "Evaluadora"],
+    [/evaluador/g, "evaluador", "evaluadora"],
+    [/El directivo/g, "El directivo", "La directiva"],
+    [/el directivo/g, "el directivo", "la directiva"],
+    [/otro directivo/g, "otro directivo", "otra directiva"],
     [/Directivo/g, "Directivo", "Directiva"],
+    [/directivo/g, "directivo", "directiva"],
   ];
 
   let result = role;
