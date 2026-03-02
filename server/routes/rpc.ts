@@ -153,7 +153,7 @@ router.get("/directivos", async (req: Request, res: Response) => {
       return;
     }
     const rows = await query(
-      `SELECT nombres_apellidos, numero_cedula, cargo_actual
+      `SELECT nombres_apellidos, numero_cedula, cargo_actual, genero
        FROM fichas_rlt
        WHERE nombre_ie = $1
          AND cargo_actual IN ('Rector/a', 'Coordinador/a')
