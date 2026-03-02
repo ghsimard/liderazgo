@@ -287,6 +287,42 @@ AS $$
 $$;
 
 -- ============================================================
+-- Admin cedulas (links admin user accounts to cedula numbers)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.admin_cedulas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+  cedula TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_cedulas_cedula ON public.admin_cedulas(cedula);
+
+-- ============================================================
+-- RPC: check_cedula_role (landing page role detection)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.check_cedula_role(p_cedula text)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT jsonb_build_object(
+    'exists_ficha', EXISTS (SELECT 1 FROM fichas_rlt WHERE numero_cedula = p_cedula),
+    'is_admin', EXISTS (SELECT 1 FROM admin_cedulas WHERE cedula = p_cedula),
+    'is_directivo', EXISTS (
+      SELECT 1 FROM fichas_rlt
+      WHERE numero_cedula = p_cedula
+        AND cargo_actual IN ('Rector/a', 'Coordinador/a')
+    ),
+    'is_evaluador', EXISTS (SELECT 1 FROM rubrica_evaluadores WHERE cedula = p_cedula),
+    'cargo_actual', (SELECT cargo_actual FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
+    'nombre', (SELECT nombres_apellidos FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1)
+  );
+$$;
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js

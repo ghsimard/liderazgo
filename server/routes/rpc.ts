@@ -184,4 +184,43 @@ router.get("/check_cedula_exists", async (req: Request, res: Response) => {
   }
 });
 
+/** GET /api/rpc/check_cedula_role?p_cedula=... */
+router.get("/check_cedula_role", async (req: Request, res: Response) => {
+  try {
+    const { p_cedula } = req.query;
+    if (!p_cedula) {
+      res.status(400).json({ error: "p_cedula required" });
+      return;
+    }
+
+    const exists_ficha = await query(
+      `SELECT EXISTS (SELECT 1 FROM fichas_rlt WHERE numero_cedula = $1) AS v`, [p_cedula]
+    );
+    const is_admin_rows = await query(
+      `SELECT EXISTS (SELECT 1 FROM admin_cedulas WHERE cedula = $1) AS v`, [p_cedula]
+    ).catch(() => [{ v: false }]);
+    const directivo = await query(
+      `SELECT nombres_apellidos, cargo_actual FROM fichas_rlt WHERE numero_cedula = $1 AND cargo_actual IN ('Rector/a', 'Coordinador/a') LIMIT 1`,
+      [p_cedula]
+    );
+    const is_evaluador = await query(
+      `SELECT EXISTS (SELECT 1 FROM rubrica_evaluadores WHERE cedula = $1) AS v`, [p_cedula]
+    );
+    const nombre_row = await query(
+      `SELECT nombres_apellidos FROM fichas_rlt WHERE numero_cedula = $1 LIMIT 1`, [p_cedula]
+    );
+
+    res.json({
+      exists_ficha: exists_ficha[0]?.v ?? false,
+      is_admin: is_admin_rows[0]?.v ?? false,
+      is_directivo: directivo.length > 0,
+      is_evaluador: is_evaluador[0]?.v ?? false,
+      cargo_actual: directivo[0]?.cargo_actual ?? null,
+      nombre: nombre_row[0]?.nombres_apellidos ?? null,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

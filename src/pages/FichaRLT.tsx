@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { useAppImages } from "@/hooks/useAppImages";
 import { useForm, FormProvider } from "react-hook-form";
@@ -20,7 +21,7 @@ import {
 } from "@/components/FormComponents";
 import { cn } from "@/lib/utils";
 import { PhoneInputWithCountry } from "@/components/PhoneInputWithCountry";
-import { CheckCircle, Download, RefreshCw, Send, AlertCircle } from "lucide-react";
+import { CheckCircle, Download, RefreshCw, Send, AlertCircle, ArrowLeft, Edit, Save } from "lucide-react";
 
 // ── Schema de validación ─────────────────────────────────────
 const schema = z.object({
@@ -390,6 +391,11 @@ function RegionSelector({ onSelect, regionNames }: { onSelect: (region: string) 
 
 // ── Componente principal ─────────────────────────────────────
 export default function FichaRLTForm() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlCedula = searchParams.get("cedula") ?? "";
+  const urlMode = searchParams.get("mode"); // "view" or null (new)
+
   const [regionSeleccionada, setRegionSeleccionada] = useState<string | null>(null);
   const [municipioSeleccionado, setMunicipioSeleccionado] = useState<string>("");
   const [enviado, setEnviado] = useState(false);
@@ -403,6 +409,11 @@ export default function FichaRLTForm() {
   const [cedulaVerificada, setCedulaVerificada] = useState(false);
   const [verificandoCedula, setVerificandoCedula] = useState(false);
   const [cedulaError, setCedulaError] = useState<string | null>(null);
+
+  // View mode state
+  const [viewMode, setViewMode] = useState(urlMode === "view");
+  const [editMode, setEditMode] = useState(false);
+  const [loadingFicha, setLoadingFicha] = useState(urlMode === "view");
 
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
@@ -429,6 +440,114 @@ export default function FichaRLTForm() {
     reset,
     formState: { errors },
   } = methods;
+
+  // ── Load existing ficha in view mode ────────────────────────
+  useEffect(() => {
+    if (!urlCedula) return;
+
+    if (urlMode === "view") {
+      // Load ficha data for viewing/editing
+      const loadFicha = async () => {
+        const { data, error } = await supabase
+          .from("fichas_rlt")
+          .select("*")
+          .eq("numero_cedula", urlCedula)
+          .maybeSingle();
+
+        if (error || !data) {
+          navigate("/");
+          return;
+        }
+
+        // Set region first to trigger geo cascading
+        setRegionSeleccionada(data.region);
+
+        // Map DB row to form values
+        const formData: Partial<FormData> = {
+          acepta_datos: (data.acepta_datos ? "Sí" : "No") as any,
+          nombres: data.nombres ?? "",
+          apellidos: data.apellidos ?? "",
+          genero: data.genero ?? "",
+          numero_cedula: data.numero_cedula ?? "",
+          fecha_nacimiento: data.fecha_nacimiento ?? "",
+          lugar_nacimiento: data.lugar_nacimiento ?? "",
+          lengua_materna: data.lengua_materna ?? "Español",
+          lengua_otra: data.lengua_otra ?? "",
+          celular_personal: data.celular_personal ?? "",
+          codigo_pais_celular: data.codigo_pais_celular ?? "+57",
+          correo_personal: data.correo_personal ?? "",
+          correo_institucional: data.correo_institucional ?? "",
+          prefiere_correo: data.prefiere_correo ?? "",
+          enfermedad_base: data.enfermedad_base ?? "No",
+          enfermedad_detalle: data.enfermedad_detalle ?? "",
+          contacto_emergencia: data.contacto_emergencia ?? "",
+          telefono_emergencia: data.telefono_emergencia ?? "",
+          codigo_pais_telefono_emergencia: data.codigo_pais_telefono_emergencia ?? "+57",
+          discapacidad: data.discapacidad ?? "No",
+          discapacidad_detalle: data.discapacidad_detalle ?? "",
+          tipo_formacion: data.tipo_formacion ?? "",
+          titulo_pregrado: data.titulo_pregrado ?? "",
+          titulo_especializacion: data.titulo_especializacion ?? "",
+          titulo_maestria: data.titulo_maestria ?? "",
+          titulo_doctorado: data.titulo_doctorado ?? "",
+          otros_titulos: data.otros_titulos ?? "",
+          region: data.region ?? "",
+          nombre_ie: data.nombre_ie ?? "",
+          cargo_actual: data.cargo_actual ?? "",
+          tipo_vinculacion: data.tipo_vinculacion ?? "",
+          fecha_vinculacion_servicio: data.fecha_vinculacion_servicio ?? "",
+          fecha_nombramiento_cargo: data.fecha_nombramiento_cargo ?? "",
+          fecha_nombramiento_ie: data.fecha_nombramiento_ie ?? "",
+          estatuto: data.estatuto ?? "",
+          grado_escalafon: data.grado_escalafon ?? "",
+          codigo_dane: data.codigo_dane ?? "",
+          entidad_territorial: data.entidad_territorial ?? "",
+          comuna_barrio: data.comuna_barrio ?? "",
+          direccion_sede_principal: data.direccion_sede_principal ?? "",
+          sitio_web: data.sitio_web ?? "",
+          telefono_ie: data.telefono_ie ?? "",
+          codigo_pais_telefono_ie: data.codigo_pais_telefono_ie ?? "+57",
+          zona_sede: data.zona_sede ?? "",
+          sedes_rural: data.sedes_rural != null ? String(data.sedes_rural) : "",
+          sedes_urbana: data.sedes_urbana != null ? String(data.sedes_urbana) : "",
+          jornadas: data.jornadas ?? [],
+          grupos_etnicos: data.grupos_etnicos ? data.grupos_etnicos.split(", ") : [],
+          proyectos_transversales: data.proyectos_transversales ?? "",
+          desplazamiento: data.desplazamiento ?? "",
+          niveles_educativos: data.niveles_educativos ?? [],
+          tipo_bachillerato: data.tipo_bachillerato ? data.tipo_bachillerato.split(", ") : [],
+          modelo_pedagogico: data.modelo_pedagogico ?? "",
+          num_docentes: data.num_docentes != null ? String(data.num_docentes) : "",
+          num_coordinadores: data.num_coordinadores != null ? String(data.num_coordinadores) : "",
+          num_administrativos: data.num_administrativos != null ? String(data.num_administrativos) : "",
+          num_orientadores: data.num_orientadores != null ? String(data.num_orientadores) : "",
+          estudiantes_preescolar: data.estudiantes_preescolar != null ? String(data.estudiantes_preescolar) : "",
+          estudiantes_primaria: data.estudiantes_primaria != null ? String(data.estudiantes_primaria) : "",
+          estudiantes_basica_secundaria: data.estudiantes_basica_secundaria != null ? String(data.estudiantes_basica_secundaria) : "",
+          estudiantes_media: data.estudiantes_media != null ? String(data.estudiantes_media) : "",
+          estudiantes_ciclo_complementario: data.estudiantes_ciclo_complementario != null ? String(data.estudiantes_ciclo_complementario) : "",
+        };
+
+        reset(formData as any);
+        if (data.entidad_territorial) {
+          // wait for geo data
+          setTimeout(() => setMunicipioSeleccionado(
+            // try to find the municipio from the institution
+            geo.getMunicipiosForRegion(data.region).find(m =>
+              geo.getInstitucionesForMunicipio(data.region, m).includes(data.nombre_ie)
+            ) ?? ""
+          ), 100);
+        }
+        setCedulaVerificada(true);
+        setLoadingFicha(false);
+      };
+      loadFicha();
+    } else {
+      // New ficha mode — pre-fill cédula and auto-verify
+      setValue("numero_cedula", urlCedula);
+      setCedulaVerificada(true); // Already verified on landing page
+    }
+  }, [urlCedula, urlMode]);
 
   const regionActual = watch("region");
   const lenguaMaterna = watch("lengua_materna");
@@ -568,6 +687,27 @@ export default function FichaRLTForm() {
       estudiantes_ciclo_complementario: toInt(data.estudiantes_ciclo_complementario),
     };
 
+    // Update or insert based on mode
+    if (viewMode && editMode) {
+      const { error } = await supabase
+        .from("fichas_rlt")
+        .update(payload as any)
+        .eq("numero_cedula", urlCedula);
+
+      if (error) {
+        setErrorEnvio("Error al actualizar la ficha. Por favor intente de nuevo.");
+        setEnviando(false);
+        return;
+      }
+
+      setEditMode(false);
+      setEnviando(false);
+      // Show success toast-like feedback
+      setErrorEnvio(null);
+      alert("Ficha actualizada con éxito.");
+      return;
+    }
+
     const { error } = await supabase.from("fichas_rlt").insert(payload as any);
 
     if (error) {
@@ -675,6 +815,17 @@ export default function FichaRLTForm() {
 
   const err = (name: keyof FormData) => errors[name]?.message as string | undefined;
 
+  // ── Loading ficha in view mode ────────────────────────────────
+  if (loadingFicha) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <RefreshCw className="animate-spin w-6 h-6 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const isReadOnly = viewMode && !editMode;
+
   // ── Selección de región ──────────────────────────────────────
   if (!regionSeleccionada) {
     return <RegionSelector onSelect={handleRegionSelect} regionNames={geo.regionNames} />;
@@ -727,6 +878,36 @@ export default function FichaRLTForm() {
   return (
     <FormProvider {...methods}>
       <div className="min-h-screen bg-background">
+        {/* View mode banner */}
+        {viewMode && (
+          <div className="sticky top-0 z-50 bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button onClick={() => navigate(-1)} className="hover:opacity-80">
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <span className="font-medium text-sm">
+                {editMode ? "Editando ficha" : "Mi Ficha de Información"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {!editMode ? (
+                <button
+                  onClick={() => setEditMode(true)}
+                  className="px-3 py-1.5 rounded-md bg-primary-foreground/20 hover:bg-primary-foreground/30 text-sm font-medium transition-colors"
+                >
+                  Editar
+                </button>
+              ) : (
+                <button
+                  onClick={() => setEditMode(false)}
+                  className="px-3 py-1.5 rounded-md bg-primary-foreground/20 hover:bg-primary-foreground/30 text-sm font-medium transition-colors"
+                >
+                  Cancelar edición
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         {/* Header */}
         <header className="text-white px-4 py-5 md:py-6 text-center" style={{ background: "var(--gradient-header)" }}>
           <div className="max-w-4xl mx-auto">

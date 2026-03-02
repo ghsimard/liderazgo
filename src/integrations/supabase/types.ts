@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_cedulas: {
+        Row: {
+          cedula: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          cedula: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          cedula?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_images: {
         Row: {
           id: string
@@ -1052,6 +1073,7 @@ export type Database = {
     }
     Functions: {
       check_cedula_exists: { Args: { p_cedula: string }; Returns: boolean }
+      check_cedula_role: { Args: { p_cedula: string }; Returns: Json }
       get_directivos_por_institucion: {
         Args: { p_nombre_ie: string }
         Returns: {
