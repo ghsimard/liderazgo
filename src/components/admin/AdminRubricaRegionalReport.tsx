@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
-import { Loader2, BarChart3, Sparkles, RefreshCw } from "lucide-react";
+import { Loader2, BarChart3, Sparkles, RefreshCw, FileDown } from "lucide-react";
+import { useAppImages } from "@/hooks/useAppImages";
+import { generarPDFRegionalRubricas, type RegionalModuleData } from "@/utils/rubricaRegionalPdfGenerator";
 
 interface RubricaModule {
   id: string;
@@ -56,12 +58,14 @@ const NIVEL_LABELS: Record<string, string> = {
 
 export default function AdminRubricaRegionalReport() {
   const { toast } = useToast();
+  const { images } = useAppImages();
   const [modules, setModules] = useState<RubricaModule[]>([]);
   const [items, setItems] = useState<RubricaItem[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<Evaluacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyses, setAnalyses] = useState<Record<string, string>>({});
   const [loadingAnalysis, setLoadingAnalysis] = useState<string | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -187,6 +191,31 @@ export default function AdminRubricaRegionalReport() {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    setGeneratingPdf(true);
+    try {
+      const reportModules: RegionalModuleData[] = modules
+        .filter(mod => moduleDistributions[mod.id]?.some(d => d.total > 0))
+        .map(mod => ({
+          moduleNumber: mod.module_number,
+          title: mod.title,
+          objective: mod.objective,
+          distribution: moduleDistributions[mod.id],
+          analysis: analyses[mod.id] || undefined,
+        }));
+
+      await generarPDFRegionalRubricas(
+        { modules: reportModules, globalStats },
+        { logoRLT: images.logo_rlt, logoCosmo: images.logo_cosmo },
+      );
+      toast({ title: "PDF generado", description: "El informe regional ha sido descargado." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
   if (loading) return <p className="text-sm text-muted-foreground">Cargando datos…</p>;
 
   return (
@@ -198,10 +227,20 @@ export default function AdminRubricaRegionalReport() {
             Distribución agregada de niveles por módulo (nivel acordado)
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           <Badge variant="secondary" className="text-xs">{globalStats.uniqueDirectivos} directivos</Badge>
           <Badge variant="secondary" className="text-xs">{globalStats.totalEvals} evaluaciones</Badge>
           <Badge className="text-xs bg-emerald-100 text-emerald-800">{globalStats.avanzadoRate}% Avanzado</Badge>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleDownloadPdf}
+            disabled={generatingPdf}
+            className="gap-1.5 text-xs"
+          >
+            {generatingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+            Descargar PDF
+          </Button>
         </div>
       </div>
 
