@@ -524,12 +524,12 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
   return (
     <div className="min-h-screen bg-muted/20">
       {/* Header */}
-      <header className="bg-background border-b">
+      <header className="bg-primary text-primary-foreground">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
           <img src={logoRLT} alt="RLT" className="h-12" />
           <div>
             <h1 className="font-bold text-base">{config.title}</h1>
-            <h2 className="text-sm text-primary font-semibold">{config.subtitle}</h2>
+            <h2 className="text-sm font-semibold opacity-90">{config.subtitle}</h2>
           </div>
         </div>
       </header>
