@@ -148,11 +148,11 @@ export default function AdminReviewsTab() {
       <Card>
         <CardContent className="pt-5 pb-4 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-foreground">Sondeo de apreciación post-soumission</p>
+            <p className="text-sm font-medium text-foreground">Sondeo de apreciación post-envío</p>
             <p className="text-xs text-muted-foreground">
               {reviewEnabled
-                ? "Activado — la modale de évaluation s'affiche après chaque soumission de formulaire."
-                : "Desactivado — la modale de évaluation ne s'affiche pas."}
+                ? "Activado — el modal de evaluación se muestra después de cada envío de formulario."
+                : "Desactivado — el modal de evaluación no se muestra."}
             </p>
           </div>
           <Switch
