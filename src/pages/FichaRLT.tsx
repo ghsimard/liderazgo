@@ -347,26 +347,16 @@ function InstitutionSearchField({
 
 function RegionSelector({ onSelect, regionNames }: { onSelect: (region: string) => void; regionNames: string[] }) {
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt_white;
-  const logoCLT = images.logo_clt_white;
+  const logoRLT = images.logo_rlt;
+  const logoCLT = images.logo_clt_dark;
   const logoCosmo = images.logo_cosmo;
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-sm text-center">
-        {/* Logos con descripción */}
-        <div className="flex justify-center gap-6 mb-6 items-start">
-          <div className="flex flex-col items-center gap-2">
-            <div className="rounded-xl p-3 flex items-center justify-center" style={{ background: "var(--gradient-header)" }}>
-              <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-16 sm:h-24 w-auto object-contain" />
-            </div>
-            <span className="text-xs font-medium text-muted-foreground leading-tight max-w-[120px]">Rectores Líderes Transformadores</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <div className="rounded-xl p-3 flex items-center justify-center" style={{ background: "var(--gradient-header)" }}>
-              <img src={logoCLT} alt="Coordinadores Líderes Transformadores" className="h-16 sm:h-24 w-auto object-contain" />
-            </div>
-            <span className="text-xs font-medium text-muted-foreground leading-tight max-w-[120px]">Coordinadores Líderes Transformadores</span>
-          </div>
+        {/* Logos con texto completo */}
+        <div className="flex justify-center gap-6 mb-6 items-center">
+          <img src={logoRLT} alt="Rectores Líderes Transformadores" className="h-20 sm:h-28 w-auto object-contain" />
+          <img src={logoCLT} alt="Coordinadores Líderes Transformadores" className="h-20 sm:h-28 w-auto object-contain" />
         </div>
         <h1 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: "hsl(var(--primary))" }}>
           Ficha de Información Básica
