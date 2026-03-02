@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/accordion";
 
 function AdminLink({ to, children }: { to: string; children: React.ReactNode }) {
+  const { isAdmin } = useAdminAuth();
+  if (!isAdmin) return <span className="font-medium">{children}</span>;
   return (
     <Link
       to={to}
@@ -206,7 +208,6 @@ const faqSections: FaqSection[] = [
 
 export default function FaqPage() {
   const navigate = useNavigate();
-  const { isAdmin } = useAdminAuth();
   const [search, setSearch] = useState("");
 
   const filteredSections = useMemo(() => {
@@ -219,14 +220,6 @@ export default function FaqPage() {
       }))
       .filter((section) => section.questions.length > 0);
   }, [search]);
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <RefreshCw className="animate-spin w-6 h-6 text-muted-foreground" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
