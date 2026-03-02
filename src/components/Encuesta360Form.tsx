@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/utils/apiFetch";
 import { supabase } from "@/utils/dbClient";
+import { genderizeRole } from "@/utils/genderizeRole";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, CheckCircle2, Info } from "lucide-react";
@@ -284,6 +285,7 @@ interface DirectivoOption {
   nombres_apellidos: string;
   numero_cedula: string;
   cargo_actual: string;
+  genero?: string | null;
 }
 
 function DirectivoSelect({
@@ -381,7 +383,7 @@ function DirectivoSelect({
         </option>
         {directivos.map((d) => (
           <option key={d.nombres_apellidos + d.numero_cedula} value={d.nombres_apellidos}>
-            {d.nombres_apellidos} — {d.cargo_actual}
+            {d.nombres_apellidos} — {genderizeRole(d.cargo_actual, d.genero)}
           </option>
         ))}
       </select>

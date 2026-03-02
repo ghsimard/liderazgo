@@ -6,6 +6,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/utils/dbClient";
+import { genderizeRole } from "@/utils/genderizeRole";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
 import { useGeographicData } from "@/hooks/useGeographicData";
 import PostSubmitReviewModal from "@/components/PostSubmitReviewModal";
@@ -1345,7 +1346,15 @@ export default function FichaRLTForm() {
               </FormFieldWrapper>
 
               <FormFieldWrapper name="cargo_actual" label="Cargo actual" required>
-                {regionSeleccionada === "Quibdó" ? (
+                {isReadOnly ? (
+                  <input
+                    id="cargo_actual"
+                    value={genderizeRole(watch("cargo_actual"), watch("genero"))}
+                    readOnly
+                    disabled
+                    className="form-input floating-input opacity-75 cursor-not-allowed"
+                  />
+                ) : regionSeleccionada === "Quibdó" ? (
                   <input
                     id="cargo_actual"
                     value="Rector/a"

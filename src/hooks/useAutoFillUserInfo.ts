@@ -87,17 +87,18 @@ export function useAutoFillUserInfo() {
         if (cedula) {
           const { data } = await supabase
             .from("fichas_rlt")
-            .select("nombres_apellidos,correo_personal,celular_personal,codigo_pais_celular,cargo_actual")
+            .select("nombres_apellidos,correo_personal,celular_personal,codigo_pais_celular,cargo_actual,genero")
             .eq("numero_cedula", cedula)
             .limit(1);
           const row = Array.isArray(data) ? data[0] : data;
           if (row) {
+            const { genderizeRole } = await import("@/utils/genderizeRole");
             setInfo({
               nombre: (row as any).nombres_apellidos || "",
               email: (row as any).correo_personal || "",
               telefono: (row as any).celular_personal || "",
               codigo_pais: (row as any).codigo_pais_celular || "+57",
-              rol: (row as any).cargo_actual || "",
+              rol: genderizeRole((row as any).cargo_actual || "", (row as any).genero),
               source: "ficha",
             });
             setLoading(false);

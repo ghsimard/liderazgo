@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { genderizeRole } from "@/utils/genderizeRole";
 
 /** Convert an image URL (imported asset) to a base64 data URL */
 function loadImageAsBase64(src: string): Promise<string> {
@@ -246,7 +247,7 @@ export async function generarPDFFicha(
   // ── EXPERIENCIA LABORAL ──
   drawSection("EXPERIENCIA LABORAL");
   drawRow("Nombre completo de la IE actual", val("nombre_ie"));
-  drawRow("Cargo", val("cargo_actual"));
+  drawRow("Cargo", genderizeRole(val("cargo_actual"), val("genero")));
   drawRow("Tipo de vinculación", val("tipo_vinculacion"));
   drawRow("Fecha de vinculación al servicio educativo estatal (dd/mm/aaaa)", val("fecha_vinculacion_servicio"));
   drawRow("Fecha de nombramiento estatal en el cargo actual (dd/mm/aaaa)", val("fecha_nombramiento_cargo"));
