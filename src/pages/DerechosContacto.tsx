@@ -121,7 +121,7 @@ export default function DerechosContacto() {
         <section className="space-y-6">
           <div className="flex items-center gap-3 mb-4">
             <Mail className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">Contactar a Ghislain Simard</h2>
+            <h2 className="text-xl font-semibold text-foreground">Contactar al Administrador</h2>
           </div>
 
           <div className="bg-card border border-border rounded-lg p-6">
