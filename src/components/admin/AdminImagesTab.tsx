@@ -74,7 +74,11 @@ export default function AdminImagesTab() {
       }
 
       // Show new image locally (bust cache)
-      setLocalOverrides((prev) => ({ ...prev, [imageKey]: `${publicUrl}?t=${Date.now()}` }));
+      // In Express mode, prefix relative paths with the API URL
+      const displayUrl = USE_EXPRESS && publicUrl.startsWith("/uploads/")
+        ? `${import.meta.env.VITE_API_URL}${publicUrl}`
+        : publicUrl;
+      setLocalOverrides((prev) => ({ ...prev, [imageKey]: `${displayUrl}?t=${Date.now()}` }));
       invalidateAppImagesCache();
 
       toast({ title: "Image mise à jour", description: `${imageKey} a été remplacée.` });
