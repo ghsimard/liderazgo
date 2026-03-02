@@ -54,6 +54,7 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
   const [createOpen, setCreateOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newCedula, setNewCedula] = useState("");
   const [newRole, setNewRole] = useState<string>("admin");
   const [createLoading, setCreateLoading] = useState(false);
 
@@ -94,15 +95,17 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
     }
     setCreateLoading(true);
     try {
+      let createdUserId: string | null = null;
       if (USE_EXPRESS) {
-        const { error } = await apiFetch("/api/users", {
+        const { data, error } = await apiFetch<{ user?: { id: string } }>("/api/users", {
           method: "POST",
           body: { email: newEmail, password: newPassword, role: newRole },
         });
         if (error) throw new Error(error);
+        createdUserId = data?.user?.id ?? null;
       } else {
         const { data: { session } } = await supabase.auth.getSession();
-        await supabase.functions.invoke("create-user", {
+        const res = await supabase.functions.invoke("create-user", {
           body: {
             email: newEmail,
             password: newPassword,
@@ -111,11 +114,22 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
           },
           headers: { Authorization: `Bearer ${session?.access_token}` },
         });
+        createdUserId = res.data?.user?.id ?? null;
       }
+
+      // Save cedula link if provided
+      if (newCedula.trim() && createdUserId) {
+        await supabase.from("admin_cedulas").insert([{
+          user_id: createdUserId,
+          cedula: newCedula.trim(),
+        }]);
+      }
+
       toast({ title: "Administrador creado", description: `${newEmail} (${newRole})` });
       setCreateOpen(false);
       setNewEmail("");
       setNewPassword("");
+      setNewCedula("");
       setNewRole("admin");
       fetchUsers();
     } catch (err: unknown) {
@@ -249,7 +263,7 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
       </div>
 
       {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setNewEmail(""); setNewPassword(""); setNewRole("admin"); setShowNewPassword(false); } }}>
+      <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setNewEmail(""); setNewPassword(""); setNewCedula(""); setNewRole("admin"); setShowNewPassword(false); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Crear administrador</DialogTitle>
@@ -257,6 +271,13 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
           </DialogHeader>
           <div className="flex flex-col gap-3 py-2">
             <Input type="email" placeholder="Correo electrónico" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder="Número de cédula"
+              value={newCedula}
+              onChange={(e) => setNewCedula(e.target.value.replace(/\D/g, ""))}
+            />
             <div className="relative">
               <Input type={showNewPassword ? "text" : "password"} placeholder="Contraseña (mín. 6 caracteres)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="pr-10" />
               <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-10" onClick={() => setShowNewPassword(!showNewPassword)} tabIndex={-1}>
