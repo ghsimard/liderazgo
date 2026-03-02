@@ -15,6 +15,7 @@ import Encuesta360Directivo from "./pages/Encuesta360Directivo";
 import Encuesta360Docente from "./pages/Encuesta360Docente";
 import Encuesta360Estudiante from "./pages/Encuesta360Estudiante";
 import RubricaEvaluacion from "./pages/RubricaEvaluacion";
+import DerechosContacto from "./pages/DerechosContacto";
 import AppFooter from "./components/AppFooter";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,9 @@ const App = () => (
 
               {/* Rubrica Evaluation */}
               <Route path="/rubrica-evaluacion" element={<RubricaEvaluacion />} />
+
+              {/* Legal / Contact */}
+              <Route path="/derechos-contacto" element={<DerechosContacto />} />
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
