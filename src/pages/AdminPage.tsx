@@ -105,8 +105,8 @@ export default function AdminPage() {
   const { isAdmin, isSuperAdmin, signOut } = useAdminAuth();
   const { toast } = useToast();
   const { images } = useAppImages();
-  const logoRLT = images.logo_rlt_white;
-  const logoCLT = images.logo_clt_white;
+  const logoRLT = images.logo_rlt;
+  const logoCLT = images.logo_clt_dark;
   const [exporting, setExporting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
