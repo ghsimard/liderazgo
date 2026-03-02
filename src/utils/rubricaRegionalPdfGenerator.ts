@@ -95,7 +95,9 @@ export async function generarPDFRegionalRubricas(
 
   const addFooter = () => {
     const footerY = pageH - 15;
-    try { doc.addImage(imgMap.cosmo.b64, "PNG", margin, footerY - 4, 20, 8); } catch {}
+    const cosmoTargetH = 8;
+    const cosmoW = cosmoTargetH * (imgMap.cosmo.widthPx / imgMap.cosmo.heightPx);
+    try { doc.addImage(imgMap.cosmo.b64, "PNG", margin, footerY - 4, cosmoW, cosmoTargetH); } catch {}
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
     doc.text(`Página ${doc.getNumberOfPages()}`, pageW - margin, footerY, { align: "right" });

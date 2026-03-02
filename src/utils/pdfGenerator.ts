@@ -19,6 +19,16 @@ function loadImageAsBase64(src: string): Promise<string> {
   });
 }
 
+function getImageNaturalSize(src: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    img.src = src;
+  });
+}
+
 export interface PdfLogos {
   logoRLT: string;
   logoCLT?: string;
@@ -34,10 +44,11 @@ export async function generarPDFFicha(
   const showRlt = logoFlags.showLogoRlt ?? true;
   const showClt = logoFlags.showLogoClt ?? true;
 
-  const [rltB64, cltB64, cosmoB64] = await Promise.all([
+  const [rltB64, cltB64, cosmoB64, cosmoSize] = await Promise.all([
     showRlt ? loadImageAsBase64(logoSources.logoRLT) : Promise.resolve(""),
     showClt ? loadImageAsBase64(logoSources.logoCLTDark) : Promise.resolve(""),
     loadImageAsBase64(logoSources.logoCosmo),
+    getImageNaturalSize(logoSources.logoCosmo),
   ]);
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -324,9 +335,9 @@ export async function generarPDFFicha(
   // ── Disclaimer on page 1 ──
   const totalPages = (doc.internal as { getNumberOfPages?: () => number }).getNumberOfPages?.() ?? 1;
 
-  // Footer with Cosmo logo and page numbers
-  const cosmoLogoW = 24;
-  const cosmoLogoH = 8;
+  const cosmoTargetH = 8;
+  const cosmoLogoW = cosmoTargetH * (cosmoSize.width / cosmoSize.height);
+  const cosmoLogoH = cosmoTargetH;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
 

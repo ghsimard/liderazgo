@@ -100,7 +100,7 @@ export async function generarReporte360PDF(
   const cosmoSrc = logoSources.logoCosmo || (await import("@/assets/logo_cosmo.png")).default;
   const coverSrc = logoSources.coverBg || "/images/cover-bg-logo.png";
   const bulbSrc = logoSources.lightbulb || "/images/lightbulb-icon.png";
-  const [rltB64, cltB64, bulbB64, cosmoB64, coverBgB64, rltSize, cltSize] = await Promise.all([
+  const [rltB64, cltB64, bulbB64, cosmoB64, coverBgB64, rltSize, cltSize, cosmoSize] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
     loadImageAsBase64(logoSources.logoCLT),
     loadImageAsBase64(bulbSrc),
@@ -108,6 +108,7 @@ export async function generarReporte360PDF(
     loadImageAsBase64(coverSrc),
     getImageNaturalSize(logoSources.logoRLT),
     getImageNaturalSize(logoSources.logoCLT),
+    getImageNaturalSize(cosmoSrc),
   ]);
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
@@ -597,10 +598,10 @@ export async function generarReporte360PDF(
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     const footerY = pageH - marginBottom + 5;
-    // Cosmo logo at left
-    const cosmoW = 18;
-    const cosmoH = 10;
-    doc.addImage(cosmoB64, "PNG", margin, footerY - cosmoH / 2 - 1, cosmoW, cosmoH);
+    // Cosmo logo at left — proportional
+    const cosmoTargetH = 10;
+    const cosmoW = cosmoTargetH * (cosmoSize.width / cosmoSize.height);
+    doc.addImage(cosmoB64, "PNG", margin, footerY - cosmoTargetH / 2 - 1, cosmoW, cosmoTargetH);
     // Page number at right, same baseline
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
