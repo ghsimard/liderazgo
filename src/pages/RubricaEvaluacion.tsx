@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,7 +81,6 @@ type DetectedRole = "directivo" | "evaluador" | null;
 export default function RubricaEvaluacion() {
   const { toast } = useToast();
   const { images } = useAppImages();
-  const [searchParams] = useSearchParams();
   const logoRLT = images.logo_rlt_noletters;
   const logoCLT = images.logo_clt_noletters;
 
@@ -304,16 +302,16 @@ export default function RubricaEvaluacion() {
     }
   };
 
-  // Auto-search when arriving from MiPanel with cedula in URL params
+  // Auto-search when arriving with cedula stored in sessionStorage
   useEffect(() => {
     if (autoSearchDone.current) return;
-    const paramCedula = searchParams.get("cedula");
-    if (paramCedula && !detectedRole) {
+    const storedCedula = sessionStorage.getItem("user_cedula");
+    if (storedCedula && !detectedRole) {
       autoSearchDone.current = true;
-      handleSearch(paramCedula);
+      handleSearch(storedCedula);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, []);
 
   const handleSelectDirectivo = async (asig: Asignacion) => {
     setSelectedDirectivo(asig);

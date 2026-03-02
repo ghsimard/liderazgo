@@ -394,7 +394,7 @@ function RegionSelector({ onSelect, regionNames }: { onSelect: (region: string) 
 export default function FichaRLTForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const urlCedula = searchParams.get("cedula") ?? "";
+  const urlCedula = searchParams.get("cedula") ?? sessionStorage.getItem("user_cedula") ?? "";
   const urlMode = searchParams.get("mode"); // "view" or null (new)
 
   const [regionSeleccionada, setRegionSeleccionada] = useState<string | null>(null);

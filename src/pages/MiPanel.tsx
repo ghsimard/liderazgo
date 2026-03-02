@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,7 @@ interface CedulaRoleResult {
 
 export default function MiPanel() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const cedula = searchParams.get("cedula") ?? "";
+  const cedula = sessionStorage.getItem("user_cedula") ?? "";
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_white;
   const logoCLT = images.logo_clt;
@@ -162,7 +161,7 @@ export default function MiPanel() {
               <>
                 <Button
                   className="w-full h-14 justify-start gap-3 text-base"
-                  onClick={() => navigate(`/ficha?cedula=${encodeURIComponent(cedula)}&mode=view`)}
+                  onClick={() => navigate(`/ficha?mode=view`)}
                 >
                   <FileText className="h-5 w-5" />
                   <div className="text-left">
@@ -176,7 +175,7 @@ export default function MiPanel() {
                     variant="outline"
                     className="w-full h-14 justify-start gap-3 text-base"
                     onClick={() =>
-                      navigate(`/rubrica-evaluacion?cedula=${encodeURIComponent(cedula)}&role=directivo`)
+                      navigate(`/rubrica-evaluacion?role=directivo`)
                     }
                   >
                     <ClipboardList className="h-5 w-5 text-primary" />
@@ -196,7 +195,7 @@ export default function MiPanel() {
               <Button
                 className="w-full h-14 justify-start gap-3 text-base"
                 onClick={() =>
-                  navigate(`/rubrica-evaluacion?cedula=${encodeURIComponent(cedula)}&role=evaluador`)
+                  navigate(`/rubrica-evaluacion?role=evaluador`)
                 }
               >
                 <ClipboardList className="h-5 w-5" />
