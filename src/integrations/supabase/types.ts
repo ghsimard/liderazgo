@@ -102,7 +102,9 @@ export type Database = {
           leido: boolean
           mensaje: string
           nombre: string
+          rating: number | null
           telefono: string | null
+          tipo_contacto: string
         }
         Insert: {
           asunto: string
@@ -114,7 +116,9 @@ export type Database = {
           leido?: boolean
           mensaje: string
           nombre: string
+          rating?: number | null
           telefono?: string | null
+          tipo_contacto?: string
         }
         Update: {
           asunto?: string
@@ -126,7 +130,9 @@ export type Database = {
           leido?: boolean
           mensaje?: string
           nombre?: string
+          rating?: number | null
           telefono?: string | null
+          tipo_contacto?: string
         }
         Relationships: []
       }
