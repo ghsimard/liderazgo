@@ -41,6 +41,7 @@ export interface DirectivoIdentificacion {
   institucion: string;
   codigoDane: string;
   cargo: string;
+  genero: string | null;
 }
 
 export interface ObservadorInfo {
@@ -130,7 +131,7 @@ export async function calcularReporte360(nombreDirectivo: string, institucion: s
   // 4. Fetch directivo identification from fichas_rlt
   const { data: fichas } = await supabase
     .from("fichas_rlt")
-    .select("nombres_apellidos, numero_cedula, entidad_territorial, nombre_ie, codigo_dane, cargo_actual")
+    .select("nombres_apellidos, numero_cedula, entidad_territorial, nombre_ie, codigo_dane, cargo_actual, genero")
     .eq("nombres_apellidos", nombreDirectivo)
     .eq("nombre_ie", institucion)
     .limit(1);
@@ -144,6 +145,7 @@ export async function calcularReporte360(nombreDirectivo: string, institucion: s
     institucion: ficha?.nombre_ie ?? institucion,
     codigoDane: ficha?.codigo_dane ?? "",
     cargo: ficha?.cargo_actual ?? "",
+    genero: ficha?.genero ?? null,
   };
 
   // 5. Build observer info — one row per role, with dias distribution

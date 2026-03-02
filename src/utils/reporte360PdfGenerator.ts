@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import type { Reporte360Data } from "./reporte360Calculator";
+import { genderizeRole } from "@/utils/genderizeRole";
 import {
   DOMAIN_ORDER,
   COMPETENCIES_BY_DOMAIN,
@@ -396,9 +397,10 @@ export async function generarReporte360PDF(
   // Legend
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
+  const g = data.directivo.genero;
   const legendItems = [
-    { color: COLOR_DIRECTIVO, label: "Directivo" },
-    { color: COLOR_INTERNOS, label: "Administrativo(a), coordinador(a) y docente" },
+    { color: COLOR_DIRECTIVO, label: genderizeRole("Directivo", g) },
+    { color: COLOR_INTERNOS, label: genderizeRole("Administrativo(a), coordinador(a) y docente", g) },
     { color: COLOR_EXTERNOS, label: "Acudiente y estudiante" },
   ];
   // Calculate total legend width first
@@ -565,7 +567,7 @@ export async function generarReporte360PDF(
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
   const obsLegendItems = [
-    { color: [30, 30, 30] as [number, number, number], label: "Administrativo(a), coordinador(a) y docente" },
+    { color: [30, 30, 30] as [number, number, number], label: genderizeRole("Administrativo(a), coordinador(a) y docente", g) },
     { color: [128, 128, 128] as [number, number, number], label: "Acudiente y estudiante" },
   ];
   let totalObsLegW = 0;
