@@ -49,6 +49,9 @@ export default function Index() {
         return;
       }
 
+      // Persist cedula for downstream auto-fill
+      sessionStorage.setItem("user_cedula", trimmed);
+
       const result = (data as CedulaRoleResult) ?? {
         exists_ficha: false,
         is_admin: false,
