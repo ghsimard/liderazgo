@@ -134,6 +134,12 @@ export default function DerechosContacto() {
                   <label className="text-sm font-medium text-foreground">Nombre completo *</label>
                   <Input {...register("nombre")} placeholder="Su nombre" />
                   {errors.nombre && <p className="text-xs text-destructive">{errors.nombre.message}</p>}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Correo electrónico *</label>
+                  <Input {...register("email")} type="email" placeholder="correo@ejemplo.com" />
+                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -174,12 +180,6 @@ export default function DerechosContacto() {
                       </label>
                     )}
                   />
-                </div>
-              </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-foreground">Correo electrónico *</label>
-                  <Input {...register("email")} type="email" placeholder="correo@ejemplo.com" />
-                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
                 </div>
               </div>
 
