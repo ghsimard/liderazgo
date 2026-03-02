@@ -206,6 +206,21 @@ CREATE TABLE IF NOT EXISTS public.rubrica_regional_analyses (
 );
 
 -- ============================================================
+-- Site reviews (évaluations du site, séparées des sugerencias)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.site_reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre TEXT NOT NULL,
+  email TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comentario TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_site_reviews_created_at ON public.site_reviews(created_at);
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js

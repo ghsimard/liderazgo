@@ -44,6 +44,7 @@ const PUBLIC_INSERT_TABLES = new Set([
   "rubrica_submission_dates",
   "rubrica_evaluaciones",
   "rubrica_seguimientos",
+  "site_reviews",
 ]);
 
 // Whitelist of allowed tables

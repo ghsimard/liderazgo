@@ -965,6 +965,33 @@ export type Database = {
         }
         Relationships: []
       }
+      site_reviews: {
+        Row: {
+          comentario: string | null
+          created_at: string
+          email: string
+          id: string
+          nombre: string
+          rating: number
+        }
+        Insert: {
+          comentario?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          nombre: string
+          rating: number
+        }
+        Update: {
+          comentario?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          nombre?: string
+          rating?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
