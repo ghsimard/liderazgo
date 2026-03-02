@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft, Send, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/utils/dbClient";
 
 const evaluacionSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio").max(100),
