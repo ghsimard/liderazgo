@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -103,6 +104,7 @@ function FormCard({ form }: { form: FormItem }) {
 }
 
 export default function AdminPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAdmin, isSuperAdmin, signOut } = useAdminAuth();
   const { toast } = useToast();
   const { images } = useAppImages();
@@ -112,6 +114,7 @@ export default function AdminPage() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
   const [showMensajes, setShowMensajes] = useState(false);
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "formularios");
 
   const handleExportDB = async () => {
     setExporting(true);
@@ -188,7 +191,7 @@ export default function AdminPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <Tabs defaultValue="formularios">
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchParams({ tab: v }); }}>
           <TabsList className="mb-4">
             <TabsTrigger value="formularios" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Formularios</TabsTrigger>
             <TabsTrigger value="fichas" className="gap-1.5"><FileText className="w-4 h-4" /> Fichas Gestión</TabsTrigger>
