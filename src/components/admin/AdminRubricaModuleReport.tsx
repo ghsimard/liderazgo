@@ -364,7 +364,7 @@ export default function AdminRubricaModuleReport() {
                             <span className="text-xs font-medium">{item.item_label}</span>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                             {/* Autoevaluación */}
                             <div className="space-y-1 bg-amber-50/50 rounded p-2">
                               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Autoevaluación</p>
@@ -384,6 +384,13 @@ export default function AdminRubricaModuleReport() {
                               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Nivel acordado</p>
                               <NivelBadge nivel={ev?.acordado_nivel || null} />
                               <p className="text-xs text-muted-foreground">{ev?.acordado_comentario || "Sin comentario"}</p>
+                            </div>
+
+                            {/* Seguimiento */}
+                            <div className="space-y-1 bg-purple-50/50 rounded p-2">
+                              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Seguimiento</p>
+                              <NivelBadge nivel={itemSegs.length > 0 ? itemSegs[itemSegs.length - 1].nivel : null} />
+                              <p className="text-xs text-muted-foreground">{itemSegs.length > 0 ? (itemSegs[itemSegs.length - 1].comentario || "Sin comentario") : "Sin seguimiento"}</p>
                             </div>
                           </div>
 
