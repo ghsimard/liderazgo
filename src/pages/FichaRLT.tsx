@@ -883,9 +883,9 @@ export default function FichaRLTForm() {
                 <ArrowLeft className="h-5 w-5" />
                 <span className="text-sm">Mi Panel</span>
               </button>
-              <span className="font-medium text-sm">
-                {editMode ? "Editando ficha" : "Mi Ficha de Información"}
-              </span>
+              {editMode && (
+                <span className="font-medium text-sm">Editando ficha</span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {!editMode ? (
