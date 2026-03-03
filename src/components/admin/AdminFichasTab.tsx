@@ -216,21 +216,61 @@ export default function AdminFichasTab() {
     if (ficha) {
       const nombre = ficha.nombres_apellidos;
       const ie = ficha.nombre_ie;
+      const cedula = ficha.numero_cedula;
 
+      // Fetch related encuestas
       const { data: relatedEncuestas } = await supabase
         .from("encuestas_360")
         .select("*")
         .eq("institucion_educativa", ie)
         .or(`nombre_directivo.eq.${nombre},and(nombre_completo.eq.${nombre},tipo_formulario.eq.autoevaluacion)`);
 
+      // Fetch related rubrica data by cedula
+      let relatedEvaluaciones: any[] = [];
+      let relatedAsignaciones: any[] = [];
+      let relatedSubmissionDates: any[] = [];
+      let relatedSeguimientos: any[] = [];
+
+      if (cedula) {
+        const [evalRes, asigRes, subRes, segRes] = await Promise.all([
+          supabase.from("rubrica_evaluaciones").select("*").eq("directivo_cedula", cedula),
+          supabase.from("rubrica_asignaciones").select("*").eq("directivo_cedula", cedula),
+          supabase.from("rubrica_submission_dates").select("*").eq("directivo_cedula", cedula),
+          supabase.from("rubrica_seguimientos").select("*").eq("directivo_cedula", cedula),
+        ]);
+        relatedEvaluaciones = evalRes.data ?? [];
+        relatedAsignaciones = asigRes.data ?? [];
+        relatedSubmissionDates = subRes.data ?? [];
+        relatedSeguimientos = segRes.data ?? [];
+      }
+
+      // Save everything to trash
       await supabase.from("deleted_records").insert([{
         record_type: "ficha_rlt",
         record_label: `${nombre} — ${ie}`,
-        deleted_data: { ficha, encuestas: relatedEncuestas ?? [] } as any,
+        deleted_data: {
+          ficha,
+          encuestas: relatedEncuestas ?? [],
+          rubrica_evaluaciones: relatedEvaluaciones,
+          rubrica_asignaciones: relatedAsignaciones,
+          rubrica_submission_dates: relatedSubmissionDates,
+          rubrica_seguimientos: relatedSeguimientos,
+        } as any,
       }]);
 
+      // Delete related encuestas
       await supabase.from("encuestas_360").delete().eq("nombre_directivo", nombre).eq("institucion_educativa", ie);
       await supabase.from("encuestas_360").delete().eq("nombre_completo", nombre).eq("institucion_educativa", ie).eq("tipo_formulario", "autoevaluacion");
+
+      // Delete related rubrica data
+      if (cedula) {
+        await Promise.all([
+          supabase.from("rubrica_evaluaciones").delete().eq("directivo_cedula", cedula),
+          supabase.from("rubrica_submission_dates").delete().eq("directivo_cedula", cedula),
+          supabase.from("rubrica_seguimientos").delete().eq("directivo_cedula", cedula),
+          supabase.from("rubrica_asignaciones").delete().eq("directivo_cedula", cedula),
+        ]);
+      }
     }
 
     const { error } = await supabase.from("fichas_rlt").delete().eq("id", deleteId);
