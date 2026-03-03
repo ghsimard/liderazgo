@@ -120,7 +120,7 @@ export async function generarPDFRegionalRubricas(
   const PX_TO_MM = 25.4 / DPI;
   const SCALE = 0.5;
 
-  const LOGO_TARGET_H = 20; // fixed height in mm for both logos
+  const LOGO_TARGET_H = 25; // fixed height in mm for both logos
   const logosToDraw: { b64: string; wMm: number; hMm: number }[] = [];
   if (logoSources.showLogoRLT && imgMap.rlt) {
     const li = imgMap.rlt;
