@@ -1070,7 +1070,7 @@ export default function RubricaEvaluacion() {
                                   </div>
                                   <p className="text-[11px] italic text-muted-foreground">{item.desc_avanzado}</p>
 
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                     {/* Autoevaluación */}
                                     <div className="space-y-1 bg-amber-50/50 dark:bg-amber-950/20 rounded p-2">
                                       <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Autoevaluación</p>
@@ -1102,6 +1102,17 @@ export default function RubricaEvaluacion() {
                                         </Badge>
                                       ) : <span className="text-xs text-muted-foreground">—</span>}
                                       <p className="text-xs text-muted-foreground">{ev?.acordado_comentario || "Sin comentario"}</p>
+                                    </div>
+
+                                    {/* Seguimiento */}
+                                    <div className="space-y-1 bg-purple-50/50 dark:bg-purple-950/20 rounded p-2">
+                                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Seguimiento</p>
+                                      {itemSegs.length > 0 && itemSegs[itemSegs.length - 1].nivel ? (
+                                        <Badge className={`text-xs ${NIVELES.find(n => n.value === itemSegs[itemSegs.length - 1].nivel)?.color || ""}`}>
+                                          {NIVELES.find(n => n.value === itemSegs[itemSegs.length - 1].nivel)?.label}
+                                        </Badge>
+                                      ) : <span className="text-xs text-muted-foreground">—</span>}
+                                      <p className="text-xs text-muted-foreground">{itemSegs.length > 0 ? (itemSegs[itemSegs.length - 1].comentario || "Sin comentario") : "Sin seguimiento"}</p>
                                     </div>
                                   </div>
 
