@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,6 +80,7 @@ const NIVEL_RANK: Record<string, number> = {
 type DetectedRole = "directivo" | "evaluador" | null;
 
 export default function RubricaEvaluacion() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
@@ -623,8 +625,8 @@ export default function RubricaEvaluacion() {
             <h2 className="text-xl font-semibold">¡Evaluación guardada!</h2>
             <p className="text-muted-foreground text-sm">Las respuestas han sido registradas correctamente.</p>
             <Button onClick={() => {
-              setSubmitted(false);
               if (detectedRole === "evaluador") {
+                setSubmitted(false);
                 setSelectedDirectivo(null);
                 setDirectivoInfo(null);
                 setEvaluaciones({});
@@ -632,18 +634,10 @@ export default function RubricaEvaluacion() {
                 setSeguimientos([]);
                 setPendingSeguimientos({});
               } else {
-                setCedula("");
-                setDetectedRole(null);
-                setUserName("");
-                setDirectivoInfo(null);
-                setDirectivoReadOnly(false);
-                setEvaluaciones({});
-                setSubmissionDates({});
-                setSeguimientos([]);
-                setPendingSeguimientos({});
+                navigate("/mi-panel");
               }
             }}>
-              {detectedRole === "evaluador" ? `Evaluar ${genderizeRole("otro directivo", directivoInfo?.genero).toLowerCase()}` : "Nueva evaluación"}
+              {detectedRole === "evaluador" ? `Evaluar ${genderizeRole("otro directivo", directivoInfo?.genero).toLowerCase()}` : "Mi Panel"}
             </Button>
           </CardContent>
         </Card>
