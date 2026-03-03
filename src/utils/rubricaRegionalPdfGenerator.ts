@@ -127,7 +127,8 @@ export async function generarPDFRegionalRubricas(
   }
   if (logoSources.showLogoCLT && imgMap.clt) {
     const li = imgMap.clt;
-    logosToDraw.push({ b64: li.b64, wMm: li.widthPx * PX_TO_MM * SCALE, hMm: li.heightPx * PX_TO_MM * SCALE });
+    const CLT_SCALE = 0.3;
+    logosToDraw.push({ b64: li.b64, wMm: li.widthPx * PX_TO_MM * CLT_SCALE, hMm: li.heightPx * PX_TO_MM * CLT_SCALE });
   }
 
   if (logosToDraw.length === 1) {
