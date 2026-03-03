@@ -5,7 +5,7 @@ import { supabase as cloudClient } from "@/utils/dbClient";
 // Static fallback imports
 import staticLogoRlt from "@/assets/logo_rlt.png";
 import staticLogoRltWhite from "@/assets/logo_rlt_white.png";
-import staticLogoClt from "@/assets/logo_clt.png";
+// logo_clt.png removed — use logo_clt_white.png everywhere
 import staticLogoCltDark from "@/assets/logo_clt_dark.png";
 import staticLogoCltWhite from "@/assets/logo_clt_white.png";
 import staticLogoCosmo from "@/assets/logo_cosmo.png";
@@ -27,7 +27,7 @@ export interface AppImageConfig {
 export const APP_IMAGE_CONFIGS: AppImageConfig[] = [
   { key: "logo_rlt", label: "Logo RLT (fond foncé)", description: "Header formulaires 360° (fond foncé), formulaire Ficha (fond foncé), rapports rúbrica PDF", fallback: staticLogoRlt },
   { key: "logo_rlt_white", label: "Logo RLT (fond blanc)", description: "Header admin, page login, couverture PDF 360°, en-tête PDF ficha", fallback: staticLogoRltWhite },
-  { key: "logo_clt", label: "Logo CLT (fond blanc)", description: "Header admin, page login, couverture PDF 360°, rapport régional rúbrica PDF", fallback: staticLogoClt },
+  { key: "logo_clt", label: "Logo CLT (fond blanc)", description: "Header admin, page login, couverture PDF 360°, rapport régional rúbrica PDF", fallback: staticLogoCltWhite },
   { key: "logo_clt_dark", label: "Logo CLT (fond foncé)", description: "Header formulaire Ficha (sélecteur de région), header admin édition ficha", fallback: staticLogoCltDark },
   { key: "logo_clt_white", label: "Logo CLT (impression)", description: "En-tête PDF ficha (version impression)", fallback: staticLogoCltWhite },
   { key: "logo_cosmo", label: "Logo Cosmo Schools (fond blanc)", description: "Footer formulaires web, footer admin, footer PDF (ficha, rúbrica, 360°, régional)", fallback: staticLogoCosmo },
