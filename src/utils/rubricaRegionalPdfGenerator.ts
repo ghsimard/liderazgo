@@ -120,19 +120,17 @@ export async function generarPDFRegionalRubricas(
   const PX_TO_MM = 25.4 / DPI;
   const SCALE = 0.5;
 
+  const LOGO_TARGET_H = 20; // fixed height in mm for both logos
   const logosToDraw: { b64: string; wMm: number; hMm: number }[] = [];
-  let rltWMm = 0;
   if (logoSources.showLogoRLT && imgMap.rlt) {
     const li = imgMap.rlt;
-    rltWMm = li.widthPx * PX_TO_MM * SCALE;
-    const rltHMm = li.heightPx * PX_TO_MM * SCALE;
-    logosToDraw.push({ b64: li.b64, wMm: rltWMm, hMm: rltHMm });
+    const w = LOGO_TARGET_H * (li.widthPx / li.heightPx);
+    logosToDraw.push({ b64: li.b64, wMm: w, hMm: LOGO_TARGET_H });
   }
   if (logoSources.showLogoCLT && imgMap.clt) {
     const li = imgMap.clt;
-    const targetW = rltWMm > 0 ? rltWMm : li.widthPx * PX_TO_MM * SCALE;
-    const aspectRatio = li.heightPx / li.widthPx;
-    logosToDraw.push({ b64: li.b64, wMm: targetW, hMm: targetW * aspectRatio });
+    const w = LOGO_TARGET_H * (li.widthPx / li.heightPx);
+    logosToDraw.push({ b64: li.b64, wMm: w, hMm: LOGO_TARGET_H });
   }
 
   if (logosToDraw.length === 1) {
