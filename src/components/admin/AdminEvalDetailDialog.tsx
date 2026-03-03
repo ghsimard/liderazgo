@@ -34,6 +34,13 @@ interface Evaluacion {
   acordado_comentario: string | null;
 }
 
+interface Seguimiento {
+  item_id: string;
+  nivel: string | null;
+  comentario: string | null;
+  created_at: string;
+}
+
 const NIVELES = [
   { value: "avanzado", label: "Avanzado", color: "bg-emerald-100 text-emerald-800" },
   { value: "intermedio", label: "Intermedio", color: "bg-blue-100 text-blue-800" },
@@ -54,6 +61,7 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
   const [items, setItems] = useState<RubricaItem[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<Record<string, Evaluacion>>({});
   const [loading, setLoading] = useState(true);
+  const [seguimientos, setSeguimientos] = useState<Seguimiento[]>([]);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
@@ -65,10 +73,11 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
   const loadData = async () => {
     setLoading(true);
     setDirty(false);
-    const [{ data: mods }, { data: its }, { data: evals }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: evals }, { data: segs }] = await Promise.all([
       supabase.from("rubrica_modules").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("*").eq("directivo_cedula", directivoCedula),
+      supabase.from("rubrica_seguimientos").select("item_id, nivel, comentario, created_at").eq("directivo_cedula", directivoCedula).order("created_at", { ascending: true }),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
@@ -77,6 +86,7 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
       for (const e of evals) map[e.item_id] = e;
       setEvaluaciones(map);
     }
+    if (segs) setSeguimientos(segs as Seguimiento[]);
     setLoading(false);
   };
 
@@ -160,7 +170,7 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-5xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <BookOpen className="w-5 h-5" />
@@ -188,6 +198,8 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
 
                   {modItems.map(item => {
                     const ev = evaluaciones[item.id];
+                    const itemSegs = seguimientos.filter(s => s.item_id === item.id);
+                    const lastSeg = itemSegs.length > 0 ? itemSegs[itemSegs.length - 1] : null;
                     return (
                       <div key={item.id} className="border rounded-lg p-3 space-y-3 bg-muted/10">
                         <div className="flex items-center gap-2">
@@ -195,7 +207,7 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
                           <span className="text-xs font-medium">{item.item_label}</span>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                           {/* Directivo */}
                           <div className="space-y-1.5">
                             <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Directivo</Label>
@@ -239,6 +251,17 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
                               placeholder="Comentario…"
                               className="text-xs h-16 resize-none"
                             />
+                          </div>
+
+                          {/* Seguimiento (read-only) */}
+                          <div className="space-y-1.5">
+                            <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Seguimiento</Label>
+                            {lastSeg?.nivel ? (
+                              <Badge className={`text-xs ${NIVELES.find(n => n.value === lastSeg.nivel)?.color || ""}`}>
+                                {NIVELES.find(n => n.value === lastSeg.nivel)?.label}
+                              </Badge>
+                            ) : <span className="text-xs text-muted-foreground">—</span>}
+                            <p className="text-xs text-muted-foreground">{lastSeg?.comentario || "Sin seguimiento"}</p>
                           </div>
                         </div>
                       </div>
