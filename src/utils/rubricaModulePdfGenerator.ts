@@ -183,12 +183,18 @@ export async function generarPDFRubricaModulo(
     doc.text(objText, margin, y);
     y += objText.length * 3.5 + 4;
 
-    // Three columns: Directivo, Equipo, Acordado
-    const colW = (contentW - 6) / 3;
+    // Four columns: Directivo, Equipo, Acordado, Seguimiento
+    const colW = (contentW - 9) / 4;
+
+    // Find the last seguimiento for this item
+    const itemSegs = (data.seguimientos || []).filter(s => s.itemLabel === item.itemLabel);
+    const lastSeg = itemSegs.length > 0 ? itemSegs[itemSegs.length - 1] : null;
+
     const columns = [
       { title: "AUTOEVALUACIÓN", nivel: item.directivoNivel, comentario: item.directivoComentario },
       { title: "EVALUACIÓN EQUIPO", nivel: item.equipoNivel, comentario: item.equipoComentario },
       { title: "NIVEL ACORDADO", nivel: item.acordadoNivel, comentario: item.acordadoComentario },
+      { title: "SEGUIMIENTO", nivel: lastSeg?.nivel || null, comentario: lastSeg?.comentario || null },
     ];
 
     const startY = y;
@@ -218,7 +224,7 @@ export async function generarPDFRubricaModulo(
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(60, 60, 60);
-      const comment = col.comentario || "Sin comentario";
+      const comment = col.comentario || (ci === 3 ? "Sin seguimiento" : "Sin comentario");
       const lines = doc.splitTextToSize(comment, colW - 4);
       doc.text(lines, x + 2, colY + 4);
       colY += lines.length * 3.5 + 6;
