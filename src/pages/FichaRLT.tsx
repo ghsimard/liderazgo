@@ -879,8 +879,9 @@ export default function FichaRLTForm() {
         {viewMode && (
           <div className="sticky top-0 z-50 bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button onClick={() => navigate(-1)} className="hover:opacity-80">
+              <button onClick={() => navigate("/mi-panel")} className="hover:opacity-80 flex items-center gap-1">
                 <ArrowLeft className="h-5 w-5" />
+                <span className="text-sm">Mi Panel</span>
               </button>
               <span className="font-medium text-sm">
                 {editMode ? "Editando ficha" : "Mi Ficha de Información"}
