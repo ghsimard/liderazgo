@@ -7,10 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Filter, TrendingUp, TrendingDown, Minus, BarChart3, Eye, Download } from "lucide-react";
+import { RefreshCw, Filter, TrendingUp, TrendingDown, Minus, BarChart3, Eye, Download, Archive } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarMelPDF } from "@/utils/reporte360MelPdfGenerator";
+import { Progress } from "@/components/ui/progress";
+import JSZip from "jszip";
 
 interface DirectivoOption {
   nombre: string;
@@ -150,6 +152,8 @@ export default function AdminMelTab() {
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [melData, setMelData] = useState<MelAnalysisData | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkExporting, setBulkExporting] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
 
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
@@ -225,6 +229,50 @@ export default function AdminMelTab() {
     setAnalyzing(null);
   };
 
+  const handleBulkExport = async () => {
+    if (filteredDirectivos.length === 0) return;
+    setBulkExporting(true);
+    setBulkProgress({ current: 0, total: filteredDirectivos.length });
+    const zip = new JSZip();
+    const logos = {
+      logoRLT: images.logo_rlt_white || images.logo_rlt,
+      logoCLT: images.logo_clt || images.logo_clt_white,
+    };
+    let generated = 0;
+
+    for (const d of filteredDirectivos) {
+      try {
+        const data = await calcularMelAnalysis(d.nombre, d.institucion);
+        if (data.hasInicial || data.hasFinal) {
+          const blob = await generarMelPDF(data, logos, { returnBlob: true });
+          if (blob) {
+            const safeName = d.nombre.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, "").replace(/\s+/g, "_");
+            zip.file(`MEL_${safeName}.pdf`, blob);
+            generated++;
+          }
+        }
+      } catch (err) {
+        console.warn(`MEL skip ${d.nombre}:`, err);
+      }
+      setBulkProgress((p) => ({ ...p, current: p.current + 1 }));
+    }
+
+    if (generated === 0) {
+      toast({ title: "Sin datos", description: "Ningún directivo tiene datos MEL disponibles.", variant: "destructive" });
+    } else {
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      const regionLabel = selRegions.length === 1 ? selRegions[0].replace(/\s+/g, "_") : "Seleccion";
+      a.download = `MEL_${regionLabel}_${generated}rapports.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "ZIP descargado", description: `${generated} rapport(s) MEL exporté(s).` });
+    }
+    setBulkExporting(false);
+  };
+
   const hasFilters = selRegions.length > 0 || selEntidades.length > 0 || selInstituciones.length > 0;
 
   if (loading) {
@@ -270,11 +318,31 @@ export default function AdminMelTab() {
         </CardContent>
       </Card>
 
-      {/* Directivos list */}
+      {/* Bulk export + Directivos list */}
       <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">
-          {filteredDirectivos.length} directivo(s) {hasFilters ? "filtrado(s)" : "registrado(s)"}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            {filteredDirectivos.length} directivo(s) {hasFilters ? "filtrado(s)" : "registrado(s)"}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBulkExport}
+            disabled={bulkExporting || filteredDirectivos.length === 0}
+            className="gap-1.5"
+          >
+            {bulkExporting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Archive className="w-3.5 h-3.5" />}
+            Exportar ZIP ({filteredDirectivos.length})
+          </Button>
+        </div>
+        {bulkExporting && (
+          <div className="space-y-1">
+            <Progress value={(bulkProgress.current / bulkProgress.total) * 100} className="h-2" />
+            <p className="text-xs text-muted-foreground text-center">
+              {bulkProgress.current} / {bulkProgress.total} directivo(s) procesado(s)…
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredDirectivos.map((d) => (
             <Card key={d.nombre + d.institucion} className="hover:shadow-md transition-shadow">
