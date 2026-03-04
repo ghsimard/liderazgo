@@ -218,119 +218,64 @@ function TextField({
   );
 }
 
-// ── Single question card (wizard mode) ──
-function QuestionCard({
-  item,
+// ── Survey table for likert-type questions ──
+function SurveyTable({
+  items,
   options,
-  value,
+  answers,
   onAnswer,
-  hasError,
-  current,
-  total,
-  onPrev,
-  onNext,
-  onSubmit,
-  isLast,
-  submitting,
   sectionTitle,
+  errors,
 }: {
-  item: { num: number; text: string };
+  items: { num: number; text: string }[];
   options: string[];
-  value: string;
-  onAnswer: (val: string) => void;
-  hasError: boolean;
-  current: number;
-  total: number;
-  onPrev: () => void;
-  onNext: () => void;
-  onSubmit: () => void;
-  isLast: boolean;
-  submitting: boolean;
-  sectionTitle?: string;
+  answers: Record<string, string>;
+  onAnswer: (num: number, val: string) => void;
+  sectionTitle: string;
+  errors: Set<number>;
 }) {
   return (
-    <div className="space-y-6">
-      {/* Progress */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Pregunta {current} de {total}</span>
-          <span>{Math.round((current / total) * 100)}%</span>
-        </div>
-        <div className="w-full bg-muted rounded-full h-2.5">
-          <div
-            className="bg-primary h-2.5 rounded-full transition-all duration-300"
-            style={{ width: `${(current / total) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Section instruction */}
-      {sectionTitle && (
-        <div className="bg-muted/60 rounded-lg px-4 py-3 text-sm text-muted-foreground italic">
-          {sectionTitle}
-        </div>
-      )}
-
-      {/* Question */}
-      <div className={cn(
-        "bg-background rounded-lg border p-6 space-y-6",
-        hasError && "border-destructive"
-      )}>
-        <div className="space-y-2">
-          <span className="text-xs font-medium text-muted-foreground">Ítem {item.num}</span>
-          <p className="text-lg font-medium leading-relaxed">{item.text}</p>
-        </div>
-
-        <div className="space-y-3">
-          {options.map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => {
-                onAnswer(opt);
-                // Auto-advance after a short delay
-                if (!isLast) {
-                  setTimeout(() => onNext(), 350);
-                }
-              }}
-              className={cn(
-                "w-full text-left px-5 py-4 rounded-lg border-2 transition-all text-sm font-medium",
-                value === opt
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-input hover:border-primary/50 hover:bg-muted/50"
-              )}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          onClick={onPrev}
-          disabled={current === 1}
-          className="gap-2"
-        >
-          ← Anterior
-        </Button>
-
-        {isLast ? (
-          <Button
-            onClick={onSubmit}
-            disabled={submitting}
-            className="gap-2 min-w-[160px]"
-          >
-            {submitting && <RefreshCw className="w-4 h-4 animate-spin" />}
-            {submitting ? "Enviando…" : "Enviar encuesta"}
-          </Button>
-        ) : (
-          <Button onClick={onNext} className="gap-2">
-            Siguiente →
-          </Button>
-        )}
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold text-muted-foreground">{sectionTitle}</h3>
+      <div className="overflow-auto border rounded-lg max-h-[70vh]">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 z-10">
+            <tr className="bg-muted">
+              <th className="text-left p-3 font-medium min-w-[40px]">#</th>
+              <th className="text-left p-3 font-medium min-w-[300px]">Ítem</th>
+              {options.map((opt) => (
+                <th key={opt} className="p-3 font-medium text-center min-w-[80px] text-xs">
+                  {opt}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr
+                key={item.num}
+                className={cn(
+                  "border-t hover:bg-muted/30 transition-colors",
+                  errors.has(item.num) && "bg-destructive/5"
+                )}
+              >
+                <td className="p-3 font-medium text-muted-foreground">{item.num}</td>
+                <td className="p-3">{item.text}</td>
+                {options.map((opt) => (
+                  <td key={opt} className="p-3 text-center">
+                    <input
+                      type="radio"
+                      name={`item_${item.num}`}
+                      checked={answers[String(item.num)] === opt}
+                      onChange={() => onAnswer(item.num, opt)}
+                      className="accent-primary w-4 h-4 cursor-pointer"
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -523,12 +468,10 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
   // Extra fields
   const [extraValues, setExtraValues] = useState<Record<string, string>>({});
 
-  // Answers & wizard
+  // Answers
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [fieldErrors, setFieldErrors] = useState<Set<string>>(new Set());
   const [itemErrors, setItemErrors] = useState<Set<number>>(new Set());
-  const [wizardStarted, setWizardStarted] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(0); // 0-indexed into allItems
 
   const handleAnswer = (num: number, val: string) => {
     setAnswers((prev) => ({ ...prev, [String(num)]: val }));
@@ -539,50 +482,38 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
     });
   };
 
-  const validateIdentification = (): boolean => {
+  const validate = (): boolean => {
     const errors = new Set<string>();
+    const iErrors = new Set<number>();
+
     if (!institucion) errors.add("institucion");
     if (!cargoDirectivo && !isPrefilled) errors.add("cargo_directivo");
+
     if (config.isAutoeval) {
       if (!nombreCompleto.trim()) errors.add("nombre_completo");
     } else {
       if (!nombreDirectivo.trim()) errors.add("nombre_directivo");
       if (!diasContacto) errors.add("dias_contacto");
     }
+
     config.extraFields?.forEach((f) => {
       if (!extraValues[f.key]) errors.add(f.key);
     });
-    setFieldErrors(errors);
-    if (errors.size > 0) {
-      toast({
-        title: "Campos incompletos",
-        description: "Por favor complete todos los datos de identificación.",
-        variant: "destructive",
-      });
-      return false;
-    }
-    return true;
-  };
 
-  const validate = (): boolean => {
-    if (!validateIdentification()) return false;
-
-    const iErrors = new Set<number>();
     const allItems = [...config.frequencyItems, ...config.agreementItems];
     allItems.forEach((item) => {
       if (!answers[String(item.num)]) iErrors.add(item.num);
     });
+
+    setFieldErrors(errors);
     setItemErrors(iErrors);
 
-    if (iErrors.size > 0) {
+    if (errors.size > 0 || iErrors.size > 0) {
       toast({
         title: "Campos incompletos",
-        description: `Hay ${iErrors.size} pregunta(s) sin responder.`,
+        description: `Hay ${errors.size + iErrors.size} campo(s) sin responder. Por favor complete todas las preguntas.`,
         variant: "destructive",
       });
-      // Navigate to first unanswered question
-      const firstUnanswered = allItems.findIndex((item) => !answers[String(item.num)]);
-      if (firstUnanswered >= 0) setCurrentQuestion(firstUnanswered);
       return false;
     }
     return true;
@@ -702,6 +633,8 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
     );
   }
 
+  const freqOptions = config.isAutoeval ? FREQUENCY_OPTIONS_NO_NOSABE : FREQUENCY_OPTIONS_WITH_NOSABE;
+  const agreeOptions = config.isAutoeval ? AGREEMENT_OPTIONS_NO_NOSABE : AGREEMENT_OPTIONS_WITH_NOSABE;
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -717,8 +650,6 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-8">
-        {!wizardStarted && (
-        <>
         {/* Introduction */}
         <div className="bg-background rounded-lg border p-6 space-y-4">
           <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{config.intro}</p>
@@ -857,76 +788,51 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
             />
           ))}
         </div>
-        </>
-        )}
 
-        {/* Wizard: one question at a time */}
-        {!wizardStarted ? (
-          <div className="flex justify-center">
-            <Button size="lg" onClick={() => {
-              // Validate identification fields first
-              if (!validateIdentification()) return;
-              setWizardStarted(true);
-              setCurrentQuestion(0);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }} className="gap-2 min-w-[200px]">
-              Comenzar encuesta →
-            </Button>
-          </div>
-        ) : (
-          (() => {
-            const freqOptions = config.isAutoeval ? FREQUENCY_OPTIONS_NO_NOSABE : FREQUENCY_OPTIONS_WITH_NOSABE;
-            const agreeOptions = config.isAutoeval ? AGREEMENT_OPTIONS_NO_NOSABE : AGREEMENT_OPTIONS_WITH_NOSABE;
-            const allItems = [
-              ...config.frequencyItems.map((item) => ({ ...item, options: freqOptions })),
-              ...config.agreementItems.map((item) => ({ ...item, options: agreeOptions })),
-            ];
-            const totalQ = allItems.length;
-            const current = allItems[currentQuestion];
-            if (!current) return null;
+        {/* Frequency section (items 1-18) */}
+        <div className="bg-background rounded-lg border p-6">
+          <SurveyTable
+            items={config.frequencyItems}
+            options={freqOptions}
+            answers={answers}
+            onAnswer={handleAnswer}
+            sectionTitle={
+              config.isAutoeval
+                ? "Teniendo en cuenta su gestión como directivo docente, seleccione con qué frecuencia ocurren las siguientes situaciones:"
+                : "Teniendo en cuenta la gestión del directivo docente evaluado, seleccione con qué frecuencia ocurren las siguientes situaciones:"
+            }
+            errors={itemErrors}
+          />
+        </div>
 
-            const freqCount = config.frequencyItems.length;
-            const freqTitle = config.isAutoeval
-              ? "Teniendo en cuenta su gestión como directivo docente, seleccione con qué frecuencia ocurren las siguientes situaciones:"
-              : "Teniendo en cuenta la gestión del directivo docente evaluado, seleccione con qué frecuencia ocurren las siguientes situaciones:";
-            const agreeTitle = config.isAutoeval
-              ? "Teniendo en cuenta su gestión como directivo docente, seleccione qué tan de acuerdo está con las siguientes afirmaciones:"
-              : "Teniendo en cuenta la gestión del directivo docente evaluado, seleccione qué tan de acuerdo está con las siguientes afirmaciones:";
+        {/* Agreement section (items 19-39) */}
+        <div className="bg-background rounded-lg border p-6">
+          <SurveyTable
+            items={config.agreementItems}
+            options={agreeOptions}
+            answers={answers}
+            onAnswer={handleAnswer}
+            sectionTitle={
+              config.isAutoeval
+                ? "Teniendo en cuenta su gestión como directivo docente, seleccione qué tan de acuerdo está con las siguientes afirmaciones:"
+                : "Teniendo en cuenta la gestión del directivo docente evaluado, seleccione qué tan de acuerdo está con las siguientes afirmaciones:"
+            }
+            errors={itemErrors}
+          />
+        </div>
 
-            // Show section title on first question of each section
-            const isFirstFreq = currentQuestion === 0;
-            const isFirstAgree = currentQuestion === freqCount;
-            const sectionTitle = isFirstFreq ? freqTitle : isFirstAgree ? agreeTitle : undefined;
-
-            return (
-              <QuestionCard
-                item={current}
-                options={current.options}
-                value={answers[String(current.num)] || ""}
-                onAnswer={(val) => handleAnswer(current.num, val)}
-                hasError={itemErrors.has(current.num)}
-                current={currentQuestion + 1}
-                total={totalQ}
-                sectionTitle={sectionTitle}
-                onPrev={() => {
-                  if (currentQuestion === 0) {
-                    setWizardStarted(false);
-                  } else {
-                    setCurrentQuestion((p) => p - 1);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }
-                }}
-                onNext={() => {
-                  setCurrentQuestion((p) => Math.min(p + 1, totalQ - 1));
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                onSubmit={handleSubmit}
-                isLast={currentQuestion === totalQ - 1}
-                submitting={submitting}
-              />
-            );
-          })()
-        )}
+        {/* Submit */}
+        <div className="flex justify-center pb-8">
+          <Button
+            size="lg"
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="gap-2 min-w-[200px]"
+          >
+            {submitting && <RefreshCw className="w-4 h-4 animate-spin" />}
+            {submitting ? "Enviando…" : "Enviar encuesta"}
+          </Button>
+        </div>
       </main>
     </div>
   );
