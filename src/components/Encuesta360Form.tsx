@@ -586,6 +586,7 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   // Token-based invitation (email not in URL)
   const invitationToken = searchParams.get("token") || "";
@@ -697,7 +698,11 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    if (!validate()) {
+      setPendingSubmit(true);
+      return;
+    }
+    setPendingSubmit(false);
 
     setSubmitting(true);
     try {
@@ -782,6 +787,18 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
     }
     setSubmitting(false);
   };
+
+  const handleSubmitRef = useRef(handleSubmit);
+  handleSubmitRef.current = handleSubmit;
+
+  // Re-open confirmation dialog when pending submit and all errors are resolved
+  useEffect(() => {
+    if (pendingSubmit && fieldErrors.size === 0 && itemErrors.size === 0) {
+      setPendingSubmit(false);
+      const timer = setTimeout(() => handleSubmitRef.current(), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingSubmit, fieldErrors, itemErrors]);
 
   if (submitted) {
     return (
