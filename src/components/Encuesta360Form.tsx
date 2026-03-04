@@ -448,7 +448,7 @@ function SurveyWizard({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Revisar respuestas</AlertDialogCancel>
-                <AlertDialogAction onClick={onComplete}>Sí, enviar</AlertDialogAction>
+                <AlertDialogAction onClick={(e) => { e.preventDefault(); onComplete(); }}>Sí, enviar</AlertDialogAction>
               </AlertDialogFooter>
             </>
           )}
