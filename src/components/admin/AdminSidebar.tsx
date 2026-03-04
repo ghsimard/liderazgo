@@ -54,10 +54,15 @@ const sections: SidebarSection[] = [
     ],
   },
   {
+    label: "Rúbricas",
+    items: [
+      { tab: "rubricas", label: "Rúbricas", icon: ClipboardList },
+    ],
+  },
+  {
     label: "Análisis",
     items: [
       { tab: "mel", label: "MEL", icon: BarChart3 },
-      { tab: "rubricas", label: "Rúbricas", icon: ClipboardList },
     ],
   },
   {
