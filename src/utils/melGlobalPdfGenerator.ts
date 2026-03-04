@@ -223,6 +223,62 @@ export async function generarMelGlobalPDF(
   });
   y += boxH + 10;
 
+  // MEL Indicator: % incremento por gestión
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...C_BLACK);
+  doc.text("INDICADOR MEL: INCREMENTO POR GESTIÓN", margin, y);
+  y += 3;
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...C_MID);
+  doc.text("% de directivos que presentan incremento en su puntaje promedio (Meta: 80% · Línea base: 0%)", margin, y);
+  y += 5;
+
+  // Global bar
+  const barH = 5;
+  const barW = contentW - 40;
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...C_BLACK);
+  doc.text(`Global: ${agg.globalPctPositive.toFixed(1)}%`, margin, y + barH / 2 + 1);
+  const barX = margin + 35;
+  doc.setFillColor(...C_LIGHT);
+  doc.roundedRect(barX, y, barW, barH, 1, 1, "F");
+  const fillW = Math.min(agg.globalPctPositive, 100) / 100 * barW;
+  doc.setFillColor(agg.globalPctPositive >= 80 ? 34 : agg.globalPctPositive >= 50 ? 180 : 200, agg.globalPctPositive >= 80 ? 139 : agg.globalPctPositive >= 50 ? 140 : 60, agg.globalPctPositive >= 80 ? 34 : agg.globalPctPositive >= 50 ? 0 : 60);
+  doc.roundedRect(barX, y, fillW, barH, 1, 1, "F");
+  // Target line at 80%
+  const targetX = barX + barW * 0.8;
+  doc.setDrawColor(...C_DARK);
+  doc.setLineDashPattern([1, 1], 0);
+  doc.line(targetX, y - 1, targetX, y + barH + 1);
+  doc.setLineDashPattern([], 0);
+  y += barH + 4;
+
+  // Per domain bars
+  for (const d of agg.domainIncrementPcts) {
+    const label = d.domainLabel.length > 25 ? d.domainLabel.substring(0, 23) + "…" : d.domainLabel;
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C_BLACK);
+    doc.text(`${label}: ${d.pctPositive.toFixed(1)}%`, margin, y + barH / 2 + 1);
+    doc.setFillColor(...C_LIGHT);
+    doc.roundedRect(barX, y, barW, barH, 1, 1, "F");
+    const dFillW = Math.min(d.pctPositive, 100) / 100 * barW;
+    doc.setFillColor(d.pctPositive >= 80 ? 34 : d.pctPositive >= 50 ? 180 : 200, d.pctPositive >= 80 ? 139 : d.pctPositive >= 50 ? 140 : 60, d.pctPositive >= 80 ? 34 : d.pctPositive >= 50 ? 0 : 60);
+    doc.roundedRect(barX, y, dFillW, barH, 1, 1, "F");
+    doc.setDrawColor(...C_DARK);
+    doc.setLineDashPattern([1, 1], 0);
+    doc.line(targetX, y - 0.5, targetX, y + barH + 0.5);
+    doc.setLineDashPattern([], 0);
+    y += barH + 3;
+  }
+  doc.setFontSize(6);
+  doc.setTextColor(...C_MID);
+  doc.text(`(${agg.countPositiveAuto} / ${agg.countBothPhases} directivos con incremento global)`, margin, y);
+  y += 6;
+
   // Domain chart image
   if (domainImg) {
     doc.setFontSize(12);

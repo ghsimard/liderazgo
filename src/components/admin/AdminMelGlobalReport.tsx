@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { calcularMelAnalysis, type MelAnalysisData } from "@/utils/reporte360MelCalculator";
-import type { AggregatedMel } from "@/utils/melGlobalTypes";
+import type { AggregatedMel, DomainIncrementPct } from "@/utils/melGlobalTypes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -40,6 +40,8 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
   const avgDeltaObserver = bothPhases.length > 0 ? bothPhases.reduce((s, r) => s + r.globalDeltaObserver, 0) / bothPhases.length : 0;
 
   const domainMap = new Map<string, { label: string; sumAuto: number; sumInt: number; sumExt: number; n: number }>();
+  // Track per-domain positive increments
+  const domainPosMap = new Map<string, { label: string; pos: number; total: number }>();
   for (const r of bothPhases) {
     for (const d of r.domainDeltas) {
       const entry = domainMap.get(d.domain) || { label: d.domainLabel, sumAuto: 0, sumInt: 0, sumExt: 0, n: 0 };
@@ -48,6 +50,11 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
       entry.sumExt += d.deltaExternos;
       entry.n++;
       domainMap.set(d.domain, entry);
+
+      const posEntry = domainPosMap.get(d.domain) || { label: d.domainLabel, pos: 0, total: 0 };
+      posEntry.total++;
+      if (d.deltaAuto > 0) posEntry.pos++;
+      domainPosMap.set(d.domain, posEntry);
     }
   }
   const domainDeltas = [...domainMap.entries()].map(([domain, v]) => ({
@@ -56,6 +63,14 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
     avgDeltaAuto: v.n > 0 ? v.sumAuto / v.n : 0,
     avgDeltaInternos: v.n > 0 ? v.sumInt / v.n : 0,
     avgDeltaExternos: v.n > 0 ? v.sumExt / v.n : 0,
+  }));
+
+  const domainIncrementPcts: DomainIncrementPct[] = [...domainPosMap.entries()].map(([domain, v]) => ({
+    domain,
+    domainLabel: v.label,
+    pctPositive: v.total > 0 ? (v.pos / v.total) * 100 : 0,
+    countPositive: v.pos,
+    countTotal: v.total,
   }));
 
   const compMap = new Map<string, { label: string; sumIA: number; sumFA: number; sumDA: number; sumIO: number; sumFO: number; sumDO: number; n: number }>();
@@ -83,15 +98,21 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
     avgDeltaObs: v.n > 0 ? v.sumDO / v.n : 0,
   }));
 
+  const countPositiveAuto = bothPhases.filter((r) => r.globalDeltaAuto > 0).length;
+  const globalPctPositive = bothPhases.length > 0 ? (countPositiveAuto / bothPhases.length) * 100 : 0;
+
   return {
     count: results.length,
     countWithData: withData.length,
-    countPositiveAuto: bothPhases.filter((r) => r.globalDeltaAuto > 0).length,
+    countBothPhases: bothPhases.length,
+    countPositiveAuto,
     countPositiveObs: bothPhases.filter((r) => r.globalDeltaObserver > 0).length,
     avgDeltaAuto,
     avgDeltaObserver,
     domainDeltas,
     competencyDeltas,
+    domainIncrementPcts,
+    globalPctPositive,
   };
 }
 
@@ -248,6 +269,65 @@ export default function AdminMelGlobalReport({ directivos, filterLabel }: { dire
           </CardContent>
         </Card>
       </div>
+
+      {/* MEL Indicator: % with positive increment by domain */}
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h4 className="text-sm font-semibold">Indicador MEL: Incremento por Gestión</h4>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                % de directivos que presentan incremento en su puntaje promedio en la Encuesta 360°, desagregado por gestión
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-xs text-muted-foreground">Meta: 80%</p>
+              <p className="text-xs text-muted-foreground">Línea base: 0%</p>
+            </div>
+          </div>
+
+          {/* Global % */}
+          <div className="rounded-lg border p-3 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Global (todas las gestiones)</span>
+              <span className={`text-sm font-bold ${agg.globalPctPositive >= 80 ? "text-emerald-600" : agg.globalPctPositive >= 50 ? "text-amber-600" : "text-destructive"}`}>
+                {agg.globalPctPositive.toFixed(1)}%
+              </span>
+            </div>
+            <div className="relative h-3 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`absolute inset-y-0 left-0 rounded-full transition-all ${agg.globalPctPositive >= 80 ? "bg-emerald-500" : agg.globalPctPositive >= 50 ? "bg-amber-500" : "bg-destructive"}`}
+                style={{ width: `${Math.min(agg.globalPctPositive, 100)}%` }}
+              />
+              {/* Target line at 80% */}
+              <div className="absolute inset-y-0 border-r-2 border-dashed border-foreground/40" style={{ left: "80%" }} />
+            </div>
+            <p className="text-xs text-muted-foreground">{agg.countPositiveAuto} / {agg.countBothPhases} directivos con incremento</p>
+          </div>
+
+          {/* Per domain */}
+          <div className="grid gap-2">
+            {agg.domainIncrementPcts.map((d) => (
+              <div key={d.domain} className="rounded-md border p-2.5 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium">{d.domainLabel}</span>
+                  <span className={`text-xs font-bold ${d.pctPositive >= 80 ? "text-emerald-600" : d.pctPositive >= 50 ? "text-amber-600" : "text-destructive"}`}>
+                    {d.pctPositive.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="relative h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={`absolute inset-y-0 left-0 rounded-full ${d.pctPositive >= 80 ? "bg-emerald-500" : d.pctPositive >= 50 ? "bg-amber-500" : "bg-destructive"}`}
+                    style={{ width: `${Math.min(d.pctPositive, 100)}%` }}
+                  />
+                  <div className="absolute inset-y-0 border-r-2 border-dashed border-foreground/30" style={{ left: "80%" }} />
+                </div>
+                <p className="text-[10px] text-muted-foreground">{d.countPositive} / {d.countTotal} directivos</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Domain delta bar chart */}
       <Card>
