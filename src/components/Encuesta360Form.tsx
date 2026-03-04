@@ -239,8 +239,8 @@ function SurveyTable({
       <h3 className="text-sm font-semibold text-muted-foreground">{sectionTitle}</h3>
       <div className="overflow-x-auto border rounded-lg">
         <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/50">
+          <thead className="sticky top-0 z-10">
+            <tr className="bg-muted">
               <th className="text-left p-3 font-medium min-w-[40px]">#</th>
               <th className="text-left p-3 font-medium min-w-[300px]">Ítem</th>
               {options.map((opt) => (
