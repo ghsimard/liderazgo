@@ -41,13 +41,11 @@ interface SidebarSection {
   items: SidebarItem[];
 }
 
+const topLevelItems: SidebarItem[] = [
+  { tab: "formularios", label: "Enlaces", icon: Link2 },
+];
+
 const sections: SidebarSection[] = [
-  {
-    label: "General",
-    items: [
-      { tab: "formularios", label: "Enlaces", icon: Link2 },
-    ],
-  },
   {
     label: "Fichas RLT",
     items: [
@@ -126,6 +124,28 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarContent className="pt-2">
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {topLevelItems.map((item) => {
+                const Icon = item.icon;
+                const active = activeTab === item.tab;
+                return (
+                  <SidebarMenuItem key={item.tab}>
+                    <SidebarMenuButton
+                      onClick={() => handleTabClick(item.tab)}
+                      isActive={active}
+                      tooltip={item.label}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {!collapsed && <span>{item.label}</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         {sections.map((section) => {
           const visibleItems = section.items.filter(
             (i) => !i.superadminOnly || isSuperAdmin
