@@ -31,7 +31,7 @@ router.post("/send", requireAuth, requireAdmin, async (req: Request, res: Respon
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: from || "RLT Fichas <onboarding@resend.dev>",
+        from: from || "RLT Fichas <notificaciones@liderazgo.net.co>",
         to: Array.isArray(to) ? to : [to],
         subject,
         html,
