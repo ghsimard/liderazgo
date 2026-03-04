@@ -155,6 +155,23 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
         </div>
       );
 
+    case "enlaces360":
+      return (
+        <div className="space-y-8">
+          <p className="text-sm text-muted-foreground">Copia el enlace de cada formulario 360° para compartirlo.</p>
+          {categories.filter((cat) => cat.title.startsWith("360°")).map((cat) => (
+            <section key={cat.title} className="space-y-4">
+              <h3 className="text-base font-semibold border-b pb-2">{cat.title}</h3>
+              {cat.forms && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {cat.forms.map((f) => <FormCard key={f.path} form={f} />)}
+                </div>
+              )}
+            </section>
+          ))}
+        </div>
+      );
+
     case "fichas":
       return <AdminFichasTab />;
 
