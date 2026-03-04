@@ -206,6 +206,20 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return <AdminMelTab />;
     case "rubricas":
       return <AdminRubricasTab />;
+    case "ambiente-escolar":
+      return (
+        <div className="space-y-4">
+          <h3 className="text-base font-semibold border-b pb-2">Ambiente Escolar</h3>
+          <p className="text-sm text-muted-foreground">Copia el enlace de cada encuesta para compartirlo.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              { name: "Encuesta Docente", path: "/encuesta-docente", icon: BookOpen },
+              { name: "Encuesta Acudiente", path: "/encuesta-acudiente", icon: Users },
+              { name: "Encuesta Estudiante", path: "/encuesta-estudiante", icon: GraduationCap },
+            ].map((f) => <FormCard key={f.path} form={f} />)}
+          </div>
+        </div>
+      );
     case "reviews":
       return isSuperAdmin ? <AdminReviewsTab /> : null;
     case "mensajes":

@@ -9,6 +9,7 @@ import {
   MessageSquare,
   GitCommit,
   Link2,
+  School,
 } from "lucide-react";
 import {
   Sidebar,
@@ -51,6 +52,12 @@ const sections: SidebarSection[] = [
       { tab: "encuestas360final", label: "Final", icon: ClipboardList },
       { tab: "reportes360", label: "Informes Inicial", icon: BarChart3 },
       { tab: "reportes360final", label: "Informes Final", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "Ambiente Escolar",
+    items: [
+      { tab: "ambiente-escolar", label: "Encuestas", icon: School },
     ],
   },
   {
