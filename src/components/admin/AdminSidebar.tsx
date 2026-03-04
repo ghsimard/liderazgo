@@ -57,6 +57,7 @@ const sections: SidebarSection[] = [
   {
     label: "Encuesta 360°",
     items: [
+      { tab: "enlaces360", label: "Enlaces", icon: Link2 },
       { tab: "ponderaciones", label: "Configuración", icon: Settings2 },
       { tab: "encuestas360", label: "Inicial", icon: ClipboardList },
       { tab: "encuestas360final", label: "Final", icon: ClipboardList },
