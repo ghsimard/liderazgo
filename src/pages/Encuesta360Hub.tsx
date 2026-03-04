@@ -474,6 +474,7 @@ export default function Encuesta360Hub() {
           formUrl={`${window.location.origin}${shareForm.path}`}
           formPath={shareForm.path}
           tipoFormulario={shareForm.tipo}
+          fase={fase}
           directivoNombre={directivoInfo.nombre}
           directivoEmail={directivoInfo.email}
           directivoCedula={directivoInfo.cedula}
