@@ -13,6 +13,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { generarMelPDF } from "@/utils/reporte360MelPdfGenerator";
 import { Progress } from "@/components/ui/progress";
 import JSZip from "jszip";
+import AdminMelGlobalReport from "./AdminMelGlobalReport";
 
 interface DirectivoOption {
   nombre: string;
@@ -154,6 +155,7 @@ export default function AdminMelTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkExporting, setBulkExporting] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+  const [viewMode, setViewMode] = useState<"individual" | "global">("individual");
 
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
@@ -285,8 +287,26 @@ export default function AdminMelTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-accent/50 border border-accent rounded-lg p-4 text-sm text-muted-foreground">
-        <p><strong>Análisis MEL</strong> — Monitoring, Evaluation & Learning. Compare les scores 360° entre la phase initiale et finale pour mesurer la progression de chaque directivo.</p>
+      <div className="flex items-center justify-between">
+        <div className="bg-accent/50 border border-accent rounded-lg p-4 text-sm text-muted-foreground flex-1">
+          <p><strong>Análisis MEL</strong> — Monitoring, Evaluation & Learning. Compare les scores 360° entre la phase initiale et finale pour mesurer la progression.</p>
+        </div>
+      </div>
+
+      {/* View mode toggle */}
+      <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
+        <button
+          onClick={() => setViewMode("individual")}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "individual" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          Individual
+        </button>
+        <button
+          onClick={() => setViewMode("global")}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "global" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          Rapport global
+        </button>
       </div>
 
       {/* Filters */}
@@ -318,60 +338,66 @@ export default function AdminMelTab() {
         </CardContent>
       </Card>
 
-      {/* Bulk export + Directivos list */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {filteredDirectivos.length} directivo(s) {hasFilters ? "filtrado(s)" : "registrado(s)"}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleBulkExport}
-            disabled={bulkExporting || filteredDirectivos.length === 0}
-            className="gap-1.5"
-          >
-            {bulkExporting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Archive className="w-3.5 h-3.5" />}
-            Exportar ZIP ({filteredDirectivos.length})
-          </Button>
-        </div>
-        {bulkExporting && (
-          <div className="space-y-1">
-            <Progress value={(bulkProgress.current / bulkProgress.total) * 100} className="h-2" />
-            <p className="text-xs text-muted-foreground text-center">
-              {bulkProgress.current} / {bulkProgress.total} directivo(s) procesado(s)…
-            </p>
+      {viewMode === "global" ? (
+        <AdminMelGlobalReport directivos={filteredDirectivos} />
+      ) : (
+        <>
+          {/* Bulk export + Directivos list */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {filteredDirectivos.length} directivo(s) {hasFilters ? "filtrado(s)" : "registrado(s)"}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkExport}
+                disabled={bulkExporting || filteredDirectivos.length === 0}
+                className="gap-1.5"
+              >
+                {bulkExporting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Archive className="w-3.5 h-3.5" />}
+                Exportar ZIP ({filteredDirectivos.length})
+              </Button>
+            </div>
+            {bulkExporting && (
+              <div className="space-y-1">
+                <Progress value={(bulkProgress.current / bulkProgress.total) * 100} className="h-2" />
+                <p className="text-xs text-muted-foreground text-center">
+                  {bulkProgress.current} / {bulkProgress.total} directivo(s) procesado(s)…
+                </p>
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredDirectivos.map((d) => (
+                <Card key={d.nombre + d.institucion} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="rounded-lg bg-primary/10 p-2.5">
+                      <BarChart3 className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{d.nombre}</p>
+                      <p className="text-xs text-muted-foreground truncate">{d.institucion}</p>
+                      <p className="text-xs text-muted-foreground">{genderizeRole(d.cargo, d.genero)} · {d.region}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAnalyze(d)}
+                      disabled={analyzing === d.nombre}
+                      className="gap-1 text-xs shrink-0"
+                    >
+                      {analyzing === d.nombre ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+                      Analizar
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filteredDirectivos.map((d) => (
-            <Card key={d.nombre + d.institucion} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="rounded-lg bg-primary/10 p-2.5">
-                  <BarChart3 className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{d.nombre}</p>
-                  <p className="text-xs text-muted-foreground truncate">{d.institucion}</p>
-                  <p className="text-xs text-muted-foreground">{genderizeRole(d.cargo, d.genero)} · {d.region}</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleAnalyze(d)}
-                  disabled={analyzing === d.nombre}
-                  className="gap-1 text-xs shrink-0"
-                >
-                  {analyzing === d.nombre ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
-                  Analizar
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
 
-      <MelDetailDialog open={dialogOpen} onOpenChange={setDialogOpen} data={melData} images={images} />
+          <MelDetailDialog open={dialogOpen} onOpenChange={setDialogOpen} data={melData} images={images} />
+        </>
+      )}
     </div>
   );
 }
