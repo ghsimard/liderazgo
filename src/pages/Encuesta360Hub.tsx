@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ShareEncuestaDialog from "@/components/ShareEncuestaDialog";
+import AutoevalViewerDialog from "@/components/AutoevalViewerDialog";
 import {
   ArrowLeft,
   Bell,
@@ -16,6 +17,7 @@ import {
   ClipboardList,
   Clock,
   Copy,
+  Eye,
   GraduationCap,
   Loader2,
   Mail,
@@ -53,19 +55,26 @@ const FORM_QUOTAS: Record<string, number> = {
   acudiente: 1,
 };
 
-const forms = [
-  { label: "Autoevaluación", description: "Evalúe su propio desempeño", path: "/formulario-360-autoevaluacion", tipo: "autoevaluacion", icon: UserCheck, isAutoeval: true },
-  { label: "Directivo", description: "Evaluación por coordinador/a", path: "/formulario-360-directivo", tipo: "directivo", icon: UserRound, isAutoeval: false },
-  { label: "Docente", description: "Evaluación por docentes", path: "/formulario-360-docente", tipo: "docente", icon: GraduationCap, isAutoeval: false },
-  { label: "Administrativo", description: "Evaluación por administrativos", path: "/formulario-360-administrativo", tipo: "administrativo", icon: ClipboardList, isAutoeval: false },
-  { label: "Estudiante", description: "Evaluación por estudiantes", path: "/formulario-360-estudiante", tipo: "estudiante", icon: School, isAutoeval: false },
-  { label: "Acudiente", description: "Evaluación por acudientes", path: "/formulario-360-acudiente", tipo: "acudiente", icon: Users, isAutoeval: false },
+const formsBase = [
+  { label: "Autoevaluación", description: "Evalúe su propio desempeño", basePath: "autoevaluacion", tipo: "autoevaluacion", icon: UserCheck, isAutoeval: true },
+  { label: "Directivo", description: "Evaluación por coordinador/a", basePath: "directivo", tipo: "directivo", icon: UserRound, isAutoeval: false },
+  { label: "Docente", description: "Evaluación por docentes", basePath: "docente", tipo: "docente", icon: GraduationCap, isAutoeval: false },
+  { label: "Administrativo", description: "Evaluación por administrativos", basePath: "administrativo", tipo: "administrativo", icon: ClipboardList, isAutoeval: false },
+  { label: "Estudiante", description: "Evaluación por estudiantes", basePath: "estudiante", tipo: "estudiante", icon: School, isAutoeval: false },
+  { label: "Acudiente", description: "Evaluación por acudientes", basePath: "acudiente", tipo: "acudiente", icon: Users, isAutoeval: false },
 ];
+
+function getFormPath(basePath: string, isFinal: boolean) {
+  return isFinal ? `/formulario-360-final-${basePath}` : `/formulario-360-${basePath}`;
+}
 
 const REMINDER_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24h
 
 export default function Encuesta360Hub() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fase = (searchParams.get("fase") || "inicial") as "inicial" | "final";
+  const isFinal = fase === "final";
   const { images } = useAppImages();
   const { toast } = useToast();
   const logoRLT = images.logo_rlt_white;
@@ -80,6 +89,7 @@ export default function Encuesta360Hub() {
   // Share dialog state
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareForm, setShareForm] = useState<{ label: string; path: string; tipo: string } | null>(null);
+  const [autoEvalViewerOpen, setAutoEvalViewerOpen] = useState(false);
 
   const loadInvitations = useCallback(async (cedula: string) => {
     try {
@@ -118,7 +128,7 @@ export default function Encuesta360Hub() {
             .from("encuestas_360")
             .select("tipo_formulario")
             .or(`cedula.eq.${cedula},cedula_directivo.eq.${cedula}`)
-            .eq("fase", "inicial");
+            .eq("fase", fase);
           const counts: Record<string, number> = {};
           (countRows || []).forEach((r: any) => {
             counts[r.tipo_formulario] = (counts[r.tipo_formulario] || 0) + 1;
@@ -131,7 +141,7 @@ export default function Encuesta360Hub() {
         setLoading(false);
       }
     })();
-  }, [loadInvitations]);
+  }, [loadInvitations, fase]);
 
   const [copyingLink, setCopyingLink] = useState<string | null>(null);
 
@@ -148,7 +158,7 @@ export default function Encuesta360Hub() {
           institucion: directivoInfo.institucion,
           email_destinatario: "enlace-copiado",
           tipo_formulario: tipo,
-          fase: "inicial",
+          fase: fase,
         })
         .select("token")
         .single();
@@ -182,8 +192,9 @@ export default function Encuesta360Hub() {
     if (!directivoInfo || !canSendReminder(inv)) return;
     setSendingReminder(inv.id);
     try {
-      const formUrl = `${window.location.origin}${forms.find(f => f.tipo === inv.tipo_formulario)?.path || ""}?token=${inv.token}`;
-      const formLabel = forms.find(f => f.tipo === inv.tipo_formulario)?.label || inv.tipo_formulario;
+      const formBase = formsBase.find(f => f.tipo === inv.tipo_formulario);
+      const formUrl = `${window.location.origin}${formBase ? getFormPath(formBase.basePath, isFinal) : ""}?token=${inv.token}`;
+      const formLabel = formBase?.label || inv.tipo_formulario;
 
       const htmlBody = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -256,7 +267,7 @@ export default function Encuesta360Hub() {
                   {logoCLT && <img src={logoCLT} alt="Logo CLT" className="h-14 object-contain" />}
                 </div>
                 <CardTitle className="text-lg font-bold text-foreground">
-                  Encuesta 360° — Fase Inicial
+                  Encuesta 360° — Fase {isFinal ? "Final" : "Inicial"}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
                   {directivoInfo
@@ -265,27 +276,28 @@ export default function Encuesta360Hub() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-2">
-                {forms.map((form) => {
+                {formsBase.map((form) => {
                   const count = formCounts[form.tipo] || 0;
                   const quota = FORM_QUOTAS[form.tipo] || 1;
                   const quotaMet = count >= quota;
                   const isAutoevalDone = form.isAutoeval && quotaMet;
+                  const formPath = getFormPath(form.basePath, isFinal);
 
                   return (
-                  <div key={form.path} className="flex items-center gap-1">
+                  <div key={form.basePath} className="flex items-center gap-1">
                     <Button
                       variant="outline"
                       className={`flex-1 h-14 justify-start gap-3 text-base ${isAutoevalDone ? "opacity-60" : ""}`}
                       disabled={isAutoevalDone}
                       onClick={() => {
                         if (form.isAutoeval) {
-                          navigate(form.path);
+                          navigate(formPath);
                         } else {
                           const params = new URLSearchParams({
                             nombre_directivo: directivoInfo?.nombre || "",
                             institucion: directivoInfo?.institucion || "",
                           });
-                          navigate(`${form.path}?${params.toString()}`);
+                          navigate(`${formPath}?${params.toString()}`);
                         }
                       }}
                     >
@@ -307,11 +319,23 @@ export default function Encuesta360Hub() {
                       </div>
                     </Button>
 
+                    {/* View own autoevaluación */}
+                    {form.isAutoeval && isAutoevalDone && directivoInfo && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="shrink-0 h-10 w-10" onClick={() => setAutoEvalViewerOpen(true)}>
+                            <Eye className="h-4 w-4 text-primary" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Ver mis respuestas</TooltipContent>
+                      </Tooltip>
+                    )}
+
                     {!form.isAutoeval && directivoInfo && (
                       <>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="shrink-0 h-10 w-10" disabled={copyingLink === form.tipo} onClick={() => handleCopyUrl(form.path, form.label, form.tipo)}>
+                            <Button variant="ghost" size="icon" className="shrink-0 h-10 w-10" disabled={copyingLink === form.tipo} onClick={() => handleCopyUrl(formPath, form.label, form.tipo)}>
                               <Copy className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </TooltipTrigger>
@@ -319,7 +343,7 @@ export default function Encuesta360Hub() {
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="shrink-0 h-10 w-10" onClick={() => handleOpenEmailDialog(form)}>
+                            <Button variant="ghost" size="icon" className="shrink-0 h-10 w-10" onClick={() => handleOpenEmailDialog({ label: form.label, path: formPath, tipo: form.tipo })}>
                               <Mail className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </TooltipTrigger>
@@ -357,7 +381,7 @@ export default function Encuesta360Hub() {
                     </p>
                   ) : (
                     pendingInvitations.map((inv) => {
-                      const formMeta = forms.find((f) => f.tipo === inv.tipo_formulario);
+                      const formMeta = formsBase.find((f) => f.tipo === inv.tipo_formulario);
                       const canRemind = canSendReminder(inv);
                       const nextReminderAt = inv.last_reminder_at
                         ? new Date(new Date(inv.last_reminder_at).getTime() + REMINDER_COOLDOWN_MS)
@@ -425,6 +449,16 @@ export default function Encuesta360Hub() {
           directivoCedula={directivoInfo.cedula}
           institucion={directivoInfo.institucion}
           onInvitationsSent={() => loadInvitations(directivoInfo.cedula)}
+        />
+      )}
+
+      {/* Autoevaluación read-only viewer */}
+      {directivoInfo && (
+        <AutoevalViewerDialog
+          open={autoEvalViewerOpen}
+          onOpenChange={setAutoEvalViewerOpen}
+          cedula={directivoInfo.cedula}
+          fase={fase}
         />
       )}
     </TooltipProvider>
