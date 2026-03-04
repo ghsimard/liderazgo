@@ -375,7 +375,7 @@ export default function AdminMelTab() {
           onClick={() => setViewMode("global")}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "global" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
         >
-          Rapport global
+          Reporte global
         </button>
       </div>
 
