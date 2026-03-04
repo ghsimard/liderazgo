@@ -4,7 +4,8 @@ import { supabase } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ClipboardList, FileText, Loader2, User } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { ArrowLeft, CheckCircle2, ClipboardList, FileText, Loader2, User } from "lucide-react";
 
 import { genderizeRole } from "@/utils/genderizeRole";
 
@@ -27,6 +28,7 @@ export default function MiPanel() {
 
   const [loading, setLoading] = useState(true);
   const [roleInfo, setRoleInfo] = useState<CedulaRoleResult | null>(null);
+  const [rubricaProgress, setRubricaProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 4 });
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
 
@@ -56,6 +58,21 @@ export default function MiPanel() {
       // If has ficha but is not directivo nor evaluador, show ficha-only panel
       if (result.exists_ficha && !result.is_directivo && !result.is_evaluador) {
         setSelectedRole("directivo"); // show ficha access
+      }
+
+      // Fetch rubrica progress for directivos
+      if (result.is_directivo && result.exists_ficha) {
+        const { data: submissions } = await supabase
+          .from("rubrica_submission_dates")
+          .select("module_number")
+          .eq("directivo_cedula", cedula)
+          .eq("submission_type", "acordado");
+        const { count } = await supabase
+          .from("rubrica_modules")
+          .select("id", { count: "exact", head: true });
+        const total = count ?? 4;
+        const completedModules = new Set((submissions || []).map(s => s.module_number)).size;
+        setRubricaProgress({ completed: completedModules, total });
       }
 
       setLoading(false);
@@ -173,17 +190,28 @@ export default function MiPanel() {
                 {roleInfo.is_directivo && roleInfo.exists_ficha && (
                   <Button
                     variant="outline"
-                    className="w-full h-14 justify-start gap-3 text-base"
+                    className="w-full h-auto min-h-[3.5rem] justify-start gap-3 text-base py-3"
                     onClick={() =>
                       navigate(`/rubrica-evaluacion?role=directivo`)
                     }
                   >
-                    <ClipboardList className="h-5 w-5 text-primary" />
-                    <div className="text-left">
-                      <div className="font-semibold">Mi Rúbrica de Evaluación</div>
-                      <div className="text-xs text-muted-foreground">
-                        Autoevaluación y nivel acordado
+                    <ClipboardList className="h-5 w-5 text-primary shrink-0" />
+                    <div className="text-left flex-1 min-w-0">
+                      <div className="font-semibold flex items-center gap-2">
+                        Mi Rúbrica de Evaluación
+                        {rubricaProgress.completed === rubricaProgress.total && (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        )}
                       </div>
+                      <div className="text-xs text-muted-foreground">
+                        {rubricaProgress.completed === rubricaProgress.total
+                          ? "Todos los módulos completados"
+                          : `${rubricaProgress.completed} de ${rubricaProgress.total} módulos completados`}
+                      </div>
+                      <Progress
+                        value={(rubricaProgress.completed / rubricaProgress.total) * 100}
+                        className="h-1.5 mt-1.5 bg-muted"
+                      />
                     </div>
                   </Button>
                 )}
