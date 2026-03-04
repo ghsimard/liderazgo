@@ -870,18 +870,21 @@ export type Database = {
         Row: {
           cedula: string
           created_at: string
+          email: string | null
           id: string
           nombre: string
         }
         Insert: {
           cedula: string
           created_at?: string
+          email?: string | null
           id?: string
           nombre: string
         }
         Update: {
           cedula?: string
           created_at?: string
+          email?: string | null
           id?: string
           nombre?: string
         }

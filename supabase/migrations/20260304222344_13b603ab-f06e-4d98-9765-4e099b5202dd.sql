@@ -1,0 +1,1 @@
+ALTER TABLE public.rubrica_evaluadores ADD COLUMN IF NOT EXISTS email TEXT;

@@ -16,6 +16,7 @@ interface Evaluador {
   id: string;
   nombre: string;
   cedula: string;
+  email: string | null;
   created_at: string;
 }
 
@@ -46,6 +47,7 @@ export default function AdminEvaluadoresTab() {
   const [showNewEval, setShowNewEval] = useState(false);
   const [newNombre, setNewNombre] = useState("");
   const [newCedula, setNewCedula] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Assign dialog
@@ -99,6 +101,7 @@ export default function AdminEvaluadoresTab() {
     const { error } = await supabase.from("rubrica_evaluadores").insert({
       nombre: newNombre.trim(),
       cedula: newCedula.trim(),
+      email: newEmail.trim() || null,
     });
     setSaving(false);
     if (error) {
@@ -108,6 +111,7 @@ export default function AdminEvaluadoresTab() {
       setShowNewEval(false);
       setNewNombre("");
       setNewCedula("");
+      setNewEmail("");
       loadData();
     }
   };
@@ -236,6 +240,7 @@ export default function AdminEvaluadoresTab() {
                       <Users className="w-4 h-4" />
                       {ev.nombre}
                       <Badge variant="outline" className="text-xs ml-1">CC: {ev.cedula}</Badge>
+                      {ev.email && <span className="text-xs text-muted-foreground ml-1">📧 {ev.email}</span>}
                     </CardTitle>
                     <div className="flex items-center gap-1">
                       <Button
@@ -343,6 +348,10 @@ export default function AdminEvaluadoresTab() {
             <div>
               <Label>Cédula</Label>
               <Input value={newCedula} onChange={e => setNewCedula(e.target.value)} placeholder="Ej: 1234567890" />
+            </div>
+            <div>
+              <Label>Email (opcional)</Label>
+              <Input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="Ej: evaluador@correo.com" />
             </div>
           </div>
           <DialogFooter>
