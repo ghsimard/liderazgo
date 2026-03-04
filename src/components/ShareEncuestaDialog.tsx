@@ -89,12 +89,19 @@ export default function ShareEncuestaDialog({
         </div>
       `;
 
-      const result = await sendEmail({
-        to: emails,
-        subject: `Encuesta 360° — ${formLabel} — ${institucion}`,
-        html: htmlBody,
-        reply_to: directivoEmail,
-      });
+      const results = await Promise.all(
+        emails.map((email) =>
+          sendEmail({
+            to: email,
+            subject: `Encuesta 360° — ${formLabel} — ${institucion}`,
+            html: htmlBody,
+            reply_to: directivoEmail,
+          })
+        )
+      );
+
+      const failed = results.filter((r) => !r.success);
+      const result = { success: failed.length === 0, error: failed.map((f) => f.error).join(", ") };
 
       if (result.success) {
         toast({ title: "Enviado", description: `Invitación enviada a ${emails.length} destinatario(s).` });
