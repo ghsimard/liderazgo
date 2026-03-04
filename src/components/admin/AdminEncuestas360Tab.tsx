@@ -51,7 +51,11 @@ const FORM_TYPE_LABELS: Record<string, string> = {
   acudiente: "Acudiente",
 };
 
-export default function AdminEncuestas360Tab() {
+interface AdminEncuestas360TabProps {
+  fase?: "inicial" | "final";
+}
+
+export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuestas360TabProps) {
   const { toast } = useToast();
   const [groups, setGroups] = useState<InstitutionGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,13 +69,14 @@ export default function AdminEncuestas360Tab() {
 
   useEffect(() => {
     loadEncuestas();
-  }, []);
+  }, [fase]);
 
   const loadEncuestas = async () => {
     setLoading(true);
     const { data } = await supabase
       .from("encuestas_360")
       .select("id, tipo_formulario, nombre_completo, nombre_directivo, institucion_educativa, cargo_directivo, dias_contacto, created_at, respuestas")
+      .eq("fase", fase)
       .order("institucion_educativa")
       .order("created_at", { ascending: false });
 

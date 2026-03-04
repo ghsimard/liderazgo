@@ -89,12 +89,13 @@ export interface Reporte360Data {
 
 // ── Main calculation function ──
 
-export async function calcularReporte360(nombreDirectivo: string, institucion: string): Promise<Reporte360Data> {
+export async function calcularReporte360(nombreDirectivo: string, institucion: string, fase: "inicial" | "final" = "inicial"): Promise<Reporte360Data> {
   // 1. Fetch all encuestas for this directivo
   const { data: encuestas, error: encError } = await supabase
     .from("encuestas_360")
     .select("*")
-    .eq("institucion_educativa", institucion);
+    .eq("institucion_educativa", institucion)
+    .eq("fase", fase);
 
   if (encError) throw encError;
 
