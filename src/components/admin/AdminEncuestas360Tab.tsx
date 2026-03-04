@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, School, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
+import { RefreshCw, School, ChevronDown, ChevronRight, Trash2, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -66,10 +67,27 @@ export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuesta
   const [loadingTexts, setLoadingTexts] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Encuesta | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [regiones, setRegiones] = useState<{ id: string; nombre: string }[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string>("todas");
+  const [instRegionMap, setInstRegionMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadEncuestas();
+    loadRegiones();
   }, [fase]);
+
+  const loadRegiones = async () => {
+    const [{ data: regionesData }, { data: fichasData }] = await Promise.all([
+      supabase.from("regiones").select("id, nombre").order("nombre"),
+      supabase.from("fichas_rlt").select("nombre_ie, region"),
+    ]);
+    if (regionesData) setRegiones(regionesData);
+    if (fichasData) {
+      const map: Record<string, string> = {};
+      fichasData.forEach((f: any) => { map[f.nombre_ie] = f.region; });
+      setInstRegionMap(map);
+    }
+  };
 
   const loadEncuestas = async () => {
     setLoading(true);
@@ -156,11 +174,16 @@ export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuesta
     });
   };
 
-  const filtered = search.trim()
-    ? groups.filter((g) => g.institucion.toLowerCase().includes(search.toLowerCase()))
-    : groups;
+  const regionFiltered = useMemo(() => {
+    if (selectedRegion === "todas") return groups;
+    return groups.filter((g) => instRegionMap[g.institucion] === selectedRegion);
+  }, [groups, selectedRegion, instRegionMap]);
 
-  const totalEncuestas = groups.reduce((sum, g) => sum + g.encuestas.length, 0);
+  const filtered = search.trim()
+    ? regionFiltered.filter((g) => g.institucion.toLowerCase().includes(search.toLowerCase()))
+    : regionFiltered;
+
+  const totalEncuestas = filtered.reduce((sum, g) => sum + g.encuestas.length, 0);
 
   if (loading) {
     return (
@@ -174,14 +197,30 @@ export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuesta
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-muted-foreground">
-          {totalEncuestas} encuesta(s) en {groups.length} institución(es)
+          {totalEncuestas} encuesta(s) en {filtered.length} institución(es)
         </p>
-        <Input
-          placeholder="Buscar institución…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-muted-foreground" />
+            <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+              <SelectTrigger className="w-[200px] h-9">
+                <SelectValue placeholder="Región" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas las regiones</SelectItem>
+                {regiones.map((r) => (
+                  <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Input
+            placeholder="Buscar institución…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
