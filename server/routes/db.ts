@@ -36,6 +36,7 @@ const PUBLIC_READ_TABLES = new Set([
   "rubrica_asignaciones",
   "rubrica_evaluaciones",
   "rubrica_seguimientos",
+  "encuesta_invitaciones",
 ]);
 
 // Tables that allow public inserts (no auth required for POST without _method)
@@ -47,6 +48,15 @@ const PUBLIC_INSERT_TABLES = new Set([
   "rubrica_seguimientos",
   "site_reviews",
   "contact_messages",
+  "encuesta_invitaciones",
+]);
+
+// Tables that allow public updates (no auth required for PATCH)
+const PUBLIC_UPDATE_TABLES = new Set([
+  "rubrica_evaluaciones",
+  "rubrica_seguimientos",
+  "rubrica_submission_dates",
+  "encuesta_invitaciones",
 ]);
 
 // Whitelist of allowed tables
@@ -302,9 +312,11 @@ router.post("/:table", async (req: Request, res: Response) => {
     // If no _method, it's a direct INSERT from dbClient
     const method = _method || "POST";
 
-    // Auth check: public inserts allowed for certain tables, everything else needs admin
+    // Auth check: public inserts/updates allowed for certain tables, everything else needs admin
     if (method === "POST" && !_body?._upsert && PUBLIC_INSERT_TABLES.has(table)) {
       // Public insert allowed, no auth needed
+    } else if (method === "PATCH" && PUBLIC_UPDATE_TABLES.has(table)) {
+      // Public update allowed, no auth needed
     } else {
       // Need admin auth — check manually since we may not use middleware
       const authHeader = req.headers.authorization;

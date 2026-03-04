@@ -409,10 +409,20 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
   const [submitted, setSubmitted] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
 
-  // Pre-filled from URL params (shared links)
+  // Token-based invitation (email not in URL)
+  const invitationToken = searchParams.get("token") || "";
+  const [invitationEmail, setInvitationEmail] = useState("");
+  const [invitationId, setInvitationId] = useState("");
+
+  // Pre-filled from URL params (shared links — legacy or copy-link mode)
   const prefillInstitucion = searchParams.get("institucion") || "";
   const prefillNombreDirectivo = searchParams.get("nombre_directivo") || "";
-  const isPrefilled = !!prefillInstitucion && !!prefillNombreDirectivo;
+  const [tokenPrefillInstitucion, setTokenPrefillInstitucion] = useState("");
+  const [tokenPrefillNombreDirectivo, setTokenPrefillNombreDirectivo] = useState("");
+
+  const effectiveInstitucionPrefill = prefillInstitucion || tokenPrefillInstitucion;
+  const effectiveNombreDirectivoPrefill = prefillNombreDirectivo || tokenPrefillNombreDirectivo;
+  const isPrefilled = !!effectiveInstitucionPrefill && !!effectiveNombreDirectivoPrefill;
 
   // Header fields
   const [institucion, setInstitucion] = useState(prefillInstitucion);
@@ -420,6 +430,35 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
   const [cedulaDirectivo, setCedulaDirectivo] = useState("");
   const [cargoDirectivo, setCargoDirectivo] = useState("");
   const [diasContacto, setDiasContacto] = useState("");
+
+  // Resolve invitation token on mount
+  useEffect(() => {
+    if (!invitationToken) return;
+    (async () => {
+      try {
+        const { data } = await supabase.rpc("get_invitation_by_token", { p_token: invitationToken });
+        if (data) {
+          const inv = typeof data === "string" ? JSON.parse(data) : data;
+          if (inv.responded_at) {
+            toast({ title: "Ya respondida", description: "Esta invitación ya fue completada.", variant: "destructive" });
+            return;
+          }
+          setInvitationEmail(inv.email_destinatario || "");
+          setInvitationId(inv.id || "");
+          if (inv.institucion) {
+            setTokenPrefillInstitucion(inv.institucion);
+            setInstitucion(inv.institucion);
+          }
+          if (inv.directivo_nombre) {
+            setTokenPrefillNombreDirectivo(inv.directivo_nombre);
+            setNombreDirectivo(inv.directivo_nombre);
+          }
+        }
+      } catch (err) {
+        console.error("Error resolving invitation token:", err);
+      }
+    })();
+  }, [invitationToken]);
 
   // Autoevaluacion fields
   const [nombreCompleto, setNombreCompleto] = useState("");
@@ -517,9 +556,17 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
 
       if (extraValues.grado_estudiante) payload.grado_estudiante = extraValues.grado_estudiante;
       if (extraValues.cargo_evaluador) payload.cargo_evaluador = extraValues.cargo_evaluador;
+      if (invitationEmail) payload.email_evaluador = invitationEmail;
 
       const { error } = await apiFetch("/api/encuestas", { method: "POST", body: payload as any });
       if (error) throw new Error(error);
+
+      // Mark invitation as responded
+      if (invitationId) {
+        try {
+          await supabase.from("encuesta_invitaciones").update({ responded_at: new Date().toISOString() }).eq("id", invitationId);
+        } catch { /* non-blocking */ }
+      }
 
       setSubmitted(true);
       setShowReviewModal(true);
