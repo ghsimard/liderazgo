@@ -44,6 +44,15 @@ interface Invitation {
   responded_at: string | null;
 }
 
+const FORM_QUOTAS: Record<string, number> = {
+  autoevaluacion: 1,
+  directivo: 2,
+  docente: 2,
+  administrativo: 2,
+  estudiante: 1,
+  acudiente: 1,
+};
+
 const forms = [
   { label: "Autoevaluación", description: "Evalúe su propio desempeño", path: "/formulario-360-autoevaluacion", tipo: "autoevaluacion", icon: UserCheck, isAutoeval: true },
   { label: "Directivo", description: "Evaluación por coordinador/a", path: "/formulario-360-directivo", tipo: "directivo", icon: UserRound, isAutoeval: false },
@@ -65,7 +74,7 @@ export default function Encuesta360Hub() {
   const [directivoInfo, setDirectivoInfo] = useState<DirectivoInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [autoevalDone, setAutoevalDone] = useState(false);
+  const [formCounts, setFormCounts] = useState<Record<string, number>>({});
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
 
   // Share dialog state
@@ -104,14 +113,17 @@ export default function Encuesta360Hub() {
           });
           await loadInvitations(cedula);
 
-          // Check if autoevaluacion already submitted
-          const { count } = await supabase
+          // Count submissions per form type for this directivo
+          const { data: countRows } = await supabase
             .from("encuestas_360")
-            .select("id", { count: "exact", head: true })
-            .eq("cedula", cedula)
-            .eq("tipo_formulario", "autoevaluacion")
+            .select("tipo_formulario")
+            .or(`cedula.eq.${cedula},cedula_directivo.eq.${cedula}`)
             .eq("fase", "inicial");
-          setAutoevalDone((count ?? 0) > 0);
+          const counts: Record<string, number> = {};
+          (countRows || []).forEach((r: any) => {
+            counts[r.tipo_formulario] = (counts[r.tipo_formulario] || 0) + 1;
+          });
+          setFormCounts(counts);
         }
       } catch (err) {
         console.error("Error loading directivo info:", err);
@@ -238,12 +250,18 @@ export default function Encuesta360Hub() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-2">
-                {forms.map((form) => (
+                {forms.map((form) => {
+                  const count = formCounts[form.tipo] || 0;
+                  const quota = FORM_QUOTAS[form.tipo] || 1;
+                  const quotaMet = count >= quota;
+                  const isAutoevalDone = form.isAutoeval && quotaMet;
+
+                  return (
                   <div key={form.path} className="flex items-center gap-1">
                     <Button
                       variant="outline"
-                      className={`flex-1 h-14 justify-start gap-3 text-base ${form.isAutoeval && autoevalDone ? "opacity-60" : ""}`}
-                      disabled={form.isAutoeval && autoevalDone}
+                      className={`flex-1 h-14 justify-start gap-3 text-base ${isAutoevalDone ? "opacity-60" : ""}`}
+                      disabled={isAutoevalDone}
                       onClick={() => {
                         if (form.isAutoeval) {
                           navigate(form.path);
@@ -252,16 +270,20 @@ export default function Encuesta360Hub() {
                         }
                       }}
                     >
-                      <form.icon className={`h-5 w-5 shrink-0 ${form.isAutoeval && autoevalDone ? "text-muted-foreground" : "text-primary"}`} />
+                      <form.icon className={`h-5 w-5 shrink-0 ${isAutoevalDone ? "text-muted-foreground" : "text-primary"}`} />
                       <div className="text-left">
                         <div className="font-semibold flex items-center gap-2">
                           {form.label}
-                          {form.isAutoeval && autoevalDone && (
+                          {quotaMet && (
                             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {form.isAutoeval && autoevalDone ? "Ya completada" : form.description}
+                          {isAutoevalDone
+                            ? "Ya completada"
+                            : !form.isAutoeval && directivoInfo && count > 0
+                            ? `${count}/${quota} respuesta(s)`
+                            : form.description}
                         </div>
                       </div>
                     </Button>
@@ -287,7 +309,8 @@ export default function Encuesta360Hub() {
                       </>
                     )}
                   </div>
-                ))}
+                  );
+                })}
                 <Button variant="ghost" className="w-full mt-2" onClick={() => navigate("/mi-panel")}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Volver a Mi Panel
