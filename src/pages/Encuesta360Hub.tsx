@@ -289,7 +289,22 @@ export default function Encuesta360Hub() {
                       variant="outline"
                       className={`flex-1 h-14 justify-start gap-3 text-base ${isAutoevalDone ? "opacity-60" : ""}`}
                       disabled={isAutoevalDone}
-                      onClick={() => {
+                      onClick={async () => {
+                        // Log direct access in encuesta_invitaciones
+                        if (directivoInfo) {
+                          try {
+                            await supabase.from("encuesta_invitaciones").insert({
+                              directivo_cedula: directivoInfo.cedula,
+                              directivo_nombre: directivoInfo.nombre,
+                              institucion: directivoInfo.institucion,
+                              email_destinatario: "acceso-directo",
+                              tipo_formulario: form.tipo,
+                              fase: fase,
+                            });
+                          } catch (err) {
+                            console.error("Error logging direct access:", err);
+                          }
+                        }
                         if (form.isAutoeval) {
                           navigate(formPath);
                         } else {
