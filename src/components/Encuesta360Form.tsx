@@ -28,11 +28,13 @@ function InstitutionSearch({
   onChange,
   hasError,
   onlyWithFichas,
+  onLoaded,
 }: {
   value: string;
   onChange: (v: string) => void;
   hasError?: boolean;
   onlyWithFichas?: boolean;
+  onLoaded?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -78,6 +80,7 @@ function InstitutionSearch({
         console.error("Error loading instituciones:", err);
       } finally {
         setLoading(false);
+        onLoaded?.();
       }
     })();
   }, [onlyWithFichas]);
@@ -587,6 +590,7 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
   const [submitted, setSubmitted] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // Token-based invitation (email not in URL)
   const invitationToken = searchParams.get("token") || "";
@@ -638,6 +642,13 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
       }
     })();
   }, [invitationToken]);
+
+  // If prefilled, no InstitutionSearch renders so mark loading done
+  useEffect(() => {
+    if (isPrefilled && !config.isAutoeval) {
+      setInitialLoading(false);
+    }
+  }, [isPrefilled, config.isAutoeval]);
 
   // Autoevaluacion fields
   const [nombreCompleto, setNombreCompleto] = useState("");
@@ -843,7 +854,22 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-8">
+      {initialLoading && (
+        <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
+          <div className="bg-background rounded-lg border p-6 space-y-4">
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+                className="w-10 h-10 rounded-full border-4 border-muted border-t-primary"
+              />
+              <p className="text-sm text-muted-foreground animate-pulse">Cargando formulario…</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <main className={cn("max-w-4xl mx-auto px-4 py-6 space-y-8", initialLoading && "hidden")}>
         {/* Introduction */}
         <div className="bg-background rounded-lg border p-6 space-y-4">
           <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{config.intro}</p>
@@ -894,6 +920,7 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
               }}
               hasError={fieldErrors.has("institucion")}
               onlyWithFichas
+              onLoaded={() => setInitialLoading(false)}
             />
           )}
 
