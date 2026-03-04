@@ -578,8 +578,14 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
       if (extraValues.cargo_evaluador) payload.cargo_evaluador = extraValues.cargo_evaluador;
       if (invitationEmail) payload.email_evaluador = invitationEmail;
 
-      const { error } = await apiFetch("/api/encuestas", { method: "POST", body: payload as any });
-      if (error) throw new Error(error);
+      const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
+      if (USE_EXPRESS) {
+        const { error } = await apiFetch("/api/encuestas", { method: "POST", body: payload as any });
+        if (error) throw new Error(error);
+      } else {
+        const { error } = await supabase.from("encuestas_360").insert(payload as any);
+        if (error) throw new Error(error.message);
+      }
 
       // Mark invitation as responded
       if (invitationId) {
