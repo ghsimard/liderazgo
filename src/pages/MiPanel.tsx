@@ -191,7 +191,7 @@ export default function MiPanel() {
                   const allDone = rubricaProgress.completed === rubricaProgress.total;
                   return (
                   <Button
-                    variant={allDone ? "default" : "outline"}
+                    variant="default"
                     className={`w-full h-auto min-h-[3.5rem] justify-start gap-3 text-base py-3 ${
                       allDone
                         ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
