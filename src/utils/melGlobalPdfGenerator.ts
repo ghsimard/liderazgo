@@ -148,13 +148,11 @@ export async function generarMelGlobalPDF(
   // ═══════════════════════════════════════════
   drawPageHeader();
 
-  const pxToMm = 25.4 / 96 * 0.50;
-  const rltW = rltSize.width * pxToMm;
-  const rltH = rltSize.height * pxToMm;
-  const cltW = cltSize.width * pxToMm;
-  const cltH = cltSize.height * pxToMm;
-  doc.addImage(rltB64, "PNG", margin, 25, rltW, rltH);
-  doc.addImage(cltB64, "PNG", pageW - margin - cltW, 25, cltW, cltH);
+  const logoTargetH = 24; // mm – same height for both logos
+  const rltW = (rltSize.width / rltSize.height) * logoTargetH;
+  const cltW = (cltSize.width / cltSize.height) * logoTargetH;
+  doc.addImage(rltB64, "PNG", margin, 25, rltW, logoTargetH);
+  doc.addImage(cltB64, "PNG", pageW - margin - cltW, 25, cltW, logoTargetH);
 
   let y = 80;
   doc.setTextColor(...C_BLACK);
