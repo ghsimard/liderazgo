@@ -7,8 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Filter, TrendingUp, TrendingDown, Minus, BarChart3, Eye } from "lucide-react";
+import { RefreshCw, Filter, TrendingUp, TrendingDown, Minus, BarChart3, Eye, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAppImages } from "@/hooks/useAppImages";
+import { generarMelPDF } from "@/utils/reporte360MelPdfGenerator";
 
 interface DirectivoOption {
   nombre: string;
@@ -29,15 +31,37 @@ function DeltaBadge({ value }: { value: number }) {
   return <span className="inline-flex items-center gap-1 text-xs text-destructive font-medium"><TrendingDown className="w-3 h-3" /> {value.toFixed(2)}</span>;
 }
 
-function MelDetailDialog({ open, onOpenChange, data }: { open: boolean; onOpenChange: (v: boolean) => void; data: MelAnalysisData | null }) {
+function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; onOpenChange: (v: boolean) => void; data: MelAnalysisData | null; images: Record<string, string> }) {
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!data) return;
+    setDownloading(true);
+    try {
+      await generarMelPDF(data, {
+        logoRLT: images.logo_rlt_white || images.logo_rlt,
+        logoCLT: images.logo_clt || images.logo_clt_white,
+      });
+    } catch (err: any) {
+      console.error("PDF generation error:", err);
+    }
+    setDownloading(false);
+  };
+
   if (!data) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Análisis MEL — {data.directivoNombre}</DialogTitle>
-          <p className="text-sm text-muted-foreground">{data.institucion}</p>
+        <DialogHeader className="flex-row items-start justify-between gap-4">
+          <div>
+            <DialogTitle>Análisis MEL — {data.directivoNombre}</DialogTitle>
+            <p className="text-sm text-muted-foreground">{data.institucion}</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={downloading} className="gap-1.5 shrink-0">
+            {downloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            PDF
+          </Button>
         </DialogHeader>
 
         {/* Global summary */}
@@ -120,6 +144,7 @@ function MelDetailDialog({ open, onOpenChange, data }: { open: boolean; onOpenCh
 
 export default function AdminMelTab() {
   const { toast } = useToast();
+  const { images } = useAppImages();
   const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState<string | null>(null);
@@ -278,7 +303,7 @@ export default function AdminMelTab() {
         </div>
       </div>
 
-      <MelDetailDialog open={dialogOpen} onOpenChange={setDialogOpen} data={melData} />
+      <MelDetailDialog open={dialogOpen} onOpenChange={setDialogOpen} data={melData} images={images} />
     </div>
   );
 }
