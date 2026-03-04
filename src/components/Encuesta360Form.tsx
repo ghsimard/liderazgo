@@ -218,64 +218,186 @@ function TextField({
   );
 }
 
-// ── Survey table for likert-type questions ──
-function SurveyTable({
-  items,
-  options,
-  answers,
-  onAnswer,
-  sectionTitle,
-  errors,
-}: {
+// ── Wizard-style survey (one question at a time) ──
+interface WizardSection {
+  label: string;
+  instruction: string;
   items: { num: number; text: string }[];
   options: string[];
+}
+
+function SurveyWizard({
+  sections,
+  answers,
+  onAnswer,
+  errors,
+  onComplete,
+}: {
+  sections: WizardSection[];
   answers: Record<string, string>;
   onAnswer: (num: number, val: string) => void;
-  sectionTitle: string;
   errors: Set<number>;
+  onComplete: () => void;
 }) {
+  const allItems = sections.flatMap((s) =>
+    s.items.map((item) => ({ ...item, options: s.options, instruction: s.instruction, sectionLabel: s.label }))
+  );
+  const total = allItems.length;
+
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [showInstruction, setShowInstruction] = useState(true);
+  const answeredCount = allItems.filter((item) => answers[String(item.num)]).length;
+  const progress = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
+
+  // Detect section change to show instruction
+  const current = allItems[currentIdx];
+  const prevSectionLabel = currentIdx > 0 ? allItems[currentIdx - 1]?.sectionLabel : null;
+  useEffect(() => {
+    if (current && current.sectionLabel !== prevSectionLabel) {
+      setShowInstruction(true);
+    }
+  }, [currentIdx, current?.sectionLabel, prevSectionLabel]);
+
+  // Jump to first unanswered on error
+  useEffect(() => {
+    if (errors.size > 0) {
+      const firstErrorIdx = allItems.findIndex((item) => errors.has(item.num));
+      if (firstErrorIdx >= 0) setCurrentIdx(firstErrorIdx);
+    }
+  }, [errors.size]);
+
+  if (!current) return null;
+
+  const goNext = () => {
+    if (currentIdx < total - 1) setCurrentIdx(currentIdx + 1);
+  };
+  const goPrev = () => {
+    if (currentIdx > 0) setCurrentIdx(currentIdx - 1);
+  };
+
+  const handleSelect = (opt: string) => {
+    onAnswer(current.num, opt);
+    // Auto-advance after short delay
+    setTimeout(() => {
+      if (currentIdx < total - 1) {
+        setCurrentIdx((prev) => prev + 1);
+      }
+    }, 350);
+  };
+
+  // (jump to first unanswered is handled above)
+
+  const selectedOpt = answers[String(current.num)] || "";
+
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-muted-foreground">{sectionTitle}</h3>
-      <div className="overflow-auto border rounded-lg max-h-[70vh]">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10">
-            <tr className="bg-muted">
-              <th className="text-left p-3 font-medium min-w-[40px]">#</th>
-              <th className="text-left p-3 font-medium min-w-[300px]">Ítem</th>
-              {options.map((opt) => (
-                <th key={opt} className="p-3 font-medium text-center min-w-[80px] text-xs">
-                  {opt}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr
-                key={item.num}
+    <div className="bg-background rounded-lg border p-6 space-y-6">
+      {/* Progress bar */}
+      <div className="space-y-2">
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>Pregunta {currentIdx + 1} de {total}</span>
+          <span>{progress}% completado</span>
+        </div>
+        <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+          <div
+            className="bg-primary h-full rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Section instruction (shown at section start) */}
+      {showInstruction && (
+        <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground flex items-start gap-2">
+          <Info className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+          <div>
+            <span className="font-medium text-foreground">{current.sectionLabel}</span>
+            <p className="mt-1">{current.instruction}</p>
+          </div>
+          <button
+            onClick={() => setShowInstruction(false)}
+            className="ml-auto text-xs text-muted-foreground hover:text-foreground shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Question */}
+      <div className="space-y-4">
+        <p className="text-base font-medium leading-relaxed">
+          <span className="text-primary font-bold mr-2">{current.num}.</span>
+          {current.text}
+        </p>
+
+        {/* Options as large buttons */}
+        <div className="grid gap-2">
+          {current.options.map((opt) => (
+            <button
+              key={opt}
+              onClick={() => handleSelect(opt)}
+              className={cn(
+                "w-full text-left px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all",
+                selectedOpt === opt
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border hover:border-primary/40 hover:bg-muted/50 text-foreground"
+              )}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex items-center justify-between pt-2 border-t">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={goPrev}
+          disabled={currentIdx === 0}
+          className="gap-1.5"
+        >
+          ← Anterior
+        </Button>
+
+        <div className="flex gap-1">
+          {sections.map((s, si) => {
+            const sectionStart = sections.slice(0, si).reduce((acc, sec) => acc + sec.items.length, 0);
+            const sectionEnd = sectionStart + s.items.length;
+            const isActive = currentIdx >= sectionStart && currentIdx < sectionEnd;
+            const sectionAnswered = s.items.every((item) => answers[String(item.num)]);
+            return (
+              <button
+                key={si}
+                onClick={() => setCurrentIdx(sectionStart)}
                 className={cn(
-                  "border-t hover:bg-muted/30 transition-colors",
-                  errors.has(item.num) && "bg-destructive/5"
+                  "w-3 h-3 rounded-full transition-colors",
+                  isActive ? "bg-primary" : sectionAnswered ? "bg-primary/40" : "bg-muted-foreground/20"
                 )}
-              >
-                <td className="p-3 font-medium text-muted-foreground">{item.num}</td>
-                <td className="p-3">{item.text}</td>
-                {options.map((opt) => (
-                  <td key={opt} className="p-3 text-center">
-                    <input
-                      type="radio"
-                      name={`item_${item.num}`}
-                      checked={answers[String(item.num)] === opt}
-                      onChange={() => onAnswer(item.num, opt)}
-                      className="accent-primary w-4 h-4 cursor-pointer"
-                    />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                title={s.label}
+              />
+            );
+          })}
+        </div>
+
+        {currentIdx < total - 1 ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goNext}
+            className="gap-1.5"
+          >
+            Siguiente →
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            onClick={onComplete}
+            className="gap-1.5"
+          >
+            Finalizar ✓
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -789,50 +911,40 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
           ))}
         </div>
 
-        {/* Frequency section (items 1-18) */}
-        <div className="bg-background rounded-lg border p-6">
-          <SurveyTable
-            items={config.frequencyItems}
-            options={freqOptions}
-            answers={answers}
-            onAnswer={handleAnswer}
-            sectionTitle={
-              config.isAutoeval
+        {/* Survey Wizard */}
+        <SurveyWizard
+          sections={[
+            {
+              label: "Frecuencia",
+              instruction: config.isAutoeval
                 ? "Teniendo en cuenta su gestión como directivo docente, seleccione con qué frecuencia ocurren las siguientes situaciones:"
-                : "Teniendo en cuenta la gestión del directivo docente evaluado, seleccione con qué frecuencia ocurren las siguientes situaciones:"
-            }
-            errors={itemErrors}
-          />
-        </div>
-
-        {/* Agreement section (items 19-39) */}
-        <div className="bg-background rounded-lg border p-6">
-          <SurveyTable
-            items={config.agreementItems}
-            options={agreeOptions}
-            answers={answers}
-            onAnswer={handleAnswer}
-            sectionTitle={
-              config.isAutoeval
+                : "Teniendo en cuenta la gestión del directivo docente evaluado, seleccione con qué frecuencia ocurren las siguientes situaciones:",
+              items: config.frequencyItems,
+              options: freqOptions,
+            },
+            {
+              label: "Grado de acuerdo",
+              instruction: config.isAutoeval
                 ? "Teniendo en cuenta su gestión como directivo docente, seleccione qué tan de acuerdo está con las siguientes afirmaciones:"
-                : "Teniendo en cuenta la gestión del directivo docente evaluado, seleccione qué tan de acuerdo está con las siguientes afirmaciones:"
-            }
-            errors={itemErrors}
-          />
-        </div>
+                : "Teniendo en cuenta la gestión del directivo docente evaluado, seleccione qué tan de acuerdo está con las siguientes afirmaciones:",
+              items: config.agreementItems,
+              options: agreeOptions,
+            },
+          ]}
+          answers={answers}
+          onAnswer={handleAnswer}
+          errors={itemErrors}
+          onComplete={handleSubmit}
+        />
 
-        {/* Submit */}
-        <div className="flex justify-center pb-8">
-          <Button
-            size="lg"
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="gap-2 min-w-[200px]"
-          >
-            {submitting && <RefreshCw className="w-4 h-4 animate-spin" />}
-            {submitting ? "Enviando…" : "Enviar encuesta"}
-          </Button>
-        </div>
+        {/* Submit button shown below wizard when submitting */}
+        {submitting && (
+          <div className="flex justify-center pb-8">
+            <Button size="lg" disabled className="gap-2 min-w-[200px]">
+              <RefreshCw className="w-4 h-4 animate-spin" /> Enviando…
+            </Button>
+          </div>
+        )}
       </main>
     </div>
   );
