@@ -414,7 +414,7 @@ export default function Encuesta360Hub() {
                               </Badge>
                               <span>·</span>
                               <Clock className="h-3 w-3" />
-                              {new Date(inv.sent_at).toLocaleDateString()}
+                              {new Date(inv.sent_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })} {new Date(inv.sent_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}
                             </div>
                           </div>
                           <Tooltip>
