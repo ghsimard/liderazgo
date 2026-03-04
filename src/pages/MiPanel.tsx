@@ -77,15 +77,26 @@ export default function MiPanel() {
         setRubricaProgress({ completed: completedModules, total });
       }
 
-      // Check if initial autoevaluacion is done
+      // Check if directivo has started module 4 in rubrica (unlock Salida)
       if (result.is_directivo) {
-        const { count: inicialCount } = await supabase
-          .from("encuestas_360")
+        const { count: mod4Count } = await supabase
+          .from("rubrica_evaluaciones")
           .select("id", { count: "exact", head: true })
-          .eq("cedula_directivo", cedula)
-          .eq("tipo_formulario", "autoevaluacion")
-          .eq("fase", "inicial");
-        setInicialDone((inicialCount ?? 0) > 0);
+          .eq("directivo_cedula", cedula)
+          .in("item_id", 
+            (await supabase
+              .from("rubrica_items")
+              .select("id")
+              .in("module_id", 
+                (await supabase
+                  .from("rubrica_modules")
+                  .select("id")
+                  .eq("module_number", 4)
+                ).data?.map(m => m.id) ?? []
+              )
+            ).data?.map(i => i.id) ?? []
+          );
+        setInicialDone((mod4Count ?? 0) > 0);
       }
 
       setLoading(false);
