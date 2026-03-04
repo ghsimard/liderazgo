@@ -24,14 +24,20 @@ interface DirectivoOption {
   entidad_territorial: string;
 }
 
-function DeltaBadge({ value }: { value: number }) {
+function DeltaBadge({ value, pct }: { value: number; pct?: number | null }) {
+  const pctStr = pct !== undefined && pct !== null && isFinite(pct) ? ` (${pct > 0 ? "+" : ""}${pct.toFixed(1)}%)` : "";
   if (Math.abs(value) < 0.01) {
-    return <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Minus className="w-3 h-3" /> 0.00</span>;
+    return <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Minus className="w-3 h-3" /> 0.00{pctStr}</span>;
   }
   if (value > 0) {
-    return <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium"><TrendingUp className="w-3 h-3" /> +{value.toFixed(2)}</span>;
+    return <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium"><TrendingUp className="w-3 h-3" /> +{value.toFixed(2)}{pctStr}</span>;
   }
-  return <span className="inline-flex items-center gap-1 text-xs text-destructive font-medium"><TrendingDown className="w-3 h-3" /> {value.toFixed(2)}</span>;
+  return <span className="inline-flex items-center gap-1 text-xs text-destructive font-medium"><TrendingDown className="w-3 h-3" /> {value.toFixed(2)}{pctStr}</span>;
+}
+
+function calcPct(initial: number, delta: number): number | null {
+  if (initial === 0) return null;
+  return (delta / initial) * 100;
 }
 
 function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; onOpenChange: (v: boolean) => void; data: MelAnalysisData | null; images: Record<string, string> }) {
@@ -72,7 +78,7 @@ function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; 
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-xs text-muted-foreground mb-1">Δ Autoevaluación Global</p>
-              <DeltaBadge value={data.globalDeltaAuto} />
+              <DeltaBadge value={data.globalDeltaAuto} pct={calcPct(data.inicial?.autoAvg ?? 0, data.globalDeltaAuto)} />
               <div className="text-xs text-muted-foreground mt-1">
                 {data.inicial?.autoAvg.toFixed(2) ?? "—"} → {data.final?.autoAvg.toFixed(2) ?? "—"}
               </div>
@@ -81,7 +87,7 @@ function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; 
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-xs text-muted-foreground mb-1">Δ Observadores Global</p>
-              <DeltaBadge value={data.globalDeltaObserver} />
+              <DeltaBadge value={data.globalDeltaObserver} pct={calcPct(data.inicial?.observerAvg ?? 0, data.globalDeltaObserver)} />
               <div className="text-xs text-muted-foreground mt-1">
                 {data.inicial?.observerAvg.toFixed(2) ?? "—"} → {data.final?.observerAvg.toFixed(2) ?? "—"}
               </div>
@@ -107,7 +113,7 @@ function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; 
                     <div key={d.domain} className="flex items-center gap-3 rounded-md border p-2">
                       <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${hasIncrement ? "bg-emerald-500" : "bg-destructive"}`} />
                       <span className="text-xs font-medium flex-1">{d.domainLabel}</span>
-                      <DeltaBadge value={d.deltaAuto} />
+                      <DeltaBadge value={d.deltaAuto} pct={calcPct(d.inicialAuto, d.deltaAuto)} />
                       <span className={`text-xs font-bold ${hasIncrement ? "text-emerald-600" : "text-destructive"}`}>
                         {hasIncrement ? "✓ Incremento" : "✗ Sin incremento"}
                       </span>
@@ -124,8 +130,8 @@ function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; 
 
         {/* Observer indicators (internos / externos) */}
         {data.hasInicial && data.hasFinal && [
-          { title: "Internos (Directivos, Docentes, Administrativos)", getter: (d: typeof data.domainDeltas[0]) => d.deltaInternos },
-          { title: "Externos (Estudiantes, Acudientes)", getter: (d: typeof data.domainDeltas[0]) => d.deltaExternos },
+          { title: "Internos (Directivos, Docentes, Administrativos)", getter: (d: typeof data.domainDeltas[0]) => d.deltaInternos, initialGetter: (d: typeof data.domainDeltas[0]) => d.inicialInternos },
+          { title: "Externos (Estudiantes, Acudientes)", getter: (d: typeof data.domainDeltas[0]) => d.deltaExternos, initialGetter: (d: typeof data.domainDeltas[0]) => d.inicialExternos },
         ].map((section) => (
           <Card key={section.title} className="my-2">
             <CardContent className="p-4 space-y-3">
@@ -144,7 +150,7 @@ function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; 
                     <div key={d.domain} className="flex items-center gap-3 rounded-md border p-2">
                       <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${hasInc ? "bg-emerald-500" : "bg-destructive"}`} />
                       <span className="text-xs font-medium flex-1">{d.domainLabel}</span>
-                      <DeltaBadge value={delta} />
+                      <DeltaBadge value={delta} pct={calcPct(section.initialGetter(d), delta)} />
                       <span className={`text-xs font-bold ${hasInc ? "text-emerald-600" : "text-destructive"}`}>
                         {hasInc ? "✓" : "✗"}
                       </span>
@@ -174,9 +180,9 @@ function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; 
             {data.domainDeltas.map((d) => (
               <TableRow key={d.domain}>
                 <TableCell className="text-sm font-medium">{d.domainLabel}</TableCell>
-                <TableCell className="text-center"><DeltaBadge value={d.deltaAuto} /></TableCell>
-                <TableCell className="text-center"><DeltaBadge value={d.deltaInternos} /></TableCell>
-                <TableCell className="text-center"><DeltaBadge value={d.deltaExternos} /></TableCell>
+                <TableCell className="text-center"><DeltaBadge value={d.deltaAuto} pct={calcPct(d.inicialAuto, d.deltaAuto)} /></TableCell>
+                <TableCell className="text-center"><DeltaBadge value={d.deltaInternos} pct={calcPct(d.inicialInternos, d.deltaInternos)} /></TableCell>
+                <TableCell className="text-center"><DeltaBadge value={d.deltaExternos} pct={calcPct(d.inicialExternos, d.deltaExternos)} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -202,10 +208,10 @@ function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; 
                 <TableCell className="text-sm">{c.competencyLabel}</TableCell>
                 <TableCell className="text-center text-xs">{c.inicialAuto.toFixed(2)}</TableCell>
                 <TableCell className="text-center text-xs">{c.finalAuto.toFixed(2)}</TableCell>
-                <TableCell className="text-center"><DeltaBadge value={c.deltaAuto} /></TableCell>
+                <TableCell className="text-center"><DeltaBadge value={c.deltaAuto} pct={calcPct(c.inicialAuto, c.deltaAuto)} /></TableCell>
                 <TableCell className="text-center text-xs">{c.inicialObserver.toFixed(2)}</TableCell>
                 <TableCell className="text-center text-xs">{c.finalObserver.toFixed(2)}</TableCell>
-                <TableCell className="text-center"><DeltaBadge value={c.deltaObserver} /></TableCell>
+                <TableCell className="text-center"><DeltaBadge value={c.deltaObserver} pct={calcPct(c.inicialObserver, c.deltaObserver)} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
