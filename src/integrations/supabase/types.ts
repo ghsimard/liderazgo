@@ -229,6 +229,48 @@ export type Database = {
         }
         Relationships: []
       }
+      encuesta_invitaciones: {
+        Row: {
+          directivo_cedula: string
+          directivo_nombre: string
+          email_destinatario: string
+          fase: string
+          id: string
+          institucion: string
+          last_reminder_at: string | null
+          responded_at: string | null
+          sent_at: string
+          tipo_formulario: string
+          token: string
+        }
+        Insert: {
+          directivo_cedula: string
+          directivo_nombre: string
+          email_destinatario: string
+          fase?: string
+          id?: string
+          institucion: string
+          last_reminder_at?: string | null
+          responded_at?: string | null
+          sent_at?: string
+          tipo_formulario: string
+          token?: string
+        }
+        Update: {
+          directivo_cedula?: string
+          directivo_nombre?: string
+          email_destinatario?: string
+          fase?: string
+          id?: string
+          institucion?: string
+          last_reminder_at?: string | null
+          responded_at?: string | null
+          sent_at?: string
+          tipo_formulario?: string
+          token?: string
+        }
+        Relationships: []
+      }
       encuestas_360: {
         Row: {
           cargo_directivo: string
@@ -237,6 +279,7 @@ export type Database = {
           cedula_directivo: string | null
           created_at: string
           dias_contacto: string | null
+          email_evaluador: string | null
           fase: string
           grado_estudiante: string | null
           id: string
@@ -253,6 +296,7 @@ export type Database = {
           cedula_directivo?: string | null
           created_at?: string
           dias_contacto?: string | null
+          email_evaluador?: string | null
           fase?: string
           grado_estudiante?: string | null
           id?: string
@@ -269,6 +313,7 @@ export type Database = {
           cedula_directivo?: string | null
           created_at?: string
           dias_contacto?: string | null
+          email_evaluador?: string | null
           fase?: string
           grado_estudiante?: string | null
           id?: string
@@ -1100,6 +1145,8 @@ export type Database = {
           nombre_ie: string
         }[]
       }
+      get_invitaciones_directivo: { Args: { p_cedula: string }; Returns: Json }
+      get_invitation_by_token: { Args: { p_token: string }; Returns: Json }
       get_table_columns: {
         Args: { table_names: string[] }
         Returns: {

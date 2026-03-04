@@ -7,25 +7,35 @@ import { Badge } from "@/components/ui/badge";
 import { X, Send, Plus, Loader2, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { sendEmail } from "@/utils/emailClient";
+import { supabase } from "@/utils/dbClient";
 
 interface ShareEncuestaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formLabel: string;
   formUrl: string;
+  formPath: string;
+  tipoFormulario: string;
   directivoNombre: string;
   directivoEmail: string;
+  directivoCedula: string;
   institucion: string;
+  fase?: string;
+  onInvitationsSent?: () => void;
 }
 
 export default function ShareEncuestaDialog({
   open,
   onOpenChange,
   formLabel,
-  formUrl,
+  formPath,
+  tipoFormulario,
   directivoNombre,
   directivoEmail,
+  directivoCedula,
   institucion,
+  fase = "inicial",
+  onInvitationsSent,
 }: ShareEncuestaDialogProps) {
   const { toast } = useToast();
   const [emailInput, setEmailInput] = useState("");
@@ -68,32 +78,60 @@ export default function ShareEncuestaDialog({
 
     setSending(true);
     try {
-      const htmlBody = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1a1a2e;">Encuesta 360° — ${formLabel}</h2>
-          <p>Estimado/a evaluador/a,</p>
-          <p><strong>${directivoNombre}</strong> de la institución <strong>${institucion}</strong> le invita a completar el formulario de evaluación 360°.</p>
-          <p style="margin: 24px 0;">
-            <a href="${formUrl}" 
-               style="background-color: #1a1a2e; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Completar formulario
-            </a>
-          </p>
-          <p style="color: #666; font-size: 14px;">También puede copiar y pegar este enlace en su navegador:<br/>
-            <a href="${formUrl}" style="color: #1a1a2e;">${formUrl}</a>
-          </p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-          <p style="color: #999; font-size: 12px;">
-            Enviado por ${directivoNombre} (${directivoEmail})
-          </p>
-        </div>
-      `;
-
+      // Create invitation records and send emails sequentially (rate limit: 2/s)
       const results: { success: boolean; error?: string }[] = [];
+
       for (let i = 0; i < emails.length; i++) {
         if (i > 0) await new Promise((r) => setTimeout(r, 600));
+
+        const email = emails[i];
+
+        // 1. Create invitation record and get the token
+        const { data: invitation, error: invError } = await supabase
+          .from("encuesta_invitaciones")
+          .insert({
+            directivo_cedula: directivoCedula,
+            directivo_nombre: directivoNombre,
+            institucion,
+            email_destinatario: email,
+            tipo_formulario: tipoFormulario,
+            fase,
+          })
+          .select("token")
+          .single();
+
+        if (invError || !invitation?.token) {
+          results.push({ success: false, error: `Error creando invitación para ${email}` });
+          continue;
+        }
+
+        // 2. Build URL with token (no email in URL)
+        const formUrl = `${window.location.origin}${formPath}?token=${invitation.token}`;
+
+        // 3. Send email
+        const htmlBody = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1a1a2e;">Encuesta 360° — ${formLabel}</h2>
+            <p>Estimado/a evaluador/a,</p>
+            <p><strong>${directivoNombre}</strong> de la institución <strong>${institucion}</strong> le invita a completar el formulario de evaluación 360°.</p>
+            <p style="margin: 24px 0;">
+              <a href="${formUrl}" 
+                 style="background-color: #1a1a2e; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                Completar formulario
+              </a>
+            </p>
+            <p style="color: #666; font-size: 14px;">También puede copiar y pegar este enlace en su navegador:<br/>
+              <a href="${formUrl}" style="color: #1a1a2e;">${formUrl}</a>
+            </p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+            <p style="color: #999; font-size: 12px;">
+              Enviado por ${directivoNombre} (${directivoEmail})
+            </p>
+          </div>
+        `;
+
         const res = await sendEmail({
-          to: emails[i],
+          to: email,
           subject: `Encuesta 360° — ${formLabel} — ${institucion}`,
           html: htmlBody,
           reply_to: directivoEmail,
@@ -102,14 +140,13 @@ export default function ShareEncuestaDialog({
       }
 
       const failed = results.filter((r) => !r.success);
-      const result = { success: failed.length === 0, error: failed.map((f) => f.error).join(", ") };
-
-      if (result.success) {
+      if (failed.length === 0) {
         toast({ title: "Enviado", description: `Invitación enviada a ${emails.length} destinatario(s).` });
         setEmails([]);
         onOpenChange(false);
+        onInvitationsSent?.();
       } else {
-        toast({ title: "Error al enviar", description: result.error || "Intente nuevamente.", variant: "destructive" });
+        toast({ title: "Error al enviar", description: failed.map((f) => f.error).join(", ") || "Intente nuevamente.", variant: "destructive" });
       }
     } catch (err) {
       toast({ title: "Error", description: "No se pudo enviar el correo.", variant: "destructive" });

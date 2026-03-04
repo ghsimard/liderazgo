@@ -242,4 +242,42 @@ router.get("/get_ficha_by_cedula", async (req: Request, res: Response) => {
   }
 });
 
+/** GET /api/rpc/get_invitation_by_token?p_token=... */
+router.get("/get_invitation_by_token", async (req: Request, res: Response) => {
+  try {
+    const { p_token } = req.query;
+    if (!p_token) {
+      res.status(400).json({ error: "p_token required" });
+      return;
+    }
+    const rows = await query(
+      `SELECT id, email_destinatario, directivo_nombre, institucion, tipo_formulario, fase, responded_at
+       FROM encuesta_invitaciones WHERE token = $1 LIMIT 1`,
+      [p_token]
+    );
+    res.json(rows[0] ?? null);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** GET /api/rpc/get_invitaciones_directivo?p_cedula=... */
+router.get("/get_invitaciones_directivo", async (req: Request, res: Response) => {
+  try {
+    const { p_cedula } = req.query;
+    if (!p_cedula) {
+      res.status(400).json({ error: "p_cedula required" });
+      return;
+    }
+    const rows = await query(
+      `SELECT id, token, email_destinatario, tipo_formulario, fase, sent_at, last_reminder_at, responded_at
+       FROM encuesta_invitaciones WHERE directivo_cedula = $1 ORDER BY sent_at DESC`,
+      [p_cedula]
+    );
+    res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
