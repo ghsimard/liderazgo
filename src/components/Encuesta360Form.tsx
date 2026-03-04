@@ -232,6 +232,7 @@ function QuestionCard({
   onSubmit,
   isLast,
   submitting,
+  sectionTitle,
 }: {
   item: { num: number; text: string };
   options: string[];
@@ -245,6 +246,7 @@ function QuestionCard({
   onSubmit: () => void;
   isLast: boolean;
   submitting: boolean;
+  sectionTitle?: string;
 }) {
   return (
     <div className="space-y-6">
@@ -261,6 +263,13 @@ function QuestionCard({
           />
         </div>
       </div>
+
+      {/* Section instruction */}
+      {sectionTitle && (
+        <div className="bg-muted/60 rounded-lg px-4 py-3 text-sm text-muted-foreground italic">
+          {sectionTitle}
+        </div>
+      )}
 
       {/* Question */}
       <div className={cn(
@@ -876,6 +885,19 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
             const current = allItems[currentQuestion];
             if (!current) return null;
 
+            const freqCount = config.frequencyItems.length;
+            const freqTitle = config.isAutoeval
+              ? "Teniendo en cuenta su gestión como directivo docente, seleccione con qué frecuencia ocurren las siguientes situaciones:"
+              : "Teniendo en cuenta la gestión del directivo docente evaluado, seleccione con qué frecuencia ocurren las siguientes situaciones:";
+            const agreeTitle = config.isAutoeval
+              ? "Teniendo en cuenta su gestión como directivo docente, seleccione qué tan de acuerdo está con las siguientes afirmaciones:"
+              : "Teniendo en cuenta la gestión del directivo docente evaluado, seleccione qué tan de acuerdo está con las siguientes afirmaciones:";
+
+            // Show section title on first question of each section
+            const isFirstFreq = currentQuestion === 0;
+            const isFirstAgree = currentQuestion === freqCount;
+            const sectionTitle = isFirstFreq ? freqTitle : isFirstAgree ? agreeTitle : undefined;
+
             return (
               <QuestionCard
                 item={current}
@@ -885,6 +907,7 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
                 hasError={itemErrors.has(current.num)}
                 current={currentQuestion + 1}
                 total={totalQ}
+                sectionTitle={sectionTitle}
                 onPrev={() => {
                   if (currentQuestion === 0) {
                     setWizardStarted(false);
