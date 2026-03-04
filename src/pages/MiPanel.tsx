@@ -29,6 +29,7 @@ export default function MiPanel() {
   const [loading, setLoading] = useState(true);
   const [roleInfo, setRoleInfo] = useState<CedulaRoleResult | null>(null);
   const [rubricaProgress, setRubricaProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 4 });
+  const [encuestaProgress, setEncuestaProgress] = useState<{ collected: number; total: number }>({ collected: 0, total: 9 });
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
 
@@ -73,6 +74,34 @@ export default function MiPanel() {
         const total = count ?? 4;
         const completedModules = new Set((submissions || []).map(s => s.module_number)).size;
         setRubricaProgress({ completed: completedModules, total });
+
+        // Fetch encuesta 360 progress (evaluations received by this directivo)
+        const quotas: Record<string, number> = {
+          autoevaluacion: 1,
+          directivo: 2,
+          docente: 2,
+          administrativo: 2,
+          estudiante: 1,
+          acudiente: 1,
+        };
+        const totalRequired = Object.values(quotas).reduce((a, b) => a + b, 0);
+        const { data: encuestas } = await supabase
+          .from("encuestas_360")
+          .select("tipo_formulario")
+          .eq("cedula_directivo", cedula)
+          .eq("fase", "inicial");
+        
+        let fulfilled = 0;
+        if (encuestas) {
+          const countByType: Record<string, number> = {};
+          for (const e of encuestas) {
+            countByType[e.tipo_formulario] = (countByType[e.tipo_formulario] || 0) + 1;
+          }
+          for (const [type, quota] of Object.entries(quotas)) {
+            fulfilled += Math.min(countByType[type] || 0, quota);
+          }
+        }
+        setEncuestaProgress({ collected: fulfilled, total: totalRequired });
       }
 
       setLoading(false);
@@ -225,18 +254,41 @@ export default function MiPanel() {
                   );
                 })()}
 
-                {roleInfo.is_directivo && (
+                {roleInfo.is_directivo && (() => {
+                  const allDone360 = encuestaProgress.collected === encuestaProgress.total;
+                  return (
                   <Button
-                    className="w-full h-14 justify-start gap-3 text-base"
+                    variant="default"
+                    className={`w-full h-auto min-h-[3.5rem] justify-start gap-3 text-base py-3 ${
+                      allDone360
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
+                        : ""
+                    }`}
                     onClick={() => navigate("/formulario-360-autoevaluacion")}
                   >
-                    <FileBarChart className="h-5 w-5" />
-                    <div className="text-left">
-                      <div className="font-semibold">Mi Autoevaluación 360°</div>
-                      <div className="text-xs opacity-80">Encuesta de autoevaluación</div>
+                    <FileBarChart className={`h-5 w-5 shrink-0 ${allDone360 ? "text-white" : ""}`} />
+                    <div className="text-left flex-1 min-w-0">
+                      <div className="font-semibold flex items-center gap-2">
+                        Mi Encuesta 360°
+                        {allDone360 && (
+                          <CheckCircle2 className="h-4 w-4 text-white" />
+                        )}
+                      </div>
+                      <div className={`text-xs ${allDone360 ? "text-emerald-100" : "text-muted-foreground"}`}>
+                        {allDone360
+                          ? "✓ Todas las evaluaciones recopiladas"
+                          : `${encuestaProgress.collected} de ${encuestaProgress.total} evaluaciones recibidas`}
+                      </div>
+                      {!allDone360 && (
+                        <Progress
+                          value={(encuestaProgress.collected / encuestaProgress.total) * 100}
+                          className="h-1.5 mt-1.5 bg-muted"
+                        />
+                      )}
                     </div>
                   </Button>
-                )}
+                  );
+                })()}
               </>
             )}
 
