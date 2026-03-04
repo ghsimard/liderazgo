@@ -333,6 +333,33 @@ AS $$
 $$;
 
 -- ============================================================
+-- Encuesta invitaciones (invitation tracking with tokens)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.encuesta_invitaciones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  token UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+  directivo_cedula TEXT NOT NULL,
+  directivo_nombre TEXT NOT NULL,
+  institucion TEXT NOT NULL,
+  email_destinatario TEXT NOT NULL,
+  tipo_formulario TEXT NOT NULL,
+  fase TEXT NOT NULL DEFAULT 'inicial',
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_reminder_at TIMESTAMPTZ,
+  responded_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_invitaciones_token ON public.encuesta_invitaciones(token);
+CREATE INDEX IF NOT EXISTS idx_invitaciones_cedula ON public.encuesta_invitaciones(directivo_cedula);
+
+-- ============================================================
+-- email_evaluador column on encuestas_360
+-- ============================================================
+
+ALTER TABLE public.encuestas_360 ADD COLUMN IF NOT EXISTS email_evaluador TEXT;
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js
