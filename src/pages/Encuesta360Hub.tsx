@@ -391,23 +391,26 @@ export default function Encuesta360Hub() {
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {pendingInvitations.length === 0 ? (
+                  {visibleInvitations.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-2">
-                      <CheckCircle2 className="inline h-4 w-4 mr-1" />
-                      Todas las invitaciones han sido respondidas.
+                      No hay invitaciones enviadas aún.
                     </p>
                   ) : (
-                    pendingInvitations.map((inv) => {
+                  visibleInvitations.map((inv) => {
                       const formMeta = formsBase.find((f) => f.tipo === inv.tipo_formulario);
+                      const isResponded = !!inv.responded_at;
                       const canRemind = canSendReminder(inv);
                       const nextReminderAt = inv.last_reminder_at
                         ? new Date(new Date(inv.last_reminder_at).getTime() + REMINDER_COOLDOWN_MS)
                         : null;
 
                       return (
-                        <div key={inv.id} className="flex items-center justify-between gap-2 rounded-md border p-2.5">
+                        <div key={inv.id} className={`flex items-center justify-between gap-2 rounded-md border p-2.5 ${isResponded ? "bg-emerald-50 border-emerald-200" : ""}`}>
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium truncate">{inv.email_destinatario}</div>
+                            <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                              {inv.email_destinatario}
+                              {isResponded && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />}
+                            </div>
                             <div className="text-xs text-muted-foreground flex items-center gap-1">
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                                 {formMeta?.label || inv.tipo_formulario}
@@ -415,32 +418,42 @@ export default function Encuesta360Hub() {
                               <span>·</span>
                               <Clock className="h-3 w-3" />
                               {new Date(inv.sent_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })} {new Date(inv.sent_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}
+                              {isResponded && inv.responded_at && (
+                                <>
+                                  <span>·</span>
+                                  <span className="text-emerald-600 font-medium">
+                                    ✓ {new Date(inv.responded_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="shrink-0 h-8 w-8"
-                                disabled={!canRemind || sendingReminder === inv.id}
-                                onClick={() => handleSendReminder(inv)}
-                              >
-                                {sendingReminder === inv.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Bell className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {canRemind
-                                ? "Enviar recordatorio"
-                                : nextReminderAt
-                                ? `Próximo recordatorio disponible: ${nextReminderAt.toLocaleString()}`
-                                : "Ya respondido"}
-                            </TooltipContent>
-                          </Tooltip>
+                          {!isResponded && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="shrink-0 h-8 w-8"
+                                  disabled={!canRemind || sendingReminder === inv.id}
+                                  onClick={() => handleSendReminder(inv)}
+                                >
+                                  {sendingReminder === inv.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Bell className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {canRemind
+                                  ? "Enviar recordatorio"
+                                  : nextReminderAt
+                                  ? `Próximo recordatorio disponible: ${nextReminderAt.toLocaleString()}`
+                                  : "Recordatorio enviado recientemente"}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                       );
                     })
