@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ClipboardList,
   FileText,
@@ -10,6 +11,8 @@ import {
   GitCommit,
   Link2,
   School,
+  Copy,
+  Check,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,9 +28,17 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 
+interface SidebarItem {
+  tab: string;
+  label: string;
+  icon: React.ElementType;
+  superadminOnly?: boolean;
+  copyUrl?: string;
+}
+
 interface SidebarSection {
   label: string;
-  items: { tab: string; label: string; icon: React.ElementType; superadminOnly?: boolean }[];
+  items: SidebarItem[];
 }
 
 const sections: SidebarSection[] = [
@@ -40,7 +51,7 @@ const sections: SidebarSection[] = [
   {
     label: "Fichas RLT",
     items: [
-      { tab: "fichas", label: "Lista", icon: FileText },
+      { tab: "fichas", label: "Lista", icon: FileText, copyUrl: "https://884bdecf-dfd4-47e7-ac2b-4a0fa0ab7c80.lovableproject.com/" },
       { tab: "geography", label: "Regiones", icon: MapPin },
     ],
   },
@@ -96,10 +107,18 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: AdminSidebarProps) {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
+  const [copiedTab, setCopiedTab] = useState<string | null>(null);
 
   const handleTabClick = (tab: string) => {
     onTabChange(tab);
     if (isMobile) setOpenMobile(false);
+  };
+
+  const handleCopyUrl = (e: React.MouseEvent, url: string, tab: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(url);
+    setCopiedTab(tab);
+    setTimeout(() => setCopiedTab(null), 2000);
   };
 
   return (
@@ -136,7 +155,24 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                               tooltip={item.label}
                             >
                               <Icon className="h-4 w-4 shrink-0" />
-                              {!collapsed && <span>{item.label}</span>}
+                              {!collapsed && (
+                                <span className="flex items-center gap-1.5 flex-1">
+                                  {item.label}
+                                  {item.copyUrl && (
+                                    <button
+                                      onClick={(e) => handleCopyUrl(e, item.copyUrl!, item.tab)}
+                                      className="ml-auto p-0.5 rounded hover:bg-muted/80 transition-colors"
+                                      title="Copiar enlace"
+                                    >
+                                      {copiedTab === item.tab ? (
+                                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                      ) : (
+                                        <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                      )}
+                                    </button>
+                                  )}
+                                </span>
+                              )}
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         );
