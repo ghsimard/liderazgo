@@ -226,6 +226,63 @@ export async function generarMelPDF(
   drawDomainTable(doc, data.domainDeltas, margin, y, contentW);
   y += 6 + data.domainDeltas.length * 6 + 8;
 
+  // ── Indicator: increment per domain ──
+  if (data.hasInicial && data.hasFinal) {
+    if (y + 50 > pageH - 20) {
+      doc.addPage();
+      drawPageHeader();
+      y = 25;
+    }
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C_BLACK);
+    doc.text("INDICADOR: INCREMENTO POR GESTIÓN", margin, y);
+    y += 3;
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C_MID);
+    doc.text("Progresión del puntaje promedio (auto) por dominio · Meta: 80%", margin, y);
+    y += 6;
+
+    const barH = 5;
+    const barW = contentW - 45;
+    const barX = margin + 40;
+    const targetX = barX + barW * 0.8;
+
+    for (const d of data.domainDeltas) {
+      const hasInc = d.deltaAuto > 0;
+      const label = d.domainLabel.length > 25 ? d.domainLabel.substring(0, 23) + "…" : d.domainLabel;
+      
+      // Dot indicator
+      doc.setFillColor(hasInc ? 34 : 200, hasInc ? 139 : 60, hasInc ? 34 : 60);
+      doc.circle(margin + 2, y + barH / 2, 1.2, "F");
+      
+      // Label + status
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...C_BLACK);
+      doc.text(label, margin + 5, y + barH / 2 + 1);
+      
+      // Status text on right
+      doc.setFontSize(6);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(hasInc ? 34 : 200, hasInc ? 139 : 60, hasInc ? 34 : 60);
+      doc.text(
+        hasInc ? `✓ ${deltaSign(d.deltaAuto)}` : `✗ ${deltaSign(d.deltaAuto)}`,
+        pageW - margin, y + barH / 2 + 1, { align: "right" }
+      );
+      
+      y += barH + 3;
+    }
+
+    const posCount = data.domainDeltas.filter(d => d.deltaAuto > 0).length;
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C_MID);
+    doc.text(`${posCount} / ${data.domainDeltas.length} dominios con incremento positivo`, margin, y);
+    y += 8;
+  }
+
   // ═══════════════════════════════════════════
   // PAGE 3 — COMPETENCY DELTAS
   // ═══════════════════════════════════════════
