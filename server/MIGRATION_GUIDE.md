@@ -173,10 +173,10 @@ Route unique qui remplace **tous** les appels `supabase.from("table").select/ins
 | `/api/db/:table` | POST | Conditionnel | INSERT, UPDATE, DELETE, UPSERT via `_method` |
 
 **Tables en lecture publique** (GET sans auth) :
-`domains_360`, `competencies_360`, `competency_weights`, `items_360`, `item_texts_360`, `entidades_territoriales`, `municipios`, `instituciones`, `regiones`, `region_municipios`, `region_instituciones`, `app_images`, `app_settings`, `rubrica_submission_dates`, `rubrica_modules`, `rubrica_items`, `rubrica_evaluadores`, `rubrica_asignaciones`, `rubrica_evaluaciones`, `rubrica_seguimientos`
+`domains_360`, `competencies_360`, `competency_weights`, `items_360`, `item_texts_360`, `entidades_territoriales`, `municipios`, `instituciones`, `regiones`, `region_municipios`, `region_instituciones`, `app_images`, `app_settings`, `rubrica_submission_dates`, `rubrica_modules`, `rubrica_items`, `rubrica_evaluadores`, `rubrica_asignaciones`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `encuesta_invitaciones`
 
 **Tables en insertion publique** (POST sans auth) :
-`fichas_rlt`, `encuestas_360`, `rubrica_submission_dates`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `site_reviews`
+`fichas_rlt`, `encuestas_360`, `rubrica_submission_dates`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `site_reviews`, `contact_messages`, `encuesta_invitaciones`
 
 **Toutes les autres opérations** (UPDATE, DELETE, écriture sur tables non-publiques) : **admin requis**.
 
