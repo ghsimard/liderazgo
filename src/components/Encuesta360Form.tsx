@@ -354,7 +354,7 @@ function DirectivoSelect({
   return (
     <div className="flex flex-col gap-1">
       <label className="text-sm font-medium text-foreground">
-        {label || "Nombre del directivo docente"} <span className="text-destructive">*</span>
+        {label || "Nombre del directivo docente evaluado"} <span className="text-destructive">*</span>
       </label>
       <select
         value={value}
