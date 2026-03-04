@@ -245,7 +245,7 @@ export default function Encuesta360Hub() {
 
   // Filter out internal logs (enlace-copiado, acceso-directo) — only visible to admins
   const INTERNAL_LABELS = ["enlace-copiado", "acceso-directo"];
-  const visibleInvitations = invitations.filter((i) => !INTERNAL_LABELS.includes(i.email_destinatario));
+  const visibleInvitations = invitations.filter((i) => !INTERNAL_LABELS.includes(i.email_destinatario) && i.fase === fase);
   const pendingInvitations = visibleInvitations.filter((i) => !i.responded_at);
   const respondedCount = visibleInvitations.filter((i) => i.responded_at).length;
 
