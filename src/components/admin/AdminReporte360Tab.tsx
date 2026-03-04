@@ -23,7 +23,11 @@ interface DirectivoOption {
   municipio: string;
 }
 
-export default function AdminReporte360Tab() {
+interface AdminReporte360TabProps {
+  fase?: "inicial" | "final";
+}
+
+export default function AdminReporte360Tab({ fase = "inicial" }: AdminReporte360TabProps) {
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_white;
   const logoCLT = images.logo_clt_white;
@@ -132,7 +136,7 @@ export default function AdminReporte360Tab() {
   const handleView = async (d: DirectivoOption) => {
     setViewing(d.nombre);
     try {
-      const data = await calcularReporte360(d.nombre, d.institucion);
+      const data = await calcularReporte360(d.nombre, d.institucion, fase);
       setViewerData(data);
       setViewerOpen(true);
     } catch (err: any) {
@@ -144,7 +148,7 @@ export default function AdminReporte360Tab() {
   const handleGenerate = async (d: DirectivoOption) => {
     setGenerating(d.nombre);
     try {
-      const data = await calcularReporte360(d.nombre, d.institucion);
+      const data = await calcularReporte360(d.nombre, d.institucion, fase);
       await generarReporte360PDF(data, { logoRLT, logoCLT, logoCosmo: images.logo_cosmo, coverBg: images.cover_bg, lightbulb: images.lightbulb_icon });
       toast({ title: "Informe generado", description: `PDF descargado para ${d.nombre}` });
     } catch (err: any) {
@@ -161,7 +165,7 @@ export default function AdminReporte360Tab() {
       let count = 0;
       for (const d of filteredDirectivos) {
         try {
-          const data = await calcularReporte360(d.nombre, d.institucion);
+          const data = await calcularReporte360(d.nombre, d.institucion, fase);
           const blob = await generarReporte360PDF(data, { logoRLT, logoCLT, logoCosmo: images.logo_cosmo, coverBg: images.cover_bg, lightbulb: images.lightbulb_icon }, { returnBlob: true });
           if (blob) {
             zip.file(`Informe_360_${d.nombre.replace(/\s+/g, "_")}.pdf`, blob);
@@ -209,7 +213,7 @@ export default function AdminReporte360Tab() {
 
   return (
     <div className="space-y-6">
-      <AdminEncuestaMonitor />
+      <AdminEncuestaMonitor fase={fase} />
 
       {/* Cascade filters */}
       <Card>

@@ -20,7 +20,7 @@ interface FormCategory {
 
 const categories: FormCategory[] = [
   {
-    title: "360",
+    title: "360° Inicial",
     forms: [
       { name: "Formulario Acudiente", path: "/formulario-360-acudiente", icon: Users },
       { name: "Formulario Administrativo", path: "/formulario-360-administrativo", icon: ClipboardList },
@@ -28,6 +28,17 @@ const categories: FormCategory[] = [
       { name: "Formulario Directivo", path: "/formulario-360-directivo", icon: School },
       { name: "Formulario Docente", path: "/formulario-360-docente", icon: BookOpen },
       { name: "Formulario Estudiante", path: "/formulario-360-estudiante", icon: GraduationCap },
+    ],
+  },
+  {
+    title: "360° Final",
+    forms: [
+      { name: "Formulario Acudiente (Final)", path: "/formulario-360-final-acudiente", icon: Users },
+      { name: "Formulario Administrativo (Final)", path: "/formulario-360-final-administrativo", icon: ClipboardList },
+      { name: "Formulario Autoevaluación (Final)", path: "/formulario-360-final-autoevaluacion", icon: FileText },
+      { name: "Formulario Directivo (Final)", path: "/formulario-360-final-directivo", icon: School },
+      { name: "Formulario Docente (Final)", path: "/formulario-360-final-docente", icon: BookOpen },
+      { name: "Formulario Estudiante (Final)", path: "/formulario-360-final-estudiante", icon: GraduationCap },
     ],
   },
   {

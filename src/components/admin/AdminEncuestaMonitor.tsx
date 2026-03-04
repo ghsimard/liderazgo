@@ -27,7 +27,11 @@ interface DirectivoRow {
   incomplete: boolean;
 }
 
-export default function AdminEncuestaMonitor() {
+interface AdminEncuestaMonitorProps {
+  fase?: "inicial" | "final";
+}
+
+export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuestaMonitorProps) {
   const [rows, setRows] = useState<DirectivoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -35,7 +39,7 @@ export default function AdminEncuestaMonitor() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [fase]);
 
   const loadData = async () => {
     setLoading(true);
@@ -50,7 +54,8 @@ export default function AdminEncuestaMonitor() {
     // Get all encuestas grouped
     const { data: encuestas } = await supabase
       .from("encuestas_360")
-      .select("tipo_formulario, institucion_educativa, nombre_directivo, nombre_completo");
+      .select("tipo_formulario, institucion_educativa, nombre_directivo, nombre_completo")
+      .eq("fase", fase);
 
     const directivoList = (fichas ?? []).map((f) => ({
       nombre: f.nombres_apellidos,

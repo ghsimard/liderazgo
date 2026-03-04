@@ -40,7 +40,7 @@ interface FormCategory {
 
 const categories: FormCategory[] = [
   {
-    title: "360",
+    title: "360° Inicial",
     forms: [
       { name: "Formulario Acudiente", path: "/formulario-360-acudiente", icon: Users },
       { name: "Formulario Administrativo", path: "/formulario-360-administrativo", icon: ClipboardList },
@@ -48,6 +48,22 @@ const categories: FormCategory[] = [
       { name: "Formulario Directivo", path: "/formulario-360-directivo", icon: School },
       { name: "Formulario Docente", path: "/formulario-360-docente", icon: BookOpen },
       { name: "Formulario Estudiante", path: "/formulario-360-estudiante", icon: GraduationCap },
+    ],
+  },
+  {
+    title: "360° Final",
+    forms: [
+      { name: "Formulario Acudiente (Final)", path: "/formulario-360-final-acudiente", icon: Users },
+      { name: "Formulario Administrativo (Final)", path: "/formulario-360-final-administrativo", icon: ClipboardList },
+      { name: "Formulario Autoevaluación (Final)", path: "/formulario-360-final-autoevaluacion", icon: FileText },
+      { name: "Formulario Directivo (Final)", path: "/formulario-360-final-directivo", icon: School },
+      { name: "Formulario Docente (Final)", path: "/formulario-360-final-docente", icon: BookOpen },
+      { name: "Formulario Estudiante (Final)", path: "/formulario-360-final-estudiante", icon: GraduationCap },
+    ],
+  },
+  {
+    title: "Rúbrica",
+    forms: [
       { name: "Rúbrica de Evaluación", path: "/rubrica-evaluacion", icon: ClipboardList },
     ],
   },
@@ -200,8 +216,10 @@ export default function AdminPage() {
             <TabsTrigger value="formularios" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Formularios</TabsTrigger>
             <TabsTrigger value="fichas" className="gap-1.5"><FileText className="w-4 h-4" /> Fichas Gestión</TabsTrigger>
             <TabsTrigger value="ponderaciones" className="gap-1.5"><Settings2 className="w-4 h-4" /> Config 360°</TabsTrigger>
-            <TabsTrigger value="encuestas360" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Encuestas 360°</TabsTrigger>
-            <TabsTrigger value="reportes360" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Informes 360°</TabsTrigger>
+            <TabsTrigger value="encuestas360" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Encuestas 360° Inicial</TabsTrigger>
+            <TabsTrigger value="reportes360" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Informes 360° Inicial</TabsTrigger>
+            <TabsTrigger value="encuestas360final" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Encuestas 360° Final</TabsTrigger>
+            <TabsTrigger value="reportes360final" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Informes 360° Final</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
             
             <TabsTrigger value="rubricas" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Rúbricas</TabsTrigger>
@@ -272,8 +290,10 @@ export default function AdminPage() {
               <TabsContent value="papelera"><AdminTrashManager /></TabsContent>
             </Tabs>
           </TabsContent>
-          <TabsContent value="encuestas360"><AdminEncuestas360Tab /></TabsContent>
-          <TabsContent value="reportes360"><AdminReporte360Tab /></TabsContent>
+          <TabsContent value="encuestas360"><AdminEncuestas360Tab fase="inicial" /></TabsContent>
+          <TabsContent value="reportes360"><AdminReporte360Tab fase="inicial" /></TabsContent>
+          <TabsContent value="encuestas360final"><AdminEncuestas360Tab fase="final" /></TabsContent>
+          <TabsContent value="reportes360final"><AdminReporte360Tab fase="final" /></TabsContent>
           <TabsContent value="users"><AdminUsersTab isSuperAdmin={isSuperAdmin} /></TabsContent>
           
           <TabsContent value="rubricas"><AdminRubricasTab /></TabsContent>
