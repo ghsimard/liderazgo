@@ -29,6 +29,7 @@ export default function MiPanel() {
   const [loading, setLoading] = useState(true);
   const [roleInfo, setRoleInfo] = useState<CedulaRoleResult | null>(null);
   const [rubricaProgress, setRubricaProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 4 });
+  const [inicialDone, setInicialDone] = useState(false);
   
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
@@ -74,6 +75,17 @@ export default function MiPanel() {
         const total = count ?? 4;
         const completedModules = new Set((submissions || []).map(s => s.module_number)).size;
         setRubricaProgress({ completed: completedModules, total });
+      }
+
+      // Check if initial autoevaluacion is done
+      if (result.is_directivo) {
+        const { count: inicialCount } = await supabase
+          .from("encuestas_360")
+          .select("id", { count: "exact", head: true })
+          .eq("cedula_directivo", cedula)
+          .eq("tipo_formulario", "autoevaluacion")
+          .eq("fase", "inicial");
+        setInicialDone((inicialCount ?? 0) > 0);
       }
 
       setLoading(false);
@@ -233,8 +245,22 @@ export default function MiPanel() {
                   >
                     <FileBarChart className="h-5 w-5" />
                     <div className="text-left">
-                      <div className="font-semibold">Mi Autoevaluación 360°</div>
-                      <div className="text-xs opacity-80">Encuesta de autoevaluación inicial</div>
+                      <div className="font-semibold">Mis Encuestas 360° - Entrada</div>
+                      <div className="text-xs opacity-80">Encuestas de evaluación inicial</div>
+                    </div>
+                  </Button>
+                )}
+
+                {roleInfo.is_directivo && inicialDone && (
+                  <Button
+                    className="w-full h-14 justify-start gap-3 text-base"
+                    variant="outline"
+                    onClick={() => navigate("/encuesta-360?fase=final")}
+                  >
+                    <FileBarChart className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">Mis Encuestas 360° - Salida</div>
+                      <div className="text-xs opacity-80">Encuestas de evaluación final</div>
                     </div>
                   </Button>
                 )}
