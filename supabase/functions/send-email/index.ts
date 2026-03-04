@@ -82,7 +82,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: body.from || "RLT Fichas <onboarding@resend.dev>",
+        from: body.from || "RLT Fichas <notificaciones@liderazgo.net.co>",
         to: Array.isArray(body.to) ? body.to : [body.to],
         subject: body.subject,
         html: body.html,
