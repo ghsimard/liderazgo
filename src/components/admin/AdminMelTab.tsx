@@ -339,7 +339,7 @@ export default function AdminMelTab() {
       </Card>
 
       {viewMode === "global" ? (
-        <AdminMelGlobalReport directivos={filteredDirectivos} />
+        <AdminMelGlobalReport directivos={filteredDirectivos} filterLabel={selRegions.length > 0 ? selRegions.join(", ") : undefined} />
       ) : (
         <>
           {/* Bulk export + Directivos list */}
