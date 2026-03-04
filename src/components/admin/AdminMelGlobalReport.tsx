@@ -40,8 +40,8 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
   const avgDeltaObserver = bothPhases.length > 0 ? bothPhases.reduce((s, r) => s + r.globalDeltaObserver, 0) / bothPhases.length : 0;
 
   const domainMap = new Map<string, { label: string; sumAuto: number; sumInt: number; sumExt: number; n: number }>();
-  // Track per-domain positive increments
-  const domainPosMap = new Map<string, { label: string; pos: number; total: number }>();
+  // Track per-domain positive increments (auto, internos, externos)
+  const domainPosMap = new Map<string, { label: string; posAuto: number; posInt: number; posExt: number; total: number }>();
   for (const r of bothPhases) {
     for (const d of r.domainDeltas) {
       const entry = domainMap.get(d.domain) || { label: d.domainLabel, sumAuto: 0, sumInt: 0, sumExt: 0, n: 0 };
@@ -51,9 +51,11 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
       entry.n++;
       domainMap.set(d.domain, entry);
 
-      const posEntry = domainPosMap.get(d.domain) || { label: d.domainLabel, pos: 0, total: 0 };
+      const posEntry = domainPosMap.get(d.domain) || { label: d.domainLabel, posAuto: 0, posInt: 0, posExt: 0, total: 0 };
       posEntry.total++;
-      if (d.deltaAuto > 0) posEntry.pos++;
+      if (d.deltaAuto > 0) posEntry.posAuto++;
+      if (d.deltaInternos > 0) posEntry.posInt++;
+      if (d.deltaExternos > 0) posEntry.posExt++;
       domainPosMap.set(d.domain, posEntry);
     }
   }
@@ -65,13 +67,18 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
     avgDeltaExternos: v.n > 0 ? v.sumExt / v.n : 0,
   }));
 
-  const domainIncrementPcts: DomainIncrementPct[] = [...domainPosMap.entries()].map(([domain, v]) => ({
-    domain,
-    domainLabel: v.label,
-    pctPositive: v.total > 0 ? (v.pos / v.total) * 100 : 0,
-    countPositive: v.pos,
-    countTotal: v.total,
-  }));
+  const buildPcts = (getter: (e: { posAuto: number; posInt: number; posExt: number; total: number }) => number) =>
+    [...domainPosMap.entries()].map(([domain, v]) => ({
+      domain,
+      domainLabel: v.label,
+      pctPositive: v.total > 0 ? (getter(v) / v.total) * 100 : 0,
+      countPositive: getter(v),
+      countTotal: v.total,
+    }));
+
+  const domainIncrementPcts: DomainIncrementPct[] = buildPcts(e => e.posAuto);
+  const domainIncrementPctsInternos: DomainIncrementPct[] = buildPcts(e => e.posInt);
+  const domainIncrementPctsExternos: DomainIncrementPct[] = buildPcts(e => e.posExt);
 
   const compMap = new Map<string, { label: string; sumIA: number; sumFA: number; sumDA: number; sumIO: number; sumFO: number; sumDO: number; n: number }>();
   for (const r of bothPhases) {
@@ -99,20 +106,35 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
   }));
 
   const countPositiveAuto = bothPhases.filter((r) => r.globalDeltaAuto > 0).length;
+  const countPositiveObs = bothPhases.filter((r) => r.globalDeltaObserver > 0).length;
   const globalPctPositive = bothPhases.length > 0 ? (countPositiveAuto / bothPhases.length) * 100 : 0;
+
+  // Global % for internos/externos: count directivos where avg domain delta internos/externos > 0
+  const countPosInternos = bothPhases.filter((r) => {
+    const avg = r.domainDeltas.length > 0 ? r.domainDeltas.reduce((s, d) => s + d.deltaInternos, 0) / r.domainDeltas.length : 0;
+    return avg > 0;
+  }).length;
+  const countPosExternos = bothPhases.filter((r) => {
+    const avg = r.domainDeltas.length > 0 ? r.domainDeltas.reduce((s, d) => s + d.deltaExternos, 0) / r.domainDeltas.length : 0;
+    return avg > 0;
+  }).length;
 
   return {
     count: results.length,
     countWithData: withData.length,
     countBothPhases: bothPhases.length,
     countPositiveAuto,
-    countPositiveObs: bothPhases.filter((r) => r.globalDeltaObserver > 0).length,
+    countPositiveObs,
     avgDeltaAuto,
     avgDeltaObserver,
     domainDeltas,
     competencyDeltas,
     domainIncrementPcts,
+    domainIncrementPctsInternos,
+    domainIncrementPctsExternos,
     globalPctPositive,
+    globalPctPositiveInternos: bothPhases.length > 0 ? (countPosInternos / bothPhases.length) * 100 : 0,
+    globalPctPositiveExternos: bothPhases.length > 0 ? (countPosExternos / bothPhases.length) * 100 : 0,
   };
 }
 
@@ -328,6 +350,61 @@ export default function AdminMelGlobalReport({ directivos, filterLabel }: { dire
           </div>
         </CardContent>
       </Card>
+
+      {/* MEL Indicator: % with positive increment by domain - OBSERVERS */}
+      {[
+        { title: "Internos (Directivos, Docentes, Administrativos)", data: agg.domainIncrementPctsInternos, globalPct: agg.globalPctPositiveInternos },
+        { title: "Externos (Estudiantes, Acudientes)", data: agg.domainIncrementPctsExternos, globalPct: agg.globalPctPositiveExternos },
+      ].map((section) => (
+        <Card key={section.title}>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h4 className="text-sm font-semibold">Indicador: {section.title}</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">% de directivos con incremento por gestión según observadores</p>
+              </div>
+              <span className="text-xs text-muted-foreground shrink-0">Meta: 80%</span>
+            </div>
+
+            <div className="rounded-lg border p-3 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Global</span>
+                <span className={`text-sm font-bold ${section.globalPct >= 80 ? "text-emerald-600" : section.globalPct >= 50 ? "text-amber-600" : "text-destructive"}`}>
+                  {section.globalPct.toFixed(1)}%
+                </span>
+              </div>
+              <div className="relative h-3 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={`absolute inset-y-0 left-0 rounded-full transition-all ${section.globalPct >= 80 ? "bg-emerald-500" : section.globalPct >= 50 ? "bg-amber-500" : "bg-destructive"}`}
+                  style={{ width: `${Math.min(section.globalPct, 100)}%` }}
+                />
+                <div className="absolute inset-y-0 border-r-2 border-dashed border-foreground/40" style={{ left: "80%" }} />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              {section.data.map((d) => (
+                <div key={d.domain} className="rounded-md border p-2.5 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium">{d.domainLabel}</span>
+                    <span className={`text-xs font-bold ${d.pctPositive >= 80 ? "text-emerald-600" : d.pctPositive >= 50 ? "text-amber-600" : "text-destructive"}`}>
+                      {d.pctPositive.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="relative h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`absolute inset-y-0 left-0 rounded-full ${d.pctPositive >= 80 ? "bg-emerald-500" : d.pctPositive >= 50 ? "bg-amber-500" : "bg-destructive"}`}
+                      style={{ width: `${Math.min(d.pctPositive, 100)}%` }}
+                    />
+                    <div className="absolute inset-y-0 border-r-2 border-dashed border-foreground/30" style={{ left: "80%" }} />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{d.countPositive} / {d.countTotal} directivos</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
 
       {/* Domain delta bar chart */}
       <Card>

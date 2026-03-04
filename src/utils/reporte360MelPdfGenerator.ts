@@ -281,6 +281,57 @@ export async function generarMelPDF(
     doc.setTextColor(...C_MID);
     doc.text(`${posCount} / ${data.domainDeltas.length} dominios con incremento positivo`, margin, y);
     y += 8;
+
+    // Observer indicators (internos / externos)
+    const obsIndicators = [
+      { title: "INTERNOS (Directivos, Docentes, Administrativos)", getter: (d: MelDomainDelta) => d.deltaInternos },
+      { title: "EXTERNOS (Estudiantes, Acudientes)", getter: (d: MelDomainDelta) => d.deltaExternos },
+    ];
+
+    for (const indicator of obsIndicators) {
+      if (y + 30 > pageH - 20) {
+        doc.addPage();
+        drawPageHeader();
+        y = 25;
+      }
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...C_BLACK);
+      doc.text(`INDICADOR: ${indicator.title}`, margin, y);
+      y += 5;
+
+      for (const d of data.domainDeltas) {
+        const delta = indicator.getter(d);
+        const hasInc = delta > 0;
+        const label = d.domainLabel.length > 25 ? d.domainLabel.substring(0, 23) + "…" : d.domainLabel;
+
+        doc.setFillColor(hasInc ? 34 : 200, hasInc ? 139 : 60, hasInc ? 34 : 60);
+        doc.circle(margin + 2, y + barH / 2, 1.2, "F");
+
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...C_BLACK);
+        doc.text(label, margin + 5, y + barH / 2 + 1);
+
+        doc.setFontSize(6);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(hasInc ? 34 : 200, hasInc ? 139 : 60, hasInc ? 34 : 60);
+        doc.text(
+          hasInc ? `✓ ${deltaSign(delta)}` : `✗ ${deltaSign(delta)}`,
+          pageW - margin, y + barH / 2 + 1, { align: "right" }
+        );
+
+        y += barH + 3;
+      }
+
+      const posCount = data.domainDeltas.filter(d => indicator.getter(d) > 0).length;
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...C_MID);
+      doc.text(`${posCount} / ${data.domainDeltas.length} dominios con incremento`, margin, y);
+      y += 6;
+    }
   }
 
   // ═══════════════════════════════════════════
