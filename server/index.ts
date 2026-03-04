@@ -53,8 +53,8 @@ app.post("/api/encuestas", async (req, res) => {
   try {
     const d = req.body;
     const result = await dbQuery(
-      `INSERT INTO encuestas_360 (tipo_formulario, institucion_educativa, cargo_directivo, nombre_directivo, cedula_directivo, dias_contacto, nombre_completo, cedula, grado_estudiante, cargo_evaluador, respuestas)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+      `INSERT INTO encuestas_360 (tipo_formulario, institucion_educativa, cargo_directivo, nombre_directivo, cedula_directivo, dias_contacto, nombre_completo, cedula, grado_estudiante, cargo_evaluador, respuestas, fase)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
       [
         d.tipo_formulario,
         d.institucion_educativa,
@@ -67,6 +67,7 @@ app.post("/api/encuestas", async (req, res) => {
         d.grado_estudiante || null,
         d.cargo_evaluador || null,
         JSON.stringify(d.respuestas || {}),
+        d.fase || "inicial",
       ],
     );
     res.json(result[0]);
