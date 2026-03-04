@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/utils/apiFetch";
 import { supabase } from "@/utils/dbClient";
@@ -401,6 +401,7 @@ interface Encuesta360FormProps {
 }
 
 export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) {
+  const navigate = useNavigate();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
   const { toast } = useToast();
@@ -607,6 +608,14 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
           <h2 className="text-xl font-semibold">¡Encuesta enviada!</h2>
           <p className="text-muted-foreground">{config.closingMessage}</p>
           <p className="text-sm text-muted-foreground">Programa Rectores Líderes Transformadores</p>
+          {config.isAutoeval && (
+            <Button
+              onClick={() => navigate("/mi-panel")}
+              className="mt-4"
+            >
+              Volver a Mi Panel
+            </Button>
+          )}
         </div>
         <PostSubmitReviewModal
           open={showReviewModal}
