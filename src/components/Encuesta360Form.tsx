@@ -523,6 +523,25 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
 
     setSubmitting(true);
     try {
+      // Prevent duplicate autoevaluacion submission
+      if (config.isAutoeval && cedula) {
+        const currentFase = fase ?? "inicial";
+        const { count } = await supabase
+          .from("encuestas_360")
+          .select("id", { count: "exact", head: true })
+          .eq("cedula", cedula)
+          .eq("tipo_formulario", "autoevaluacion")
+          .eq("fase", currentFase);
+        if ((count ?? 0) > 0) {
+          toast({
+            title: "Ya completada",
+            description: `Ya existe una autoevaluación ${currentFase === "inicial" ? "de entrada" : "de salida"} registrada con esta cédula.`,
+            variant: "destructive",
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
       // Resolve cédula + cargo from DB when prefilled (cédula never exposed to user)
       let resolvedCedula = cedulaDirectivo;
       let resolvedCargo = cargoDirectivo;
