@@ -366,7 +366,7 @@ export async function generarPDFFicha(
     doc.text(`${i}/${totalPages}`, pageW - margin, cosmoY + cosmoLogoH / 2 + 1, { align: "right" });
   }
 
-  const nombre = String(datos["apellidos"] ?? datos["nombres"] ?? "ficha").replace(/\s+/g, "_");
+  const nombre = String(datos["nombres_apellidos"] ?? (`${datos["nombres"] ?? ""} ${datos["apellidos"] ?? ""}`.trim() || "ficha")).replace(/\s+/g, "_");
   if (options.returnBlob) {
     return doc.output("blob");
   }
