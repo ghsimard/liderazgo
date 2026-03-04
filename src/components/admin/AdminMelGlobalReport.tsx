@@ -1,10 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
-import { calcularMelAnalysis, type MelAnalysisData, type MelDomainDelta, type MelCompetencyDelta } from "@/utils/reporte360MelCalculator";
+import { useState, useRef } from "react";
+import { calcularMelAnalysis, type MelAnalysisData } from "@/utils/reporte360MelCalculator";
+import type { AggregatedMel } from "@/utils/melGlobalTypes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { RefreshCw, TrendingUp, TrendingDown, Minus, Users, BarChart3 } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, Minus, Users, BarChart3, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAppImages } from "@/hooks/useAppImages";
+import { generarMelGlobalPDF } from "@/utils/melGlobalPdfGenerator";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -17,17 +20,6 @@ interface DirectivoOption {
   genero: string | null;
   region: string;
   entidad_territorial: string;
-}
-
-interface AggregatedMel {
-  count: number;
-  countWithData: number;
-  countPositiveAuto: number;
-  countPositiveObs: number;
-  avgDeltaAuto: number;
-  avgDeltaObserver: number;
-  domainDeltas: { domain: string; domainLabel: string; avgDeltaAuto: number; avgDeltaInternos: number; avgDeltaExternos: number }[];
-  competencyDeltas: { competency: string; competencyLabel: string; avgInicialAuto: number; avgFinalAuto: number; avgDeltaAuto: number; avgInicialObs: number; avgFinalObs: number; avgDeltaObs: number }[];
 }
 
 function DeltaBadge({ value }: { value: number }) {
@@ -47,7 +39,6 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
   const avgDeltaAuto = bothPhases.length > 0 ? bothPhases.reduce((s, r) => s + r.globalDeltaAuto, 0) / bothPhases.length : 0;
   const avgDeltaObserver = bothPhases.length > 0 ? bothPhases.reduce((s, r) => s + r.globalDeltaObserver, 0) / bothPhases.length : 0;
 
-  // Domain aggregation
   const domainMap = new Map<string, { label: string; sumAuto: number; sumInt: number; sumExt: number; n: number }>();
   for (const r of bothPhases) {
     for (const d of r.domainDeltas) {
@@ -67,7 +58,6 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
     avgDeltaExternos: v.n > 0 ? v.sumExt / v.n : 0,
   }));
 
-  // Competency aggregation
   const compMap = new Map<string, { label: string; sumIA: number; sumFA: number; sumDA: number; sumIO: number; sumFO: number; sumDO: number; n: number }>();
   for (const r of bothPhases) {
     for (const c of r.competencyDeltas) {
@@ -105,10 +95,17 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
   };
 }
 
-export default function AdminMelGlobalReport({ directivos }: { directivos: DirectivoOption[] }) {
+export default function AdminMelGlobalReport({ directivos, filterLabel }: { directivos: DirectivoOption[]; filterLabel?: string }) {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [agg, setAgg] = useState<AggregatedMel | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const { images } = useAppImages();
+
+  // Chart refs for PDF capture
+  const domainChartRef = useRef<HTMLDivElement>(null);
+  const radarChartRef = useRef<HTMLDivElement>(null);
+  const competencyChartRef = useRef<HTMLDivElement>(null);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -127,6 +124,25 @@ export default function AdminMelGlobalReport({ directivos }: { directivos: Direc
 
     setAgg(aggregate(results));
     setLoading(false);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!agg) return;
+    setDownloading(true);
+    try {
+      await generarMelGlobalPDF(
+        agg,
+        {
+          logoRLT: images.logo_rlt_white || images.logo_rlt,
+          logoCLT: images.logo_clt || images.logo_clt_white,
+        },
+        { domainChartRef, radarChartRef, competencyChartRef },
+        filterLabel || "Todos los directivos"
+      );
+    } catch (err) {
+      console.error("Global MEL PDF error:", err);
+    }
+    setDownloading(false);
   };
 
   if (!agg && !loading) {
@@ -165,9 +181,6 @@ export default function AdminMelGlobalReport({ directivos }: { directivos: Direc
 
   if (!agg) return null;
 
-  const bothCount = agg.countPositiveAuto + (agg.countWithData - agg.countPositiveAuto); // total with both phases is implicit
-
-  // Chart data
   const domainChartData = agg.domainDeltas.map((d) => ({
     name: d.domainLabel.length > 25 ? d.domainLabel.substring(0, 23) + "…" : d.domainLabel,
     "Δ Auto": +d.avgDeltaAuto.toFixed(2),
@@ -191,6 +204,21 @@ export default function AdminMelGlobalReport({ directivos }: { directivos: Direc
 
   return (
     <div className="space-y-6">
+      {/* Action bar */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">{agg.countWithData} directivo(s) con datos MEL</p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={downloading} className="gap-1.5">
+            {downloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            PDF Global
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleGenerate} className="gap-1.5 text-xs">
+            <RefreshCw className="w-3.5 h-3.5" />
+            Recalcular
+          </Button>
+        </div>
+      </div>
+
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
@@ -225,18 +253,20 @@ export default function AdminMelGlobalReport({ directivos }: { directivos: Direc
       <Card>
         <CardContent className="p-4 space-y-3">
           <h4 className="text-sm font-semibold">Progresión promedio por Dominio</h4>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={domainChartData} layout="vertical" margin={{ left: 10, right: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11 }} />
-              <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="Δ Auto" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
-              <Bar dataKey="Δ Internos" fill="hsl(var(--muted-foreground))" radius={[0, 3, 3, 0]} />
-              <Bar dataKey="Δ Externos" fill="hsl(var(--accent-foreground))" radius={[0, 3, 3, 0]} opacity={0.6} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div ref={domainChartRef}>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={domainChartData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="Δ Auto" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
+                <Bar dataKey="Δ Internos" fill="hsl(var(--muted-foreground))" radius={[0, 3, 3, 0]} />
+                <Bar dataKey="Δ Externos" fill="hsl(var(--accent-foreground))" radius={[0, 3, 3, 0]} opacity={0.6} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
@@ -267,24 +297,26 @@ export default function AdminMelGlobalReport({ directivos }: { directivos: Direc
         </CardContent>
       </Card>
 
-      {/* Radar chart — Inicial vs Final */}
+      {/* Radar chart */}
       {radarData.length > 0 && (
         <Card>
           <CardContent className="p-4 space-y-3">
             <h4 className="text-sm font-semibold">Comparación Inicial vs Final por Competencia</h4>
-            <ResponsiveContainer width="100%" height={380}>
-              <RadarChart data={radarData}>
-                <PolarGrid />
-                <PolarAngleAxis dataKey="competency" tick={{ fontSize: 9 }} />
-                <PolarRadiusAxis angle={30} domain={[0, 10]} tick={{ fontSize: 9 }} />
-                <Radar name="Inicial Auto" dataKey="Inicial Auto" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.15} strokeDasharray="4 4" />
-                <Radar name="Final Auto" dataKey="Final Auto" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
-                <Radar name="Inicial Obs." dataKey="Inicial Obs." stroke="hsl(var(--accent-foreground))" fill="none" strokeDasharray="4 4" opacity={0.5} />
-                <Radar name="Final Obs." dataKey="Final Obs." stroke="hsl(var(--accent-foreground))" fill="hsl(var(--accent-foreground))" fillOpacity={0.1} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Tooltip />
-              </RadarChart>
-            </ResponsiveContainer>
+            <div ref={radarChartRef}>
+              <ResponsiveContainer width="100%" height={380}>
+                <RadarChart data={radarData}>
+                  <PolarGrid />
+                  <PolarAngleAxis dataKey="competency" tick={{ fontSize: 9 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 10]} tick={{ fontSize: 9 }} />
+                  <Radar name="Inicial Auto" dataKey="Inicial Auto" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.15} strokeDasharray="4 4" />
+                  <Radar name="Final Auto" dataKey="Final Auto" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
+                  <Radar name="Inicial Obs." dataKey="Inicial Obs." stroke="hsl(var(--accent-foreground))" fill="none" strokeDasharray="4 4" opacity={0.5} />
+                  <Radar name="Final Obs." dataKey="Final Obs." stroke="hsl(var(--accent-foreground))" fill="hsl(var(--accent-foreground))" fillOpacity={0.1} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Tooltip />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -293,17 +325,19 @@ export default function AdminMelGlobalReport({ directivos }: { directivos: Direc
       <Card>
         <CardContent className="p-4 space-y-3">
           <h4 className="text-sm font-semibold">Deltas promedio por Competencia</h4>
-          <ResponsiveContainer width="100%" height={Math.max(300, agg.competencyDeltas.length * 28)}>
-            <BarChart data={competencyBarData} layout="vertical" margin={{ left: 10, right: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11 }} />
-              <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 9 }} />
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="Δ Auto" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
-              <Bar dataKey="Δ Obs." fill="hsl(var(--muted-foreground))" radius={[0, 3, 3, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div ref={competencyChartRef}>
+            <ResponsiveContainer width="100%" height={Math.max(300, agg.competencyDeltas.length * 28)}>
+              <BarChart data={competencyBarData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 9 }} />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="Δ Auto" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
+                <Bar dataKey="Δ Obs." fill="hsl(var(--muted-foreground))" radius={[0, 3, 3, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
@@ -339,13 +373,6 @@ export default function AdminMelGlobalReport({ directivos }: { directivos: Direc
           </Table>
         </CardContent>
       </Card>
-
-      <div className="text-center">
-        <Button variant="ghost" size="sm" onClick={handleGenerate} className="gap-1.5 text-xs">
-          <RefreshCw className="w-3.5 h-3.5" />
-          Recalcular
-        </Button>
-      </div>
     </div>
   );
 }
