@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/utils/apiFetch";
@@ -245,6 +246,7 @@ function SurveyWizard({
   const total = allItems.length;
 
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
   const [showInstruction, setShowInstruction] = useState(true);
   const answeredCount = allItems.filter((item) => answers[String(item.num)]).length;
   const progress = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
@@ -269,20 +271,26 @@ function SurveyWizard({
   if (!current) return null;
 
   const goNext = () => {
-    if (currentIdx < total - 1) setCurrentIdx(currentIdx + 1);
+    if (currentIdx < total - 1) { setDirection(1); setCurrentIdx(currentIdx + 1); }
   };
   const goPrev = () => {
-    if (currentIdx > 0) setCurrentIdx(currentIdx - 1);
+    if (currentIdx > 0) { setDirection(-1); setCurrentIdx(currentIdx - 1); }
   };
 
   const handleSelect = (opt: string) => {
     onAnswer(current.num, opt);
-    // Auto-advance after short delay
     setTimeout(() => {
       if (currentIdx < total - 1) {
+        setDirection(1);
         setCurrentIdx((prev) => prev + 1);
       }
     }, 350);
+  };
+
+  const slideVariants = {
+    enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: number) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
   };
 
   // (jump to first unanswered is handled above)
@@ -322,31 +330,42 @@ function SurveyWizard({
         </div>
       )}
 
-      {/* Question */}
-      <div className="space-y-4">
-        <p className="text-base font-medium leading-relaxed">
-          <span className="text-primary font-bold mr-2">{current.num}.</span>
-          {current.text}
-        </p>
+      {/* Question with slide animation */}
+      <AnimatePresence mode="wait" custom={direction}>
+        <motion.div
+          key={currentIdx}
+          custom={direction}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+          className="space-y-4"
+        >
+          <p className="text-base font-medium leading-relaxed">
+            <span className="text-primary font-bold mr-2">{current.num}.</span>
+            {current.text}
+          </p>
 
-        {/* Options as large buttons */}
-        <div className="grid gap-2">
-          {current.options.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => handleSelect(opt)}
-              className={cn(
-                "w-full text-left px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all",
-                selectedOpt === opt
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border hover:border-primary/40 hover:bg-muted/50 text-foreground"
-              )}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-      </div>
+          {/* Options as large buttons */}
+          <div className="grid gap-2">
+            {current.options.map((opt) => (
+              <button
+                key={opt}
+                onClick={() => handleSelect(opt)}
+                className={cn(
+                  "w-full text-left px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all",
+                  selectedOpt === opt
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-primary/40 hover:bg-muted/50 text-foreground"
+                )}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Navigation */}
       <div className="flex items-center justify-between pt-2 border-t">
@@ -369,7 +388,7 @@ function SurveyWizard({
             return (
               <button
                 key={si}
-                onClick={() => setCurrentIdx(sectionStart)}
+                onClick={() => { setDirection(sectionStart > currentIdx ? 1 : -1); setCurrentIdx(sectionStart); }}
                 className={cn(
                   "w-3 h-3 rounded-full transition-colors",
                   isActive ? "bg-primary" : sectionAnswered ? "bg-primary/40" : "bg-muted-foreground/20"
