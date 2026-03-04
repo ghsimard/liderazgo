@@ -229,7 +229,7 @@ export default function MiPanel() {
                 {roleInfo.is_directivo && (
                   <Button
                     className="w-full h-14 justify-start gap-3 text-base"
-                    onClick={() => navigate("/formulario-360-autoevaluacion")}
+                    onClick={() => navigate("/encuesta-360")}
                   >
                     <FileBarChart className="h-5 w-5" />
                     <div className="text-left">

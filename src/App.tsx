@@ -16,6 +16,7 @@ const FichaRLTPage = lazy(() => import("./pages/FichaRLT"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const AdminEditFicha = lazy(() => import("./pages/AdminEditFicha"));
+const Encuesta360Hub = lazy(() => import("./pages/Encuesta360Hub"));
 const Encuesta360Acudiente = lazy(() => import("./pages/Encuesta360Acudiente"));
 const Encuesta360Administrativo = lazy(() => import("./pages/Encuesta360Administrativo"));
 const Encuesta360Autoevaluacion = lazy(() => import("./pages/Encuesta360Autoevaluacion"));
@@ -61,6 +62,7 @@ const App = () => (
                 <Route path="/admin/ficha/:id" element={<AdminEditFicha />} />
 
                 {/* 360° Survey Forms */}
+                <Route path="/encuesta-360" element={<Encuesta360Hub />} />
                 <Route path="/formulario-360-acudiente" element={<Encuesta360Acudiente />} />
                 <Route path="/formulario-360-administrativo" element={<Encuesta360Administrativo />} />
                 <Route path="/formulario-360-autoevaluacion" element={<Encuesta360Autoevaluacion />} />
