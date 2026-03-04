@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/utils/apiFetch";
 import { supabase } from "@/utils/dbClient";
@@ -403,13 +404,19 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
 
+  // Pre-filled from URL params (shared links)
+  const prefillInstitucion = searchParams.get("institucion") || "";
+  const prefillNombreDirectivo = searchParams.get("nombre_directivo") || "";
+  const isPrefilled = !!prefillInstitucion && !!prefillNombreDirectivo;
+
   // Header fields
-  const [institucion, setInstitucion] = useState("");
-  const [nombreDirectivo, setNombreDirectivo] = useState("");
+  const [institucion, setInstitucion] = useState(prefillInstitucion);
+  const [nombreDirectivo, setNombreDirectivo] = useState(prefillNombreDirectivo);
   const [cedulaDirectivo, setCedulaDirectivo] = useState("");
   const [cargoDirectivo, setCargoDirectivo] = useState("");
   const [diasContacto, setDiasContacto] = useState("");
@@ -440,7 +447,7 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
     const iErrors = new Set<number>();
 
     if (!institucion) errors.add("institucion");
-    if (!cargoDirectivo) errors.add("cargo_directivo");
+    if (!cargoDirectivo && !isPrefilled) errors.add("cargo_directivo");
 
     if (config.isAutoeval) {
       if (!nombreCompleto.trim()) errors.add("nombre_completo");
@@ -477,10 +484,24 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
 
     setSubmitting(true);
     try {
+      // Resolve cédula + cargo from DB when prefilled (cédula never exposed to user)
+      let resolvedCedula = cedulaDirectivo;
+      let resolvedCargo = cargoDirectivo;
+      if (isPrefilled && !config.isAutoeval && !resolvedCedula) {
+        const { data } = await supabase.rpc("get_directivos_por_institucion", { p_nombre_ie: institucion });
+        const match = (data as any[] ?? []).find(
+          (d: any) => d.nombres_apellidos === nombreDirectivo
+        );
+        if (match) {
+          resolvedCedula = match.numero_cedula ?? "";
+          resolvedCargo = match.cargo_actual ?? cargoDirectivo;
+        }
+      }
+
       const payload: Record<string, unknown> = {
         tipo_formulario: config.tipo,
         institucion_educativa: institucion,
-        cargo_directivo: cargoDirectivo,
+        cargo_directivo: resolvedCargo,
         respuestas: answers,
         fase: fase ?? "inicial",
       };
@@ -490,7 +511,7 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
         payload.cedula = cedula;
       } else {
         payload.nombre_directivo = nombreDirectivo;
-        payload.cedula_directivo = cedulaDirectivo;
+        payload.cedula_directivo = resolvedCedula;
         payload.dias_contacto = diasContacto;
       }
 
@@ -574,19 +595,32 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
         <div className="bg-background rounded-lg border p-6 space-y-5">
           <h3 className="font-semibold text-sm border-b pb-2">Datos de identificación</h3>
 
-          <InstitutionSearch
-            value={institucion}
-            onChange={(v) => {
-              setInstitucion(v);
-              // Reset directivo selection when institution changes
-              setNombreDirectivo("");
-              setCedulaDirectivo("");
-              setCargoDirectivo("");
-              setFieldErrors((prev) => { const n = new Set(prev); n.delete("institucion"); return n; });
-            }}
-            hasError={fieldErrors.has("institucion")}
-            onlyWithFichas
-          />
+          {isPrefilled && !config.isAutoeval ? (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-foreground">
+                Institución Educativa
+              </label>
+              <input
+                type="text"
+                value={institucion}
+                disabled
+                className="w-full rounded-md border border-input bg-muted px-3 py-2.5 text-sm cursor-not-allowed"
+              />
+            </div>
+          ) : (
+            <InstitutionSearch
+              value={institucion}
+              onChange={(v) => {
+                setInstitucion(v);
+                setNombreDirectivo("");
+                setCedulaDirectivo("");
+                setCargoDirectivo("");
+                setFieldErrors((prev) => { const n = new Set(prev); n.delete("institucion"); return n; });
+              }}
+              hasError={fieldErrors.has("institucion")}
+              onlyWithFichas
+            />
+          )}
 
           {config.isAutoeval ? (
             <>
@@ -607,6 +641,20 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
                 hasError={fieldErrors.has("nombre_completo")}
                 label="Nombre completo"
               />
+            </>
+          ) : isPrefilled ? (
+            <>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-foreground">
+                  Nombre del directivo docente a evaluar
+                </label>
+                <input
+                  type="text"
+                  value={nombreDirectivo}
+                  disabled
+                  className="w-full rounded-md border border-input bg-muted px-3 py-2.5 text-sm cursor-not-allowed"
+                />
+              </div>
             </>
           ) : (
             <>
