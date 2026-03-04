@@ -63,6 +63,7 @@ const sections: SidebarSection[] = [
       { tab: "encuestas360final", label: "Final", icon: ClipboardList },
       { tab: "reportes360", label: "Informes Inicial", icon: BarChart3 },
       { tab: "reportes360final", label: "Informes Final", icon: BarChart3 },
+      { tab: "mel", label: "MEL", icon: BarChart3 },
     ],
   },
   {
@@ -75,12 +76,6 @@ const sections: SidebarSection[] = [
     label: "Rúbricas",
     items: [
       { tab: "rubricas", label: "Rúbricas", icon: ClipboardList },
-    ],
-  },
-  {
-    label: "Análisis",
-    items: [
-      { tab: "mel", label: "MEL", icon: BarChart3 },
     ],
   },
   {
