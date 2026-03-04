@@ -5,7 +5,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle2, ClipboardCheck, ClipboardList, FileText, Loader2, User } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardCheck, ClipboardList, FileBarChart, FileText, Loader2, User } from "lucide-react";
 
 import { genderizeRole } from "@/utils/genderizeRole";
 
@@ -224,6 +224,20 @@ export default function MiPanel() {
                   </Button>
                   );
                 })()}
+
+                {roleInfo.is_directivo && (
+                  <Button
+                    variant="outline"
+                    className="w-full h-14 justify-start gap-3 text-base"
+                    onClick={() => navigate("/formulario-360-autoevaluacion")}
+                  >
+                    <FileBarChart className="h-5 w-5 text-primary" />
+                    <div className="text-left">
+                      <div className="font-semibold">Mi Autoevaluación 360°</div>
+                      <div className="text-xs text-muted-foreground">Encuesta de autoevaluación</div>
+                    </div>
+                  </Button>
+                )}
               </>
             )}
 
