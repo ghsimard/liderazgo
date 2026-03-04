@@ -56,7 +56,7 @@ export default function AutoevalViewerDialog({ open, onOpenChange, cedula, fase 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Eye className="h-4 w-4 text-primary" />
@@ -84,7 +84,7 @@ export default function AutoevalViewerDialog({ open, onOpenChange, cedula, fase 
             No se encontró la autoevaluación.
           </p>
         ) : (
-          <ScrollArea className="flex-1 pr-3">
+          <ScrollArea className="flex-1 min-h-0 pr-3">
             <div className="space-y-3">
               {allItems.map((item, idx) => {
                 const answer = respuestas[String(item.num)] || "—";
