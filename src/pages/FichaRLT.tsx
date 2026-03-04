@@ -888,6 +888,22 @@ export default function FichaRLTForm() {
               )}
             </div>
             <div className="flex items-center gap-2">
+              {!editMode && (
+                <button
+                  onClick={() => {
+                    const values = getValues();
+                    const allData: Record<string, unknown> = { ...values };
+                    const cargo = (values.cargo_actual || "").toLowerCase();
+                    const isRector = cargo.includes("rector");
+                    const isCoordinador = cargo.includes("coordinador");
+                    generarPDFFicha(allData, { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite }, { showLogoRlt: isRector, showLogoClt: isCoordinador });
+                  }}
+                  className="px-3 py-1.5 rounded-md bg-primary-foreground/20 hover:bg-primary-foreground/30 text-sm font-medium transition-colors flex items-center gap-1.5"
+                >
+                  <Download className="h-4 w-4" />
+                  PDF
+                </button>
+              )}
               {!editMode ? (
                 <button
                   onClick={() => setEditMode(true)}
