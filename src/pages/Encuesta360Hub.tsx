@@ -243,9 +243,11 @@ export default function Encuesta360Hub() {
     }
   };
 
-  // Group invitations by form type
-  const pendingInvitations = invitations.filter((i) => !i.responded_at);
-  const respondedCount = invitations.filter((i) => i.responded_at).length;
+  // Filter out internal logs (enlace-copiado, acceso-directo) — only visible to admins
+  const INTERNAL_LABELS = ["enlace-copiado", "acceso-directo"];
+  const visibleInvitations = invitations.filter((i) => !INTERNAL_LABELS.includes(i.email_destinatario));
+  const pendingInvitations = visibleInvitations.filter((i) => !i.responded_at);
+  const respondedCount = visibleInvitations.filter((i) => i.responded_at).length;
 
   if (loading) {
     return (
@@ -377,7 +379,7 @@ export default function Encuesta360Hub() {
             </Card>
 
             {/* Invitation tracking section */}
-            {directivoInfo && invitations.length > 0 && (
+            {directivoInfo && visibleInvitations.length > 0 && (
               <Card className="shadow-lg border-0">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
