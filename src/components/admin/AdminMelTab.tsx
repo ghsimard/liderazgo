@@ -89,6 +89,39 @@ function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; 
           </Card>
         </div>
 
+        {/* MEL Indicator: increment per domain */}
+        {data.hasInicial && data.hasFinal && (
+          <Card className="my-4">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h4 className="text-sm font-semibold">Indicador: Incremento por Gestión</h4>
+                  <p className="text-xs text-muted-foreground">Progresión del puntaje promedio (auto) por dominio</p>
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0">Meta: 80%</span>
+              </div>
+              <div className="grid gap-2">
+                {data.domainDeltas.map((d) => {
+                  const hasIncrement = d.deltaAuto > 0;
+                  return (
+                    <div key={d.domain} className="flex items-center gap-3 rounded-md border p-2">
+                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${hasIncrement ? "bg-emerald-500" : "bg-destructive"}`} />
+                      <span className="text-xs font-medium flex-1">{d.domainLabel}</span>
+                      <DeltaBadge value={d.deltaAuto} />
+                      <span className={`text-xs font-bold ${hasIncrement ? "text-emerald-600" : "text-destructive"}`}>
+                        {hasIncrement ? "✓ Incremento" : "✗ Sin incremento"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {data.domainDeltas.filter(d => d.deltaAuto > 0).length} / {data.domainDeltas.length} dominios con incremento positivo
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Domain deltas */}
         <h4 className="text-sm font-semibold mb-2">Deltas por Dominio</h4>
         <Table>
