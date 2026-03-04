@@ -7,6 +7,7 @@ import { supabase } from "@/utils/dbClient";
 import { genderizeRole } from "@/utils/genderizeRole";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RefreshCw, CheckCircle2, Info } from "lucide-react";
 import { useAppImages } from "@/hooks/useAppImages";
 import PostSubmitReviewModal from "@/components/PostSubmitReviewModal";
@@ -248,6 +249,7 @@ function SurveyWizard({
   const [currentIdx, setCurrentIdx] = useState(0);
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
   const [showInstruction, setShowInstruction] = useState(true);
+  const [showConfirm, setShowConfirm] = useState(false);
   const answeredCount = allItems.filter((item) => answers[String(item.num)]).length;
   const progress = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
 
@@ -283,6 +285,9 @@ function SurveyWizard({
       if (currentIdx < total - 1) {
         setDirection(1);
         setCurrentIdx((prev) => prev + 1);
+      } else {
+        // Last question answered — show confirmation
+        setShowConfirm(true);
       }
     }, 350);
   };
@@ -411,13 +416,29 @@ function SurveyWizard({
         ) : (
           <Button
             size="sm"
-            onClick={onComplete}
+            onClick={() => setShowConfirm(true)}
             className="gap-1.5"
           >
             Finalizar ✓
           </Button>
         )}
       </div>
+
+      {/* Confirmation dialog */}
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Desea enviar sus respuestas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ha respondido {answeredCount} de {total} preguntas. Una vez enviadas, no podrá modificar sus respuestas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Revisar respuestas</AlertDialogCancel>
+            <AlertDialogAction onClick={onComplete}>Sí, enviar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
