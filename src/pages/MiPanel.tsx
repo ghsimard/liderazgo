@@ -187,34 +187,43 @@ export default function MiPanel() {
                   </div>
                 </Button>
 
-                {roleInfo.is_directivo && roleInfo.exists_ficha && (
+                {roleInfo.is_directivo && roleInfo.exists_ficha && (() => {
+                  const allDone = rubricaProgress.completed === rubricaProgress.total;
+                  return (
                   <Button
-                    variant="outline"
-                    className="w-full h-auto min-h-[3.5rem] justify-start gap-3 text-base py-3"
+                    variant={allDone ? "default" : "outline"}
+                    className={`w-full h-auto min-h-[3.5rem] justify-start gap-3 text-base py-3 ${
+                      allDone
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
+                        : ""
+                    }`}
                     onClick={() =>
                       navigate(`/rubrica-evaluacion?role=directivo`)
                     }
                   >
-                    <ClipboardList className="h-5 w-5 text-primary shrink-0" />
+                    <ClipboardList className={`h-5 w-5 shrink-0 ${allDone ? "text-white" : "text-primary"}`} />
                     <div className="text-left flex-1 min-w-0">
                       <div className="font-semibold flex items-center gap-2">
                         Mi Rúbrica de Evaluación
-                        {rubricaProgress.completed === rubricaProgress.total && (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        {allDone && (
+                          <CheckCircle2 className="h-4 w-4 text-white" />
                         )}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {rubricaProgress.completed === rubricaProgress.total
-                          ? "Todos los módulos completados"
+                      <div className={`text-xs ${allDone ? "text-emerald-100" : "text-muted-foreground"}`}>
+                        {allDone
+                          ? "✓ Todos los módulos completados"
                           : `${rubricaProgress.completed} de ${rubricaProgress.total} módulos completados`}
                       </div>
-                      <Progress
-                        value={(rubricaProgress.completed / rubricaProgress.total) * 100}
-                        className="h-1.5 mt-1.5 bg-muted"
-                      />
+                      {!allDone && (
+                        <Progress
+                          value={(rubricaProgress.completed / rubricaProgress.total) * 100}
+                          className="h-1.5 mt-1.5 bg-muted"
+                        />
+                      )}
                     </div>
                   </Button>
-                )}
+                  );
+                })()}
               </>
             )}
 
