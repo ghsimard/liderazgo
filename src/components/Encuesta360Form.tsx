@@ -237,7 +237,7 @@ function SurveyTable({
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold text-muted-foreground">{sectionTitle}</h3>
-      <div className="overflow-x-auto border rounded-lg">
+      <div className="overflow-auto border rounded-lg max-h-[70vh]">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10">
             <tr className="bg-muted">
