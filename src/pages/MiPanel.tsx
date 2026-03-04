@@ -262,7 +262,7 @@ export default function MiPanel() {
                   </Button>
                 )}
 
-                {roleInfo.is_directivo && inicialDone && (
+                {roleInfo.is_directivo && (
                   <Button
                     className="w-full h-14 justify-start gap-3 text-base"
                     variant="outline"
