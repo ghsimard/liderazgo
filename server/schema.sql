@@ -139,8 +139,11 @@ CREATE TABLE IF NOT EXISTS public.rubrica_evaluadores (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   nombre TEXT NOT NULL,
   cedula TEXT NOT NULL UNIQUE,
+  email TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.rubrica_evaluadores ADD COLUMN IF NOT EXISTS email TEXT;
 
 CREATE TABLE IF NOT EXISTS public.rubrica_asignaciones (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
