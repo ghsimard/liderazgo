@@ -82,8 +82,13 @@ interface AdminSidebarProps {
 }
 
 export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: AdminSidebarProps) {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
+
+  const handleTabClick = (tab: string) => {
+    onTabChange(tab);
+    if (isMobile) setOpenMobile(false);
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -114,7 +119,7 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                         return (
                           <SidebarMenuItem key={item.tab}>
                             <SidebarMenuButton
-                              onClick={() => onTabChange(item.tab)}
+                              onClick={() => handleTabClick(item.tab)}
                               isActive={active}
                               tooltip={item.label}
                             >
