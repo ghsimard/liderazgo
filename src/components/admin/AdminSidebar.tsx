@@ -13,6 +13,15 @@ import {
   School,
   Copy,
   Check,
+  FolderOpen,
+  PlayCircle,
+  FlagTriangleRight,
+  FileBarChart,
+  FileBarChart2,
+  TrendingUp,
+  ClipboardCheck,
+  Gauge,
+  Trash2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,6 +47,7 @@ interface SidebarItem {
 
 interface SidebarSection {
   label: string;
+  icon: React.ElementType;
   items: SidebarItem[];
 }
 
@@ -48,6 +58,7 @@ const topLevelItems: SidebarItem[] = [
 const sections: SidebarSection[] = [
   {
     label: "Fichas RLT",
+    icon: FolderOpen,
     items: [
       { tab: "enlace-ficha", label: "Enlace Ficha", icon: Link2, linkUrl: "https://884bdecf-dfd4-47e7-ac2b-4a0fa0ab7c80.lovableproject.com/" },
       { tab: "fichas", label: "Lista", icon: FileText },
@@ -56,30 +67,34 @@ const sections: SidebarSection[] = [
   },
   {
     label: "Encuesta 360°",
+    icon: Gauge,
     items: [
       { tab: "enlaces360", label: "Formularios", icon: Link2 },
       { tab: "ponderaciones", label: "Configuración", icon: Settings2 },
-      { tab: "encuestas360", label: "Inicial", icon: ClipboardList },
-      { tab: "encuestas360final", label: "Final", icon: ClipboardList },
-      { tab: "reportes360", label: "Informes Inicial", icon: BarChart3 },
-      { tab: "reportes360final", label: "Informes Final", icon: BarChart3 },
-      { tab: "mel", label: "MEL", icon: BarChart3 },
+      { tab: "encuestas360", label: "Inicial", icon: PlayCircle },
+      { tab: "encuestas360final", label: "Final", icon: FlagTriangleRight },
+      { tab: "reportes360", label: "Informes Inicial", icon: FileBarChart },
+      { tab: "reportes360final", label: "Informes Final", icon: FileBarChart2 },
+      { tab: "mel", label: "MEL", icon: TrendingUp },
     ],
   },
   {
     label: "Ambiente Escolar",
+    icon: School,
     items: [
       { tab: "ambiente-escolar", label: "Encuestas", icon: School },
     ],
   },
   {
     label: "Rúbricas",
+    icon: ClipboardCheck,
     items: [
-      { tab: "rubricas", label: "Rúbricas", icon: ClipboardList },
+      { tab: "rubricas", label: "Rúbricas", icon: ClipboardCheck },
     ],
   },
   {
     label: "Sistema",
+    icon: Settings2,
     items: [
       { tab: "users", label: "Administradores", icon: Users },
       { tab: "reviews", label: "Apreciaciones", icon: Star, superadminOnly: true },
@@ -148,6 +163,30 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
           );
           if (visibleItems.length === 0) return null;
 
+          if (collapsed) {
+            // When collapsed, show section icon that clicks to first visible item
+            const SectionIcon = section.icon;
+            const firstItem = visibleItems[0];
+            const sectionActive = sectionContainsTab(section, activeTab);
+            return (
+              <SidebarGroup key={section.label}>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => handleTabClick(firstItem.tab)}
+                        isActive={sectionActive}
+                        tooltip={section.label}
+                      >
+                        <SectionIcon className="h-4 w-4 shrink-0" />
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          }
+
           const isOpen = sectionContainsTab(section, activeTab);
 
           return (
@@ -156,7 +195,7 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                 <CollapsibleTrigger asChild>
                   <SidebarGroupLabel className="cursor-pointer select-none flex items-center justify-between pr-2 hover:bg-muted/50 rounded-md transition-colors">
                     <span>{section.label}</span>
-                    {!collapsed && <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-0 group-data-[state=closed]:-rotate-90" />}
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-0 group-data-[state=closed]:-rotate-90" />
                   </SidebarGroupLabel>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -174,22 +213,20 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                               >
                                 <a href={item.linkUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
                                   <Icon className="h-4 w-4 shrink-0" />
-                                  {!collapsed && (
-                                    <span className="flex items-center gap-1.5 flex-1">
-                                      {item.label}
-                                      <button
-                                        onClick={(e) => handleCopyUrl(e, item.linkUrl!, item.tab)}
-                                        className="ml-auto p-0.5 rounded hover:bg-muted/80 transition-colors"
-                                        title="Copiar enlace"
-                                      >
-                                        {copiedTab === item.tab ? (
-                                          <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                        ) : (
-                                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                                        )}
-                                      </button>
-                                    </span>
-                                  )}
+                                  <span className="flex items-center gap-1.5 flex-1">
+                                    {item.label}
+                                    <button
+                                      onClick={(e) => handleCopyUrl(e, item.linkUrl!, item.tab)}
+                                      className="ml-auto p-0.5 rounded hover:bg-muted/80 transition-colors"
+                                      title="Copiar enlace"
+                                    >
+                                      {copiedTab === item.tab ? (
+                                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                      ) : (
+                                        <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                      )}
+                                    </button>
+                                  </span>
                                 </a>
                               </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -204,7 +241,7 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                               tooltip={item.label}
                             >
                               <Icon className="h-4 w-4 shrink-0" />
-                              {!collapsed && <span>{item.label}</span>}
+                              <span>{item.label}</span>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         );
