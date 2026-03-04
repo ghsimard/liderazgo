@@ -25,6 +25,7 @@ import AdminRubricasTab from "@/components/admin/AdminRubricasTab";
 import AdminMensajesTab from "@/components/admin/AdminMensajesTab";
 import AdminReviewsTab from "@/components/admin/AdminReviewsTab";
 import AdminChangelogTab from "@/components/admin/AdminChangelogTab";
+import AdminMelTab from "@/components/admin/AdminMelTab";
 
 interface FormItem {
   name: string;
@@ -222,6 +223,7 @@ export default function AdminPage() {
             <TabsTrigger value="reportes360final" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Informes 360° Final</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
             
+            <TabsTrigger value="mel" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Análisis MEL</TabsTrigger>
             <TabsTrigger value="rubricas" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Rúbricas</TabsTrigger>
             {isSuperAdmin && (
               <TabsTrigger value="reviews" className="gap-1.5"><Star className="w-4 h-4" /> Apreciaciones</TabsTrigger>
@@ -296,6 +298,7 @@ export default function AdminPage() {
           <TabsContent value="reportes360final"><AdminReporte360Tab fase="final" /></TabsContent>
           <TabsContent value="users"><AdminUsersTab isSuperAdmin={isSuperAdmin} /></TabsContent>
           
+          <TabsContent value="mel"><AdminMelTab /></TabsContent>
           <TabsContent value="rubricas"><AdminRubricasTab /></TabsContent>
           {isSuperAdmin && (
             <TabsContent value="reviews"><AdminReviewsTab /></TabsContent>
