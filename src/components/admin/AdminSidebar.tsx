@@ -43,7 +43,7 @@ interface SidebarSection {
 
 const sections: SidebarSection[] = [
   {
-    label: "Formularios",
+    label: "General",
     items: [
       { tab: "formularios", label: "Enlaces", icon: Link2 },
     ],
