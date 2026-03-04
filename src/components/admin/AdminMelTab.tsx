@@ -122,6 +122,43 @@ function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; 
           </Card>
         )}
 
+        {/* Observer indicators (internos / externos) */}
+        {data.hasInicial && data.hasFinal && [
+          { title: "Internos (Directivos, Docentes, Administrativos)", getter: (d: typeof data.domainDeltas[0]) => d.deltaInternos },
+          { title: "Externos (Estudiantes, Acudientes)", getter: (d: typeof data.domainDeltas[0]) => d.deltaExternos },
+        ].map((section) => (
+          <Card key={section.title} className="my-2">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h4 className="text-sm font-semibold">Indicador: {section.title}</h4>
+                  <p className="text-xs text-muted-foreground">Progresión según observadores por dominio</p>
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0">Meta: 80%</span>
+              </div>
+              <div className="grid gap-2">
+                {data.domainDeltas.map((d) => {
+                  const delta = section.getter(d);
+                  const hasInc = delta > 0;
+                  return (
+                    <div key={d.domain} className="flex items-center gap-3 rounded-md border p-2">
+                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${hasInc ? "bg-emerald-500" : "bg-destructive"}`} />
+                      <span className="text-xs font-medium flex-1">{d.domainLabel}</span>
+                      <DeltaBadge value={delta} />
+                      <span className={`text-xs font-bold ${hasInc ? "text-emerald-600" : "text-destructive"}`}>
+                        {hasInc ? "✓" : "✗"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {data.domainDeltas.filter(d => section.getter(d) > 0).length} / {data.domainDeltas.length} dominios con incremento
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+
         {/* Domain deltas */}
         <h4 className="text-sm font-semibold mb-2">Deltas por Dominio</h4>
         <Table>

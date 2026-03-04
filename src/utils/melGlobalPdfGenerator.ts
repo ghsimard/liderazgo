@@ -279,6 +279,68 @@ export async function generarMelGlobalPDF(
   doc.text(`(${agg.countPositiveAuto} / ${agg.countBothPhases} directivos con incremento global)`, margin, y);
   y += 6;
 
+  // ── Observer indicators (Internos / Externos) ──
+  const obsIndicators = [
+    { title: "INTERNOS (Directivos, Docentes, Administrativos)", data: agg.domainIncrementPctsInternos, globalPct: agg.globalPctPositiveInternos },
+    { title: "EXTERNOS (Estudiantes, Acudientes)", data: agg.domainIncrementPctsExternos, globalPct: agg.globalPctPositiveExternos },
+  ];
+
+  for (const indicator of obsIndicators) {
+    // Check page space
+    const neededH = 20 + (indicator.data.length + 1) * (barH + 3);
+    if (y + neededH > pageH - 20) {
+      doc.addPage();
+      drawPageHeader();
+      y = 25;
+    }
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C_BLACK);
+    doc.text(`INDICADOR: ${indicator.title}`, margin, y);
+    y += 3;
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C_MID);
+    doc.text("% de directivos con incremento por gestión según observadores · Meta: 80%", margin, y);
+    y += 5;
+
+    // Global bar
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C_BLACK);
+    doc.text(`Global: ${indicator.globalPct.toFixed(1)}%`, margin, y + barH / 2 + 1);
+    doc.setFillColor(...C_LIGHT);
+    doc.roundedRect(barX, y, barW, barH, 1, 1, "F");
+    const gFillW = Math.min(indicator.globalPct, 100) / 100 * barW;
+    doc.setFillColor(indicator.globalPct >= 80 ? 34 : indicator.globalPct >= 50 ? 180 : 200, indicator.globalPct >= 80 ? 139 : indicator.globalPct >= 50 ? 140 : 60, indicator.globalPct >= 80 ? 34 : indicator.globalPct >= 50 ? 0 : 60);
+    doc.roundedRect(barX, y, gFillW, barH, 1, 1, "F");
+    doc.setDrawColor(...C_DARK);
+    doc.setLineDashPattern([1, 1], 0);
+    doc.line(targetX, y - 1, targetX, y + barH + 1);
+    doc.setLineDashPattern([], 0);
+    y += barH + 4;
+
+    for (const d of indicator.data) {
+      const label = d.domainLabel.length > 25 ? d.domainLabel.substring(0, 23) + "…" : d.domainLabel;
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...C_BLACK);
+      doc.text(`${label}: ${d.pctPositive.toFixed(1)}%`, margin, y + barH / 2 + 1);
+      doc.setFillColor(...C_LIGHT);
+      doc.roundedRect(barX, y, barW, barH, 1, 1, "F");
+      const dFillW = Math.min(d.pctPositive, 100) / 100 * barW;
+      doc.setFillColor(d.pctPositive >= 80 ? 34 : d.pctPositive >= 50 ? 180 : 200, d.pctPositive >= 80 ? 139 : d.pctPositive >= 50 ? 140 : 60, d.pctPositive >= 80 ? 34 : d.pctPositive >= 50 ? 0 : 60);
+      doc.roundedRect(barX, y, dFillW, barH, 1, 1, "F");
+      doc.setDrawColor(...C_DARK);
+      doc.setLineDashPattern([1, 1], 0);
+      doc.line(targetX, y - 0.5, targetX, y + barH + 0.5);
+      doc.setLineDashPattern([], 0);
+      y += barH + 3;
+    }
+    y += 4;
+  }
+
   // Domain chart image
   if (domainImg) {
     doc.setFontSize(12);
