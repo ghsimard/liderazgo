@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Eye } from "lucide-react";
 import { supabase } from "@/utils/dbClient";
 import { autoevaluacionConfig } from "@/data/encuesta360Data";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 interface Props {
   open: boolean;
@@ -84,7 +84,7 @@ export default function AutoevalViewerDialog({ open, onOpenChange, cedula, fase 
             No se encontró la autoevaluación.
           </p>
         ) : (
-          <ScrollArea className="flex-1 min-h-0 pr-3">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-3">
             <div className="space-y-3">
               {allItems.map((item, idx) => {
                 const answer = respuestas[String(item.num)] || "—";
@@ -118,7 +118,7 @@ export default function AutoevalViewerDialog({ open, onOpenChange, cedula, fase 
                 );
               })}
             </div>
-          </ScrollArea>
+          </div>
         )}
       </DialogContent>
     </Dialog>
