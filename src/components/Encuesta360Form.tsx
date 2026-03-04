@@ -396,9 +396,10 @@ function DirectivoSelect({
 // ══════════════════════════════════════════════════════════════
 interface Encuesta360FormProps {
   config: SurveyFormConfig;
+  fase?: "inicial" | "final";
 }
 
-export default function Encuesta360Form({ config }: Encuesta360FormProps) {
+export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) {
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
   const { toast } = useToast();
@@ -481,6 +482,7 @@ export default function Encuesta360Form({ config }: Encuesta360FormProps) {
         institucion_educativa: institucion,
         cargo_directivo: cargoDirectivo,
         respuestas: answers,
+        fase: fase ?? "inicial",
       };
 
       if (config.isAutoeval) {

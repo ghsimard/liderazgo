@@ -460,6 +460,19 @@ Cette colonne est utilisée pour :
 
 **Migration Render** : La colonne est ajoutée automatiquement par `schema.sql` via `ADD COLUMN IF NOT EXISTS`.
 
+### Routes formulaires finales
+
+| Route | Description |
+|---|---|
+| `/formulario-360-final-acudiente` | Encuesta 360° final — Acudiente |
+| `/formulario-360-final-administrativo` | Encuesta 360° final — Administrativo |
+| `/formulario-360-final-autoevaluacion` | Encuesta 360° final — Autoevaluación |
+| `/formulario-360-final-directivo` | Encuesta 360° final — Directivo |
+| `/formulario-360-final-docente` | Encuesta 360° final — Docente |
+| `/formulario-360-final-estudiante` | Encuesta 360° final — Estudiante |
+
+Ces formulaires réutilisent le composant `Encuesta360Form` avec la prop `fase="final"`.
+
 ---
 
 ## 9. Annexe — Inventaire complet des fichiers

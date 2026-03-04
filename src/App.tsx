@@ -22,6 +22,12 @@ const Encuesta360Autoevaluacion = lazy(() => import("./pages/Encuesta360Autoeval
 const Encuesta360Directivo = lazy(() => import("./pages/Encuesta360Directivo"));
 const Encuesta360Docente = lazy(() => import("./pages/Encuesta360Docente"));
 const Encuesta360Estudiante = lazy(() => import("./pages/Encuesta360Estudiante"));
+const Encuesta360FinalAcudiente = lazy(() => import("./pages/Encuesta360FinalAcudiente"));
+const Encuesta360FinalAdministrativo = lazy(() => import("./pages/Encuesta360FinalAdministrativo"));
+const Encuesta360FinalAutoevaluacion = lazy(() => import("./pages/Encuesta360FinalAutoevaluacion"));
+const Encuesta360FinalDirectivo = lazy(() => import("./pages/Encuesta360FinalDirectivo"));
+const Encuesta360FinalDocente = lazy(() => import("./pages/Encuesta360FinalDocente"));
+const Encuesta360FinalEstudiante = lazy(() => import("./pages/Encuesta360FinalEstudiante"));
 const RubricaEvaluacion = lazy(() => import("./pages/RubricaEvaluacion"));
 const DerechosContacto = lazy(() => import("./pages/DerechosContacto"));
 const Contacto = lazy(() => import("./pages/Contacto"));
@@ -61,6 +67,14 @@ const App = () => (
                 <Route path="/formulario-360-directivo" element={<Encuesta360Directivo />} />
                 <Route path="/formulario-360-docente" element={<Encuesta360Docente />} />
                 <Route path="/formulario-360-estudiante" element={<Encuesta360Estudiante />} />
+
+                {/* 360° Final Survey Forms */}
+                <Route path="/formulario-360-final-acudiente" element={<Encuesta360FinalAcudiente />} />
+                <Route path="/formulario-360-final-administrativo" element={<Encuesta360FinalAdministrativo />} />
+                <Route path="/formulario-360-final-autoevaluacion" element={<Encuesta360FinalAutoevaluacion />} />
+                <Route path="/formulario-360-final-directivo" element={<Encuesta360FinalDirectivo />} />
+                <Route path="/formulario-360-final-docente" element={<Encuesta360FinalDocente />} />
+                <Route path="/formulario-360-final-estudiante" element={<Encuesta360FinalEstudiante />} />
 
                 {/* Rubrica Evaluation */}
                 <Route path="/rubrica-evaluacion" element={<RubricaEvaluacion />} />
