@@ -115,6 +115,7 @@ export default function ShareEncuestaDialog({
             <div style="background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 16px; margin: 16px 0; text-align: center;">
               <p style="margin: 0; font-size: 18px; font-weight: bold; color: #856404;">
                 ⚠️ Este formulario debe ser diligenciado <u>únicamente</u> por: <span style="font-size: 22px; color: #1a1a2e;">${formLabel}</span>
+                <br/><span style="font-size: 16px;">en relación con la institución <strong>${institucion}</strong></span>
               </p>
             </div>
             <p>Estimado/a evaluador/a,</p>
