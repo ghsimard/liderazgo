@@ -1147,6 +1147,10 @@ export type Database = {
       }
       get_invitaciones_directivo: { Args: { p_cedula: string }; Returns: Json }
       get_invitation_by_token: { Args: { p_token: string }; Returns: Json }
+      get_own_autoevaluacion: {
+        Args: { p_cedula: string; p_fase?: string }
+        Returns: Json
+      }
       get_table_columns: {
         Args: { table_names: string[] }
         Returns: {
