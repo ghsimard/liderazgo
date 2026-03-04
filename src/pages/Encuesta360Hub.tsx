@@ -133,22 +133,37 @@ export default function Encuesta360Hub() {
     })();
   }, [loadInvitations]);
 
-  const buildShareUrl = (path: string) => {
-    if (!directivoInfo) return `${window.location.origin}${path}`;
-    const params = new URLSearchParams({
-      nombre_directivo: directivoInfo.nombre,
-      institucion: directivoInfo.institucion,
-    });
-    return `${window.location.origin}${path}?${params.toString()}`;
-  };
+  const [copyingLink, setCopyingLink] = useState<string | null>(null);
 
-  const handleCopyUrl = async (path: string, label: string) => {
-    const url = buildShareUrl(path);
+  const handleCopyUrl = async (path: string, label: string, tipo: string) => {
+    if (!directivoInfo) return;
+    setCopyingLink(tipo);
     try {
+      // Create an invitation record (same as email flow) to get a secure token
+      const { data: invitation, error } = await supabase
+        .from("encuesta_invitaciones")
+        .insert({
+          directivo_cedula: directivoInfo.cedula,
+          directivo_nombre: directivoInfo.nombre,
+          institucion: directivoInfo.institucion,
+          email_destinatario: "enlace-copiado",
+          tipo_formulario: tipo,
+          fase: "inicial",
+        })
+        .select("token")
+        .single();
+
+      if (error || !invitation?.token) {
+        throw new Error("No se pudo generar el enlace");
+      }
+
+      const url = `${window.location.origin}${path}?token=${invitation.token}`;
       await navigator.clipboard.writeText(url);
       toast({ title: "Enlace copiado", description: `Enlace del formulario "${label}" copiado al portapapeles.` });
-    } catch {
-      toast({ title: "Error", description: "No se pudo copiar el enlace.", variant: "destructive" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "No se pudo copiar el enlace.", variant: "destructive" });
+    } finally {
+      setCopyingLink(null);
     }
   };
 
@@ -266,7 +281,11 @@ export default function Encuesta360Hub() {
                         if (form.isAutoeval) {
                           navigate(form.path);
                         } else {
-                          navigate(buildShareUrl(form.path).replace(window.location.origin, ""));
+                          const params = new URLSearchParams({
+                            nombre_directivo: directivoInfo?.nombre || "",
+                            institucion: directivoInfo?.institucion || "",
+                          });
+                          navigate(`${form.path}?${params.toString()}`);
                         }
                       }}
                     >
@@ -292,7 +311,7 @@ export default function Encuesta360Hub() {
                       <>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="shrink-0 h-10 w-10" onClick={() => handleCopyUrl(form.path, form.label)}>
+                            <Button variant="ghost" size="icon" className="shrink-0 h-10 w-10" disabled={copyingLink === form.tipo} onClick={() => handleCopyUrl(form.path, form.label, form.tipo)}>
                               <Copy className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </TooltipTrigger>
@@ -398,7 +417,7 @@ export default function Encuesta360Hub() {
           open={shareDialogOpen}
           onOpenChange={setShareDialogOpen}
           formLabel={shareForm.label}
-          formUrl={buildShareUrl(shareForm.path)}
+          formUrl={`${window.location.origin}${shareForm.path}`}
           formPath={shareForm.path}
           tipoFormulario={shareForm.tipo}
           directivoNombre={directivoInfo.nombre}
