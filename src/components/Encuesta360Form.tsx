@@ -234,12 +234,14 @@ function SurveyWizard({
   onAnswer,
   errors,
   onComplete,
+  submitting = false,
 }: {
   sections: WizardSection[];
   answers: Record<string, string>;
   onAnswer: (num: number, val: string) => void;
   errors: Set<number>;
   onComplete: () => void;
+  submitting?: boolean;
 }) {
   const allItems = sections.flatMap((s) =>
     s.items.map((item) => ({ ...item, options: s.options, instruction: s.instruction, sectionLabel: s.label }))
@@ -425,18 +427,31 @@ function SurveyWizard({
       </div>
 
       {/* Confirmation dialog */}
-      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+      <AlertDialog open={showConfirm} onOpenChange={(open) => { if (!submitting) setShowConfirm(open); }}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Desea enviar sus respuestas?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Ha respondido {answeredCount} de {total} preguntas. Una vez enviadas, no podrá modificar sus respuestas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Revisar respuestas</AlertDialogCancel>
-            <AlertDialogAction onClick={onComplete}>Sí, enviar</AlertDialogAction>
-          </AlertDialogFooter>
+          {submitting ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-4">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+                className="w-12 h-12 rounded-full border-4 border-muted border-t-primary"
+              />
+              <p className="text-sm text-muted-foreground animate-pulse">Enviando sus respuestas…</p>
+            </div>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Desea enviar sus respuestas?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Ha respondido {answeredCount} de {total} preguntas. Una vez enviadas, no podrá modificar sus respuestas.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Revisar respuestas</AlertDialogCancel>
+                <AlertDialogAction onClick={onComplete}>Sí, enviar</AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </div>
@@ -975,16 +990,8 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
           onAnswer={handleAnswer}
           errors={itemErrors}
           onComplete={handleSubmit}
+          submitting={submitting}
         />
-
-        {/* Submit button shown below wizard when submitting */}
-        {submitting && (
-          <div className="flex justify-center pb-8">
-            <Button size="lg" disabled className="gap-2 min-w-[200px]">
-              <RefreshCw className="w-4 h-4 animate-spin" /> Enviando…
-            </Button>
-          </div>
-        )}
       </main>
     </div>
   );
