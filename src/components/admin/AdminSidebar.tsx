@@ -33,11 +33,11 @@ interface SidebarItem {
   label: string;
   icon: React.ElementType;
   superadminOnly?: boolean;
+  linkUrl?: string; // renders as a copyable link instead of a tab
 }
 
 interface SidebarSection {
   label: string;
-  copyUrl?: string;
   items: SidebarItem[];
 }
 
@@ -50,8 +50,8 @@ const sections: SidebarSection[] = [
   },
   {
     label: "Fichas RLT",
-    copyUrl: "https://884bdecf-dfd4-47e7-ac2b-4a0fa0ab7c80.lovableproject.com/",
     items: [
+      { tab: "enlace-ficha", label: "Enlace Ficha", icon: Link2, linkUrl: "https://884bdecf-dfd4-47e7-ac2b-4a0fa0ab7c80.lovableproject.com/" },
       { tab: "fichas", label: "Lista", icon: FileText },
       { tab: "geography", label: "Regiones", icon: MapPin },
     ],
@@ -140,22 +140,7 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                 <CollapsibleTrigger asChild>
                   <SidebarGroupLabel className="cursor-pointer select-none flex items-center justify-between pr-2 hover:bg-muted/50 rounded-md transition-colors">
                     <span>{section.label}</span>
-                    <span className="flex items-center gap-1">
-                      {!collapsed && section.copyUrl && (
-                        <button
-                          onClick={(e) => handleCopyUrl(e, section.copyUrl!, section.label)}
-                          className="p-0.5 rounded hover:bg-muted/80 transition-colors"
-                          title="Copiar enlace"
-                        >
-                          {copiedTab === section.label ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-600" />
-                          ) : (
-                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                          )}
-                        </button>
-                      )}
-                      {!collapsed && <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-0 group-data-[state=closed]:-rotate-90" />}
-                    </span>
+                    {!collapsed && <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-0 group-data-[state=closed]:-rotate-90" />}
                   </SidebarGroupLabel>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -163,6 +148,37 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                     <SidebarMenu>
                       {visibleItems.map((item) => {
                         const Icon = item.icon;
+                        if (item.linkUrl) {
+                          return (
+                            <SidebarMenuItem key={item.tab}>
+                              <SidebarMenuButton
+                                asChild
+                                tooltip={item.label}
+                                className="cursor-pointer"
+                              >
+                                <a href={item.linkUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                                  <Icon className="h-4 w-4 shrink-0" />
+                                  {!collapsed && (
+                                    <span className="flex items-center gap-1.5 flex-1">
+                                      {item.label}
+                                      <button
+                                        onClick={(e) => handleCopyUrl(e, item.linkUrl!, item.tab)}
+                                        className="ml-auto p-0.5 rounded hover:bg-muted/80 transition-colors"
+                                        title="Copiar enlace"
+                                      >
+                                        {copiedTab === item.tab ? (
+                                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                        ) : (
+                                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                        )}
+                                      </button>
+                                    </span>
+                                  )}
+                                </a>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          );
+                        }
                         const active = activeTab === item.tab;
                         return (
                           <SidebarMenuItem key={item.tab}>
