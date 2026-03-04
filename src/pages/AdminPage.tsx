@@ -4,11 +4,13 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, UserCheck, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, getToken } from "@/utils/apiFetch";
 import { supabase as cloudClient } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminFichasTab from "@/components/admin/AdminFichasTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminGeographyTab from "@/components/admin/AdminGeographyTab";
@@ -20,7 +22,6 @@ import AdminCompetencyWizard from "@/components/admin/AdminCompetencyWizard";
 import AdminTrashManager from "@/components/admin/AdminTrashManager";
 import AdminReporte360Tab from "@/components/admin/AdminReporte360Tab";
 import AdminEncuestas360Tab from "@/components/admin/AdminEncuestas360Tab";
-
 import AdminRubricasTab from "@/components/admin/AdminRubricasTab";
 import AdminMensajesTab from "@/components/admin/AdminMensajesTab";
 import AdminReviewsTab from "@/components/admin/AdminReviewsTab";
@@ -124,6 +125,98 @@ function FormCard({ form }: { form: FormItem }) {
   );
 }
 
+function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperAdmin: boolean }) {
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
+
+  switch (activeTab) {
+    case "formularios":
+      return (
+        <div className="space-y-8">
+          <p className="text-sm text-muted-foreground">Copia el enlace de cada formulario para compartirlo.</p>
+          {categories.map((cat) => (
+            <section key={cat.title} className="space-y-4">
+              <h3 className="text-base font-semibold border-b pb-2">{cat.title}</h3>
+              {cat.forms && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {cat.forms.map((f) => <FormCard key={f.path} form={f} />)}
+                </div>
+              )}
+              {cat.subcategories?.map((sub) => (
+                <div key={sub.title} className="space-y-2 pl-4 border-l-2 border-primary/20">
+                  <h4 className="text-sm font-medium text-muted-foreground">{sub.title}</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {sub.forms.map((f) => <FormCard key={f.path} form={f} />)}
+                  </div>
+                </div>
+              ))}
+            </section>
+          ))}
+        </div>
+      );
+
+    case "fichas":
+      return <AdminFichasTab />;
+
+    case "geography":
+      return <AdminGeographyTab />;
+
+    case "ponderaciones":
+      return (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-muted-foreground">Gestión completa de competencias 360°</h3>
+            <Button size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
+              <Plus className="w-4 h-4" /> Asistente de creación
+            </Button>
+          </div>
+          <AdminCompetencyWizard
+            open={wizardOpen}
+            onOpenChange={setWizardOpen}
+            onComplete={() => setWizardRefreshKey((k) => k + 1)}
+          />
+          <Tabs defaultValue="dominios">
+            <TabsList className="mb-4 flex-wrap h-auto gap-1">
+              <TabsTrigger value="dominios" className="gap-1.5"><Layers className="w-4 h-4" /> Dominios</TabsTrigger>
+              <TabsTrigger value="competencias" className="gap-1.5"><ListTree className="w-4 h-4" /> Competencias</TabsTrigger>
+              <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
+              <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
+              <TabsTrigger value="papelera" className="gap-1.5"><Trash2 className="w-4 h-4" /> Papelera</TabsTrigger>
+            </TabsList>
+            <TabsContent value="dominios"><AdminDomainsManager key={wizardRefreshKey} /></TabsContent>
+            <TabsContent value="competencias"><AdminCompetenciesManager key={wizardRefreshKey} /></TabsContent>
+            <TabsContent value="items"><AdminItemsManager key={wizardRefreshKey} /></TabsContent>
+            <TabsContent value="pesos"><AdminWeightsTab key={wizardRefreshKey} /></TabsContent>
+            <TabsContent value="papelera"><AdminTrashManager /></TabsContent>
+          </Tabs>
+        </>
+      );
+
+    case "encuestas360":
+      return <AdminEncuestas360Tab fase="inicial" />;
+    case "reportes360":
+      return <AdminReporte360Tab fase="inicial" />;
+    case "encuestas360final":
+      return <AdminEncuestas360Tab fase="final" />;
+    case "reportes360final":
+      return <AdminReporte360Tab fase="final" />;
+    case "users":
+      return <AdminUsersTab isSuperAdmin={isSuperAdmin} />;
+    case "mel":
+      return <AdminMelTab />;
+    case "rubricas":
+      return <AdminRubricasTab />;
+    case "reviews":
+      return isSuperAdmin ? <AdminReviewsTab /> : null;
+    case "mensajes":
+      return isSuperAdmin ? <AdminMensajesTab /> : null;
+    case "changelog":
+      return isSuperAdmin ? <AdminChangelogTab /> : null;
+    default:
+      return null;
+  }
+}
+
 export default function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { isAdmin, isSuperAdmin, signOut } = useAdminAuth();
@@ -132,10 +225,12 @@ export default function AdminPage() {
   const logoRLT = images.logo_rlt_noletters;
   const logoCLT = images.logo_clt_noletters;
   const [exporting, setExporting] = useState(false);
-  const [wizardOpen, setWizardOpen] = useState(false);
-  const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
-  const [showMensajes, setShowMensajes] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "formularios");
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
 
   const handleExportDB = async () => {
     setExporting(true);
@@ -145,14 +240,12 @@ export default function AdminPage() {
       if (USE_EXPRESS) {
         const token = getToken();
         if (!token) throw new Error("Session admin expirée. Reconnectez-vous.");
-
         const { data, error } = await apiFetch<string>("/api/export");
         if (error || !data) throw new Error(error || "Aucune donnée exportée.");
         blob = new Blob([data], { type: "application/sql" });
       } else {
         const { data, error } = await cloudClient.functions.invoke("export-database");
         if (error) throw new Error(error.message || "Échec de l'export.");
-
         if (data instanceof Blob) {
           blob = data;
         } else if (typeof data === "string") {
@@ -185,139 +278,37 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="bg-primary text-primary-foreground sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <img src={logoRLT} alt="RLT" className="h-9" />
-            <img src={logoCLT} alt="CLT" className="h-9" />
-            <h1 className="font-semibold text-base leading-tight">Panel de Administración</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            {isSuperAdmin && (
-              <Button variant="outline" size="sm" onClick={() => setShowMensajes(!showMensajes)} className={`gap-1.5 border-primary-foreground !text-primary-foreground hover:bg-primary-foreground/20 ${showMensajes ? "bg-primary-foreground/20" : "bg-primary-foreground/10"}`}>
-                <MessageSquare className="w-4 h-4" /> Mensajes
-              </Button>
-            )}
-            {isSuperAdmin && (
-              <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5 bg-primary-foreground/10 border-primary-foreground !text-primary-foreground hover:bg-primary-foreground/20">
-                <DatabaseBackup className="w-4 h-4" /> {exporting ? "Exportando…" : "Export SQL"}
-              </Button>
-            )}
-            <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5 text-primary-foreground hover:bg-primary-foreground/10">
-              <LogOut className="w-4 h-4" /> Salir
-            </Button>
-          </div>
+    <SidebarProvider defaultOpen={true}>
+      <div className="min-h-screen flex w-full bg-muted/20">
+        <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} isSuperAdmin={isSuperAdmin} />
+
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="bg-primary text-primary-foreground sticky top-0 z-10">
+            <div className="px-4 py-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="text-primary-foreground hover:bg-primary-foreground/10" />
+                <img src={logoRLT} alt="RLT" className="h-9" />
+                <img src={logoCLT} alt="CLT" className="h-9" />
+                <h1 className="font-semibold text-base leading-tight hidden sm:block">Panel de Administración</h1>
+              </div>
+              <div className="flex items-center gap-2">
+                {isSuperAdmin && (
+                  <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5 bg-primary-foreground/10 border-primary-foreground !text-primary-foreground hover:bg-primary-foreground/20">
+                    <DatabaseBackup className="w-4 h-4" /> {exporting ? "Exportando…" : "Export SQL"}
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5 text-primary-foreground hover:bg-primary-foreground/10">
+                  <LogOut className="w-4 h-4" /> Salir
+                </Button>
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1 p-4 md:p-6">
+            <AdminContent activeTab={activeTab} isSuperAdmin={isSuperAdmin} />
+          </main>
         </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchParams({ tab: v }); }}>
-          <TabsList className="mb-4 flex-wrap h-auto gap-1 [&>button[data-state=active]]:bg-primary [&>button[data-state=active]]:text-primary-foreground">
-            <TabsTrigger value="formularios" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Formularios</TabsTrigger>
-            <TabsTrigger value="fichas" className="gap-1.5"><FileText className="w-4 h-4" /> Fichas Gestión</TabsTrigger>
-            <TabsTrigger value="ponderaciones" className="gap-1.5"><Settings2 className="w-4 h-4" /> Config 360°</TabsTrigger>
-            <TabsTrigger value="encuestas360" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Encuestas 360° Inicial</TabsTrigger>
-            <TabsTrigger value="reportes360" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Informes 360° Inicial</TabsTrigger>
-            <TabsTrigger value="encuestas360final" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Encuestas 360° Final</TabsTrigger>
-            <TabsTrigger value="reportes360final" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Informes 360° Final</TabsTrigger>
-            <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
-            
-            <TabsTrigger value="mel" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Análisis MEL</TabsTrigger>
-            <TabsTrigger value="rubricas" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Rúbricas</TabsTrigger>
-            {isSuperAdmin && (
-              <TabsTrigger value="reviews" className="gap-1.5"><Star className="w-4 h-4" /> Apreciaciones</TabsTrigger>
-            )}
-            {isSuperAdmin && (
-              <TabsTrigger value="changelog" className="gap-1.5"><GitCommit className="w-4 h-4" /> Changelog</TabsTrigger>
-            )}
-          </TabsList>
-          <TabsContent value="formularios">
-            <div className="space-y-8">
-              <p className="text-sm text-muted-foreground">Copia el enlace de cada formulario para compartirlo.</p>
-              {categories.map((cat) => (
-                <section key={cat.title} className="space-y-4">
-                  <h3 className="text-base font-semibold border-b pb-2">{cat.title}</h3>
-                  {cat.forms && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {cat.forms.map((f) => <FormCard key={f.path} form={f} />)}
-                    </div>
-                  )}
-                  {cat.subcategories?.map((sub) => (
-                    <div key={sub.title} className="space-y-2 pl-4 border-l-2 border-primary/20">
-                      <h4 className="text-sm font-medium text-muted-foreground">{sub.title}</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {sub.forms.map((f) => <FormCard key={f.path} form={f} />)}
-                      </div>
-                    </div>
-                  ))}
-                </section>
-              ))}
-            </div>
-          </TabsContent>
-          <TabsContent value="fichas">
-            <Tabs defaultValue="lista">
-              <TabsList className="mb-4">
-                <TabsTrigger value="lista" className="gap-1.5"><FileText className="w-4 h-4" /> Lista de Fichas</TabsTrigger>
-                <TabsTrigger value="geography" className="gap-1.5"><MapPin className="w-4 h-4" /> Configuración de Región</TabsTrigger>
-              </TabsList>
-              <TabsContent value="lista"><AdminFichasTab /></TabsContent>
-              <TabsContent value="geography"><AdminGeographyTab /></TabsContent>
-            </Tabs>
-          </TabsContent>
-          <TabsContent value="ponderaciones">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-muted-foreground">Gestión completa de competencias 360°</h3>
-              <Button size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
-                <Plus className="w-4 h-4" /> Asistente de creación
-              </Button>
-            </div>
-            <AdminCompetencyWizard
-              open={wizardOpen}
-              onOpenChange={setWizardOpen}
-              onComplete={() => setWizardRefreshKey((k) => k + 1)}
-            />
-            <Tabs defaultValue="dominios">
-              <TabsList className="mb-4 flex-wrap h-auto gap-1">
-                <TabsTrigger value="dominios" className="gap-1.5"><Layers className="w-4 h-4" /> Dominios</TabsTrigger>
-                <TabsTrigger value="competencias" className="gap-1.5"><ListTree className="w-4 h-4" /> Competencias</TabsTrigger>
-                <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
-                <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
-                <TabsTrigger value="papelera" className="gap-1.5"><Trash2 className="w-4 h-4" /> Papelera</TabsTrigger>
-              </TabsList>
-              <TabsContent value="dominios"><AdminDomainsManager key={wizardRefreshKey} /></TabsContent>
-              <TabsContent value="competencias"><AdminCompetenciesManager key={wizardRefreshKey} /></TabsContent>
-              <TabsContent value="items"><AdminItemsManager key={wizardRefreshKey} /></TabsContent>
-              <TabsContent value="pesos"><AdminWeightsTab key={wizardRefreshKey} /></TabsContent>
-              <TabsContent value="papelera"><AdminTrashManager /></TabsContent>
-            </Tabs>
-          </TabsContent>
-          <TabsContent value="encuestas360"><AdminEncuestas360Tab fase="inicial" /></TabsContent>
-          <TabsContent value="reportes360"><AdminReporte360Tab fase="inicial" /></TabsContent>
-          <TabsContent value="encuestas360final"><AdminEncuestas360Tab fase="final" /></TabsContent>
-          <TabsContent value="reportes360final"><AdminReporte360Tab fase="final" /></TabsContent>
-          <TabsContent value="users"><AdminUsersTab isSuperAdmin={isSuperAdmin} /></TabsContent>
-          
-          <TabsContent value="mel"><AdminMelTab /></TabsContent>
-          <TabsContent value="rubricas"><AdminRubricasTab /></TabsContent>
-          {isSuperAdmin && (
-            <TabsContent value="reviews"><AdminReviewsTab /></TabsContent>
-          )}
-          {isSuperAdmin && (
-            <TabsContent value="changelog"><AdminChangelogTab /></TabsContent>
-          )}
-        </Tabs>
-
-        {/* Mensajes panel — shown/hidden via header button */}
-        {isSuperAdmin && showMensajes && (
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" /> Mensajes y Sugerencias
-            </h2>
-            <AdminMensajesTab />
-          </div>
-        )}
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
