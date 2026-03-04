@@ -16,7 +16,7 @@ export interface AggregatedMel {
   countPositiveObs: number;
   avgDeltaAuto: number;
   avgDeltaObserver: number;
-  domainDeltas: { domain: string; domainLabel: string; avgDeltaAuto: number; avgDeltaInternos: number; avgDeltaExternos: number }[];
+  domainDeltas: { domain: string; domainLabel: string; avgDeltaAuto: number; avgDeltaInternos: number; avgDeltaExternos: number; avgInicialAuto: number; avgInicialInternos: number; avgInicialExternos: number }[];
   competencyDeltas: { competency: string; competencyLabel: string; avgInicialAuto: number; avgFinalAuto: number; avgDeltaAuto: number; avgInicialObs: number; avgFinalObs: number; avgDeltaObs: number }[];
   /** % de directivos con incremento por dominio - autoevaluación */
   domainIncrementPcts: DomainIncrementPct[];

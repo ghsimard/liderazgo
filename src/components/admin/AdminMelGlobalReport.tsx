@@ -22,14 +22,15 @@ interface DirectivoOption {
   entidad_territorial: string;
 }
 
-function DeltaBadge({ value }: { value: number }) {
+function DeltaBadge({ value, pct }: { value: number; pct?: number | null }) {
+  const pctStr = pct !== undefined && pct !== null && isFinite(pct) ? ` (${pct > 0 ? "+" : ""}${pct.toFixed(1)}%)` : "";
   if (Math.abs(value) < 0.01) {
-    return <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Minus className="w-3 h-3" /> 0.00</span>;
+    return <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Minus className="w-3 h-3" /> 0.00{pctStr}</span>;
   }
   if (value > 0) {
-    return <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium"><TrendingUp className="w-3 h-3" /> +{value.toFixed(2)}</span>;
+    return <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium"><TrendingUp className="w-3 h-3" /> +{value.toFixed(2)}{pctStr}</span>;
   }
-  return <span className="inline-flex items-center gap-1 text-xs text-destructive font-medium"><TrendingDown className="w-3 h-3" /> {value.toFixed(2)}</span>;
+  return <span className="inline-flex items-center gap-1 text-xs text-destructive font-medium"><TrendingDown className="w-3 h-3" /> {value.toFixed(2)}{pctStr}</span>;
 }
 
 function aggregate(results: MelAnalysisData[]): AggregatedMel {
@@ -39,15 +40,18 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
   const avgDeltaAuto = bothPhases.length > 0 ? bothPhases.reduce((s, r) => s + r.globalDeltaAuto, 0) / bothPhases.length : 0;
   const avgDeltaObserver = bothPhases.length > 0 ? bothPhases.reduce((s, r) => s + r.globalDeltaObserver, 0) / bothPhases.length : 0;
 
-  const domainMap = new Map<string, { label: string; sumAuto: number; sumInt: number; sumExt: number; n: number }>();
+  const domainMap = new Map<string, { label: string; sumAuto: number; sumInt: number; sumExt: number; sumIniAuto: number; sumIniInt: number; sumIniExt: number; n: number }>();
   // Track per-domain positive increments (auto, internos, externos)
   const domainPosMap = new Map<string, { label: string; posAuto: number; posInt: number; posExt: number; total: number }>();
   for (const r of bothPhases) {
     for (const d of r.domainDeltas) {
-      const entry = domainMap.get(d.domain) || { label: d.domainLabel, sumAuto: 0, sumInt: 0, sumExt: 0, n: 0 };
+      const entry = domainMap.get(d.domain) || { label: d.domainLabel, sumAuto: 0, sumInt: 0, sumExt: 0, sumIniAuto: 0, sumIniInt: 0, sumIniExt: 0, n: 0 };
       entry.sumAuto += d.deltaAuto;
       entry.sumInt += d.deltaInternos;
       entry.sumExt += d.deltaExternos;
+      entry.sumIniAuto += d.inicialAuto;
+      entry.sumIniInt += d.inicialInternos;
+      entry.sumIniExt += d.inicialExternos;
       entry.n++;
       domainMap.set(d.domain, entry);
 
@@ -65,6 +69,9 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
     avgDeltaAuto: v.n > 0 ? v.sumAuto / v.n : 0,
     avgDeltaInternos: v.n > 0 ? v.sumInt / v.n : 0,
     avgDeltaExternos: v.n > 0 ? v.sumExt / v.n : 0,
+    avgInicialAuto: v.n > 0 ? v.sumIniAuto / v.n : 0,
+    avgInicialInternos: v.n > 0 ? v.sumIniInt / v.n : 0,
+    avgInicialExternos: v.n > 0 ? v.sumIniExt / v.n : 0,
   }));
 
   const buildPcts = (getter: (e: { posAuto: number; posInt: number; posExt: number; total: number }) => number) =>
@@ -444,9 +451,9 @@ export default function AdminMelGlobalReport({ directivos, filterLabel }: { dire
               {agg.domainDeltas.map((d) => (
                 <TableRow key={d.domain}>
                   <TableCell className="text-sm font-medium">{d.domainLabel}</TableCell>
-                  <TableCell className="text-center"><DeltaBadge value={d.avgDeltaAuto} /></TableCell>
-                  <TableCell className="text-center"><DeltaBadge value={d.avgDeltaInternos} /></TableCell>
-                  <TableCell className="text-center"><DeltaBadge value={d.avgDeltaExternos} /></TableCell>
+                  <TableCell className="text-center"><DeltaBadge value={d.avgDeltaAuto} pct={d.avgInicialAuto ? (d.avgDeltaAuto / d.avgInicialAuto) * 100 : null} /></TableCell>
+                  <TableCell className="text-center"><DeltaBadge value={d.avgDeltaInternos} pct={d.avgInicialInternos ? (d.avgDeltaInternos / d.avgInicialInternos) * 100 : null} /></TableCell>
+                  <TableCell className="text-center"><DeltaBadge value={d.avgDeltaExternos} pct={d.avgInicialExternos ? (d.avgDeltaExternos / d.avgInicialExternos) * 100 : null} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -520,10 +527,10 @@ export default function AdminMelGlobalReport({ directivos, filterLabel }: { dire
                   <TableCell className="text-sm">{c.competencyLabel}</TableCell>
                   <TableCell className="text-center text-xs">{c.avgInicialAuto.toFixed(2)}</TableCell>
                   <TableCell className="text-center text-xs">{c.avgFinalAuto.toFixed(2)}</TableCell>
-                  <TableCell className="text-center"><DeltaBadge value={c.avgDeltaAuto} /></TableCell>
+                  <TableCell className="text-center"><DeltaBadge value={c.avgDeltaAuto} pct={c.avgInicialAuto ? (c.avgDeltaAuto / c.avgInicialAuto) * 100 : null} /></TableCell>
                   <TableCell className="text-center text-xs">{c.avgInicialObs.toFixed(2)}</TableCell>
                   <TableCell className="text-center text-xs">{c.avgFinalObs.toFixed(2)}</TableCell>
-                  <TableCell className="text-center"><DeltaBadge value={c.avgDeltaObs} /></TableCell>
+                  <TableCell className="text-center"><DeltaBadge value={c.avgDeltaObs} pct={c.avgInicialObs ? (c.avgDeltaObs / c.avgInicialObs) * 100 : null} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
