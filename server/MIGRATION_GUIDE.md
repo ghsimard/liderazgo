@@ -1,6 +1,6 @@
 # Guide de Migration : Supabase → Render (PostgreSQL + Express)
 
-> Document généré le 25 février 2026 — Mis à jour le 25 février 2026  
+> Document généré le 25 février 2026 — Mis à jour le 4 mars 2026  
 > Projet : RLT Ficha / Encuestas 360°
 
 ---
@@ -443,6 +443,22 @@ Vérifier que ces dépendances sont présentes :
 - [ ] Gestion géographique fonctionne
 - [ ] Gestion Config 360° (domaines, compétences, items, poids) fonctionne
 - [ ] Corbeille (suppression, restauration, purge) fonctionne
+
+---
+
+## 10. Colonne `fase` sur `encuestas_360`
+
+La table `encuestas_360` dispose d'une colonne `fase` (type `TEXT`, défaut `'inicial'`) qui distingue les évaluations initiales des évaluations finales du programme de formation. Les valeurs possibles sont :
+
+- `'inicial'` — Évaluation de départ (début du programme)
+- `'final'` — Évaluation de fin (après le programme de formation)
+
+Cette colonne est utilisée pour :
+1. Filtrer les encuestas par phase dans le panneau d'administration
+2. Calculer les rapports 360° par phase
+3. Générer les analyses comparatives MEL (Monitoring, Evaluation & Learning)
+
+**Migration Render** : La colonne est ajoutée automatiquement par `schema.sql` via `ADD COLUMN IF NOT EXISTS`.
 
 ---
 

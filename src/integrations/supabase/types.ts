@@ -237,6 +237,7 @@ export type Database = {
           cedula_directivo: string | null
           created_at: string
           dias_contacto: string | null
+          fase: string
           grado_estudiante: string | null
           id: string
           institucion_educativa: string
@@ -252,6 +253,7 @@ export type Database = {
           cedula_directivo?: string | null
           created_at?: string
           dias_contacto?: string | null
+          fase?: string
           grado_estudiante?: string | null
           id?: string
           institucion_educativa: string
@@ -267,6 +269,7 @@ export type Database = {
           cedula_directivo?: string | null
           created_at?: string
           dias_contacto?: string | null
+          fase?: string
           grado_estudiante?: string | null
           id?: string
           institucion_educativa?: string

@@ -264,6 +264,13 @@ VALUES ('review_modal_enabled', 'true')
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================
+-- Phase column on encuestas_360
+-- ============================================================
+
+ALTER TABLE public.encuestas_360 ADD COLUMN IF NOT EXISTS fase TEXT NOT NULL DEFAULT 'inicial';
+CREATE INDEX IF NOT EXISTS idx_encuestas_360_fase ON public.encuestas_360(fase);
+
+-- ============================================================
 -- Unique constraint on cedula (fichas_rlt)
 -- ============================================================
 
