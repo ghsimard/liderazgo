@@ -5,7 +5,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle2, ClipboardList, FileText, Loader2, User } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardCheck, ClipboardList, FileText, Loader2, User } from "lucide-react";
 
 import { genderizeRole } from "@/utils/genderizeRole";
 
@@ -201,7 +201,7 @@ export default function MiPanel() {
                       navigate(`/rubrica-evaluacion?role=directivo`)
                     }
                   >
-                    <ClipboardList className={`h-5 w-5 shrink-0 ${allDone ? "text-white" : "text-primary"}`} />
+                    <ClipboardCheck className={`h-5 w-5 shrink-0 ${allDone ? "text-white" : ""}`} />
                     <div className="text-left flex-1 min-w-0">
                       <div className="font-semibold flex items-center gap-2">
                         Mi Rúbrica de Evaluación
