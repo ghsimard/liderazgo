@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, RefreshCw, ChevronDown, ChevronRight, School, Clock, CheckCircle2, Mail, Search, Link2, LogIn } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Trash2, RefreshCw, ChevronDown, ChevronRight, School, Clock, CheckCircle2, Mail, Search, Link2, LogIn, Columns3, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
@@ -49,6 +51,40 @@ const ACTION_LABELS: Record<string, { label: string; icon: "link" | "login" }> =
   "enlace-copiado": { label: "Enlace copiado", icon: "link" },
 };
 
+type ColumnKey = "destinatario" | "tipo" | "accion" | "fase" | "accesos" | "enviada" | "estado";
+
+const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
+  { key: "destinatario", label: "Destinatario" },
+  { key: "tipo", label: "Tipo" },
+  { key: "accion", label: "Acción" },
+  { key: "fase", label: "Fase" },
+  { key: "accesos", label: "Accesos" },
+  { key: "enviada", label: "Enviada" },
+  { key: "estado", label: "Estado" },
+];
+
+type SortKey = "destinatario" | "tipo" | "accion" | "fase" | "accesos" | "enviada" | "estado";
+type SortDir = "asc" | "desc";
+
+function getActionType(email: string): string {
+  if (email === "acceso-directo") return "acceso-directo";
+  if (email === "enlace-copiado") return "enlace-copiado";
+  return "invitacion";
+}
+
+function getSortValue(inv: Invitation, key: SortKey): string | number {
+  switch (key) {
+    case "destinatario": return inv.email_destinatario.toLowerCase();
+    case "tipo": return inv.tipo_formulario;
+    case "accion": return getActionType(inv.email_destinatario);
+    case "fase": return inv.fase;
+    case "accesos": return inv.access_count;
+    case "enviada": return inv.sent_at;
+    case "estado": return inv.responded_at ? `0_${inv.responded_at}` : "1_pendiente";
+    default: return "";
+  }
+}
+
 export default function AdminInvitacionesTab() {
   const { toast } = useToast();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -56,9 +92,14 @@ export default function AdminInvitacionesTab() {
   const [search, setSearch] = useState("");
   const [faseFilter, setFaseFilter] = useState<string>("todas");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [typeFilter, setTypeFilter] = useState<string>("todos");
+  const [actionFilter, setActionFilter] = useState<string>("todos");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<Invitation | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [visibleCols, setVisibleCols] = useState<Set<ColumnKey>>(new Set(ALL_COLUMNS.map(c => c.key)));
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   useEffect(() => {
     loadInvitations();
@@ -102,18 +143,38 @@ export default function AdminInvitacionesTab() {
     });
   };
 
-  // Filter out internal log entries for display, apply filters
+  const toggleCol = (key: ColumnKey) => {
+    setVisibleCols(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) { if (next.size > 1) next.delete(key); }
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDir === "asc") setSortDir("desc");
+      else { setSortKey(null); setSortDir("asc"); }
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) => {
+    if (sortKey !== col) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-30" />;
+    return sortDir === "asc" ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
+
   const filtered = useMemo(() => {
     let result = [...invitations];
 
-    if (faseFilter !== "todas") {
-      result = result.filter((inv) => inv.fase === faseFilter);
-    }
-    if (statusFilter === "pendientes") {
-      result = result.filter((inv) => !inv.responded_at);
-    } else if (statusFilter === "respondidas") {
-      result = result.filter((inv) => !!inv.responded_at);
-    }
+    if (faseFilter !== "todas") result = result.filter((inv) => inv.fase === faseFilter);
+    if (statusFilter === "pendientes") result = result.filter((inv) => !inv.responded_at);
+    else if (statusFilter === "respondidas") result = result.filter((inv) => !!inv.responded_at);
+    if (typeFilter !== "todos") result = result.filter((inv) => inv.tipo_formulario === typeFilter);
+    if (actionFilter !== "todos") result = result.filter((inv) => getActionType(inv.email_destinatario) === actionFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -123,8 +184,19 @@ export default function AdminInvitacionesTab() {
           inv.email_destinatario.toLowerCase().includes(q)
       );
     }
+
+    // Sort
+    if (sortKey) {
+      result.sort((a, b) => {
+        const va = getSortValue(a, sortKey);
+        const vb = getSortValue(b, sortKey);
+        const cmp = typeof va === "number" && typeof vb === "number" ? va - vb : String(va).localeCompare(String(vb));
+        return sortDir === "asc" ? cmp : -cmp;
+      });
+    }
+
     return result;
-  }, [invitations, faseFilter, statusFilter, search]);
+  }, [invitations, faseFilter, statusFilter, typeFilter, actionFilter, search, sortKey, sortDir]);
 
   // Group by directivo
   const grouped = useMemo(() => {
@@ -153,6 +225,8 @@ export default function AdminInvitacionesTab() {
     );
   }
 
+  const show = (col: ColumnKey) => visibleCols.has(col);
+
   return (
     <div className="space-y-4">
       {/* Summary */}
@@ -171,7 +245,7 @@ export default function AdminInvitacionesTab() {
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
         <Select value={faseFilter} onValueChange={setFaseFilter}>
-          <SelectTrigger className="w-[150px] h-9">
+          <SelectTrigger className="w-[140px] h-9">
             <SelectValue placeholder="Fase" />
           </SelectTrigger>
           <SelectContent>
@@ -181,7 +255,7 @@ export default function AdminInvitacionesTab() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px] h-9">
+          <SelectTrigger className="w-[150px] h-9">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
@@ -190,12 +264,55 @@ export default function AdminInvitacionesTab() {
             <SelectItem value="respondidas">Respondidas</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-[160px] h-9">
+            <SelectValue placeholder="Tipo formulario" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos los tipos</SelectItem>
+            {Object.entries(FORM_TYPE_LABELS).map(([k, v]) => (
+              <SelectItem key={k} value={k}>{v}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={actionFilter} onValueChange={setActionFilter}>
+          <SelectTrigger className="w-[160px] h-9">
+            <SelectValue placeholder="Acción" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas las acciones</SelectItem>
+            <SelectItem value="invitacion">Invitación</SelectItem>
+            <SelectItem value="acceso-directo">Acceso directo</SelectItem>
+            <SelectItem value="enlace-copiado">Enlace copiado</SelectItem>
+          </SelectContent>
+        </Select>
         <Input
           placeholder="Buscar directivo, institución, email…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
         />
+
+        {/* Column visibility */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Columns3 className="w-3.5 h-3.5" /> Columnas
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-2" align="end">
+            {ALL_COLUMNS.map(col => (
+              <label key={col.key} className="flex items-center gap-2 py-1 px-1 hover:bg-muted/50 rounded cursor-pointer text-sm">
+                <Checkbox
+                  checked={visibleCols.has(col.key)}
+                  onCheckedChange={() => toggleCol(col.key)}
+                />
+                {col.label}
+              </label>
+            ))}
+          </PopoverContent>
+        </Popover>
+
         <Button variant="outline" size="sm" onClick={loadInvitations} className="gap-1.5 ml-auto">
           <RefreshCw className="w-3.5 h-3.5" /> Actualizar
         </Button>
@@ -243,94 +360,110 @@ export default function AdminInvitacionesTab() {
               </CardHeader>
               {isOpen && (
                 <CardContent className="px-4 pb-4 pt-0">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-muted/30 text-left">
-                         <th className="px-3 py-1.5 font-medium">Destinatario</th>
-                         <th className="px-3 py-1.5 font-medium">Tipo</th>
-                         <th className="px-3 py-1.5 font-medium">Acción</th>
-                         <th className="px-3 py-1.5 font-medium">Fase</th>
-                         <th className="px-3 py-1.5 font-medium text-center">Accesos</th>
-                         <th className="px-3 py-1.5 font-medium">Enviada</th>
-                         <th className="px-3 py-1.5 font-medium">Estado</th>
-                         <th className="px-3 py-1.5 font-medium w-10"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                       {group.invitations.map((inv) => {
-                         const isResponded = !!inv.responded_at;
-                         const isInternal = INTERNAL_EMAILS.includes(inv.email_destinatario);
-                         const actionInfo = ACTION_LABELS[inv.email_destinatario];
-                         return (
-                           <tr key={inv.id} className={`border-t ${isResponded ? "bg-emerald-50/50" : ""}`}>
-                             <td className="px-3 py-2">
-                               {isInternal ? (
-                                 <span className="text-xs text-muted-foreground italic">—</span>
-                               ) : (
-                                 <div className="flex items-center gap-1.5">
-                                   <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
-                                   <span className="truncate max-w-[200px]">{inv.email_destinatario}</span>
-                                 </div>
-                               )}
-                             </td>
-                             <td className="px-3 py-2">
-                               <Badge variant="secondary" className={`text-xs ${FORM_TYPE_COLORS[inv.tipo_formulario] ?? ""}`}>
-                                 {FORM_TYPE_LABELS[inv.tipo_formulario] ?? inv.tipo_formulario}
-                               </Badge>
-                             </td>
-                             <td className="px-3 py-2">
-                               {actionInfo ? (
-                                 <Badge variant="outline" className="text-xs gap-1">
-                                   {actionInfo.icon === "login" ? <LogIn className="w-3 h-3" /> : <Link2 className="w-3 h-3" />}
-                                   {actionInfo.label}
-                                 </Badge>
-                               ) : (
-                                 <Badge variant="outline" className="text-xs gap-1">
-                                   <Mail className="w-3 h-3" /> Invitación
-                                 </Badge>
-                               )}
-                             </td>
-                             <td className="px-3 py-2">
-                               <Badge variant="outline" className="text-xs capitalize">{inv.fase}</Badge>
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              {inv.access_count > 0 ? (
-                                <Badge variant="secondary" className="text-xs">{inv.access_count}×</Badge>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">0</span>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/30 text-left">
+                          {show("destinatario") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort("destinatario")}>Destinatario <SortIcon col="destinatario" /></th>}
+                          {show("tipo") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort("tipo")}>Tipo <SortIcon col="tipo" /></th>}
+                          {show("accion") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort("accion")}>Acción <SortIcon col="accion" /></th>}
+                          {show("fase") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort("fase")}>Fase <SortIcon col="fase" /></th>}
+                          {show("accesos") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap text-center" onClick={() => handleSort("accesos")}>Accesos <SortIcon col="accesos" /></th>}
+                          {show("enviada") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort("enviada")}>Enviada <SortIcon col="enviada" /></th>}
+                          {show("estado") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort("estado")}>Estado <SortIcon col="estado" /></th>}
+                          <th className="px-3 py-1.5 font-medium w-10"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.invitations.map((inv) => {
+                          const isResponded = !!inv.responded_at;
+                          const isInternal = INTERNAL_EMAILS.includes(inv.email_destinatario);
+                          const actionInfo = ACTION_LABELS[inv.email_destinatario];
+                          return (
+                            <tr key={inv.id} className={`border-t ${isResponded ? "bg-emerald-50/50" : ""}`}>
+                              {show("destinatario") && (
+                                <td className="px-3 py-2">
+                                  {isInternal ? (
+                                    <span className="text-xs text-muted-foreground italic">—</span>
+                                  ) : (
+                                    <div className="flex items-center gap-1.5">
+                                      <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
+                                      <span className="truncate max-w-[200px]">{inv.email_destinatario}</span>
+                                    </div>
+                                  )}
+                                </td>
                               )}
-                            </td>
-                            <td className="px-3 py-2 text-muted-foreground text-xs">
-                              {new Date(inv.sent_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}{" "}
-                              {new Date(inv.sent_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}
-                            </td>
-                            <td className="px-3 py-2">
-                              {isResponded ? (
-                                <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  {new Date(inv.responded_at!).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5" /> Pendiente
-                                </span>
+                              {show("tipo") && (
+                                <td className="px-3 py-2">
+                                  <Badge variant="secondary" className={`text-xs ${FORM_TYPE_COLORS[inv.tipo_formulario] ?? ""}`}>
+                                    {FORM_TYPE_LABELS[inv.tipo_formulario] ?? inv.tipo_formulario}
+                                  </Badge>
+                                </td>
                               )}
-                            </td>
-                            <td className="px-3 py-2 text-right">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-destructive hover:text-destructive"
-                                onClick={() => setDeleteTarget(inv)}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                              {show("accion") && (
+                                <td className="px-3 py-2">
+                                  {actionInfo ? (
+                                    <Badge variant="outline" className="text-xs gap-1">
+                                      {actionInfo.icon === "login" ? <LogIn className="w-3 h-3" /> : <Link2 className="w-3 h-3" />}
+                                      {actionInfo.label}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs gap-1">
+                                      <Mail className="w-3 h-3" /> Invitación
+                                    </Badge>
+                                  )}
+                                </td>
+                              )}
+                              {show("fase") && (
+                                <td className="px-3 py-2">
+                                  <Badge variant="outline" className="text-xs capitalize">{inv.fase}</Badge>
+                                </td>
+                              )}
+                              {show("accesos") && (
+                                <td className="px-3 py-2 text-center">
+                                  {inv.access_count > 0 ? (
+                                    <Badge variant="secondary" className="text-xs">{inv.access_count}×</Badge>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">0</span>
+                                  )}
+                                </td>
+                              )}
+                              {show("enviada") && (
+                                <td className="px-3 py-2 text-muted-foreground text-xs whitespace-nowrap">
+                                  {new Date(inv.sent_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}{" "}
+                                  {new Date(inv.sent_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}
+                                </td>
+                              )}
+                              {show("estado") && (
+                                <td className="px-3 py-2">
+                                  {isResponded ? (
+                                    <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      {new Date(inv.responded_at!).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
+                                      <Clock className="w-3.5 h-3.5" /> Pendiente
+                                    </span>
+                                  )}
+                                </td>
+                              )}
+                              <td className="px-3 py-2 text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => setDeleteTarget(inv)}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </CardContent>
               )}
             </Card>
