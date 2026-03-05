@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { RefreshCw, TrendingUp, TrendingDown, Minus, Users, BarChart3, Download, Info } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, Minus, Users, BarChart3, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarMelGlobalPDF } from "@/utils/melGlobalPdfGenerator";
@@ -317,14 +317,6 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
             <p className="text-xs text-muted-foreground">Progresión positiva (auto)</p>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Nota explicativa */}
-      <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 px-3 py-2">
-        <Info className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-        <p className="text-xs text-muted-foreground">
-          Un directivo valida el indicador MEL cuando obtiene un incremento (ΔP) igual o superior a 0,5 puntos entre la fase inicial y la fase final.
-        </p>
       </div>
 
       {/* MEL Indicator: % with positive increment by domain */}
