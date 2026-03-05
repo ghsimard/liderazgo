@@ -233,9 +233,9 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
                     <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 10 }} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="Δ Auto" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
-                    <Bar dataKey="Δ Internos" fill="hsl(var(--muted-foreground))" radius={[0, 3, 3, 0]} />
-                    <Bar dataKey="Δ Externos" fill="hsl(160, 60%, 45%)" radius={[0, 3, 3, 0]} />
+                    <Bar dataKey="Δ Auto" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} label={{ position: "right", fontSize: 10, fill: "hsl(var(--foreground))" }} />
+                    <Bar dataKey="Δ Internos" fill="hsl(var(--muted-foreground))" radius={[0, 3, 3, 0]} label={{ position: "right", fontSize: 10, fill: "hsl(var(--foreground))" }} />
+                    <Bar dataKey="Δ Externos" fill="hsl(160, 60%, 45%)" radius={[0, 3, 3, 0]} label={{ position: "right", fontSize: 10, fill: "hsl(var(--foreground))" }} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
