@@ -402,7 +402,7 @@ function drawDomainDeltaChart(
   domains: MelDomainDelta[],
   x: number, y: number, w: number, h: number
 ) {
-  const labelW = w * 0.32;
+  const labelW = w * 0.22;
   const chartW = w - labelW;
   const rowH = h / domains.length;
   const barH = Math.min(rowH * 0.25, 3.5);
