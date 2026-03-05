@@ -203,8 +203,8 @@ export async function generarMelPDF(
   if (data.hasInicial && data.hasFinal) {
     const meets = data.globalDeltaAuto >= 0.5;
     const noteText = meets
-      ? "✓ Cumple criterio MEL (0,5+ puntos de progresión)."
-      : "✗ No cumple criterio MEL (menos de 0,5 puntos de progresión).";
+      ? "Cumple criterio MEL (0,5+ puntos de progresión)."
+      : "No cumple criterio MEL (menos de 0,5 puntos de progresión).";
     const noteH = 9;
     // Background fill
     doc.setFillColor(...(meets ? [236, 253, 245] as [number, number, number] : [254, 242, 242] as [number, number, number]));
