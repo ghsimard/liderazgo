@@ -167,9 +167,9 @@ export default function Index() {
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cédula no encontrada</AlertDialogTitle>
+            <AlertDialogTitle>¡Bienvenido/a, líder!</AlertDialogTitle>
             <AlertDialogDescription>
-              La cédula <span className="font-bold">{cedula}</span> no se encuentra registrada en el sistema. ¿Está seguro/a de que el número es correcto?
+              Su número de cédula ingresado es <span className="font-bold">{cedula}</span>. Por favor, confirme que este número es correcto antes de continuar.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
