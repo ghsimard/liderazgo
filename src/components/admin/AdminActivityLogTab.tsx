@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/utils/dbClient";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import {
   CalendarIcon, Search, RefreshCw, Loader2, Trash2, ChevronLeft, ChevronRight,
-  LogIn, FileText, ClipboardCheck, Send, Star, MessageSquare, Eye, Activity,
+  LogIn, LogOut, FileText, ClipboardCheck, Send, Star, MessageSquare, Eye, Activity,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface ActivityLog {
   id: string;
@@ -28,6 +33,7 @@ interface ActivityLog {
 const ACTION_TYPES = [
   { value: "all", label: "Todos" },
   { value: "login", label: "Identificación" },
+  { value: "logout", label: "Cierre de sesión" },
   { value: "page_view", label: "Vista de página" },
   { value: "ficha_submit", label: "Envío de ficha" },
   { value: "ficha_update", label: "Actualización de ficha" },
@@ -41,6 +47,7 @@ const ACTION_TYPES = [
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
   login: LogIn,
+  logout: LogOut,
   page_view: Eye,
   ficha_submit: FileText,
   ficha_update: FileText,
@@ -54,6 +61,7 @@ const ACTION_ICONS: Record<string, React.ElementType> = {
 
 const ACTION_COLORS: Record<string, string> = {
   login: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  logout: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
   page_view: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200",
   ficha_submit: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
   ficha_update: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
@@ -65,13 +73,24 @@ const ACTION_COLORS: Record<string, string> = {
   review_submit: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
 };
 
+const PURGE_OPTIONS = [
+  { value: "30", label: "más de 30 días" },
+  { value: "60", label: "más de 60 días" },
+  { value: "90", label: "más de 90 días" },
+  { value: "180", label: "más de 180 días" },
+  { value: "all", label: "todos los registros" },
+];
+
 const PAGE_SIZE = 50;
 
-export default function AdminActivityLogTab() {
+export default function AdminActivityLogTab({ isSuperAdmin = false }: { isSuperAdmin?: boolean }) {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
+  const [purging, setPurging] = useState(false);
+  const [showPurgeDialog, setShowPurgeDialog] = useState(false);
+  const [purgeDays, setPurgeDays] = useState("90");
 
   // Filters
   const [cedulaFilter, setCedulaFilter] = useState("");
@@ -132,6 +151,38 @@ export default function AdminActivityLogTab() {
     setTimeout(fetchLogs, 0);
   };
 
+  const handlePurge = async () => {
+    setPurging(true);
+    try {
+      let q = supabase.from("user_activity_log").delete();
+
+      if (purgeDays === "all") {
+        // Delete all — need a filter, use created_at <= now
+        q = q.lte("created_at", new Date().toISOString());
+      } else {
+        const cutoff = subDays(new Date(), parseInt(purgeDays));
+        q = q.lt("created_at", cutoff.toISOString());
+      }
+
+      const { error } = await q;
+      if (error) throw error;
+
+      toast.success(
+        purgeDays === "all"
+          ? "Todos los registros fueron eliminados."
+          : `Registros de más de ${purgeDays} días eliminados.`
+      );
+      setShowPurgeDialog(false);
+      setPage(0);
+      fetchLogs();
+    } catch (err: any) {
+      console.error("Purge error:", err);
+      toast.error("Error al purgar los registros: " + (err.message || "Error desconocido"));
+    } finally {
+      setPurging(false);
+    }
+  };
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const getActionLabel = (type: string) => {
@@ -153,9 +204,21 @@ export default function AdminActivityLogTab() {
             {stats.total} registros · {stats.uniqueCedulas} cédulas en esta página
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchLogs} disabled={loading} className="gap-1.5">
-          <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} /> Actualizar
-        </Button>
+        <div className="flex gap-2">
+          {isSuperAdmin && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowPurgeDialog(true)}
+              className="gap-1.5"
+            >
+              <Trash2 className="w-4 h-4" /> Purgar
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={fetchLogs} disabled={loading} className="gap-1.5">
+            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} /> Actualizar
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -300,6 +363,41 @@ export default function AdminActivityLogTab() {
           )}
         </>
       )}
+
+      {/* Purge Dialog */}
+      <AlertDialog open={showPurgeDialog} onOpenChange={setShowPurgeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Purgar registros de actividad</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción es irreversible. Seleccione qué registros desea eliminar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-3">
+            <Select value={purgeDays} onValueChange={setPurgeDays}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PURGE_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={purging}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handlePurge(); }}
+              disabled={purging}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {purging ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Purgar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
