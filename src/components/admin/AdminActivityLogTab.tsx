@@ -287,7 +287,7 @@ export default function AdminActivityLogTab({ isSuperAdmin = false }: { isSuperA
               <Search className="w-4 h-4" /> Buscar
             </Button>
             <Button onClick={handleClear} variant="ghost" size="sm" className="gap-1.5">
-              Limpiar
+              Reiniciar filtros
             </Button>
           </div>
         </CardContent>
