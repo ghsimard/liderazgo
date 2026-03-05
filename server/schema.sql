@@ -364,6 +364,25 @@ CREATE INDEX IF NOT EXISTS idx_invitaciones_cedula ON public.encuesta_invitacion
 ALTER TABLE public.encuestas_360 ADD COLUMN IF NOT EXISTS email_evaluador TEXT;
 
 -- ============================================================
+-- User activity log (audit trail by cedula)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.user_activity_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cedula TEXT NOT NULL,
+  action_type TEXT NOT NULL,
+  action_detail TEXT,
+  page_path TEXT,
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_log_cedula ON public.user_activity_log(cedula);
+CREATE INDEX IF NOT EXISTS idx_activity_log_action_type ON public.user_activity_log(action_type);
+CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON public.user_activity_log(created_at DESC);
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js

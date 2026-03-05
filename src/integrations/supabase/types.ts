@@ -1100,6 +1100,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_log: {
+        Row: {
+          action_detail: string | null
+          action_type: string
+          cedula: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          page_path: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_detail?: string | null
+          action_type: string
+          cedula: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          page_path?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_detail?: string | null
+          action_type?: string
+          cedula?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          page_path?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
