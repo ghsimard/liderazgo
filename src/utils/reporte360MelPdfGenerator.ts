@@ -731,19 +731,28 @@ function drawCompetencyDeltaChart(
     const label = c.competencyLabel.length > 30 ? c.competencyLabel.substring(0, 28) + "…" : c.competencyLabel;
     doc.text(label, x + labelW - 3, cy, { align: "right" });
 
-    // Delta bar (single bar showing the delta value)
-    const delta = c.deltaAuto;
-    const absDelta = Math.max(0, Math.abs(delta));
-    const barW = (absDelta / maxVal) * chartW;
+    // Auto delta bar
+    const autoDelta = c.deltaAuto;
+    const autoAbsW = (Math.max(0, Math.abs(autoDelta)) / maxVal) * chartW;
     doc.setFillColor(...C_BLACK);
-    if (barW > 0.3) doc.rect(chartX, cy - barH / 2, barW, barH, "F");
+    if (autoAbsW > 0.3) doc.rect(chartX, cy - barH - 0.5, autoAbsW, barH, "F");
 
-    // Value label
+    // Auto value label
     doc.setFontSize(5);
     doc.setTextColor(80, 80, 80);
-    const valLabel = (delta >= 0 ? "+" : "") + delta.toFixed(2);
-    const labelX = barW > 0.3 ? chartX + barW + 1.5 : chartX + 1.5;
-    doc.text(valLabel, labelX, cy + 1);
+    const autoLabel = (autoDelta >= 0 ? "+" : "") + autoDelta.toFixed(2);
+    doc.text(autoLabel, autoAbsW > 0.3 ? chartX + autoAbsW + 1.5 : chartX + 1.5, cy - 0.5);
+
+    // Observer delta bar
+    const obsDelta = c.deltaObserver;
+    const obsAbsW = (Math.max(0, Math.abs(obsDelta)) / maxVal) * chartW;
+    doc.setFillColor(...C_MID);
+    if (obsAbsW > 0.3) doc.rect(chartX, cy + 0.5, obsAbsW, barH, "F");
+
+    // Observer value label
+    doc.setTextColor(120, 120, 120);
+    const obsLabel = (obsDelta >= 0 ? "+" : "") + obsDelta.toFixed(2);
+    doc.text(obsLabel, obsAbsW > 0.3 ? chartX + obsAbsW + 1.5 : chartX + 1.5, cy + barH + 1);
   });
 }
 
