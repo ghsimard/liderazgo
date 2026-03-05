@@ -271,7 +271,7 @@ export async function generarMelPDF(
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C_MID);
-    doc.text("Progresión del puntaje promedio (auto) por dominio · Meta: 80%", margin, y);
+    doc.text("Progresión del puntaje promedio (auto) por dominio", margin, y);
     y += 6;
 
     const barH = 5;
