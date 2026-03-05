@@ -43,6 +43,7 @@ const EXPORT_TABLES = [
   "contact_messages",
   "encuesta_invitaciones",
   "admin_cedulas",
+  "user_activity_log",
 ];
 
 router.get("/", requireAuth, requireSuperAdmin, async (_req: Request, res: Response) => {

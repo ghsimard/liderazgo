@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
       "contact_messages",
       "encuesta_invitaciones",
       "admin_cedulas",
+      "user_activity_log",
     ];
 
     let sql = `-- Database export generated on ${new Date().toISOString()}\n`;
