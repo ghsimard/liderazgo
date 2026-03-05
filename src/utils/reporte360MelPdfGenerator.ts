@@ -77,7 +77,7 @@ export async function generarMelPDF(
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 100, 100);
     doc.text("Programa RLT y CLT", margin, 10);
-    doc.text("Informe Análisis MEL", pageW - margin, 10, { align: "right" });
+    doc.text("Informe Análisis 360", pageW - margin, 10, { align: "right" });
   };
 
   // ═══════════════════════════════════════════
@@ -90,10 +90,24 @@ export async function generarMelPDF(
   const logoTargetH = 24; // mm – same height for both logos
   const rltW = (rltSize.width / rltSize.height) * logoTargetH;
   const cltW = (cltSize.width / cltSize.height) * logoTargetH;
-  if (showRLT) doc.addImage(rltB64, "PNG", margin, 25, rltW, logoTargetH);
-  if (showCLT) doc.addImage(cltB64, "PNG", pageW - margin - cltW, 25, cltW, logoTargetH);
+  // Logos drawn centered below
 
-  let y = 80;
+  // Center logos closer to title
+  let y = 60;
+
+  // Draw logos centered together
+  const logoGap = 10;
+  const totalLogosW = (showRLT ? rltW : 0) + (showCLT ? cltW : 0) + (showRLT && showCLT ? logoGap : 0);
+  let logoX = (pageW - totalLogosW) / 2;
+  if (showRLT) {
+    doc.addImage(rltB64, "PNG", logoX, y - logoTargetH / 2, rltW, logoTargetH);
+    logoX += rltW + logoGap;
+  }
+  if (showCLT) {
+    doc.addImage(cltB64, "PNG", logoX, y - logoTargetH / 2, cltW, logoTargetH);
+  }
+
+  y += logoTargetH / 2 + 15;
   doc.setTextColor(...C_BLACK);
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
@@ -106,7 +120,7 @@ export async function generarMelPDF(
   y += 30;
   doc.setFontSize(28);
   doc.setTextColor(...C_DARK);
-  doc.text("Análisis MEL", pageW / 2, y, { align: "center" });
+  doc.text("Análisis 360", pageW / 2, y, { align: "center" });
   y += 14;
   doc.setFontSize(14);
   doc.setTextColor(...C_MID);
@@ -121,13 +135,6 @@ export async function generarMelPDF(
   doc.setFontSize(12);
   doc.setTextColor(...C_MID);
   doc.text(data.institucion, pageW / 2, y, { align: "center" });
-
-  y += 20;
-  doc.setFontSize(10);
-  doc.setTextColor(...C_BLACK);
-  doc.setFont("helvetica", "normal");
-  const statusLine = `Fase Inicial: ${data.hasInicial ? "✓" : "✗"}    Fase Final: ${data.hasFinal ? "✓" : "✗"}`;
-  doc.text(statusLine, pageW / 2, y, { align: "center" });
 
   // ═══════════════════════════════════════════
   // PAGE 2 — GLOBAL SUMMARY + DOMAIN CHART
@@ -161,7 +168,7 @@ export async function generarMelPDF(
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C_MID);
   doc.text(
-    `${data.inicial?.autoAvg.toFixed(2) ?? "—"} → ${data.final?.autoAvg.toFixed(2) ?? "—"}`,
+    `${data.inicial?.autoAvg.toFixed(2) ?? "—"} \u2192 ${data.final?.autoAvg.toFixed(2) ?? "—"}`,
     margin + boxW / 2, y + 20, { align: "center" }
   );
 
@@ -181,7 +188,7 @@ export async function generarMelPDF(
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C_MID);
   doc.text(
-    `${data.inicial?.observerAvg.toFixed(2) ?? "—"} → ${data.final?.observerAvg.toFixed(2) ?? "—"}`,
+    `${data.inicial?.observerAvg.toFixed(2) ?? "—"} \u2192 ${data.final?.observerAvg.toFixed(2) ?? "—"}`,
     box2X + boxW / 2, y + 20, { align: "center" }
   );
 
@@ -395,13 +402,11 @@ function drawDomainDeltaChart(
   domains: MelDomainDelta[],
   x: number, y: number, w: number, h: number
 ) {
-  const chartW = w;
-  const chartH = h;
-  const labelH = 12;
-  const barArea = chartH - labelH;
-  const groupW = chartW / domains.length;
-  const barW = groupW * 0.22;
-  const gap = 2;
+  const labelW = w * 0.35;
+  const chartW = w - labelW;
+  const rowH = h / domains.length;
+  const barH = Math.min(rowH * 0.22, 2.5);
+  const gap = 0.8;
 
   // Find max absolute delta for scale
   let maxAbs = 1;
@@ -410,48 +415,54 @@ function drawDomainDeltaChart(
   });
   maxAbs = Math.ceil(maxAbs * 10) / 10 + 0.2;
 
-  const zeroY = y + barArea / 2;
+  const chartX = x + labelW;
+  const zeroX = chartX + chartW / 2;
 
-  // Horizontal zero line
+  // Zero line
   doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.3);
-  doc.line(x, zeroY, x + chartW, zeroY);
+  doc.setLineWidth(0.2);
+  doc.line(zeroX, y, zeroX, y + h);
 
   // Scale labels
-  doc.setFontSize(6);
-  doc.setFont("helvetica", "normal");
+  doc.setFontSize(5);
   doc.setTextColor(150, 150, 150);
-  doc.text(`+${maxAbs.toFixed(1)}`, x - 1, y + 3, { align: "right" });
-  doc.text(`-${maxAbs.toFixed(1)}`, x - 1, y + barArea - 1, { align: "right" });
-  doc.text("0", x - 1, zeroY + 1.5, { align: "right" });
+  doc.text(`-${maxAbs.toFixed(1)}`, chartX, y - 1);
+  doc.text(`+${maxAbs.toFixed(1)}`, chartX + chartW, y - 1, { align: "right" });
 
   domains.forEach((d, i) => {
-    const cx = x + groupW * i + groupW / 2;
+    const cy = y + i * rowH + rowH / 2;
+
+    // Stripe
+    if (i % 2 === 0) {
+      doc.setFillColor(250, 250, 250);
+      doc.rect(chartX, cy - rowH / 2, chartW, rowH, "F");
+    }
+
+    // Label
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C_BLACK);
+    const label = d.domainLabel.length > 28 ? d.domainLabel.substring(0, 26) + "…" : d.domainLabel;
+    doc.text(label, x + labelW - 3, cy, { align: "right" });
+
     const bars = [
       { val: d.deltaAuto, color: C_BLACK },
       { val: d.deltaInternos, color: C_MID },
       { val: d.deltaExternos, color: C_LIGHT },
     ];
 
-    const totalBarsW = bars.length * barW + (bars.length - 1) * gap;
-    let bx = cx - totalBarsW / 2;
+    const totalBarsH = bars.length * barH + (bars.length - 1) * gap;
+    let by = cy - totalBarsH / 2;
 
     bars.forEach((bar) => {
-      const barH = (Math.abs(bar.val) / maxAbs) * (barArea / 2);
-      const by = bar.val >= 0 ? zeroY - barH : zeroY;
+      const barW = (bar.val / maxAbs) * (chartW / 2);
       doc.setFillColor(...bar.color);
-      doc.rect(bx, by, barW, barH, "F");
-      bx += barW + gap;
-    });
-
-    // Domain label
-    doc.setFontSize(6);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...C_BLACK);
-    const label = d.domainLabel.length > 20 ? d.domainLabel.substring(0, 18) + "…" : d.domainLabel;
-    const lines = doc.splitTextToSize(label, groupW - 4);
-    lines.forEach((line: string, li: number) => {
-      doc.text(line, cx, y + barArea + 4 + li * 3.5, { align: "center" });
+      if (barW >= 0) {
+        doc.rect(zeroX, by, barW, barH, "F");
+      } else {
+        doc.rect(zeroX + barW, by, -barW, barH, "F");
+      }
+      by += barH + gap;
     });
   });
 }
