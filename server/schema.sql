@@ -350,7 +350,8 @@ CREATE TABLE IF NOT EXISTS public.encuesta_invitaciones (
   fase TEXT NOT NULL DEFAULT 'inicial',
   sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_reminder_at TIMESTAMPTZ,
-  responded_at TIMESTAMPTZ
+  responded_at TIMESTAMPTZ,
+  access_count INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_invitaciones_token ON public.encuesta_invitaciones(token);

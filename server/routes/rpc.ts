@@ -251,7 +251,7 @@ router.get("/get_invitation_by_token", async (req: Request, res: Response) => {
       return;
     }
     const rows = await query(
-      `SELECT id, email_destinatario, directivo_nombre, institucion, tipo_formulario, fase, responded_at
+      `SELECT id, email_destinatario, directivo_nombre, institucion, tipo_formulario, fase, responded_at, access_count
        FROM encuesta_invitaciones WHERE token = $1 LIMIT 1`,
       [p_token]
     );
