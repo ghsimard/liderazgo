@@ -50,6 +50,8 @@ function deltaSign(n: number): string {
 export interface MelPdfLogos {
   logoRLT: string;
   logoCLT: string;
+  showRLT?: boolean;
+  showCLT?: boolean;
 }
 
 export async function generarMelPDF(
@@ -83,11 +85,13 @@ export async function generarMelPDF(
   // ═══════════════════════════════════════════
   drawPageHeader();
 
+  const showRLT = logoSources.showRLT !== false;
+  const showCLT = logoSources.showCLT !== false;
   const logoTargetH = 24; // mm – same height for both logos
   const rltW = (rltSize.width / rltSize.height) * logoTargetH;
   const cltW = (cltSize.width / cltSize.height) * logoTargetH;
-  doc.addImage(rltB64, "PNG", margin, 25, rltW, logoTargetH);
-  doc.addImage(cltB64, "PNG", pageW - margin - cltW, 25, cltW, logoTargetH);
+  if (showRLT) doc.addImage(rltB64, "PNG", margin, 25, rltW, logoTargetH);
+  if (showCLT) doc.addImage(cltB64, "PNG", pageW - margin - cltW, 25, cltW, logoTargetH);
 
   let y = 80;
   doc.setTextColor(...C_BLACK);

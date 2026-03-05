@@ -40,8 +40,18 @@ function calcPct(initial: number, delta: number): number | null {
   return (delta / initial) * 100;
 }
 
-function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; onOpenChange: (v: boolean) => void; data: MelAnalysisData | null; images: Record<string, string> }) {
+function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { open: boolean; onOpenChange: (v: boolean) => void; data: MelAnalysisData | null; images: Record<string, string>; regionName?: string }) {
   const [downloading, setDownloading] = useState(false);
+  const [logoConfig, setLogoConfig] = useState<{ showRLT: boolean; showCLT: boolean }>({ showRLT: true, showCLT: true });
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (!regionName) { setLogoConfig({ showRLT: true, showCLT: true }); return; }
+      const { data: r } = await supabase.from("regiones").select("mostrar_logo_rlt, mostrar_logo_clt").eq("nombre", regionName).maybeSingle();
+      setLogoConfig(r ? { showRLT: r.mostrar_logo_rlt, showCLT: r.mostrar_logo_clt } : { showRLT: true, showCLT: true });
+    };
+    if (open) fetch();
+  }, [regionName, open]);
 
   const handleDownloadPdf = async () => {
     if (!data) return;
@@ -50,6 +60,8 @@ function MelDetailDialog({ open, onOpenChange, data, images }: { open: boolean; 
       await generarMelPDF(data, {
         logoRLT: images.logo_rlt_white || images.logo_rlt,
         logoCLT: images.logo_clt || images.logo_clt_white,
+        showRLT: logoConfig.showRLT,
+        showCLT: logoConfig.showCLT,
       });
     } catch (err: any) {
       console.error("PDF generation error:", err);
@@ -228,6 +240,7 @@ export default function AdminMelTab() {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [melData, setMelData] = useState<MelAnalysisData | null>(null);
+  const [melRegion, setMelRegion] = useState<string | undefined>(undefined);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkExporting, setBulkExporting] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
@@ -299,6 +312,7 @@ export default function AdminMelTab() {
         toast({ title: "Sin datos", description: "No hay encuestas 360° para este directivo.", variant: "destructive" });
       } else {
         setMelData(data);
+        setMelRegion(d.region);
         setDialogOpen(true);
       }
     } catch (err: any) {
@@ -312,17 +326,27 @@ export default function AdminMelTab() {
     setBulkExporting(true);
     setBulkProgress({ current: 0, total: filteredDirectivos.length });
     const zip = new JSZip();
-    const logos = {
+    const baseLogos = {
       logoRLT: images.logo_rlt_white || images.logo_rlt,
       logoCLT: images.logo_clt || images.logo_clt_white,
     };
+
+    // Pre-fetch region logo configs
+    const uniqueRegions = [...new Set(filteredDirectivos.map(d => d.region).filter(Boolean))];
+    const regionConfigs = new Map<string, { showRLT: boolean; showCLT: boolean }>();
+    for (const rName of uniqueRegions) {
+      const { data: r } = await supabase.from("regiones").select("mostrar_logo_rlt, mostrar_logo_clt").eq("nombre", rName).maybeSingle();
+      regionConfigs.set(rName, r ? { showRLT: r.mostrar_logo_rlt, showCLT: r.mostrar_logo_clt } : { showRLT: true, showCLT: true });
+    }
+
     let generated = 0;
 
     for (const d of filteredDirectivos) {
       try {
         const data = await calcularMelAnalysis(d.nombre, d.institucion);
+        const rc = regionConfigs.get(d.region) || { showRLT: true, showCLT: true };
         if (data.hasInicial || data.hasFinal) {
-          const blob = await generarMelPDF(data, logos, { returnBlob: true });
+          const blob = await generarMelPDF(data, { ...baseLogos, ...rc }, { returnBlob: true });
           if (blob) {
             const safeName = d.nombre.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, "").replace(/\s+/g, "_");
             zip.file(`MEL_${safeName}.pdf`, blob);
@@ -471,7 +495,7 @@ export default function AdminMelTab() {
             </div>
           </div>
 
-          <MelDetailDialog open={dialogOpen} onOpenChange={setDialogOpen} data={melData} images={images} />
+          <MelDetailDialog open={dialogOpen} onOpenChange={setDialogOpen} data={melData} images={images} regionName={melRegion} />
         </>
       )}
     </div>
