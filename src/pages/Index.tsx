@@ -176,7 +176,7 @@ export default function Index() {
           <AlertDialogHeader>
             <AlertDialogTitle>¡Bienvenido/a, líder!</AlertDialogTitle>
             <AlertDialogDescription>
-              Su número de cédula ingresado es <span className="font-bold">{cedula}</span>. Por favor, confirme que este número es correcto antes de continuar.
+              Su número de cédula ingresado es <span className="font-bold text-foreground text-lg bg-muted px-2 py-0.5 rounded">{cedula}</span>. Por favor, confirme que este número es correcto antes de continuar.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
