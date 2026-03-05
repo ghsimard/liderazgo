@@ -213,7 +213,7 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
         {/* Radar chart: competency initial vs final */}
         {data.hasInicial && data.hasFinal && data.competencyDeltas.length > 0 && (() => {
           const radarData = data.competencyDeltas.map((c) => ({
-            competency: c.competencyLabel.length > 18 ? c.competencyLabel.substring(0, 16) + "…" : c.competencyLabel,
+            competency: c.competencyLabel,
             "Inicial Auto": +c.inicialAuto.toFixed(2),
             "Final Auto": +c.finalAuto.toFixed(2),
             "Inicial Obs.": +c.inicialObserver.toFixed(2),
@@ -223,10 +223,10 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
             <Card className="my-4">
               <CardContent className="p-4 space-y-3">
                 <h4 className="text-sm font-semibold">Comparación Inicial vs Final por Competencia</h4>
-                <ResponsiveContainer width="100%" height={340}>
-                  <RadarChart data={radarData}>
+                <ResponsiveContainer width="100%" height={450}>
+                  <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="60%">
                     <PolarGrid />
-                    <PolarAngleAxis dataKey="competency" tick={{ fontSize: 9 }} />
+                    <PolarAngleAxis dataKey="competency" tick={{ fontSize: 8, fill: "hsl(var(--foreground))" }} />
                     <PolarRadiusAxis angle={30} domain={[0, 10]} tick={{ fontSize: 9 }} />
                     <Radar name="Inicial Auto" dataKey="Inicial Auto" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.15} strokeDasharray="4 4" />
                     <Radar name="Final Auto" dataKey="Final Auto" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
