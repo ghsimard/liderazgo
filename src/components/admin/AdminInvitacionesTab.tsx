@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, RefreshCw, ChevronDown, ChevronRight, School, Clock, CheckCircle2, Mail, MapPin, Search } from "lucide-react";
+import { Trash2, RefreshCw, ChevronDown, ChevronRight, School, Clock, CheckCircle2, Mail, Search, Link2, LogIn } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,6 +42,11 @@ const FORM_TYPE_COLORS: Record<string, string> = {
 };
 
 const INTERNAL_EMAILS = ["acceso-directo", "enlace-copiado"];
+
+const ACTION_LABELS: Record<string, { label: string; icon: "link" | "login" }> = {
+  "acceso-directo": { label: "Acceso directo", icon: "login" },
+  "enlace-copiado": { label: "Enlace copiado", icon: "link" },
+};
 
 export default function AdminInvitacionesTab() {
   const { toast } = useToast();
@@ -98,7 +103,7 @@ export default function AdminInvitacionesTab() {
 
   // Filter out internal log entries for display, apply filters
   const filtered = useMemo(() => {
-    let result = invitations.filter((inv) => !INTERNAL_EMAILS.includes(inv.email_destinatario));
+    let result = [...invitations];
 
     if (faseFilter !== "todas") {
       result = result.filter((inv) => inv.fase === faseFilter);
@@ -135,8 +140,8 @@ export default function AdminInvitacionesTab() {
       .sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [filtered]);
 
-  const totalReal = invitations.filter((inv) => !INTERNAL_EMAILS.includes(inv.email_destinatario)).length;
-  const totalResponded = invitations.filter((inv) => !INTERNAL_EMAILS.includes(inv.email_destinatario) && inv.responded_at).length;
+  const totalReal = invitations.length;
+  const totalResponded = invitations.filter((inv) => inv.responded_at).length;
   const totalPending = totalReal - totalResponded;
 
   if (loading) {
@@ -197,7 +202,7 @@ export default function AdminInvitacionesTab() {
 
       {/* Results */}
       <p className="text-sm text-muted-foreground">
-        {filtered.length} invitación(es) en {grouped.length} directivo(s)
+        {filtered.length} registro(s) en {grouped.length} par(es)
       </p>
 
       <div className="space-y-2">
@@ -240,32 +245,52 @@ export default function AdminInvitacionesTab() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-muted/30 text-left">
-                        <th className="px-3 py-1.5 font-medium">Destinatario</th>
-                        <th className="px-3 py-1.5 font-medium">Tipo</th>
-                        <th className="px-3 py-1.5 font-medium">Fase</th>
-                        <th className="px-3 py-1.5 font-medium">Enviada</th>
-                        <th className="px-3 py-1.5 font-medium">Estado</th>
+                         <th className="px-3 py-1.5 font-medium">Destinatario</th>
+                         <th className="px-3 py-1.5 font-medium">Tipo</th>
+                         <th className="px-3 py-1.5 font-medium">Acción</th>
+                         <th className="px-3 py-1.5 font-medium">Fase</th>
+                         <th className="px-3 py-1.5 font-medium">Enviada</th>
+                         <th className="px-3 py-1.5 font-medium">Estado</th>
+                         <th className="px-3 py-1.5 font-medium w-10"></th>
                         <th className="px-3 py-1.5 font-medium w-10"></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {group.invitations.map((inv) => {
-                        const isResponded = !!inv.responded_at;
-                        return (
-                          <tr key={inv.id} className={`border-t ${isResponded ? "bg-emerald-50/50" : ""}`}>
-                            <td className="px-3 py-2">
-                              <div className="flex items-center gap-1.5">
-                                <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
-                                <span className="truncate max-w-[200px]">{inv.email_destinatario}</span>
-                              </div>
-                            </td>
-                            <td className="px-3 py-2">
-                              <Badge variant="secondary" className={`text-xs ${FORM_TYPE_COLORS[inv.tipo_formulario] ?? ""}`}>
-                                {FORM_TYPE_LABELS[inv.tipo_formulario] ?? inv.tipo_formulario}
-                              </Badge>
-                            </td>
-                            <td className="px-3 py-2">
-                              <Badge variant="outline" className="text-xs capitalize">{inv.fase}</Badge>
+                       {group.invitations.map((inv) => {
+                         const isResponded = !!inv.responded_at;
+                         const isInternal = INTERNAL_EMAILS.includes(inv.email_destinatario);
+                         const actionInfo = ACTION_LABELS[inv.email_destinatario];
+                         return (
+                           <tr key={inv.id} className={`border-t ${isResponded ? "bg-emerald-50/50" : ""}`}>
+                             <td className="px-3 py-2">
+                               {isInternal ? (
+                                 <span className="text-xs text-muted-foreground italic">—</span>
+                               ) : (
+                                 <div className="flex items-center gap-1.5">
+                                   <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
+                                   <span className="truncate max-w-[200px]">{inv.email_destinatario}</span>
+                                 </div>
+                               )}
+                             </td>
+                             <td className="px-3 py-2">
+                               <Badge variant="secondary" className={`text-xs ${FORM_TYPE_COLORS[inv.tipo_formulario] ?? ""}`}>
+                                 {FORM_TYPE_LABELS[inv.tipo_formulario] ?? inv.tipo_formulario}
+                               </Badge>
+                             </td>
+                             <td className="px-3 py-2">
+                               {actionInfo ? (
+                                 <Badge variant="outline" className="text-xs gap-1">
+                                   {actionInfo.icon === "login" ? <LogIn className="w-3 h-3" /> : <Link2 className="w-3 h-3" />}
+                                   {actionInfo.label}
+                                 </Badge>
+                               ) : (
+                                 <Badge variant="outline" className="text-xs gap-1">
+                                   <Mail className="w-3 h-3" /> Invitación
+                                 </Badge>
+                               )}
+                             </td>
+                             <td className="px-3 py-2">
+                               <Badge variant="outline" className="text-xs capitalize">{inv.fase}</Badge>
                             </td>
                             <td className="px-3 py-2 text-muted-foreground text-xs">
                               {new Date(inv.sent_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}{" "}
