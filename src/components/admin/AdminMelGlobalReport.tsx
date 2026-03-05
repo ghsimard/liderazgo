@@ -194,14 +194,14 @@ export default function AdminMelGlobalReport({ directivos, filterLabel }: { dire
         <CardContent className="p-8 text-center space-y-4">
           <BarChart3 className="w-10 h-10 text-primary mx-auto opacity-60" />
           <div>
-            <p className="text-sm font-medium">Rapport global MEL</p>
+            <p className="text-sm font-medium">Informe global MEL</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Agrège les deltas de progression de {directivos.length} directivo(s) filtrés.
+              Agrega los deltas de progresión de {directivos.length} directivo(s) filtrados.
             </p>
           </div>
           <Button onClick={handleGenerate} disabled={directivos.length === 0} className="gap-1.5">
             <BarChart3 className="w-4 h-4" />
-            Générer le rapport global
+            Generar informe global
           </Button>
         </CardContent>
       </Card>
@@ -212,7 +212,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel }: { dire
     return (
       <Card>
         <CardContent className="p-6 space-y-3">
-          <p className="text-sm font-medium text-center">Analyse en cours…</p>
+          <p className="text-sm font-medium text-center">Análisis en curso…</p>
           <Progress value={(progress.current / progress.total) * 100} className="h-2" />
           <p className="text-xs text-muted-foreground text-center">
             {progress.current} / {progress.total} directivo(s)

@@ -343,10 +343,10 @@ export default function AdminMelTab() {
       const a = document.createElement("a");
       a.href = url;
       const regionLabel = selRegions.length === 1 ? selRegions[0].replace(/\s+/g, "_") : "Seleccion";
-      a.download = `MEL_${regionLabel}_${generated}rapports.zip`;
+      a.download = `MEL_${regionLabel}_${generated}informes.zip`;
       a.click();
       URL.revokeObjectURL(url);
-      toast({ title: "ZIP descargado", description: `${generated} rapport(s) MEL exporté(s).` });
+      toast({ title: "ZIP descargado", description: `${generated} informe(s) MEL exportado(s).` });
     }
     setBulkExporting(false);
   };
