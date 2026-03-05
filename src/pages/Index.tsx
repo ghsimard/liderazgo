@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, ArrowRight, Loader2, Search } from "lucide-react";
 import AppFooter from "@/components/AppFooter";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CedulaRoleResult {
   exists_ficha: boolean;
@@ -26,7 +30,7 @@ export default function Index() {
   const [cedula, setCedula] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [showConfirm, setShowConfirm] = useState(false);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = cedula.trim();
@@ -73,9 +77,9 @@ export default function Index() {
         return;
       }
 
-      // Case 3: Cédula not found → new ficha form
+      // Case 3: Cédula not found → ask confirmation
       if (!result.exists_ficha) {
-        navigate(`/ficha`);
+        setShowConfirm(true);
         return;
       }
 
@@ -159,6 +163,25 @@ export default function Index() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cédula no encontrada</AlertDialogTitle>
+            <AlertDialogDescription>
+              La cédula <span className="font-bold">{cedula}</span> no se encuentra registrada en el sistema. ¿Está seguro/a de que el número es correcto?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowConfirm(false)}>
+              Corregir
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setShowConfirm(false); navigate("/ficha"); }}>
+              Sí, continuar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
