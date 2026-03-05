@@ -57,9 +57,9 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
 
       const posEntry = domainPosMap.get(d.domain) || { label: d.domainLabel, posAuto: 0, posInt: 0, posExt: 0, total: 0 };
       posEntry.total++;
-      if (d.deltaAuto > 0) posEntry.posAuto++;
-      if (d.deltaInternos > 0) posEntry.posInt++;
-      if (d.deltaExternos > 0) posEntry.posExt++;
+      if (d.deltaAuto >= 0.5) posEntry.posAuto++;
+      if (d.deltaInternos >= 0.5) posEntry.posInt++;
+      if (d.deltaExternos >= 0.5) posEntry.posExt++;
       domainPosMap.set(d.domain, posEntry);
     }
   }
@@ -112,18 +112,18 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
     avgDeltaObs: v.n > 0 ? v.sumDO / v.n : 0,
   }));
 
-  const countPositiveAuto = bothPhases.filter((r) => r.globalDeltaAuto > 0).length;
-  const countPositiveObs = bothPhases.filter((r) => r.globalDeltaObserver > 0).length;
+  const countPositiveAuto = bothPhases.filter((r) => r.globalDeltaAuto >= 0.5).length;
+  const countPositiveObs = bothPhases.filter((r) => r.globalDeltaObserver >= 0.5).length;
   const globalPctPositive = bothPhases.length > 0 ? (countPositiveAuto / bothPhases.length) * 100 : 0;
 
   // Global % for internos/externos: count directivos where avg domain delta internos/externos > 0
   const countPosInternos = bothPhases.filter((r) => {
     const avg = r.domainDeltas.length > 0 ? r.domainDeltas.reduce((s, d) => s + d.deltaInternos, 0) / r.domainDeltas.length : 0;
-    return avg > 0;
+    return avg >= 0.5;
   }).length;
   const countPosExternos = bothPhases.filter((r) => {
     const avg = r.domainDeltas.length > 0 ? r.domainDeltas.reduce((s, d) => s + d.deltaExternos, 0) / r.domainDeltas.length : 0;
-    return avg > 0;
+    return avg >= 0.5;
   }).length;
 
   return {
