@@ -731,17 +731,19 @@ function drawCompetencyDeltaChart(
     const label = c.competencyLabel.length > 30 ? c.competencyLabel.substring(0, 28) + "…" : c.competencyLabel;
     doc.text(label, x + labelW - 3, cy, { align: "right" });
 
-    // Auto bar (only positive deltas shown)
-    const autoVal = Math.max(0, c.deltaAuto);
-    const autoW = (autoVal / maxVal) * chartW;
+    // Delta bar (single bar showing the delta value)
+    const delta = c.deltaAuto;
+    const absDelta = Math.max(0, Math.abs(delta));
+    const barW = (absDelta / maxVal) * chartW;
     doc.setFillColor(...C_BLACK);
-    if (autoW > 0.3) doc.rect(chartX, cy - barH - 0.5, autoW, barH, "F");
+    if (barW > 0.3) doc.rect(chartX, cy - barH / 2, barW, barH, "F");
 
-    // Observer bar (only positive deltas shown)
-    const obsVal = Math.max(0, c.deltaObserver);
-    const obsW = (obsVal / maxVal) * chartW;
-    doc.setFillColor(...C_MID);
-    if (obsW > 0.3) doc.rect(chartX, cy + 0.5, obsW, barH, "F");
+    // Value label
+    doc.setFontSize(5);
+    doc.setTextColor(80, 80, 80);
+    const valLabel = (delta >= 0 ? "+" : "") + delta.toFixed(2);
+    const labelX = barW > 0.3 ? chartX + barW + 1.5 : chartX + 1.5;
+    doc.text(valLabel, labelX, cy + 1);
   });
 }
 
