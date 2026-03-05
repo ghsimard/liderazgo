@@ -203,8 +203,8 @@ export async function generarMelPDF(
   if (data.hasInicial && data.hasFinal) {
     const meets = data.globalDeltaAuto >= 0.5;
     const noteText = meets
-      ? "✓ Cumple criterio MEL (ΔP ≥ 0,5 puntos en evaluación)."
-      : "✗ No cumple criterio MEL (ΔP < 0,5 puntos en evaluación).";
+      ? "✓ Cumple criterio MEL (0,5+ puntos de progresión)."
+      : "✗ No cumple criterio MEL (menos de 0,5 puntos de progresión).";
     const noteH = 9;
     // Background fill
     doc.setFillColor(...(meets ? [236, 253, 245] as [number, number, number] : [254, 242, 242] as [number, number, number]));
@@ -238,14 +238,14 @@ export async function generarMelPDF(
   ];
   let totalLW = 0;
   legendItems.forEach((item, i) => {
-    totalLW += 4 + 1 + doc.getTextWidth(item.label) + (i < legendItems.length - 1 ? 8 : 0);
+    totalLW += 4 + 1 + doc.getTextWidth(item.label) + (i < legendItems.length - 1 ? 14 : 0);
   });
   let lx = margin + (contentW - totalLW) / 2;
   legendItems.forEach((item, i) => {
     doc.setFillColor(...item.color);
     doc.rect(lx, y, 4, 3, "F");
     doc.text(item.label, lx + 5, y + 2.5);
-    lx += 4 + 1 + doc.getTextWidth(item.label) + 8;
+    lx += 4 + 1 + doc.getTextWidth(item.label) + 14;
   });
   y += 8;
 
