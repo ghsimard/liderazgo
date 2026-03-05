@@ -97,6 +97,8 @@ export default function AdminInvitacionesTab() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<Invitation | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [visibleCols, setVisibleCols] = useState<Set<ColumnKey>>(new Set(ALL_COLUMNS.map(c => c.key)));
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -132,6 +134,26 @@ export default function AdminInvitacionesTab() {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
     setDeleting(false);
+  };
+
+  const handleBulkDelete = async () => {
+    if (filtered.length === 0) return;
+    setBulkDeleting(true);
+    try {
+      const ids = filtered.map(inv => inv.id);
+      // Delete in batches of 50
+      for (let i = 0; i < ids.length; i += 50) {
+        const batch = ids.slice(i, i + 50);
+        const { error } = await supabase.from("encuesta_invitaciones").delete().in("id", batch);
+        if (error) throw error;
+      }
+      toast({ title: `${ids.length} invitación(es) eliminada(s)` });
+      setShowBulkDelete(false);
+      loadInvitations();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setBulkDeleting(false);
   };
 
   const toggleExpand = (key: string) => {
@@ -313,9 +335,16 @@ export default function AdminInvitacionesTab() {
           </PopoverContent>
         </Popover>
 
-        <Button variant="outline" size="sm" onClick={loadInvitations} className="gap-1.5 ml-auto">
-          <RefreshCw className="w-3.5 h-3.5" /> Actualizar
-        </Button>
+        <div className="flex items-center gap-2 ml-auto">
+          {filtered.length > 0 && (
+            <Button variant="destructive" size="sm" onClick={() => setShowBulkDelete(true)} className="gap-1.5">
+              <Trash2 className="w-3.5 h-3.5" /> Borrar todo ({filtered.length})
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={loadInvitations} className="gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5" /> Actualizar
+          </Button>
+        </div>
       </div>
 
       {/* Results */}
@@ -493,6 +522,25 @@ export default function AdminInvitacionesTab() {
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
               {deleting ? <RefreshCw className="w-4 h-4 animate-spin mr-1.5" /> : <Trash2 className="w-4 h-4 mr-1.5" />}
               Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk delete confirm */}
+      <Dialog open={showBulkDelete} onOpenChange={(o) => { if (!o) setShowBulkDelete(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar {filtered.length} invitación(es)?</DialogTitle>
+            <DialogDescription>
+              Se eliminarán todas las invitaciones que coinciden con los filtros actuales. Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkDelete(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleting}>
+              {bulkDeleting ? <RefreshCw className="w-4 h-4 animate-spin mr-1.5" /> : <Trash2 className="w-4 h-4 mr-1.5" />}
+              Eliminar {filtered.length}
             </Button>
           </DialogFooter>
         </DialogContent>
