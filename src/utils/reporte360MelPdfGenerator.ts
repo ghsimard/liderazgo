@@ -408,40 +408,56 @@ function drawDomainDeltaChart(
   const barH = Math.min(rowH * 0.25, 3.5);
   const gap = 1;
 
-  // Find max absolute delta for scale
-  let maxAbs = 1;
+  // Collect all values to determine range
+  const allVals: number[] = [];
   domains.forEach((d) => {
-    maxAbs = Math.max(maxAbs, Math.abs(d.deltaAuto), Math.abs(d.deltaInternos), Math.abs(d.deltaExternos));
+    allVals.push(d.deltaAuto, d.deltaInternos, d.deltaExternos);
   });
-  maxAbs = Math.ceil(maxAbs * 10) / 10 + 0.5;
+  const minVal = Math.min(...allVals);
+  const maxVal = Math.max(...allVals);
+
+  // If all values >= 0, use 0-based chart; if all <= 0, use negative-only; otherwise diverging
+  const allPositive = minVal >= 0;
+  const allNegative = maxVal <= 0;
+
+  let maxAbs = Math.max(Math.abs(minVal), Math.abs(maxVal));
+  maxAbs = Math.ceil(maxAbs * 10) / 10 + 0.3;
 
   const chartX = x + labelW;
-  const zeroX = chartX + chartW / 2;
 
-  // Grid lines
-  doc.setDrawColor(230, 230, 230);
-  doc.setLineWidth(0.15);
-  for (let g = -1; g <= 1; g += 0.5) {
-    if (g === 0) continue;
-    const gx = zeroX + (g / maxAbs) * (chartW / 2) * maxAbs;
-    const actualGx = zeroX + (g * chartW) / (2 * maxAbs) * maxAbs;
+  // Determine zero position
+  let zeroX: number;
+  let scaleWidth: number;
+  if (allPositive) {
+    zeroX = chartX;
+    scaleWidth = chartW;
+  } else if (allNegative) {
+    zeroX = chartX + chartW;
+    scaleWidth = chartW;
+  } else {
+    zeroX = chartX + chartW / 2;
+    scaleWidth = chartW / 2;
+  }
+
+  // Scale labels
+  doc.setFontSize(6);
+  doc.setTextColor(130, 130, 130);
+  if (allPositive) {
+    doc.text("0", chartX, y - 1.5);
+    doc.text(`+${maxAbs.toFixed(1)}`, chartX + chartW - 1, y - 1.5, { align: "right" });
+  } else if (allNegative) {
+    doc.text(`-${maxAbs.toFixed(1)}`, chartX + 1, y - 1.5);
+    doc.text("0", chartX + chartW, y - 1.5, { align: "right" });
+  } else {
+    doc.text(`-${maxAbs.toFixed(1)}`, chartX + 1, y - 1.5);
+    doc.text("0", zeroX, y - 1.5, { align: "center" });
+    doc.text(`+${maxAbs.toFixed(1)}`, chartX + chartW - 1, y - 1.5, { align: "right" });
   }
 
   // Zero line
   doc.setDrawColor(160, 160, 160);
   doc.setLineWidth(0.3);
   doc.line(zeroX, y, zeroX, y + h);
-
-  // Scale labels
-  doc.setFontSize(6);
-  doc.setTextColor(130, 130, 130);
-  doc.text(`-${maxAbs.toFixed(1)}`, chartX + 1, y - 1.5);
-  doc.text("0", zeroX, y - 1.5, { align: "center" });
-  doc.text(`+${maxAbs.toFixed(1)}`, chartX + chartW - 1, y - 1.5, { align: "right" });
-
-  // Horizontal separators
-  doc.setDrawColor(240, 240, 240);
-  doc.setLineWidth(0.1);
 
   domains.forEach((d, i) => {
     const cy = y + i * rowH + rowH / 2;
@@ -455,6 +471,7 @@ function drawDomainDeltaChart(
     // Separator
     if (i > 0) {
       doc.setDrawColor(235, 235, 235);
+      doc.setLineWidth(0.1);
       doc.line(x, y + i * rowH, x + w, y + i * rowH);
     }
 
@@ -475,22 +492,23 @@ function drawDomainDeltaChart(
     let by = cy - totalBarsH / 2;
 
     bars.forEach((bar) => {
-      const barW = (bar.val / maxAbs) * (chartW / 2);
+      const barW = (Math.abs(bar.val) / maxAbs) * scaleWidth;
       doc.setFillColor(...bar.color);
-      if (barW >= 0) {
+
+      if (bar.val >= 0) {
         doc.roundedRect(zeroX, by, Math.max(barW, 0.3), barH, 0.5, 0.5, "F");
       } else {
-        doc.roundedRect(zeroX + barW, by, Math.max(-barW, 0.3), barH, 0.5, 0.5, "F");
+        doc.roundedRect(zeroX - barW, by, Math.max(barW, 0.3), barH, 0.5, 0.5, "F");
       }
 
       // Value label
       doc.setFontSize(5);
       doc.setTextColor(...bar.color);
       const valText = bar.val >= 0 ? `+${bar.val.toFixed(2)}` : bar.val.toFixed(2);
-      if (barW >= 0) {
+      if (bar.val >= 0) {
         doc.text(valText, zeroX + barW + 1.5, by + barH - 0.3);
       } else {
-        doc.text(valText, zeroX + barW - 1, by + barH - 0.3, { align: "right" });
+        doc.text(valText, zeroX - barW - 1, by + barH - 0.3, { align: "right" });
       }
 
       by += barH + gap;
