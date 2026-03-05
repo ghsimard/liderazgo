@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { logActivity } from "@/utils/activityLogger";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { useAppImages } from "@/hooks/useAppImages";
@@ -536,6 +537,7 @@ export default function FichaRLTForm() {
           ), 100);
         }
         setCedulaVerificada(true);
+        logActivity(urlCedula, urlMode === "view" ? "ficha_view" : "page_view", `Mode: ${urlMode}`, "/ficha-rlt");
         setLoadingFicha(false);
       };
       loadFicha();
@@ -699,6 +701,7 @@ export default function FichaRLTForm() {
 
       setEditMode(false);
       setEnviando(false);
+      logActivity(urlCedula || "", "ficha_update", "Ficha actualizada", "/ficha-rlt");
       // Show success toast-like feedback
       setErrorEnvio(null);
       alert("Ficha actualizada con éxito.");
@@ -718,6 +721,7 @@ export default function FichaRLTForm() {
 
     setDatosPDF(payload as unknown as Record<string, unknown>);
     setReviewUserData({ nombre: `${data.nombres} ${data.apellidos}`, email: data.correo_personal, cargo: data.cargo_actual });
+    logActivity(data.numero_cedula || "", "ficha_submit", `Cargo: ${data.cargo_actual}`, "/ficha-rlt");
     setEnviado(true);
     setEnviando(false);
     setShowReviewModal(true);

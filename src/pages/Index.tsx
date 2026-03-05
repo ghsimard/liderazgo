@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logActivity } from "@/utils/activityLogger";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
@@ -59,6 +60,7 @@ export default function Index() {
 
       // Persist cedula for downstream auto-fill
       sessionStorage.setItem("user_cedula", trimmed);
+      logActivity(trimmed, "login", "Identificación por cédula");
 
       const result = (data as CedulaRoleResult) ?? {
         exists_ficha: false,

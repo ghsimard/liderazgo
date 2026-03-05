@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { logActivity } from "@/utils/activityLogger";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
@@ -48,6 +49,7 @@ export default function MiPanel() {
         return;
       }
       setRoleInfo(result);
+      logActivity(cedula, "page_view", `Panel: ${result.is_directivo ? "directivo" : ""}${result.is_evaluador ? " evaluador" : ""}`, "/mi-panel");
 
       // Store cedula in sessionStorage for auto-fill on downstream pages
       sessionStorage.setItem("user_cedula", cedula);
