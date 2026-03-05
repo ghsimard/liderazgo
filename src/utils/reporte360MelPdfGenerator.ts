@@ -198,8 +198,8 @@ export async function generarMelPDF(
   if (data.hasInicial && data.hasFinal) {
     const meets = data.globalDeltaAuto >= 0.5;
     const noteText = meets
-      ? "✓ Este directivo cumple el criterio MEL (ΔP ≥ 0,5 puntos en autoevaluación global)."
-      : "✗ Este directivo no cumple el criterio MEL (ΔP < 0,5 puntos en autoevaluación global).";
+      ? "✓ Cumple criterio MEL (ΔP ≥ 0,5 puntos en evaluación)."
+      : "✗ No cumple criterio MEL (ΔP < 0,5 puntos en evaluación).";
     doc.setFillColor(...(meets ? [230, 245, 230] as [number, number, number] : [250, 230, 230] as [number, number, number]));
     doc.roundedRect(margin, y, contentW, 8, 1.5, 1.5, "F");
     doc.setFontSize(7.5);
