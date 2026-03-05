@@ -87,9 +87,9 @@ export async function calcularMelAnalysis(
       inicialAuto: ini?.autoScore ?? 0,
       finalAuto: fin?.autoScore ?? 0,
       deltaAuto: (fin?.autoScore ?? 0) - (ini?.autoScore ?? 0),
-      inicialObserver: ini?.observerScore ?? 0,
-      finalObserver: fin?.observerScore ?? 0,
-      deltaObserver: (fin?.observerScore ?? 0) - (ini?.observerScore ?? 0),
+      inicialObserver: ((ini?.autoScore ?? 0) + (ini?.observerScore ?? 0)) / 2,
+      finalObserver: ((fin?.autoScore ?? 0) + (fin?.observerScore ?? 0)) / 2,
+      deltaObserver: ((fin?.autoScore ?? 0) + (fin?.observerScore ?? 0)) / 2 - ((ini?.autoScore ?? 0) + (ini?.observerScore ?? 0)) / 2,
       inicialInternos: ini?.internosScore ?? 0,
       finalInternos: fin?.internosScore ?? 0,
       deltaInternos: (fin?.internosScore ?? 0) - (ini?.internosScore ?? 0),
@@ -132,7 +132,9 @@ export async function calcularMelAnalysis(
     competencyDeltas,
     domainDeltas,
     globalDeltaAuto: (final_?.autoAvg ?? 0) - (inicial?.autoAvg ?? 0),
-    globalDeltaObserver: (final_?.observerAvg ?? 0) - (inicial?.observerAvg ?? 0),
+    globalDeltaObserver:
+      ((final_?.autoAvg ?? 0) + (final_?.observerAvg ?? 0)) / 2 -
+      ((inicial?.autoAvg ?? 0) + (inicial?.observerAvg ?? 0)) / 2,
     hasInicial: inicial !== null && inicial.hasResponses,
     hasFinal: final_ !== null && final_.hasResponses,
   };

@@ -59,8 +59,8 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
       const posEntry = domainPosMap.get(d.domain) || { label: d.domainLabel, posAuto: 0, posObs: 0, total: 0 };
       posEntry.total++;
       if (d.deltaAuto >= 0.5) posEntry.posAuto++;
-      // Observer = average of internos + externos deltas
-      const obsAvgDelta = (d.deltaInternos + d.deltaExternos) / 2;
+      // Observer = average of auto + internos + externos deltas
+      const obsAvgDelta = (d.deltaAuto + d.deltaInternos + d.deltaExternos) / 3;
       if (obsAvgDelta >= 0.5) posEntry.posObs++;
       domainPosMap.set(d.domain, posEntry);
     }
