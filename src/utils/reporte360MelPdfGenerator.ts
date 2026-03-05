@@ -222,8 +222,8 @@ export async function generarMelPDF(
   });
   y += 8;
 
-  drawDomainDeltaChart(doc, data.domainDeltas, margin, y, contentW, 55);
-  y += 62;
+  drawDomainDeltaChart(doc, data.domainDeltas, margin, y, contentW, Math.max(55, data.domainDeltas.length * 16));
+  y += Math.max(55, data.domainDeltas.length * 16) + 7;
 
   // ── Domain table ──
   doc.setFontSize(12);
@@ -402,53 +402,73 @@ function drawDomainDeltaChart(
   domains: MelDomainDelta[],
   x: number, y: number, w: number, h: number
 ) {
-  const labelW = w * 0.35;
+  const labelW = w * 0.32;
   const chartW = w - labelW;
   const rowH = h / domains.length;
-  const barH = Math.min(rowH * 0.22, 2.5);
-  const gap = 0.8;
+  const barH = Math.min(rowH * 0.25, 3.5);
+  const gap = 1;
 
   // Find max absolute delta for scale
   let maxAbs = 1;
   domains.forEach((d) => {
     maxAbs = Math.max(maxAbs, Math.abs(d.deltaAuto), Math.abs(d.deltaInternos), Math.abs(d.deltaExternos));
   });
-  maxAbs = Math.ceil(maxAbs * 10) / 10 + 0.2;
+  maxAbs = Math.ceil(maxAbs * 10) / 10 + 0.5;
 
   const chartX = x + labelW;
   const zeroX = chartX + chartW / 2;
 
+  // Grid lines
+  doc.setDrawColor(230, 230, 230);
+  doc.setLineWidth(0.15);
+  for (let g = -1; g <= 1; g += 0.5) {
+    if (g === 0) continue;
+    const gx = zeroX + (g / maxAbs) * (chartW / 2) * maxAbs;
+    const actualGx = zeroX + (g * chartW) / (2 * maxAbs) * maxAbs;
+  }
+
   // Zero line
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.2);
+  doc.setDrawColor(160, 160, 160);
+  doc.setLineWidth(0.3);
   doc.line(zeroX, y, zeroX, y + h);
 
   // Scale labels
-  doc.setFontSize(5);
-  doc.setTextColor(150, 150, 150);
-  doc.text(`-${maxAbs.toFixed(1)}`, chartX, y - 1);
-  doc.text(`+${maxAbs.toFixed(1)}`, chartX + chartW, y - 1, { align: "right" });
+  doc.setFontSize(6);
+  doc.setTextColor(130, 130, 130);
+  doc.text(`-${maxAbs.toFixed(1)}`, chartX + 1, y - 1.5);
+  doc.text("0", zeroX, y - 1.5, { align: "center" });
+  doc.text(`+${maxAbs.toFixed(1)}`, chartX + chartW - 1, y - 1.5, { align: "right" });
+
+  // Horizontal separators
+  doc.setDrawColor(240, 240, 240);
+  doc.setLineWidth(0.1);
 
   domains.forEach((d, i) => {
     const cy = y + i * rowH + rowH / 2;
 
-    // Stripe
+    // Alternating background
     if (i % 2 === 0) {
-      doc.setFillColor(250, 250, 250);
-      doc.rect(chartX, cy - rowH / 2, chartW, rowH, "F");
+      doc.setFillColor(248, 248, 248);
+      doc.rect(x, y + i * rowH, w, rowH, "F");
+    }
+
+    // Separator
+    if (i > 0) {
+      doc.setDrawColor(235, 235, 235);
+      doc.line(x, y + i * rowH, x + w, y + i * rowH);
     }
 
     // Label
-    doc.setFontSize(6);
+    doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C_BLACK);
-    const label = d.domainLabel.length > 28 ? d.domainLabel.substring(0, 26) + "…" : d.domainLabel;
-    doc.text(label, x + labelW - 3, cy, { align: "right" });
+    const label = d.domainLabel.length > 30 ? d.domainLabel.substring(0, 28) + "…" : d.domainLabel;
+    doc.text(label, x + labelW - 4, cy + 0.5, { align: "right" });
 
     const bars = [
-      { val: d.deltaAuto, color: C_BLACK },
-      { val: d.deltaInternos, color: C_MID },
-      { val: d.deltaExternos, color: C_LIGHT },
+      { val: d.deltaAuto, color: C_BLACK as [number, number, number] },
+      { val: d.deltaInternos, color: C_MID as [number, number, number] },
+      { val: d.deltaExternos, color: C_LIGHT as [number, number, number] },
     ];
 
     const totalBarsH = bars.length * barH + (bars.length - 1) * gap;
@@ -458,13 +478,29 @@ function drawDomainDeltaChart(
       const barW = (bar.val / maxAbs) * (chartW / 2);
       doc.setFillColor(...bar.color);
       if (barW >= 0) {
-        doc.rect(zeroX, by, barW, barH, "F");
+        doc.roundedRect(zeroX, by, Math.max(barW, 0.3), barH, 0.5, 0.5, "F");
       } else {
-        doc.rect(zeroX + barW, by, -barW, barH, "F");
+        doc.roundedRect(zeroX + barW, by, Math.max(-barW, 0.3), barH, 0.5, 0.5, "F");
       }
+
+      // Value label
+      doc.setFontSize(5);
+      doc.setTextColor(...bar.color);
+      const valText = bar.val >= 0 ? `+${bar.val.toFixed(2)}` : bar.val.toFixed(2);
+      if (barW >= 0) {
+        doc.text(valText, zeroX + barW + 1.5, by + barH - 0.3);
+      } else {
+        doc.text(valText, zeroX + barW - 1, by + barH - 0.3, { align: "right" });
+      }
+
       by += barH + gap;
     });
   });
+
+  // Re-draw zero line on top
+  doc.setDrawColor(160, 160, 160);
+  doc.setLineWidth(0.3);
+  doc.line(zeroX, y, zeroX, y + h);
 }
 
 // ── Draw domain table ──
