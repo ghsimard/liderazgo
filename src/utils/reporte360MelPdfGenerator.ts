@@ -283,113 +283,99 @@ export async function generarMelPDF(
   drawDomainInitialFinalChart(doc, data, margin, y, contentW, ivfChartH);
   y += ivfChartH + 8;
 
-  // ── Indicator: increment per domain ──
+  // ── Indicator: increment per domain (bar charts) ──
   if (data.hasInicial && data.hasFinal) {
-    if (y + 50 > pageH - 20) {
-      doc.addPage();
-      drawPageHeader();
-      y = 25;
-    }
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...C_BLACK);
-    doc.text("INDICADOR: INCREMENTO POR GESTIÓN", margin, y);
-    y += 3;
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...C_MID);
-    doc.text("Progresión del puntaje promedio (auto) por dominio", margin, y);
-    y += 6;
+    // Collect all deltas to find a shared max for consistent scale
+    const allDeltas = data.domainDeltas.flatMap(d => [
+      Math.abs(d.deltaAuto), Math.abs(d.deltaInternos), Math.abs(d.deltaExternos)
+    ]);
+    const maxDelta = Math.max(1, ...allDeltas);
+    const scale = Math.ceil(maxDelta * 10) / 10 + 0.2;
 
-    const barH = 5;
-    const barW = contentW - 45;
-    const barX = margin + 40;
-    const targetX = barX + barW * 0.8;
-
-    for (const d of data.domainDeltas) {
-      const hasInc = d.deltaAuto > 0;
-      const label = d.domainLabel.length > 25 ? d.domainLabel.substring(0, 23) + "…" : d.domainLabel;
-      
-      // Dot indicator
-      doc.setFillColor(hasInc ? 34 : 200, hasInc ? 139 : 60, hasInc ? 34 : 60);
-      doc.circle(margin + 2, y + barH / 2, 1.2, "F");
-      
-      // Label
-      doc.setFontSize(7);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...C_BLACK);
-      doc.text(label, margin + 5, y + barH / 2 + 1);
-      
-      // Status value (right after label)
-      const labelEndX = margin + 5 + doc.getTextWidth(label) + 3;
-      doc.setFontSize(6);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(hasInc ? 34 : 200, hasInc ? 139 : 60, hasInc ? 34 : 60);
-      doc.text(
-        hasInc ? `${deltaSign(d.deltaAuto)}` : `${deltaSign(d.deltaAuto)}`,
-        labelEndX, y + barH / 2 + 1
-      );
-      
-      y += barH + 3;
-    }
-
-    const posCount = data.domainDeltas.filter(d => d.deltaAuto > 0).length;
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...C_MID);
-    doc.text(`${posCount} / ${data.domainDeltas.length} dominios con incremento positivo`, margin, y);
-    y += 8;
-
-    // Observer indicators (internos / externos)
-    const obsIndicators = [
-      { title: "INTERNOS (Pares, Docentes, Administrativos)", getter: (d: MelDomainDelta) => d.deltaInternos },
-      { title: "EXTERNOS (Estudiantes, Acudientes)", getter: (d: MelDomainDelta) => d.deltaExternos },
+    const indicators = [
+      { title: "INDICADOR: INCREMENTO POR GESTIÓN", subtitle: "Progresión del puntaje promedio (auto) por dominio", getter: (d: MelDomainDelta) => d.deltaAuto },
+      { title: "INDICADOR: INTERNOS (Pares, Docentes, Administrativos)", subtitle: null, getter: (d: MelDomainDelta) => d.deltaInternos },
+      { title: "INDICADOR: EXTERNOS (Estudiantes, Acudientes)", subtitle: null, getter: (d: MelDomainDelta) => d.deltaExternos },
     ];
 
-    for (const indicator of obsIndicators) {
-      if (y + 30 > pageH - 20) {
+    const labelW = 55;
+    const barH = 6;
+    const rowGap = 3;
+
+    for (const indicator of indicators) {
+      const neededH = 15 + data.domainDeltas.length * (barH + rowGap) + 10;
+      if (y + neededH > pageH - 20) {
         doc.addPage();
         drawPageHeader();
         y = 25;
       }
 
+      // Title
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...C_BLACK);
-      doc.text(`INDICADOR: ${indicator.title}`, margin, y);
-      y += 5;
+      doc.text(indicator.title, margin, y);
+      y += 4;
+      if (indicator.subtitle) {
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...C_MID);
+        doc.text(indicator.subtitle, margin, y);
+        y += 4;
+      }
+
+      const chartX = margin + labelW;
+      const chartW = contentW - labelW;
+
+      // Scale
+      doc.setFontSize(5);
+      doc.setTextColor(150, 150, 150);
+      doc.text("0", chartX, y);
+      doc.text(`+${scale.toFixed(1)}`, chartX + chartW, y, { align: "right" });
+      y += 3;
 
       for (const d of data.domainDeltas) {
         const delta = indicator.getter(d);
+        const absDelta = Math.max(0, Math.abs(delta));
+        const bw = (absDelta / scale) * chartW;
         const hasInc = delta > 0;
-        const label = d.domainLabel.length > 25 ? d.domainLabel.substring(0, 23) + "…" : d.domainLabel;
+        const label = d.domainLabel.length > 30 ? d.domainLabel.substring(0, 28) + "…" : d.domainLabel;
 
-        doc.setFillColor(hasInc ? 34 : 200, hasInc ? 139 : 60, hasInc ? 34 : 60);
-        doc.circle(margin + 2, y + barH / 2, 1.2, "F");
-
-        doc.setFontSize(7);
+        // Label
+        doc.setFontSize(6.5);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(...C_BLACK);
-        doc.text(label, margin + 5, y + barH / 2 + 1);
+        doc.text(label, chartX - 3, y + barH / 2 + 1, { align: "right" });
 
-        const labelEndX = margin + 5 + doc.getTextWidth(label) + 3;
-        doc.setFontSize(6);
+        // Bar background
+        doc.setFillColor(245, 245, 245);
+        doc.rect(chartX, y, chartW, barH, "F");
+
+        // Bar fill
+        doc.setFillColor(hasInc ? 34 : 180, hasInc ? 139 : 80, hasInc ? 34 : 80);
+        if (bw > 0.3) doc.rect(chartX, y, bw, barH, "F");
+
+        // Value on bar
+        doc.setFontSize(5.5);
         doc.setFont("helvetica", "bold");
-        doc.setTextColor(hasInc ? 34 : 200, hasInc ? 139 : 60, hasInc ? 34 : 60);
-        doc.text(
-          `${deltaSign(delta)}`,
-          labelEndX, y + barH / 2 + 1
-        );
+        doc.setTextColor(bw > 12 ? 255 : 60, bw > 12 ? 255 : 60, bw > 12 ? 255 : 60);
+        const valText = (delta >= 0 ? "+" : "") + delta.toFixed(2);
+        if (bw > 12) {
+          doc.text(valText, chartX + bw - 1.5, y + barH / 2 + 1, { align: "right" });
+        } else {
+          doc.setTextColor(60, 60, 60);
+          doc.text(valText, chartX + bw + 1.5, y + barH / 2 + 1);
+        }
 
-        y += barH + 3;
+        y += barH + rowGap;
       }
 
       const posCount = data.domainDeltas.filter(d => indicator.getter(d) > 0).length;
       doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...C_MID);
-      doc.text(`${posCount} / ${data.domainDeltas.length} dominios con incremento`, margin, y);
-      y += 6;
+      doc.text(`${posCount} / ${data.domainDeltas.length} dominios con incremento positivo`, margin, y);
+      y += 8;
     }
   }
 
