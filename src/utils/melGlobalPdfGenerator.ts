@@ -87,6 +87,8 @@ function svgToDataUrl(svgEl: SVGSVGElement, width: number, height: number): Prom
 export interface MelGlobalPdfLogos {
   logoRLT: string;
   logoCLT: string;
+  showRLT?: boolean;
+  showCLT?: boolean;
 }
 
 export interface ChartCaptures {
@@ -167,11 +169,13 @@ export async function generarMelGlobalPDF(
   // ═══════════════════════════════════════════
   // PAGE 1 — COVER
   // ═══════════════════════════════════════════
+  const showRLT = logoSources.showRLT !== false;
+  const showCLT = logoSources.showCLT !== false;
   const logoTargetH = 24;
   const rltW = (rltSize.width / rltSize.height) * logoTargetH;
   const cltW = (cltSize.width / cltSize.height) * logoTargetH;
-  doc.addImage(rltB64, "PNG", margin, 28, rltW, logoTargetH);
-  doc.addImage(cltB64, "PNG", pageW - margin - cltW, 28, cltW, logoTargetH);
+  if (showRLT) doc.addImage(rltB64, "PNG", margin, 28, rltW, logoTargetH);
+  if (showCLT) doc.addImage(cltB64, "PNG", pageW - margin - cltW, 28, cltW, logoTargetH);
 
   let y = 82;
   doc.setDrawColor(...C_MID);

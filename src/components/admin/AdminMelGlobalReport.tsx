@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { calcularMelAnalysis, type MelAnalysisData } from "@/utils/reporte360MelCalculator";
 import type { AggregatedMel, DomainIncrementPct } from "@/utils/melGlobalTypes";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -138,12 +139,34 @@ function aggregate(results: MelAnalysisData[]): AggregatedMel {
   };
 }
 
-export default function AdminMelGlobalReport({ directivos, filterLabel }: { directivos: DirectivoOption[]; filterLabel?: string }) {
+export default function AdminMelGlobalReport({ directivos, filterLabel, selectedRegions }: { directivos: DirectivoOption[]; filterLabel?: string; selectedRegions?: string[] }) {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [agg, setAgg] = useState<AggregatedMel | null>(null);
   const [downloading, setDownloading] = useState(false);
   const { images } = useAppImages();
+  const [regionLogoConfig, setRegionLogoConfig] = useState<{ showRLT: boolean; showCLT: boolean }>({ showRLT: true, showCLT: true });
+
+  // Query region logo config when selectedRegions changes
+  useEffect(() => {
+    const fetchRegionConfig = async () => {
+      if (!selectedRegions || selectedRegions.length !== 1) {
+        setRegionLogoConfig({ showRLT: true, showCLT: true });
+        return;
+      }
+      const { data } = await supabase
+        .from("regiones")
+        .select("mostrar_logo_rlt, mostrar_logo_clt")
+        .eq("nombre", selectedRegions[0])
+        .maybeSingle();
+      if (data) {
+        setRegionLogoConfig({ showRLT: data.mostrar_logo_rlt, showCLT: data.mostrar_logo_clt });
+      } else {
+        setRegionLogoConfig({ showRLT: true, showCLT: true });
+      }
+    };
+    fetchRegionConfig();
+  }, [selectedRegions]);
 
   // Chart refs for PDF capture
   const domainChartRef = useRef<HTMLDivElement>(null);
@@ -178,6 +201,8 @@ export default function AdminMelGlobalReport({ directivos, filterLabel }: { dire
         {
           logoRLT: images.logo_rlt_white || images.logo_rlt,
           logoCLT: images.logo_clt || images.logo_clt_white,
+          showRLT: regionLogoConfig.showRLT,
+          showCLT: regionLogoConfig.showCLT,
         },
         { domainChartRef, radarChartRef, competencyChartRef },
         filterLabel || "Todos los directivos"
