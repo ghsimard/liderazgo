@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { logActivity } from "@/utils/activityLogger";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -789,6 +790,11 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
       }
 
       setSubmitted(true);
+      logActivity(
+        cedula || sessionStorage.getItem("user_cedula") || "unknown",
+        "encuesta_submit",
+        `Tipo: ${config.tipo}, Fase: ${fase ?? "inicial"}`
+      );
       setShowReviewModal(true);
     } catch (err: any) {
       toast({

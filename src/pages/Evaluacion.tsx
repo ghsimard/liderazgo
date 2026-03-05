@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logActivity } from "@/utils/activityLogger";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -128,6 +129,7 @@ export default function Evaluacion() {
         es_anonimo: esAnonimo,
       } as any);
       if (error) throw error;
+      logActivity(sessionStorage.getItem("user_cedula") || "anonymous", "review_submit", `Rating: ${data.rating}`, "/evaluacion");
       toast.success("¡Gracias por su evaluación! Su opinión nos ayuda a mejorar.");
       reset();
       setEsAnonimo(false);

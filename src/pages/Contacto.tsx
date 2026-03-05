@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logActivity } from "@/utils/activityLogger";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -69,6 +70,7 @@ export default function Contacto() {
         rol_remitente: info.rol || null,
       } as any);
       if (error) throw error;
+      logActivity(sessionStorage.getItem("user_cedula") || "anonymous", "contact_submit", `Asunto: ${data.asunto}`, "/contacto");
       toast.success("Mensaje enviado correctamente. Gracias por contactarnos.");
       reset();
       setEsAnonimo(false);

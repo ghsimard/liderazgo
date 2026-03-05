@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { logActivity } from "@/utils/activityLogger";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
@@ -307,6 +308,7 @@ export default function RubricaEvaluacion() {
     const storedCedula = sessionStorage.getItem("user_cedula");
     if (storedCedula && !detectedRole) {
       autoSearchDone.current = true;
+      logActivity(storedCedula, "rubrica_access", "Acceso automático", "/rubrica-evaluacion");
       handleSearch(storedCedula);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -470,6 +472,7 @@ export default function RubricaEvaluacion() {
       }));
 
       toast({ title: "Guardado exitoso", description: "Las evaluaciones han sido guardadas." });
+      logActivity(cedula, "rubrica_submit", `Módulo ${currentModule.module_number}, Tipo: ${submissionType}`, "/rubrica-evaluacion");
       setSubmitted(true);
       setShowReviewModal(true);
     } catch (err: any) {
