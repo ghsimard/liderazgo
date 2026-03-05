@@ -249,7 +249,9 @@ export default function AdminMelGlobalReport({ directivos, filterLabel }: { dire
     <div className="space-y-6">
       {/* Action bar */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{agg.countWithData} directivo(s) con datos MEL</p>
+        <p className="text-sm text-muted-foreground">
+          {agg.countBothPhases} de {agg.countWithData} directivo(s) con datos en ambas fases (inicial y final)
+        </p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={downloading} className="gap-1.5">
             {downloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
