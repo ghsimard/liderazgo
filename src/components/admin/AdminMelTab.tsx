@@ -228,10 +228,10 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
                     <PolarGrid />
                     <PolarAngleAxis dataKey="competency" tick={{ fontSize: 8, fill: "hsl(var(--foreground))" }} />
                     <PolarRadiusAxis angle={30} domain={[0, 10]} tick={{ fontSize: 9 }} />
-                    <Radar name="Inicial Auto" dataKey="Inicial Auto" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.15} strokeDasharray="4 4" />
-                    <Radar name="Final Auto" dataKey="Final Auto" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
-                    <Radar name="Inicial Obs." dataKey="Inicial Obs." stroke="hsl(var(--accent-foreground))" fill="none" strokeDasharray="4 4" opacity={0.5} />
-                    <Radar name="Final Obs." dataKey="Final Obs." stroke="hsl(var(--accent-foreground))" fill="hsl(var(--accent-foreground))" fillOpacity={0.1} />
+                    <Radar name="Inicial Auto" dataKey="Inicial Auto" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.1} strokeWidth={2} strokeDasharray="6 3" />
+                    <Radar name="Final Auto" dataKey="Final Auto" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} strokeWidth={2} />
+                    <Radar name="Inicial Obs." dataKey="Inicial Obs." stroke="hsl(160, 60%, 45%)" fill="hsl(160, 60%, 45%)" fillOpacity={0.08} strokeWidth={2} strokeDasharray="6 3" />
+                    <Radar name="Final Obs." dataKey="Final Obs." stroke="hsl(280, 60%, 55%)" fill="hsl(280, 60%, 55%)" fillOpacity={0.12} strokeWidth={2} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Tooltip />
                   </RadarChart>
