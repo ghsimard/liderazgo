@@ -535,7 +535,7 @@ function DirectivoSelect({
   return (
     <div className="flex flex-col gap-1">
       <label className="text-sm font-medium text-foreground">
-        {label || "Nombre del directivo docente a evaluar"} <span className="text-destructive">*</span>
+        {label || "Nombre del par a evaluar"} <span className="text-destructive">*</span>
       </label>
       <select
         value={value}
@@ -557,10 +557,10 @@ function DirectivoSelect({
           {!institucion
             ? "Seleccione primero una institución"
             : loading
-            ? "Cargando directivos…"
-            : directivos.length === 0
-            ? "No se encontraron directivos para esta institución"
-            : "Seleccione un directivo"}
+             ? "Cargando pares…"
+             : directivos.length === 0
+             ? "No se encontraron pares para esta institución"
+             : "Seleccione un par"}
         </option>
         {directivos.map((d) => (
           <option key={d.nombres_apellidos + d.numero_cedula} value={d.nombres_apellidos}>

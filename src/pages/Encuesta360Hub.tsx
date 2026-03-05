@@ -57,7 +57,7 @@ const FORM_QUOTAS: Record<string, number> = {
 
 const formsBase = [
   { label: "Autoevaluación", description: "Evalúe su propio desempeño", basePath: "autoevaluacion", tipo: "autoevaluacion", icon: UserCheck, isAutoeval: true },
-  { label: "Directivo", description: "Evaluación por coordinador/a", basePath: "directivo", tipo: "directivo", icon: UserRound, isAutoeval: false },
+  { label: "Par", description: "Evaluación por coordinador/a", basePath: "directivo", tipo: "directivo", icon: UserRound, isAutoeval: false },
   { label: "Docente", description: "Evaluación por docentes", basePath: "docente", tipo: "docente", icon: GraduationCap, isAutoeval: false },
   { label: "Administrativo", description: "Evaluación por administrativos", basePath: "administrativo", tipo: "administrativo", icon: ClipboardList, isAutoeval: false },
   { label: "Estudiante", description: "Evaluación por estudiantes", basePath: "estudiante", tipo: "estudiante", icon: School, isAutoeval: false },

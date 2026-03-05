@@ -142,7 +142,7 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
 
         {/* Observer indicators (internos / externos) */}
         {data.hasInicial && data.hasFinal && [
-          { title: "Internos (Directivos, Docentes, Administrativos)", getter: (d: typeof data.domainDeltas[0]) => d.deltaInternos, initialGetter: (d: typeof data.domainDeltas[0]) => d.inicialInternos },
+          { title: "Internos (Pares, Docentes, Administrativos)", getter: (d: typeof data.domainDeltas[0]) => d.deltaInternos, initialGetter: (d: typeof data.domainDeltas[0]) => d.inicialInternos },
           { title: "Externos (Estudiantes, Acudientes)", getter: (d: typeof data.domainDeltas[0]) => d.deltaExternos, initialGetter: (d: typeof data.domainDeltas[0]) => d.inicialExternos },
         ].map((section) => (
           <Card key={section.title} className="my-2">
@@ -309,7 +309,7 @@ export default function AdminMelTab() {
     try {
       const data = await calcularMelAnalysis(d.nombre, d.institucion);
       if (!data.hasInicial && !data.hasFinal) {
-        toast({ title: "Sin datos", description: "No hay encuestas 360° para este directivo.", variant: "destructive" });
+        toast({ title: "Sin datos", description: "No hay encuestas 360° para este par.", variant: "destructive" });
       } else {
         setMelData(data);
         setMelRegion(d.region);
@@ -360,7 +360,7 @@ export default function AdminMelTab() {
     }
 
     if (generated === 0) {
-      toast({ title: "Sin datos", description: "Ningún directivo tiene datos MEL disponibles.", variant: "destructive" });
+      toast({ title: "Sin datos", description: "Ningún par tiene datos MEL disponibles.", variant: "destructive" });
     } else {
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(zipBlob);

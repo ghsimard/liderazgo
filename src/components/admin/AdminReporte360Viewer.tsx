@@ -88,7 +88,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
             <h3 className={sectionTitleClass}>IDENTIFICACIÓN</h3>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
               {[
-                ["Directivo/a Docente", directivo.nombre],
+                ["Par evaluado/a", directivo.nombre],
                 ["Identificación", directivo.cedula],
                 ["Entidad Territorial", directivo.entidadTerritorial],
                 ["Institución Educativa", directivo.institucion],
@@ -149,7 +149,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
           <section>
             <h3 className={sectionTitleClass}>RESUMEN GENERAL</h3>
             <div className="flex gap-4 text-xs mb-2 justify-center">
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AUTO }} /> {genderizeRole("Directivo", data.directivo.genero)}</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AUTO }} /> {genderizeRole("Par", data.directivo.genero)}</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_INTERNOS }} /> {genderizeRole("Administrativo(a), coordinador(a) y docente", data.directivo.genero)}</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_EXTERNOS }} /> Acudiente y estudiante</span>
             </div>
@@ -159,7 +159,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 <XAxis type="number" domain={[0, 10]} />
                 <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="Directivo" fill={COLOR_AUTO} barSize={10} radius={[0, 3, 3, 0]}
+                <Bar dataKey="Directivo" fill={COLOR_AUTO} barSize={10} radius={[0, 3, 3, 0]} name="Par"
                   label={({ x, y, width, height, value }: any) => {
                     if (!value) return null;
                     return <text x={x + width + 4} y={y + height / 2} fill={COLOR_AUTO} fontSize={9} textAnchor="start" dominantBaseline="central">{(+value).toFixed(1)}</text>;
@@ -185,7 +185,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
 
           {/* ── ANÁLISIS DE LA DISTANCIA — Radar ── */}
           <section>
-            <h3 className={sectionTitleClass}>ANÁLISIS DE LA DISTANCIA ENTRE EL DIRECTIVO Y LOS OBSERVADORES</h3>
+            <h3 className={sectionTitleClass}>ANÁLISIS DE LA DISTANCIA ENTRE EL PAR Y LOS OBSERVADORES</h3>
             <ResponsiveContainer width="100%" height={350}>
               <RadarChart data={radarData} outerRadius="70%">
                 <PolarGrid />

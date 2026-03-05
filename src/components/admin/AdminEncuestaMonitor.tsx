@@ -117,7 +117,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
         <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-orange-500" />
-            Estado de recolección por directivo
+            Estado de recolección por par
           </CardTitle>
           <Badge variant={incompleteCount > 0 ? "destructive" : "secondary"}>
             {incompleteCount} incompleto(s) / {rows.length} total
@@ -130,7 +130,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
           <div className="relative flex-1 min-w-[180px] max-w-xs">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar directivo o IE…"
+              placeholder="Buscar par o IE…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8 h-9"
@@ -153,7 +153,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[180px]">Directivo</TableHead>
+                <TableHead className="min-w-[180px]">Par</TableHead>
                 <TableHead className="min-w-[150px]">Institución</TableHead>
                 {ROLE_KEYS.map((k) => (
                   <TableHead key={k} className="text-center text-xs whitespace-nowrap">

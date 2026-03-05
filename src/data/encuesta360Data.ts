@@ -158,7 +158,7 @@ export const estudianteConfig: SurveyFormConfig = {
 export const directivoConfig: SurveyFormConfig = {
   tipo: "directivo",
   title: "ENCUESTA DE 360° PONDERADA",
-  subtitle: "INSTRUMENTO PARA DIRECTIVO DOCENTE",
+  subtitle: "INSTRUMENTO PARA PAR",
   intro: "Esta encuesta tiene como objetivo conocer la percepción que tienen las personas que interactúan con el directivo sobre sus competencias personales, pedagógicas, administrativas y comunitarias. Los resultados de esta encuesta le permitirán al directivo participante identificar las áreas de potencial desarrollo que le permitirán mejorar su gestión como líder de la institución educativa.\n\nEn este instrumento no hay respuestas correctas o incorrectas ya que solo se indaga por su percepción y opinión acerca de la gestión del directivo docente de la institución educativa. Le solicitamos que las respuestas que consigne aquí sean sinceras, ya que serán un insumo importante para el mejoramiento continuo del directivo docente evaluado y, a la vez, de la Institución Educativa (IE).",
   extraFields: [
     { key: "cargo_evaluador", label: "¿Cuál es su cargo en el colegio?", type: "radio", options: ["Rector/a", "Coordinador/a"] },

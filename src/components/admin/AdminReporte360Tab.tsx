@@ -277,7 +277,7 @@ export default function AdminReporte360Tab({ fase = "inicial" }: AdminReporte360
         <CardContent className="p-4 flex items-center gap-3 flex-wrap">
           <Download className="w-5 h-5 text-primary" />
           <span className="text-sm font-medium">
-            Exportación agrupada ({filteredDirectivos.length} directivo{filteredDirectivos.length !== 1 ? "s" : ""}) :
+            Exportación agrupada ({filteredDirectivos.length} par{filteredDirectivos.length !== 1 ? "es" : ""}) :
           </span>
           <Button
             size="sm"
@@ -294,7 +294,7 @@ export default function AdminReporte360Tab({ fase = "inicial" }: AdminReporte360
       {/* Individual reports */}
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">
-          {filteredDirectivos.length} directivo(s) {hasFilters ? "filtrado(s)" : "registrado(s)"}
+          {filteredDirectivos.length} par(es) {hasFilters ? "filtrado(s)" : "registrado(s)"}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredDirectivos.map((d) => (

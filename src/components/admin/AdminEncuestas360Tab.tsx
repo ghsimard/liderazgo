@@ -46,7 +46,7 @@ const FORM_TYPE_COLORS: Record<string, string> = {
 const FORM_TYPE_LABELS: Record<string, string> = {
   autoevaluacion: "Autoevaluación",
   docente: "Docente",
-  directivo: "Directivo",
+  directivo: "Par",
   administrativo: "Administrativo",
   estudiante: "Estudiante",
   acudiente: "Acudiente",
@@ -336,7 +336,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuesta
           {deleteTarget && (
             <div className="text-sm space-y-1">
               <p><strong>Tipo:</strong> {FORM_TYPE_LABELS[deleteTarget.tipo_formulario] ?? deleteTarget.tipo_formulario}</p>
-              <p><strong>Directivo:</strong> {deleteTarget.tipo_formulario === "autoevaluacion" ? deleteTarget.nombre_completo : deleteTarget.nombre_directivo}</p>
+              <p><strong>Par evaluado:</strong> {deleteTarget.tipo_formulario === "autoevaluacion" ? deleteTarget.nombre_completo : deleteTarget.nombre_directivo}</p>
               <p><strong>Institución:</strong> {deleteTarget.institucion_educativa}</p>
             </div>
           )}
@@ -367,7 +367,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuesta
             {selectedEncuesta && (
               <div className="text-sm text-muted-foreground space-y-0.5 pt-1">
                 <p><strong>Institución:</strong> {selectedEncuesta.institucion_educativa}</p>
-                <p><strong>Directivo evaluado:</strong> {selectedEncuesta.tipo_formulario === "autoevaluacion" ? selectedEncuesta.nombre_completo : selectedEncuesta.nombre_directivo}</p>
+                <p><strong>Par evaluado:</strong> {selectedEncuesta.tipo_formulario === "autoevaluacion" ? selectedEncuesta.nombre_completo : selectedEncuesta.nombre_directivo}</p>
                 <p><strong>Cargo:</strong> {selectedEncuesta.cargo_directivo} · <strong>Fecha:</strong> {new Date(selectedEncuesta.created_at).toLocaleDateString("es-CO")}</p>
                 {selectedEncuesta.dias_contacto && <p><strong>Días de contacto:</strong> {selectedEncuesta.dias_contacto}</p>}
               </div>
