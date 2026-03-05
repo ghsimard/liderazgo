@@ -133,7 +133,7 @@ export async function calcularMelAnalysis(
     domainDeltas,
     globalDeltaAuto: (final_?.autoAvg ?? 0) - (inicial?.autoAvg ?? 0),
     globalDeltaObserver: (final_?.observerAvg ?? 0) - (inicial?.observerAvg ?? 0),
-    hasInicial: inicial !== null && (inicial.competencyScores.length > 0),
-    hasFinal: final_ !== null && (final_.competencyScores.length > 0),
+    hasInicial: inicial !== null && inicial.hasResponses,
+    hasFinal: final_ !== null && final_.hasResponses,
   };
 }

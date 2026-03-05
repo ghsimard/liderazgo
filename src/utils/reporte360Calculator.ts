@@ -85,6 +85,8 @@ export interface Reporte360Data {
   itemScores: ItemScore[];
   autoAvg: number;
   observerAvg: number;
+  /** Whether actual survey responses exist for this directivo in this phase */
+  hasResponses: boolean;
 }
 
 // ── Main calculation function ──
@@ -304,6 +306,7 @@ export async function calcularReporte360(nombreDirectivo: string, institucion: s
     itemScores: allItemScores,
     autoAvg: avg(allAutoScores),
     observerAvg: avg(allObsScores),
+    hasResponses: !!autoEncuesta || observerEncuestas.length > 0,
   };
 }
 
