@@ -173,7 +173,7 @@ export async function generarMelPDF(
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C_MID);
   doc.text(
-    `${data.inicial?.autoAvg.toFixed(2) ?? "—"} \u2192 ${data.final?.autoAvg.toFixed(2) ?? "—"}`,
+    `${data.inicial?.autoAvg.toFixed(2) ?? "—"} -> ${data.final?.autoAvg.toFixed(2) ?? "—"}`,
     margin + boxW / 2, y + 20, { align: "center" }
   );
 
@@ -193,7 +193,7 @@ export async function generarMelPDF(
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C_MID);
   doc.text(
-    `${data.inicial?.observerAvg.toFixed(2) ?? "—"} \u2192 ${data.final?.observerAvg.toFixed(2) ?? "—"}`,
+    `${data.inicial?.observerAvg.toFixed(2) ?? "—"} -> ${data.final?.observerAvg.toFixed(2) ?? "—"}`,
     box2X + boxW / 2, y + 20, { align: "center" }
   );
 
