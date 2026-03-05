@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiGetMe, apiLogout, isAuthenticated } from "@/utils/apiFetch";
 import { supabase } from "@/utils/dbClient";
+import { logActivity } from "@/utils/activityLogger";
 
 const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
@@ -71,7 +72,13 @@ export function useAdminAuth() {
   }, [navigate]);
 
   const signOut = async () => {
+    // Log admin logout before clearing session
+    if (userId) {
+      const email = sessionStorage.getItem("admin_email") || userId;
+      logActivity(email, "logout", "Admin logout");
+    }
     await apiLogout();
+    sessionStorage.removeItem("admin_email");
     navigate("/admin/login");
   };
 
