@@ -21,6 +21,7 @@ interface Invitation {
   sent_at: string;
   last_reminder_at: string | null;
   responded_at: string | null;
+  access_count: number;
 }
 
 const FORM_TYPE_LABELS: Record<string, string> = {
@@ -249,10 +250,10 @@ export default function AdminInvitacionesTab() {
                          <th className="px-3 py-1.5 font-medium">Tipo</th>
                          <th className="px-3 py-1.5 font-medium">Acción</th>
                          <th className="px-3 py-1.5 font-medium">Fase</th>
+                         <th className="px-3 py-1.5 font-medium text-center">Accesos</th>
                          <th className="px-3 py-1.5 font-medium">Enviada</th>
                          <th className="px-3 py-1.5 font-medium">Estado</th>
                          <th className="px-3 py-1.5 font-medium w-10"></th>
-                        <th className="px-3 py-1.5 font-medium w-10"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -291,6 +292,13 @@ export default function AdminInvitacionesTab() {
                              </td>
                              <td className="px-3 py-2">
                                <Badge variant="outline" className="text-xs capitalize">{inv.fase}</Badge>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              {inv.access_count > 0 ? (
+                                <Badge variant="secondary" className="text-xs">{inv.access_count}×</Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">0</span>
+                              )}
                             </td>
                             <td className="px-3 py-2 text-muted-foreground text-xs">
                               {new Date(inv.sent_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}{" "}

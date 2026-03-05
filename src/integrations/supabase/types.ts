@@ -231,6 +231,7 @@ export type Database = {
       }
       encuesta_invitaciones: {
         Row: {
+          access_count: number
           directivo_cedula: string
           directivo_nombre: string
           email_destinatario: string
@@ -244,6 +245,7 @@ export type Database = {
           token: string
         }
         Insert: {
+          access_count?: number
           directivo_cedula: string
           directivo_nombre: string
           email_destinatario: string
@@ -257,6 +259,7 @@ export type Database = {
           token?: string
         }
         Update: {
+          access_count?: number
           directivo_cedula?: string
           directivo_nombre?: string
           email_destinatario?: string

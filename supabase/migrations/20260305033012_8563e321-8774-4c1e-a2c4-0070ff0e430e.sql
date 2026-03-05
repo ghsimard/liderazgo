@@ -1,0 +1,1 @@
+ALTER TABLE public.encuesta_invitaciones ADD COLUMN IF NOT EXISTS access_count integer NOT NULL DEFAULT 0;

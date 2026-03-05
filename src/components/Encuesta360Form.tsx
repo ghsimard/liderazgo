@@ -622,10 +622,11 @@ export default function Encuesta360Form({ config, fase }: Encuesta360FormProps) 
         const { data } = await supabase.rpc("get_invitation_by_token", { p_token: invitationToken });
         if (data) {
           const inv = typeof data === "string" ? JSON.parse(data) : data;
-          if (inv.responded_at) {
-            toast({ title: "Ya respondida", description: "Esta invitación ya fue completada.", variant: "destructive" });
-            return;
-          }
+          // Allow re-use of the link — increment access_count
+          try {
+            await supabase.from("encuesta_invitaciones").update({ access_count: (inv.access_count ?? 0) + 1 }).eq("id", inv.id);
+          } catch { /* non-blocking */ }
+
           setInvitationEmail(inv.email_destinatario || "");
           setInvitationId(inv.id || "");
           if (inv.institucion) {
