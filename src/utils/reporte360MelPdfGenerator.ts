@@ -424,8 +424,8 @@ export async function generarMelPDF(
   });
   y += 8;
 
-  drawCompetencyDeltaChart(doc, data.competencyDeltas, margin, y, contentW, 80);
-  y += 88;
+  drawCompetencyDeltaChart(doc, data.competencyDeltas, margin, y, contentW, 110);
+  y += 118;
 
   // Competency detail table
   doc.setFontSize(12);
