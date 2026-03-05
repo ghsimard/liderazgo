@@ -331,6 +331,8 @@ export default function RubricaEvaluacion() {
       setSubmissionDates({});
       setSeguimientos([]);
       setPendingSeguimientos({});
+    } else if (detectedRole === "directivo") {
+      navigate("/mi-panel");
     } else {
       setCedula("");
       setDetectedRole(null);
