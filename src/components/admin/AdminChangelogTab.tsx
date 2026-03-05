@@ -81,6 +81,9 @@ export default function AdminChangelogTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
+        <p className="text-sm text-muted-foreground">
+          Repositorio: <span className="font-medium text-foreground">{owner}/{repo}</span>
+        </p>
         <Button variant="outline" size="sm" onClick={fetchCommits} disabled={loading} className="gap-1.5">
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           {loading ? "Cargando…" : "Actualizar"}
@@ -88,7 +91,9 @@ export default function AdminChangelogTab() {
       </div>
 
       {commits.length === 0 && !loading && (
-        <p className="text-sm text-muted-foreground">No hay commits para mostrar.</p>
+        <p className="text-sm text-muted-foreground">
+          Ingresa el owner y repositorio de GitHub, luego haz clic en "Cargar commits".
+        </p>
       )}
 
       <div className="space-y-2">
