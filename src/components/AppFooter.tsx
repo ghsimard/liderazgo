@@ -9,10 +9,21 @@ const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
 export default function AppFooter() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [reviewsEnabled, setReviewsEnabled] = useState(true);
 
   useEffect(() => {
     const check = async () => {
       try {
+        // Check review_modal_enabled setting
+        const { data: setting } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "review_modal_enabled")
+          .maybeSingle();
+        if (setting && (setting as any).value === "false") {
+          setReviewsEnabled(false);
+        }
+
         if (!isAuthenticated()) return;
 
         if (USE_EXPRESS) {
@@ -47,12 +58,14 @@ export default function AppFooter() {
           Programa RLT / CLT · Colombia · {new Date().getFullYear()}
         </p>
         <div className="flex items-center gap-3 sm:gap-4 shrink-0 flex-wrap justify-center">
-          <Link
-            to="/evaluacion"
-            className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
-          >
-            <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Evaluar
-          </Link>
+          {reviewsEnabled && (
+            <Link
+              to="/evaluacion"
+              className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+            >
+              <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Evaluar
+            </Link>
+          )}
           <Link
             to="/sugerencias"
             className="text-primary-foreground text-[10px] sm:text-xs opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
