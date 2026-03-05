@@ -147,15 +147,18 @@ export default function Index() {
               )}
 
               <Button
-                type="submit"
+                type={error ? "button" : "submit"}
                 className="w-full h-12 text-base font-semibold"
-                disabled={loading || !cedula.trim()}
+                disabled={loading || (!error && !cedula.trim())}
+                onClick={error ? () => { setCedula(""); setError(null); } : undefined}
               >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Verificando...
                   </>
+                ) : error ? (
+                  "Corregir"
                 ) : (
                   <>
                     Continuar
