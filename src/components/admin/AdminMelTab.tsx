@@ -119,8 +119,8 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
             <span className="font-semibold">{data.globalDeltaAuto >= 0.5 ? "✓" : "✗"}</span>
             <span>
               {data.globalDeltaAuto >= 0.5
-                ? "Este directivo cumple el criterio MEL (ΔP ≥ 0,5 puntos en autoevaluación global)."
-                : "Este directivo no cumple el criterio MEL (ΔP < 0,5 puntos en autoevaluación global)."}
+                ? "✓ Cumple criterio MEL (ΔP ≥ 0,5 puntos en evaluación)."
+                : "✗ No cumple criterio MEL (ΔP < 0,5 puntos en evaluación)."}
             </span>
           </div>
         )}
