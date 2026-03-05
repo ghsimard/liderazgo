@@ -17,15 +17,15 @@ interface Commit {
   url: string;
 }
 
-const DEFAULT_OWNER = "your-org";
-const DEFAULT_REPO = "your-repo";
+const OWNER = "ghsimard";
+const REPO = "liderazgo";
 
 export default function AdminChangelogTab() {
   const { toast } = useToast();
   const [commits, setCommits] = useState<Commit[]>([]);
   const [loading, setLoading] = useState(false);
-  const [owner, setOwner] = useState(() => localStorage.getItem("changelog_owner") || DEFAULT_OWNER);
-  const [repo, setRepo] = useState(() => localStorage.getItem("changelog_repo") || DEFAULT_REPO);
+  const owner = OWNER;
+  const repo = REPO;
 
   const fetchCommits = async () => {
     setLoading(true);
@@ -55,8 +55,6 @@ export default function AdminChangelogTab() {
       }
 
       setCommits(data);
-      localStorage.setItem("changelog_owner", owner);
-      localStorage.setItem("changelog_repo", repo);
     } catch (err: any) {
       toast({ title: "Error al cargar commits", description: err.message, variant: "destructive" });
     } finally {
@@ -65,9 +63,7 @@ export default function AdminChangelogTab() {
   };
 
   useEffect(() => {
-    if (owner !== DEFAULT_OWNER && repo !== DEFAULT_REPO) {
-      fetchCommits();
-    }
+    fetchCommits();
   }, []);
 
   const formatDate = (dateStr: string) => {
@@ -84,18 +80,13 @@ export default function AdminChangelogTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Owner / Org</label>
-          <Input value={owner} onChange={(e) => setOwner(e.target.value)} placeholder="owner" className="w-40" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Repository</label>
-          <Input value={repo} onChange={(e) => setRepo(e.target.value)} placeholder="repo" className="w-52" />
-        </div>
-        <Button onClick={fetchCommits} disabled={loading} className="gap-1.5">
+      <div className="flex items-center gap-3">
+        <p className="text-sm text-muted-foreground">
+          Repositorio: <span className="font-medium text-foreground">{owner}/{repo}</span>
+        </p>
+        <Button variant="outline" size="sm" onClick={fetchCommits} disabled={loading} className="gap-1.5">
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          {loading ? "Cargando…" : "Cargar commits"}
+          {loading ? "Cargando…" : "Actualizar"}
         </Button>
       </div>
 
