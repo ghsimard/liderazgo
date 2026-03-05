@@ -135,21 +135,31 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
                   <p className="text-xs text-muted-foreground">Progresión del puntaje promedio (auto) por dominio</p>
                 </div>
               </div>
-              <div className="grid gap-2">
-                {data.domainDeltas.map((d) => {
-                  const hasIncrement = d.deltaAuto > 0;
-                  return (
-                    <div key={d.domain} className="flex items-center gap-3 rounded-md border p-2">
-                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${hasIncrement ? "bg-emerald-500" : "bg-destructive"}`} />
-                      <span className="text-xs font-medium flex-1">{d.domainLabel}</span>
-                      <DeltaBadge value={d.deltaAuto} pct={calcPct(d.inicialAuto, d.deltaAuto)} />
-                      <span className={`text-xs font-bold ${hasIncrement ? "text-emerald-600" : "text-destructive"}`}>
-                        {hasIncrement ? "✓ Incremento" : "✗ Sin incremento"}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              {(() => {
+                const maxVal = Math.max(1, ...data.domainDeltas.map(d => Math.abs(d.deltaAuto)));
+                return (
+                  <div className="grid gap-2">
+                    {data.domainDeltas.map((d) => {
+                      const hasIncrement = d.deltaAuto > 0;
+                      const pct = Math.min(100, (Math.abs(d.deltaAuto) / maxVal) * 100);
+                      return (
+                        <div key={d.domain} className="flex items-center gap-3">
+                          <span className="text-xs font-medium w-[45%] text-right shrink-0">{d.domainLabel}</span>
+                          <div className="flex-1 h-6 bg-muted rounded relative overflow-hidden">
+                            <div
+                              className={`h-full rounded ${hasIncrement ? "bg-emerald-500" : "bg-destructive"}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                            <span className={`absolute inset-0 flex items-center text-[11px] font-bold ${pct > 30 ? "text-white pl-2" : "text-foreground pl-1"}`} style={{ paddingLeft: pct > 30 ? undefined : `${pct}%` }}>
+                              {d.deltaAuto >= 0 ? "+" : ""}{d.deltaAuto.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
               <p className="text-[10px] text-muted-foreground">
                 {data.domainDeltas.filter(d => d.deltaAuto > 0).length} / {data.domainDeltas.length} dominios con incremento positivo
               </p>
@@ -171,22 +181,32 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
                 </div>
                 
               </div>
-              <div className="grid gap-2">
-                {data.domainDeltas.map((d) => {
-                  const delta = section.getter(d);
-                  const hasInc = delta > 0;
-                  return (
-                    <div key={d.domain} className="flex items-center gap-3 rounded-md border p-2">
-                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${hasInc ? "bg-emerald-500" : "bg-destructive"}`} />
-                      <span className="text-xs font-medium flex-1">{d.domainLabel}</span>
-                      <DeltaBadge value={delta} pct={calcPct(section.initialGetter(d), delta)} />
-                      <span className={`text-xs font-bold ${hasInc ? "text-emerald-600" : "text-destructive"}`}>
-                        {hasInc ? "✓" : "✗"}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              {(() => {
+                const maxVal = Math.max(1, ...data.domainDeltas.map(d => Math.abs(section.getter(d))));
+                return (
+                  <div className="grid gap-2">
+                    {data.domainDeltas.map((d) => {
+                      const delta = section.getter(d);
+                      const hasInc = delta > 0;
+                      const pct = Math.min(100, (Math.abs(delta) / maxVal) * 100);
+                      return (
+                        <div key={d.domain} className="flex items-center gap-3">
+                          <span className="text-xs font-medium w-[45%] text-right shrink-0">{d.domainLabel}</span>
+                          <div className="flex-1 h-6 bg-muted rounded relative overflow-hidden">
+                            <div
+                              className={`h-full rounded ${hasInc ? "bg-emerald-500" : "bg-destructive"}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                            <span className={`absolute inset-0 flex items-center text-[11px] font-bold ${pct > 30 ? "text-white pl-2" : "text-foreground pl-1"}`} style={{ paddingLeft: pct > 30 ? undefined : `${pct}%` }}>
+                              {delta >= 0 ? "+" : ""}{delta.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
               <p className="text-[10px] text-muted-foreground">
                 {data.domainDeltas.filter(d => section.getter(d) > 0).length} / {data.domainDeltas.length} dominios con incremento
               </p>
