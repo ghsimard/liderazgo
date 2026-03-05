@@ -113,7 +113,7 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
 
         {/* Note: validation criterion */}
         {data.hasInicial && data.hasFinal && (
-          <div className={`flex items-center gap-2 rounded-md border p-3 text-sm ${
+          <div className={`flex items-center justify-center gap-2 rounded-md border p-3 text-sm ${
             data.globalDeltaAuto >= 0.5 ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-destructive/30 bg-destructive/5 text-destructive"
           }`}>
             <span className="font-semibold">{data.globalDeltaAuto >= 0.5 ? "✓" : "✗"}</span>
