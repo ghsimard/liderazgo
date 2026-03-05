@@ -38,6 +38,10 @@ export default function Index() {
       setError("Ingrese su número de cédula.");
       return;
     }
+    if (trimmed.length < 6 || trimmed.length > 10) {
+      setError("El número de cédula debe tener entre 6 y 10 dígitos.");
+      return;
+    }
 
     setLoading(true);
     setError(null);
