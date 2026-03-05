@@ -701,28 +701,28 @@ function drawCompetencyDeltaChart(
   const rowH = h / comps.length;
   const barH = Math.min(rowH * 0.35, 3);
 
-  let maxAbs = 1;
+  let maxVal = 1;
   comps.forEach((c) => {
-    maxAbs = Math.max(maxAbs, Math.abs(c.deltaAuto), Math.abs(c.deltaObserver));
+    maxVal = Math.max(maxVal, Math.abs(c.deltaAuto), Math.abs(c.deltaObserver));
   });
-  maxAbs = Math.ceil(maxAbs * 10) / 10 + 0.2;
+  maxVal = Math.ceil(maxVal * 10) / 10 + 0.2;
 
   const chartX = x + labelW;
-  const zeroX = chartX + chartW / 2;
 
-  // Zero line
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.2);
-  doc.line(zeroX, y, zeroX, y + h);
-
-  // Scale
+  // Scale labels
   doc.setFontSize(5);
   doc.setTextColor(150, 150, 150);
-  doc.text(`-${maxAbs.toFixed(1)}`, chartX, y - 1);
-  doc.text(`+${maxAbs.toFixed(1)}`, chartX + chartW, y - 1, { align: "right" });
+  doc.text("0", chartX, y - 1);
+  doc.text(`+${maxVal.toFixed(1)}`, chartX + chartW, y - 1, { align: "right" });
 
   comps.forEach((c, i) => {
     const cy = y + i * rowH + rowH / 2;
+
+    // Stripe
+    if (i % 2 === 0) {
+      doc.setFillColor(250, 250, 250);
+      doc.rect(chartX, cy - rowH / 2, chartW, rowH, "F");
+    }
 
     // Label
     doc.setFontSize(5.5);
@@ -731,36 +731,17 @@ function drawCompetencyDeltaChart(
     const label = c.competencyLabel.length > 30 ? c.competencyLabel.substring(0, 28) + "…" : c.competencyLabel;
     doc.text(label, x + labelW - 3, cy, { align: "right" });
 
-    // Auto bar
-    const autoW = (c.deltaAuto / maxAbs) * (chartW / 2);
+    // Auto bar (only positive deltas shown)
+    const autoVal = Math.max(0, c.deltaAuto);
+    const autoW = (autoVal / maxVal) * chartW;
     doc.setFillColor(...C_BLACK);
-    if (autoW >= 0) {
-      doc.rect(zeroX, cy - barH - 0.5, autoW, barH, "F");
-    } else {
-      doc.rect(zeroX + autoW, cy - barH - 0.5, -autoW, barH, "F");
-    }
+    if (autoW > 0.3) doc.rect(chartX, cy - barH - 0.5, autoW, barH, "F");
 
-    // Observer bar
-    const obsW = (c.deltaObserver / maxAbs) * (chartW / 2);
+    // Observer bar (only positive deltas shown)
+    const obsVal = Math.max(0, c.deltaObserver);
+    const obsW = (obsVal / maxVal) * chartW;
     doc.setFillColor(...C_MID);
-    if (obsW >= 0) {
-      doc.rect(zeroX, cy + 0.5, obsW, barH, "F");
-    } else {
-      doc.rect(zeroX + obsW, cy + 0.5, -obsW, barH, "F");
-    }
-
-    // Stripe
-    if (i % 2 === 0) {
-      doc.setFillColor(250, 250, 250);
-      doc.rect(chartX, cy - rowH / 2, chartW, rowH, "F");
-      // Redraw bars on top
-      doc.setFillColor(...C_BLACK);
-      if (autoW >= 0) doc.rect(zeroX, cy - barH - 0.5, autoW, barH, "F");
-      else doc.rect(zeroX + autoW, cy - barH - 0.5, -autoW, barH, "F");
-      doc.setFillColor(...C_MID);
-      if (obsW >= 0) doc.rect(zeroX, cy + 0.5, obsW, barH, "F");
-      else doc.rect(zeroX + obsW, cy + 0.5, -obsW, barH, "F");
-    }
+    if (obsW > 0.3) doc.rect(chartX, cy + 0.5, obsW, barH, "F");
   });
 }
 
