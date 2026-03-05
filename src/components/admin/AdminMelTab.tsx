@@ -9,6 +9,10 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Filter, TrendingUp, TrendingDown, Minus, BarChart3, Eye, Download, Archive } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+} from "recharts";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarMelPDF } from "@/utils/reporte360MelPdfGenerator";
 import { Progress } from "@/components/ui/progress";
@@ -177,7 +181,67 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
           </Card>
         ))}
 
-        {/* Domain deltas */}
+        {/* Domain delta bar chart */}
+        {data.hasInicial && data.hasFinal && (() => {
+          const domainChartData = data.domainDeltas.map((d) => ({
+            name: d.domainLabel.length > 25 ? d.domainLabel.substring(0, 23) + "…" : d.domainLabel,
+            "Δ Auto": +d.deltaAuto.toFixed(2),
+            "Δ Internos": +d.deltaInternos.toFixed(2),
+            "Δ Externos": +d.deltaExternos.toFixed(2),
+          }));
+          return (
+            <Card className="my-4">
+              <CardContent className="p-4 space-y-3">
+                <h4 className="text-sm font-semibold">Progresión por Dominio</h4>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={domainChartData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 10 }} />
+                    <Tooltip />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Bar dataKey="Δ Auto" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
+                    <Bar dataKey="Δ Internos" fill="hsl(var(--muted-foreground))" radius={[0, 3, 3, 0]} />
+                    <Bar dataKey="Δ Externos" fill="hsl(var(--accent-foreground))" radius={[0, 3, 3, 0]} opacity={0.6} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
+        {/* Radar chart: competency initial vs final */}
+        {data.hasInicial && data.hasFinal && data.competencyDeltas.length > 0 && (() => {
+          const radarData = data.competencyDeltas.map((c) => ({
+            competency: c.competencyLabel.length > 18 ? c.competencyLabel.substring(0, 16) + "…" : c.competencyLabel,
+            "Inicial Auto": +c.inicialAuto.toFixed(2),
+            "Final Auto": +c.finalAuto.toFixed(2),
+            "Inicial Obs.": +c.inicialObserver.toFixed(2),
+            "Final Obs.": +c.finalObserver.toFixed(2),
+          }));
+          return (
+            <Card className="my-4">
+              <CardContent className="p-4 space-y-3">
+                <h4 className="text-sm font-semibold">Comparación Inicial vs Final por Competencia</h4>
+                <ResponsiveContainer width="100%" height={340}>
+                  <RadarChart data={radarData}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="competency" tick={{ fontSize: 9 }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 10]} tick={{ fontSize: 9 }} />
+                    <Radar name="Inicial Auto" dataKey="Inicial Auto" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.15} strokeDasharray="4 4" />
+                    <Radar name="Final Auto" dataKey="Final Auto" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
+                    <Radar name="Inicial Obs." dataKey="Inicial Obs." stroke="hsl(var(--accent-foreground))" fill="none" strokeDasharray="4 4" opacity={0.5} />
+                    <Radar name="Final Obs." dataKey="Final Obs." stroke="hsl(var(--accent-foreground))" fill="hsl(var(--accent-foreground))" fillOpacity={0.1} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Tooltip />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
+        {/* Domain deltas table */}
         <h4 className="text-sm font-semibold mb-2">Deltas por Dominio</h4>
         <Table>
           <TableHeader>
