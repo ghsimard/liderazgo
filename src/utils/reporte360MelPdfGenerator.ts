@@ -192,7 +192,22 @@ export async function generarMelPDF(
     box2X + boxW / 2, y + 20, { align: "center" }
   );
 
-  y += boxH + 12;
+  y += boxH + 10;
+
+  // ── Note: validation criterion ──
+  if (data.hasInicial && data.hasFinal) {
+    const meets = data.globalDeltaAuto >= 0.5;
+    const noteText = meets
+      ? "✓ Este directivo cumple el criterio MEL (ΔP ≥ 0,5 puntos en autoevaluación global)."
+      : "✗ Este directivo no cumple el criterio MEL (ΔP < 0,5 puntos en autoevaluación global).";
+    doc.setFillColor(...(meets ? [230, 245, 230] as [number, number, number] : [250, 230, 230] as [number, number, number]));
+    doc.roundedRect(margin, y, contentW, 8, 1.5, 1.5, "F");
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C_BLACK);
+    doc.text(noteText, margin + 3, y + 5.5);
+    y += 12;
+  }
 
   // ── Domain deltas chart ──
   doc.setFontSize(12);

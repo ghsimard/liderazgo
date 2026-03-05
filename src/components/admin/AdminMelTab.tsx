@@ -111,6 +111,20 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
           </Card>
         </div>
 
+        {/* Note: validation criterion */}
+        {data.hasInicial && data.hasFinal && (
+          <div className={`flex items-center gap-2 rounded-md border p-3 text-sm ${
+            data.globalDeltaAuto >= 0.5 ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-destructive/30 bg-destructive/5 text-destructive"
+          }`}>
+            <span className="font-semibold">{data.globalDeltaAuto >= 0.5 ? "✓" : "✗"}</span>
+            <span>
+              {data.globalDeltaAuto >= 0.5
+                ? "Este directivo cumple el criterio MEL (ΔP ≥ 0,5 puntos en autoevaluación global)."
+                : "Este directivo no cumple el criterio MEL (ΔP < 0,5 puntos en autoevaluación global)."}
+            </span>
+          </div>
+        )}
+
         {/* MEL Indicator: increment per domain */}
         {data.hasInicial && data.hasFinal && (
           <Card className="my-4">
