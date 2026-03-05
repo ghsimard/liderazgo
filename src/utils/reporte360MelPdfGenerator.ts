@@ -225,15 +225,36 @@ export async function generarMelPDF(
   drawDomainDeltaChart(doc, data.domainDeltas, margin, y, contentW, Math.max(55, data.domainDeltas.length * 16));
   y += Math.max(55, data.domainDeltas.length * 16) + 7;
 
-  // ── Domain table ──
+  // ── Domain initial vs final chart ──
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C_BLACK);
-  doc.text("DELTAS POR DOMINIO", margin, y);
-  y += 5;
+  doc.text("COMPARACIÓN INICIAL VS FINAL POR DOMINIO", margin, y);
+  y += 4;
 
-  drawDomainTable(doc, data.domainDeltas, margin, y, contentW);
-  y += 6 + data.domainDeltas.length * 6 + 8;
+  // Legend
+  const legendIvF = [
+    { color: C_LIGHT, label: "Inicial" },
+    { color: C_BLACK, label: "Final" },
+  ];
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  let ivfLW = 0;
+  legendIvF.forEach((item, i) => {
+    ivfLW += 4 + 1 + doc.getTextWidth(item.label) + (i < legendIvF.length - 1 ? 8 : 0);
+  });
+  let ivfLx = margin + (contentW - ivfLW) / 2;
+  legendIvF.forEach((item) => {
+    doc.setFillColor(...item.color);
+    doc.rect(ivfLx, y, 4, 3, "F");
+    doc.text(item.label, ivfLx + 5, y + 2.5);
+    ivfLx += 4 + 1 + doc.getTextWidth(item.label) + 8;
+  });
+  y += 8;
+
+  const ivfChartH = Math.max(45, data.domainDeltas.length * 14);
+  drawDomainInitialFinalChart(doc, data, margin, y, contentW, ivfChartH);
+  y += ivfChartH + 8;
 
   // ── Indicator: increment per domain ──
   if (data.hasInicial && data.hasFinal) {
@@ -521,7 +542,91 @@ function drawDomainDeltaChart(
   doc.line(zeroX, y, zeroX, y + h);
 }
 
-// ── Draw domain table ──
+// ── Draw initial vs final grouped bar chart per domain ──
+function drawDomainInitialFinalChart(
+  doc: jsPDF,
+  data: MelAnalysisData,
+  x: number, y: number, w: number, h: number
+) {
+  const domains = data.domainDeltas;
+  const labelW = w * 0.22;
+  const chartW = w - labelW;
+  const rowH = h / domains.length;
+  const barH = Math.min(rowH * 0.35, 4);
+  const gap = 1;
+  const chartX = x + labelW;
+
+  // Get initial and final domain averages from the data
+  // domainDeltas has: inicialAuto, deltaAuto (so final = inicial + delta)
+  const maxVal = Math.max(10, ...domains.map(d => Math.max(
+    d.inicialAuto, d.inicialAuto + d.deltaAuto,
+    d.inicialInternos, d.inicialInternos + d.deltaInternos,
+    d.inicialExternos, d.inicialExternos + d.deltaExternos
+  )));
+  const scale = Math.ceil(maxVal);
+
+  // Scale labels
+  doc.setFontSize(6);
+  doc.setTextColor(130, 130, 130);
+  doc.text("0", chartX, y - 1.5);
+  doc.text(scale.toString(), chartX + chartW - 1, y - 1.5, { align: "right" });
+
+  // Grid lines
+  doc.setDrawColor(240, 240, 240);
+  doc.setLineWidth(0.1);
+  for (let g = 2; g < scale; g += 2) {
+    const gx = chartX + (g / scale) * chartW;
+    doc.line(gx, y, gx, y + h);
+    doc.setFontSize(5);
+    doc.setTextColor(180, 180, 180);
+    doc.text(g.toString(), gx, y - 1.5, { align: "center" });
+  }
+
+  domains.forEach((d, i) => {
+    const cy = y + i * rowH + rowH / 2;
+
+    // Alternating background
+    if (i % 2 === 0) {
+      doc.setFillColor(248, 248, 248);
+      doc.rect(x, y + i * rowH, w, rowH, "F");
+    }
+
+    // Separator
+    if (i > 0) {
+      doc.setDrawColor(235, 235, 235);
+      doc.setLineWidth(0.1);
+      doc.line(x, y + i * rowH, x + w, y + i * rowH);
+    }
+
+    // Label
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C_BLACK);
+    const label = d.domainLabel.length > 30 ? d.domainLabel.substring(0, 28) + "…" : d.domainLabel;
+    doc.text(label, x + labelW - 4, cy + 0.5, { align: "right" });
+
+    const inicial = d.inicialAuto;
+    const final_ = d.inicialAuto + d.deltaAuto;
+
+    // Initial bar (light)
+    const iniW = (inicial / scale) * chartW;
+    doc.setFillColor(...C_LIGHT);
+    doc.roundedRect(chartX, cy - barH - gap / 2, Math.max(iniW, 0.3), barH, 0.5, 0.5, "F");
+
+    // Final bar (dark)
+    const finW = (final_ / scale) * chartW;
+    doc.setFillColor(...C_BLACK);
+    doc.roundedRect(chartX, cy + gap / 2, Math.max(finW, 0.3), barH, 0.5, 0.5, "F");
+
+    // Value labels
+    doc.setFontSize(5.5);
+    doc.setTextColor(...C_MID);
+    doc.text(inicial.toFixed(2), chartX + iniW + 1.5, cy - gap / 2 - 0.3);
+    doc.setTextColor(...C_BLACK);
+    doc.text(final_.toFixed(2), chartX + finW + 1.5, cy + gap / 2 + barH - 0.3);
+  });
+}
+
 function drawDomainTable(doc: jsPDF, domains: MelDomainDelta[], x: number, y: number, w: number) {
   const cols = [w * 0.34, w * 0.22, w * 0.22, w * 0.22];
   const rowH = 6;
