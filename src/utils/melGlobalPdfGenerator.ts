@@ -182,7 +182,7 @@ export async function generarMelGlobalPDF(
   y += 15;
   doc.setFontSize(10);
   doc.setTextColor(...C_MID);
-  doc.text(`${agg.countWithData} directivo(s) con datos · ${agg.countPositiveAuto} con progresión positiva`, pageW / 2, y, { align: "center" });
+  doc.text(`${agg.countBothPhases} de ${agg.countWithData} directivo(s) con datos en ambas fases · ${agg.countPositiveAuto} con progresión positiva (ΔP ≥ 0,5)`, pageW / 2, y, { align: "center" });
 
   // ═══════════════════════════════════════════
   // PAGE 2 — KPI + DOMAIN CHART + DOMAIN TABLE
@@ -225,12 +225,12 @@ export async function generarMelGlobalPDF(
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C_BLACK);
-  doc.text("INDICADOR MEL: INCREMENTO POR GESTIÓN", margin, y);
+  doc.text("INDICADOR MEL: AUTOEVALUACIÓN", margin, y);
   y += 3;
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C_MID);
-  doc.text("% de directivos que presentan incremento en su puntaje promedio (Meta: 80% · Línea base: 0%)", margin, y);
+  doc.text("% de directivos con incremento en autoevaluación (ΔP ≥ 0,5) · Meta: 80% · Línea base: 0%", margin, y);
   y += 5;
 
   // Global bar
@@ -417,9 +417,9 @@ function drawDomainTable(
   domains: AggregatedMel["domainDeltas"],
   x: number, y: number, w: number
 ) {
-  const cols = [w * 0.34, w * 0.22, w * 0.22, w * 0.22];
+  const cols = [w * 0.40, w * 0.30, w * 0.30];
   const rowH = 6;
-  const headers = ["Dominio", "Δ Auto", "Δ Internos", "Δ Externos"];
+  const headers = ["Dominio", "Δ Auto", "Δ Observadores"];
 
   doc.setFillColor(...C_HEADER);
   doc.rect(x, y, w, rowH, "F");
@@ -442,9 +442,10 @@ function drawDomainTable(
     }
     let cx = x;
     doc.setFontSize(7);
-    doc.text(d.domainLabel.substring(0, 35), cx + 2, y + rowH / 2 + 1);
+    doc.text(d.domainLabel.substring(0, 40), cx + 2, y + rowH / 2 + 1);
     cx += cols[0];
-    [d.avgDeltaAuto, d.avgDeltaInternos, d.avgDeltaExternos].forEach((val, vi) => {
+    const obsAvg = (d.avgDeltaInternos + d.avgDeltaExternos) / 2;
+    [d.avgDeltaAuto, obsAvg].forEach((val, vi) => {
       doc.text(deltaSign(val), cx + cols[vi + 1] / 2, y + rowH / 2 + 1, { align: "center" });
       cx += cols[vi + 1];
     });
