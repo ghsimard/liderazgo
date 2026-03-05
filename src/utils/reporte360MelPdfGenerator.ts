@@ -339,7 +339,7 @@ export async function generarMelPDF(
         const absDelta = Math.max(0, Math.abs(delta));
         const bw = (absDelta / scale) * chartW;
         const hasInc = delta > 0;
-        const label = d.domainLabel.length > 30 ? d.domainLabel.substring(0, 28) + "…" : d.domainLabel;
+        const label = d.domainLabel;
 
         // Label
         doc.setFontSize(6.5);
@@ -515,7 +515,7 @@ function drawDomainDeltaChart(
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C_BLACK);
-    const label = d.domainLabel.length > 30 ? d.domainLabel.substring(0, 28) + "…" : d.domainLabel;
+    const label = d.domainLabel;
     doc.text(label, x + labelW - 4, cy + 0.5, { align: "right" });
 
     const bars = [
@@ -617,7 +617,7 @@ function drawDomainInitialFinalChart(
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C_BLACK);
-    const label = d.domainLabel.length > 30 ? d.domainLabel.substring(0, 28) + "…" : d.domainLabel;
+    const label = d.domainLabel;
     doc.text(label, x + labelW - 4, cy + 0.5, { align: "right" });
 
     const inicial = d.inicialAuto;
