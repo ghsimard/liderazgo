@@ -171,7 +171,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                 <TableRow>
                   <TableCell colSpan={ROLE_KEYS.length + 3} className="text-center text-muted-foreground py-8">
                     {filterMode === "incomplete"
-                      ? "✅ Todos los directivos tienen el mínimo requerido"
+                      ? "✅ Todos los pares tienen el mínimo requerido"
                       : "Sin resultados"}
                   </TableCell>
                 </TableRow>
@@ -214,7 +214,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
           </Table>
         </div>
         <p className="text-xs text-muted-foreground">
-          {filtered.length} directivo(s) mostrado(s)
+          {filtered.length} par(es) mostrado(s)
         </p>
       </CardContent>
     </Card>
