@@ -1,17 +1,15 @@
 import jsPDF from "jspdf";
 import type { AggregatedMel } from "./melGlobalTypes";
 
-// ── Design tokens ──
-const C_BLACK: [number, number, number] = [25, 25, 25];
-const C_DARK: [number, number, number] = [55, 55, 55];
-const C_MID: [number, number, number] = [110, 110, 110];
-const C_LIGHT_TEXT: [number, number, number] = [140, 140, 140];
-const C_ACCENT: [number, number, number] = [38, 70, 83]; // teal-dark for headers
-const C_ACCENT_LIGHT: [number, number, number] = [42, 157, 143]; // teal for positive
-const C_WARN: [number, number, number] = [180, 60, 60];
-const C_BG_LIGHT: [number, number, number] = [248, 248, 248];
-const C_BG_CARD: [number, number, number] = [252, 252, 252];
-const C_BORDER: [number, number, number] = [220, 220, 220];
+// ── Grayscale design tokens (monochrome print) ──
+const C_BLACK: [number, number, number] = [30, 30, 30];
+const C_DARK: [number, number, number] = [60, 60, 60];
+const C_MID: [number, number, number] = [120, 120, 120];
+const C_LIGHT: [number, number, number] = [170, 170, 170];
+const C_SUBTLE: [number, number, number] = [200, 200, 200];
+const C_BG: [number, number, number] = [240, 240, 240];
+const C_STRIPE: [number, number, number] = [248, 248, 248];
+const C_HEADER_BG: [number, number, number] = [50, 50, 50];
 const C_WHITE: [number, number, number] = [255, 255, 255];
 
 function r1(n: number): string {
@@ -20,9 +18,11 @@ function r1(n: number): string {
 function deltaSign(n: number): string {
   return n > 0 ? `+${r1(n)}` : r1(n);
 }
-function pct(n: number): string {
+function pctStr(n: number): string {
   return `${n.toFixed(1)}%`;
 }
+
+// ── Image helpers ──
 
 function loadImageAsBase64(src: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -101,44 +101,34 @@ async function captureChartImage(ref: React.RefObject<HTMLDivElement | null>): P
   const svg = el.querySelector("svg.recharts-surface") as SVGSVGElement | null;
   if (!svg) return null;
   const rect = el.getBoundingClientRect();
-  try {
-    return await svgToDataUrl(svg, rect.width, rect.height);
-  } catch {
-    return null;
-  }
+  try { return await svgToDataUrl(svg, rect.width, rect.height); } catch { return null; }
 }
 
-// ── Utility draw helpers ──
-
-function drawHRule(doc: jsPDF, x: number, y: number, w: number) {
-  doc.setDrawColor(...C_BORDER);
-  doc.setLineWidth(0.3);
-  doc.line(x, y, x + w, y);
-}
+// ── Section drawing helpers ──
 
 function drawSectionTitle(doc: jsPDF, text: string, x: number, y: number): number {
-  doc.setFontSize(11);
+  // Thin rule above title
+  doc.setDrawColor(...C_SUBTLE);
+  doc.setLineWidth(0.3);
+  doc.line(x, y - 1, x + 60, y - 1);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C_ACCENT);
-  doc.text(text, x, y);
-  return y + 2;
+  doc.setTextColor(...C_BLACK);
+  doc.text(text, x, y + 3);
+  return y + 6;
 }
 
 function drawSubtitle(doc: jsPDF, text: string, x: number, y: number): number {
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(...C_LIGHT_TEXT);
+  doc.setTextColor(...C_LIGHT);
   doc.text(text, x, y);
   return y + 5;
 }
 
-function getBarColor(val: number): [number, number, number] {
-  if (val >= 80) return C_ACCENT_LIGHT;
-  if (val >= 50) return [180, 140, 0];
-  return C_WARN;
-}
-
-// ── Main export ──
+// ═══════════════════════════════════════════
+// Main export
+// ═══════════════════════════════════════════
 
 export async function generarMelGlobalPDF(
   agg: AggregatedMel,
@@ -151,7 +141,6 @@ export async function generarMelGlobalPDF(
     captureChartImage(charts.radarChartRef),
     captureChartImage(charts.competencyChartRef),
   ]);
-
   const [rltB64, cltB64, rltSize, cltSize] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
     loadImageAsBase64(logoSources.logoCLT),
@@ -165,12 +154,12 @@ export async function generarMelGlobalPDF(
   const margin = 22;
   const contentW = pageW - margin * 2;
 
-  const drawPageFooter = (pageNum: number) => {
+  const drawPageFooter = (pn: number) => {
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(...C_LIGHT_TEXT);
+    doc.setTextColor(...C_LIGHT);
     doc.text("Programa RLT y CLT · Informe Global MEL", margin, pageH - 8);
-    doc.text(String(pageNum), pageW - margin, pageH - 8, { align: "right" });
+    doc.text(String(pn), pageW - margin, pageH - 8, { align: "right" });
   };
 
   let pageNum = 1;
@@ -184,30 +173,27 @@ export async function generarMelGlobalPDF(
   doc.addImage(rltB64, "PNG", margin, 28, rltW, logoTargetH);
   doc.addImage(cltB64, "PNG", pageW - margin - cltW, 28, cltW, logoTargetH);
 
-  let y = 85;
-
-  // Thin accent line
-  doc.setDrawColor(...C_ACCENT);
-  doc.setLineWidth(0.8);
-  doc.line(pageW / 2 - 30, y, pageW / 2 + 30, y);
+  let y = 82;
+  doc.setDrawColor(...C_MID);
+  doc.setLineWidth(0.5);
+  doc.line(pageW / 2 - 28, y, pageW / 2 + 28, y);
   y += 10;
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C_MID);
   doc.text("PROGRAMA", pageW / 2, y, { align: "center" });
-  y += 6;
+  y += 7;
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C_BLACK);
   doc.text("RECTORES LÍDERES TRANSFORMADORES", pageW / 2, y, { align: "center" });
-  y += 6;
+  y += 7;
   doc.text("COORDINADORES LÍDERES TRANSFORMADORES", pageW / 2, y, { align: "center" });
 
-  y += 25;
+  y += 28;
   doc.setFontSize(26);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C_ACCENT);
+  doc.setTextColor(...C_DARK);
   doc.text("Informe Global MEL", pageW / 2, y, { align: "center" });
   y += 10;
   doc.setFontSize(11);
@@ -215,91 +201,72 @@ export async function generarMelGlobalPDF(
   doc.setTextColor(...C_MID);
   doc.text("Monitoring, Evaluation & Learning", pageW / 2, y, { align: "center" });
 
-  y += 25;
+  y += 28;
   doc.setFontSize(13);
-  doc.setFont("helvetica", "normal");
   doc.setTextColor(...C_BLACK);
   doc.text(filterLabel || "Todos los directivos", pageW / 2, y, { align: "center" });
 
-  // Stats card
-  y += 18;
-  const cardW = 130;
-  const cardX = (pageW - cardW) / 2;
-  doc.setFillColor(...C_BG_LIGHT);
-  doc.setDrawColor(...C_BORDER);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(cardX, y, cardW, 20, 3, 3, "FD");
-
+  y += 15;
   doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
   doc.setTextColor(...C_MID);
-  const statsLine1 = `${agg.countBothPhases} de ${agg.countWithData} directivo(s) con datos en ambas fases`;
-  const statsLine2 = `${agg.countPositiveAuto} con progresión positiva (ΔP ≥ 0,5)`;
-  doc.text(statsLine1, pageW / 2, y + 8, { align: "center" });
-  doc.text(statsLine2, pageW / 2, y + 14, { align: "center" });
+  doc.text(
+    `${agg.countBothPhases} de ${agg.countWithData} directivo(s) con datos en ambas fases · ${agg.countPositiveAuto} con progresión positiva (ΔP ≥ 0,5)`,
+    pageW / 2, y, { align: "center" }
+  );
 
   drawPageFooter(pageNum);
 
   // ═══════════════════════════════════════════
-  // PAGE 2 — KPIs + INDICATOR AUTO
+  // PAGE 2 — KPIs + INDICATORS
   // ═══════════════════════════════════════════
   doc.addPage();
   pageNum++;
   y = 22;
 
   y = drawSectionTitle(doc, "RESUMEN GLOBAL", margin, y);
-  y += 6;
+  y += 4;
 
-  // KPI cards in a row
-  const kpiCount = 4;
-  const kpiGap = 5;
-  const kpiW = (contentW - (kpiCount - 1) * kpiGap) / kpiCount;
-  const kpiH = 22;
+  // KPI row — simple bold numbers with label above
+  const kpiGap = 4;
+  const kpiW2 = (contentW - 3 * kpiGap) / 4;
   const kpis = [
-    { label: "Directivos", value: String(agg.countWithData), sub: "con datos" },
-    { label: "Δ Auto prom.", value: deltaSign(agg.avgDeltaAuto), sub: "autoevaluación" },
-    { label: "Δ Obs. prom.", value: deltaSign(agg.avgDeltaObserver), sub: "observadores" },
-    { label: "Progresión +", value: String(agg.countPositiveAuto), sub: `de ${agg.countBothPhases}` },
+    { label: "DIRECTIVOS", value: String(agg.countWithData) },
+    { label: "Δ AUTO PROM.", value: deltaSign(agg.avgDeltaAuto) },
+    { label: "Δ OBS. PROM.", value: deltaSign(agg.avgDeltaObserver) },
+    { label: "PROGRESIÓN +", value: `${agg.countPositiveAuto} / ${agg.countBothPhases}` },
   ];
   kpis.forEach((kpi, i) => {
-    const bx = margin + i * (kpiW + kpiGap);
-    doc.setFillColor(...C_BG_CARD);
-    doc.setDrawColor(...C_BORDER);
-    doc.setLineWidth(0.25);
-    doc.roundedRect(bx, y, kpiW, kpiH, 2, 2, "FD");
-    // Top accent bar
-    doc.setFillColor(...C_ACCENT);
-    doc.rect(bx, y, kpiW, 1.2, "F");
-
-    doc.setFontSize(6.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...C_LIGHT_TEXT);
-    doc.text(kpi.label.toUpperCase(), bx + kpiW / 2, y + 6, { align: "center" });
-    doc.setFontSize(13);
+    const bx = margin + i * (kpiW2 + kpiGap);
+    // Light bg box
+    doc.setFillColor(...C_BG);
+    doc.rect(bx, y, kpiW2, 18, "F");
+    // Label
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C_MID);
+    doc.text(kpi.label, bx + kpiW2 / 2, y + 5.5, { align: "center" });
+    // Value
+    doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...C_BLACK);
-    doc.text(kpi.value, bx + kpiW / 2, y + 14, { align: "center" });
-    doc.setFontSize(5.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...C_LIGHT_TEXT);
-    doc.text(kpi.sub, bx + kpiW / 2, y + 19, { align: "center" });
+    doc.text(kpi.value, bx + kpiW2 / 2, y + 14, { align: "center" });
   });
-  y += kpiH + 12;
+  y += 26;
 
   // ── INDICATOR: AUTOEVALUACIÓN ──
   y = drawSectionTitle(doc, "INDICADOR MEL: AUTOEVALUACIÓN", margin, y);
   y = drawSubtitle(doc, "% de directivos con incremento (ΔP ≥ 0,5) · Meta: 80% · Línea base: 0%", margin, y);
 
-  y = drawIndicatorBars(doc, {
+  y = drawBulletChart(doc, {
     globalPct: agg.globalPctPositive,
     domainPcts: agg.domainIncrementPcts,
     countPositive: agg.countPositiveAuto,
     countTotal: agg.countBothPhases,
-  }, margin, y, contentW, pageW);
-  y += 4;
+  }, margin, y, contentW);
+  y += 6;
 
   // ── INDICATOR: OBSERVADORES ──
-  if (y + 60 > pageH - 15) {
+  if (y + 55 > pageH - 15) {
     drawPageFooter(pageNum);
     doc.addPage();
     pageNum++;
@@ -309,12 +276,12 @@ export async function generarMelGlobalPDF(
   y = drawSectionTitle(doc, "INDICADOR MEL: OBSERVADORES", margin, y);
   y = drawSubtitle(doc, "% de directivos con incremento (ΔP ≥ 0,5) según observadores · Meta: 80%", margin, y);
 
-  y = drawIndicatorBars(doc, {
+  y = drawBulletChart(doc, {
     globalPct: agg.globalPctPositiveObserver,
     domainPcts: agg.domainIncrementPctsObserver,
     countPositive: agg.countPositiveObs,
     countTotal: agg.countBothPhases,
-  }, margin, y, contentW, pageW);
+  }, margin, y, contentW);
 
   drawPageFooter(pageNum);
 
@@ -327,13 +294,12 @@ export async function generarMelGlobalPDF(
 
   if (domainImg) {
     y = drawSectionTitle(doc, "PROGRESIÓN POR DOMINIO", margin, y);
-    y += 4;
+    y += 3;
     const imgH = 55;
     doc.addImage(domainImg, "PNG", margin, y, contentW, imgH);
     y += imgH + 8;
   }
 
-  // Domain table
   if (y + 10 + agg.domainDeltas.length * 7 > pageH - 15) {
     drawPageFooter(pageNum);
     doc.addPage();
@@ -341,7 +307,7 @@ export async function generarMelGlobalPDF(
     y = 22;
   }
   y = drawSectionTitle(doc, "DELTAS PROMEDIO POR DOMINIO", margin, y);
-  y += 4;
+  y += 3;
   y = drawDomainTable(doc, agg.domainDeltas, margin, y, contentW);
 
   drawPageFooter(pageNum);
@@ -355,7 +321,7 @@ export async function generarMelGlobalPDF(
 
   if (radarImg) {
     y = drawSectionTitle(doc, "COMPARACIÓN INICIAL VS FINAL", margin, y);
-    y += 4;
+    y += 3;
     const radarH = 78;
     doc.addImage(radarImg, "PNG", margin + 12, y, contentW - 24, radarH);
     y += radarH + 10;
@@ -369,7 +335,7 @@ export async function generarMelGlobalPDF(
       y = 22;
     }
     y = drawSectionTitle(doc, "DELTAS POR COMPETENCIA", margin, y);
-    y += 4;
+    y += 3;
     const compH = Math.min(88, pageH - y - 20);
     doc.addImage(compImg, "PNG", margin, y, contentW, compH);
     y += compH + 8;
@@ -385,19 +351,20 @@ export async function generarMelGlobalPDF(
   y = 22;
 
   y = drawSectionTitle(doc, "DETALLE POR COMPETENCIA", margin, y);
-  y += 4;
+  y += 3;
 
   const finalPageNum = drawCompetencyTable(doc, agg.competencyDeltas, margin, y, contentW, pageH, pageNum, drawPageFooter);
   drawPageFooter(finalPageNum);
 
-  // Save
   const safeName = (filterLabel || "Global").replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, "").replace(/\s+/g, "_");
   doc.save(`MEL_Global_${safeName}.pdf`);
 }
 
-// ══════════════════════════════════════════════
-// Indicator bars (shared for auto & observer)
-// ══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// Bullet chart — clean monochrome indicator
+// Stephen Few's bullet graph style adapted for print
+// ═══════════════════════════════════════════════
+
 interface IndicatorData {
   globalPct: number;
   domainPcts: AggregatedMel["domainIncrementPcts"];
@@ -405,85 +372,105 @@ interface IndicatorData {
   countTotal: number;
 }
 
-function drawIndicatorBars(
+function drawBulletChart(
   doc: jsPDF, data: IndicatorData,
-  margin: number, startY: number, contentW: number, pageW: number
+  margin: number, startY: number, contentW: number
 ): number {
   let y = startY;
-  const barH = 5;
-  const labelColW = 42;
-  const barW = contentW - labelColW - 20;
-  const barX = margin + labelColW;
-  const targetX = barX + barW * 0.8;
+  const rowH = 7;
+  const labelColW = 45;
+  const valueColW = 16;
+  const chartW = contentW - labelColW - valueColW;
+  const chartX = margin + labelColW;
+  const barH = 3.5;
 
-  // Global bar
-  doc.setFontSize(7.5);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C_BLACK);
-  doc.text("Global", margin, y + barH / 2 + 1);
+  // Scale marks at 0%, 20%, 40%, 60%, 80%, 100%
+  const drawScale = (atY: number) => {
+    doc.setFontSize(5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C_LIGHT);
+    for (let p = 0; p <= 100; p += 20) {
+      const sx = chartX + (p / 100) * chartW;
+      doc.text(String(p), sx, atY, { align: "center" });
+    }
+  };
 
-  // Background
-  doc.setFillColor(...C_BG_LIGHT);
-  doc.roundedRect(barX, y, barW, barH, 1.5, 1.5, "F");
-  // Fill
-  const fillW = Math.max(Math.min(data.globalPct, 100) / 100 * barW, 0.5);
-  doc.setFillColor(...getBarColor(data.globalPct));
-  doc.roundedRect(barX, y, fillW, barH, 1.5, 1.5, "F");
-  // Value label
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C_BLACK);
-  doc.text(pct(data.globalPct), barX + barW + 2, y + barH / 2 + 1);
-  // Target line
-  doc.setDrawColor(...C_DARK);
-  doc.setLineDashPattern([1.5, 1], 0);
-  doc.setLineWidth(0.3);
-  doc.line(targetX, y - 1, targetX, y + barH + 1);
-  doc.setLineDashPattern([], 0);
+  // Draw scale at top
+  drawScale(y);
+  y += 3;
 
-  y += barH + 4;
+  // Helper to draw one bullet row
+  const drawRow = (label: string, value: number, isBold: boolean) => {
+    // Qualitative ranges (background bands): poor / satisfactory / good
+    const bandH = rowH - 1;
+    const bandY = y + 0.5;
+    // Band 1: 0-50% light gray
+    doc.setFillColor(230, 230, 230);
+    doc.rect(chartX, bandY, chartW * 0.5, bandH, "F");
+    // Band 2: 50-80% slightly darker
+    doc.setFillColor(210, 210, 210);
+    doc.rect(chartX + chartW * 0.5, bandY, chartW * 0.3, bandH, "F");
+    // Band 3: 80-100% darker
+    doc.setFillColor(190, 190, 190);
+    doc.rect(chartX + chartW * 0.8, bandY, chartW * 0.2, bandH, "F");
 
-  // Domain bars
+    // Performance bar (solid black)
+    const barWidth = Math.max(Math.min(value, 100) / 100 * chartW, 0.3);
+    const barY = y + (rowH - barH) / 2;
+    doc.setFillColor(...C_BLACK);
+    doc.rect(chartX, barY, barWidth, barH, "F");
+
+    // Target marker at 80% — vertical line
+    const targetX = chartX + chartW * 0.8;
+    doc.setDrawColor(...C_BLACK);
+    doc.setLineWidth(0.6);
+    doc.line(targetX, bandY - 0.5, targetX, bandY + bandH + 0.5);
+
+    // Label
+    doc.setFontSize(isBold ? 7 : 6.5);
+    doc.setFont("helvetica", isBold ? "bold" : "normal");
+    doc.setTextColor(...C_BLACK);
+    doc.text(label, chartX - 3, y + rowH / 2 + 1, { align: "right" });
+
+    // Value
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", isBold ? "bold" : "normal");
+    doc.setTextColor(...C_DARK);
+    doc.text(pctStr(value), chartX + chartW + 3, y + rowH / 2 + 1);
+
+    y += rowH + 1;
+  };
+
+  // Global row
+  drawRow("Global", data.globalPct, true);
+
+  // Thin separator
+  doc.setDrawColor(...C_SUBTLE);
+  doc.setLineWidth(0.2);
+  doc.line(chartX, y - 0.5, chartX + chartW, y - 0.5);
+  y += 1;
+
+  // Domain rows
   for (const d of data.domainPcts) {
     const label = d.domainLabel.length > 28 ? d.domainLabel.substring(0, 26) + "…" : d.domainLabel;
-    doc.setFontSize(6.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...C_DARK);
-    doc.text(label, margin, y + barH / 2 + 1);
-
-    doc.setFillColor(...C_BG_LIGHT);
-    doc.roundedRect(barX, y, barW, barH, 1.5, 1.5, "F");
-    const dFillW = Math.max(Math.min(d.pctPositive, 100) / 100 * barW, 0.5);
-    doc.setFillColor(...getBarColor(d.pctPositive));
-    doc.roundedRect(barX, y, dFillW, barH, 1.5, 1.5, "F");
-
-    doc.setFontSize(6.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...C_MID);
-    doc.text(pct(d.pctPositive), barX + barW + 2, y + barH / 2 + 1);
-
-    doc.setDrawColor(...C_DARK);
-    doc.setLineDashPattern([1.5, 1], 0);
-    doc.setLineWidth(0.2);
-    doc.line(targetX, y, targetX, y + barH);
-    doc.setLineDashPattern([], 0);
-
-    y += barH + 2.5;
+    drawRow(label, d.pctPositive, false);
   }
 
-  // Summary line
+  // Summary
+  y += 1;
   doc.setFontSize(6.5);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(...C_LIGHT_TEXT);
-  doc.text(`${data.countPositive} / ${data.countTotal} directivos con incremento`, margin, y + 2);
-  y += 8;
+  doc.setTextColor(...C_MID);
+  doc.text(`${data.countPositive} / ${data.countTotal} directivos con incremento`, margin, y);
+  y += 5;
 
   return y;
 }
 
-// ══════════════════════════════════════════════
-// Domain table
-// ══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// Domain delta table
+// ═══════════════════════════════════════════════
+
 function drawDomainTable(
   doc: jsPDF,
   domains: AggregatedMel["domainDeltas"],
@@ -494,41 +481,39 @@ function drawDomainTable(
   const headers = ["Dominio", "Δ Auto", "Δ Observadores"];
 
   // Header
-  doc.setFillColor(...C_ACCENT);
-  doc.roundedRect(x, y, w, rowH, 1.5, 1.5, "F");
-  // Fill bottom corners to avoid gap with rows
-  doc.rect(x, y + rowH - 2, w, 2, "F");
+  doc.setFillColor(...C_HEADER_BG);
+  doc.rect(x, y, w, rowH, "F");
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C_WHITE);
   let tx = x;
   headers.forEach((h, i) => {
-    doc.text(h, i === 0 ? tx + 4 : tx + cols[i] / 2, y + rowH / 2 + 1, i === 0 ? {} : { align: "center" });
+    doc.text(h, i === 0 ? tx + 3 : tx + cols[i] / 2, y + rowH / 2 + 1, i === 0 ? {} : { align: "center" });
     tx += cols[i];
   });
   y += rowH;
 
   // Rows
   domains.forEach((d, i) => {
-    doc.setFillColor(i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 248);
-    doc.rect(x, y, w, rowH, "F");
-    // Bottom border
-    doc.setDrawColor(...C_BORDER);
-    doc.setLineWidth(0.15);
+    if (i % 2 === 0) {
+      doc.setFillColor(...C_STRIPE);
+      doc.rect(x, y, w, rowH, "F");
+    }
+    doc.setDrawColor(...C_SUBTLE);
+    doc.setLineWidth(0.1);
     doc.line(x, y + rowH, x + w, y + rowH);
 
     let cx = x;
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C_BLACK);
-    doc.text(d.domainLabel.substring(0, 42), cx + 4, y + rowH / 2 + 1);
+    doc.text(d.domainLabel.substring(0, 42), cx + 3, y + rowH / 2 + 1);
     cx += cols[0];
 
     const obsAvg = (d.avgDeltaInternos + d.avgDeltaExternos) / 2;
     [d.avgDeltaAuto, obsAvg].forEach((val, vi) => {
-      const color = val > 0 ? C_ACCENT_LIGHT : val < 0 ? C_WARN : C_MID;
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...color);
+      doc.setTextColor(...C_BLACK);
       doc.text(deltaSign(val), cx + cols[vi + 1] / 2, y + rowH / 2 + 1, { align: "center" });
       cx += cols[vi + 1];
     });
@@ -538,9 +523,10 @@ function drawDomainTable(
   return y + 4;
 }
 
-// ══════════════════════════════════════════════
-// Competency detail table
-// ══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// Competency detail table (multi-page)
+// ═══════════════════════════════════════════════
+
 function drawCompetencyTable(
   doc: jsPDF,
   comps: AggregatedMel["competencyDeltas"],
@@ -556,16 +542,15 @@ function drawCompetencyTable(
   let y = startY;
 
   const drawHeader = () => {
-    doc.setFillColor(...C_ACCENT);
-    doc.roundedRect(x, y, w, rowH + 1, 1.5, 1.5, "F");
-    doc.rect(x, y + rowH - 1, w, 2, "F");
+    doc.setFillColor(...C_HEADER_BG);
+    doc.rect(x, y, w, rowH + 1, "F");
     doc.setFontSize(6);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...C_WHITE);
-    let tx = x;
+    let hx = x;
     headers.forEach((h, i) => {
-      doc.text(h, i === 0 ? tx + 3 : tx + cols[i] / 2, y + rowH / 2 + 1, i === 0 ? {} : { align: "center" });
-      tx += cols[i];
+      doc.text(h, i === 0 ? hx + 3 : hx + cols[i] / 2, y + rowH / 2 + 1, i === 0 ? {} : { align: "center" });
+      hx += cols[i];
     });
     y += rowH + 1;
   };
@@ -581,15 +566,17 @@ function drawCompetencyTable(
       drawHeader();
     }
 
-    doc.setFillColor(i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 248);
-    doc.rect(x, y, w, rowH, "F");
-    doc.setDrawColor(...C_BORDER);
-    doc.setLineWidth(0.1);
+    if (i % 2 === 0) {
+      doc.setFillColor(...C_STRIPE);
+      doc.rect(x, y, w, rowH, "F");
+    }
+    doc.setDrawColor(...C_SUBTLE);
+    doc.setLineWidth(0.08);
     doc.line(x, y + rowH, x + w, y + rowH);
 
-    doc.setTextColor(...C_BLACK);
     doc.setFontSize(5.8);
     doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C_BLACK);
     let tx = x;
     const label = c.competencyLabel.length > 30 ? c.competencyLabel.substring(0, 28) + "…" : c.competencyLabel;
     doc.text(label, tx + 3, y + rowH / 2 + 1);
@@ -599,14 +586,8 @@ function drawCompetencyTable(
     vals.forEach((v, vi) => {
       const isDelta = vi === 2 || vi === 5;
       const text = isDelta ? deltaSign(v) : r1(v);
-      if (isDelta) {
-        const color = v > 0 ? C_ACCENT_LIGHT : v < 0 ? C_WARN : C_MID;
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(...color);
-      } else {
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(...C_BLACK);
-      }
+      doc.setFont("helvetica", isDelta ? "bold" : "normal");
+      doc.setTextColor(...C_BLACK);
       doc.text(text, tx + cols[vi + 1] / 2, y + rowH / 2 + 1, { align: "center" });
       tx += cols[vi + 1];
     });
