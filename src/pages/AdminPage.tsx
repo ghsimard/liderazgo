@@ -28,6 +28,7 @@ import AdminReviewsTab from "@/components/admin/AdminReviewsTab";
 import AdminChangelogTab from "@/components/admin/AdminChangelogTab";
 import AdminMelTab from "@/components/admin/AdminMelTab";
 import AdminInvitacionesTab from "@/components/admin/AdminInvitacionesTab";
+import AdminActivityLogTab from "@/components/admin/AdminActivityLogTab";
 
 interface FormItem {
   name: string;
@@ -244,6 +245,8 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return isSuperAdmin ? <AdminReviewsTab /> : null;
     case "mensajes":
       return isSuperAdmin ? <AdminMensajesTab /> : null;
+    case "activity-log":
+      return <AdminActivityLogTab />;
     case "changelog":
       return isSuperAdmin ? <AdminChangelogTab /> : null;
     default:
