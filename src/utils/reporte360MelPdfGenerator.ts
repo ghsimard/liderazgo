@@ -143,11 +143,16 @@ export async function generarMelPDF(
   drawPageHeader();
   y = 25;
 
-  doc.setFontSize(12);
+  // Page title matching UI dialog
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C_BLACK);
-  doc.text("RESUMEN GLOBAL", margin, y);
-  y += 8;
+  doc.text(`Análisis MEL — ${data.directivoNombre}`, margin, y);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...C_MID);
+  doc.text(data.institucion, margin, y + 6);
+  y += 14;
 
   // Global delta boxes
   const boxW = contentW / 2 - 3;
@@ -194,19 +199,26 @@ export async function generarMelPDF(
 
   y += boxH + 10;
 
-  // ── Note: validation criterion ──
+  // ── Note: validation criterion (matching UI) ──
   if (data.hasInicial && data.hasFinal) {
     const meets = data.globalDeltaAuto >= 0.5;
     const noteText = meets
       ? "✓ Cumple criterio MEL (ΔP ≥ 0,5 puntos en evaluación)."
       : "✗ No cumple criterio MEL (ΔP < 0,5 puntos en evaluación).";
-    doc.setFillColor(...(meets ? [230, 245, 230] as [number, number, number] : [250, 230, 230] as [number, number, number]));
-    doc.roundedRect(margin, y, contentW, 8, 1.5, 1.5, "F");
-    doc.setFontSize(7.5);
+    const noteH = 9;
+    // Background fill
+    doc.setFillColor(...(meets ? [236, 253, 245] as [number, number, number] : [254, 242, 242] as [number, number, number]));
+    // Border
+    doc.setDrawColor(...(meets ? [134, 239, 172] as [number, number, number] : [220, 140, 140] as [number, number, number]));
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, y, contentW, noteH, 1.5, 1.5, "FD");
+    // Centered text
+    doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...C_BLACK);
-    doc.text(noteText, margin + 3, y + 5.5);
-    y += 12;
+    doc.setTextColor(...(meets ? [6, 95, 70] as [number, number, number] : [180, 40, 40] as [number, number, number]));
+    doc.text(noteText, margin + contentW / 2, y + noteH / 2 + 1, { align: "center" });
+    doc.setDrawColor(0);
+    y += noteH + 6;
   }
 
   // ── Domain deltas chart ──
