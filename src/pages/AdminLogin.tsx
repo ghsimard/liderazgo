@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Lock } from "lucide-react";
 import { useAppImages } from "@/hooks/useAppImages";
+import { logActivity } from "@/utils/activityLogger";
 
 const authErrors: Record<string, string> = {
   session_missing: "Session absente. Veuillez vous reconnecter.",
@@ -45,6 +46,11 @@ export default function AdminLogin() {
       setLoading(false);
       return;
     }
+
+    // Log admin login activity
+    const adminEmail = data.user?.email || email;
+    logActivity(adminEmail, "login", "Admin login");
+    sessionStorage.setItem("admin_email", adminEmail);
 
     navigate("/admin", { replace: true });
   };
