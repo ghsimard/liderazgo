@@ -49,6 +49,7 @@ const PUBLIC_INSERT_TABLES = new Set([
   "site_reviews",
   "contact_messages",
   "encuesta_invitaciones",
+  "user_activity_log",
 ]);
 
 // Tables that allow public updates (no auth required for PATCH)
@@ -80,6 +81,7 @@ const ALLOWED_TABLES = new Set([
   "app_settings",
   "contact_messages",
   "admin_cedulas",
+  "user_activity_log",
 ]);
 
 // ── Helpers ────────────────────────────────────────────
