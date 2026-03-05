@@ -208,13 +208,13 @@ export async function generarMelGlobalPDF(
   y += 28;
   doc.setFontSize(13);
   doc.setTextColor(...C_BLACK);
-  doc.text(filterLabel || "Todos los directivos", pageW / 2, y, { align: "center" });
+  doc.text(filterLabel || "Todos los pares", pageW / 2, y, { align: "center" });
 
   y += 15;
   doc.setFontSize(8);
   doc.setTextColor(...C_MID);
   doc.text(
-    `${agg.countBothPhases} de ${agg.countWithData} directivo(s) con datos en ambas fases · ${agg.countPositiveAuto} con progresión positiva (ΔP ≥ 0,5)`,
+    `${agg.countBothPhases} de ${agg.countWithData} par(es) con datos en ambas fases · ${agg.countPositiveAuto} con progresión positiva (ΔP ≥ 0,5)`,
     pageW / 2, y, { align: "center" }
   );
 
@@ -234,7 +234,7 @@ export async function generarMelGlobalPDF(
   const kpiGap = 4;
   const kpiW2 = (contentW - 3 * kpiGap) / 4;
   const kpis = [
-    { label: "DIRECTIVOS", value: String(agg.countWithData) },
+    { label: "PARES", value: String(agg.countWithData) },
     { label: "Δ AUTO PROM.", value: deltaSign(agg.avgDeltaAuto) },
     { label: "Δ OBS. PROM.", value: deltaSign(agg.avgDeltaObserver) },
     { label: "PROGRESIÓN +", value: `${agg.countPositiveAuto} / ${agg.countBothPhases}` },
@@ -259,7 +259,7 @@ export async function generarMelGlobalPDF(
 
   // ── INDICATOR: AUTOEVALUACIÓN ──
   y = drawSectionTitle(doc, "INDICADOR MEL: AUTOEVALUACIÓN", margin, y);
-  y = drawSubtitle(doc, "% de directivos con incremento (ΔP ≥ 0,5) · Meta: 80% · Línea base: 0%", margin, y);
+  y = drawSubtitle(doc, "% de pares con incremento (ΔP ≥ 0,5) · Meta: 80% · Línea base: 0%", margin, y);
 
   y = drawBulletChart(doc, {
     globalPct: agg.globalPctPositive,
@@ -278,7 +278,7 @@ export async function generarMelGlobalPDF(
   }
 
   y = drawSectionTitle(doc, "INDICADOR MEL: OBSERVADORES", margin, y);
-  y = drawSubtitle(doc, "% de directivos con incremento (ΔP ≥ 0,5) según observadores · Meta: 80%", margin, y);
+  y = drawSubtitle(doc, "% de pares con incremento (ΔP ≥ 0,5) según observadores · Meta: 80%", margin, y);
 
   y = drawBulletChart(doc, {
     globalPct: agg.globalPctPositiveObserver,
@@ -465,7 +465,7 @@ function drawBulletChart(
   doc.setFontSize(6.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C_MID);
-  doc.text(`${data.countPositive} / ${data.countTotal} directivos con incremento`, margin, y);
+  doc.text(`${data.countPositive} / ${data.countTotal} pares con incremento`, margin, y);
   y += 5;
 
   return y;

@@ -293,7 +293,7 @@ export async function generarMelPDF(
 
     // Observer indicators (internos / externos)
     const obsIndicators = [
-      { title: "INTERNOS (Directivos, Docentes, Administrativos)", getter: (d: MelDomainDelta) => d.deltaInternos },
+      { title: "INTERNOS (Pares, Docentes, Administrativos)", getter: (d: MelDomainDelta) => d.deltaInternos },
       { title: "EXTERNOS (Estudiantes, Acudientes)", getter: (d: MelDomainDelta) => d.deltaExternos },
     ];
 

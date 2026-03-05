@@ -282,7 +282,7 @@ export async function generarReporte360PDF(
     y += 6;
   };
 
-  drawIdRow("DIRECTIVO/A DOCENTE", data.directivo.nombre.toUpperCase());
+  drawIdRow("PAR EVALUADO/A", data.directivo.nombre.toUpperCase());
   drawIdRow("IDENTIFICACIÓN", data.directivo.cedula);
   drawIdRow("ENTIDAD TERRITORIAL", data.directivo.entidadTerritorial.toUpperCase());
   drawIdRow("INSTITUCIÓN EDUCATIVA", data.directivo.institucion.toUpperCase());
@@ -399,7 +399,7 @@ export async function generarReporte360PDF(
   doc.setFont("helvetica", "normal");
   const g = data.directivo.genero;
   const legendItems = [
-    { color: COLOR_DIRECTIVO, label: genderizeRole("Directivo", g) },
+    { color: COLOR_DIRECTIVO, label: genderizeRole("Par", g) },
     { color: COLOR_INTERNOS, label: genderizeRole("Administrativo(a), coordinador(a) y docente", g) },
     { color: COLOR_EXTERNOS, label: "Acudiente y estudiante" },
   ];
@@ -468,7 +468,7 @@ export async function generarReporte360PDF(
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text("ANÁLISIS DE LA DISTANCIA ENTRE EL DIRECTIVO Y LOS OBSERVADORES", margin, y);
+  doc.text("ANÁLISIS DE LA DISTANCIA ENTRE EL PAR Y LOS OBSERVADORES", margin, y);
   y += 6;
 
   drawRadarChart(doc, data.competencyScores, pageW / 2, y + 48, 38);
@@ -482,7 +482,7 @@ export async function generarReporte360PDF(
   y += 5;
 
   {
-    const tableHeaders = ["Competencia", "Autoevaluación", "Directivos, Docentes y Administrativos", "Estudiantes y Acudientes"];
+    const tableHeaders = ["Competencia", "Autoevaluación", "Pares, Docentes y Administrativos", "Estudiantes y Acudientes"];
     const colWidths = [contentW * 0.46, contentW * 0.18, contentW * 0.18, contentW * 0.18];
     const rowH = 5.5;
 

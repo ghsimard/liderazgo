@@ -205,7 +205,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
           showCLT: regionLogoConfig.showCLT,
         },
         { domainChartRef, radarChartRef, competencyChartRef },
-        filterLabel || "Todos los directivos"
+        filterLabel || "Todos los pares"
       );
     } catch (err) {
       console.error("Global MEL PDF error:", err);
@@ -221,7 +221,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
           <div>
             <p className="text-sm font-medium">Informe global MEL</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Agrega los deltas de progresión de {directivos.length} directivo(s) filtrados.
+              Agrega los deltas de progresión de {directivos.length} par(es) filtrados.
             </p>
           </div>
           <Button onClick={handleGenerate} disabled={directivos.length === 0} className="gap-1.5">
@@ -240,7 +240,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
           <p className="text-sm font-medium text-center">Análisis en curso…</p>
           <Progress value={(progress.current / progress.total) * 100} className="h-2" />
           <p className="text-xs text-muted-foreground text-center">
-            {progress.current} / {progress.total} directivo(s)
+            {progress.current} / {progress.total} par(es)
           </p>
         </CardContent>
       </Card>
@@ -275,7 +275,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
       {/* Action bar */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {agg.countBothPhases} de {agg.countWithData} directivo(s) con datos en ambas fases (inicial y final)
+          {agg.countBothPhases} de {agg.countWithData} par(es) con datos en ambas fases (inicial y final)
         </p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={downloading} className="gap-1.5">
@@ -295,7 +295,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
           <CardContent className="p-4 text-center">
             <Users className="w-5 h-5 text-primary mx-auto mb-1" />
             <p className="text-2xl font-bold">{agg.countWithData}</p>
-            <p className="text-xs text-muted-foreground">Directivos con datos</p>
+            <p className="text-xs text-muted-foreground">Pares con datos</p>
           </CardContent>
         </Card>
         <Card>
@@ -326,7 +326,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
             <div>
               <h4 className="text-sm font-semibold">Indicador MEL: Incremento por Gestión</h4>
               <p className="text-xs text-muted-foreground mt-0.5">
-                % de directivos que presentan incremento en su puntaje promedio en la Encuesta 360°, desagregado por gestión
+                % de pares que presentan incremento en su puntaje promedio en la Encuesta 360°, desagregado por gestión
               </p>
             </div>
             <div className="text-right shrink-0">
@@ -351,7 +351,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
               {/* Target line at 80% */}
               <div className="absolute inset-y-0 border-r-2 border-dashed border-foreground/40" style={{ left: "80%" }} />
             </div>
-            <p className="text-xs text-muted-foreground">{agg.countPositiveAuto} / {agg.countBothPhases} directivos con incremento</p>
+            <p className="text-xs text-muted-foreground">{agg.countPositiveAuto} / {agg.countBothPhases} pares con incremento</p>
           </div>
 
           {/* Per domain */}
@@ -371,7 +371,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
                   />
                   <div className="absolute inset-y-0 border-r-2 border-dashed border-foreground/30" style={{ left: "80%" }} />
                 </div>
-                <p className="text-[10px] text-muted-foreground">{d.countPositive} / {d.countTotal} directivos</p>
+                <p className="text-[10px] text-muted-foreground">{d.countPositive} / {d.countTotal} pares</p>
               </div>
             ))}
           </div>
@@ -384,7 +384,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
           <div className="flex items-start justify-between gap-4">
             <div>
               <h4 className="text-sm font-semibold">Indicador MEL: Observadores</h4>
-              <p className="text-xs text-muted-foreground mt-0.5">% de directivos con incremento (ΔP ≥ 0.5) por gestión según observadores</p>
+              <p className="text-xs text-muted-foreground mt-0.5">% de pares con incremento (ΔP ≥ 0.5) por gestión según observadores</p>
             </div>
             <div className="text-right shrink-0">
               <p className="text-xs text-muted-foreground">Meta: 80%</p>
@@ -406,7 +406,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
               />
               <div className="absolute inset-y-0 border-r-2 border-dashed border-foreground/40" style={{ left: "80%" }} />
             </div>
-            <p className="text-xs text-muted-foreground">{agg.countPositiveObs} / {agg.countBothPhases} directivos con incremento</p>
+            <p className="text-xs text-muted-foreground">{agg.countPositiveObs} / {agg.countBothPhases} pares con incremento</p>
           </div>
 
           <div className="grid gap-2">
@@ -425,7 +425,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
                   />
                   <div className="absolute inset-y-0 border-r-2 border-dashed border-foreground/30" style={{ left: "80%" }} />
                 </div>
-                <p className="text-[10px] text-muted-foreground">{d.countPositive} / {d.countTotal} directivos</p>
+                <p className="text-[10px] text-muted-foreground">{d.countPositive} / {d.countTotal} pares</p>
               </div>
             ))}
           </div>
