@@ -259,7 +259,7 @@ export async function generarMelGlobalPDF(
 
   // ── INDICATOR: AUTOEVALUACIÓN ──
   y = drawSectionTitle(doc, "INDICADOR MEL: AUTOEVALUACIÓN", margin, y);
-  y = drawSubtitle(doc, "% de pares con incremento (ΔP ≥ 0,5) · Meta: 80% · Línea base: 0%", margin, y);
+  y = drawSubtitle(doc, "% de pares con incremento (ΔP ≥ 0,5)", margin, y);
 
   y = drawBulletChart(doc, {
     globalPct: agg.globalPctPositive,
@@ -278,7 +278,7 @@ export async function generarMelGlobalPDF(
   }
 
   y = drawSectionTitle(doc, "INDICADOR MEL: OBSERVADORES", margin, y);
-  y = drawSubtitle(doc, "% de pares con incremento (ΔP ≥ 0,5) según observadores · Meta: 80%", margin, y);
+  y = drawSubtitle(doc, "% de pares con incremento (ΔP ≥ 0,5) según observadores", margin, y);
 
   y = drawBulletChart(doc, {
     globalPct: agg.globalPctPositiveObserver,

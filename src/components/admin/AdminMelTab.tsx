@@ -120,7 +120,6 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
                   <h4 className="text-sm font-semibold">Indicador: Incremento por Gestión</h4>
                   <p className="text-xs text-muted-foreground">Progresión del puntaje promedio (auto) por dominio</p>
                 </div>
-                <span className="text-xs text-muted-foreground shrink-0">Meta: 80%</span>
               </div>
               <div className="grid gap-2">
                 {data.domainDeltas.map((d) => {
@@ -156,7 +155,7 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
                   <h4 className="text-sm font-semibold">Indicador: {section.title}</h4>
                   <p className="text-xs text-muted-foreground">Progresión según observadores por dominio</p>
                 </div>
-                <span className="text-xs text-muted-foreground shrink-0">Meta: 80%</span>
+                
               </div>
               <div className="grid gap-2">
                 {data.domainDeltas.map((d) => {

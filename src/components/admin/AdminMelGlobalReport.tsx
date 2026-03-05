@@ -329,10 +329,6 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
                 % de pares que presentan incremento en su puntaje promedio en la Encuesta 360°, desagregado por gestión
               </p>
             </div>
-            <div className="text-right shrink-0">
-              <p className="text-xs text-muted-foreground">Meta: 80%</p>
-              <p className="text-xs text-muted-foreground">Línea base: 0%</p>
-            </div>
           </div>
 
           {/* Global % */}
@@ -385,10 +381,6 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
             <div>
               <h4 className="text-sm font-semibold">Indicador MEL: Observadores</h4>
               <p className="text-xs text-muted-foreground mt-0.5">% de pares con incremento (ΔP ≥ 0.5) por gestión según observadores</p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="text-xs text-muted-foreground">Meta: 80%</p>
-              <p className="text-xs text-muted-foreground">Línea base: 0%</p>
             </div>
           </div>
 
