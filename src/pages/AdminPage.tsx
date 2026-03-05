@@ -27,6 +27,7 @@ import AdminMensajesTab from "@/components/admin/AdminMensajesTab";
 import AdminReviewsTab from "@/components/admin/AdminReviewsTab";
 import AdminChangelogTab from "@/components/admin/AdminChangelogTab";
 import AdminMelTab from "@/components/admin/AdminMelTab";
+import AdminInvitacionesTab from "@/components/admin/AdminInvitacionesTab";
 
 interface FormItem {
   name: string;
@@ -221,6 +222,8 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return <AdminUsersTab isSuperAdmin={isSuperAdmin} />;
     case "mel":
       return <AdminMelTab />;
+    case "invitaciones":
+      return <AdminInvitacionesTab />;
     case "rubricas":
       return <AdminRubricasTab />;
     case "ambiente-escolar":
