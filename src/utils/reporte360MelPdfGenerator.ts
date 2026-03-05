@@ -718,6 +718,13 @@ function drawCompetencyDeltaChart(
   comps.forEach((c, i) => {
     const cy = y + i * rowH + rowH / 2;
 
+    // Separator line between competencies
+    if (i > 0) {
+      doc.setDrawColor(210, 210, 210);
+      doc.setLineWidth(0.15);
+      doc.line(x, y + i * rowH, x + w, y + i * rowH);
+    }
+
     // Stripe
     if (i % 2 === 0) {
       doc.setFillColor(250, 250, 250);
