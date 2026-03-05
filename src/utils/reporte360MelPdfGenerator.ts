@@ -314,19 +314,20 @@ export async function generarMelPDF(
       doc.setFillColor(hasInc ? 34 : 200, hasInc ? 139 : 60, hasInc ? 34 : 60);
       doc.circle(margin + 2, y + barH / 2, 1.2, "F");
       
-      // Label + status
+      // Label
       doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...C_BLACK);
       doc.text(label, margin + 5, y + barH / 2 + 1);
       
-      // Status text on right
+      // Status value (right after label)
+      const labelEndX = margin + 5 + doc.getTextWidth(label) + 3;
       doc.setFontSize(6);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(hasInc ? 34 : 200, hasInc ? 139 : 60, hasInc ? 34 : 60);
       doc.text(
-        hasInc ? `✓ ${deltaSign(d.deltaAuto)}` : `✗ ${deltaSign(d.deltaAuto)}`,
-        pageW - margin, y + barH / 2 + 1, { align: "right" }
+        hasInc ? `${deltaSign(d.deltaAuto)}` : `${deltaSign(d.deltaAuto)}`,
+        labelEndX, y + barH / 2 + 1
       );
       
       y += barH + 3;
@@ -371,12 +372,13 @@ export async function generarMelPDF(
         doc.setTextColor(...C_BLACK);
         doc.text(label, margin + 5, y + barH / 2 + 1);
 
+        const labelEndX = margin + 5 + doc.getTextWidth(label) + 3;
         doc.setFontSize(6);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(hasInc ? 34 : 200, hasInc ? 139 : 60, hasInc ? 34 : 60);
         doc.text(
-          hasInc ? `✓ ${deltaSign(delta)}` : `✗ ${deltaSign(delta)}`,
-          pageW - margin, y + barH / 2 + 1, { align: "right" }
+          `${deltaSign(delta)}`,
+          labelEndX, y + barH / 2 + 1
         );
 
         y += barH + 3;
