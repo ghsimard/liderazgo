@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/utils/dbClient";
 import { calcularMelRubricas, NIVEL_LABELS, type MelRubricaData, type DirectivoRubricaResult, type MelRubricaKPIs } from "@/utils/melRubricaCalculator";
+import { generarMelRubricasPDF } from "@/utils/melRubricaPdfGenerator";
+import { useAppImages } from "@/hooks/useAppImages";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MultiSelect } from "@/components/ui/multi-select";
@@ -8,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Filter, Target, CheckCircle2, XCircle, BarChart3 } from "lucide-react";
+import { RefreshCw, Filter, Target, CheckCircle2, XCircle, BarChart3, Download } from "lucide-react";
 
 interface DirectivoOption {
   nombre: string;
@@ -80,8 +82,10 @@ function NivelBadge({ nivel }: { nivel: string | null }) {
 
 export default function AdminMelRubricasTab() {
   const { toast } = useToast();
+  const { images } = useAppImages();
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
   const [melData, setMelData] = useState<MelRubricaData | null>(null);
 
@@ -177,6 +181,29 @@ export default function AdminMelRubricasTab() {
     setCalculating(false);
   };
 
+  const filterLabel = useMemo(() => {
+    const parts: string[] = [];
+    if (selRegions.length > 0) parts.push(selRegions.join(", "));
+    if (selEntidades.length > 0) parts.push(selEntidades.join(", "));
+    if (selInstituciones.length > 0) parts.push(selInstituciones.join(", "));
+    return parts.length > 0 ? parts.join(" / ") : "Todos los directivos";
+  }, [selRegions, selEntidades, selInstituciones]);
+
+  const handleDownloadPdf = async () => {
+    if (!melData) return;
+    setGeneratingPdf(true);
+    try {
+      await generarMelRubricasPDF(melData, {
+        logoRLT: images.logo_rlt_white,
+        logoCLT: images.logo_clt,
+      }, filterLabel);
+      toast({ title: "PDF generado", description: "El informe MEL Rúbricas se ha descargado." });
+    } catch (err: any) {
+      toast({ title: "Error al generar PDF", description: err.message, variant: "destructive" });
+    }
+    setGeneratingPdf(false);
+  };
+
   const hasFilters = selRegions.length > 0 || selEntidades.length > 0 || selInstituciones.length > 0;
 
   if (loading) {
@@ -257,10 +284,16 @@ export default function AdminMelRubricasTab() {
             <p className="text-sm text-muted-foreground">
               {melData.directivos.length} directivo(s) con datos de rúbricas
             </p>
-            <Button variant="ghost" size="sm" onClick={handleCalculate} className="gap-1.5 text-xs">
-              <RefreshCw className="w-3.5 h-3.5" />
-              Recalcular
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={generatingPdf} className="gap-1.5 text-xs">
+                <Download className="w-3.5 h-3.5" />
+                {generatingPdf ? "Generando…" : "Descargar PDF"}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleCalculate} className="gap-1.5 text-xs">
+                <RefreshCw className="w-3.5 h-3.5" />
+                Recalcular
+              </Button>
+            </div>
           </div>
 
           {/* KPI Cards */}
