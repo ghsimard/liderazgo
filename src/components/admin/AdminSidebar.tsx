@@ -51,6 +51,7 @@ interface SidebarSection {
   label: string;
   icon: React.ElementType;
   items: SidebarItem[];
+  separatorAfter?: boolean;
 }
 
 const topLevelItems: SidebarItem[] = [
