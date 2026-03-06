@@ -69,6 +69,7 @@ const sections: SidebarSection[] = [
     icon: FolderOpen,
     items: [
       { tab: "enlace-ficha", label: "Enlace Ficha", icon: Link2, linkUrl: "https://884bdecf-dfd4-47e7-ac2b-4a0fa0ab7c80.lovableproject.com/" },
+      { tab: "blank-pdf", label: "Ficha en Blanco", icon: Printer, action: "blank-pdf" },
       { tab: "fichas", label: "Lista", icon: FileText },
       { tab: "geography", label: "Regiones", icon: MapPin },
     ],
