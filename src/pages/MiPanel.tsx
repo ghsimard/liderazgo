@@ -22,6 +22,43 @@ interface CedulaRoleResult {
   genero: string | null;
 }
 
+function BlankFichaPdfButton() {
+  const [generating, setGenerating] = useState(false);
+  const { images } = useAppImages();
+  const { toast } = useToast();
+
+  const handleClick = async () => {
+    if (generating) return;
+    setGenerating(true);
+    try {
+      await generarPDFFichaEnBlanco(
+        { logoRLT: images.logo_rlt_white, logoCLTDark: images.logo_clt_dark, logoCosmo: images.logo_cosmo },
+        { showLogoRlt: true, showLogoClt: true }
+      );
+      toast({ title: "PDF generado", description: "La ficha en blanco se ha descargado." });
+    } catch {
+      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="outline"
+      className="w-full h-14 justify-start gap-3 text-base"
+      onClick={handleClick}
+      disabled={generating}
+    >
+      <Printer className="h-5 w-5" />
+      <div className="text-left">
+        <div className="font-semibold">{generating ? "Generando…" : "Ficha en Blanco"}</div>
+        <div className="text-xs text-muted-foreground">Descargar PDF para diligenciar a mano</div>
+      </div>
+    </Button>
+  );
+}
+
 export default function MiPanel() {
   const navigate = useNavigate();
   const cedula = sessionStorage.getItem("user_cedula") ?? "";
