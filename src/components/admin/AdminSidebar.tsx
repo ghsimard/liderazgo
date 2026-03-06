@@ -273,6 +273,20 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                               </SidebarMenuItem>
                             );
                           }
+                          if (item.action === "blank-pdf") {
+                            return (
+                              <SidebarMenuItem key={item.tab}>
+                                <SidebarMenuButton
+                                  onClick={handleBlankPdf}
+                                  tooltip={item.label}
+                                  className="cursor-pointer"
+                                >
+                                  <Icon className="h-4 w-4 shrink-0" />
+                                  <span>{generatingPdf ? "Generando…" : item.label}</span>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            );
+                          }
                           const active = activeTab === item.tab;
                           return (
                             <SidebarMenuItem key={item.tab}>
