@@ -284,10 +284,16 @@ export default function AdminMelRubricasTab() {
             <p className="text-sm text-muted-foreground">
               {melData.directivos.length} directivo(s) con datos de rúbricas
             </p>
-            <Button variant="ghost" size="sm" onClick={handleCalculate} className="gap-1.5 text-xs">
-              <RefreshCw className="w-3.5 h-3.5" />
-              Recalcular
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={generatingPdf} className="gap-1.5 text-xs">
+                <Download className="w-3.5 h-3.5" />
+                {generatingPdf ? "Generando…" : "Descargar PDF"}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleCalculate} className="gap-1.5 text-xs">
+                <RefreshCw className="w-3.5 h-3.5" />
+                Recalcular
+              </Button>
+            </div>
           </div>
 
           {/* KPI Cards */}
