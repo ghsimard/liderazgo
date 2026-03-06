@@ -497,13 +497,19 @@ export default function AdminMelTab() {
           onClick={() => setViewMode("individual")}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "individual" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
         >
-          Individual
+          360° Individual
         </button>
         <button
           onClick={() => setViewMode("global")}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "global" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
         >
-          Informe global
+          360° Global
+        </button>
+        <button
+          onClick={() => setViewMode("rubricas")}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "rubricas" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          MEL Rúbricas
         </button>
       </div>
 
