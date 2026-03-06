@@ -27,6 +27,7 @@ import AdminMensajesTab from "@/components/admin/AdminMensajesTab";
 import AdminReviewsTab from "@/components/admin/AdminReviewsTab";
 import AdminChangelogTab from "@/components/admin/AdminChangelogTab";
 import AdminMelTab from "@/components/admin/AdminMelTab";
+import AdminMelRubricasTab from "@/components/admin/AdminMelRubricasTab";
 import AdminInvitacionesTab from "@/components/admin/AdminInvitacionesTab";
 import AdminActivityLogTab from "@/components/admin/AdminActivityLogTab";
 
@@ -223,6 +224,8 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return <AdminUsersTab isSuperAdmin={isSuperAdmin} />;
     case "mel":
       return <AdminMelTab />;
+    case "mel-rubricas":
+      return <AdminMelRubricasTab />;
     case "invitaciones":
       return <AdminInvitacionesTab />;
     case "rubricas":
