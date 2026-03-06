@@ -30,6 +30,8 @@ function BlankFichaPdfButton() {
   const handleClick = async () => {
     if (generating) return;
     setGenerating(true);
+    const cedula = sessionStorage.getItem("user_cedula") ?? "";
+    logActivity(cedula, "ficha_view", "Descarga ficha en blanco (PDF)", "/mi-panel");
     try {
       await generarPDFFichaEnBlanco(
         { logoRLT: images.logo_rlt_white, logoCLTDark: images.logo_clt_dark, logoCosmo: images.logo_cosmo },
