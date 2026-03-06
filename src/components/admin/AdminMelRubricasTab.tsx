@@ -181,6 +181,29 @@ export default function AdminMelRubricasTab() {
     setCalculating(false);
   };
 
+  const filterLabel = useMemo(() => {
+    const parts: string[] = [];
+    if (selRegions.length > 0) parts.push(selRegions.join(", "));
+    if (selEntidades.length > 0) parts.push(selEntidades.join(", "));
+    if (selInstituciones.length > 0) parts.push(selInstituciones.join(", "));
+    return parts.length > 0 ? parts.join(" / ") : "Todos los directivos";
+  }, [selRegions, selEntidades, selInstituciones]);
+
+  const handleDownloadPdf = async () => {
+    if (!melData) return;
+    setGeneratingPdf(true);
+    try {
+      await generarMelRubricasPDF(melData, {
+        logoRLT: images.logo_rlt_white,
+        logoCLT: images.logo_clt,
+      }, filterLabel);
+      toast({ title: "PDF generado", description: "El informe MEL Rúbricas se ha descargado." });
+    } catch (err: any) {
+      toast({ title: "Error al generar PDF", description: err.message, variant: "destructive" });
+    }
+    setGeneratingPdf(false);
+  };
+
   const hasFilters = selRegions.length > 0 || selEntidades.length > 0 || selInstituciones.length > 0;
 
   if (loading) {
