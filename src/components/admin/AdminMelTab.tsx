@@ -542,7 +542,9 @@ export default function AdminMelTab() {
         </CardContent>
       </Card>
 
-      {viewMode === "global" ? (
+      {viewMode === "rubricas" ? (
+        <AdminMelRubricasTab selRegions={selRegions} selEntidades={selEntidades} selInstituciones={selInstituciones} />
+      ) : viewMode === "global" ? (
         <AdminMelGlobalReport directivos={filteredDirectivos} filterLabel={selRegions.length > 0 ? selRegions.join(", ") : undefined} selectedRegions={selRegions} />
       ) : (
         <>
