@@ -342,7 +342,7 @@ export default function AdminMelTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkExporting, setBulkExporting] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
-  const [viewMode, setViewMode] = useState<"individual" | "global">("individual");
+  const [viewMode, setViewMode] = useState<"individual" | "global" | "rubricas">("individual");
 
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
