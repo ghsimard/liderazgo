@@ -48,7 +48,8 @@ interface SidebarItem {
   label: string;
   icon: React.ElementType;
   superadminOnly?: boolean;
-  linkUrl?: string; // renders as a copyable link instead of a tab
+  linkUrl?: string;
+  action?: "blank-pdf";
 }
 
 interface SidebarSection {
