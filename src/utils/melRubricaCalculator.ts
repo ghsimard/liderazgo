@@ -37,7 +37,8 @@ export interface DirectivoRubricaResult {
 
 export interface MelRubricaKPIs {
   kpi1: { numerator: number; denominator: number; percentage: number; meta: number };
-  kpi2: { numerator: number; denominator: number; percentage: number; meta: number };
+  kpi2a: { numerator: number; denominator: number; percentage: number; meta: number };
+  kpi2b: { numerator: number; denominator: number; percentage: number; meta: number };
   kpi3: { numerator: number; denominator: number; percentage: number; meta: number };
 }
 
