@@ -18,6 +18,7 @@ import { generarMelPDF } from "@/utils/reporte360MelPdfGenerator";
 import { Progress } from "@/components/ui/progress";
 import JSZip from "jszip";
 import AdminMelGlobalReport from "./AdminMelGlobalReport";
+import AdminMelRubricasTab from "./AdminMelRubricasTab";
 
 interface DirectivoOption {
   nombre: string;
