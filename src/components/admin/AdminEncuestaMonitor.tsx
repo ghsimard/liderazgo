@@ -10,7 +10,7 @@ import { RefreshCw, AlertTriangle, CheckCircle2, Search } from "lucide-react";
 /** Required counts per tipo_formulario */
 const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> = {
   autoevaluacion: { min: 1, max: 1, label: "Autoevaluación" },
-  directivo: { min: 2, max: 2, label: "Coordinador/a" },
+  directivo: { min: 2, max: 2, label: "Directivo Par" },
   docente: { min: 2, max: 2, label: "Docente" },
   administrativo: { min: 2, max: 2, label: "Administrativo" },
   estudiante: { min: 1, max: 1, label: "Estudiante" },

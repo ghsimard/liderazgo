@@ -56,7 +56,7 @@ export const FORM_TYPE_TO_ROLE: Record<string, string> = {
 
 /** Display labels for observer roles */
 export const ROLE_LABELS: Record<string, string> = {
-  coor: "Par",
+  coor: "Directivo Par",
   doce: "Docente",
   admi: "Personal administrativo",
   acud: "Acudiente y familia",
