@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/utils/dbClient";
 import { calcularMelRubricas, NIVEL_LABELS, type MelRubricaData, type DirectivoRubricaResult, type MelRubricaKPIs } from "@/utils/melRubricaCalculator";
+import { generarMelRubricasPDF } from "@/utils/melRubricaPdfGenerator";
+import { useAppImages } from "@/hooks/useAppImages";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MultiSelect } from "@/components/ui/multi-select";
@@ -8,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Filter, Target, CheckCircle2, XCircle, BarChart3 } from "lucide-react";
+import { RefreshCw, Filter, Target, CheckCircle2, XCircle, BarChart3, Download } from "lucide-react";
 
 interface DirectivoOption {
   nombre: string;
