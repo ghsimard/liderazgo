@@ -101,6 +101,7 @@ const sections: SidebarSection[] = [
     items: [
       { tab: "mel", label: "MEL", icon: TrendingUp },
     ],
+    separatorAfter: true,
   },
   {
     label: "Sistema",
