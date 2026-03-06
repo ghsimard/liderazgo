@@ -136,6 +136,9 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const { images } = useAppImages();
+  const { toast } = useToast();
 
   const handleTabClick = (tab: string) => {
     onTabChange(tab);
@@ -148,6 +151,26 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
     navigator.clipboard.writeText(url);
     setCopiedTab(label);
     setTimeout(() => setCopiedTab(null), 2000);
+  };
+
+  const handleBlankPdf = async () => {
+    if (generatingPdf) return;
+    setGeneratingPdf(true);
+    try {
+      await generarPDFFichaEnBlanco(
+        {
+          logoRLT: images.logo_rlt_white,
+          logoCLTDark: images.logo_clt_dark,
+          logoCosmo: images.logo_cosmo,
+        },
+        { showLogoRlt: true, showLogoClt: true }
+      );
+      toast({ title: "PDF generado", description: "La ficha en blanco se ha descargado." });
+    } catch (err) {
+      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+    } finally {
+      setGeneratingPdf(false);
+    }
   };
 
   return (
