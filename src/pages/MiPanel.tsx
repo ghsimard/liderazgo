@@ -3,10 +3,12 @@ import { logActivity } from "@/utils/activityLogger";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle2, ClipboardCheck, ClipboardList, FileBarChart, FileText, Loader2, User } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardCheck, ClipboardList, FileBarChart, FileText, Loader2, Printer, User } from "lucide-react";
+import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 
 import { genderizeRole } from "@/utils/genderizeRole";
 
