@@ -24,7 +24,11 @@ import {
   Gauge,
   Trash2,
   Activity,
+  Printer,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAppImages } from "@/hooks/useAppImages";
+import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import {
   Sidebar,
   SidebarContent,
