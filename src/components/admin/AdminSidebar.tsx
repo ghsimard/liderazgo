@@ -169,7 +169,8 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {sections.map((section) => {
+        <Separator className="mx-2 my-1" />
+        {sections.map((section, idx) => {
           const visibleItems = section.items.filter(
             (i) => !i.superadminOnly || isSuperAdmin
           );
