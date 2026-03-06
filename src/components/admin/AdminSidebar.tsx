@@ -265,6 +265,13 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
               </SidebarGroup>
             </Collapsible>
           );
+
+          return section.separatorAfter ? (
+            <div key={section.label}>
+              {rendered}
+              <Separator className="mx-2 my-1" />
+            </div>
+          ) : rendered;
         })}
       </SidebarContent>
     </Sidebar>
