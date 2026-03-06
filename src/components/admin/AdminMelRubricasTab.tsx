@@ -82,8 +82,10 @@ function NivelBadge({ nivel }: { nivel: string | null }) {
 
 export default function AdminMelRubricasTab() {
   const { toast } = useToast();
+  const { images } = useAppImages();
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
   const [melData, setMelData] = useState<MelRubricaData | null>(null);
 
