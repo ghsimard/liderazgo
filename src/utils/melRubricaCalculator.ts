@@ -205,10 +205,10 @@ export async function calcularMelRubricas(
       return num != null && num >= 3; // Intermedio (3) or Avanzado (4)
     });
 
-    // KPI 2: Avanzado in Module 1 AND Module 2
+    // KPI 2a: Avanzado in Module 1 (Autoconocimiento)
     const mod1Avanzado = moduleNumericLevels[1] === 4;
+    // KPI 2b: Avanzado in Module 2 (Comunicación Asertiva)
     const mod2Avanzado = moduleNumericLevels[2] === 4;
-
     // KPI 3: Avanzado in Module 3
     const mod3Avanzado = moduleNumericLevels[3] === 4;
 
@@ -223,9 +223,10 @@ export async function calcularMelRubricas(
       kpi1Cumple: passingModules.length >= 3,
       kpi1ModulesCount: evaluatedModules.length,
       kpi1PassingCount: passingModules.length,
-      kpi2Cumple: mod1Avanzado && mod2Avanzado,
-      kpi2HasMod1: moduleLevels[1] != null,
-      kpi2HasMod2: moduleLevels[2] != null,
+      kpi2aCumple: mod1Avanzado,
+      kpi2aHasMod1: moduleLevels[1] != null,
+      kpi2bCumple: mod2Avanzado,
+      kpi2bHasMod2: moduleLevels[2] != null,
       kpi3Cumple: mod3Avanzado,
       kpi3HasMod3: moduleLevels[3] != null,
     });
