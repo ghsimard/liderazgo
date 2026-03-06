@@ -306,7 +306,8 @@ export default function AdminMelRubricasTab() {
                       <TableHead className="text-center">Mod. 3</TableHead>
                       <TableHead className="text-center">Mod. 4</TableHead>
                       <TableHead className="text-center">Ind. 1</TableHead>
-                      <TableHead className="text-center">Ind. 2</TableHead>
+                      <TableHead className="text-center">Ind. 2a</TableHead>
+                      <TableHead className="text-center">Ind. 2b</TableHead>
                       <TableHead className="text-center">Ind. 3</TableHead>
                     </TableRow>
                   </TableHeader>
