@@ -155,8 +155,10 @@ export default function AdminMelRubricasTab() {
       // Recalculate KPIs with filtered set
       const kpi1Eligible = filtered.filter((r) => r.kpi1ModulesCount >= 3);
       const kpi1Pass = kpi1Eligible.filter((r) => r.kpi1Cumple);
-      const kpi2Eligible = filtered.filter((r) => r.kpi2HasMod1 && r.kpi2HasMod2);
-      const kpi2Pass = kpi2Eligible.filter((r) => r.kpi2Cumple);
+      const kpi2aEligible = filtered.filter((r) => r.kpi2aHasMod1);
+      const kpi2aPass = kpi2aEligible.filter((r) => r.kpi2aCumple);
+      const kpi2bEligible = filtered.filter((r) => r.kpi2bHasMod2);
+      const kpi2bPass = kpi2bEligible.filter((r) => r.kpi2bCumple);
       const kpi3Eligible = filtered.filter((r) => r.kpi3HasMod3);
       const kpi3Pass = kpi3Eligible.filter((r) => r.kpi3Cumple);
 
@@ -164,7 +166,8 @@ export default function AdminMelRubricasTab() {
         directivos: filtered,
         kpis: {
           kpi1: { numerator: kpi1Pass.length, denominator: kpi1Eligible.length, percentage: kpi1Eligible.length > 0 ? (kpi1Pass.length / kpi1Eligible.length) * 100 : 0, meta: 85 },
-          kpi2: { numerator: kpi2Pass.length, denominator: kpi2Eligible.length, percentage: kpi2Eligible.length > 0 ? (kpi2Pass.length / kpi2Eligible.length) * 100 : 0, meta: 80 },
+          kpi2a: { numerator: kpi2aPass.length, denominator: kpi2aEligible.length, percentage: kpi2aEligible.length > 0 ? (kpi2aPass.length / kpi2aEligible.length) * 100 : 0, meta: 80 },
+          kpi2b: { numerator: kpi2bPass.length, denominator: kpi2bEligible.length, percentage: kpi2bEligible.length > 0 ? (kpi2bPass.length / kpi2bEligible.length) * 100 : 0, meta: 80 },
           kpi3: { numerator: kpi3Pass.length, denominator: kpi3Eligible.length, percentage: kpi3Eligible.length > 0 ? (kpi3Pass.length / kpi3Eligible.length) * 100 : 0, meta: 80 },
         },
       });
@@ -261,7 +264,7 @@ export default function AdminMelRubricasTab() {
           </div>
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard
               title="Indicador 1: Nivel Intermedio/Avanzado"
               description="% de rectores que alcanzan nivel intermedio o avanzado en ≥3 de los 4 módulos"
@@ -269,10 +272,16 @@ export default function AdminMelRubricasTab() {
               colorClass="border-l-yellow-400"
             />
             <KpiCard
-              title="Indicador 2: Autoconocimiento y Comunicación"
-              description="% de rectores con nivel avanzado en Módulo 1 (autoconocimiento) Y Módulo 2 (comunicación asertiva)"
-              kpi={melData.kpis.kpi2}
+              title="Indicador 2a: Autoconocimiento"
+              description="% de rectores con nivel avanzado en Módulo 1 (autoconocimiento)"
+              kpi={melData.kpis.kpi2a}
               colorClass="border-l-slate-400"
+            />
+            <KpiCard
+              title="Indicador 2b: Comunicación Asertiva"
+              description="% de rectores con nivel avanzado en Módulo 2 (comunicación asertiva)"
+              kpi={melData.kpis.kpi2b}
+              colorClass="border-l-blue-400"
             />
             <KpiCard
               title="Indicador 3: Trabajo Colaborativo"
@@ -297,7 +306,8 @@ export default function AdminMelRubricasTab() {
                       <TableHead className="text-center">Mod. 3</TableHead>
                       <TableHead className="text-center">Mod. 4</TableHead>
                       <TableHead className="text-center">Ind. 1</TableHead>
-                      <TableHead className="text-center">Ind. 2</TableHead>
+                      <TableHead className="text-center">Ind. 2a</TableHead>
+                      <TableHead className="text-center">Ind. 2b</TableHead>
                       <TableHead className="text-center">Ind. 3</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -317,8 +327,13 @@ export default function AdminMelRubricasTab() {
                           ) : <span className="text-xs text-muted-foreground">N/A</span>}
                         </TableCell>
                         <TableCell className="text-center">
-                          {d.kpi2HasMod1 && d.kpi2HasMod2 ? (
-                            d.kpi2Cumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
+                          {d.kpi2aHasMod1 ? (
+                            d.kpi2aCumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
+                          ) : <span className="text-xs text-muted-foreground">N/A</span>}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {d.kpi2bHasMod2 ? (
+                            d.kpi2bCumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
                           ) : <span className="text-xs text-muted-foreground">N/A</span>}
                         </TableCell>
                         <TableCell className="text-center">
@@ -330,7 +345,7 @@ export default function AdminMelRubricasTab() {
                     ))}
                     {melData.directivos.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">
+                        <TableCell colSpan={10} className="text-center text-sm text-muted-foreground py-8">
                           No hay datos de rúbricas para los directivos seleccionados.
                         </TableCell>
                       </TableRow>

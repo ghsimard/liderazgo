@@ -24,10 +24,12 @@ export interface DirectivoRubricaResult {
   kpi1Cumple: boolean;
   kpi1ModulesCount: number; // how many modules evaluated
   kpi1PassingCount: number; // how many with Intermedio/Avanzado
-  /** KPI 2: Avanzado in Module 1 AND Module 2 */
-  kpi2Cumple: boolean;
-  kpi2HasMod1: boolean;
-  kpi2HasMod2: boolean;
+  /** KPI 2a: Avanzado in Module 1 (Autoconocimiento) */
+  kpi2aCumple: boolean;
+  kpi2aHasMod1: boolean;
+  /** KPI 2b: Avanzado in Module 2 (Comunicación Asertiva) */
+  kpi2bCumple: boolean;
+  kpi2bHasMod2: boolean;
   /** KPI 3: Avanzado in Module 3 */
   kpi3Cumple: boolean;
   kpi3HasMod3: boolean;
@@ -35,7 +37,8 @@ export interface DirectivoRubricaResult {
 
 export interface MelRubricaKPIs {
   kpi1: { numerator: number; denominator: number; percentage: number; meta: number };
-  kpi2: { numerator: number; denominator: number; percentage: number; meta: number };
+  kpi2a: { numerator: number; denominator: number; percentage: number; meta: number };
+  kpi2b: { numerator: number; denominator: number; percentage: number; meta: number };
   kpi3: { numerator: number; denominator: number; percentage: number; meta: number };
 }
 
@@ -202,10 +205,10 @@ export async function calcularMelRubricas(
       return num != null && num >= 3; // Intermedio (3) or Avanzado (4)
     });
 
-    // KPI 2: Avanzado in Module 1 AND Module 2
+    // KPI 2a: Avanzado in Module 1 (Autoconocimiento)
     const mod1Avanzado = moduleNumericLevels[1] === 4;
+    // KPI 2b: Avanzado in Module 2 (Comunicación Asertiva)
     const mod2Avanzado = moduleNumericLevels[2] === 4;
-
     // KPI 3: Avanzado in Module 3
     const mod3Avanzado = moduleNumericLevels[3] === 4;
 
@@ -220,9 +223,10 @@ export async function calcularMelRubricas(
       kpi1Cumple: passingModules.length >= 3,
       kpi1ModulesCount: evaluatedModules.length,
       kpi1PassingCount: passingModules.length,
-      kpi2Cumple: mod1Avanzado && mod2Avanzado,
-      kpi2HasMod1: moduleLevels[1] != null,
-      kpi2HasMod2: moduleLevels[2] != null,
+      kpi2aCumple: mod1Avanzado,
+      kpi2aHasMod1: moduleLevels[1] != null,
+      kpi2bCumple: mod2Avanzado,
+      kpi2bHasMod2: moduleLevels[2] != null,
       kpi3Cumple: mod3Avanzado,
       kpi3HasMod3: moduleLevels[3] != null,
     });
@@ -233,9 +237,13 @@ export async function calcularMelRubricas(
   const kpi1Eligible = results.filter((r) => r.kpi1ModulesCount >= 3);
   const kpi1Pass = kpi1Eligible.filter((r) => r.kpi1Cumple);
 
-  // KPI 2: denominator = rectores evaluated in BOTH modules 1 and 2
-  const kpi2Eligible = results.filter((r) => r.kpi2HasMod1 && r.kpi2HasMod2);
-  const kpi2Pass = kpi2Eligible.filter((r) => r.kpi2Cumple);
+  // KPI 2a: denominator = rectores evaluated in module 1
+  const kpi2aEligible = results.filter((r) => r.kpi2aHasMod1);
+  const kpi2aPass = kpi2aEligible.filter((r) => r.kpi2aCumple);
+
+  // KPI 2b: denominator = rectores evaluated in module 2
+  const kpi2bEligible = results.filter((r) => r.kpi2bHasMod2);
+  const kpi2bPass = kpi2bEligible.filter((r) => r.kpi2bCumple);
 
   // KPI 3: denominator = rectores evaluated in module 3
   const kpi3Eligible = results.filter((r) => r.kpi3HasMod3);
@@ -250,10 +258,16 @@ export async function calcularMelRubricas(
         percentage: kpi1Eligible.length > 0 ? (kpi1Pass.length / kpi1Eligible.length) * 100 : 0,
         meta: 85,
       },
-      kpi2: {
-        numerator: kpi2Pass.length,
-        denominator: kpi2Eligible.length,
-        percentage: kpi2Eligible.length > 0 ? (kpi2Pass.length / kpi2Eligible.length) * 100 : 0,
+      kpi2a: {
+        numerator: kpi2aPass.length,
+        denominator: kpi2aEligible.length,
+        percentage: kpi2aEligible.length > 0 ? (kpi2aPass.length / kpi2aEligible.length) * 100 : 0,
+        meta: 80,
+      },
+      kpi2b: {
+        numerator: kpi2bPass.length,
+        denominator: kpi2bEligible.length,
+        percentage: kpi2bEligible.length > 0 ? (kpi2bPass.length / kpi2bEligible.length) * 100 : 0,
         meta: 80,
       },
       kpi3: {
