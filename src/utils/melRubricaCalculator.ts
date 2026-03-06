@@ -24,10 +24,12 @@ export interface DirectivoRubricaResult {
   kpi1Cumple: boolean;
   kpi1ModulesCount: number; // how many modules evaluated
   kpi1PassingCount: number; // how many with Intermedio/Avanzado
-  /** KPI 2: Avanzado in Module 1 AND Module 2 */
-  kpi2Cumple: boolean;
-  kpi2HasMod1: boolean;
-  kpi2HasMod2: boolean;
+  /** KPI 2a: Avanzado in Module 1 (Autoconocimiento) */
+  kpi2aCumple: boolean;
+  kpi2aHasMod1: boolean;
+  /** KPI 2b: Avanzado in Module 2 (Comunicación Asertiva) */
+  kpi2bCumple: boolean;
+  kpi2bHasMod2: boolean;
   /** KPI 3: Avanzado in Module 3 */
   kpi3Cumple: boolean;
   kpi3HasMod3: boolean;
