@@ -104,7 +104,7 @@ export const estudianteConfig: SurveyFormConfig = {
   subtitle: "INSTRUMENTO PARA ESTUDIANTES",
   intro: "Esta encuesta tiene como objetivo conocer tu percepción sobre las competencias del directivo docente evaluado. Los resultados de la encuesta le permitirán al directivo identificar las áreas de potencial desarrollo que le permitirán mejorar su gestión como líder de la institución educativa.\n\nEn este instrumento no hay respuestas correctas o incorrectas ya que solo se indaga por tu percepción y opinión acerca de la gestión del directivo docente de la institución. Te solicitamos que las respuestas que consignes aquí sean sinceras, ya que serán un insumo importante para el mejoramiento continuo del directivo docente evaluado y, a la vez, de la Institución Educativa (IE).",
   extraFields: [
-    { key: "grado_estudiante", label: "¿En qué grado estás?", type: "radio", options: ["9°", "10°", "11°"] },
+    { key: "grado_estudiante", label: "¿En qué grado estás?", type: "radio", options: ["9°", "10°", "11°", "Otro"] },
   ],
   frequencyItems: [
     { num: 1, text: "Se reúne con docentes y directivos docentes para reflexionar sobre sus fortalezas y lo que pueden mejorar desde su rol en el colegio." },
