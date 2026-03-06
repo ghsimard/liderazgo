@@ -264,7 +264,7 @@ export default function AdminMelRubricasTab() {
           </div>
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard
               title="Indicador 1: Nivel Intermedio/Avanzado"
               description="% de rectores que alcanzan nivel intermedio o avanzado en ≥3 de los 4 módulos"
@@ -272,10 +272,16 @@ export default function AdminMelRubricasTab() {
               colorClass="border-l-yellow-400"
             />
             <KpiCard
-              title="Indicador 2: Autoconocimiento y Comunicación"
-              description="% de rectores con nivel avanzado en Módulo 1 (autoconocimiento) Y Módulo 2 (comunicación asertiva)"
-              kpi={melData.kpis.kpi2}
+              title="Indicador 2a: Autoconocimiento"
+              description="% de rectores con nivel avanzado en Módulo 1 (autoconocimiento)"
+              kpi={melData.kpis.kpi2a}
               colorClass="border-l-slate-400"
+            />
+            <KpiCard
+              title="Indicador 2b: Comunicación Asertiva"
+              description="% de rectores con nivel avanzado en Módulo 2 (comunicación asertiva)"
+              kpi={melData.kpis.kpi2b}
+              colorClass="border-l-blue-400"
             />
             <KpiCard
               title="Indicador 3: Trabajo Colaborativo"
