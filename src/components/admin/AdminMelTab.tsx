@@ -18,7 +18,6 @@ import { generarMelPDF } from "@/utils/reporte360MelPdfGenerator";
 import { Progress } from "@/components/ui/progress";
 import JSZip from "jszip";
 import AdminMelGlobalReport from "./AdminMelGlobalReport";
-import AdminMelRubricasTab from "./AdminMelRubricasTab";
 
 interface DirectivoOption {
   nombre: string;
@@ -342,7 +341,7 @@ export default function AdminMelTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkExporting, setBulkExporting] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
-  const [viewMode, setViewMode] = useState<"individual" | "global" | "rubricas">("individual");
+  const [viewMode, setViewMode] = useState<"individual" | "global">("individual");
 
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
@@ -497,19 +496,13 @@ export default function AdminMelTab() {
           onClick={() => setViewMode("individual")}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "individual" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
         >
-          360° Individual
+          Individual
         </button>
         <button
           onClick={() => setViewMode("global")}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "global" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
         >
-          360° Global
-        </button>
-        <button
-          onClick={() => setViewMode("rubricas")}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "rubricas" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          MEL Rúbricas
+          Informe global
         </button>
       </div>
 
@@ -542,9 +535,7 @@ export default function AdminMelTab() {
         </CardContent>
       </Card>
 
-      {viewMode === "rubricas" ? (
-        <AdminMelRubricasTab selRegions={selRegions} selEntidades={selEntidades} selInstituciones={selInstituciones} />
-      ) : viewMode === "global" ? (
+      {viewMode === "global" ? (
         <AdminMelGlobalReport directivos={filteredDirectivos} filterLabel={selRegions.length > 0 ? selRegions.join(", ") : undefined} selectedRegions={selRegions} />
       ) : (
         <>
