@@ -155,8 +155,10 @@ export default function AdminMelRubricasTab() {
       // Recalculate KPIs with filtered set
       const kpi1Eligible = filtered.filter((r) => r.kpi1ModulesCount >= 3);
       const kpi1Pass = kpi1Eligible.filter((r) => r.kpi1Cumple);
-      const kpi2Eligible = filtered.filter((r) => r.kpi2HasMod1 && r.kpi2HasMod2);
-      const kpi2Pass = kpi2Eligible.filter((r) => r.kpi2Cumple);
+      const kpi2aEligible = filtered.filter((r) => r.kpi2aHasMod1);
+      const kpi2aPass = kpi2aEligible.filter((r) => r.kpi2aCumple);
+      const kpi2bEligible = filtered.filter((r) => r.kpi2bHasMod2);
+      const kpi2bPass = kpi2bEligible.filter((r) => r.kpi2bCumple);
       const kpi3Eligible = filtered.filter((r) => r.kpi3HasMod3);
       const kpi3Pass = kpi3Eligible.filter((r) => r.kpi3Cumple);
 
@@ -164,7 +166,8 @@ export default function AdminMelRubricasTab() {
         directivos: filtered,
         kpis: {
           kpi1: { numerator: kpi1Pass.length, denominator: kpi1Eligible.length, percentage: kpi1Eligible.length > 0 ? (kpi1Pass.length / kpi1Eligible.length) * 100 : 0, meta: 85 },
-          kpi2: { numerator: kpi2Pass.length, denominator: kpi2Eligible.length, percentage: kpi2Eligible.length > 0 ? (kpi2Pass.length / kpi2Eligible.length) * 100 : 0, meta: 80 },
+          kpi2a: { numerator: kpi2aPass.length, denominator: kpi2aEligible.length, percentage: kpi2aEligible.length > 0 ? (kpi2aPass.length / kpi2aEligible.length) * 100 : 0, meta: 80 },
+          kpi2b: { numerator: kpi2bPass.length, denominator: kpi2bEligible.length, percentage: kpi2bEligible.length > 0 ? (kpi2bPass.length / kpi2bEligible.length) * 100 : 0, meta: 80 },
           kpi3: { numerator: kpi3Pass.length, denominator: kpi3Eligible.length, percentage: kpi3Eligible.length > 0 ? (kpi3Pass.length / kpi3Eligible.length) * 100 : 0, meta: 80 },
         },
       });
