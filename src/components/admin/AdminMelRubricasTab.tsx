@@ -327,8 +327,13 @@ export default function AdminMelRubricasTab() {
                           ) : <span className="text-xs text-muted-foreground">N/A</span>}
                         </TableCell>
                         <TableCell className="text-center">
-                          {d.kpi2HasMod1 && d.kpi2HasMod2 ? (
-                            d.kpi2Cumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
+                          {d.kpi2aHasMod1 ? (
+                            d.kpi2aCumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
+                          ) : <span className="text-xs text-muted-foreground">N/A</span>}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {d.kpi2bHasMod2 ? (
+                            d.kpi2bCumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
                           ) : <span className="text-xs text-muted-foreground">N/A</span>}
                         </TableCell>
                         <TableCell className="text-center">
