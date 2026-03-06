@@ -399,7 +399,7 @@ export async function generarReporte360PDF(
   doc.setFont("helvetica", "normal");
   const g = data.directivo.genero;
   const legendItems = [
-    { color: COLOR_DIRECTIVO, label: genderizeRole("Par", g) },
+    { color: COLOR_DIRECTIVO, label: genderizeRole("Directivo Par", g) },
     { color: COLOR_INTERNOS, label: genderizeRole("Administrativo(a), coordinador(a) y docente", g) },
     { color: COLOR_EXTERNOS, label: "Acudiente y estudiante" },
   ];

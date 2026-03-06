@@ -149,7 +149,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
           <section>
             <h3 className={sectionTitleClass}>RESUMEN GENERAL</h3>
             <div className="flex gap-4 text-xs mb-2 justify-center">
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AUTO }} /> {genderizeRole("Par", data.directivo.genero)}</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AUTO }} /> {genderizeRole("Directivo Par", data.directivo.genero)}</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_INTERNOS }} /> {genderizeRole("Administrativo(a), coordinador(a) y docente", data.directivo.genero)}</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: COLOR_EXTERNOS }} /> Acudiente y estudiante</span>
             </div>
@@ -159,7 +159,7 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
                 <XAxis type="number" domain={[0, 10]} />
                 <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="Directivo" fill={COLOR_AUTO} barSize={10} radius={[0, 3, 3, 0]} name="Par"
+                <Bar dataKey="Directivo" fill={COLOR_AUTO} barSize={10} radius={[0, 3, 3, 0]} name="Directivo Par"
                   label={({ x, y, width, height, value }: any) => {
                     if (!value) return null;
                     return <text x={x + width + 4} y={y + height / 2} fill={COLOR_AUTO} fontSize={9} textAnchor="start" dominantBaseline="central">{(+value).toFixed(1)}</text>;

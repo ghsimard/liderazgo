@@ -46,7 +46,7 @@ const FORM_TYPE_COLORS: Record<string, string> = {
 const FORM_TYPE_LABELS: Record<string, string> = {
   autoevaluacion: "Autoevaluación",
   docente: "Docente",
-  directivo: "Par",
+  directivo: "Directivo Par",
   administrativo: "Administrativo",
   estudiante: "Estudiante",
   acudiente: "Acudiente",
