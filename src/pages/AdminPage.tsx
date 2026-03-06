@@ -224,6 +224,8 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return <AdminUsersTab isSuperAdmin={isSuperAdmin} />;
     case "mel":
       return <AdminMelTab />;
+    case "mel-rubricas":
+      return <AdminMelRubricasTab />;
     case "invitaciones":
       return <AdminInvitacionesTab />;
     case "rubricas":
