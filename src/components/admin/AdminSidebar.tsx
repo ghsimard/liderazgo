@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Separator } from "@/components/ui/separator";
 import {
   ClipboardList,
   FileText,
@@ -50,6 +51,7 @@ interface SidebarSection {
   label: string;
   icon: React.ElementType;
   items: SidebarItem[];
+  separatorAfter?: boolean;
 }
 
 const topLevelItems: SidebarItem[] = [
@@ -99,6 +101,7 @@ const sections: SidebarSection[] = [
     items: [
       { tab: "mel", label: "MEL", icon: TrendingUp },
     ],
+    separatorAfter: true,
   },
   {
     label: "Sistema",
@@ -166,18 +169,20 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {sections.map((section) => {
+        <Separator className="mx-2 my-1" />
+        {sections.map((section, idx) => {
           const visibleItems = section.items.filter(
             (i) => !i.superadminOnly || isSuperAdmin
           );
           if (visibleItems.length === 0) return null;
 
+          let rendered: React.ReactNode;
+
           if (collapsed) {
-            // When collapsed, show section icon that clicks to first visible item
             const SectionIcon = section.icon;
             const firstItem = visibleItems[0];
             const sectionActive = sectionContainsTab(section, activeTab);
-            return (
+            rendered = (
               <SidebarGroup key={section.label}>
                 <SidebarGroupContent>
                   <SidebarMenu>
@@ -194,73 +199,79 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                 </SidebarGroupContent>
               </SidebarGroup>
             );
-          }
-
-          const isOpen = sectionContainsTab(section, activeTab);
-
-          return (
-            <Collapsible key={section.label} defaultOpen={isOpen}>
-              <SidebarGroup>
-                <CollapsibleTrigger asChild>
-                  <SidebarGroupLabel className="cursor-pointer select-none flex items-center justify-between pr-2 hover:bg-muted/50 rounded-md transition-colors">
-                    <span>{section.label}</span>
-                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-0 group-data-[state=closed]:-rotate-90" />
-                  </SidebarGroupLabel>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {visibleItems.map((item) => {
-                        const Icon = item.icon;
-                        if (item.linkUrl) {
+          } else {
+            const isOpen = sectionContainsTab(section, activeTab);
+            rendered = (
+              <Collapsible key={section.label} defaultOpen={isOpen}>
+                <SidebarGroup>
+                  <CollapsibleTrigger asChild>
+                    <SidebarGroupLabel className="cursor-pointer select-none flex items-center justify-between pr-2 hover:bg-muted/50 rounded-md transition-colors">
+                      <span>{section.label}</span>
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-0 group-data-[state=closed]:-rotate-90" />
+                    </SidebarGroupLabel>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {visibleItems.map((item) => {
+                          const Icon = item.icon;
+                          if (item.linkUrl) {
+                            return (
+                              <SidebarMenuItem key={item.tab}>
+                                <SidebarMenuButton
+                                  asChild
+                                  tooltip={item.label}
+                                  className="cursor-pointer"
+                                >
+                                  <a href={item.linkUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                                    <Icon className="h-4 w-4 shrink-0" />
+                                    <span className="flex items-center gap-1.5 flex-1">
+                                      {item.label}
+                                      <button
+                                        onClick={(e) => handleCopyUrl(e, item.linkUrl!, item.tab)}
+                                        className="ml-auto p-0.5 rounded hover:bg-muted/80 transition-colors"
+                                        title="Copiar enlace"
+                                      >
+                                        {copiedTab === item.tab ? (
+                                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                        ) : (
+                                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                        )}
+                                      </button>
+                                    </span>
+                                  </a>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            );
+                          }
+                          const active = activeTab === item.tab;
                           return (
                             <SidebarMenuItem key={item.tab}>
                               <SidebarMenuButton
-                                asChild
+                                onClick={() => handleTabClick(item.tab)}
+                                isActive={active}
                                 tooltip={item.label}
-                                className="cursor-pointer"
                               >
-                                <a href={item.linkUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                                  <Icon className="h-4 w-4 shrink-0" />
-                                  <span className="flex items-center gap-1.5 flex-1">
-                                    {item.label}
-                                    <button
-                                      onClick={(e) => handleCopyUrl(e, item.linkUrl!, item.tab)}
-                                      className="ml-auto p-0.5 rounded hover:bg-muted/80 transition-colors"
-                                      title="Copiar enlace"
-                                    >
-                                      {copiedTab === item.tab ? (
-                                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                      ) : (
-                                        <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                                      )}
-                                    </button>
-                                  </span>
-                                </a>
+                                <Icon className="h-4 w-4 shrink-0" />
+                                <span>{item.label}</span>
                               </SidebarMenuButton>
                             </SidebarMenuItem>
                           );
-                        }
-                        const active = activeTab === item.tab;
-                        return (
-                          <SidebarMenuItem key={item.tab}>
-                            <SidebarMenuButton
-                              onClick={() => handleTabClick(item.tab)}
-                              isActive={active}
-                              tooltip={item.label}
-                            >
-                              <Icon className="h-4 w-4 shrink-0" />
-                              <span>{item.label}</span>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </CollapsibleContent>
-              </SidebarGroup>
-            </Collapsible>
-          );
+                        })}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </CollapsibleContent>
+                </SidebarGroup>
+              </Collapsible>
+            );
+          }
+
+          return section.separatorAfter ? (
+            <div key={section.label}>
+              {rendered}
+              <Separator className="mx-2 my-1" />
+            </div>
+          ) : <div key={section.label}>{rendered}</div>;
         })}
       </SidebarContent>
     </Sidebar>
