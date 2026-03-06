@@ -24,7 +24,11 @@ import {
   Gauge,
   Trash2,
   Activity,
+  Printer,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAppImages } from "@/hooks/useAppImages";
+import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import {
   Sidebar,
   SidebarContent,
@@ -44,7 +48,8 @@ interface SidebarItem {
   label: string;
   icon: React.ElementType;
   superadminOnly?: boolean;
-  linkUrl?: string; // renders as a copyable link instead of a tab
+  linkUrl?: string;
+  action?: "blank-pdf";
 }
 
 interface SidebarSection {
@@ -64,6 +69,7 @@ const sections: SidebarSection[] = [
     icon: FolderOpen,
     items: [
       { tab: "enlace-ficha", label: "Enlace Ficha", icon: Link2, linkUrl: "https://884bdecf-dfd4-47e7-ac2b-4a0fa0ab7c80.lovableproject.com/" },
+      { tab: "blank-pdf", label: "Ficha en Blanco", icon: Printer, action: "blank-pdf" },
       { tab: "fichas", label: "Lista", icon: FileText },
       { tab: "geography", label: "Regiones", icon: MapPin },
     ],
@@ -130,6 +136,9 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const { images } = useAppImages();
+  const { toast } = useToast();
 
   const handleTabClick = (tab: string) => {
     onTabChange(tab);
@@ -142,6 +151,26 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
     navigator.clipboard.writeText(url);
     setCopiedTab(label);
     setTimeout(() => setCopiedTab(null), 2000);
+  };
+
+  const handleBlankPdf = async () => {
+    if (generatingPdf) return;
+    setGeneratingPdf(true);
+    try {
+      await generarPDFFichaEnBlanco(
+        {
+          logoRLT: images.logo_rlt_white,
+          logoCLTDark: images.logo_clt_dark,
+          logoCosmo: images.logo_cosmo,
+        },
+        { showLogoRlt: true, showLogoClt: true }
+      );
+      toast({ title: "PDF generado", description: "La ficha en blanco se ha descargado." });
+    } catch (err) {
+      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+    } finally {
+      setGeneratingPdf(false);
+    }
   };
 
   return (
@@ -240,6 +269,20 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                                       </button>
                                     </span>
                                   </a>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            );
+                          }
+                          if (item.action === "blank-pdf") {
+                            return (
+                              <SidebarMenuItem key={item.tab}>
+                                <SidebarMenuButton
+                                  onClick={handleBlankPdf}
+                                  tooltip={item.label}
+                                  className="cursor-pointer"
+                                >
+                                  <Icon className="h-4 w-4 shrink-0" />
+                                  <span>{generatingPdf ? "Generando…" : item.label}</span>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
                             );
