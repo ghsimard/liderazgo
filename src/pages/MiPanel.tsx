@@ -284,20 +284,23 @@ export default function MiPanel() {
 
             {/* Evaluador buttons */}
             {selectedRole === "evaluador" && (
-              <Button
-                className="w-full h-14 justify-start gap-3 text-base"
-                onClick={() =>
-                  navigate(`/rubrica-evaluacion?role=evaluador`)
-                }
-              >
-                <ClipboardList className="h-5 w-5" />
-                <div className="text-left">
-                  <div className="font-semibold">Mi Rúbrica de Evaluación</div>
-                  <div className="text-xs opacity-80">
-                    Evaluar directivos asignados
+              <>
+                <Button
+                  className="w-full h-14 justify-start gap-3 text-base"
+                  onClick={() =>
+                    navigate(`/rubrica-evaluacion?role=evaluador`)
+                  }
+                >
+                  <ClipboardList className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-semibold">Mi Rúbrica de Evaluación</div>
+                    <div className="text-xs opacity-80">
+                      Evaluar directivos asignados
+                    </div>
                   </div>
-                </div>
-              </Button>
+                </Button>
+                <BlankFichaPdfButton />
+              </>
             )}
 
             {/* Back / switch role */}
