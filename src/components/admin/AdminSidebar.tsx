@@ -67,6 +67,13 @@ const sections: SidebarSection[] = [
     ],
   },
   {
+    label: "Rúbricas",
+    icon: ClipboardCheck,
+    items: [
+      { tab: "rubricas", label: "Rúbricas", icon: ClipboardCheck },
+    ],
+  },
+  {
     label: "Encuesta 360°",
     icon: Gauge,
     items: [
@@ -77,7 +84,6 @@ const sections: SidebarSection[] = [
       { tab: "invitaciones", label: "Invitaciones", icon: Users },
       { tab: "reportes360", label: "Informes Inicial", icon: FileBarChart },
       { tab: "reportes360final", label: "Informes Final", icon: FileBarChart2 },
-      { tab: "mel", label: "MEL", icon: TrendingUp },
     ],
   },
   {
@@ -88,10 +94,10 @@ const sections: SidebarSection[] = [
     ],
   },
   {
-    label: "Rúbricas",
-    icon: ClipboardCheck,
+    label: "MEL",
+    icon: TrendingUp,
     items: [
-      { tab: "rubricas", label: "Rúbricas", icon: ClipboardCheck },
+      { tab: "mel", label: "MEL", icon: TrendingUp },
     ],
   },
   {
