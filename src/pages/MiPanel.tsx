@@ -3,10 +3,12 @@ import { logActivity } from "@/utils/activityLogger";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle2, ClipboardCheck, ClipboardList, FileBarChart, FileText, Loader2, User } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardCheck, ClipboardList, FileBarChart, FileText, Loader2, Printer, User } from "lucide-react";
+import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 
 import { genderizeRole } from "@/utils/genderizeRole";
 
@@ -18,6 +20,43 @@ interface CedulaRoleResult {
   cargo_actual: string | null;
   nombre: string | null;
   genero: string | null;
+}
+
+function BlankFichaPdfButton() {
+  const [generating, setGenerating] = useState(false);
+  const { images } = useAppImages();
+  const { toast } = useToast();
+
+  const handleClick = async () => {
+    if (generating) return;
+    setGenerating(true);
+    try {
+      await generarPDFFichaEnBlanco(
+        { logoRLT: images.logo_rlt_white, logoCLTDark: images.logo_clt_dark, logoCosmo: images.logo_cosmo },
+        { showLogoRlt: true, showLogoClt: true }
+      );
+      toast({ title: "PDF generado", description: "La ficha en blanco se ha descargado." });
+    } catch {
+      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="outline"
+      className="w-full h-14 justify-start gap-3 text-base"
+      onClick={handleClick}
+      disabled={generating}
+    >
+      <Printer className="h-5 w-5" />
+      <div className="text-left">
+        <div className="font-semibold">{generating ? "Generando…" : "Ficha en Blanco"}</div>
+        <div className="text-xs text-muted-foreground">Descargar PDF para diligenciar a mano</div>
+      </div>
+    </Button>
+  );
 }
 
 export default function MiPanel() {
@@ -282,20 +321,23 @@ export default function MiPanel() {
 
             {/* Evaluador buttons */}
             {selectedRole === "evaluador" && (
-              <Button
-                className="w-full h-14 justify-start gap-3 text-base"
-                onClick={() =>
-                  navigate(`/rubrica-evaluacion?role=evaluador`)
-                }
-              >
-                <ClipboardList className="h-5 w-5" />
-                <div className="text-left">
-                  <div className="font-semibold">Mi Rúbrica de Evaluación</div>
-                  <div className="text-xs opacity-80">
-                    Evaluar directivos asignados
+              <>
+                <Button
+                  className="w-full h-14 justify-start gap-3 text-base"
+                  onClick={() =>
+                    navigate(`/rubrica-evaluacion?role=evaluador`)
+                  }
+                >
+                  <ClipboardList className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-semibold">Mi Rúbrica de Evaluación</div>
+                    <div className="text-xs opacity-80">
+                      Evaluar directivos asignados
+                    </div>
                   </div>
-                </div>
-              </Button>
+                </Button>
+                <BlankFichaPdfButton />
+              </>
             )}
 
             {/* Back / switch role */}
