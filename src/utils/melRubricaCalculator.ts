@@ -37,10 +37,10 @@ export interface DirectivoRubricaResult {
   /** Inicio (directivo_nivel only) module levels */
   moduleLevelsInicio: Record<number, string | null>;
   moduleNumericLevelsInicio: Record<number, number | null>;
-  /** Dynamic KPI results: kpi_key → { cumple, hasData } */
-  kpiResults: Record<string, { cumple: boolean; hasData: boolean }>;
+  /** Dynamic KPI results: kpi_key → { cumple, hasData, score } */
+  kpiResults: Record<string, { cumple: boolean; hasData: boolean; score: number }>;
   /** KPI results based on directivo_nivel (inicio/autoeval) */
-  kpiResultsInicio: Record<string, { cumple: boolean; hasData: boolean }>;
+  kpiResultsInicio: Record<string, { cumple: boolean; hasData: boolean; score: number }>;
   // Legacy fields for backward compatibility
   kpi1Cumple: boolean;
   kpi1ModulesCount: number;
