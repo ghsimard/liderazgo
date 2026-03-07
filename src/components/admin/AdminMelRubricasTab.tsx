@@ -89,6 +89,7 @@ export default function AdminMelRubricasTab() {
   const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
   const [melData, setMelData] = useState<MelRubricaData | null>(null);
   const [showIndividual, setShowIndividual] = useState(true);
+  const [regionLogoConfig, setRegionLogoConfig] = useState<{ showRLT: boolean; showCLT: boolean }>({ showRLT: true, showCLT: true });
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
   const [selEntidades, setSelEntidades] = useState<string[]>([]);
