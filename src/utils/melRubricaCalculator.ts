@@ -306,7 +306,7 @@ export async function calcularMelRubricas(
     }
 
     // Evaluate all dynamic KPIs (fin)
-    const kpiResults: Record<string, { cumple: boolean; hasData: boolean }> = {};
+    const kpiResults: Record<string, { cumple: boolean; hasData: boolean; score: number }> = {};
     for (const config of activeKpis) {
       kpiResults[config.kpi_key] = evaluateKpi(config, moduleLevels, moduleNumericLevels, evalMap, segMap, itemsByModule);
     }
