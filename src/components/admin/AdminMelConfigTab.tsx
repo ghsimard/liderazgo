@@ -80,7 +80,7 @@ export default function AdminMelConfigTab() {
       supabase.from("mel_kpi_config").select("*").order("sort_order"),
       supabase.from("rubrica_items").select("id, item_label, module_id, sort_order").order("sort_order"),
       supabase.from("rubrica_modules").select("id, module_number, title").order("module_number"),
-      supabase.from("app_settings").select("key, value").in("key", ["mel_360_progression_threshold", "mel_360_global_meta"]),
+      supabase.from("app_settings").select("key, value").in("key", ["mel_360_progression_threshold", "mel_360_global_meta", "mel_rubricas_show_individual"]),
     ]);
 
     const moduleMap = new Map<string, { module_number: number; title: string }>();
