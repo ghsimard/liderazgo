@@ -403,6 +403,17 @@ export default function AdminMelConfigTab() {
                 % de rectores que deben cumplir el criterio de progresión
               </p>
             </div>
+           </div>
+            <Separator />
+            <div>
+              <Label className="text-xs">Resultados individuales</Label>
+              <div className="flex items-center gap-3 mt-2">
+                <Switch checked={showIndividualResults} onCheckedChange={setShowIndividualResults} />
+                <span className="text-xs text-muted-foreground">
+                  {showIndividualResults ? "Visible en el reporte y en la interfaz" : "Oculto en el reporte y en la interfaz"}
+                </span>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
