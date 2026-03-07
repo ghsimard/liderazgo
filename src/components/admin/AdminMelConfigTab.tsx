@@ -207,7 +207,7 @@ export default function AdminMelConfigTab() {
         </div>
         <Button onClick={saveAll} disabled={saving}>
           <Save className="w-4 h-4 mr-2" />
-          {saving ? "Guardando..." : "Guardar todo"}
+          {saving ? "Guardando..." : "Guardar Configuración MEL"}
         </Button>
       </div>
 
