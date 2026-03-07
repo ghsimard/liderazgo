@@ -220,7 +220,7 @@ export default function AdminMelConfigTab() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <GripVertical className="w-4 h-4 text-muted-foreground" />
-                    <Badge variant="outline" className="text-xs">{kpi.kpi_key}</Badge>
+                    <Input value={kpi.kpi_key} onChange={(e) => updateKpi(idx, "kpi_key", e.target.value)} className="h-6 text-xs w-40 font-mono" />
                     {!kpi.is_active && <Badge variant="secondary" className="text-xs">Inactivo</Badge>}
                   </div>
                   <div className="flex items-center gap-2">
