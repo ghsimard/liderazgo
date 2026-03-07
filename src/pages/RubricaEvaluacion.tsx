@@ -337,8 +337,9 @@ export default function RubricaEvaluacion() {
     const fichaRow = fichaRaw as Record<string, any> | null;
     setDirectivoInfo({ nombre: asig.directivo_nombre, cedula: asig.directivo_cedula, institucion: asig.institucion, genero: fichaRow?.genero ?? null });
     await loadEvaluaciones(asig.directivo_cedula);
-    await loadSubmissionDates(asig.directivo_cedula);
+    const dates = await loadSubmissionDates(asig.directivo_cedula);
     await loadSeguimientos(asig.directivo_cedula);
+    navigateToLastEnabledModule(modules, dates, "equipo");
   };
 
   const handleBack = () => {
