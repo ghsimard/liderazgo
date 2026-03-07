@@ -393,7 +393,7 @@ export default function AdminMelRubricasTab() {
                     ))}
                     {melData.directivos.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6 + melData.kpiConfigs.length * 2} className="text-center text-sm text-muted-foreground py-8">
+                        <TableCell colSpan={6 + melData.kpiConfigs.length} className="text-center text-sm text-muted-foreground py-8">
                           No hay datos de rúbricas para los directivos seleccionados.
                         </TableCell>
                       </TableRow>
