@@ -405,15 +405,24 @@ export default function AdminMelConfigTab() {
                 </p>
               </div>
             </div>
-            <Separator />
-            <div>
-              <Label className="text-xs">Resultados individuales (MEL Rúbricas)</Label>
-              <div className="flex items-center gap-3 mt-2">
-                <Switch checked={showIndividualResults} onCheckedChange={setShowIndividualResults} />
-                <span className="text-xs text-muted-foreground">
-                  {showIndividualResults ? "Visible en el reporte y en la interfaz" : "Oculto en el reporte y en la interfaz"}
-                </span>
-              </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── MEL Rúbricas Settings ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Opciones MEL Rúbricas</CardTitle>
+          <p className="text-xs text-muted-foreground">Parámetros de visualización del informe de rúbricas</p>
+        </CardHeader>
+        <CardContent>
+          <div>
+            <Label className="text-xs">Resultados individuales</Label>
+            <div className="flex items-center gap-3 mt-2">
+              <Switch checked={showIndividualResults} onCheckedChange={setShowIndividualResults} />
+              <span className="text-xs text-muted-foreground">
+                {showIndividualResults ? "Visible en el reporte y en la interfaz" : "Oculto en el reporte y en la interfaz"}
+              </span>
             </div>
           </div>
         </CardContent>
