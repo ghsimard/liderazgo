@@ -362,6 +362,7 @@ export async function calcularMelRubricas(
       region: fichaInfo.region,
       entidadTerritorial: fichaInfo.et,
       moduleLevels,
+      moduleLevelsDisplay,
       moduleNumericLevels,
       moduleLevelsInicio,
       moduleNumericLevelsInicio,
