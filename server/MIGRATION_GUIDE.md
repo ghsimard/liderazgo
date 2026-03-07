@@ -496,11 +496,16 @@ server/
     └── storage.ts            ← POST/DELETE /api/storage/:bucket
 ```
 
-### Fichiers FRONTEND migrés (✅ 24/24)
+### Fichiers FRONTEND migrés (✅ 32/32)
 
 ```
 src/utils/apiFetch.ts                           ← CRÉÉ — wrapper fetch centralisé
 src/utils/dbClient.ts                           ← CRÉÉ — shim compatibilité Supabase
+src/utils/melRubricaCalculator.ts               ← MIGRÉ — calcul dynamique KPIs MEL
+src/utils/melRubricaPdfGenerator.ts             ← MIGRÉ
+src/utils/melGlobalPdfGenerator.ts              ← MIGRÉ
+src/utils/reporte360Calculator.ts               ← MIGRÉ
+src/utils/reporte360MelCalculator.ts            ← MIGRÉ
 src/pages/AdminLogin.tsx                        ← MIGRÉ
 src/pages/AdminPage.tsx                         ← MIGRÉ
 src/pages/AdminEditFicha.tsx                    ← MIGRÉ
@@ -522,8 +527,11 @@ src/components/admin/AdminTrashManager.tsx        ← MIGRÉ
 src/components/admin/AdminUsersTab.tsx            ← MIGRÉ
 src/components/admin/AdminImagesTab.tsx           ← MIGRÉ
 src/components/admin/AdminReporte360Tab.tsx        ← MIGRÉ
+src/components/admin/AdminMelTab.tsx              ← MIGRÉ
+src/components/admin/AdminMelRubricasTab.tsx      ← MIGRÉ
+src/components/admin/AdminMelConfigTab.tsx        ← MIGRÉ — config KPIs + groupes
+src/components/admin/AdminMelKpiGroupsManager.tsx ← CRÉÉ — gestion groupes KPI régionaux
 src/data/encuesta360Data.ts                      ← MIGRÉ
-src/utils/reporte360Calculator.ts                ← MIGRÉ
 ```
 
 ### Fichiers à SUPPRIMER (lors du déploiement final)
