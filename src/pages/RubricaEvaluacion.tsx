@@ -522,13 +522,13 @@ export default function RubricaEvaluacion() {
     try {
       const currentWorkingModule = getEvaluadorCurrentWorkingModuleNumber();
 
-      const { error } = await supabase.from("rubrica_seguimientos").insert({
+      const { error } = await supabase.from("rubrica_seguimientos").upsert({
         item_id: itemId,
         directivo_cedula: directivoInfo.cedula,
         module_number: currentWorkingModule,
         nivel: pending.nivel,
         comentario: pending.comentario,
-      });
+      }, { onConflict: "directivo_cedula,item_id,module_number" });
 
       if (error) throw error;
 
