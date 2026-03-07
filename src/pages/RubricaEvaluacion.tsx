@@ -522,13 +522,29 @@ export default function RubricaEvaluacion() {
     try {
       const currentWorkingModule = getEvaluadorCurrentWorkingModuleNumber();
 
-      const { error } = await supabase.from("rubrica_seguimientos").upsert({
+      // Check if seguimiento already exists for this combination
+      const { data: existingSeg } = await supabase
+        .from("rubrica_seguimientos")
+        .select("id")
+        .eq("directivo_cedula", directivoInfo.cedula)
+        .eq("item_id", itemId)
+        .eq("module_number", currentWorkingModule)
+        .maybeSingle();
+
+      const segPayload = {
         item_id: itemId,
         directivo_cedula: directivoInfo.cedula,
         module_number: currentWorkingModule,
         nivel: pending.nivel,
         comentario: pending.comentario,
-      }, { onConflict: "directivo_cedula,item_id,module_number" });
+      };
+
+      let error;
+      if (existingSeg?.id) {
+        ({ error } = await supabase.from("rubrica_seguimientos").update(segPayload).eq("id", existingSeg.id));
+      } else {
+        ({ error } = await supabase.from("rubrica_seguimientos").insert(segPayload));
+      }
 
       if (error) throw error;
 
