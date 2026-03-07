@@ -88,7 +88,7 @@ export default function AdminMelRubricasTab() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
   const [melData, setMelData] = useState<MelRubricaData | null>(null);
-
+  const [showIndividual, setShowIndividual] = useState(true);
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
   const [selEntidades, setSelEntidades] = useState<string[]>([]);
@@ -100,11 +100,17 @@ export default function AdminMelRubricasTab() {
 
   const loadDirectivos = async () => {
     setLoading(true);
-    const { data: fichas } = await supabase
-      .from("fichas_rlt")
-      .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial, cargo_actual")
-      .in("cargo_actual", ["Rector/a", "Coordinador/a"])
-      .order("nombres_apellidos");
+    const [{ data: fichas }, { data: settings }] = await Promise.all([
+      supabase
+        .from("fichas_rlt")
+        .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial, cargo_actual")
+        .in("cargo_actual", ["Rector/a", "Coordinador/a"])
+        .order("nombres_apellidos"),
+      supabase.from("app_settings").select("key, value").eq("key", "mel_rubricas_show_individual"),
+    ]);
+
+    const showSetting = (settings ?? []).find(s => s.key === "mel_rubricas_show_individual");
+    setShowIndividual(showSetting ? showSetting.value !== "false" : true);
 
     setDirectivos(
       (fichas ?? []).filter(f => f.numero_cedula).map((f) => ({
@@ -201,7 +207,7 @@ export default function AdminMelRubricasTab() {
       await generarMelRubricasPDF(melData, {
         logoRLT: images.logo_rlt_white,
         logoCLT: images.logo_clt,
-      }, filterLabel);
+      }, filterLabel, { showIndividualResults: showIndividual });
       toast({ title: "PDF generado", description: "El informe MEL Rúbricas se ha descargado." });
     } catch (err: any) {
       toast({ title: "Error al generar PDF", description: err.message, variant: "destructive" });
@@ -330,6 +336,7 @@ export default function AdminMelRubricasTab() {
           </div>
 
           {/* Individual results table */}
+          {showIndividual && (
           <Card>
             <CardContent className="p-4 space-y-3">
               <h4 className="text-sm font-semibold">Resultados individuales</h4>
@@ -396,6 +403,7 @@ export default function AdminMelRubricasTab() {
               </div>
             </CardContent>
           </Card>
+          )}
         </>
       )}
     </div>

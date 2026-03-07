@@ -65,6 +65,7 @@ export async function generarMelRubricasPDF(
   data: MelRubricaData,
   logoSources: MelRubricaPdfLogos,
   filterLabel: string,
+  options?: { showIndividualResults?: boolean },
 ): Promise<void> {
   const [rltB64, cltB64, rltSize, cltSize] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
@@ -190,6 +191,9 @@ export async function generarMelRubricasPDF(
 
   drawPageFooter(pageNum);
 
+  const showIndividual = options?.showIndividualResults !== false;
+
+  if (showIndividual) {
   // ═══════════════════════════════════════════
   // PAGE 3+ — INDIVIDUAL RESULTS TABLE
   // ═══════════════════════════════════════════
@@ -301,6 +305,7 @@ export async function generarMelRubricasPDF(
   }
 
   drawPageFooter(pageNum);
+  } // end showIndividual
 
   const safeName = (filterLabel || "Global").replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, "").replace(/\s+/g, "_");
   doc.save(`MEL_Rubricas_${safeName}.pdf`);

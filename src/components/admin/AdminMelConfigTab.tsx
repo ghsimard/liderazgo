@@ -70,6 +70,7 @@ export default function AdminMelConfigTab() {
   // MEL 360 settings
   const [mel360Threshold, setMel360Threshold] = useState("0.5");
   const [mel360Meta, setMel360Meta] = useState("80");
+  const [showIndividualResults, setShowIndividualResults] = useState(true);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -79,7 +80,7 @@ export default function AdminMelConfigTab() {
       supabase.from("mel_kpi_config").select("*").order("sort_order"),
       supabase.from("rubrica_items").select("id, item_label, module_id, sort_order").order("sort_order"),
       supabase.from("rubrica_modules").select("id, module_number, title").order("module_number"),
-      supabase.from("app_settings").select("key, value").in("key", ["mel_360_progression_threshold", "mel_360_global_meta"]),
+      supabase.from("app_settings").select("key, value").in("key", ["mel_360_progression_threshold", "mel_360_global_meta", "mel_rubricas_show_individual"]),
     ]);
 
     const moduleMap = new Map<string, { module_number: number; title: string }>();
@@ -104,6 +105,7 @@ export default function AdminMelConfigTab() {
     (settings ?? []).forEach(s => {
       if (s.key === "mel_360_progression_threshold") setMel360Threshold(s.value);
       if (s.key === "mel_360_global_meta") setMel360Meta(s.value);
+      if (s.key === "mel_rubricas_show_individual") setShowIndividualResults(s.value !== "false");
     });
 
     setLoading(false);
@@ -175,6 +177,7 @@ export default function AdminMelConfigTab() {
       await supabase.from("app_settings").upsert([
         { key: "mel_360_progression_threshold", value: mel360Threshold, updated_at: new Date().toISOString() },
         { key: "mel_360_global_meta", value: mel360Meta, updated_at: new Date().toISOString() },
+        { key: "mel_rubricas_show_individual", value: showIndividualResults ? "true" : "false", updated_at: new Date().toISOString() },
       ]);
 
       toast({ title: "Configuración guardada", description: "Los cambios se aplicarán al recalcular." });
@@ -364,41 +367,53 @@ export default function AdminMelConfigTab() {
           <p className="text-xs text-muted-foreground">Parámetros para el análisis de progresión de las encuestas 360°</p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-xs">Umbral de progresión (ΔP mínimo)</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <Input
-                  type="number"
-                  step="0.1"
-                  min={0}
-                  max={10}
-                  value={mel360Threshold}
-                  onChange={(e) => setMel360Threshold(e.target.value)}
-                  className="h-8 text-sm w-24"
-                />
-                <span className="text-xs text-muted-foreground">puntos</span>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs">Umbral de progresión (ΔP mínimo)</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min={0}
+                    max={10}
+                    value={mel360Threshold}
+                    onChange={(e) => setMel360Threshold(e.target.value)}
+                    className="h-8 text-sm w-24"
+                  />
+                  <span className="text-xs text-muted-foreground">puntos</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Un rector cumple el criterio si su ΔP (autoevaluación) es ≥ este valor
+                </p>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Un rector cumple el criterio si su ΔP (autoevaluación) es ≥ este valor
-              </p>
+              <div>
+                <Label className="text-xs">Meta global (%)</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={mel360Meta}
+                    onChange={(e) => setMel360Meta(e.target.value)}
+                    className="h-8 text-sm w-24"
+                  />
+                  <span className="text-xs text-muted-foreground">%</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  % de rectores que deben cumplir el criterio de progresión
+                </p>
+              </div>
             </div>
+            <Separator />
             <div>
-              <Label className="text-xs">Meta global (%)</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={mel360Meta}
-                  onChange={(e) => setMel360Meta(e.target.value)}
-                  className="h-8 text-sm w-24"
-                />
-                <span className="text-xs text-muted-foreground">%</span>
+              <Label className="text-xs">Resultados individuales (MEL Rúbricas)</Label>
+              <div className="flex items-center gap-3 mt-2">
+                <Switch checked={showIndividualResults} onCheckedChange={setShowIndividualResults} />
+                <span className="text-xs text-muted-foreground">
+                  {showIndividualResults ? "Visible en el reporte y en la interfaz" : "Oculto en el reporte y en la interfaz"}
+                </span>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                % de rectores que deben cumplir el criterio de progresión
-              </p>
             </div>
           </div>
         </CardContent>
