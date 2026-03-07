@@ -117,10 +117,14 @@ function determineModuleLevel(
     if (acordado) levels.push(acordado);
   }
   if (levels.length === 0) return null;
-  const freq: Record<string, number> = {};
-  levels.forEach((l) => { freq[l] = (freq[l] || 0) + 1; });
-  const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
-  return sorted[0][0];
+  // Use highest (most advanced) level among items
+  let best: string = levels[0];
+  let bestNum = NIVEL_TO_NUM[best] ?? 0;
+  for (const l of levels) {
+    const n = NIVEL_TO_NUM[l] ?? 0;
+    if (n > bestNum) { best = l; bestNum = n; }
+  }
+  return best;
 }
 
 function determineItemLevel(
