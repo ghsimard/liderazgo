@@ -632,6 +632,71 @@ export type Database = {
         }
         Relationships: []
       }
+      mel_kpi_config: {
+        Row: {
+          color_class: string | null
+          created_at: string | null
+          description: string | null
+          formula_type: string
+          id: string
+          is_active: boolean | null
+          kpi_key: string
+          label: string
+          meta_percentage: number
+          min_modules: number | null
+          required_level: string
+          sort_order: number | null
+          target_item_id: string | null
+          target_module_number: number | null
+          threshold_level: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          color_class?: string | null
+          created_at?: string | null
+          description?: string | null
+          formula_type?: string
+          id?: string
+          is_active?: boolean | null
+          kpi_key: string
+          label: string
+          meta_percentage?: number
+          min_modules?: number | null
+          required_level?: string
+          sort_order?: number | null
+          target_item_id?: string | null
+          target_module_number?: number | null
+          threshold_level?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          color_class?: string | null
+          created_at?: string | null
+          description?: string | null
+          formula_type?: string
+          id?: string
+          is_active?: boolean | null
+          kpi_key?: string
+          label?: string
+          meta_percentage?: number
+          min_modules?: number | null
+          required_level?: string
+          sort_order?: number | null
+          target_item_id?: string | null
+          target_module_number?: number | null
+          threshold_level?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mel_kpi_config_target_item_id_fkey"
+            columns: ["target_item_id"]
+            isOneToOne: false
+            referencedRelation: "rubrica_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       municipios: {
         Row: {
           created_at: string
