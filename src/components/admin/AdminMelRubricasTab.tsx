@@ -156,24 +156,29 @@ export default function AdminMelRubricasTab() {
       if (selEntidades.length > 0) filtered = filtered.filter((d) => selEntidades.includes(d.entidadTerritorial));
       if (selInstituciones.length > 0) filtered = filtered.filter((d) => selInstituciones.includes(d.institucion));
 
-      // Recalculate KPIs with filtered set
-      const kpi1Eligible = filtered.filter((r) => r.kpi1ModulesCount >= 3);
-      const kpi1Pass = kpi1Eligible.filter((r) => r.kpi1Cumple);
-      const kpi2aEligible = filtered.filter((r) => r.kpi2aHasItem);
-      const kpi2aPass = kpi2aEligible.filter((r) => r.kpi2aCumple);
-      const kpi2bEligible = filtered.filter((r) => r.kpi2bHasItem);
-      const kpi2bPass = kpi2bEligible.filter((r) => r.kpi2bCumple);
-      const kpi3Eligible = filtered.filter((r) => r.kpi3HasMod3);
-      const kpi3Pass = kpi3Eligible.filter((r) => r.kpi3Cumple);
+      // Recalculate KPIs dynamically from kpiConfigs
+      const dynamicKpis: Record<string, any> = {};
+      for (const config of data.kpiConfigs) {
+        const eligible = filtered.filter((r) => r.kpiResults[config.kpi_key]?.hasData);
+        const pass = eligible.filter((r) => r.kpiResults[config.kpi_key]?.cumple);
+        dynamicKpis[config.kpi_key] = {
+          numerator: pass.length, denominator: eligible.length,
+          percentage: eligible.length > 0 ? (pass.length / eligible.length) * 100 : 0,
+          meta: Number(config.meta_percentage),
+          label: config.label, description: config.description, color_class: config.color_class, kpi_key: config.kpi_key,
+        };
+      }
 
       setMelData({
         directivos: filtered,
         kpis: {
-          kpi1: { numerator: kpi1Pass.length, denominator: kpi1Eligible.length, percentage: kpi1Eligible.length > 0 ? (kpi1Pass.length / kpi1Eligible.length) * 100 : 0, meta: 85 },
-          kpi2a: { numerator: kpi2aPass.length, denominator: kpi2aEligible.length, percentage: kpi2aEligible.length > 0 ? (kpi2aPass.length / kpi2aEligible.length) * 100 : 0, meta: 80 },
-          kpi2b: { numerator: kpi2bPass.length, denominator: kpi2bEligible.length, percentage: kpi2bEligible.length > 0 ? (kpi2bPass.length / kpi2bEligible.length) * 100 : 0, meta: 80 },
-          kpi3: { numerator: kpi3Pass.length, denominator: kpi3Eligible.length, percentage: kpi3Eligible.length > 0 ? (kpi3Pass.length / kpi3Eligible.length) * 100 : 0, meta: 80 },
+          kpi1: dynamicKpis["kpi1"] ?? { numerator: 0, denominator: 0, percentage: 0, meta: 85 },
+          kpi2a: dynamicKpis["kpi2a"] ?? { numerator: 0, denominator: 0, percentage: 0, meta: 80 },
+          kpi2b: dynamicKpis["kpi2b"] ?? { numerator: 0, denominator: 0, percentage: 0, meta: 80 },
+          kpi3: dynamicKpis["kpi3"] ?? { numerator: 0, denominator: 0, percentage: 0, meta: 80 },
+          ...dynamicKpis,
         },
+        kpiConfigs: data.kpiConfigs,
       });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });

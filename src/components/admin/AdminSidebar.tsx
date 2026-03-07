@@ -107,6 +107,7 @@ const sections: SidebarSection[] = [
     items: [
       { tab: "mel", label: "MEL 360°", icon: TrendingUp },
       { tab: "mel-rubricas", label: "MEL Rúbricas", icon: ClipboardCheck },
+      { tab: "mel-config", label: "Configuración", icon: Settings2 },
     ],
     separatorAfter: true,
   },

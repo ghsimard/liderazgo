@@ -1,15 +1,30 @@
 /**
  * MEL Rúbricas Calculator
  * 
- * Calculates 3 KPIs based on rubrica evaluations:
- * 1. % rectores with "Intermedio" or "Avanzado" in ≥3 of 4 modules (meta 85%)
- * 2. % rectores with "Avanzado" in Module 1 AND Module 2 (meta 80%)
- * 3. % rectores with "Avanzado" in Module 3 (meta 80%)
+ * Dynamically calculates KPIs based on mel_kpi_config table.
+ * Supports 3 formula types: item_level, module_level, module_count.
  */
 
 import { supabase } from "@/utils/dbClient";
 
 // ── Types ──
+
+export interface KpiConfigRow {
+  id: string;
+  kpi_key: string;
+  label: string;
+  description: string;
+  meta_percentage: number;
+  formula_type: string; // 'item_level' | 'module_level' | 'module_count'
+  target_item_id: string | null;
+  target_module_number: number | null;
+  required_level: string;
+  min_modules: number | null;
+  threshold_level: string | null;
+  sort_order: number;
+  is_active: boolean;
+  color_class: string;
+}
 
 export interface DirectivoRubricaResult {
   cedula: string;
@@ -17,34 +32,47 @@ export interface DirectivoRubricaResult {
   institucion: string;
   region: string;
   entidadTerritorial: string;
-  /** Overall qualitative level per module (1-4 scale, null if no data) */
-  moduleLevels: Record<number, string | null>; // module_number → nivel string
-  moduleNumericLevels: Record<number, number | null>; // module_number → 1-4
-  /** KPI 1: has Intermedio or Avanzado in ≥3 modules */
+  moduleLevels: Record<number, string | null>;
+  moduleNumericLevels: Record<number, number | null>;
+  /** Dynamic KPI results: kpi_key → { cumple, hasData } */
+  kpiResults: Record<string, { cumple: boolean; hasData: boolean }>;
+  // Legacy fields for backward compatibility
   kpi1Cumple: boolean;
-  kpi1ModulesCount: number; // how many modules evaluated
-  kpi1PassingCount: number; // how many with Intermedio/Avanzado
-  /** KPI 2a: Avanzado in item "Autoconocimiento" (Module 1, item 1) */
+  kpi1ModulesCount: number;
+  kpi1PassingCount: number;
   kpi2aCumple: boolean;
   kpi2aHasItem: boolean;
-  /** KPI 2b: Avanzado in item "Comunicación asertiva" (Module 2, item 1) */
   kpi2bCumple: boolean;
   kpi2bHasItem: boolean;
-  /** KPI 3: Avanzado in Module 3 */
   kpi3Cumple: boolean;
   kpi3HasMod3: boolean;
 }
 
+export interface KpiResult {
+  numerator: number;
+  denominator: number;
+  percentage: number;
+  meta: number;
+  label: string;
+  description: string;
+  color_class: string;
+  kpi_key: string;
+}
+
 export interface MelRubricaKPIs {
+  // Legacy indexed access
   kpi1: { numerator: number; denominator: number; percentage: number; meta: number };
   kpi2a: { numerator: number; denominator: number; percentage: number; meta: number };
   kpi2b: { numerator: number; denominator: number; percentage: number; meta: number };
   kpi3: { numerator: number; denominator: number; percentage: number; meta: number };
+  // Dynamic list
+  [key: string]: { numerator: number; denominator: number; percentage: number; meta: number; label?: string; description?: string; color_class?: string; kpi_key?: string };
 }
 
 export interface MelRubricaData {
   directivos: DirectivoRubricaResult[];
   kpis: MelRubricaKPIs;
+  kpiConfigs: KpiConfigRow[];
 }
 
 // ── Helpers ──
@@ -68,49 +96,28 @@ function nivelToNum(nivel: string | null): number | null {
   return NIVEL_TO_NUM[nivel] ?? null;
 }
 
-/**
- * For each directivo+module, determine the overall level.
- * Priority: latest seguimiento > acordado_nivel
- * We take the MOST COMMON level across items in that module,
- * using the priority rule for each item.
- */
 function determineModuleLevel(
-  moduloItems: string[], // item IDs for this module
-  evaluaciones: Map<string, string | null>, // item_id → acordado_nivel
-  seguimientos: Map<string, { nivel: string | null; created_at: string }[]> // item_id → seguimientos sorted by date
+  moduloItems: string[],
+  evaluaciones: Map<string, string | null>,
+  seguimientos: Map<string, { nivel: string | null; created_at: string }[]>
 ): string | null {
   const levels: string[] = [];
-
   for (const itemId of moduloItems) {
-    // Check seguimientos first (latest one)
     const segs = seguimientos.get(itemId);
     if (segs && segs.length > 0) {
       const latest = segs[segs.length - 1];
-      if (latest.nivel) {
-        levels.push(latest.nivel);
-        continue;
-      }
+      if (latest.nivel) { levels.push(latest.nivel); continue; }
     }
-    // Fall back to acordado
     const acordado = evaluaciones.get(itemId);
-    if (acordado) {
-      levels.push(acordado);
-    }
+    if (acordado) levels.push(acordado);
   }
-
   if (levels.length === 0) return null;
-
-  // Most common level
   const freq: Record<string, number> = {};
   levels.forEach((l) => { freq[l] = (freq[l] || 0) + 1; });
   const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
   return sorted[0][0];
 }
 
-/**
- * Determine the level for a single item.
- * Priority: latest seguimiento > acordado_nivel
- */
 function determineItemLevel(
   itemId: string,
   evaluaciones: Map<string, string | null>,
@@ -124,45 +131,86 @@ function determineItemLevel(
   return evaluaciones.get(itemId) ?? null;
 }
 
+/**
+ * Evaluate a single KPI for a directivo based on config.
+ */
+function evaluateKpi(
+  config: KpiConfigRow,
+  moduleLevels: Record<number, string | null>,
+  moduleNumericLevels: Record<number, number | null>,
+  evalMap: Map<string, string | null>,
+  segMap: Map<string, { nivel: string | null; created_at: string }[]>,
+  itemsByModule: Map<number, string[]>,
+): { cumple: boolean; hasData: boolean } {
+  const requiredNum = NIVEL_TO_NUM[config.required_level] ?? 4;
+
+  if (config.formula_type === "item_level") {
+    if (!config.target_item_id) return { cumple: false, hasData: false };
+    const level = determineItemLevel(config.target_item_id, evalMap, segMap);
+    if (!level) return { cumple: false, hasData: false };
+    const num = nivelToNum(level);
+    return { cumple: num != null && num >= requiredNum, hasData: true };
+  }
+
+  if (config.formula_type === "module_level") {
+    const modNum = config.target_module_number;
+    if (modNum == null) return { cumple: false, hasData: false };
+    const level = moduleLevels[modNum];
+    if (!level) return { cumple: false, hasData: false };
+    const num = moduleNumericLevels[modNum];
+    return { cumple: num != null && num >= requiredNum, hasData: true };
+  }
+
+  if (config.formula_type === "module_count") {
+    const thresholdNum = NIVEL_TO_NUM[config.threshold_level ?? "intermedio"] ?? 3;
+    const minMods = config.min_modules ?? 3;
+    const evaluatedModules = [1, 2, 3, 4].filter((m) => moduleLevels[m] != null);
+    const passingModules = [1, 2, 3, 4].filter((m) => {
+      const num = moduleNumericLevels[m];
+      return num != null && num >= thresholdNum;
+    });
+    return {
+      cumple: passingModules.length >= minMods,
+      hasData: evaluatedModules.length >= minMods,
+    };
+  }
+
+  return { cumple: false, hasData: false };
+}
+
 // ── Main calculation ──
 
 export async function calcularMelRubricas(
   filteredCedulas?: string[]
 ): Promise<MelRubricaData> {
-  // 1. Fetch modules and items
-  const [{ data: modules }, { data: items }] = await Promise.all([
+  // 1. Fetch modules, items, and KPI config
+  const [{ data: modules }, { data: items }, { data: kpiConfigs }, { data: evaluaciones }, { data: seguimientos }, { data: fichas }] = await Promise.all([
     supabase.from("rubrica_modules").select("id, module_number").order("module_number"),
     supabase.from("rubrica_items").select("id, module_id").order("sort_order"),
+    supabase.from("mel_kpi_config").select("*").eq("is_active", true).order("sort_order"),
+    supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel"),
+    supabase.from("rubrica_seguimientos").select("item_id, directivo_cedula, nivel, created_at").order("created_at"),
+    supabase.from("fichas_rlt")
+      .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial, cargo_actual")
+      .in("cargo_actual", ["Rector/a", "Coordinador/a"]),
   ]);
 
-  const moduleMap = new Map<string, number>(); // module_id → module_number
+  const activeKpis: KpiConfigRow[] = (kpiConfigs ?? []).map(k => ({ ...k, meta_percentage: Number(k.meta_percentage) }));
+
+  const moduleMap = new Map<string, number>();
   (modules ?? []).forEach((m) => moduleMap.set(m.id, m.module_number));
 
-  const itemsByModule = new Map<number, string[]>(); // module_number → item_ids
-  const itemToModule = new Map<string, number>(); // item_id → module_number
-  const firstItemByModule = new Map<number, string>(); // module_number → first item_id (sort_order=1)
+  const itemsByModule = new Map<number, string[]>();
+  const itemToModule = new Map<string, number>();
   (items ?? []).forEach((item) => {
     const modNum = moduleMap.get(item.module_id);
     if (modNum == null) return;
     if (!itemsByModule.has(modNum)) itemsByModule.set(modNum, []);
     itemsByModule.get(modNum)!.push(item.id);
     itemToModule.set(item.id, modNum);
-    // Track first item per module (lowest sort_order seen first due to ORDER BY)
-    if (!firstItemByModule.has(modNum)) firstItemByModule.set(modNum, item.id);
   });
 
-  // 2. Fetch all evaluaciones and seguimientos
-  const [{ data: evaluaciones }, { data: seguimientos }] = await Promise.all([
-    supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel"),
-    supabase.from("rubrica_seguimientos").select("item_id, directivo_cedula, nivel, created_at").order("created_at"),
-  ]);
-
-  // 3. Fetch fichas for name/region mapping
-  const { data: fichas } = await supabase
-    .from("fichas_rlt")
-    .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial, cargo_actual")
-    .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
-
+  // 2. Build maps
   const fichaMap = new Map<string, { nombre: string; institucion: string; region: string; et: string }>();
   (fichas ?? []).forEach((f) => {
     if (f.numero_cedula) {
@@ -175,8 +223,7 @@ export async function calcularMelRubricas(
     }
   });
 
-  // 4. Group evaluaciones and seguimientos by directivo_cedula
-  const evalByDirectivo = new Map<string, Map<string, string | null>>(); // cedula → (item_id → acordado_nivel)
+  const evalByDirectivo = new Map<string, Map<string, string | null>>();
   (evaluaciones ?? []).forEach((e) => {
     if (!evalByDirectivo.has(e.directivo_cedula)) evalByDirectivo.set(e.directivo_cedula, new Map());
     evalByDirectivo.get(e.directivo_cedula)!.set(e.item_id, e.acordado_nivel);
@@ -190,20 +237,18 @@ export async function calcularMelRubricas(
     map.get(s.item_id)!.push({ nivel: s.nivel, created_at: s.created_at });
   });
 
-  // 5. Get all unique cedulas
+  // 3. Get all unique cedulas
   const allCedulas = new Set<string>();
   (evaluaciones ?? []).forEach((e) => allCedulas.add(e.directivo_cedula));
   (seguimientos ?? []).forEach((s) => allCedulas.add(s.directivo_cedula));
 
-  // 6. Calculate per-directivo
+  // 4. Calculate per-directivo
   const results: DirectivoRubricaResult[] = [];
 
   for (const cedula of allCedulas) {
-    // Filter if needed
     if (filteredCedulas && !filteredCedulas.includes(cedula)) continue;
-
     const fichaInfo = fichaMap.get(cedula);
-    if (!fichaInfo) continue; // skip if no ficha
+    if (!fichaInfo) continue;
 
     const evalMap = evalByDirectivo.get(cedula) ?? new Map();
     const segMap = segByDirectivo.get(cedula) ?? new Map();
@@ -218,29 +263,18 @@ export async function calcularMelRubricas(
       moduleNumericLevels[modNum] = nivelToNum(level);
     }
 
-    // KPI 1: Intermedio or Avanzado in ≥3 modules
+    // Evaluate all dynamic KPIs
+    const kpiResults: Record<string, { cumple: boolean; hasData: boolean }> = {};
+    for (const config of activeKpis) {
+      kpiResults[config.kpi_key] = evaluateKpi(config, moduleLevels, moduleNumericLevels, evalMap, segMap, itemsByModule);
+    }
+
+    // Legacy compatibility
     const evaluatedModules = [1, 2, 3, 4].filter((m) => moduleLevels[m] != null);
     const passingModules = [1, 2, 3, 4].filter((m) => {
       const num = moduleNumericLevels[m];
-      return num != null && num >= 3; // Intermedio (3) or Avanzado (4)
+      return num != null && num >= 3;
     });
-
-    // KPI 2a: Avanzado in item "Autoconocimiento" (first item of Module 1)
-    const autoconocimientoItemId = firstItemByModule.get(1);
-    const autoconocimientoLevel = autoconocimientoItemId 
-      ? determineItemLevel(autoconocimientoItemId, evalMap, segMap) 
-      : null;
-    const autoconocimientoAvanzado = autoconocimientoLevel === "avanzado";
-
-    // KPI 2b: Avanzado in item "Comunicación asertiva" (first item of Module 2)
-    const comunicacionItemId = firstItemByModule.get(2);
-    const comunicacionLevel = comunicacionItemId 
-      ? determineItemLevel(comunicacionItemId, evalMap, segMap) 
-      : null;
-    const comunicacionAvanzado = comunicacionLevel === "avanzado";
-
-    // KPI 3: Avanzado in Module 3
-    const mod3Avanzado = moduleNumericLevels[3] === 4;
 
     results.push({
       cedula,
@@ -250,62 +284,50 @@ export async function calcularMelRubricas(
       entidadTerritorial: fichaInfo.et,
       moduleLevels,
       moduleNumericLevels,
-      kpi1Cumple: passingModules.length >= 3,
+      kpiResults,
+      // Legacy
+      kpi1Cumple: kpiResults["kpi1"]?.cumple ?? false,
       kpi1ModulesCount: evaluatedModules.length,
       kpi1PassingCount: passingModules.length,
-      kpi2aCumple: autoconocimientoAvanzado,
-      kpi2aHasItem: autoconocimientoLevel != null,
-      kpi2bCumple: comunicacionAvanzado,
-      kpi2bHasItem: comunicacionLevel != null,
-      kpi3Cumple: mod3Avanzado,
-      kpi3HasMod3: moduleLevels[3] != null,
+      kpi2aCumple: kpiResults["kpi2a"]?.cumple ?? false,
+      kpi2aHasItem: kpiResults["kpi2a"]?.hasData ?? false,
+      kpi2bCumple: kpiResults["kpi2b"]?.cumple ?? false,
+      kpi2bHasItem: kpiResults["kpi2b"]?.hasData ?? false,
+      kpi3Cumple: kpiResults["kpi3"]?.cumple ?? false,
+      kpi3HasMod3: kpiResults["kpi3"]?.hasData ?? false,
     });
   }
 
-  // 7. Aggregate KPIs
-  const kpi1Eligible = results.filter((r) => r.kpi1ModulesCount >= 3);
-  const kpi1Pass = kpi1Eligible.filter((r) => r.kpi1Cumple);
+  // 5. Aggregate KPIs dynamically
+  const dynamicKpis: Record<string, KpiResult> = {};
+  for (const config of activeKpis) {
+    const eligible = results.filter((r) => r.kpiResults[config.kpi_key]?.hasData);
+    const pass = eligible.filter((r) => r.kpiResults[config.kpi_key]?.cumple);
+    dynamicKpis[config.kpi_key] = {
+      numerator: pass.length,
+      denominator: eligible.length,
+      percentage: eligible.length > 0 ? (pass.length / eligible.length) * 100 : 0,
+      meta: config.meta_percentage,
+      label: config.label,
+      description: config.description,
+      color_class: config.color_class,
+      kpi_key: config.kpi_key,
+    };
+  }
 
-  // KPI 2a: denominator = rectores with Autoconocimiento item evaluated
-  const kpi2aEligible = results.filter((r) => r.kpi2aHasItem);
-  const kpi2aPass = kpi2aEligible.filter((r) => r.kpi2aCumple);
-
-  // KPI 2b: denominator = rectores with Comunicación asertiva item evaluated
-  const kpi2bEligible = results.filter((r) => r.kpi2bHasItem);
-  const kpi2bPass = kpi2bEligible.filter((r) => r.kpi2bCumple);
-
-  // KPI 3: denominator = rectores evaluated in module 3
-  const kpi3Eligible = results.filter((r) => r.kpi3HasMod3);
-  const kpi3Pass = kpi3Eligible.filter((r) => r.kpi3Cumple);
+  // Build legacy kpis object with dynamic fallback
+  const kpis: MelRubricaKPIs = {
+    kpi1: dynamicKpis["kpi1"] ?? { numerator: 0, denominator: 0, percentage: 0, meta: 85 },
+    kpi2a: dynamicKpis["kpi2a"] ?? { numerator: 0, denominator: 0, percentage: 0, meta: 80 },
+    kpi2b: dynamicKpis["kpi2b"] ?? { numerator: 0, denominator: 0, percentage: 0, meta: 80 },
+    kpi3: dynamicKpis["kpi3"] ?? { numerator: 0, denominator: 0, percentage: 0, meta: 80 },
+    ...dynamicKpis,
+  };
 
   return {
     directivos: results,
-    kpis: {
-      kpi1: {
-        numerator: kpi1Pass.length,
-        denominator: kpi1Eligible.length,
-        percentage: kpi1Eligible.length > 0 ? (kpi1Pass.length / kpi1Eligible.length) * 100 : 0,
-        meta: 85,
-      },
-      kpi2a: {
-        numerator: kpi2aPass.length,
-        denominator: kpi2aEligible.length,
-        percentage: kpi2aEligible.length > 0 ? (kpi2aPass.length / kpi2aEligible.length) * 100 : 0,
-        meta: 80,
-      },
-      kpi2b: {
-        numerator: kpi2bPass.length,
-        denominator: kpi2bEligible.length,
-        percentage: kpi2bEligible.length > 0 ? (kpi2bPass.length / kpi2bEligible.length) * 100 : 0,
-        meta: 80,
-      },
-      kpi3: {
-        numerator: kpi3Pass.length,
-        denominator: kpi3Eligible.length,
-        percentage: kpi3Eligible.length > 0 ? (kpi3Pass.length / kpi3Eligible.length) * 100 : 0,
-        meta: 80,
-      },
-    },
+    kpis,
+    kpiConfigs: activeKpis,
   };
 }
 
