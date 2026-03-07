@@ -270,8 +270,9 @@ export default function RubricaEvaluacion() {
         setDirectivoInfo({ nombre: fichaData.nombres_apellidos, cedula: fichaData.numero_cedula, institucion: fichaData.nombre_ie, genero: fichaData.genero });
 
         const evMap = await loadEvaluaciones(fichaData.numero_cedula);
-        await loadSubmissionDates(fichaData.numero_cedula);
+        const dates = await loadSubmissionDates(fichaData.numero_cedula);
         await loadSeguimientos(fichaData.numero_cedula);
+        navigateToLastEnabledModule(modules, dates, "directivo");
 
         // Load assigned evaluator name for this directivo
         const { data: asigData } = await supabase
