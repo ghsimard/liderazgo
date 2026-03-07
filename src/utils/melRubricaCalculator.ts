@@ -207,12 +207,12 @@ export async function calcularMelRubricas(
     if (region?.kpi_group_id) {
       const groupItems = (groupItemsData ?? []).filter(gi => gi.group_id === region.kpi_group_id);
       const allowedKpiIds = new Set(groupItems.map(gi => gi.kpi_config_id));
-      const metaOverrides = new Map(groupItems.map(gi => [gi.kpi_config_id, gi.meta_override ? Number(gi.meta_override) : null]));
+      const metaOverrides = new Map<string, number | null>(groupItems.map(gi => [gi.kpi_config_id, gi.meta_override ? Number(gi.meta_override) : null]));
       activeKpis = activeKpis
         .filter(k => allowedKpiIds.has(k.id))
         .map(k => {
           const override = metaOverrides.get(k.id);
-          return override != null ? { ...k, meta_percentage: override } : k;
+          return override != null ? { ...k, meta_percentage: override as number } : k;
         });
     }
   }
