@@ -315,8 +315,8 @@ router.post("/:table", async (req: Request, res: Response) => {
     const method = _method || "POST";
 
     // Auth check: public inserts/updates allowed for certain tables, everything else needs admin
-    if (method === "POST" && PUBLIC_INSERT_TABLES.has(table)) {
-      // Public insert/upsert allowed, no auth needed
+    if (method === "POST" && !_body?._upsert && PUBLIC_INSERT_TABLES.has(table)) {
+      // Public insert allowed, no auth needed
     } else if (method === "PATCH" && PUBLIC_UPDATE_TABLES.has(table)) {
       // Public update allowed, no auth needed
     } else {

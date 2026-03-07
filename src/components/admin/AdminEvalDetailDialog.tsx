@@ -125,9 +125,22 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
           acordado_comentario: ev.acordado_comentario,
         };
 
-        await supabase
+        const { data: existing } = await supabase
           .from("rubrica_evaluaciones")
-          .upsert(payload, { onConflict: "directivo_cedula,item_id" });
+          .select("id")
+          .eq("item_id", ev.item_id)
+          .eq("directivo_cedula", directivoCedula)
+          .maybeSingle();
+
+        if (existing?.id) {
+          await supabase.from("rubrica_evaluaciones").update(payload).eq("id", existing.id);
+        } else {
+          // Only insert if there's at least one value
+          const hasValue = ev.directivo_nivel || ev.equipo_nivel || ev.acordado_nivel;
+          if (hasValue) {
+            await supabase.from("rubrica_evaluaciones").insert(payload);
+          }
+        }
       }
       setDirty(false);
       toast({ title: "Guardado", description: "Evaluaciones actualizadas correctamente." });

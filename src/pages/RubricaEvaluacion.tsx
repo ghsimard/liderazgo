@@ -451,9 +451,18 @@ export default function RubricaEvaluacion() {
           payload.acordado_comentario = ev.acordado_comentario;
         }
 
-        await supabase
+        const { data: existing } = await supabase
           .from("rubrica_evaluaciones")
-          .upsert(payload, { onConflict: "directivo_cedula,item_id" });
+          .select("id")
+          .eq("item_id", ev.item_id)
+          .eq("directivo_cedula", directivoInfo.cedula)
+          .maybeSingle();
+
+        if (existing?.id) {
+          await supabase.from("rubrica_evaluaciones").update(payload).eq("id", existing.id);
+        } else {
+          await supabase.from("rubrica_evaluaciones").insert(payload);
+        }
       }
 
       // Record submission date
@@ -522,29 +531,13 @@ export default function RubricaEvaluacion() {
     try {
       const currentWorkingModule = getEvaluadorCurrentWorkingModuleNumber();
 
-      // Check if seguimiento already exists for this combination
-      const { data: existingSeg } = await supabase
-        .from("rubrica_seguimientos")
-        .select("id")
-        .eq("directivo_cedula", directivoInfo.cedula)
-        .eq("item_id", itemId)
-        .eq("module_number", currentWorkingModule)
-        .maybeSingle();
-
-      const segPayload = {
+      const { error } = await supabase.from("rubrica_seguimientos").insert({
         item_id: itemId,
         directivo_cedula: directivoInfo.cedula,
         module_number: currentWorkingModule,
         nivel: pending.nivel,
         comentario: pending.comentario,
-      };
-
-      let error;
-      if (existingSeg?.id) {
-        ({ error } = await supabase.from("rubrica_seguimientos").update(segPayload).eq("id", existingSeg.id));
-      } else {
-        ({ error } = await supabase.from("rubrica_seguimientos").insert(segPayload));
-      }
+      });
 
       if (error) throw error;
 
