@@ -336,6 +336,7 @@ export default function AdminMelRubricasTab() {
           </div>
 
           {/* Individual results table */}
+          {showIndividual && (
           <Card>
             <CardContent className="p-4 space-y-3">
               <h4 className="text-sm font-semibold">Resultados individuales</h4>
