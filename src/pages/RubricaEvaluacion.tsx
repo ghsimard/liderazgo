@@ -127,6 +127,21 @@ export default function RubricaEvaluacion() {
   // The active role for saving (directivo or equipo)
   const role: "directivo" | "equipo" = detectedRole === "directivo" ? "directivo" : "equipo";
 
+  // Helper: find the last enabled module and set it as active
+  const navigateToLastEnabledModule = (mods: RubricaModule[], dates: Record<string, string>, userRole: "directivo" | "equipo") => {
+    if (!mods.length) return;
+    let lastEnabled = mods[0].id;
+    for (let i = 0; i < mods.length; i++) {
+      const m = mods[i];
+      const prevModNum = i > 0 ? mods[i - 1].module_number : null;
+      const prevDone = prevModNum === null || !!dates[`${prevModNum}:nivel_acordado`];
+      const evalBlocked = userRole === "equipo" && !dates[`${m.module_number}:autoevaluacion`];
+      if (!prevDone || evalBlocked) break;
+      lastEnabled = m.id;
+    }
+    setActiveModule(lastEnabled);
+  };
+
   // Load modules & items
   useEffect(() => {
     (async () => {
@@ -255,8 +270,9 @@ export default function RubricaEvaluacion() {
         setDirectivoInfo({ nombre: fichaData.nombres_apellidos, cedula: fichaData.numero_cedula, institucion: fichaData.nombre_ie, genero: fichaData.genero });
 
         const evMap = await loadEvaluaciones(fichaData.numero_cedula);
-        await loadSubmissionDates(fichaData.numero_cedula);
+        const dates = await loadSubmissionDates(fichaData.numero_cedula);
         await loadSeguimientos(fichaData.numero_cedula);
+        navigateToLastEnabledModule(modules, dates, "directivo");
 
         // Load assigned evaluator name for this directivo
         const { data: asigData } = await supabase
@@ -321,8 +337,9 @@ export default function RubricaEvaluacion() {
     const fichaRow = fichaRaw as Record<string, any> | null;
     setDirectivoInfo({ nombre: asig.directivo_nombre, cedula: asig.directivo_cedula, institucion: asig.institucion, genero: fichaRow?.genero ?? null });
     await loadEvaluaciones(asig.directivo_cedula);
-    await loadSubmissionDates(asig.directivo_cedula);
+    const dates = await loadSubmissionDates(asig.directivo_cedula);
     await loadSeguimientos(asig.directivo_cedula);
+    navigateToLastEnabledModule(modules, dates, "equipo");
   };
 
   const handleBack = () => {
