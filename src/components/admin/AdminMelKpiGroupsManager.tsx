@@ -228,7 +228,7 @@ export default function AdminMelKpiGroupsManager() {
                       </span>
                       {isIncluded && (
                         <div className="flex items-center gap-1">
-                          <Label className="text-[10px] text-muted-foreground">Meta override:</Label>
+                          <Label className="text-[10px] text-muted-foreground">Meta personalizada:</Label>
                           <Input
                             type="number"
                             min={0}
