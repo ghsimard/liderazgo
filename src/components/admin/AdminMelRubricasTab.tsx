@@ -376,16 +376,9 @@ export default function AdminMelRubricasTab() {
                           const delta = scoreFin - scoreInicio;
                           return (
                             <TableCell key={config.kpi_key} className="text-center">
-                              <div className="flex flex-col items-center gap-0.5">
-                                <span className={`text-xs font-semibold ${scoreFin >= 100 ? "text-emerald-600" : "text-foreground"}`}>
-                                  {scoreFin.toFixed(0)}%
-                                </span>
-                                {inicio?.hasData && (
-                                  <span className={`text-[10px] ${delta > 0 ? "text-emerald-600" : delta < 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                                    {delta > 0 ? "▲" : delta < 0 ? "▼" : "="}{Math.abs(delta).toFixed(0)}%
-                                  </span>
-                                )}
-                              </div>
+                              <span className={`text-xs font-semibold ${delta > 0 ? "text-emerald-600" : delta < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                                {delta > 0 ? "▲+" : delta < 0 ? "▼" : "="}{delta !== 0 ? `${Math.abs(delta).toFixed(0)}%` : ""}
+                              </span>
                             </TableCell>
                           );
                         })}
