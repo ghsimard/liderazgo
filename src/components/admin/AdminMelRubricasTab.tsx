@@ -360,12 +360,12 @@ export default function AdminMelRubricasTab() {
                           ) : <span className="text-xs text-muted-foreground">N/A</span>}
                         </TableCell>
                         <TableCell className="text-center">
-                          {d.kpi2aHasMod1 ? (
+                          {d.kpi2aHasItem ? (
                             d.kpi2aCumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
                           ) : <span className="text-xs text-muted-foreground">N/A</span>}
                         </TableCell>
                         <TableCell className="text-center">
-                          {d.kpi2bHasMod2 ? (
+                          {d.kpi2bHasItem ? (
                             d.kpi2bCumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
                           ) : <span className="text-xs text-muted-foreground">N/A</span>}
                         </TableCell>
