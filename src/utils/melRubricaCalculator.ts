@@ -146,24 +146,26 @@ function evaluateKpi(
   evalMap: Map<string, string | null>,
   segMap: Map<string, { nivel: string | null; created_at: string }[]>,
   itemsByModule: Map<number, string[]>,
-): { cumple: boolean; hasData: boolean } {
+): { cumple: boolean; hasData: boolean; score: number } {
   const requiredNum = NIVEL_TO_NUM[config.required_level] ?? 4;
 
   if (config.formula_type === "item_level") {
-    if (!config.target_item_id) return { cumple: false, hasData: false };
+    if (!config.target_item_id) return { cumple: false, hasData: false, score: 0 };
     const level = determineItemLevel(config.target_item_id, evalMap, segMap);
-    if (!level) return { cumple: false, hasData: false };
-    const num = nivelToNum(level);
-    return { cumple: num != null && num >= requiredNum, hasData: true };
+    if (!level) return { cumple: false, hasData: false, score: 0 };
+    const num = nivelToNum(level) ?? 0;
+    const score = Math.min((num / requiredNum) * 100, 100);
+    return { cumple: num >= requiredNum, hasData: true, score };
   }
 
   if (config.formula_type === "module_level") {
     const modNum = config.target_module_number;
-    if (modNum == null) return { cumple: false, hasData: false };
+    if (modNum == null) return { cumple: false, hasData: false, score: 0 };
     const level = moduleLevels[modNum];
-    if (!level) return { cumple: false, hasData: false };
-    const num = moduleNumericLevels[modNum];
-    return { cumple: num != null && num >= requiredNum, hasData: true };
+    if (!level) return { cumple: false, hasData: false, score: 0 };
+    const num = moduleNumericLevels[modNum] ?? 0;
+    const score = Math.min((num / requiredNum) * 100, 100);
+    return { cumple: num >= requiredNum, hasData: true, score };
   }
 
   if (config.formula_type === "module_count") {
@@ -174,13 +176,15 @@ function evaluateKpi(
       const num = moduleNumericLevels[m];
       return num != null && num >= thresholdNum;
     });
+    const score = minMods > 0 ? Math.min((passingModules.length / minMods) * 100, 100) : 0;
     return {
       cumple: passingModules.length >= minMods,
       hasData: evaluatedModules.length >= minMods,
+      score,
     };
   }
 
-  return { cumple: false, hasData: false };
+  return { cumple: false, hasData: false, score: 0 };
 }
 
 // ── Main calculation ──
