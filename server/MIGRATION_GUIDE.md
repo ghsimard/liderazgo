@@ -483,7 +483,7 @@ Ces formulaires réutilisent le composant `Encuesta360Form` avec la prop `fase="
 server/
 ├── index.ts                  ← Point d'entrée (enregistre 7 groupes de routes)
 ├── db.ts                     ← Pool pg + helpers query/queryOne
-├── schema.sql                ← Schéma users/roles/app_images
+├── schema.sql                ← Schéma users/roles/app_images/mel_kpi_config/mel_kpi_groups
 ├── middleware/
 │   └── auth.ts               ← signToken, requireAuth, requireAdmin
 └── routes/
