@@ -70,6 +70,7 @@ export default function AdminMelConfigTab() {
   // MEL 360 settings
   const [mel360Threshold, setMel360Threshold] = useState("0.5");
   const [mel360Meta, setMel360Meta] = useState("80");
+  const [showIndividualResults, setShowIndividualResults] = useState(true);
 
   useEffect(() => { loadAll(); }, []);
 
