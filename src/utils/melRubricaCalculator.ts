@@ -140,12 +140,15 @@ export async function calcularMelRubricas(
 
   const itemsByModule = new Map<number, string[]>(); // module_number → item_ids
   const itemToModule = new Map<string, number>(); // item_id → module_number
+  const firstItemByModule = new Map<number, string>(); // module_number → first item_id (sort_order=1)
   (items ?? []).forEach((item) => {
     const modNum = moduleMap.get(item.module_id);
     if (modNum == null) return;
     if (!itemsByModule.has(modNum)) itemsByModule.set(modNum, []);
     itemsByModule.get(modNum)!.push(item.id);
     itemToModule.set(item.id, modNum);
+    // Track first item per module (lowest sort_order seen first due to ORDER BY)
+    if (!firstItemByModule.has(modNum)) firstItemByModule.set(modNum, item.id);
   });
 
   // 2. Fetch all evaluaciones and seguimientos
