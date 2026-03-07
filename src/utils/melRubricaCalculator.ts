@@ -107,6 +107,37 @@ function determineModuleLevel(
   evaluaciones: Map<string, string | null>,
   seguimientos: Map<string, { nivel: string | null; created_at: string }[]>
 ): string | null {
+  const levels = collectItemLevels(moduloItems, evaluaciones, seguimientos);
+  if (levels.length === 0) return null;
+  // Statistical mode (most frequent)
+  const freq: Record<string, number> = {};
+  levels.forEach((l) => { freq[l] = (freq[l] || 0) + 1; });
+  const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+  return sorted[0][0];
+}
+
+function determineModuleLevelMax(
+  moduloItems: string[],
+  evaluaciones: Map<string, string | null>,
+  seguimientos: Map<string, { nivel: string | null; created_at: string }[]>
+): string | null {
+  const levels = collectItemLevels(moduloItems, evaluaciones, seguimientos);
+  if (levels.length === 0) return null;
+  // Highest level among items
+  let best: string = levels[0];
+  let bestNum = NIVEL_TO_NUM[best] ?? 0;
+  for (const l of levels) {
+    const n = NIVEL_TO_NUM[l] ?? 0;
+    if (n > bestNum) { best = l; bestNum = n; }
+  }
+  return best;
+}
+
+function collectItemLevels(
+  moduloItems: string[],
+  evaluaciones: Map<string, string | null>,
+  seguimientos: Map<string, { nivel: string | null; created_at: string }[]>
+): string[] {
   const levels: string[] = [];
   for (const itemId of moduloItems) {
     const segs = seguimientos.get(itemId);
@@ -117,15 +148,7 @@ function determineModuleLevel(
     const acordado = evaluaciones.get(itemId);
     if (acordado) levels.push(acordado);
   }
-  if (levels.length === 0) return null;
-  // Use highest (most advanced) level among items
-  let best: string = levels[0];
-  let bestNum = NIVEL_TO_NUM[best] ?? 0;
-  for (const l of levels) {
-    const n = NIVEL_TO_NUM[l] ?? 0;
-    if (n > bestNum) { best = l; bestNum = n; }
-  }
-  return best;
+  return levels;
 }
 
 function determineItemLevel(
