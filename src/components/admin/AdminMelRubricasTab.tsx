@@ -344,18 +344,9 @@ export default function AdminMelRubricasTab() {
                       <TableHead className="text-center">Mod. 3</TableHead>
                       <TableHead className="text-center">Mod. 4</TableHead>
                       {melData.kpiConfigs.map((config) => (
-                        <TableHead key={config.kpi_key} className="text-center" colSpan={2} title={config.label}>
+                        <TableHead key={config.kpi_key} className="text-center" title={config.label}>
                           {config.kpi_key.replace('kpi', 'Ind. ')}
                         </TableHead>
-                      ))}
-                    </TableRow>
-                    <TableRow>
-                      <TableHead colSpan={6} className="p-0" />
-                      {melData.kpiConfigs.map((config) => (
-                        <>
-                          <TableHead key={`${config.kpi_key}-ini`} className="text-center text-[10px] text-muted-foreground py-1">Inicio</TableHead>
-                          <TableHead key={`${config.kpi_key}-fin`} className="text-center text-[10px] text-muted-foreground py-1">Fin</TableHead>
-                        </>
                       ))}
                     </TableRow>
                   </TableHeader>
@@ -372,26 +363,37 @@ export default function AdminMelRubricasTab() {
                         {melData.kpiConfigs.map((config) => {
                           const inicio = d.kpiResultsInicio[config.kpi_key];
                           const fin = d.kpiResults[config.kpi_key];
+                          const hasAny = inicio?.hasData || fin?.hasData;
+                          if (!hasAny) {
+                            return (
+                              <TableCell key={config.kpi_key} className="text-center">
+                                <span className="text-xs text-muted-foreground">N/A</span>
+                              </TableCell>
+                            );
+                          }
+                          const scoreInicio = inicio?.hasData ? inicio.score : 0;
+                          const scoreFin = fin?.hasData ? fin.score : 0;
+                          const delta = scoreFin - scoreInicio;
                           return (
-                            <>
-                              <TableCell key={`${config.kpi_key}-ini`} className="text-center">
-                                {inicio?.hasData ? (
-                                  inicio.cumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
-                                ) : <span className="text-xs text-muted-foreground">N/A</span>}
-                              </TableCell>
-                              <TableCell key={`${config.kpi_key}-fin`} className="text-center">
-                                {fin?.hasData ? (
-                                  fin.cumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
-                                ) : <span className="text-xs text-muted-foreground">N/A</span>}
-                              </TableCell>
-                            </>
+                            <TableCell key={config.kpi_key} className="text-center">
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className={`text-xs font-semibold ${scoreFin >= 100 ? "text-emerald-600" : "text-foreground"}`}>
+                                  {scoreFin.toFixed(0)}%
+                                </span>
+                                {inicio?.hasData && (
+                                  <span className={`text-[10px] ${delta > 0 ? "text-emerald-600" : delta < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                                    {delta > 0 ? "▲" : delta < 0 ? "▼" : "="}{Math.abs(delta).toFixed(0)}%
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
                           );
                         })}
                       </TableRow>
                     ))}
                     {melData.directivos.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6 + melData.kpiConfigs.length * 2} className="text-center text-sm text-muted-foreground py-8">
+                        <TableCell colSpan={6 + melData.kpiConfigs.length} className="text-center text-sm text-muted-foreground py-8">
                           No hay datos de rúbricas para los directivos seleccionados.
                         </TableCell>
                       </TableRow>
