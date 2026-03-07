@@ -312,7 +312,7 @@ export async function calcularMelRubricas(
     }
 
     // Evaluate all dynamic KPIs (inicio - directivo_nivel only)
-    const kpiResultsInicio: Record<string, { cumple: boolean; hasData: boolean }> = {};
+    const kpiResultsInicio: Record<string, { cumple: boolean; hasData: boolean; score: number }> = {};
     for (const config of activeKpis) {
       kpiResultsInicio[config.kpi_key] = evaluateKpi(config, moduleLevelsInicio, moduleNumericLevelsInicio, evalInicioMap, emptySegMap, itemsByModule);
     }
