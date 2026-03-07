@@ -230,7 +230,12 @@ export default function AdminMelConfigTab() {
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5">
                       <Label className="text-xs">Activo</Label>
-                      <Switch checked={kpi.is_active} onCheckedChange={(v) => updateKpi(idx, "is_active", v)} />
+                      <Switch checked={kpi.is_active} onCheckedChange={async (v) => {
+                        updateKpi(idx, "is_active", v);
+                        if (kpi.id) {
+                          await supabase.from("mel_kpi_config").update({ is_active: v, updated_at: new Date().toISOString() }).eq("id", kpi.id);
+                        }
+                      }} />
                     </div>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeKpi(idx)}>
                       <Trash2 className="w-3.5 h-3.5" />
