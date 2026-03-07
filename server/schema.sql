@@ -383,6 +383,69 @@ CREATE INDEX IF NOT EXISTS idx_activity_log_action_type ON public.user_activity_
 CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON public.user_activity_log(created_at DESC);
 
 -- ============================================================
+-- MEL KPI Config
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.mel_kpi_config (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  kpi_key TEXT NOT NULL,
+  label TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  meta_percentage NUMERIC NOT NULL DEFAULT 80,
+  formula_type TEXT NOT NULL DEFAULT 'item_level',
+  target_item_id UUID REFERENCES public.rubrica_items(id),
+  target_module_number INTEGER,
+  required_level TEXT NOT NULL DEFAULT 'avanzado',
+  min_modules INTEGER,
+  threshold_level TEXT,
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  color_class TEXT DEFAULT 'border-l-primary',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ============================================================
+-- MEL KPI Groups (profiles assignable to regions)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.mel_kpi_groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.mel_kpi_group_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID NOT NULL REFERENCES public.mel_kpi_groups(id) ON DELETE CASCADE,
+  kpi_config_id UUID NOT NULL REFERENCES public.mel_kpi_config(id) ON DELETE CASCADE,
+  meta_override NUMERIC DEFAULT NULL,
+  UNIQUE(group_id, kpi_config_id)
+);
+
+-- Add kpi_group_id to regiones if column does not exist
+DO $$
+BEGIN
+  IF to_regclass('public.regiones') IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'regiones' AND column_name = 'kpi_group_id'
+    ) THEN
+      ALTER TABLE public.regiones ADD COLUMN kpi_group_id UUID REFERENCES public.mel_kpi_groups(id) ON DELETE SET NULL DEFAULT NULL;
+    END IF;
+  END IF;
+END $$;
+
+-- Seed MEL 360 settings
+INSERT INTO public.app_settings (key, value)
+VALUES
+  ('mel_360_progression_threshold', '0.5'),
+  ('mel_360_global_meta', '80')
+ON CONFLICT (key) DO NOTHING;
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js
