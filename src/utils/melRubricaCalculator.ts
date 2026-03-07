@@ -33,6 +33,7 @@ export interface DirectivoRubricaResult {
   region: string;
   entidadTerritorial: string;
   moduleLevels: Record<number, string | null>;
+  moduleLevelsDisplay: Record<number, string | null>;
   moduleNumericLevels: Record<number, number | null>;
   /** Inicio (directivo_nivel only) module levels */
   moduleLevelsInicio: Record<number, string | null>;
