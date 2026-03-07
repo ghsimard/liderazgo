@@ -403,6 +403,7 @@ export default function AdminMelRubricasTab() {
               </div>
             </CardContent>
           </Card>
+          )}
         </>
       )}
     </div>
