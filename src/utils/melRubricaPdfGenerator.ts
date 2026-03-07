@@ -269,8 +269,8 @@ export async function generarMelRubricasPDF(
     // Indicator results
     const indicators = [
       { eligible: d.kpi1ModulesCount >= 3, cumple: d.kpi1Cumple },
-      { eligible: d.kpi2aHasMod1, cumple: d.kpi2aCumple },
-      { eligible: d.kpi2bHasMod2, cumple: d.kpi2bCumple },
+      { eligible: d.kpi2aHasItem, cumple: d.kpi2aCumple },
+      { eligible: d.kpi2bHasItem, cumple: d.kpi2bCumple },
       { eligible: d.kpi3HasMod3, cumple: d.kpi3Cumple },
     ];
 

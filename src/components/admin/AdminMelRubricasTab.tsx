@@ -159,9 +159,9 @@ export default function AdminMelRubricasTab() {
       // Recalculate KPIs with filtered set
       const kpi1Eligible = filtered.filter((r) => r.kpi1ModulesCount >= 3);
       const kpi1Pass = kpi1Eligible.filter((r) => r.kpi1Cumple);
-      const kpi2aEligible = filtered.filter((r) => r.kpi2aHasMod1);
+      const kpi2aEligible = filtered.filter((r) => r.kpi2aHasItem);
       const kpi2aPass = kpi2aEligible.filter((r) => r.kpi2aCumple);
-      const kpi2bEligible = filtered.filter((r) => r.kpi2bHasMod2);
+      const kpi2bEligible = filtered.filter((r) => r.kpi2bHasItem);
       const kpi2bPass = kpi2bEligible.filter((r) => r.kpi2bCumple);
       const kpi3Eligible = filtered.filter((r) => r.kpi3HasMod3);
       const kpi3Pass = kpi3Eligible.filter((r) => r.kpi3Cumple);
@@ -360,12 +360,12 @@ export default function AdminMelRubricasTab() {
                           ) : <span className="text-xs text-muted-foreground">N/A</span>}
                         </TableCell>
                         <TableCell className="text-center">
-                          {d.kpi2aHasMod1 ? (
+                          {d.kpi2aHasItem ? (
                             d.kpi2aCumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
                           ) : <span className="text-xs text-muted-foreground">N/A</span>}
                         </TableCell>
                         <TableCell className="text-center">
-                          {d.kpi2bHasMod2 ? (
+                          {d.kpi2bHasItem ? (
                             d.kpi2bCumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
                           ) : <span className="text-xs text-muted-foreground">N/A</span>}
                         </TableCell>

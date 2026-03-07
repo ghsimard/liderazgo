@@ -24,12 +24,12 @@ export interface DirectivoRubricaResult {
   kpi1Cumple: boolean;
   kpi1ModulesCount: number; // how many modules evaluated
   kpi1PassingCount: number; // how many with Intermedio/Avanzado
-  /** KPI 2a: Avanzado in Module 1 (Autoconocimiento) */
+  /** KPI 2a: Avanzado in item "Autoconocimiento" (Module 1, item 1) */
   kpi2aCumple: boolean;
-  kpi2aHasMod1: boolean;
-  /** KPI 2b: Avanzado in Module 2 (Comunicación Asertiva) */
+  kpi2aHasItem: boolean;
+  /** KPI 2b: Avanzado in item "Comunicación asertiva" (Module 2, item 1) */
   kpi2bCumple: boolean;
-  kpi2bHasMod2: boolean;
+  kpi2bHasItem: boolean;
   /** KPI 3: Avanzado in Module 3 */
   kpi3Cumple: boolean;
   kpi3HasMod3: boolean;
@@ -107,6 +107,23 @@ function determineModuleLevel(
   return sorted[0][0];
 }
 
+/**
+ * Determine the level for a single item.
+ * Priority: latest seguimiento > acordado_nivel
+ */
+function determineItemLevel(
+  itemId: string,
+  evaluaciones: Map<string, string | null>,
+  seguimientos: Map<string, { nivel: string | null; created_at: string }[]>
+): string | null {
+  const segs = seguimientos.get(itemId);
+  if (segs && segs.length > 0) {
+    const latest = segs[segs.length - 1];
+    if (latest.nivel) return latest.nivel;
+  }
+  return evaluaciones.get(itemId) ?? null;
+}
+
 // ── Main calculation ──
 
 export async function calcularMelRubricas(
@@ -123,12 +140,15 @@ export async function calcularMelRubricas(
 
   const itemsByModule = new Map<number, string[]>(); // module_number → item_ids
   const itemToModule = new Map<string, number>(); // item_id → module_number
+  const firstItemByModule = new Map<number, string>(); // module_number → first item_id (sort_order=1)
   (items ?? []).forEach((item) => {
     const modNum = moduleMap.get(item.module_id);
     if (modNum == null) return;
     if (!itemsByModule.has(modNum)) itemsByModule.set(modNum, []);
     itemsByModule.get(modNum)!.push(item.id);
     itemToModule.set(item.id, modNum);
+    // Track first item per module (lowest sort_order seen first due to ORDER BY)
+    if (!firstItemByModule.has(modNum)) firstItemByModule.set(modNum, item.id);
   });
 
   // 2. Fetch all evaluaciones and seguimientos
@@ -205,10 +225,20 @@ export async function calcularMelRubricas(
       return num != null && num >= 3; // Intermedio (3) or Avanzado (4)
     });
 
-    // KPI 2a: Avanzado in Module 1 (Autoconocimiento)
-    const mod1Avanzado = moduleNumericLevels[1] === 4;
-    // KPI 2b: Avanzado in Module 2 (Comunicación Asertiva)
-    const mod2Avanzado = moduleNumericLevels[2] === 4;
+    // KPI 2a: Avanzado in item "Autoconocimiento" (first item of Module 1)
+    const autoconocimientoItemId = firstItemByModule.get(1);
+    const autoconocimientoLevel = autoconocimientoItemId 
+      ? determineItemLevel(autoconocimientoItemId, evalMap, segMap) 
+      : null;
+    const autoconocimientoAvanzado = autoconocimientoLevel === "avanzado";
+
+    // KPI 2b: Avanzado in item "Comunicación asertiva" (first item of Module 2)
+    const comunicacionItemId = firstItemByModule.get(2);
+    const comunicacionLevel = comunicacionItemId 
+      ? determineItemLevel(comunicacionItemId, evalMap, segMap) 
+      : null;
+    const comunicacionAvanzado = comunicacionLevel === "avanzado";
+
     // KPI 3: Avanzado in Module 3
     const mod3Avanzado = moduleNumericLevels[3] === 4;
 
@@ -223,26 +253,25 @@ export async function calcularMelRubricas(
       kpi1Cumple: passingModules.length >= 3,
       kpi1ModulesCount: evaluatedModules.length,
       kpi1PassingCount: passingModules.length,
-      kpi2aCumple: mod1Avanzado,
-      kpi2aHasMod1: moduleLevels[1] != null,
-      kpi2bCumple: mod2Avanzado,
-      kpi2bHasMod2: moduleLevels[2] != null,
+      kpi2aCumple: autoconocimientoAvanzado,
+      kpi2aHasItem: autoconocimientoLevel != null,
+      kpi2bCumple: comunicacionAvanzado,
+      kpi2bHasItem: comunicacionLevel != null,
       kpi3Cumple: mod3Avanzado,
       kpi3HasMod3: moduleLevels[3] != null,
     });
   }
 
   // 7. Aggregate KPIs
-  // KPI 1: denominator = rectores with evaluación válida in ≥3 modules
   const kpi1Eligible = results.filter((r) => r.kpi1ModulesCount >= 3);
   const kpi1Pass = kpi1Eligible.filter((r) => r.kpi1Cumple);
 
-  // KPI 2a: denominator = rectores evaluated in module 1
-  const kpi2aEligible = results.filter((r) => r.kpi2aHasMod1);
+  // KPI 2a: denominator = rectores with Autoconocimiento item evaluated
+  const kpi2aEligible = results.filter((r) => r.kpi2aHasItem);
   const kpi2aPass = kpi2aEligible.filter((r) => r.kpi2aCumple);
 
-  // KPI 2b: denominator = rectores evaluated in module 2
-  const kpi2bEligible = results.filter((r) => r.kpi2bHasMod2);
+  // KPI 2b: denominator = rectores with Comunicación asertiva item evaluated
+  const kpi2bEligible = results.filter((r) => r.kpi2bHasItem);
   const kpi2bPass = kpi2bEligible.filter((r) => r.kpi2bCumple);
 
   // KPI 3: denominator = rectores evaluated in module 3
