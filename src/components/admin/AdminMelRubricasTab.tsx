@@ -344,9 +344,18 @@ export default function AdminMelRubricasTab() {
                       <TableHead className="text-center">Mod. 3</TableHead>
                       <TableHead className="text-center">Mod. 4</TableHead>
                       {melData.kpiConfigs.map((config) => (
-                        <TableHead key={config.kpi_key} className="text-center" title={config.label}>
+                        <TableHead key={config.kpi_key} className="text-center" colSpan={2} title={config.label}>
                           {config.kpi_key.replace('kpi', 'Ind. ')}
                         </TableHead>
+                      ))}
+                    </TableRow>
+                    <TableRow>
+                      <TableHead colSpan={6} className="p-0" />
+                      {melData.kpiConfigs.map((config) => (
+                        <>
+                          <TableHead key={`${config.kpi_key}-ini`} className="text-center text-[10px] text-muted-foreground py-1">Inicio</TableHead>
+                          <TableHead key={`${config.kpi_key}-fin`} className="text-center text-[10px] text-muted-foreground py-1">Fin</TableHead>
+                        </>
                       ))}
                     </TableRow>
                   </TableHeader>
@@ -361,20 +370,28 @@ export default function AdminMelRubricasTab() {
                           </TableCell>
                         ))}
                         {melData.kpiConfigs.map((config) => {
-                          const result = d.kpiResults[config.kpi_key];
+                          const inicio = d.kpiResultsInicio[config.kpi_key];
+                          const fin = d.kpiResults[config.kpi_key];
                           return (
-                            <TableCell key={config.kpi_key} className="text-center">
-                              {result?.hasData ? (
-                                result.cumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
-                              ) : <span className="text-xs text-muted-foreground">N/A</span>}
-                            </TableCell>
+                            <>
+                              <TableCell key={`${config.kpi_key}-ini`} className="text-center">
+                                {inicio?.hasData ? (
+                                  inicio.cumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
+                                ) : <span className="text-xs text-muted-foreground">N/A</span>}
+                              </TableCell>
+                              <TableCell key={`${config.kpi_key}-fin`} className="text-center">
+                                {fin?.hasData ? (
+                                  fin.cumple ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive mx-auto" />
+                                ) : <span className="text-xs text-muted-foreground">N/A</span>}
+                              </TableCell>
+                            </>
                           );
                         })}
                       </TableRow>
                     ))}
                     {melData.directivos.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6 + melData.kpiConfigs.length} className="text-center text-sm text-muted-foreground py-8">
+                        <TableCell colSpan={6 + melData.kpiConfigs.length * 2} className="text-center text-sm text-muted-foreground py-8">
                           No hay datos de rúbricas para los directivos seleccionados.
                         </TableCell>
                       </TableRow>

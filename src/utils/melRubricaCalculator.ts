@@ -34,8 +34,13 @@ export interface DirectivoRubricaResult {
   entidadTerritorial: string;
   moduleLevels: Record<number, string | null>;
   moduleNumericLevels: Record<number, number | null>;
+  /** Inicio (directivo_nivel only) module levels */
+  moduleLevelsInicio: Record<number, string | null>;
+  moduleNumericLevelsInicio: Record<number, number | null>;
   /** Dynamic KPI results: kpi_key → { cumple, hasData } */
   kpiResults: Record<string, { cumple: boolean; hasData: boolean }>;
+  /** KPI results based on directivo_nivel (inicio/autoeval) */
+  kpiResultsInicio: Record<string, { cumple: boolean; hasData: boolean }>;
   // Legacy fields for backward compatibility
   kpi1Cumple: boolean;
   kpi1ModulesCount: number;
@@ -189,7 +194,7 @@ export async function calcularMelRubricas(
     supabase.from("rubrica_modules").select("id, module_number").order("module_number"),
     supabase.from("rubrica_items").select("id, module_id").order("sort_order"),
     supabase.from("mel_kpi_config").select("*").eq("is_active", true).order("sort_order"),
-    supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel"),
+    supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel, directivo_nivel"),
     supabase.from("rubrica_seguimientos").select("item_id, directivo_cedula, nivel, created_at").order("created_at"),
     supabase.from("fichas_rlt")
       .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial, cargo_actual")
@@ -244,9 +249,13 @@ export async function calcularMelRubricas(
   });
 
   const evalByDirectivo = new Map<string, Map<string, string | null>>();
+  const evalInicioByDirectivo = new Map<string, Map<string, string | null>>();
   (evaluaciones ?? []).forEach((e) => {
     if (!evalByDirectivo.has(e.directivo_cedula)) evalByDirectivo.set(e.directivo_cedula, new Map());
     evalByDirectivo.get(e.directivo_cedula)!.set(e.item_id, e.acordado_nivel);
+    // Inicio map uses directivo_nivel (self-evaluation)
+    if (!evalInicioByDirectivo.has(e.directivo_cedula)) evalInicioByDirectivo.set(e.directivo_cedula, new Map());
+    evalInicioByDirectivo.get(e.directivo_cedula)!.set(e.item_id, (e as any).directivo_nivel ?? null);
   });
 
   const segByDirectivo = new Map<string, Map<string, { nivel: string | null; created_at: string }[]>>();
@@ -271,22 +280,37 @@ export async function calcularMelRubricas(
     if (!fichaInfo) continue;
 
     const evalMap = evalByDirectivo.get(cedula) ?? new Map();
+    const evalInicioMap = evalInicioByDirectivo.get(cedula) ?? new Map();
     const segMap = segByDirectivo.get(cedula) ?? new Map();
+    const emptySegMap = new Map<string, { nivel: string | null; created_at: string }[]>();
 
     const moduleLevels: Record<number, string | null> = {};
     const moduleNumericLevels: Record<number, number | null> = {};
+    const moduleLevelsInicio: Record<number, string | null> = {};
+    const moduleNumericLevelsInicio: Record<number, number | null> = {};
 
     for (const modNum of [1, 2, 3, 4]) {
       const modItems = itemsByModule.get(modNum) ?? [];
+      // Fin: uses acordado_nivel + seguimientos (current logic)
       const level = determineModuleLevel(modItems, evalMap, segMap);
       moduleLevels[modNum] = level;
       moduleNumericLevels[modNum] = nivelToNum(level);
+      // Inicio: uses directivo_nivel only (no seguimientos)
+      const levelInicio = determineModuleLevel(modItems, evalInicioMap, emptySegMap);
+      moduleLevelsInicio[modNum] = levelInicio;
+      moduleNumericLevelsInicio[modNum] = nivelToNum(levelInicio);
     }
 
-    // Evaluate all dynamic KPIs
+    // Evaluate all dynamic KPIs (fin)
     const kpiResults: Record<string, { cumple: boolean; hasData: boolean }> = {};
     for (const config of activeKpis) {
       kpiResults[config.kpi_key] = evaluateKpi(config, moduleLevels, moduleNumericLevels, evalMap, segMap, itemsByModule);
+    }
+
+    // Evaluate all dynamic KPIs (inicio - directivo_nivel only)
+    const kpiResultsInicio: Record<string, { cumple: boolean; hasData: boolean }> = {};
+    for (const config of activeKpis) {
+      kpiResultsInicio[config.kpi_key] = evaluateKpi(config, moduleLevelsInicio, moduleNumericLevelsInicio, evalInicioMap, emptySegMap, itemsByModule);
     }
 
     // Legacy compatibility
@@ -304,7 +328,10 @@ export async function calcularMelRubricas(
       entidadTerritorial: fichaInfo.et,
       moduleLevels,
       moduleNumericLevels,
+      moduleLevelsInicio,
+      moduleNumericLevelsInicio,
       kpiResults,
+      kpiResultsInicio,
       // Legacy
       kpi1Cumple: kpiResults["kpi1"]?.cumple ?? false,
       kpi1ModulesCount: evaluatedModules.length,
