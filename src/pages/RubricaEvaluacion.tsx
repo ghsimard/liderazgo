@@ -127,6 +127,21 @@ export default function RubricaEvaluacion() {
   // The active role for saving (directivo or equipo)
   const role: "directivo" | "equipo" = detectedRole === "directivo" ? "directivo" : "equipo";
 
+  // Helper: find the last enabled module and set it as active
+  const navigateToLastEnabledModule = (mods: RubricaModule[], dates: Record<string, string>, userRole: "directivo" | "equipo") => {
+    if (!mods.length) return;
+    let lastEnabled = mods[0].id;
+    for (let i = 0; i < mods.length; i++) {
+      const m = mods[i];
+      const prevModNum = i > 0 ? mods[i - 1].module_number : null;
+      const prevDone = prevModNum === null || !!dates[`${prevModNum}:nivel_acordado`];
+      const evalBlocked = userRole === "equipo" && !dates[`${m.module_number}:autoevaluacion`];
+      if (!prevDone || evalBlocked) break;
+      lastEnabled = m.id;
+    }
+    setActiveModule(lastEnabled);
+  };
+
   // Load modules & items
   useEffect(() => {
     (async () => {
