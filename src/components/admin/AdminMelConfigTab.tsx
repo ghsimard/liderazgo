@@ -177,6 +177,7 @@ export default function AdminMelConfigTab() {
       await supabase.from("app_settings").upsert([
         { key: "mel_360_progression_threshold", value: mel360Threshold, updated_at: new Date().toISOString() },
         { key: "mel_360_global_meta", value: mel360Meta, updated_at: new Date().toISOString() },
+        { key: "mel_rubricas_show_individual", value: showIndividualResults ? "true" : "false", updated_at: new Date().toISOString() },
       ]);
 
       toast({ title: "Configuración guardada", description: "Los cambios se aplicarán al recalcular." });
