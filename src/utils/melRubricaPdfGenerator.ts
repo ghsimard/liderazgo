@@ -191,6 +191,9 @@ export async function generarMelRubricasPDF(
 
   drawPageFooter(pageNum);
 
+  const showIndividual = options?.showIndividualResults !== false;
+
+  if (showIndividual) {
   // ═══════════════════════════════════════════
   // PAGE 3+ — INDIVIDUAL RESULTS TABLE
   // ═══════════════════════════════════════════
