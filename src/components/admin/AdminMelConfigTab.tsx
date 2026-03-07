@@ -419,7 +419,10 @@ export default function AdminMelConfigTab() {
           <div>
             <Label className="text-xs">Resultados individuales</Label>
             <div className="flex items-center gap-3 mt-2">
-              <Switch checked={showIndividualResults} onCheckedChange={setShowIndividualResults} />
+              <Switch checked={showIndividualResults} onCheckedChange={async (val) => {
+                setShowIndividualResults(val);
+                await supabase.from("app_settings").upsert({ key: "mel_rubricas_show_individual", value: val ? "true" : "false", updated_at: new Date().toISOString() });
+              }} />
               <span className="text-xs text-muted-foreground">
                 {showIndividualResults ? "Visible en el reporte y en la interfaz" : "Oculto en el reporte y en la interfaz"}
               </span>
