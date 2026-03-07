@@ -33,6 +33,7 @@ export interface DirectivoRubricaResult {
   region: string;
   entidadTerritorial: string;
   moduleLevels: Record<number, string | null>;
+  moduleLevelsDisplay: Record<number, string | null>;
   moduleNumericLevels: Record<number, number | null>;
   /** Inicio (directivo_nivel only) module levels */
   moduleLevelsInicio: Record<number, string | null>;
@@ -106,6 +107,37 @@ function determineModuleLevel(
   evaluaciones: Map<string, string | null>,
   seguimientos: Map<string, { nivel: string | null; created_at: string }[]>
 ): string | null {
+  const levels = collectItemLevels(moduloItems, evaluaciones, seguimientos);
+  if (levels.length === 0) return null;
+  // Statistical mode (most frequent)
+  const freq: Record<string, number> = {};
+  levels.forEach((l) => { freq[l] = (freq[l] || 0) + 1; });
+  const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+  return sorted[0][0];
+}
+
+function determineModuleLevelMax(
+  moduloItems: string[],
+  evaluaciones: Map<string, string | null>,
+  seguimientos: Map<string, { nivel: string | null; created_at: string }[]>
+): string | null {
+  const levels = collectItemLevels(moduloItems, evaluaciones, seguimientos);
+  if (levels.length === 0) return null;
+  // Highest level among items
+  let best: string = levels[0];
+  let bestNum = NIVEL_TO_NUM[best] ?? 0;
+  for (const l of levels) {
+    const n = NIVEL_TO_NUM[l] ?? 0;
+    if (n > bestNum) { best = l; bestNum = n; }
+  }
+  return best;
+}
+
+function collectItemLevels(
+  moduloItems: string[],
+  evaluaciones: Map<string, string | null>,
+  seguimientos: Map<string, { nivel: string | null; created_at: string }[]>
+): string[] {
   const levels: string[] = [];
   for (const itemId of moduloItems) {
     const segs = seguimientos.get(itemId);
@@ -116,15 +148,7 @@ function determineModuleLevel(
     const acordado = evaluaciones.get(itemId);
     if (acordado) levels.push(acordado);
   }
-  if (levels.length === 0) return null;
-  // Use highest (most advanced) level among items
-  let best: string = levels[0];
-  let bestNum = NIVEL_TO_NUM[best] ?? 0;
-  for (const l of levels) {
-    const n = NIVEL_TO_NUM[l] ?? 0;
-    if (n > bestNum) { best = l; bestNum = n; }
-  }
-  return best;
+  return levels;
 }
 
 function determineItemLevel(
@@ -293,16 +317,19 @@ export async function calcularMelRubricas(
     const emptySegMap = new Map<string, { nivel: string | null; created_at: string }[]>();
 
     const moduleLevels: Record<number, string | null> = {};
+    const moduleLevelsDisplay: Record<number, string | null> = {};
     const moduleNumericLevels: Record<number, number | null> = {};
     const moduleLevelsInicio: Record<number, string | null> = {};
     const moduleNumericLevelsInicio: Record<number, number | null> = {};
 
     for (const modNum of [1, 2, 3, 4]) {
       const modItems = itemsByModule.get(modNum) ?? [];
-      // Fin: uses acordado_nivel + seguimientos (current logic)
+      // Fin (mode) for KPI calculations
       const level = determineModuleLevel(modItems, evalMap, segMap);
       moduleLevels[modNum] = level;
       moduleNumericLevels[modNum] = nivelToNum(level);
+      // Fin (max) for display only
+      moduleLevelsDisplay[modNum] = determineModuleLevelMax(modItems, evalMap, segMap);
       // Inicio: uses directivo_nivel only (no seguimientos)
       const levelInicio = determineModuleLevel(modItems, evalInicioMap, emptySegMap);
       moduleLevelsInicio[modNum] = levelInicio;
@@ -335,6 +362,7 @@ export async function calcularMelRubricas(
       region: fichaInfo.region,
       entidadTerritorial: fichaInfo.et,
       moduleLevels,
+      moduleLevelsDisplay,
       moduleNumericLevels,
       moduleLevelsInicio,
       moduleNumericLevelsInicio,

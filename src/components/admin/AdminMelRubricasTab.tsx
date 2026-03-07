@@ -353,7 +353,7 @@ export default function AdminMelRubricasTab() {
                         <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{d.institucion}</TableCell>
                         {[1, 2, 3, 4].map((mod) => (
                           <TableCell key={mod} className="text-center">
-                            <NivelBadge nivel={d.moduleLevels[mod]} />
+                            <NivelBadge nivel={d.moduleLevelsDisplay[mod]} />
                           </TableCell>
                         ))}
                         {melData.kpiConfigs.map((config) => {
