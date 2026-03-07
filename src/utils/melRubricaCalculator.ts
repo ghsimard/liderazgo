@@ -34,8 +34,13 @@ export interface DirectivoRubricaResult {
   entidadTerritorial: string;
   moduleLevels: Record<number, string | null>;
   moduleNumericLevels: Record<number, number | null>;
+  /** Inicio (directivo_nivel only) module levels */
+  moduleLevelsInicio: Record<number, string | null>;
+  moduleNumericLevelsInicio: Record<number, number | null>;
   /** Dynamic KPI results: kpi_key → { cumple, hasData } */
   kpiResults: Record<string, { cumple: boolean; hasData: boolean }>;
+  /** KPI results based on directivo_nivel (inicio/autoeval) */
+  kpiResultsInicio: Record<string, { cumple: boolean; hasData: boolean }>;
   // Legacy fields for backward compatibility
   kpi1Cumple: boolean;
   kpi1ModulesCount: number;
