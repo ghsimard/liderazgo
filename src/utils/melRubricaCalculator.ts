@@ -107,6 +107,23 @@ function determineModuleLevel(
   return sorted[0][0];
 }
 
+/**
+ * Determine the level for a single item.
+ * Priority: latest seguimiento > acordado_nivel
+ */
+function determineItemLevel(
+  itemId: string,
+  evaluaciones: Map<string, string | null>,
+  seguimientos: Map<string, { nivel: string | null; created_at: string }[]>
+): string | null {
+  const segs = seguimientos.get(itemId);
+  if (segs && segs.length > 0) {
+    const latest = segs[segs.length - 1];
+    if (latest.nivel) return latest.nivel;
+  }
+  return evaluaciones.get(itemId) ?? null;
+}
+
 // ── Main calculation ──
 
 export async function calcularMelRubricas(
