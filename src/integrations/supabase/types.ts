@@ -697,6 +697,66 @@ export type Database = {
           },
         ]
       }
+      mel_kpi_group_items: {
+        Row: {
+          group_id: string
+          id: string
+          kpi_config_id: string
+          meta_override: number | null
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          kpi_config_id: string
+          meta_override?: number | null
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          kpi_config_id?: string
+          meta_override?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mel_kpi_group_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "mel_kpi_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mel_kpi_group_items_kpi_config_id_fkey"
+            columns: ["kpi_config_id"]
+            isOneToOne: false
+            referencedRelation: "mel_kpi_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mel_kpi_groups: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       municipios: {
         Row: {
           created_at: string
@@ -829,6 +889,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          kpi_group_id: string | null
           mostrar_logo_clt: boolean
           mostrar_logo_rlt: boolean
           nombre: string
@@ -836,6 +897,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          kpi_group_id?: string | null
           mostrar_logo_clt?: boolean
           mostrar_logo_rlt?: boolean
           nombre: string
@@ -843,11 +905,20 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          kpi_group_id?: string | null
           mostrar_logo_clt?: boolean
           mostrar_logo_rlt?: boolean
           nombre?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "regiones_kpi_group_id_fkey"
+            columns: ["kpi_group_id"]
+            isOneToOne: false
+            referencedRelation: "mel_kpi_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rubrica_asignaciones: {
         Row: {
