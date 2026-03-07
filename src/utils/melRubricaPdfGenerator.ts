@@ -98,8 +98,18 @@ export async function generarMelRubricasPDF(
   const logoTargetH = 24;
   const rltW = (rltSize.width / rltSize.height) * logoTargetH;
   const cltW = (cltSize.width / cltSize.height) * logoTargetH;
-  if (showRLT) doc.addImage(rltB64, "PNG", margin, 28, rltW, logoTargetH);
-  if (showCLT) doc.addImage(cltB64, "PNG", pageW - margin - cltW, 28, cltW, logoTargetH);
+
+  if (showRLT && showCLT) {
+    // Both logos: left and right
+    doc.addImage(rltB64, "PNG", margin, 28, rltW, logoTargetH);
+    doc.addImage(cltB64, "PNG", pageW - margin - cltW, 28, cltW, logoTargetH);
+  } else if (showRLT) {
+    // Only RLT: centered
+    doc.addImage(rltB64, "PNG", (pageW - rltW) / 2, 28, rltW, logoTargetH);
+  } else if (showCLT) {
+    // Only CLT: centered
+    doc.addImage(cltB64, "PNG", (pageW - cltW) / 2, 28, cltW, logoTargetH);
+  }
 
   let y = 82;
   doc.setDrawColor(...C_MID);
