@@ -115,8 +115,9 @@ export default function AdminMelKpiGroupsManager() {
     }));
   };
 
-  const assignRegion = (regionId: string, groupId: string | null) => {
+  const assignRegion = async (regionId: string, groupId: string | null) => {
     setRegions(prev => prev.map(r => r.id === regionId ? { ...r, kpi_group_id: groupId || null } : r));
+    await supabase.from("regiones").update({ kpi_group_id: groupId || null }).eq("id", regionId);
   };
 
   const saveAll = async () => {
