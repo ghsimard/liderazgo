@@ -367,46 +367,47 @@ export default function AdminMelConfigTab() {
           <p className="text-xs text-muted-foreground">Parámetros para el análisis de progresión de las encuestas 360°</p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-xs">Umbral de progresión (ΔP mínimo)</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <Input
-                  type="number"
-                  step="0.1"
-                  min={0}
-                  max={10}
-                  value={mel360Threshold}
-                  onChange={(e) => setMel360Threshold(e.target.value)}
-                  className="h-8 text-sm w-24"
-                />
-                <span className="text-xs text-muted-foreground">puntos</span>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs">Umbral de progresión (ΔP mínimo)</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min={0}
+                    max={10}
+                    value={mel360Threshold}
+                    onChange={(e) => setMel360Threshold(e.target.value)}
+                    className="h-8 text-sm w-24"
+                  />
+                  <span className="text-xs text-muted-foreground">puntos</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Un rector cumple el criterio si su ΔP (autoevaluación) es ≥ este valor
+                </p>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Un rector cumple el criterio si su ΔP (autoevaluación) es ≥ este valor
-              </p>
-            </div>
-            <div>
-              <Label className="text-xs">Meta global (%)</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={mel360Meta}
-                  onChange={(e) => setMel360Meta(e.target.value)}
-                  className="h-8 text-sm w-24"
-                />
-                <span className="text-xs text-muted-foreground">%</span>
+              <div>
+                <Label className="text-xs">Meta global (%)</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={mel360Meta}
+                    onChange={(e) => setMel360Meta(e.target.value)}
+                    className="h-8 text-sm w-24"
+                  />
+                  <span className="text-xs text-muted-foreground">%</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  % de rectores que deben cumplir el criterio de progresión
+                </p>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                % de rectores que deben cumplir el criterio de progresión
-              </p>
             </div>
-           </div>
             <Separator />
             <div>
-              <Label className="text-xs">Resultados individuales</Label>
+              <Label className="text-xs">Resultados individuales (MEL Rúbricas)</Label>
               <div className="flex items-center gap-3 mt-2">
                 <Switch checked={showIndividualResults} onCheckedChange={setShowIndividualResults} />
                 <span className="text-xs text-muted-foreground">
