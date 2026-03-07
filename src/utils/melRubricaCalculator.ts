@@ -280,22 +280,37 @@ export async function calcularMelRubricas(
     if (!fichaInfo) continue;
 
     const evalMap = evalByDirectivo.get(cedula) ?? new Map();
+    const evalInicioMap = evalInicioByDirectivo.get(cedula) ?? new Map();
     const segMap = segByDirectivo.get(cedula) ?? new Map();
+    const emptySegMap = new Map<string, { nivel: string | null; created_at: string }[]>();
 
     const moduleLevels: Record<number, string | null> = {};
     const moduleNumericLevels: Record<number, number | null> = {};
+    const moduleLevelsInicio: Record<number, string | null> = {};
+    const moduleNumericLevelsInicio: Record<number, number | null> = {};
 
     for (const modNum of [1, 2, 3, 4]) {
       const modItems = itemsByModule.get(modNum) ?? [];
+      // Fin: uses acordado_nivel + seguimientos (current logic)
       const level = determineModuleLevel(modItems, evalMap, segMap);
       moduleLevels[modNum] = level;
       moduleNumericLevels[modNum] = nivelToNum(level);
+      // Inicio: uses directivo_nivel only (no seguimientos)
+      const levelInicio = determineModuleLevel(modItems, evalInicioMap, emptySegMap);
+      moduleLevelsInicio[modNum] = levelInicio;
+      moduleNumericLevelsInicio[modNum] = nivelToNum(levelInicio);
     }
 
-    // Evaluate all dynamic KPIs
+    // Evaluate all dynamic KPIs (fin)
     const kpiResults: Record<string, { cumple: boolean; hasData: boolean }> = {};
     for (const config of activeKpis) {
       kpiResults[config.kpi_key] = evaluateKpi(config, moduleLevels, moduleNumericLevels, evalMap, segMap, itemsByModule);
+    }
+
+    // Evaluate all dynamic KPIs (inicio - directivo_nivel only)
+    const kpiResultsInicio: Record<string, { cumple: boolean; hasData: boolean }> = {};
+    for (const config of activeKpis) {
+      kpiResultsInicio[config.kpi_key] = evaluateKpi(config, moduleLevelsInicio, moduleNumericLevelsInicio, evalInicioMap, emptySegMap, itemsByModule);
     }
 
     // Legacy compatibility
@@ -313,7 +328,10 @@ export async function calcularMelRubricas(
       entidadTerritorial: fichaInfo.et,
       moduleLevels,
       moduleNumericLevels,
+      moduleLevelsInicio,
+      moduleNumericLevelsInicio,
       kpiResults,
+      kpiResultsInicio,
       // Legacy
       kpi1Cumple: kpiResults["kpi1"]?.cumple ?? false,
       kpi1ModulesCount: evaluatedModules.length,
