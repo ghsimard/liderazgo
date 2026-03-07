@@ -65,6 +65,7 @@ export async function generarMelRubricasPDF(
   data: MelRubricaData,
   logoSources: MelRubricaPdfLogos,
   filterLabel: string,
+  options?: { showIndividualResults?: boolean },
 ): Promise<void> {
   const [rltB64, cltB64, rltSize, cltSize] = await Promise.all([
     loadImageAsBase64(logoSources.logoRLT),
