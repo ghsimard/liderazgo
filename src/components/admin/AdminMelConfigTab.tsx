@@ -352,6 +352,11 @@ export default function AdminMelConfigTab() {
         </CardContent>
       </Card>
 
+      {/* ── KPI Groups ── */}
+      <AdminMelKpiGroupsManager />
+
+      <Separator />
+
       {/* ── MEL 360° Settings ── */}
       <Card>
         <CardHeader className="pb-3">
