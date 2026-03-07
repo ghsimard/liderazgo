@@ -88,7 +88,7 @@ export default function AdminMelRubricasTab() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
   const [melData, setMelData] = useState<MelRubricaData | null>(null);
-
+  const [showIndividual, setShowIndividual] = useState(true);
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
   const [selEntidades, setSelEntidades] = useState<string[]>([]);
