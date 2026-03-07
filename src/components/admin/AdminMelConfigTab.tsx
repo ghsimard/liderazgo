@@ -105,6 +105,7 @@ export default function AdminMelConfigTab() {
     (settings ?? []).forEach(s => {
       if (s.key === "mel_360_progression_threshold") setMel360Threshold(s.value);
       if (s.key === "mel_360_global_meta") setMel360Meta(s.value);
+      if (s.key === "mel_rubricas_show_individual") setShowIndividualResults(s.value !== "false");
     });
 
     setLoading(false);
