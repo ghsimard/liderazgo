@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Settings2, Plus, Trash2, Save, RefreshCw, GripVertical } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import AdminMelKpiGroupsManager from "./AdminMelKpiGroupsManager";
 
 interface KpiConfig {
   id: string;
@@ -350,6 +351,11 @@ export default function AdminMelConfigTab() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* ── KPI Groups ── */}
+      <AdminMelKpiGroupsManager />
+
+      <Separator />
 
       {/* ── MEL 360° Settings ── */}
       <Card>

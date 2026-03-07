@@ -181,10 +181,11 @@ function evaluateKpi(
 // ── Main calculation ──
 
 export async function calcularMelRubricas(
-  filteredCedulas?: string[]
+  filteredCedulas?: string[],
+  regionFilter?: string
 ): Promise<MelRubricaData> {
-  // 1. Fetch modules, items, and KPI config
-  const [{ data: modules }, { data: items }, { data: kpiConfigs }, { data: evaluaciones }, { data: seguimientos }, { data: fichas }] = await Promise.all([
+  // 1. Fetch modules, items, KPI config, and group assignments
+  const [{ data: modules }, { data: items }, { data: kpiConfigs }, { data: evaluaciones }, { data: seguimientos }, { data: fichas }, { data: regionsData }, { data: groupItemsData }] = await Promise.all([
     supabase.from("rubrica_modules").select("id, module_number").order("module_number"),
     supabase.from("rubrica_items").select("id, module_id").order("sort_order"),
     supabase.from("mel_kpi_config").select("*").eq("is_active", true).order("sort_order"),
@@ -193,9 +194,28 @@ export async function calcularMelRubricas(
     supabase.from("fichas_rlt")
       .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial, cargo_actual")
       .in("cargo_actual", ["Rector/a", "Coordinador/a"]),
+    supabase.from("regiones").select("id, nombre, kpi_group_id"),
+    supabase.from("mel_kpi_group_items").select("group_id, kpi_config_id, meta_override"),
   ]);
 
-  const activeKpis: KpiConfigRow[] = (kpiConfigs ?? []).map(k => ({ ...k, meta_percentage: Number(k.meta_percentage) }));
+  // Determine active KPIs, potentially filtered by region's group
+  let activeKpis: KpiConfigRow[] = (kpiConfigs ?? []).map(k => ({ ...k, meta_percentage: Number(k.meta_percentage) }));
+
+  // If a region filter is set, check if it has a KPI group
+  if (regionFilter) {
+    const region = (regionsData ?? []).find(r => r.nombre === regionFilter);
+    if (region?.kpi_group_id) {
+      const groupItems = (groupItemsData ?? []).filter(gi => gi.group_id === region.kpi_group_id);
+      const allowedKpiIds = new Set(groupItems.map(gi => gi.kpi_config_id));
+      const metaOverrides = new Map<string, number | null>(groupItems.map(gi => [gi.kpi_config_id, gi.meta_override ? Number(gi.meta_override) : null]));
+      activeKpis = activeKpis
+        .filter(k => allowedKpiIds.has(k.id))
+        .map(k => {
+          const override = metaOverrides.get(k.id);
+          return override != null ? { ...k, meta_percentage: override as number } : k;
+        });
+    }
+  }
 
   const moduleMap = new Map<string, number>();
   (modules ?? []).forEach((m) => moduleMap.set(m.id, m.module_number));
