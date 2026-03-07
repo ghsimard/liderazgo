@@ -317,16 +317,19 @@ export async function calcularMelRubricas(
     const emptySegMap = new Map<string, { nivel: string | null; created_at: string }[]>();
 
     const moduleLevels: Record<number, string | null> = {};
+    const moduleLevelsDisplay: Record<number, string | null> = {};
     const moduleNumericLevels: Record<number, number | null> = {};
     const moduleLevelsInicio: Record<number, string | null> = {};
     const moduleNumericLevelsInicio: Record<number, number | null> = {};
 
     for (const modNum of [1, 2, 3, 4]) {
       const modItems = itemsByModule.get(modNum) ?? [];
-      // Fin: uses acordado_nivel + seguimientos (current logic)
+      // Fin (mode) for KPI calculations
       const level = determineModuleLevel(modItems, evalMap, segMap);
       moduleLevels[modNum] = level;
       moduleNumericLevels[modNum] = nivelToNum(level);
+      // Fin (max) for display only
+      moduleLevelsDisplay[modNum] = determineModuleLevelMax(modItems, evalMap, segMap);
       // Inicio: uses directivo_nivel only (no seguimientos)
       const levelInicio = determineModuleLevel(modItems, evalInicioMap, emptySegMap);
       moduleLevelsInicio[modNum] = levelInicio;
