@@ -100,11 +100,17 @@ export default function AdminMelRubricasTab() {
 
   const loadDirectivos = async () => {
     setLoading(true);
-    const { data: fichas } = await supabase
-      .from("fichas_rlt")
-      .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial, cargo_actual")
-      .in("cargo_actual", ["Rector/a", "Coordinador/a"])
-      .order("nombres_apellidos");
+    const [{ data: fichas }, { data: settings }] = await Promise.all([
+      supabase
+        .from("fichas_rlt")
+        .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial, cargo_actual")
+        .in("cargo_actual", ["Rector/a", "Coordinador/a"])
+        .order("nombres_apellidos"),
+      supabase.from("app_settings").select("key, value").eq("key", "mel_rubricas_show_individual"),
+    ]);
+
+    const showSetting = (settings ?? []).find(s => s.key === "mel_rubricas_show_individual");
+    setShowIndividual(showSetting ? showSetting.value !== "false" : true);
 
     setDirectivos(
       (fichas ?? []).filter(f => f.numero_cedula).map((f) => ({
