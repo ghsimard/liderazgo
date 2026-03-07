@@ -194,7 +194,7 @@ export async function calcularMelRubricas(
     supabase.from("rubrica_modules").select("id, module_number").order("module_number"),
     supabase.from("rubrica_items").select("id, module_id").order("sort_order"),
     supabase.from("mel_kpi_config").select("*").eq("is_active", true).order("sort_order"),
-    supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel"),
+    supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel, directivo_nivel"),
     supabase.from("rubrica_seguimientos").select("item_id, directivo_cedula, nivel, created_at").order("created_at"),
     supabase.from("fichas_rlt")
       .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial, cargo_actual")
