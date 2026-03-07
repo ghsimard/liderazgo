@@ -37,6 +37,9 @@ const PUBLIC_READ_TABLES = new Set([
   "rubrica_evaluaciones",
   "rubrica_seguimientos",
   "encuesta_invitaciones",
+  "mel_kpi_config",
+  "mel_kpi_groups",
+  "mel_kpi_group_items",
 ]);
 
 // Tables that allow public inserts (no auth required for POST without _method)
