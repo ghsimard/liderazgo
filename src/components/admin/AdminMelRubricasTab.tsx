@@ -207,7 +207,7 @@ export default function AdminMelRubricasTab() {
       await generarMelRubricasPDF(melData, {
         logoRLT: images.logo_rlt_white,
         logoCLT: images.logo_clt,
-      }, filterLabel);
+      }, filterLabel, { showIndividualResults: showIndividual });
       toast({ title: "PDF generado", description: "El informe MEL Rúbricas se ha descargado." });
     } catch (err: any) {
       toast({ title: "Error al generar PDF", description: err.message, variant: "destructive" });
