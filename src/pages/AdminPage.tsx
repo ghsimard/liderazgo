@@ -28,6 +28,7 @@ import AdminReviewsTab from "@/components/admin/AdminReviewsTab";
 import AdminChangelogTab from "@/components/admin/AdminChangelogTab";
 import AdminMelTab from "@/components/admin/AdminMelTab";
 import AdminMelRubricasTab from "@/components/admin/AdminMelRubricasTab";
+import AdminMelConfigTab from "@/components/admin/AdminMelConfigTab";
 import AdminInvitacionesTab from "@/components/admin/AdminInvitacionesTab";
 import AdminActivityLogTab from "@/components/admin/AdminActivityLogTab";
 
