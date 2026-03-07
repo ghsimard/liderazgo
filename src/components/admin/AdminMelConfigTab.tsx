@@ -384,6 +384,7 @@ export default function AdminMelConfigTab() {
                     max={10}
                     value={mel360Threshold}
                     onChange={(e) => setMel360Threshold(e.target.value)}
+                    onBlur={() => supabase.from("app_settings").upsert({ key: "mel_360_progression_threshold", value: mel360Threshold, updated_at: new Date().toISOString() })}
                     className="h-8 text-sm w-24"
                   />
                   <span className="text-xs text-muted-foreground">puntos</span>
@@ -401,6 +402,7 @@ export default function AdminMelConfigTab() {
                     max={100}
                     value={mel360Meta}
                     onChange={(e) => setMel360Meta(e.target.value)}
+                    onBlur={() => supabase.from("app_settings").upsert({ key: "mel_360_global_meta", value: mel360Meta, updated_at: new Date().toISOString() })}
                     className="h-8 text-sm w-24"
                   />
                   <span className="text-xs text-muted-foreground">%</span>
