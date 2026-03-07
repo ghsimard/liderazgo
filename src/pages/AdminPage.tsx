@@ -227,6 +227,8 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return <AdminMelTab />;
     case "mel-rubricas":
       return <AdminMelRubricasTab />;
+    case "mel-config":
+      return <AdminMelConfigTab />;
     case "invitaciones":
       return <AdminInvitacionesTab />;
     case "rubricas":
