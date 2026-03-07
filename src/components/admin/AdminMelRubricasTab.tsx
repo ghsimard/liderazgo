@@ -99,6 +99,27 @@ export default function AdminMelRubricasTab() {
   useEffect(() => { setSelEntidades([]); setSelInstituciones([]); }, [selRegions]);
   useEffect(() => { setSelInstituciones([]); }, [selEntidades]);
 
+  // Fetch region logo config when a single region is selected
+  useEffect(() => {
+    const fetchRegionLogoConfig = async () => {
+      if (selRegions.length !== 1) {
+        setRegionLogoConfig({ showRLT: true, showCLT: true });
+        return;
+      }
+      const { data } = await supabase
+        .from("regiones")
+        .select("mostrar_logo_rlt, mostrar_logo_clt")
+        .eq("nombre", selRegions[0])
+        .maybeSingle();
+      if (data) {
+        setRegionLogoConfig({ showRLT: data.mostrar_logo_rlt, showCLT: data.mostrar_logo_clt });
+      } else {
+        setRegionLogoConfig({ showRLT: true, showCLT: true });
+      }
+    };
+    fetchRegionLogoConfig();
+  }, [selRegions]);
+
   const loadDirectivos = async () => {
     setLoading(true);
     const [{ data: fichas }, { data: settings }] = await Promise.all([
