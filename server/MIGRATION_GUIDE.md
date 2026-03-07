@@ -1,6 +1,6 @@
 # Guide de Migration : Supabase → Render (PostgreSQL + Express)
 
-> Document généré le 25 février 2026 — Mis à jour le 4 mars 2026  
+> Document généré le 25 février 2026 — Mis à jour le 7 mars 2026  
 > Projet : RLT Ficha / Encuestas 360°
 
 ---
@@ -173,7 +173,7 @@ Route unique qui remplace **tous** les appels `supabase.from("table").select/ins
 | `/api/db/:table` | POST | Conditionnel | INSERT, UPDATE, DELETE, UPSERT via `_method` |
 
 **Tables en lecture publique** (GET sans auth) :
-`domains_360`, `competencies_360`, `competency_weights`, `items_360`, `item_texts_360`, `entidades_territoriales`, `municipios`, `instituciones`, `regiones`, `region_municipios`, `region_instituciones`, `app_images`, `app_settings`, `rubrica_submission_dates`, `rubrica_modules`, `rubrica_items`, `rubrica_evaluadores`, `rubrica_asignaciones`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `encuesta_invitaciones`
+`domains_360`, `competencies_360`, `competency_weights`, `items_360`, `item_texts_360`, `entidades_territoriales`, `municipios`, `instituciones`, `regiones`, `region_municipios`, `region_instituciones`, `app_images`, `app_settings`, `rubrica_submission_dates`, `rubrica_modules`, `rubrica_items`, `rubrica_evaluadores`, `rubrica_asignaciones`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `encuesta_invitaciones`, `mel_kpi_config`, `mel_kpi_groups`, `mel_kpi_group_items`
 
 **Tables en insertion publique** (POST sans auth) :
 `fichas_rlt`, `encuestas_360`, `rubrica_submission_dates`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `site_reviews`, `contact_messages`, `encuesta_invitaciones`
@@ -398,7 +398,7 @@ Vérifier que ces dépendances sont présentes :
 
 ### Base de données
 - [ ] PostgreSQL créé sur Render
-- [ ] `server/schema.sql` exécuté (tables `users`, `user_roles`, `app_images`)
+- [ ] `server/schema.sql` exécuté (tables `users`, `user_roles`, `app_images`, `mel_kpi_config`, `mel_kpi_groups`, `mel_kpi_group_items`)
 - [ ] Export SQL importé (15 tables métier)
 - [ ] FK `user_roles` redirigée vers `public.users`
 - [ ] Utilisateurs admin créés avec mots de passe bcrypt
@@ -483,7 +483,7 @@ Ces formulaires réutilisent le composant `Encuesta360Form` avec la prop `fase="
 server/
 ├── index.ts                  ← Point d'entrée (enregistre 7 groupes de routes)
 ├── db.ts                     ← Pool pg + helpers query/queryOne
-├── schema.sql                ← Schéma users/roles/app_images
+├── schema.sql                ← Schéma users/roles/app_images/mel_kpi_config/mel_kpi_groups
 ├── middleware/
 │   └── auth.ts               ← signToken, requireAuth, requireAdmin
 └── routes/
@@ -496,11 +496,16 @@ server/
     └── storage.ts            ← POST/DELETE /api/storage/:bucket
 ```
 
-### Fichiers FRONTEND migrés (✅ 24/24)
+### Fichiers FRONTEND migrés (✅ 32/32)
 
 ```
 src/utils/apiFetch.ts                           ← CRÉÉ — wrapper fetch centralisé
 src/utils/dbClient.ts                           ← CRÉÉ — shim compatibilité Supabase
+src/utils/melRubricaCalculator.ts               ← MIGRÉ — calcul dynamique KPIs MEL
+src/utils/melRubricaPdfGenerator.ts             ← MIGRÉ
+src/utils/melGlobalPdfGenerator.ts              ← MIGRÉ
+src/utils/reporte360Calculator.ts               ← MIGRÉ
+src/utils/reporte360MelCalculator.ts            ← MIGRÉ
 src/pages/AdminLogin.tsx                        ← MIGRÉ
 src/pages/AdminPage.tsx                         ← MIGRÉ
 src/pages/AdminEditFicha.tsx                    ← MIGRÉ
@@ -522,8 +527,11 @@ src/components/admin/AdminTrashManager.tsx        ← MIGRÉ
 src/components/admin/AdminUsersTab.tsx            ← MIGRÉ
 src/components/admin/AdminImagesTab.tsx           ← MIGRÉ
 src/components/admin/AdminReporte360Tab.tsx        ← MIGRÉ
+src/components/admin/AdminMelTab.tsx              ← MIGRÉ
+src/components/admin/AdminMelRubricasTab.tsx      ← MIGRÉ
+src/components/admin/AdminMelConfigTab.tsx        ← MIGRÉ — config KPIs + groupes
+src/components/admin/AdminMelKpiGroupsManager.tsx ← CRÉÉ — gestion groupes KPI régionaux
 src/data/encuesta360Data.ts                      ← MIGRÉ
-src/utils/reporte360Calculator.ts                ← MIGRÉ
 ```
 
 ### Fichiers à SUPPRIMER (lors du déploiement final)
