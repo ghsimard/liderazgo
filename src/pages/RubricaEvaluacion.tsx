@@ -451,18 +451,9 @@ export default function RubricaEvaluacion() {
           payload.acordado_comentario = ev.acordado_comentario;
         }
 
-        const { data: existing } = await supabase
+        await supabase
           .from("rubrica_evaluaciones")
-          .select("id")
-          .eq("item_id", ev.item_id)
-          .eq("directivo_cedula", directivoInfo.cedula)
-          .maybeSingle();
-
-        if (existing?.id) {
-          await supabase.from("rubrica_evaluaciones").update(payload).eq("id", existing.id);
-        } else {
-          await supabase.from("rubrica_evaluaciones").insert(payload);
-        }
+          .upsert(payload, { onConflict: "directivo_cedula,item_id" });
       }
 
       // Record submission date
