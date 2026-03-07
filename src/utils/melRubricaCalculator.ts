@@ -249,9 +249,13 @@ export async function calcularMelRubricas(
   });
 
   const evalByDirectivo = new Map<string, Map<string, string | null>>();
+  const evalInicioByDirectivo = new Map<string, Map<string, string | null>>();
   (evaluaciones ?? []).forEach((e) => {
     if (!evalByDirectivo.has(e.directivo_cedula)) evalByDirectivo.set(e.directivo_cedula, new Map());
     evalByDirectivo.get(e.directivo_cedula)!.set(e.item_id, e.acordado_nivel);
+    // Inicio map uses directivo_nivel (self-evaluation)
+    if (!evalInicioByDirectivo.has(e.directivo_cedula)) evalInicioByDirectivo.set(e.directivo_cedula, new Map());
+    evalInicioByDirectivo.get(e.directivo_cedula)!.set(e.item_id, (e as any).directivo_nivel ?? null);
   });
 
   const segByDirectivo = new Map<string, Map<string, { nivel: string | null; created_at: string }[]>>();
