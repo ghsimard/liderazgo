@@ -305,6 +305,7 @@ export async function generarMelRubricasPDF(
   }
 
   drawPageFooter(pageNum);
+  } // end showIndividual
 
   const safeName = (filterLabel || "Global").replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, "").replace(/\s+/g, "_");
   doc.save(`MEL_Rubricas_${safeName}.pdf`);
