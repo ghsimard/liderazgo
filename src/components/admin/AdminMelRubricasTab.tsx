@@ -89,6 +89,7 @@ export default function AdminMelRubricasTab() {
   const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
   const [melData, setMelData] = useState<MelRubricaData | null>(null);
   const [showIndividual, setShowIndividual] = useState(true);
+  const [regionLogoConfig, setRegionLogoConfig] = useState<{ showRLT: boolean; showCLT: boolean }>({ showRLT: true, showCLT: true });
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
   const [selEntidades, setSelEntidades] = useState<string[]>([]);
@@ -97,6 +98,27 @@ export default function AdminMelRubricasTab() {
   useEffect(() => { loadDirectivos(); }, []);
   useEffect(() => { setSelEntidades([]); setSelInstituciones([]); }, [selRegions]);
   useEffect(() => { setSelInstituciones([]); }, [selEntidades]);
+
+  // Fetch region logo config when a single region is selected
+  useEffect(() => {
+    const fetchRegionLogoConfig = async () => {
+      if (selRegions.length !== 1) {
+        setRegionLogoConfig({ showRLT: true, showCLT: true });
+        return;
+      }
+      const { data } = await supabase
+        .from("regiones")
+        .select("mostrar_logo_rlt, mostrar_logo_clt")
+        .eq("nombre", selRegions[0])
+        .maybeSingle();
+      if (data) {
+        setRegionLogoConfig({ showRLT: data.mostrar_logo_rlt, showCLT: data.mostrar_logo_clt });
+      } else {
+        setRegionLogoConfig({ showRLT: true, showCLT: true });
+      }
+    };
+    fetchRegionLogoConfig();
+  }, [selRegions]);
 
   const loadDirectivos = async () => {
     setLoading(true);
@@ -207,6 +229,8 @@ export default function AdminMelRubricasTab() {
       await generarMelRubricasPDF(melData, {
         logoRLT: images.logo_rlt_white,
         logoCLT: images.logo_clt,
+        showRLT: regionLogoConfig.showRLT,
+        showCLT: regionLogoConfig.showCLT,
       }, filterLabel, { showIndividualResults: showIndividual });
       toast({ title: "PDF generado", description: "El informe MEL Rúbricas se ha descargado." });
     } catch (err: any) {
