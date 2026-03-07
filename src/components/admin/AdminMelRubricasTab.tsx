@@ -307,32 +307,21 @@ export default function AdminMelRubricasTab() {
             </div>
           </div>
 
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard
-              title="Indicador 1: Nivel Intermedio/Avanzado"
-              description="% de rectores que alcanzan nivel intermedio o avanzado en ≥3 de los 4 módulos"
-              kpi={melData.kpis.kpi1}
-              colorClass="border-l-yellow-400"
-            />
-            <KpiCard
-              title="Indicador 2a: Autoconocimiento"
-              description="% de rectores con nivel avanzado en Módulo 1 (autoconocimiento)"
-              kpi={melData.kpis.kpi2a}
-              colorClass="border-l-slate-400"
-            />
-            <KpiCard
-              title="Indicador 2b: Comunicación Asertiva"
-              description="% de rectores con nivel avanzado en Módulo 2 (comunicación asertiva)"
-              kpi={melData.kpis.kpi2b}
-              colorClass="border-l-blue-400"
-            />
-            <KpiCard
-              title="Indicador 3: Trabajo Colaborativo"
-              description="% de rectores con nivel avanzado en Módulo 3 (trabajo colaborativo)"
-              kpi={melData.kpis.kpi3}
-              colorClass="border-l-green-400"
-            />
+          {/* KPI Cards — dynamic from mel_kpi_config */}
+          <div className={`grid grid-cols-1 md:grid-cols-2 ${melData.kpiConfigs.length <= 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-4`}>
+            {melData.kpiConfigs.map((config) => {
+              const kpiData = melData.kpis[config.kpi_key];
+              if (!kpiData) return null;
+              return (
+                <KpiCard
+                  key={config.kpi_key}
+                  title={config.label}
+                  description={config.description}
+                  kpi={kpiData}
+                  colorClass={config.color_class}
+                />
+              );
+            })}
           </div>
 
           {/* Individual results table */}
