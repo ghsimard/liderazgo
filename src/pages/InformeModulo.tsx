@@ -173,12 +173,12 @@ export default function InformeModulo() {
 
   const selectGroup = (group: AsignacionGroup) => {
     setSelectedGroup(group);
-    loadInforme(group.region, group.entidad_territorial, selectedModule, group.directivos);
+    loadInforme(group.region, group.entidades.join(", "), selectedModule, group.directivos);
   };
 
   useEffect(() => {
     if (selectedGroup) {
-      loadInforme(selectedGroup.region, selectedGroup.entidad_territorial, selectedModule, selectedGroup.directivos);
+      loadInforme(selectedGroup.region, selectedGroup.entidades.join(", "), selectedModule, selectedGroup.directivos);
     }
   }, [selectedModule]);
 
