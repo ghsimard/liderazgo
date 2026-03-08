@@ -769,9 +769,9 @@ export default function InformeModulo() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="text-xs w-[220px]">Gestión y competencias</TableHead>
-                            <TableHead className="text-xs">Avances</TableHead>
-                            <TableHead className="text-xs">Retos</TableHead>
+                            <TableHead className="text-xs w-[220px] text-center">Gestión y competencias</TableHead>
+                            <TableHead className="text-xs text-center">Avances</TableHead>
+                            <TableHead className="text-xs text-center">Retos</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
