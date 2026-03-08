@@ -101,6 +101,10 @@ const ALLOWED_TABLES = new Set([
   "mel_kpi_groups",
   "mel_kpi_group_items",
   "rubrica_regional_analyses",
+  "informe_modulo",
+  "informe_modulo_equipo",
+  "informe_directivo",
+  "informe_asistencia",
 ]);
 
 // ── Helpers ────────────────────────────────────────────

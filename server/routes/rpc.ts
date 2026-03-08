@@ -285,4 +285,30 @@ router.get("/get_invitaciones_directivo", async (req: Request, res: Response) =>
   }
 });
 
+/** GET /api/rpc/get_own_autoevaluacion?p_cedula=...&p_fase=... */
+router.get("/get_own_autoevaluacion", async (req: Request, res: Response) => {
+  try {
+    const { p_cedula, p_fase } = req.query;
+    if (!p_cedula) {
+      res.status(400).json({ error: "p_cedula required" });
+      return;
+    }
+    const fase = (p_fase as string) || "inicial";
+    const rows = await query(
+      `SELECT id, respuestas, created_at, tipo_formulario, fase,
+              institucion_educativa, cargo_directivo, nombre_directivo
+       FROM encuestas_360
+       WHERE (cedula_directivo = $1 OR cedula = $1)
+         AND tipo_formulario = 'autoevaluacion'
+         AND fase = $2
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [p_cedula, fase]
+    );
+    res.json(rows[0] ?? null);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
