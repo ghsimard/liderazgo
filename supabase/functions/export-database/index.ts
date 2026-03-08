@@ -89,6 +89,13 @@ Deno.serve(async (req) => {
       "encuesta_invitaciones",
       "admin_cedulas",
       "user_activity_log",
+      "mel_kpi_config",
+      "mel_kpi_groups",
+      "mel_kpi_group_items",
+      "informe_modulo",
+      "informe_modulo_equipo",
+      "informe_directivo",
+      "informe_asistencia",
     ];
 
     let sql = `-- Database export generated on ${new Date().toISOString()}\n`;

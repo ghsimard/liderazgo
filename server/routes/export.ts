@@ -47,6 +47,10 @@ const EXPORT_TABLES = [
   "encuesta_invitaciones",
   "admin_cedulas",
   "user_activity_log",
+  "informe_modulo",
+  "informe_modulo_equipo",
+  "informe_directivo",
+  "informe_asistencia",
 ];
 
 router.get("/", requireAuth, requireSuperAdmin, async (_req: Request, res: Response) => {
