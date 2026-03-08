@@ -130,7 +130,7 @@ server/
 │   ├── users.ts          ← CRUD utilisateurs (admin only)
 │   ├── images.ts         ← Upload/delete images app (admin only)
 │   ├── db.ts             ← Proxy DB générique (GET/POST /api/db/:table)
-│   ├── rpc.ts            ← Fonctions RPC (5 endpoints)
+│   ├── rpc.ts            ← Fonctions RPC (12 endpoints)
 │   ├── export.ts         ← Export SQL complet (admin only)
 │   └── storage.ts        ← Upload/delete fichiers générique
 ├── schema.sql            ← Schéma SQL pour users/roles/app_images
