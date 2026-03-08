@@ -233,6 +233,8 @@ export default function InformeModulo() {
       });
       const { data: equipoRows } = await supabase.from("informe_modulo_equipo").select("*").eq("informe_id", row.id);
       setEquipo(equipoRows || []);
+      // Load directivo evaluations
+      await loadDirectivoEvals(moduleNum, directivos);
     } else {
       setData({
         region, entidad_territorial: et, module_number: moduleNum,
