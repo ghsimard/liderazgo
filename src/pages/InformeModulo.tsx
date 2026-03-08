@@ -16,6 +16,20 @@ import { useAppImages } from "@/hooks/useAppImages";
 
 interface EquipoMember { id?: string; nombre: string; rol: string }
 interface AjusteActividad { actividad: string; aciertos: string; desaciertos: string; ajustes: string }
+interface DirectivoEval {
+  id?: string;
+  directivo_cedula: string;
+  module_number: number;
+  informe_id?: string;
+  reto_estrategico: string;
+  razon_sin_reto: string;
+  avances_pedagogica: string;
+  retos_pedagogica: string;
+  avances_administrativa: string;
+  retos_administrativa: string;
+  avances_personal: string;
+  retos_personal: string;
+}
 interface SesionesProgramadas {
   coaching_individual: number; coaching_grupal: number; coaching_relacion: number;
   coaching_sombra: number; visita_individual: number; visita_grupal: number;
