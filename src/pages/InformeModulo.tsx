@@ -352,6 +352,29 @@ export default function InformeModulo() {
         }
       }
 
+      // Save directivo evaluations
+      for (const ev of directivoEvals) {
+        const evPayload = {
+          directivo_cedula: ev.directivo_cedula,
+          module_number: data.module_number,
+          informe_id: informeId || null,
+          reto_estrategico: ev.reto_estrategico,
+          razon_sin_reto: ev.razon_sin_reto,
+          avances_pedagogica: ev.avances_pedagogica,
+          retos_pedagogica: ev.retos_pedagogica,
+          avances_administrativa: ev.avances_administrativa,
+          retos_administrativa: ev.retos_administrativa,
+          avances_personal: ev.avances_personal,
+          retos_personal: ev.retos_personal,
+        };
+        if (ev.id) {
+          await supabase.from("informe_directivo").update(evPayload).eq("id", ev.id);
+        } else {
+          const { data: inserted } = await supabase.from("informe_directivo").insert(evPayload).select("id").single();
+          if (inserted) ev.id = inserted.id;
+        }
+      }
+
       toast({ title: "Guardado", description: "El informe se ha guardado correctamente." });
       setDirty(false);
     } catch (err: any) {
