@@ -40,6 +40,10 @@ const PUBLIC_READ_TABLES = new Set([
   "mel_kpi_config",
   "mel_kpi_groups",
   "mel_kpi_group_items",
+  "informe_modulo",
+  "informe_modulo_equipo",
+  "informe_directivo",
+  "informe_asistencia",
 ]);
 
 // Tables that allow public inserts (no auth required for POST without _method)
