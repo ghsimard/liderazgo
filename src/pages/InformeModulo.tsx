@@ -834,3 +834,57 @@ export default function InformeModulo() {
     </div>
   );
 }
+
+/* ── Autocomplete for directivo name in Novedades ── */
+function NovedadDirectivoInput({
+  value,
+  directivos,
+  onChange,
+}: {
+  value: string;
+  directivos: { cedula: string; nombre: string; ie: string }[];
+  onChange: (nombre: string, ie?: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState(value);
+
+  useEffect(() => { setInput(value); }, [value]);
+
+  const filtered = input.trim()
+    ? directivos.filter(d => d.nombre.toLowerCase().includes(input.toLowerCase()))
+    : directivos;
+
+  const handleSelect = (d: { nombre: string; ie: string }) => {
+    setInput(d.nombre);
+    onChange(d.nombre, d.ie);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative">
+      <Input
+        value={input}
+        onChange={e => { setInput(e.target.value); onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        className="h-7 text-xs"
+        placeholder="Nombre del directivo…"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md max-h-[160px] overflow-y-auto">
+          {filtered.map(d => (
+            <button
+              key={d.cedula}
+              type="button"
+              className="w-full text-left px-2 py-1.5 text-xs hover:bg-accent cursor-pointer"
+              onMouseDown={e => { e.preventDefault(); handleSelect(d); }}
+            >
+              <span className="font-medium">{d.nombre}</span>
+              <span className="text-muted-foreground ml-1">— {d.ie}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
