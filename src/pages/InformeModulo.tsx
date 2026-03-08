@@ -796,6 +796,7 @@ export default function InformeModulo() {
               </CardContent>
             </Card>
 
+            <div className="flex justify-end pb-8">
               <Button onClick={handleSave} disabled={saving || !dirty} className="gap-1.5">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Guardar informe
