@@ -81,6 +81,7 @@ const App = () => (
 
                 {/* Rubrica Evaluation */}
                 <Route path="/rubrica-evaluacion" element={<RubricaEvaluacion />} />
+                <Route path="/informe-modulo" element={<InformeModulo />} />
 
                 {/* Legal / Contact / Suggestions */}
                 <Route path="/derechos-contacto" element={<DerechosContacto />} />
