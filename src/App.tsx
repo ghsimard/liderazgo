@@ -35,6 +35,7 @@ const Contacto = lazy(() => import("./pages/Contacto"));
 const Sugerencias = lazy(() => import("./pages/Sugerencias"));
 const Evaluacion = lazy(() => import("./pages/Evaluacion"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
+const InformeModulo = lazy(() => import("./pages/InformeModulo"));
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const App = () => (
 
                 {/* Rubrica Evaluation */}
                 <Route path="/rubrica-evaluacion" element={<RubricaEvaluacion />} />
+                <Route path="/informe-modulo" element={<InformeModulo />} />
 
                 {/* Legal / Contact / Suggestions */}
                 <Route path="/derechos-contacto" element={<DerechosContacto />} />
