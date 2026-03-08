@@ -550,6 +550,217 @@ export type Database = {
         }
         Relationships: []
       }
+      informe_asistencia: {
+        Row: {
+          created_at: string
+          dia: number
+          directivo_cedula: string
+          id: string
+          module_number: number
+          observaciones: string | null
+          razon_inasistencia: string | null
+          session_am: boolean
+          session_pm: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dia: number
+          directivo_cedula: string
+          id?: string
+          module_number: number
+          observaciones?: string | null
+          razon_inasistencia?: string | null
+          session_am?: boolean
+          session_pm?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dia?: number
+          directivo_cedula?: string
+          id?: string
+          module_number?: number
+          observaciones?: string | null
+          razon_inasistencia?: string | null
+          session_am?: boolean
+          session_pm?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      informe_directivo: {
+        Row: {
+          avances_administrativa: string | null
+          avances_pedagogica: string | null
+          avances_personal: string | null
+          created_at: string
+          directivo_cedula: string
+          id: string
+          informe_id: string | null
+          module_number: number
+          razon_sin_reto: string | null
+          reto_estrategico: string | null
+          retos_administrativa: string | null
+          retos_pedagogica: string | null
+          retos_personal: string | null
+          updated_at: string
+        }
+        Insert: {
+          avances_administrativa?: string | null
+          avances_pedagogica?: string | null
+          avances_personal?: string | null
+          created_at?: string
+          directivo_cedula: string
+          id?: string
+          informe_id?: string | null
+          module_number: number
+          razon_sin_reto?: string | null
+          reto_estrategico?: string | null
+          retos_administrativa?: string | null
+          retos_pedagogica?: string | null
+          retos_personal?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avances_administrativa?: string | null
+          avances_pedagogica?: string | null
+          avances_personal?: string | null
+          created_at?: string
+          directivo_cedula?: string
+          id?: string
+          informe_id?: string | null
+          module_number?: number
+          razon_sin_reto?: string | null
+          reto_estrategico?: string | null
+          retos_administrativa?: string | null
+          retos_pedagogica?: string | null
+          retos_personal?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "informe_directivo_informe_id_fkey"
+            columns: ["informe_id"]
+            isOneToOne: false
+            referencedRelation: "informe_modulo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      informe_modulo: {
+        Row: {
+          acompanamiento_descripcion: string | null
+          acompanamiento_directivos: Json | null
+          acompanamiento_no_cumplido: string | null
+          ajustes_actividades: Json | null
+          aprendizajes_intensivo: string | null
+          aprendizajes_interludio: string | null
+          articulacion_intensivo: string | null
+          articulacion_interludio: string | null
+          contexto_articulacion: string | null
+          contexto_plan_sectorial: string | null
+          created_at: string
+          entidad_territorial: string
+          estrategias: Json | null
+          fecha_fin_intensivo: string | null
+          fecha_fin_interludio: string | null
+          fecha_inicio_intensivo: string | null
+          fecha_inicio_interludio: string | null
+          id: string
+          module_number: number
+          novedades: Json | null
+          razones_diferencias: string | null
+          region: string
+          sesiones_programadas: Json | null
+          sesiones_realizadas: Json | null
+          updated_at: string
+        }
+        Insert: {
+          acompanamiento_descripcion?: string | null
+          acompanamiento_directivos?: Json | null
+          acompanamiento_no_cumplido?: string | null
+          ajustes_actividades?: Json | null
+          aprendizajes_intensivo?: string | null
+          aprendizajes_interludio?: string | null
+          articulacion_intensivo?: string | null
+          articulacion_interludio?: string | null
+          contexto_articulacion?: string | null
+          contexto_plan_sectorial?: string | null
+          created_at?: string
+          entidad_territorial: string
+          estrategias?: Json | null
+          fecha_fin_intensivo?: string | null
+          fecha_fin_interludio?: string | null
+          fecha_inicio_intensivo?: string | null
+          fecha_inicio_interludio?: string | null
+          id?: string
+          module_number: number
+          novedades?: Json | null
+          razones_diferencias?: string | null
+          region: string
+          sesiones_programadas?: Json | null
+          sesiones_realizadas?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          acompanamiento_descripcion?: string | null
+          acompanamiento_directivos?: Json | null
+          acompanamiento_no_cumplido?: string | null
+          ajustes_actividades?: Json | null
+          aprendizajes_intensivo?: string | null
+          aprendizajes_interludio?: string | null
+          articulacion_intensivo?: string | null
+          articulacion_interludio?: string | null
+          contexto_articulacion?: string | null
+          contexto_plan_sectorial?: string | null
+          created_at?: string
+          entidad_territorial?: string
+          estrategias?: Json | null
+          fecha_fin_intensivo?: string | null
+          fecha_fin_interludio?: string | null
+          fecha_inicio_intensivo?: string | null
+          fecha_inicio_interludio?: string | null
+          id?: string
+          module_number?: number
+          novedades?: Json | null
+          razones_diferencias?: string | null
+          region?: string
+          sesiones_programadas?: Json | null
+          sesiones_realizadas?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      informe_modulo_equipo: {
+        Row: {
+          id: string
+          informe_id: string
+          nombre: string
+          rol: string
+        }
+        Insert: {
+          id?: string
+          informe_id: string
+          nombre: string
+          rol: string
+        }
+        Update: {
+          id?: string
+          informe_id?: string
+          nombre?: string
+          rol?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "informe_modulo_equipo_informe_id_fkey"
+            columns: ["informe_id"]
+            isOneToOne: false
+            referencedRelation: "informe_modulo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instituciones: {
         Row: {
           created_at: string
