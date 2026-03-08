@@ -183,6 +183,16 @@ export default function AdminTrashManager() {
     }
   };
 
+  const handlePurgeAll = async () => {
+    try {
+      await supabase.from("deleted_records").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      toast({ title: "Papelera vaciada", description: "Todos los registros han sido eliminados permanentemente." });
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center py-8"><RefreshCw className="animate-spin w-5 h-5 text-muted-foreground" /></div>;
   }
