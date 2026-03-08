@@ -84,7 +84,7 @@ const DEFAULT_ESTRATEGIAS: Estrategia[] = [
   { nombre: "Acompañamiento virtual", fortalezas: "", dificultades: "" },
 ];
 
-const NOVEDAD_OPTIONS = ["Retiro", "Traslado", "Cambio", "Ingreso"];
+const NOVEDAD_OPTIONS = ["Cambio", "Ingreso", "Retiro", "Traslado"];
 const MODULES = [1, 2, 3, 4];
 
 interface EvaluadorInfo { id: string; nombre: string; cedula: string }
