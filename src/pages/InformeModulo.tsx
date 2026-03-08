@@ -349,13 +349,13 @@ export default function InformeModulo() {
             </div>
             <Button variant="outline" size="sm" onClick={handleLogout}>Cerrar sesión</Button>
           </div>
-          <p className="text-sm text-muted-foreground">Seleccione la Entidad Territorial para la cual desea diligenciar el informe:</p>
+          <p className="text-sm text-muted-foreground">Seleccione la Región para la cual desea diligenciar el informe:</p>
           {groups.map((g, i) => (
             <Card key={i} className="cursor-pointer hover:border-primary transition-colors" onClick={() => selectGroup(g)}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{g.entidad_territorial}</p>
-                  <p className="text-xs text-muted-foreground">Región {g.region} — {g.directivos.length} directivo(s)</p>
+                  <p className="font-medium">Región {g.region}</p>
+                  <p className="text-xs text-muted-foreground">{g.entidades.join(", ")} — {g.directivos.length} directivo(s)</p>
                 </div>
                 <Badge variant="secondary"><Users className="w-3.5 h-3.5 mr-1" />{g.directivos.length}</Badge>
               </CardContent>
