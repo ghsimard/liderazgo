@@ -885,17 +885,12 @@ export default function RubricaEvaluacion() {
           <>
             <Card>
               <CardContent className="pt-4 pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="font-medium">{userName}</p>
-                      <p className="text-sm text-muted-foreground">{genderizeRole("Evaluador", directivoInfo?.genero)} — Equipo local</p>
-                    </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="font-medium">{userName}</p>
+                    <p className="text-sm text-muted-foreground">{genderizeRole("Evaluador", directivoInfo?.genero)} — Equipo local</p>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1">
-                    <ArrowLeft className="w-4 h-4" /> Volver al panel
-                  </Button>
                 </div>
               </CardContent>
             </Card>
