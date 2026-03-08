@@ -377,8 +377,8 @@ export default function InformeModulo() {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>
-              <h1 className="text-lg font-semibold">Informe de Módulo — {selectedGroup.entidad_territorial}</h1>
-              <p className="text-xs text-muted-foreground">Región {selectedGroup.region} · {evaluador.nombre}</p>
+              <h1 className="text-lg font-semibold">Informe de Módulo — Región {selectedGroup.region}</h1>
+              <p className="text-xs text-muted-foreground">{selectedGroup.entidades.join(", ")} · {evaluador.nombre}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
