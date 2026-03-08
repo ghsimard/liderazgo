@@ -195,6 +195,14 @@ Options supportées : `select`, `order`, `limit`, `range(from,to)`, `single`, `h
 | `/api/rpc/get_table_columns` | GET | Public | Colonnes d'une table (param: `table_names`) |
 | `/api/rpc/get_table_constraints` | GET | Public | Contraintes d'une table (param: `table_names`) |
 | `/api/rpc/get_enum_types` | GET | Public | Types enum de la DB |
+| `/api/rpc/check_cedula_exists` | GET | Public | Vérifie si une cédula existe dans fichas_rlt |
+| `/api/rpc/check_cedula_role` | GET | Public | Détection de rôle par cédula (landing page) |
+| `/api/rpc/get_ficha_by_cedula` | GET | Public | Récupère la fiche complète par cédula |
+| `/api/rpc/get_invitation_by_token` | GET | Public | Récupère une invitation par token UUID |
+| `/api/rpc/get_invitaciones_directivo` | GET | Public | Liste les invitations d'un directivo |
+| `/api/rpc/get_own_autoevaluacion` | GET | Public | Récupère l'autoévaluation d'un directivo |
+| `/api/rpc/instituciones-ficha` | GET | Public | Alias pour Encuesta360Form |
+| `/api/rpc/directivos` | GET | Public | Alias pour Encuesta360Form |
 
 #### Export (`routes/export.ts`)
 
