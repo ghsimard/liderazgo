@@ -188,7 +188,6 @@ export default function InformeModulo() {
       .from("informe_modulo")
       .select("*")
       .eq("region", region)
-      .eq("entidad_territorial", et)
       .eq("module_number", moduleNum)
       .limit(1);
 
