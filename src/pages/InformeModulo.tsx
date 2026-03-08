@@ -712,7 +712,17 @@ export default function InformeModulo() {
                   <TableBody>
                     {data.novedades.map((n, i) => (
                       <TableRow key={i}>
-                        <TableCell><Input value={n.nombre} onChange={e => { const arr = [...data.novedades]; arr[i] = { ...arr[i], nombre: e.target.value }; update("novedades", arr); }} className="h-7 text-xs" /></TableCell>
+                        <TableCell>
+                          <NovedadDirectivoInput
+                            value={n.nombre}
+                            directivos={selectedGroup?.directivos || []}
+                            onChange={(nombre, ie) => {
+                              const arr = [...data.novedades];
+                              arr[i] = { ...arr[i], nombre, ...(ie !== undefined ? { institucion: ie } : {}) };
+                              update("novedades", arr);
+                            }}
+                          />
+                        </TableCell>
                         <TableCell><Input value={n.institucion} onChange={e => { const arr = [...data.novedades]; arr[i] = { ...arr[i], institucion: e.target.value }; update("novedades", arr); }} className="h-7 text-xs" /></TableCell>
                         <TableCell>
                           <Select value={n.novedad || "none"} onValueChange={v => { const arr = [...data.novedades]; arr[i] = { ...arr[i], novedad: v === "none" ? "" : v }; update("novedades", arr); }}>
