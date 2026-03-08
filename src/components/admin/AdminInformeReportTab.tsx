@@ -153,7 +153,7 @@ export default function AdminInformeReportTab() {
 
         if (fichas && fichas.length > 0) {
           const cedulas = fichas.map(f => f.numero_cedula).filter(Boolean) as string[];
-          const fichaMap = new Map(fichas.map(f => [f.numero_cedula, f]));
+          const fichaMap = new Map(fichas.map(f => [f.numero_cedula, f as { numero_cedula: string; nombres_apellidos: string; nombre_ie: string }]));
 
           const { data: evals } = await supabase
             .from("informe_directivo")
