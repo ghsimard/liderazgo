@@ -16,6 +16,20 @@ import { useAppImages } from "@/hooks/useAppImages";
 
 interface EquipoMember { id?: string; nombre: string; rol: string }
 interface AjusteActividad { actividad: string; aciertos: string; desaciertos: string; ajustes: string }
+interface DirectivoEval {
+  id?: string;
+  directivo_cedula: string;
+  module_number: number;
+  informe_id?: string;
+  reto_estrategico: string;
+  razon_sin_reto: string;
+  avances_pedagogica: string;
+  retos_pedagogica: string;
+  avances_administrativa: string;
+  retos_administrativa: string;
+  avances_personal: string;
+  retos_personal: string;
+}
 interface SesionesProgramadas {
   coaching_individual: number; coaching_grupal: number; coaching_relacion: number;
   coaching_sombra: number; visita_individual: number; visita_grupal: number;
@@ -96,6 +110,7 @@ export default function InformeModulo() {
   // Form
   const [data, setData] = useState<InformeData | null>(null);
   const [equipo, setEquipo] = useState<EquipoMember[]>([]);
+  const [directivoEvals, setDirectivoEvals] = useState<DirectivoEval[]>([]);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -218,6 +233,8 @@ export default function InformeModulo() {
       });
       const { data: equipoRows } = await supabase.from("informe_modulo_equipo").select("*").eq("informe_id", row.id);
       setEquipo(equipoRows || []);
+      // Load directivo evaluations
+      await loadDirectivoEvals(moduleNum, directivos);
     } else {
       setData({
         region, entidad_territorial: et, module_number: moduleNum,
@@ -238,11 +255,59 @@ export default function InformeModulo() {
         novedades: [],
       });
       setEquipo([{ nombre: "", rol: "" }]);
+      // Load directivo evaluations for new informe
+      await loadDirectivoEvals(moduleNum, directivos);
     }
     setDirty(false);
     setLoading(false);
   };
 
+  const loadDirectivoEvals = async (moduleNum: number, directivos: { cedula: string; nombre: string; ie: string }[]) => {
+    const cedulas = directivos.map(d => d.cedula);
+    const { data: rows } = await supabase
+      .from("informe_directivo")
+      .select("*")
+      .eq("module_number", moduleNum)
+      .in("directivo_cedula", cedulas);
+
+    const evalsMap = new Map<string, any>();
+    (rows || []).forEach(r => evalsMap.set(r.directivo_cedula, r));
+
+    const evals: DirectivoEval[] = directivos.map(d => {
+      const existing = evalsMap.get(d.cedula);
+      return existing ? {
+        id: existing.id,
+        directivo_cedula: existing.directivo_cedula,
+        module_number: existing.module_number,
+        informe_id: existing.informe_id,
+        reto_estrategico: existing.reto_estrategico || "",
+        razon_sin_reto: existing.razon_sin_reto || "",
+        avances_pedagogica: existing.avances_pedagogica || "",
+        retos_pedagogica: existing.retos_pedagogica || "",
+        avances_administrativa: existing.avances_administrativa || "",
+        retos_administrativa: existing.retos_administrativa || "",
+        avances_personal: existing.avances_personal || "",
+        retos_personal: existing.retos_personal || "",
+      } : {
+        directivo_cedula: d.cedula,
+        module_number: moduleNum,
+        reto_estrategico: "", razon_sin_reto: "",
+        avances_pedagogica: "", retos_pedagogica: "",
+        avances_administrativa: "", retos_administrativa: "",
+        avances_personal: "", retos_personal: "",
+      };
+    });
+    setDirectivoEvals(evals);
+  };
+
+  const updateDirectivoEval = (index: number, field: keyof DirectivoEval, value: string) => {
+    setDirectivoEvals(prev => {
+      const arr = [...prev];
+      arr[index] = { ...arr[index], [field]: value };
+      return arr;
+    });
+    setDirty(true);
+  };
   const update = <K extends keyof InformeData>(key: K, val: InformeData[K]) => {
     setData(prev => prev ? { ...prev, [key]: val } : prev);
     setDirty(true);
@@ -284,6 +349,29 @@ export default function InformeModulo() {
           await supabase.from("informe_modulo_equipo").insert(
             validEquipo.map(e => ({ informe_id: informeId, nombre: e.nombre, rol: e.rol }))
           );
+        }
+      }
+
+      // Save directivo evaluations
+      for (const ev of directivoEvals) {
+        const evPayload = {
+          directivo_cedula: ev.directivo_cedula,
+          module_number: data.module_number,
+          informe_id: informeId || null,
+          reto_estrategico: ev.reto_estrategico,
+          razon_sin_reto: ev.razon_sin_reto,
+          avances_pedagogica: ev.avances_pedagogica,
+          retos_pedagogica: ev.retos_pedagogica,
+          avances_administrativa: ev.avances_administrativa,
+          retos_administrativa: ev.retos_administrativa,
+          avances_personal: ev.avances_personal,
+          retos_personal: ev.retos_personal,
+        };
+        if (ev.id) {
+          await supabase.from("informe_directivo").update(evPayload).eq("id", ev.id);
+        } else {
+          const { data: inserted } = await supabase.from("informe_directivo").insert(evPayload).select("id").single();
+          if (inserted) ev.id = inserted.id;
         }
       }
 
@@ -632,6 +720,79 @@ export default function InformeModulo() {
                   </TableBody>
                 </Table>
                 <Button variant="outline" size="sm" className="mt-2 gap-1.5" onClick={() => update("novedades", [...data.novedades, { nombre: "", institucion: "", novedad: "", fecha: "", soporte: "" }])}><Plus className="w-3.5 h-3.5" /> Agregar novedad</Button>
+              </CardContent>
+            </Card>
+
+            {/* 6. EVALUACIÓN INDIVIDUAL (DD) */}
+            <Card>
+              <CardHeader><CardTitle className="text-sm">6. Evaluación Individual (DD)</CardTitle></CardHeader>
+              <CardContent className="space-y-6">
+                {directivoEvals.map((ev, i) => {
+                  const dirInfo = selectedGroup.directivos.find(d => d.cedula === ev.directivo_cedula);
+                  return (
+                    <div key={ev.directivo_cedula} className="border rounded-lg p-4 space-y-4 bg-muted/10">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px]">CC: {ev.directivo_cedula}</Badge>
+                        <span className="text-sm font-medium">{dirInfo?.nombre || ev.directivo_cedula}</span>
+                        {dirInfo?.ie && <span className="text-xs text-muted-foreground">— {dirInfo.ie}</span>}
+                      </div>
+
+                      <div>
+                        <Label className="text-xs font-medium">Reto estratégico</Label>
+                        <Textarea value={ev.reto_estrategico} onChange={e => updateDirectivoEval(i, "reto_estrategico", e.target.value)} rows={3} className="mt-1" placeholder="Describa el reto estratégico del directivo…" />
+                      </div>
+
+                      <div>
+                        <Label className="text-xs font-medium">Razón si no tiene reto</Label>
+                        <Textarea value={ev.razon_sin_reto} onChange={e => updateDirectivoEval(i, "razon_sin_reto", e.target.value)} rows={2} className="mt-1" placeholder="Si no aplica, indique la razón…" />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Gestión Pedagógica */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold text-primary">Gestión Pedagógica</Label>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Avances</Label>
+                            <Textarea value={ev.avances_pedagogica} onChange={e => updateDirectivoEval(i, "avances_pedagogica", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Retos</Label>
+                            <Textarea value={ev.retos_pedagogica} onChange={e => updateDirectivoEval(i, "retos_pedagogica", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                        </div>
+
+                        {/* Gestión Administrativa */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold text-primary">Gestión Administrativa</Label>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Avances</Label>
+                            <Textarea value={ev.avances_administrativa} onChange={e => updateDirectivoEval(i, "avances_administrativa", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Retos</Label>
+                            <Textarea value={ev.retos_administrativa} onChange={e => updateDirectivoEval(i, "retos_administrativa", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                        </div>
+
+                        {/* Gestión Personal */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold text-primary">Gestión Personal</Label>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Avances</Label>
+                            <Textarea value={ev.avances_personal} onChange={e => updateDirectivoEval(i, "avances_personal", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Retos</Label>
+                            <Textarea value={ev.retos_personal} onChange={e => updateDirectivoEval(i, "retos_personal", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {directivoEvals.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No hay directivos asignados para esta región.</p>
+                )}
               </CardContent>
             </Card>
 
