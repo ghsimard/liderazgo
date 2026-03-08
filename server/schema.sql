@@ -357,6 +357,9 @@ CREATE TABLE IF NOT EXISTS public.encuesta_invitaciones (
   access_count INTEGER NOT NULL DEFAULT 0
 );
 
+-- Add access_count if table already existed without it
+ALTER TABLE public.encuesta_invitaciones ADD COLUMN IF NOT EXISTS access_count INTEGER NOT NULL DEFAULT 0;
+
 CREATE INDEX IF NOT EXISTS idx_invitaciones_token ON public.encuesta_invitaciones(token);
 CREATE INDEX IF NOT EXISTS idx_invitaciones_cedula ON public.encuesta_invitaciones(directivo_cedula);
 
