@@ -805,6 +805,8 @@ export default function InformeModulo() {
                 )}
               </CardContent>
             </Card>
+              </TabsContent>
+            </Tabs>
 
             <div className="flex justify-end pb-8">
               <Button onClick={handleSave} disabled={saving || !dirty} className="gap-1.5">
