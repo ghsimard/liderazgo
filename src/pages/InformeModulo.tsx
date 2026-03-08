@@ -73,7 +73,7 @@ const NOVEDAD_OPTIONS = ["Retiro", "Traslado", "Cambio", "Ingreso"];
 const MODULES = [1, 2, 3, 4];
 
 interface EvaluadorInfo { id: string; nombre: string; cedula: string }
-interface AsignacionGroup { region: string; entidad_territorial: string; directivos: { cedula: string; nombre: string; ie: string }[] }
+interface AsignacionGroup { region: string; entidades: string[]; directivos: { cedula: string; nombre: string; ie: string }[] }
 
 export default function InformeModulo() {
   const { toast } = useToast();
