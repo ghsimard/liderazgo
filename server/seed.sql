@@ -631,7 +631,9 @@ COMMIT;
 -- APP SETTINGS
 -- ============================================================
 INSERT INTO app_settings (key, value) VALUES
-  ('review_modal_enabled', 'true')
+  ('review_modal_enabled', 'true'),
+  ('mel_360_progression_threshold', '0.5'),
+  ('mel_360_global_meta', '80')
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================
