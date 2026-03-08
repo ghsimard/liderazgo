@@ -308,7 +308,7 @@ export default function InformeModulo() {
     });
     setDirty(true);
   };
-
+  const update = <K extends keyof InformeData>(key: K, val: InformeData[K]) => {
     setData(prev => prev ? { ...prev, [key]: val } : prev);
     setDirty(true);
   };
