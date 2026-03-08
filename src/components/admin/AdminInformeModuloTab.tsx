@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarCheck, FileText, UserCheck } from "lucide-react";
 import AdminAsistenciaTab from "./AdminAsistenciaTab";
+import AdminInformeModuloForm from "./AdminInformeModuloForm";
 
 export default function AdminInformeModuloTab() {
   return (
@@ -9,7 +10,7 @@ export default function AdminInformeModuloTab() {
         <TabsTrigger value="asistencia" className="gap-1.5">
           <CalendarCheck className="w-4 h-4" /> Asistencia
         </TabsTrigger>
-        <TabsTrigger value="informe" className="gap-1.5" disabled>
+        <TabsTrigger value="informe" className="gap-1.5">
           <FileText className="w-4 h-4" /> Informe de Módulo
         </TabsTrigger>
         <TabsTrigger value="evaluacion" className="gap-1.5" disabled>
@@ -22,7 +23,7 @@ export default function AdminInformeModuloTab() {
       </TabsContent>
 
       <TabsContent value="informe">
-        <p className="text-sm text-muted-foreground py-8 text-center">Próximamente</p>
+        <AdminInformeModuloForm />
       </TabsContent>
 
       <TabsContent value="evaluacion">
