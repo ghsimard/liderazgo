@@ -159,6 +159,27 @@ export default function AdminWeightsTab() {
           </p>
         </div>
         <div className="flex gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" disabled={saving}>
+                <Trash2 className="w-4 h-4 mr-1" /> Eliminar todo
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Eliminar todas las ponderaciones?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta acción eliminará todas las ponderaciones de la base de datos. Los informes generados no serán afectados, pero los futuros cálculos no tendrán pesos asignados.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Eliminar todo
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button variant="outline" size="sm" onClick={fetchAll} disabled={saving}>
             <RefreshCw className="w-4 h-4 mr-1" /> Recargar
           </Button>
