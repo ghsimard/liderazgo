@@ -762,53 +762,45 @@ export default function InformeModulo() {
                       </div>
 
                       <div>
-                        <Label className="text-xs font-semibold">Evaluación del directivo</Label>
+                        <Label className="text-xs font-semibold">2. Evaluación del directivo</Label>
                         <p className="text-[10px] text-muted-foreground mb-2">Describa el desarrollo que el directivo ha tenido en las competencias de cada gestión, no solo frente al objetivo del módulo, y que presentan mayores avances y retos para el proceso de formación del directivo.</p>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Gestión Personal */}
-                        <div className="space-y-2">
-                          <Label className="text-xs font-semibold text-primary">Personal</Label>
-                          <p className="text-[10px] text-muted-foreground leading-tight">Autoconciencia · Manejo de las emociones · Comunicación asertiva · Trabajo colaborativo</p>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">Avances</Label>
-                            <Textarea value={ev.avances_personal} onChange={e => updateDirectivoEval(i, "avances_personal", e.target.value)} rows={3} className="text-xs" />
-                          </div>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">Retos</Label>
-                            <Textarea value={ev.retos_personal} onChange={e => updateDirectivoEval(i, "retos_personal", e.target.value)} rows={3} className="text-xs" />
-                          </div>
-                        </div>
-
-                        {/* Gestión Pedagógica */}
-                        <div className="space-y-2">
-                          <Label className="text-xs font-semibold text-primary">Pedagógica</Label>
-                          <p className="text-[10px] text-muted-foreground leading-tight">Dirección del PEI · Orientación pedagógica · Convivencia · Fomento de la cultura de la evaluación</p>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">Avances</Label>
-                            <Textarea value={ev.avances_pedagogica} onChange={e => updateDirectivoEval(i, "avances_pedagogica", e.target.value)} rows={3} className="text-xs" />
-                          </div>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">Retos</Label>
-                            <Textarea value={ev.retos_pedagogica} onChange={e => updateDirectivoEval(i, "retos_pedagogica", e.target.value)} rows={3} className="text-xs" />
-                          </div>
-                        </div>
-
-                        {/* Gestión Administrativa y Comunitaria */}
-                        <div className="space-y-2">
-                          <Label className="text-xs font-semibold text-primary">Administrativa y Comunitaria</Label>
-                          <p className="text-[10px] text-muted-foreground leading-tight">Fomento de la visión compartida · Planeación institucional · Construcción de redes · Generación de alianzas · Rendición de cuentas</p>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">Avances</Label>
-                            <Textarea value={ev.avances_administrativa} onChange={e => updateDirectivoEval(i, "avances_administrativa", e.target.value)} rows={3} className="text-xs" />
-                          </div>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">Retos</Label>
-                            <Textarea value={ev.retos_administrativa} onChange={e => updateDirectivoEval(i, "retos_administrativa", e.target.value)} rows={3} className="text-xs" />
-                          </div>
-                        </div>
-                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs w-[220px]">Gestión y competencias</TableHead>
+                            <TableHead className="text-xs">Avances</TableHead>
+                            <TableHead className="text-xs">Retos</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="align-top text-xs font-medium">
+                              <span className="font-semibold text-primary">Personal</span>
+                              <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Autoconciencia · Manejo de las emociones · Comunicación asertiva · Trabajo colaborativo</p>
+                            </TableCell>
+                            <TableCell className="align-top"><Textarea value={ev.avances_personal} onChange={e => updateDirectivoEval(i, "avances_personal", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                            <TableCell className="align-top"><Textarea value={ev.retos_personal} onChange={e => updateDirectivoEval(i, "retos_personal", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="align-top text-xs font-medium">
+                              <span className="font-semibold text-primary">Pedagógica</span>
+                              <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Dirección del PEI · Orientación pedagógica · Convivencia · Fomento de la cultura de la evaluación</p>
+                            </TableCell>
+                            <TableCell className="align-top"><Textarea value={ev.avances_pedagogica} onChange={e => updateDirectivoEval(i, "avances_pedagogica", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                            <TableCell className="align-top"><Textarea value={ev.retos_pedagogica} onChange={e => updateDirectivoEval(i, "retos_pedagogica", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="align-top text-xs font-medium">
+                              <span className="font-semibold text-primary">Administrativa y Comunitaria</span>
+                              <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Fomento de la visión compartida · Planeación institucional · Construcción de redes · Generación de alianzas · Rendición de cuentas</p>
+                            </TableCell>
+                            <TableCell className="align-top"><Textarea value={ev.avances_administrativa} onChange={e => updateDirectivoEval(i, "avances_administrativa", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                            <TableCell className="align-top"><Textarea value={ev.retos_administrativa} onChange={e => updateDirectivoEval(i, "retos_administrativa", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
                     </div>
                   );
                 })}
