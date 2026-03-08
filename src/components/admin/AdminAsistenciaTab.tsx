@@ -32,6 +32,14 @@ interface AsistenciaRow {
 
 const MODULES = [1, 2, 3, 4];
 const DAYS = [1, 2, 3, 4, 5];
+const RAZONES_INASISTENCIA = [
+  "Diligencias de salud",
+  "Diligencias de la Secretaría de Educación",
+  "Diligencias MEN u otras instituciones",
+  "Situaciones personales",
+  "Situaciones institucionales que requerían su presencia",
+  "Otras",
+];
 
 export default function AdminAsistenciaTab() {
   const { toast } = useToast();
@@ -372,12 +380,20 @@ export default function AdminAsistenciaTab() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Input
-                          value={firstDayRow?.razon_inasistencia || ""}
-                          onChange={e => updateField(d.numero_cedula, 1, "razon_inasistencia", e.target.value)}
-                          className="h-7 text-xs"
-                          placeholder="—"
-                        />
+                        <Select
+                          value={firstDayRow?.razon_inasistencia || "none"}
+                          onValueChange={v => updateField(d.numero_cedula, 1, "razon_inasistencia", v === "none" ? "" : v)}
+                        >
+                          <SelectTrigger className="h-7 text-xs min-w-[180px]">
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">—</SelectItem>
+                            {RAZONES_INASISTENCIA.map(r => (
+                              <SelectItem key={r} value={r}>{r}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <Input
