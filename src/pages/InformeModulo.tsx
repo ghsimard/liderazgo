@@ -723,7 +723,79 @@ export default function InformeModulo() {
               </CardContent>
             </Card>
 
-            <div className="flex justify-end pb-8">
+            {/* 6. EVALUACIÓN INDIVIDUAL (DD) */}
+            <Card>
+              <CardHeader><CardTitle className="text-sm">6. Evaluación Individual (DD)</CardTitle></CardHeader>
+              <CardContent className="space-y-6">
+                {directivoEvals.map((ev, i) => {
+                  const dirInfo = selectedGroup.directivos.find(d => d.cedula === ev.directivo_cedula);
+                  return (
+                    <div key={ev.directivo_cedula} className="border rounded-lg p-4 space-y-4 bg-muted/10">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px]">CC: {ev.directivo_cedula}</Badge>
+                        <span className="text-sm font-medium">{dirInfo?.nombre || ev.directivo_cedula}</span>
+                        {dirInfo?.ie && <span className="text-xs text-muted-foreground">— {dirInfo.ie}</span>}
+                      </div>
+
+                      <div>
+                        <Label className="text-xs font-medium">Reto estratégico</Label>
+                        <Textarea value={ev.reto_estrategico} onChange={e => updateDirectivoEval(i, "reto_estrategico", e.target.value)} rows={3} className="mt-1" placeholder="Describa el reto estratégico del directivo…" />
+                      </div>
+
+                      <div>
+                        <Label className="text-xs font-medium">Razón si no tiene reto</Label>
+                        <Textarea value={ev.razon_sin_reto} onChange={e => updateDirectivoEval(i, "razon_sin_reto", e.target.value)} rows={2} className="mt-1" placeholder="Si no aplica, indique la razón…" />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Gestión Pedagógica */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold text-primary">Gestión Pedagógica</Label>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Avances</Label>
+                            <Textarea value={ev.avances_pedagogica} onChange={e => updateDirectivoEval(i, "avances_pedagogica", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Retos</Label>
+                            <Textarea value={ev.retos_pedagogica} onChange={e => updateDirectivoEval(i, "retos_pedagogica", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                        </div>
+
+                        {/* Gestión Administrativa */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold text-primary">Gestión Administrativa</Label>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Avances</Label>
+                            <Textarea value={ev.avances_administrativa} onChange={e => updateDirectivoEval(i, "avances_administrativa", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Retos</Label>
+                            <Textarea value={ev.retos_administrativa} onChange={e => updateDirectivoEval(i, "retos_administrativa", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                        </div>
+
+                        {/* Gestión Personal */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold text-primary">Gestión Personal</Label>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Avances</Label>
+                            <Textarea value={ev.avances_personal} onChange={e => updateDirectivoEval(i, "avances_personal", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Retos</Label>
+                            <Textarea value={ev.retos_personal} onChange={e => updateDirectivoEval(i, "retos_personal", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {directivoEvals.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No hay directivos asignados para esta región.</p>
+                )}
+              </CardContent>
+            </Card>
+
               <Button onClick={handleSave} disabled={saving || !dirty} className="gap-1.5">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Guardar informe
