@@ -234,6 +234,8 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return <AdminInvitacionesTab />;
     case "rubricas":
       return <AdminRubricasTab />;
+    case "informe-modulo":
+      return <AdminInformeModuloTab />;
     case "ambiente-escolar":
       return (
         <div className="space-y-4">
