@@ -487,6 +487,13 @@ export default function InformeModulo() {
           <div className="flex items-center justify-center py-12"><Loader2 className="animate-spin w-6 h-6 text-muted-foreground" /></div>
         ) : !data ? null : (
           <>
+            <Tabs defaultValue="informe" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="informe">Informe de Módulo</TabsTrigger>
+                <TabsTrigger value="evaluacion">Evaluación Individual</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="informe" className="space-y-4">
             {/* 1. IDENTIFICACIÓN */}
             <Card>
               <CardHeader><CardTitle className="text-sm flex items-center gap-2"><FileText className="w-4 h-4" /> 1. Identificación</CardTitle></CardHeader>
