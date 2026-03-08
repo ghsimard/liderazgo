@@ -830,6 +830,11 @@ export default function RubricaEvaluacion() {
       {/* Header */}
       <header className="bg-primary text-primary-foreground">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
+          {detectedRole && (
+            <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1 text-primary-foreground hover:bg-primary-foreground/10 -ml-2 mr-1">
+              <ArrowLeft className="w-4 h-4" /> Volver al panel
+            </Button>
+          )}
           <img src={logoRLT} alt="RLT" className="h-10" />
           <img src={logoCLT} alt="CLT" className="h-10" />
           <div>
