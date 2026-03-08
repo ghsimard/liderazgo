@@ -353,19 +353,7 @@ export default function RubricaEvaluacion() {
     } else if (detectedRole === "directivo") {
       navigate("/mi-panel");
     } else {
-      setCedula("");
-      setDetectedRole(null);
-      setUserName("");
-      setDirectivoInfo(null);
-      setDirectivoReadOnly(false);
-      setAssignedEvaluadorNombre(null);
-      setEvaluadorId("");
-      setAsignaciones([]);
-      setSelectedDirectivo(null);
-      setEvaluaciones({});
-      setSubmissionDates({});
-      setSeguimientos([]);
-      setPendingSeguimientos({});
+      navigate("/");
     }
   };
 
