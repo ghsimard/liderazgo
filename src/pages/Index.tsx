@@ -6,7 +6,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, ArrowRight, Loader2, Search } from "lucide-react";
+import { AlertCircle, ArrowRight, Loader2, Search, Shield, Users } from "lucide-react";
 import AppFooter from "@/components/AppFooter";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -32,6 +32,8 @@ export default function Index() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showRoleChoice, setShowRoleChoice] = useState(false);
+  const [roleChoiceResult, setRoleChoiceResult] = useState<CedulaRoleResult | null>(null);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = cedula.trim();
@@ -71,13 +73,20 @@ export default function Index() {
         nombre: null,
       };
 
-      // Case 1: Admin → redirect to login
+      // Case 1: Admin AND Evaluador/Directivo → show role choice
+      if (result.is_admin && (result.is_evaluador || result.is_directivo)) {
+        setRoleChoiceResult(result);
+        setShowRoleChoice(true);
+        return;
+      }
+
+      // Case 2: Admin only → redirect to login
       if (result.is_admin) {
         navigate("/admin/login");
         return;
       }
 
-      // Case 2: Directivo and/or Evaluador → panel
+      // Case 3: Directivo and/or Evaluador → panel
       if (result.is_directivo || result.is_evaluador) {
         navigate(`/mi-panel`);
         return;
@@ -189,6 +198,44 @@ export default function Index() {
               Sí, continuar
             </AlertDialogAction>
           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Role choice dialog for admin+evaluador */}
+      <AlertDialog open={showRoleChoice} onOpenChange={setShowRoleChoice}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cómo desea ingresar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {roleChoiceResult?.nombre && (
+                <span className="block mb-2 text-foreground font-medium">{roleChoiceResult.nombre}</span>
+              )}
+              Su cédula tiene acceso como evaluador/a y como administrador/a. Seleccione el perfil con el que desea continuar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex flex-col gap-2 py-2">
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-12"
+              onClick={() => { setShowRoleChoice(false); navigate("/mi-panel"); }}
+            >
+              <Users className="w-5 h-5 text-primary" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Panel de Evaluador</p>
+                <p className="text-xs text-muted-foreground">Rúbricas, informes de módulo, encuestas</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-12"
+              onClick={() => { setShowRoleChoice(false); navigate("/admin/login"); }}
+            >
+              <Shield className="w-5 h-5 text-primary" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Panel de Administración</p>
+                <p className="text-xs text-muted-foreground">Gestión de datos, reportes, configuración</p>
+              </div>
+            </Button>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </div>
