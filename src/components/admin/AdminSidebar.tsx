@@ -82,13 +82,6 @@ const sections: SidebarSection[] = [
     ],
   },
   {
-    label: "Informe de Módulo",
-    icon: FileBarChart,
-    items: [
-      { tab: "informe-modulo", label: "Informe de Módulo", icon: FileBarChart },
-    ],
-  },
-  {
     label: "Encuesta 360°",
     icon: Gauge,
     items: [
@@ -99,6 +92,13 @@ const sections: SidebarSection[] = [
       { tab: "invitaciones", label: "Invitaciones", icon: Users },
       { tab: "reportes360", label: "Informes Inicial", icon: FileBarChart },
       { tab: "reportes360final", label: "Informes Final", icon: FileBarChart2 },
+    ],
+  },
+  {
+    label: "Informe de Módulo",
+    icon: FileBarChart,
+    items: [
+      { tab: "informe-modulo", label: "Informe de Módulo", icon: FileBarChart },
     ],
   },
   {
