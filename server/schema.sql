@@ -330,7 +330,10 @@ AS $$
     ),
     'is_evaluador', EXISTS (SELECT 1 FROM rubrica_evaluadores WHERE cedula = p_cedula),
     'cargo_actual', (SELECT cargo_actual FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
-    'nombre', (SELECT nombres_apellidos FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
+    'nombre', COALESCE(
+      (SELECT nombres_apellidos FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
+      (SELECT nombre FROM rubrica_evaluadores WHERE cedula = p_cedula LIMIT 1)
+    ),
     'genero', (SELECT genero FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1)
   );
 $$;
