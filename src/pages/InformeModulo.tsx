@@ -736,6 +736,10 @@ export default function InformeModulo() {
               <TabsContent value="evaluacion" className="space-y-4">
             <Card>
               <CardHeader><CardTitle className="text-sm">Evaluación Individual</CardTitle></CardHeader>
+              <CardContent className="space-y-2 mb-4">
+                <p className="text-xs text-muted-foreground">Describa los avances y retos del directivo en cada gestión durante el módulo en relación con los objetivos propuestos y el desarrollo de sus competencias. Tenga en cuenta lo registrado en el informe de intensivo e interludio y los diferentes resultados de las herramientas de evaluación aplicadas durante el módulo.</p>
+                <p className="text-xs text-muted-foreground">Relacione la información obtenida por medio de las diferentes herramientas para asegurar una evaluación integral del proceso.</p>
+              </CardContent>
               <CardContent className="space-y-6">
                 {directivoEvals.map((ev, i) => {
                   const dirInfo = selectedGroup.directivos.find(d => d.cedula === ev.directivo_cedula);
@@ -748,19 +752,39 @@ export default function InformeModulo() {
                       </div>
 
                       <div>
-                        <Label className="text-xs font-medium">Reto estratégico</Label>
-                        <Textarea value={ev.reto_estrategico} onChange={e => updateDirectivoEval(i, "reto_estrategico", e.target.value)} rows={3} className="mt-1" placeholder="Describa el reto estratégico del directivo…" />
+                        <Label className="text-xs font-medium">Reto estratégico de transformación institucional</Label>
+                        <Textarea value={ev.reto_estrategico} onChange={e => updateDirectivoEval(i, "reto_estrategico", e.target.value)} rows={3} className="mt-1" />
                       </div>
 
                       <div>
                         <Label className="text-xs font-medium">Si no hay reto, explique las razones por las que el directivo docente no lo ha definido</Label>
-                        <Textarea value={ev.razon_sin_reto} onChange={e => updateDirectivoEval(i, "razon_sin_reto", e.target.value)} rows={2} className="mt-1" placeholder="Explique las razones…" />
+                        <Textarea value={ev.razon_sin_reto} onChange={e => updateDirectivoEval(i, "razon_sin_reto", e.target.value)} rows={2} className="mt-1" />
+                      </div>
+
+                      <div>
+                        <Label className="text-xs font-semibold">Evaluación del directivo</Label>
+                        <p className="text-[10px] text-muted-foreground mb-2">Describa el desarrollo que el directivo ha tenido en las competencias de cada gestión, no solo frente al objetivo del módulo, y que presentan mayores avances y retos para el proceso de formación del directivo.</p>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Gestión Personal */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold text-primary">Personal</Label>
+                          <p className="text-[10px] text-muted-foreground leading-tight">Autoconciencia · Manejo de las emociones · Comunicación asertiva · Trabajo colaborativo</p>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Avances</Label>
+                            <Textarea value={ev.avances_personal} onChange={e => updateDirectivoEval(i, "avances_personal", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Retos</Label>
+                            <Textarea value={ev.retos_personal} onChange={e => updateDirectivoEval(i, "retos_personal", e.target.value)} rows={3} className="text-xs" />
+                          </div>
+                        </div>
+
                         {/* Gestión Pedagógica */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-semibold text-primary">Gestión Pedagógica</Label>
+                          <Label className="text-xs font-semibold text-primary">Pedagógica</Label>
+                          <p className="text-[10px] text-muted-foreground leading-tight">Dirección del PEI · Orientación pedagógica · Convivencia · Fomento de la cultura de la evaluación</p>
                           <div>
                             <Label className="text-[10px] text-muted-foreground">Avances</Label>
                             <Textarea value={ev.avances_pedagogica} onChange={e => updateDirectivoEval(i, "avances_pedagogica", e.target.value)} rows={3} className="text-xs" />
@@ -771,9 +795,10 @@ export default function InformeModulo() {
                           </div>
                         </div>
 
-                        {/* Gestión Administrativa */}
+                        {/* Gestión Administrativa y Comunitaria */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-semibold text-primary">Gestión Administrativa</Label>
+                          <Label className="text-xs font-semibold text-primary">Administrativa y Comunitaria</Label>
+                          <p className="text-[10px] text-muted-foreground leading-tight">Fomento de la visión compartida · Planeación institucional · Construcción de redes · Generación de alianzas · Rendición de cuentas</p>
                           <div>
                             <Label className="text-[10px] text-muted-foreground">Avances</Label>
                             <Textarea value={ev.avances_administrativa} onChange={e => updateDirectivoEval(i, "avances_administrativa", e.target.value)} rows={3} className="text-xs" />
@@ -781,19 +806,6 @@ export default function InformeModulo() {
                           <div>
                             <Label className="text-[10px] text-muted-foreground">Retos</Label>
                             <Textarea value={ev.retos_administrativa} onChange={e => updateDirectivoEval(i, "retos_administrativa", e.target.value)} rows={3} className="text-xs" />
-                          </div>
-                        </div>
-
-                        {/* Gestión Personal */}
-                        <div className="space-y-2">
-                          <Label className="text-xs font-semibold text-primary">Gestión Personal</Label>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">Avances</Label>
-                            <Textarea value={ev.avances_personal} onChange={e => updateDirectivoEval(i, "avances_personal", e.target.value)} rows={3} className="text-xs" />
-                          </div>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">Retos</Label>
-                            <Textarea value={ev.retos_personal} onChange={e => updateDirectivoEval(i, "retos_personal", e.target.value)} rows={3} className="text-xs" />
                           </div>
                         </div>
                       </div>
