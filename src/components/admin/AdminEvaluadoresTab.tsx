@@ -459,6 +459,18 @@ export default function AdminEvaluadoresTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Transfer Dialog */}
+      {transferEvaluador && (
+        <TransferDirectivosDialog
+          open={!!transferEvaluador}
+          onOpenChange={(open) => { if (!open) setTransferEvaluador(null); }}
+          sourceEvaluador={transferEvaluador}
+          evaluadores={evaluadores}
+          asignaciones={asignaciones}
+          onTransferDone={loadData}
+        />
+      )}
+
       {/* Evaluation Detail Dialog */}
       {detailDirectivo && (
         <AdminEvalDetailDialog
