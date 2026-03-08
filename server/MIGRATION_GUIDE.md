@@ -132,8 +132,11 @@ server/
 │   ├── db.ts             ← Proxy DB générique (GET/POST /api/db/:table)
 │   ├── rpc.ts            ← Fonctions RPC (12 endpoints)
 │   ├── export.ts         ← Export SQL complet (admin only)
-│   └── storage.ts        ← Upload/delete fichiers générique
-├── schema.sql            ← Schéma SQL pour users/roles/app_images
+│   ├── storage.ts        ← Upload/delete fichiers générique
+│   ├── rubrica-analysis.ts ← Analyse IA rubriques (Grok)
+│   ├── github.ts         ← Changelog GitHub commits
+│   └── email.ts          ← Envoi d'emails (Resend)
+├── schema.sql            ← Schéma complet (35+ tables + fonctions RPC)
 └── package.json
 ```
 
