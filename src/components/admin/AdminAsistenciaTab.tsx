@@ -64,8 +64,8 @@ export default function AdminAsistenciaTab() {
 
     if (data) {
       setDirectivos(data.filter(d => d.numero_cedula));
-      const regs = [...new Set(data.map(d => d.region).filter(Boolean))].sort();
-      const ets = [...new Set(data.map(d => d.entidad_territorial).filter(Boolean) as string[])].sort();
+      const regs = [...new Set(data.map(d => d.region).filter(Boolean))] as string[];
+      const ets = [...new Set(data.map(d => d.entidad_territorial).filter(Boolean))] as string[];
       setRegiones(regs);
       setEntidades(ets);
     }
