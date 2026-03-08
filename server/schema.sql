@@ -449,6 +449,101 @@ VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================
+-- Informe de Módulo (module reports by region)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.informe_modulo (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  region TEXT NOT NULL,
+  entidad_territorial TEXT NOT NULL,
+  module_number INTEGER NOT NULL,
+  fecha_inicio_intensivo TEXT,
+  fecha_fin_intensivo TEXT,
+  fecha_inicio_interludio TEXT,
+  fecha_fin_interludio TEXT,
+  sesiones_programadas JSONB,
+  sesiones_realizadas JSONB,
+  razones_diferencias TEXT,
+  estrategias JSONB,
+  contexto_plan_sectorial TEXT,
+  contexto_articulacion TEXT,
+  articulacion_intensivo TEXT,
+  articulacion_interludio TEXT,
+  aprendizajes_intensivo TEXT,
+  aprendizajes_interludio TEXT,
+  novedades JSONB,
+  acompanamiento_directivos JSONB,
+  acompanamiento_descripcion TEXT,
+  acompanamiento_no_cumplido TEXT,
+  ajustes_actividades JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.informe_modulo_equipo (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  informe_id UUID NOT NULL REFERENCES public.informe_modulo(id) ON DELETE CASCADE,
+  nombre TEXT NOT NULL,
+  rol TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.informe_directivo (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  informe_id UUID REFERENCES public.informe_modulo(id) ON DELETE SET NULL,
+  directivo_cedula TEXT NOT NULL,
+  module_number INTEGER NOT NULL,
+  reto_estrategico TEXT,
+  razon_sin_reto TEXT,
+  avances_personal TEXT,
+  avances_pedagogica TEXT,
+  avances_administrativa TEXT,
+  retos_personal TEXT,
+  retos_pedagogica TEXT,
+  retos_administrativa TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.informe_asistencia (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  directivo_cedula TEXT NOT NULL,
+  module_number INTEGER NOT NULL,
+  dia INTEGER NOT NULL,
+  session_am BOOLEAN NOT NULL DEFAULT false,
+  session_pm BOOLEAN NOT NULL DEFAULT false,
+  observaciones TEXT,
+  razon_inasistencia TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ============================================================
+-- RPC functions for Informe de Módulo
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.get_instituciones_con_ficha()
+RETURNS TABLE(nombre_ie text)
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT DISTINCT f.nombre_ie
+  FROM fichas_rlt f
+  ORDER BY f.nombre_ie;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_directivos_por_institucion(p_nombre_ie text)
+RETURNS TABLE(cargo_actual text, nombres_apellidos text, numero_cedula text, genero text)
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT cargo_actual, nombres_apellidos, numero_cedula, genero
+  FROM fichas_rlt
+  WHERE nombre_ie = p_nombre_ie
+    AND cargo_actual IN ('Rector/a', 'Coordinador/a')
+  ORDER BY nombres_apellidos;
+$$;
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js
