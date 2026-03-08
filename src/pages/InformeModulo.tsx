@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Save, Loader2, Plus, Trash2, FileText, Search, ArrowLeft, Users } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { useAppImages } from "@/hooks/useAppImages";
@@ -486,6 +487,13 @@ export default function InformeModulo() {
           <div className="flex items-center justify-center py-12"><Loader2 className="animate-spin w-6 h-6 text-muted-foreground" /></div>
         ) : !data ? null : (
           <>
+            <Tabs defaultValue="informe" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="informe">Informe de Módulo</TabsTrigger>
+                <TabsTrigger value="evaluacion">Evaluación Individual</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="informe" className="space-y-4">
             {/* 1. IDENTIFICACIÓN */}
             <Card>
               <CardHeader><CardTitle className="text-sm flex items-center gap-2"><FileText className="w-4 h-4" /> 1. Identificación</CardTitle></CardHeader>
@@ -723,9 +731,11 @@ export default function InformeModulo() {
               </CardContent>
             </Card>
 
-            {/* 6. EVALUACIÓN INDIVIDUAL (DD) */}
+              </TabsContent>
+
+              <TabsContent value="evaluacion" className="space-y-4">
             <Card>
-              <CardHeader><CardTitle className="text-sm">6. Evaluación Individual (DD)</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm">Evaluación Individual</CardTitle></CardHeader>
               <CardContent className="space-y-6">
                 {directivoEvals.map((ev, i) => {
                   const dirInfo = selectedGroup.directivos.find(d => d.cedula === ev.directivo_cedula);
@@ -795,6 +805,8 @@ export default function InformeModulo() {
                 )}
               </CardContent>
             </Card>
+              </TabsContent>
+            </Tabs>
 
             <div className="flex justify-end pb-8">
               <Button onClick={handleSave} disabled={saving || !dirty} className="gap-1.5">
