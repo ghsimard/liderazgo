@@ -208,7 +208,25 @@ Options supportées : `select`, `order`, `limit`, `range(from,to)`, `single`, `h
 
 | Route | Méthode | Auth | Description |
 |---|---|---|---|
-| `/api/export` | GET | Admin | Export SQL complet (15 tables + users + fichiers base64) |
+| `/api/export` | GET | SuperAdmin | Export SQL complet (35+ tables + users + fichiers base64) |
+
+#### Analyse IA Rubriques (`routes/rubrica-analysis.ts`)
+
+| Route | Méthode | Auth | Description |
+|---|---|---|---|
+| `/api/rubrica-analysis` | POST | Admin | Génération d'analyse IA via Grok-3 |
+
+#### GitHub (`routes/github.ts`)
+
+| Route | Méthode | Auth | Description |
+|---|---|---|---|
+| `/api/github/commits` | GET | Admin | Changelog des commits récents |
+
+#### Email (`routes/email.ts`)
+
+| Route | Méthode | Auth | Description |
+|---|---|---|---|
+| `/api/email/send` | POST | Admin | Envoi d'email via Resend |
 
 #### Storage générique (`routes/storage.ts`)
 
