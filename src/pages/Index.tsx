@@ -200,6 +200,44 @@ export default function Index() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Role choice dialog for admin+evaluador */}
+      <AlertDialog open={showRoleChoice} onOpenChange={setShowRoleChoice}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cómo desea ingresar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {roleChoiceResult?.nombre && (
+                <span className="block mb-2 text-foreground font-medium">{roleChoiceResult.nombre}</span>
+              )}
+              Su cédula tiene acceso como evaluador/a y como administrador/a. Seleccione el perfil con el que desea continuar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex flex-col gap-2 py-2">
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-12"
+              onClick={() => { setShowRoleChoice(false); navigate("/mi-panel"); }}
+            >
+              <Users className="w-5 h-5 text-primary" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Panel de Evaluador</p>
+                <p className="text-xs text-muted-foreground">Rúbricas, informes de módulo, encuestas</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-12"
+              onClick={() => { setShowRoleChoice(false); navigate("/admin/login"); }}
+            >
+              <Shield className="w-5 h-5 text-primary" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Panel de Administración</p>
+                <p className="text-xs text-muted-foreground">Gestión de datos, reportes, configuración</p>
+              </div>
+            </Button>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
