@@ -253,8 +253,18 @@ export default function AdminEvaluadoresTab() {
                         onClick={() => { setAssignEvaluadorId(ev.id); setShowAssign(true); }}
                         className="gap-1 text-xs"
                       >
-                        <Link className="w-3.5 h-3.5" /> Asignar directivo
+                        <Link className="w-3.5 h-3.5" /> Asignar
                       </Button>
+                      {asignaciones.filter(a => a.evaluador_id === ev.id).length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setTransferEvaluador(ev)}
+                          className="gap-1 text-xs"
+                        >
+                          <ArrowRightLeft className="w-3.5 h-3.5" /> Transferir
+                        </Button>
+                      )}
                       <Button
                         size="icon"
                         variant="ghost"
