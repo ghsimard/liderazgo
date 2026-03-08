@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, UserPlus, Search, Users, Link, Eye } from "lucide-react";
+import { Plus, Trash2, UserPlus, Search, Users, Link, Eye, ArrowRightLeft } from "lucide-react";
 import AdminEvalDetailDialog from "./AdminEvalDetailDialog";
+import TransferDirectivosDialog from "./TransferDirectivosDialog";
 
 interface Evaluador {
   id: string;
@@ -55,6 +56,9 @@ export default function AdminEvaluadoresTab() {
   const [assignEvaluadorId, setAssignEvaluadorId] = useState<string | null>(null);
   const [selectedCedulas, setSelectedCedulas] = useState<string[]>([]);
   const [assignSearch, setAssignSearch] = useState("");
+
+  // Transfer dialog
+  const [transferEvaluador, setTransferEvaluador] = useState<Evaluador | null>(null);
 
   // Detail dialog
   const [detailDirectivo, setDetailDirectivo] = useState<{ cedula: string; nombre: string } | null>(null);
@@ -249,8 +253,18 @@ export default function AdminEvaluadoresTab() {
                         onClick={() => { setAssignEvaluadorId(ev.id); setShowAssign(true); }}
                         className="gap-1 text-xs"
                       >
-                        <Link className="w-3.5 h-3.5" /> Asignar directivo
+                        <Link className="w-3.5 h-3.5" /> Asignar
                       </Button>
+                      {asignaciones.filter(a => a.evaluador_id === ev.id).length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setTransferEvaluador(ev)}
+                          className="gap-1 text-xs"
+                        >
+                          <ArrowRightLeft className="w-3.5 h-3.5" /> Transferir
+                        </Button>
+                      )}
                       <Button
                         size="icon"
                         variant="ghost"
@@ -444,6 +458,18 @@ export default function AdminEvaluadoresTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Transfer Dialog */}
+      {transferEvaluador && (
+        <TransferDirectivosDialog
+          open={!!transferEvaluador}
+          onOpenChange={(open) => { if (!open) setTransferEvaluador(null); }}
+          sourceEvaluador={transferEvaluador}
+          evaluadores={evaluadores}
+          asignaciones={asignaciones}
+          onTransferDone={loadData}
+        />
+      )}
 
       {/* Evaluation Detail Dialog */}
       {detailDirectivo && (
