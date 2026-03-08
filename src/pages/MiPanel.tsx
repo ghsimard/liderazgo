@@ -338,6 +338,17 @@ export default function MiPanel() {
                     </div>
                   </div>
                 </Button>
+                <Button
+                  className="w-full h-14 justify-start gap-3 text-base"
+                  variant="outline"
+                  onClick={() => navigate("/informe-modulo")}
+                >
+                  <FileBarChart className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-semibold">Informe de Módulo</div>
+                    <div className="text-xs opacity-80">Registrar informe por módulo y ET</div>
+                  </div>
+                </Button>
                 <BlankFichaPdfButton />
               </>
             )}
