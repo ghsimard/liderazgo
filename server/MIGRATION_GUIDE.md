@@ -1,6 +1,6 @@
 # Guide de Migration : Supabase → Render (PostgreSQL + Express)
 
-> Document généré le 25 février 2026 — Mis à jour le 7 mars 2026  
+> Document généré le 25 février 2026 — Mis à jour le 8 mars 2026  
 > Projet : RLT Ficha / Encuestas 360°
 
 ---
