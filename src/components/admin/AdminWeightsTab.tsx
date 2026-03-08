@@ -3,7 +3,12 @@ import { supabase } from "@/utils/dbClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, Save, AlertTriangle } from "lucide-react";
+import { RefreshCw, Save, AlertTriangle, Trash2 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const OBSERVER_ROLES = ["coor", "doce", "admi", "acud", "estu"] as const;
 const ROLE_LABELS: Record<string, string> = {
