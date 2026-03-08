@@ -353,7 +353,7 @@ export default function RubricaEvaluacion() {
     } else if (detectedRole === "directivo") {
       navigate("/mi-panel");
     } else {
-      navigate("/");
+      navigate("/mi-panel");
     }
   };
 
