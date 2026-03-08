@@ -73,13 +73,20 @@ export default function Index() {
         nombre: null,
       };
 
-      // Case 1: Admin → redirect to login
+      // Case 1: Admin AND Evaluador/Directivo → show role choice
+      if (result.is_admin && (result.is_evaluador || result.is_directivo)) {
+        setRoleChoiceResult(result);
+        setShowRoleChoice(true);
+        return;
+      }
+
+      // Case 2: Admin only → redirect to login
       if (result.is_admin) {
         navigate("/admin/login");
         return;
       }
 
-      // Case 2: Directivo and/or Evaluador → panel
+      // Case 3: Directivo and/or Evaluador → panel
       if (result.is_directivo || result.is_evaluador) {
         navigate(`/mi-panel`);
         return;
