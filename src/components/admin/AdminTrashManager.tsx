@@ -9,6 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
@@ -178,6 +183,16 @@ export default function AdminTrashManager() {
     }
   };
 
+  const handlePurgeAll = async () => {
+    try {
+      await supabase.from("deleted_records").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      toast({ title: "Papelera vaciada", description: "Todos los registros han sido eliminados permanentemente." });
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center py-8"><RefreshCw className="animate-spin w-5 h-5 text-muted-foreground" /></div>;
   }
@@ -189,9 +204,34 @@ export default function AdminTrashManager() {
           <h3 className="font-semibold text-sm">Papelera</h3>
           <p className="text-xs text-muted-foreground mt-1">Elementos eliminados que pueden ser restaurados.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchAll} className="gap-1.5">
-          <RefreshCw className="w-4 h-4" /> Actualizar
-        </Button>
+        <div className="flex gap-2">
+          {records.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="gap-1.5">
+                  <Trash2 className="w-4 h-4" /> Vaciar papelera
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Vaciar toda la papelera?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Se eliminarán permanentemente {records.length} registro(s). Esta acción no se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handlePurgeAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Vaciar papelera
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          <Button variant="outline" size="sm" onClick={fetchAll} className="gap-1.5">
+            <RefreshCw className="w-4 h-4" /> Actualizar
+          </Button>
+        </div>
       </div>
 
       {records.length === 0 ? (
