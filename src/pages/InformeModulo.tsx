@@ -110,6 +110,7 @@ export default function InformeModulo() {
   // Form
   const [data, setData] = useState<InformeData | null>(null);
   const [equipo, setEquipo] = useState<EquipoMember[]>([]);
+  const [directivoEvals, setDirectivoEvals] = useState<DirectivoEval[]>([]);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [loading, setLoading] = useState(false);
