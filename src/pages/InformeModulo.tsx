@@ -753,8 +753,8 @@ export default function InformeModulo() {
                       </div>
 
                       <div>
-                        <Label className="text-xs font-medium">Razón si no tiene reto</Label>
-                        <Textarea value={ev.razon_sin_reto} onChange={e => updateDirectivoEval(i, "razon_sin_reto", e.target.value)} rows={2} className="mt-1" placeholder="Si no aplica, indique la razón…" />
+                        <Label className="text-xs font-medium">Si no hay reto, explique las razones por las que el directivo docente no lo ha definido</Label>
+                        <Textarea value={ev.razon_sin_reto} onChange={e => updateDirectivoEval(i, "razon_sin_reto", e.target.value)} rows={2} className="mt-1" placeholder="Explique las razones…" />
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
