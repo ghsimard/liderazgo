@@ -32,6 +32,7 @@ import AdminMelConfigTab from "@/components/admin/AdminMelConfigTab";
 import AdminInvitacionesTab from "@/components/admin/AdminInvitacionesTab";
 import AdminActivityLogTab from "@/components/admin/AdminActivityLogTab";
 import AdminInformeModuloTab from "@/components/admin/AdminInformeModuloTab";
+import AdminPurgeDataTab from "@/components/admin/AdminPurgeDataTab";
 
 interface FormItem {
   name: string;
