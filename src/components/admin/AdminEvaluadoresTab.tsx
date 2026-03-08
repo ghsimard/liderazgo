@@ -224,6 +224,32 @@ export default function AdminEvaluadoresTab() {
         </Button>
       </div>
 
+      {/* Orphan directivos indicator */}
+      {!loading && (() => {
+        const assignedCedulas = new Set(asignaciones.map(a => a.directivo_cedula));
+        const orphans = directivos.filter(d => d.numero_cedula && !assignedCedulas.has(d.numero_cedula));
+        if (orphans.length === 0) return null;
+        return (
+          <Card className="border-warning/50 bg-warning/5">
+            <CardContent className="py-3 px-4">
+              <details>
+                <summary className="cursor-pointer text-sm font-medium flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
+                  <span>{orphans.length} directivo(s) sin evaluador asignado</span>
+                </summary>
+                <div className="mt-2 max-h-[160px] overflow-y-auto space-y-0.5">
+                  {orphans.map(d => (
+                    <p key={d.numero_cedula} className="text-xs text-muted-foreground pl-6">
+                      {d.nombres_apellidos} — <span className="text-foreground/60">{d.nombre_ie}</span>
+                    </p>
+                  ))}
+                </div>
+              </details>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Cargando…</p>
       ) : filtered.length === 0 ? (
