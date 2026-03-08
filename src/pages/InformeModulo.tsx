@@ -262,7 +262,53 @@ export default function InformeModulo() {
     setLoading(false);
   };
 
-  const update = <K extends keyof InformeData>(key: K, val: InformeData[K]) => {
+  const loadDirectivoEvals = async (moduleNum: number, directivos: { cedula: string; nombre: string; ie: string }[]) => {
+    const cedulas = directivos.map(d => d.cedula);
+    const { data: rows } = await supabase
+      .from("informe_directivo")
+      .select("*")
+      .eq("module_number", moduleNum)
+      .in("directivo_cedula", cedulas);
+
+    const evalsMap = new Map<string, any>();
+    (rows || []).forEach(r => evalsMap.set(r.directivo_cedula, r));
+
+    const evals: DirectivoEval[] = directivos.map(d => {
+      const existing = evalsMap.get(d.cedula);
+      return existing ? {
+        id: existing.id,
+        directivo_cedula: existing.directivo_cedula,
+        module_number: existing.module_number,
+        informe_id: existing.informe_id,
+        reto_estrategico: existing.reto_estrategico || "",
+        razon_sin_reto: existing.razon_sin_reto || "",
+        avances_pedagogica: existing.avances_pedagogica || "",
+        retos_pedagogica: existing.retos_pedagogica || "",
+        avances_administrativa: existing.avances_administrativa || "",
+        retos_administrativa: existing.retos_administrativa || "",
+        avances_personal: existing.avances_personal || "",
+        retos_personal: existing.retos_personal || "",
+      } : {
+        directivo_cedula: d.cedula,
+        module_number: moduleNum,
+        reto_estrategico: "", razon_sin_reto: "",
+        avances_pedagogica: "", retos_pedagogica: "",
+        avances_administrativa: "", retos_administrativa: "",
+        avances_personal: "", retos_personal: "",
+      };
+    });
+    setDirectivoEvals(evals);
+  };
+
+  const updateDirectivoEval = (index: number, field: keyof DirectivoEval, value: string) => {
+    setDirectivoEvals(prev => {
+      const arr = [...prev];
+      arr[index] = { ...arr[index], [field]: value };
+      return arr;
+    });
+    setDirty(true);
+  };
+
     setData(prev => prev ? { ...prev, [key]: val } : prev);
     setDirty(true);
   };
