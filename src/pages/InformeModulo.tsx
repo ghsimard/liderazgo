@@ -73,7 +73,7 @@ const NOVEDAD_OPTIONS = ["Retiro", "Traslado", "Cambio", "Ingreso"];
 const MODULES = [1, 2, 3, 4];
 
 interface EvaluadorInfo { id: string; nombre: string; cedula: string }
-interface AsignacionGroup { region: string; entidad_territorial: string; directivos: { cedula: string; nombre: string; ie: string }[] }
+interface AsignacionGroup { region: string; entidades: string[]; directivos: { cedula: string; nombre: string; ie: string }[] }
 
 export default function InformeModulo() {
   const { toast } = useToast();
@@ -146,17 +146,21 @@ export default function InformeModulo() {
         .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial")
         .in("numero_cedula", cedulas);
 
-      // Group by region + ET
+      // Group by region
       const groupMap = new Map<string, AsignacionGroup>();
       (fichas || []).forEach(f => {
-        const key = `${f.region}||${f.entidad_territorial}`;
+        const key = f.region;
         if (!groupMap.has(key)) {
-          groupMap.set(key, { region: f.region, entidad_territorial: f.entidad_territorial || "", directivos: [] });
+          groupMap.set(key, { region: f.region, entidades: [], directivos: [] });
         }
-        groupMap.get(key)!.directivos.push({ cedula: f.numero_cedula, nombre: f.nombres_apellidos, ie: f.nombre_ie });
+        const grp = groupMap.get(key)!;
+        if (f.entidad_territorial && !grp.entidades.includes(f.entidad_territorial)) {
+          grp.entidades.push(f.entidad_territorial);
+        }
+        grp.directivos.push({ cedula: f.numero_cedula, nombre: f.nombres_apellidos, ie: f.nombre_ie });
       });
 
-      const grps = Array.from(groupMap.values()).sort((a, b) => a.entidad_territorial.localeCompare(b.entidad_territorial));
+      const grps = Array.from(groupMap.values()).sort((a, b) => a.region.localeCompare(b.region));
       setGroups(grps);
 
       if (grps.length === 1) {
@@ -169,12 +173,12 @@ export default function InformeModulo() {
 
   const selectGroup = (group: AsignacionGroup) => {
     setSelectedGroup(group);
-    loadInforme(group.region, group.entidad_territorial, selectedModule, group.directivos);
+    loadInforme(group.region, group.entidades.join(", "), selectedModule, group.directivos);
   };
 
   useEffect(() => {
     if (selectedGroup) {
-      loadInforme(selectedGroup.region, selectedGroup.entidad_territorial, selectedModule, selectedGroup.directivos);
+      loadInforme(selectedGroup.region, selectedGroup.entidades.join(", "), selectedModule, selectedGroup.directivos);
     }
   }, [selectedModule]);
 
@@ -184,7 +188,6 @@ export default function InformeModulo() {
       .from("informe_modulo")
       .select("*")
       .eq("region", region)
-      .eq("entidad_territorial", et)
       .eq("module_number", moduleNum)
       .limit(1);
 
@@ -345,13 +348,13 @@ export default function InformeModulo() {
             </div>
             <Button variant="outline" size="sm" onClick={handleLogout}>Cerrar sesión</Button>
           </div>
-          <p className="text-sm text-muted-foreground">Seleccione la Entidad Territorial para la cual desea diligenciar el informe:</p>
+          <p className="text-sm text-muted-foreground">Seleccione la Región para la cual desea diligenciar el informe:</p>
           {groups.map((g, i) => (
             <Card key={i} className="cursor-pointer hover:border-primary transition-colors" onClick={() => selectGroup(g)}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{g.entidad_territorial}</p>
-                  <p className="text-xs text-muted-foreground">Región {g.region} — {g.directivos.length} directivo(s)</p>
+                  <p className="font-medium">Región {g.region}</p>
+                  <p className="text-xs text-muted-foreground">{g.entidades.join(", ")} — {g.directivos.length} directivo(s)</p>
                 </div>
                 <Badge variant="secondary"><Users className="w-3.5 h-3.5 mr-1" />{g.directivos.length}</Badge>
               </CardContent>
@@ -373,8 +376,8 @@ export default function InformeModulo() {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>
-              <h1 className="text-lg font-semibold">Informe de Módulo — {selectedGroup.entidad_territorial}</h1>
-              <p className="text-xs text-muted-foreground">Región {selectedGroup.region} · {evaluador.nombre}</p>
+              <h1 className="text-lg font-semibold">Informe de Módulo — Región {selectedGroup.region}</h1>
+              <p className="text-xs text-muted-foreground">{selectedGroup.entidades.join(", ")} · {evaluador.nombre}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
