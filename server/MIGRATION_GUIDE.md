@@ -1,6 +1,6 @@
 # Guide de Migration : Supabase → Render (PostgreSQL + Express)
 
-> Document généré le 25 février 2026 — Mis à jour le 7 mars 2026  
+> Document généré le 25 février 2026 — Mis à jour le 8 mars 2026  
 > Projet : RLT Ficha / Encuestas 360°
 
 ---
@@ -130,10 +130,13 @@ server/
 │   ├── users.ts          ← CRUD utilisateurs (admin only)
 │   ├── images.ts         ← Upload/delete images app (admin only)
 │   ├── db.ts             ← Proxy DB générique (GET/POST /api/db/:table)
-│   ├── rpc.ts            ← Fonctions RPC (5 endpoints)
+│   ├── rpc.ts            ← Fonctions RPC (12 endpoints)
 │   ├── export.ts         ← Export SQL complet (admin only)
-│   └── storage.ts        ← Upload/delete fichiers générique
-├── schema.sql            ← Schéma SQL pour users/roles/app_images
+│   ├── storage.ts        ← Upload/delete fichiers générique
+│   ├── rubrica-analysis.ts ← Analyse IA rubriques (Grok)
+│   ├── github.ts         ← Changelog GitHub commits
+│   └── email.ts          ← Envoi d'emails (Resend)
+├── schema.sql            ← Schéma complet (35+ tables + fonctions RPC)
 └── package.json
 ```
 
@@ -173,10 +176,10 @@ Route unique qui remplace **tous** les appels `supabase.from("table").select/ins
 | `/api/db/:table` | POST | Conditionnel | INSERT, UPDATE, DELETE, UPSERT via `_method` |
 
 **Tables en lecture publique** (GET sans auth) :
-`domains_360`, `competencies_360`, `competency_weights`, `items_360`, `item_texts_360`, `entidades_territoriales`, `municipios`, `instituciones`, `regiones`, `region_municipios`, `region_instituciones`, `app_images`, `app_settings`, `rubrica_submission_dates`, `rubrica_modules`, `rubrica_items`, `rubrica_evaluadores`, `rubrica_asignaciones`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `encuesta_invitaciones`, `mel_kpi_config`, `mel_kpi_groups`, `mel_kpi_group_items`
+`domains_360`, `competencies_360`, `competency_weights`, `items_360`, `item_texts_360`, `entidades_territoriales`, `municipios`, `instituciones`, `regiones`, `region_municipios`, `region_instituciones`, `app_images`, `app_settings`, `rubrica_submission_dates`, `rubrica_modules`, `rubrica_items`, `rubrica_evaluadores`, `rubrica_asignaciones`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `encuesta_invitaciones`, `mel_kpi_config`, `mel_kpi_groups`, `mel_kpi_group_items`, `informe_modulo`, `informe_modulo_equipo`, `informe_directivo`, `informe_asistencia`
 
 **Tables en insertion publique** (POST sans auth) :
-`fichas_rlt`, `encuestas_360`, `rubrica_submission_dates`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `site_reviews`, `contact_messages`, `encuesta_invitaciones`
+`fichas_rlt`, `encuestas_360`, `rubrica_submission_dates`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `site_reviews`, `contact_messages`, `encuesta_invitaciones`, `user_activity_log`, `informe_modulo`, `informe_modulo_equipo`, `informe_directivo`, `informe_asistencia`
 
 **Toutes les autres opérations** (UPDATE, DELETE, écriture sur tables non-publiques) : **admin requis**.
 
@@ -192,12 +195,38 @@ Options supportées : `select`, `order`, `limit`, `range(from,to)`, `single`, `h
 | `/api/rpc/get_table_columns` | GET | Public | Colonnes d'une table (param: `table_names`) |
 | `/api/rpc/get_table_constraints` | GET | Public | Contraintes d'une table (param: `table_names`) |
 | `/api/rpc/get_enum_types` | GET | Public | Types enum de la DB |
+| `/api/rpc/check_cedula_exists` | GET | Public | Vérifie si une cédula existe dans fichas_rlt |
+| `/api/rpc/check_cedula_role` | GET | Public | Détection de rôle par cédula (landing page) |
+| `/api/rpc/get_ficha_by_cedula` | GET | Public | Récupère la fiche complète par cédula |
+| `/api/rpc/get_invitation_by_token` | GET | Public | Récupère une invitation par token UUID |
+| `/api/rpc/get_invitaciones_directivo` | GET | Public | Liste les invitations d'un directivo |
+| `/api/rpc/get_own_autoevaluacion` | GET | Public | Récupère l'autoévaluation d'un directivo |
+| `/api/rpc/instituciones-ficha` | GET | Public | Alias pour Encuesta360Form |
+| `/api/rpc/directivos` | GET | Public | Alias pour Encuesta360Form |
 
 #### Export (`routes/export.ts`)
 
 | Route | Méthode | Auth | Description |
 |---|---|---|---|
-| `/api/export` | GET | Admin | Export SQL complet (15 tables + users + fichiers base64) |
+| `/api/export` | GET | SuperAdmin | Export SQL complet (35+ tables + users + fichiers base64) |
+
+#### Analyse IA Rubriques (`routes/rubrica-analysis.ts`)
+
+| Route | Méthode | Auth | Description |
+|---|---|---|---|
+| `/api/rubrica-analysis` | POST | Admin | Génération d'analyse IA via Grok-3 |
+
+#### GitHub (`routes/github.ts`)
+
+| Route | Méthode | Auth | Description |
+|---|---|---|---|
+| `/api/github/commits` | GET | Admin | Changelog des commits récents |
+
+#### Email (`routes/email.ts`)
+
+| Route | Méthode | Auth | Description |
+|---|---|---|---|
+| `/api/email/send` | POST | Admin | Envoi d'email via Resend |
 
 #### Storage générique (`routes/storage.ts`)
 
@@ -398,8 +427,8 @@ Vérifier que ces dépendances sont présentes :
 
 ### Base de données
 - [ ] PostgreSQL créé sur Render
-- [ ] `server/schema.sql` exécuté (tables `users`, `user_roles`, `app_images`, `mel_kpi_config`, `mel_kpi_groups`, `mel_kpi_group_items`)
-- [ ] Export SQL importé (15 tables métier)
+- [ ] `server/schema.sql` exécuté (tables `users`, `user_roles`, `app_images`, `mel_kpi_*`, `informe_*`, fonctions RPC)
+- [ ] Export SQL importé (35+ tables métier)
 - [ ] FK `user_roles` redirigée vers `public.users`
 - [ ] Utilisateurs admin créés avec mots de passe bcrypt
 - [ ] RLS policies supprimées du script
@@ -410,9 +439,12 @@ Vérifier que ces dépendances sont présentes :
 - [x] `routes/users.ts` — CRUD utilisateurs (admin)
 - [x] `routes/images.ts` — Upload/delete images app
 - [x] `routes/db.ts` — Proxy DB générique (toutes les tables)
-- [x] `routes/rpc.ts` — 5 fonctions RPC
-- [x] `routes/export.ts` — Export SQL complet
+- [x] `routes/rpc.ts` — 12 fonctions RPC
+- [x] `routes/export.ts` — Export SQL complet (35+ tables)
 - [x] `routes/storage.ts` — Upload/delete fichiers
+- [x] `routes/rubrica-analysis.ts` — Analyse IA (Grok)
+- [x] `routes/github.ts` — Changelog GitHub
+- [x] `routes/email.ts` — Envoi emails (Resend)
 - [ ] JWT_SECRET configuré (≥64 chars)
 - [ ] CORS configuré pour le domaine frontend
 
@@ -481,19 +513,25 @@ Ces formulaires réutilisent le composant `Encuesta360Form` avec la prop `fase="
 
 ```
 server/
-├── index.ts                  ← Point d'entrée (enregistre 7 groupes de routes)
+├── index.ts                  ← Point d'entrée (enregistre 10 groupes de routes)
 ├── db.ts                     ← Pool pg + helpers query/queryOne
-├── schema.sql                ← Schéma users/roles/app_images/mel_kpi_config/mel_kpi_groups
+├── schema.sql                ← Schéma complet (35+ tables + fonctions RPC)
+├── seed.sql                  ← Données de référence (360°, géographie, settings)
+├── seed-rubricas.sql         ← Données de seed pour les rubriques
+├── create-admin.js           ← Script de création admin sécurisé
 ├── middleware/
-│   └── auth.ts               ← signToken, requireAuth, requireAdmin
+│   └── auth.ts               ← signToken, requireAuth, requireAdmin, requireSuperAdmin
 └── routes/
     ├── auth.ts               ← POST /login, GET /me
     ├── users.ts              ← GET/POST/PUT/DELETE utilisateurs
     ├── images.ts             ← GET/POST/DELETE images app
     ├── db.ts                 ← GET/POST /api/db/:table (proxy générique)
-    ├── rpc.ts                ← GET /api/rpc/:function (5 fonctions)
+    ├── rpc.ts                ← GET /api/rpc/:function (12 fonctions)
     ├── export.ts             ← GET /api/export (dump SQL)
-    └── storage.ts            ← POST/DELETE /api/storage/:bucket
+    ├── storage.ts            ← POST/DELETE /api/storage/:bucket
+    ├── rubrica-analysis.ts   ← POST /api/rubrica-analysis (IA Grok)
+    ├── github.ts             ← GET /api/github/commits (changelog)
+    └── email.ts              ← POST /api/email/send (Resend)
 ```
 
 ### Fichiers FRONTEND migrés (✅ 32/32)

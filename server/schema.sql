@@ -544,6 +544,114 @@ AS $$
 $$;
 
 -- ============================================================
+-- RPC: get_ficha_by_cedula
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.get_ficha_by_cedula(p_cedula text)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT to_jsonb(f.*)
+  FROM fichas_rlt f
+  WHERE f.numero_cedula = p_cedula
+  LIMIT 1;
+$$;
+
+-- ============================================================
+-- RPC: get_own_autoevaluacion
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.get_own_autoevaluacion(p_cedula text, p_fase text DEFAULT 'inicial')
+RETURNS json
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT row_to_json(t) FROM (
+    SELECT id, respuestas, created_at, tipo_formulario, fase,
+           institucion_educativa, cargo_directivo, nombre_directivo
+    FROM public.encuestas_360
+    WHERE (cedula_directivo = p_cedula OR cedula = p_cedula)
+      AND tipo_formulario = 'autoevaluacion'
+      AND fase = p_fase
+    ORDER BY created_at DESC
+    LIMIT 1
+  ) t;
+$$;
+
+-- ============================================================
+-- RPC: get_invitation_by_token
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.get_invitation_by_token(p_token uuid)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT jsonb_build_object(
+    'id', i.id,
+    'email_destinatario', i.email_destinatario,
+    'directivo_nombre', i.directivo_nombre,
+    'institucion', i.institucion,
+    'tipo_formulario', i.tipo_formulario,
+    'fase', i.fase,
+    'responded_at', i.responded_at,
+    'access_count', i.access_count
+  )
+  FROM encuesta_invitaciones i
+  WHERE i.token = p_token
+  LIMIT 1;
+$$;
+
+-- ============================================================
+-- RPC: get_invitaciones_directivo
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.get_invitaciones_directivo(p_cedula text)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COALESCE(jsonb_agg(
+    jsonb_build_object(
+      'id', i.id,
+      'token', i.token,
+      'email_destinatario', i.email_destinatario,
+      'tipo_formulario', i.tipo_formulario,
+      'fase', i.fase,
+      'sent_at', i.sent_at,
+      'last_reminder_at', i.last_reminder_at,
+      'responded_at', i.responded_at
+    ) ORDER BY i.sent_at DESC
+  ), '[]'::jsonb)
+  FROM encuesta_invitaciones i
+  WHERE i.directivo_cedula = p_cedula;
+$$;
+
+-- ============================================================
+-- RPC: has_admin_access
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.has_admin_access(_user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = _user_id AND role IN ('admin', 'superadmin')
+  )
+$$;
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js

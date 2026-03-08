@@ -40,6 +40,10 @@ const PUBLIC_READ_TABLES = new Set([
   "mel_kpi_config",
   "mel_kpi_groups",
   "mel_kpi_group_items",
+  "informe_modulo",
+  "informe_modulo_equipo",
+  "informe_directivo",
+  "informe_asistencia",
 ]);
 
 // Tables that allow public inserts (no auth required for POST without _method)
@@ -53,6 +57,10 @@ const PUBLIC_INSERT_TABLES = new Set([
   "contact_messages",
   "encuesta_invitaciones",
   "user_activity_log",
+  "informe_modulo",
+  "informe_modulo_equipo",
+  "informe_directivo",
+  "informe_asistencia",
 ]);
 
 // Tables that allow public updates (no auth required for PATCH)
@@ -61,6 +69,10 @@ const PUBLIC_UPDATE_TABLES = new Set([
   "rubrica_seguimientos",
   "rubrica_submission_dates",
   "encuesta_invitaciones",
+  "informe_modulo",
+  "informe_modulo_equipo",
+  "informe_directivo",
+  "informe_asistencia",
 ]);
 
 // Whitelist of allowed tables
@@ -89,6 +101,10 @@ const ALLOWED_TABLES = new Set([
   "mel_kpi_groups",
   "mel_kpi_group_items",
   "rubrica_regional_analyses",
+  "informe_modulo",
+  "informe_modulo_equipo",
+  "informe_directivo",
+  "informe_asistencia",
 ]);
 
 // ── Helpers ────────────────────────────────────────────

@@ -210,13 +210,18 @@ router.get("/check_cedula_role", async (req: Request, res: Response) => {
       `SELECT nombres_apellidos, genero FROM fichas_rlt WHERE numero_cedula = $1 LIMIT 1`, [p_cedula]
     );
 
+    // Get nombre: try fichas_rlt first, then rubrica_evaluadores
+    const evaluador_row = await query(
+      `SELECT nombre FROM rubrica_evaluadores WHERE cedula = $1 LIMIT 1`, [p_cedula]
+    );
+
     res.json({
       exists_ficha: exists_ficha[0]?.v ?? false,
       is_admin: is_admin_rows[0]?.v ?? false,
       is_directivo: directivo.length > 0,
       is_evaluador: is_evaluador[0]?.v ?? false,
       cargo_actual: directivo[0]?.cargo_actual ?? null,
-      nombre: ficha_row[0]?.nombres_apellidos ?? null,
+      nombre: ficha_row[0]?.nombres_apellidos ?? evaluador_row[0]?.nombre ?? null,
       genero: ficha_row[0]?.genero ?? null,
     });
   } catch (err: any) {
@@ -275,6 +280,32 @@ router.get("/get_invitaciones_directivo", async (req: Request, res: Response) =>
       [p_cedula]
     );
     res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** GET /api/rpc/get_own_autoevaluacion?p_cedula=...&p_fase=... */
+router.get("/get_own_autoevaluacion", async (req: Request, res: Response) => {
+  try {
+    const { p_cedula, p_fase } = req.query;
+    if (!p_cedula) {
+      res.status(400).json({ error: "p_cedula required" });
+      return;
+    }
+    const fase = (p_fase as string) || "inicial";
+    const rows = await query(
+      `SELECT id, respuestas, created_at, tipo_formulario, fase,
+              institucion_educativa, cargo_directivo, nombre_directivo
+       FROM encuestas_360
+       WHERE (cedula_directivo = $1 OR cedula = $1)
+         AND tipo_formulario = 'autoevaluacion'
+         AND fase = $2
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [p_cedula, fase]
+    );
+    res.json(rows[0] ?? null);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
