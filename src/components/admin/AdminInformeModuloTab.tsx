@@ -1,7 +1,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarCheck, FileText, UserCheck } from "lucide-react";
+import { CalendarCheck, FileText, Download } from "lucide-react";
 import AdminAsistenciaTab from "./AdminAsistenciaTab";
 import AdminInformeModuloForm from "./AdminInformeModuloForm";
+import AdminInformeReportTab from "./AdminInformeReportTab";
 
 export default function AdminInformeModuloTab() {
   return (
@@ -13,8 +14,8 @@ export default function AdminInformeModuloTab() {
         <TabsTrigger value="informe" className="gap-1.5">
           <FileText className="w-4 h-4" /> Informe de Módulo
         </TabsTrigger>
-        <TabsTrigger value="evaluacion" className="gap-1.5" disabled>
-          <UserCheck className="w-4 h-4" /> Evaluación Individual
+        <TabsTrigger value="reportes" className="gap-1.5">
+          <Download className="w-4 h-4" /> Reportes PDF
         </TabsTrigger>
       </TabsList>
 
@@ -26,8 +27,8 @@ export default function AdminInformeModuloTab() {
         <AdminInformeModuloForm />
       </TabsContent>
 
-      <TabsContent value="evaluacion">
-        <p className="text-sm text-muted-foreground py-8 text-center">Próximamente</p>
+      <TabsContent value="reportes">
+        <AdminInformeReportTab />
       </TabsContent>
     </Tabs>
   );
