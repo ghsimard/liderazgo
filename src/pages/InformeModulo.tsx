@@ -731,9 +731,11 @@ export default function InformeModulo() {
               </CardContent>
             </Card>
 
-            {/* 6. EVALUACIÓN INDIVIDUAL (DD) */}
+              </TabsContent>
+
+              <TabsContent value="evaluacion" className="space-y-4">
             <Card>
-              <CardHeader><CardTitle className="text-sm">6. Evaluación Individual (DD)</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm">Evaluación Individual</CardTitle></CardHeader>
               <CardContent className="space-y-6">
                 {directivoEvals.map((ev, i) => {
                   const dirInfo = selectedGroup.directivos.find(d => d.cedula === ev.directivo_cedula);
