@@ -204,9 +204,34 @@ export default function AdminTrashManager() {
           <h3 className="font-semibold text-sm">Papelera</h3>
           <p className="text-xs text-muted-foreground mt-1">Elementos eliminados que pueden ser restaurados.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchAll} className="gap-1.5">
-          <RefreshCw className="w-4 h-4" /> Actualizar
-        </Button>
+        <div className="flex gap-2">
+          {records.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="gap-1.5">
+                  <Trash2 className="w-4 h-4" /> Vaciar papelera
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Vaciar toda la papelera?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Se eliminarán permanentemente {records.length} registro(s). Esta acción no se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handlePurgeAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Vaciar papelera
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          <Button variant="outline" size="sm" onClick={fetchAll} className="gap-1.5">
+            <RefreshCw className="w-4 h-4" /> Actualizar
+          </Button>
+        </div>
       </div>
 
       {records.length === 0 ? (
