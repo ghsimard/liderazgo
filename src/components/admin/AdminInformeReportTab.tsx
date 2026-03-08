@@ -163,7 +163,7 @@ export default function AdminInformeReportTab() {
             .order("module_number");
 
           evaluaciones = (evals || []).map(e => {
-            const ficha = fichaMap.get(e.directivo_cedula);
+            const ficha = fichaMap.get(e.directivo_cedula) as { numero_cedula: string; nombres_apellidos: string; nombre_ie: string } | undefined;
             return {
               directivo_cedula: e.directivo_cedula,
               directivo_nombre: ficha?.nombres_apellidos || e.directivo_cedula,
