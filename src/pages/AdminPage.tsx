@@ -259,6 +259,8 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return <AdminActivityLogTab isSuperAdmin={isSuperAdmin} />;
     case "changelog":
       return isSuperAdmin ? <AdminChangelogTab /> : null;
+    case "purge-data":
+      return isSuperAdmin ? <AdminPurgeDataTab /> : null;
     default:
       return null;
   }
