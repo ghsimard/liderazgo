@@ -871,7 +871,7 @@ function NovedadDirectivoInput({
         placeholder="Nombre del directivo…"
       />
       {open && filtered.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md max-h-[160px] overflow-y-auto">
+        <div className="absolute z-50 bottom-full mb-1 w-full bg-popover border rounded-md shadow-md max-h-[220px] overflow-y-auto">
           {filtered.map(d => (
             <button
               key={d.cedula}
