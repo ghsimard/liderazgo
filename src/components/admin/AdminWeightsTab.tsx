@@ -103,6 +103,20 @@ export default function AdminWeightsTab() {
     [rowSums, allCompKeys]
   );
 
+  const handleDeleteAll = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("competency_weights").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (error) throw error;
+      setWeights({});
+      setDirty(false);
+      toast({ title: "Ponderaciones eliminadas", description: "Todas las ponderaciones han sido eliminadas." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setSaving(false);
+  };
+
   const handleSave = async () => {
     if (hasErrors) {
       toast({ title: "Error de validación", description: "La suma de los pesos de cada fila debe ser igual a 1.000", variant: "destructive" });
