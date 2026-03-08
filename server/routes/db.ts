@@ -69,6 +69,10 @@ const PUBLIC_UPDATE_TABLES = new Set([
   "rubrica_seguimientos",
   "rubrica_submission_dates",
   "encuesta_invitaciones",
+  "informe_modulo",
+  "informe_modulo_equipo",
+  "informe_directivo",
+  "informe_asistencia",
 ]);
 
 // Whitelist of allowed tables
