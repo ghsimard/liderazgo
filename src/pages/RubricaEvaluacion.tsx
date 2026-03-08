@@ -877,7 +877,7 @@ export default function RubricaEvaluacion() {
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1">
-                    <ArrowLeft className="w-4 h-4" /> Volver al panel
+                    <ArrowLeft className="w-4 h-4" /> Volver a mi panel
                   </Button>
                 </div>
               </CardContent>
