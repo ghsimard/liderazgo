@@ -513,19 +513,25 @@ Ces formulaires réutilisent le composant `Encuesta360Form` avec la prop `fase="
 
 ```
 server/
-├── index.ts                  ← Point d'entrée (enregistre 7 groupes de routes)
+├── index.ts                  ← Point d'entrée (enregistre 10 groupes de routes)
 ├── db.ts                     ← Pool pg + helpers query/queryOne
-├── schema.sql                ← Schéma users/roles/app_images/mel_kpi_config/mel_kpi_groups
+├── schema.sql                ← Schéma complet (35+ tables + fonctions RPC)
+├── seed.sql                  ← Données de référence (360°, géographie, settings)
+├── seed-rubricas.sql         ← Données de seed pour les rubriques
+├── create-admin.js           ← Script de création admin sécurisé
 ├── middleware/
-│   └── auth.ts               ← signToken, requireAuth, requireAdmin
+│   └── auth.ts               ← signToken, requireAuth, requireAdmin, requireSuperAdmin
 └── routes/
     ├── auth.ts               ← POST /login, GET /me
     ├── users.ts              ← GET/POST/PUT/DELETE utilisateurs
     ├── images.ts             ← GET/POST/DELETE images app
     ├── db.ts                 ← GET/POST /api/db/:table (proxy générique)
-    ├── rpc.ts                ← GET /api/rpc/:function (5 fonctions)
+    ├── rpc.ts                ← GET /api/rpc/:function (12 fonctions)
     ├── export.ts             ← GET /api/export (dump SQL)
-    └── storage.ts            ← POST/DELETE /api/storage/:bucket
+    ├── storage.ts            ← POST/DELETE /api/storage/:bucket
+    ├── rubrica-analysis.ts   ← POST /api/rubrica-analysis (IA Grok)
+    ├── github.ts             ← GET /api/github/commits (changelog)
+    └── email.ts              ← POST /api/email/send (Resend)
 ```
 
 ### Fichiers FRONTEND migrés (✅ 32/32)
