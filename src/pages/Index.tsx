@@ -32,6 +32,8 @@ export default function Index() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showRoleChoice, setShowRoleChoice] = useState(false);
+  const [roleChoiceResult, setRoleChoiceResult] = useState<CedulaRoleResult | null>(null);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = cedula.trim();
