@@ -255,6 +255,8 @@ export default function InformeModulo() {
         novedades: [],
       });
       setEquipo([{ nombre: "", rol: "" }]);
+      // Load directivo evaluations for new informe
+      await loadDirectivoEvals(moduleNum, directivos);
     }
     setDirty(false);
     setLoading(false);
