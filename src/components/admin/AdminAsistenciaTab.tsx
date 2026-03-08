@@ -32,6 +32,14 @@ interface AsistenciaRow {
 
 const MODULES = [1, 2, 3, 4];
 const DAYS = [1, 2, 3, 4, 5];
+const RAZONES_INASISTENCIA = [
+  "Diligencias de salud",
+  "Diligencias de la Secretaría de Educación",
+  "Diligencias MEN u otras instituciones",
+  "Situaciones personales",
+  "Situaciones institucionales que requerían su presencia",
+  "Otras",
+];
 
 export default function AdminAsistenciaTab() {
   const { toast } = useToast();
