@@ -57,6 +57,10 @@ const PUBLIC_INSERT_TABLES = new Set([
   "contact_messages",
   "encuesta_invitaciones",
   "user_activity_log",
+  "informe_modulo",
+  "informe_modulo_equipo",
+  "informe_directivo",
+  "informe_asistencia",
 ]);
 
 // Tables that allow public updates (no auth required for PATCH)
