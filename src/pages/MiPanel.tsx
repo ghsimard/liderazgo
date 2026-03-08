@@ -172,7 +172,7 @@ export default function MiPanel() {
                 {logoCLT && <img src={logoCLT} alt="Logo CLT" className="h-14 object-contain" />}
               </div>
               <CardTitle className="text-lg font-bold text-foreground">
-                Hola, {roleInfo.nombre ?? "Usuario"}
+                Hola, {roleInfo.nombre?.split(" ")[0] ?? "Usuario"}
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 Tiene doble rol. ¿Cómo desea ingresar?
