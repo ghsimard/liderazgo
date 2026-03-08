@@ -700,6 +700,7 @@ export default function InformeModulo() {
             <Card>
               <CardHeader><CardTitle className="text-sm">5. Novedades</CardTitle></CardHeader>
               <CardContent>
+                <Button variant="outline" size="sm" className="mb-2 gap-1.5" onClick={() => update("novedades", [...data.novedades, { nombre: "", institucion: "", novedad: "", fecha: "", soporte: "" }])}><Plus className="w-3.5 h-3.5" /> Agregar novedad</Button>
                 <Table>
                   <TableHeader><TableRow>
                     <TableHead className="text-xs">Nombre Directivo</TableHead>
@@ -737,7 +738,6 @@ export default function InformeModulo() {
                     ))}
                   </TableBody>
                 </Table>
-                <Button variant="outline" size="sm" className="mt-2 gap-1.5" onClick={() => update("novedades", [...data.novedades, { nombre: "", institucion: "", novedad: "", fecha: "", soporte: "" }])}><Plus className="w-3.5 h-3.5" /> Agregar novedad</Button>
               </CardContent>
             </Card>
 
