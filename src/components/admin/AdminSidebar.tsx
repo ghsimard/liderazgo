@@ -95,6 +95,12 @@ const sections: SidebarSection[] = [
       { tab: "invitaciones", label: "Invitaciones", icon: Users },
       { tab: "reportes360", label: "Informes Inicial", icon: FileBarChart },
       { tab: "reportes360final", label: "Informes Final", icon: FileBarChart2 },
+      { tab: "blank-360-docente", label: "Blanco: Docente", icon: Printer, action: "blank-360-docente" },
+      { tab: "blank-360-estudiante", label: "Blanco: Estudiante", icon: Printer, action: "blank-360-estudiante" },
+      { tab: "blank-360-directivo", label: "Blanco: Par", icon: Printer, action: "blank-360-directivo" },
+      { tab: "blank-360-acudiente", label: "Blanco: Acudiente", icon: Printer, action: "blank-360-acudiente" },
+      { tab: "blank-360-autoevaluacion", label: "Blanco: Autoevaluación", icon: Printer, action: "blank-360-autoevaluacion" },
+      { tab: "blank-360-administrativo", label: "Blanco: Administrativo", icon: Printer, action: "blank-360-administrativo" },
     ],
   },
   {
