@@ -137,7 +137,7 @@ export async function generarPDFRubricaEnBlanco(
   drawBlankField("Nombre del directivo");
   drawBlankField("Número de cédula");
   drawBlankField("Institución Educativa");
-  drawBlankField("Fecha");
+  drawBlankField("Nombre del evaluador");
   y += 3;
 
   // ── Module tables ──
