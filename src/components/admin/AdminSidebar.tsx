@@ -156,6 +156,8 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
   const collapsed = state === "collapsed";
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const { images } = useAppImages();
   const { toast } = useToast();
 
@@ -172,45 +174,36 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
     setTimeout(() => setCopiedTab(null), 2000);
   };
 
-  const handleBlankPdf = async () => {
-    if (generatingPdf) return;
-    setGeneratingPdf(true);
-    try {
-      await generarPDFFichaEnBlanco(
-        {
-          logoRLT: images.logo_rlt_white,
-          logoCLTDark: images.logo_clt_dark,
-          logoCosmo: images.logo_cosmo,
-        },
-        { showLogoRlt: true, showLogoClt: true }
-      );
-      toast({ title: "PDF generado", description: "La ficha en blanco se ha descargado." });
-    } catch (err) {
-      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
-    } finally {
-      setGeneratingPdf(false);
-    }
+  const handleBlankPdf = () => {
+    setPendingAction("blank-pdf");
+    setPickerOpen(true);
   };
 
-  const handleBlankAction = async (action: string) => {
-    if (generatingPdf) return;
+  const handleBlankAction = (action: string) => {
+    setPendingAction(action);
+    setPickerOpen(true);
+  };
+
+  const handleRegionConfirm = async (flags: { showLogoRlt: boolean; showLogoClt: boolean }) => {
+    if (!pendingAction || generatingPdf) return;
     setGeneratingPdf(true);
     const logos = {
       logoRLT: images.logo_rlt_white,
       logoCLTDark: images.logo_clt_dark,
       logoCosmo: images.logo_cosmo,
     };
-    const flags = { showLogoRlt: true, showLogoClt: true };
     try {
-      if (action === "blank-pdf") {
+      if (pendingAction === "blank-pdf") {
         await generarPDFFichaEnBlanco(logos, flags);
-      } else if (action === "blank-rubrica") {
+      } else if (pendingAction === "blank-rubrica") {
         await generarPDFRubricaEnBlanco(logos, flags);
-      } else if (action.startsWith("blank-360-")) {
-        const formType = action.replace("blank-360-", "");
+      } else if (pendingAction.startsWith("blank-360-")) {
+        const formType = pendingAction.replace("blank-360-", "");
         await generarPDFEncuesta360EnBlanco(formType, logos, flags);
       }
       toast({ title: "PDF generado", description: "Le formulaire en blanc a été téléchargé." });
+      setPickerOpen(false);
+      setPendingAction(null);
     } catch (err) {
       toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
     } finally {
