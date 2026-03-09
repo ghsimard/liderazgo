@@ -151,9 +151,6 @@ function BlankPdfButton({ path }: { path: string }) {
     const logos = { logoRLT: images.logo_rlt_white, logoCLTDark: images.logo_clt_dark, logoCosmo: images.logo_cosmo };
     try {
       if (blankType === "ficha") {
-        await generarPDFFichaEnBlanco(logos, flags);
-      } else if (blankType === "rubrica") {
-        await generarPDFRubricaEnBlanco(logos, flags);
       } else {
         await generarPDFEncuesta360EnBlanco(blankType, logos, flags);
       }
