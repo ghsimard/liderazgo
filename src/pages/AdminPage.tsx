@@ -13,6 +13,7 @@ import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenera
 import { generarPDFRubricaEnBlanco } from "@/utils/blankRubricaPdfGenerator";
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminFichasTab from "@/components/admin/AdminFichasTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
