@@ -113,7 +113,7 @@ const FORM_PATH_TO_BLANK: Record<string, string> = {
   "/formulario-360-final-directivo": "directivo",
   "/formulario-360-final-docente": "docente",
   "/formulario-360-final-estudiante": "estudiante",
-  "/rubrica-evaluacion": "rubrica",
+  
   "/": "ficha",
 };
 
