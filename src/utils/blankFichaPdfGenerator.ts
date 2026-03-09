@@ -62,10 +62,11 @@ export async function generarPDFFichaEnBlanco(
     if (showClt && cltB64) {
       doc.addImage(cltB64, "PNG", rltLeft ? pageW - margin - logoW : margin, logoY, logoW, logoH);
     }
+    const textStartY = logoY + logoH + 4;
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    let titleY = 15;
+    let titleY = textStartY;
     if (showRlt) {
       doc.text("PROGRAMA RECTORES LÍDERES TRANSFORMADORES - RLT", pageW / 2, titleY, { align: "center" });
       titleY += 5;
@@ -74,15 +75,16 @@ export async function generarPDFFichaEnBlanco(
       doc.text("PROGRAMA COORDINADORES LÍDERES TRASFORMADORES - CLT", pageW / 2, titleY, { align: "center" });
       titleY += 3;
     }
+    const lineY = titleY + 2;
     doc.setDrawColor(120, 120, 120);
     doc.setLineWidth(0.4);
-    doc.line(pageW / 2 - 45, 23, pageW / 2 + 45, 23);
+    doc.line(pageW / 2 - 45, lineY, pageW / 2 + 45, lineY);
     doc.setFontSize(9);
-    doc.text("FICHA DE INFORMACIÓN BÁSICA", pageW / 2, 28, { align: "center" });
+    doc.text("FICHA DE INFORMACIÓN BÁSICA", pageW / 2, lineY + 5, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.text("Fecha de diligenciamiento: _____ / _____ / _____", pageW - margin, 36, { align: "right" });
-    y = 42;
+    doc.text("Fecha de diligenciamiento: _____ / _____ / _____", pageW - margin, lineY + 12, { align: "right" });
+    y = lineY + 18;
   };
 
   const drawPageHeader = () => {
@@ -96,17 +98,20 @@ export async function generarPDFFichaEnBlanco(
     if (showClt && cltB64) {
       doc.addImage(cltB64, "PNG", rltLeft2 ? pageW - margin - logoW : margin, logoY, logoW, logoH);
     }
+    const textStartY = logoY + logoH + 4;
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    let tY = 15;
+    let tY = textStartY;
     if (showRlt) { doc.text("PROGRAMA RECTORES LÍDERES TRANSFORMADORES - RLT", pageW / 2, tY, { align: "center" }); tY += 5; }
     if (showClt) { doc.text("PROGRAMA COORDINADORES LÍDERES TRASFORMADORES - CLT", pageW / 2, tY, { align: "center" }); tY += 3; }
+    const lineY = tY + 2;
     doc.setDrawColor(120, 120, 120);
     doc.setLineWidth(0.4);
-    doc.line(pageW / 2 - 45, tY, pageW / 2 + 45, tY);
+    doc.line(pageW / 2 - 45, lineY, pageW / 2 + 45, lineY);
     doc.setFontSize(9);
-    doc.text("FICHA DE INFORMACIÓN BÁSICA", pageW / 2, tY + 5, { align: "center" });
+    doc.text("FICHA DE INFORMACIÓN BÁSICA", pageW / 2, lineY + 5, { align: "center" });
+    y = lineY + 12;
   };
 
   drawHeader();
