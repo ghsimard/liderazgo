@@ -356,6 +356,12 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
           ) : <div key={section.label}>{rendered}</div>;
         })}
       </SidebarContent>
+      <RegionPdfPicker
+        open={pickerOpen}
+        onOpenChange={(v) => { setPickerOpen(v); if (!v) setPendingAction(null); }}
+        onConfirm={handleRegionConfirm}
+        loading={generatingPdf}
+      />
     </Sidebar>
   );
 }
