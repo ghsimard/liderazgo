@@ -30,7 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
-import { generarPDFRubricaEnBlanco } from "@/utils/blankRubricaPdfGenerator";
+
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 import {
   Sidebar,
