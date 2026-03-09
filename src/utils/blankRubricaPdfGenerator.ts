@@ -95,11 +95,11 @@ export async function generarPDFRubricaEnBlanco(
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text("RÚBRICA DE EVALUACIÓN — FORMULARIO EN BLANCO", pageW / 2, 13, { align: "center" });
+    doc.text("RÚBRICA DE EVALUACIÓN — FORMULARIO EN BLANCO", pageW / 2, 24, { align: "center" });
     doc.setDrawColor(120, 120, 120);
     doc.setLineWidth(0.4);
-    doc.line(pageW / 2 - 60, 16, pageW / 2 + 60, 16);
-    y = 20;
+    doc.line(pageW / 2 - 60, 27, pageW / 2 + 60, 27);
+    y = 33;
   };
 
   const drawPageHeader = () => {
@@ -107,8 +107,8 @@ export async function generarPDFRubricaEnBlanco(
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text("RÚBRICA DE EVALUACIÓN — FORMULARIO EN BLANCO", pageW / 2, 13, { align: "center" });
-    y = 18;
+    doc.text("RÚBRICA DE EVALUACIÓN — FORMULARIO EN BLANCO", pageW / 2, 24, { align: "center" });
+    y = 30;
   };
 
   const checkNewPage = (needed = 10) => {

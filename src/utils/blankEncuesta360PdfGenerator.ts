@@ -75,13 +75,13 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text(config.title, pageW / 2, 14, { align: "center" });
+    doc.text(config.title, pageW / 2, 28, { align: "center" });
     doc.setFontSize(9);
-    doc.text(config.subtitle, pageW / 2, 19, { align: "center" });
+    doc.text(config.subtitle, pageW / 2, 33, { align: "center" });
     doc.setDrawColor(120, 120, 120);
     doc.setLineWidth(0.4);
-    doc.line(pageW / 2 - 50, 22, pageW / 2 + 50, 22);
-    y = 26;
+    doc.line(pageW / 2 - 50, 36, pageW / 2 + 50, 36);
+    y = 42;
   };
 
   const drawPageHeader = () => {
@@ -89,8 +89,8 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text(`${config.title} — ${config.subtitle}`, pageW / 2, 16, { align: "center" });
-    y = 24;
+    doc.text(`${config.title} — ${config.subtitle}`, pageW / 2, 28, { align: "center" });
+    y = 34;
   };
 
   const checkNewPage = (needed = 10) => {
