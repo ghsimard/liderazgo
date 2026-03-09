@@ -13,6 +13,7 @@ import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenera
 import { generarPDFRubricaEnBlanco } from "@/utils/blankRubricaPdfGenerator";
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminFichasTab from "@/components/admin/AdminFichasTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
@@ -137,17 +138,17 @@ function CopyLinkButton({ path }: { path: string }) {
 
 function BlankPdfButton({ path }: { path: string }) {
   const [loading, setLoading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const { toast } = useToast();
   const { images } = useAppImages();
   const blankType = FORM_PATH_TO_BLANK[path];
 
   if (!blankType) return null;
 
-  const handleDownload = async () => {
+  const handleRegionConfirm = async (flags: { showLogoRlt: boolean; showLogoClt: boolean }) => {
     if (loading) return;
     setLoading(true);
     const logos = { logoRLT: images.logo_rlt_white, logoCLTDark: images.logo_clt_dark, logoCosmo: images.logo_cosmo };
-    const flags = { showLogoRlt: true, showLogoClt: true };
     try {
       if (blankType === "ficha") {
         await generarPDFFichaEnBlanco(logos, flags);
@@ -157,6 +158,7 @@ function BlankPdfButton({ path }: { path: string }) {
         await generarPDFEncuesta360EnBlanco(blankType, logos, flags);
       }
       toast({ title: "PDF en blanco descargado" });
+      setPickerOpen(false);
     } catch {
       toast({ title: "Error al generar PDF", variant: "destructive" });
     } finally {
@@ -165,9 +167,12 @@ function BlankPdfButton({ path }: { path: string }) {
   };
 
   return (
-    <Button variant="ghost" size="icon" onClick={handleDownload} disabled={loading} className="h-8 w-8 shrink-0" title="Descargar formulario en blanco (PDF)">
-      {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-    </Button>
+    <>
+      <Button variant="ghost" size="icon" onClick={() => setPickerOpen(true)} disabled={loading} className="h-8 w-8 shrink-0" title="Descargar formulario en blanco (PDF)">
+        {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+      </Button>
+      <RegionPdfPicker open={pickerOpen} onOpenChange={setPickerOpen} onConfirm={handleRegionConfirm} loading={loading} />
+    </>
   );
 }
 
