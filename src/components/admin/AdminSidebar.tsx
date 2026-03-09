@@ -81,6 +81,7 @@ const sections: SidebarSection[] = [
     icon: ClipboardCheck,
     items: [
       { tab: "rubricas", label: "Rúbricas", icon: ClipboardCheck },
+      { tab: "blank-rubrica", label: "Rúbrica en Blanco", icon: Printer, action: "blank-rubrica" },
     ],
   },
   {
