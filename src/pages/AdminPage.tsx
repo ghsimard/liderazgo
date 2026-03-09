@@ -10,7 +10,7 @@ import { apiFetch, getToken } from "@/utils/apiFetch";
 import { supabase as cloudClient } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
-import { generarPDFRubricaEnBlanco } from "@/utils/blankRubricaPdfGenerator";
+
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
