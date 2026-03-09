@@ -29,6 +29,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
+import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
+import { generarPDFRubricaEnBlanco } from "@/utils/blankRubricaPdfGenerator";
 import {
   Sidebar,
   SidebarContent,
@@ -49,7 +51,7 @@ interface SidebarItem {
   icon: React.ElementType;
   superadminOnly?: boolean;
   linkUrl?: string;
-  action?: "blank-pdf";
+  action?: "blank-pdf" | "blank-360-docente" | "blank-360-estudiante" | "blank-360-directivo" | "blank-360-acudiente" | "blank-360-autoevaluacion" | "blank-360-administrativo" | "blank-rubrica";
 }
 
 interface SidebarSection {
@@ -79,6 +81,7 @@ const sections: SidebarSection[] = [
     icon: ClipboardCheck,
     items: [
       { tab: "rubricas", label: "Rúbricas", icon: ClipboardCheck },
+      { tab: "blank-rubrica", label: "Rúbrica en Blanco", icon: Printer, action: "blank-rubrica" },
     ],
   },
   {
@@ -92,6 +95,12 @@ const sections: SidebarSection[] = [
       { tab: "invitaciones", label: "Invitaciones", icon: Users },
       { tab: "reportes360", label: "Informes Inicial", icon: FileBarChart },
       { tab: "reportes360final", label: "Informes Final", icon: FileBarChart2 },
+      { tab: "blank-360-docente", label: "Blanco: Docente", icon: Printer, action: "blank-360-docente" },
+      { tab: "blank-360-estudiante", label: "Blanco: Estudiante", icon: Printer, action: "blank-360-estudiante" },
+      { tab: "blank-360-directivo", label: "Blanco: Par", icon: Printer, action: "blank-360-directivo" },
+      { tab: "blank-360-acudiente", label: "Blanco: Acudiente", icon: Printer, action: "blank-360-acudiente" },
+      { tab: "blank-360-autoevaluacion", label: "Blanco: Autoevaluación", icon: Printer, action: "blank-360-autoevaluacion" },
+      { tab: "blank-360-administrativo", label: "Blanco: Administrativo", icon: Printer, action: "blank-360-administrativo" },
     ],
   },
   {
@@ -176,6 +185,32 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
         { showLogoRlt: true, showLogoClt: true }
       );
       toast({ title: "PDF generado", description: "La ficha en blanco se ha descargado." });
+    } catch (err) {
+      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
+  const handleBlankAction = async (action: string) => {
+    if (generatingPdf) return;
+    setGeneratingPdf(true);
+    const logos = {
+      logoRLT: images.logo_rlt_white,
+      logoCLTDark: images.logo_clt_dark,
+      logoCosmo: images.logo_cosmo,
+    };
+    const flags = { showLogoRlt: true, showLogoClt: true };
+    try {
+      if (action === "blank-pdf") {
+        await generarPDFFichaEnBlanco(logos, flags);
+      } else if (action === "blank-rubrica") {
+        await generarPDFRubricaEnBlanco(logos, flags);
+      } else if (action.startsWith("blank-360-")) {
+        const formType = action.replace("blank-360-", "");
+        await generarPDFEncuesta360EnBlanco(formType, logos, flags);
+      }
+      toast({ title: "PDF generado", description: "Le formulaire en blanc a été téléchargé." });
     } catch (err) {
       toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
     } finally {
@@ -283,11 +318,11 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                               </SidebarMenuItem>
                             );
                           }
-                          if (item.action === "blank-pdf") {
+                          if (item.action) {
                             return (
                               <SidebarMenuItem key={item.tab}>
                                 <SidebarMenuButton
-                                  onClick={handleBlankPdf}
+                                  onClick={() => handleBlankAction(item.action!)}
                                   tooltip={item.label}
                                   className="cursor-pointer"
                                 >
