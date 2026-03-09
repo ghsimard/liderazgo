@@ -318,11 +318,11 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                               </SidebarMenuItem>
                             );
                           }
-                          if (item.action === "blank-pdf") {
+                          if (item.action) {
                             return (
                               <SidebarMenuItem key={item.tab}>
                                 <SidebarMenuButton
-                                  onClick={handleBlankPdf}
+                                  onClick={() => handleBlankAction(item.action!)}
                                   tooltip={item.label}
                                   className="cursor-pointer"
                                 >
