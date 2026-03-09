@@ -10,7 +10,7 @@ import { apiFetch, getToken } from "@/utils/apiFetch";
 import { supabase as cloudClient } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
-import { generarPDFRubricaEnBlanco } from "@/utils/blankRubricaPdfGenerator";
+
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
@@ -113,7 +113,7 @@ const FORM_PATH_TO_BLANK: Record<string, string> = {
   "/formulario-360-final-directivo": "directivo",
   "/formulario-360-final-docente": "docente",
   "/formulario-360-final-estudiante": "estudiante",
-  "/rubrica-evaluacion": "rubrica",
+  
   "/": "ficha",
 };
 
@@ -151,9 +151,6 @@ function BlankPdfButton({ path }: { path: string }) {
     const logos = { logoRLT: images.logo_rlt_white, logoCLTDark: images.logo_clt_dark, logoCosmo: images.logo_cosmo };
     try {
       if (blankType === "ficha") {
-        await generarPDFFichaEnBlanco(logos, flags);
-      } else if (blankType === "rubrica") {
-        await generarPDFRubricaEnBlanco(logos, flags);
       } else {
         await generarPDFEncuesta360EnBlanco(blankType, logos, flags);
       }

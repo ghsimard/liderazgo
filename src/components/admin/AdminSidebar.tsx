@@ -30,7 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
-import { generarPDFRubricaEnBlanco } from "@/utils/blankRubricaPdfGenerator";
+
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 import {
   Sidebar,
@@ -82,7 +82,6 @@ const sections: SidebarSection[] = [
     icon: ClipboardCheck,
     items: [
       { tab: "rubricas", label: "Rúbricas", icon: ClipboardCheck },
-      { tab: "blank-rubrica", label: "Rúbrica en Blanco", icon: Printer, action: "blank-rubrica" },
     ],
   },
   {
@@ -195,9 +194,6 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
     };
     try {
       if (pendingAction === "blank-pdf") {
-        await generarPDFFichaEnBlanco(logos, flags);
-      } else if (pendingAction === "blank-rubrica") {
-        await generarPDFRubricaEnBlanco(logos, flags);
       } else if (pendingAction.startsWith("blank-360-")) {
         const formType = pendingAction.replace("blank-360-", "");
         await generarPDFEncuesta360EnBlanco(formType, logos, flags);
