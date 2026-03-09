@@ -192,6 +192,32 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
     }
   };
 
+  const handleBlankAction = async (action: string) => {
+    if (generatingPdf) return;
+    setGeneratingPdf(true);
+    const logos = {
+      logoRLT: images.logo_rlt_white,
+      logoCLTDark: images.logo_clt_dark,
+      logoCosmo: images.logo_cosmo,
+    };
+    const flags = { showLogoRlt: true, showLogoClt: true };
+    try {
+      if (action === "blank-pdf") {
+        await generarPDFFichaEnBlanco(logos, flags);
+      } else if (action === "blank-rubrica") {
+        await generarPDFRubricaEnBlanco(logos, flags);
+      } else if (action.startsWith("blank-360-")) {
+        const formType = action.replace("blank-360-", "");
+        await generarPDFEncuesta360EnBlanco(formType, logos, flags);
+      }
+      toast({ title: "PDF generado", description: "Le formulaire en blanc a été téléchargé." });
+    } catch (err) {
+      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarContent className="pt-2">
