@@ -145,14 +145,15 @@ export async function generarPDFEncuesta360EnBlanco(
   doc.rect(margin, y, contentW, 6, "F");
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.text("INFORMACIÓN DEL EVALUADO", pageW / 2, y + 4, { align: "center" });
+  doc.text("DATOS DE IDENTIFICACIÓN", pageW / 2, y + 4, { align: "center" });
   y += 10;
 
   drawBlankField("Institución Educativa");
-  drawBlankField("Nombre del directivo a evaluar");
-  drawBlankField("Cargo del directivo");
-  if (!config.isAutoeval) {
-    drawBlankField("¿Cuántos días a la semana tiene contacto con el directivo?");
+  if (config.isAutoeval) {
+    drawBlankField("Nombre completo");
+  } else {
+    drawBlankField("Nombre del directivo docente a evaluar");
+    drawBlankField("¿Cuántos días de la semana pasada habló con el directivo evaluado?");
   }
   if (config.extraFields) {
     config.extraFields.forEach((ef) => {
@@ -170,13 +171,6 @@ export async function generarPDFEncuesta360EnBlanco(
       });
       y += 6;
     });
-  }
-  if (config.isAutoeval) {
-    drawBlankField("Nombre completo");
-    drawBlankField("Número de cédula");
-  } else {
-    drawBlankField("Nombre completo del evaluador");
-    drawBlankField("Correo electrónico");
   }
   y += 2;
 
