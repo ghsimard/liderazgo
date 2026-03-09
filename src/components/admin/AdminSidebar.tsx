@@ -194,9 +194,6 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
     };
     try {
       if (pendingAction === "blank-pdf") {
-        await generarPDFFichaEnBlanco(logos, flags);
-      } else if (pendingAction === "blank-rubrica") {
-        await generarPDFRubricaEnBlanco(logos, flags);
       } else if (pendingAction.startsWith("blank-360-")) {
         const formType = pendingAction.replace("blank-360-", "");
         await generarPDFEncuesta360EnBlanco(formType, logos, flags);
