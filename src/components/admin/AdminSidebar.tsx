@@ -55,7 +55,7 @@ interface SidebarItem {
   icon: React.ElementType;
   superadminOnly?: boolean;
   linkUrl?: string;
-  action?: "blank-pdf" | "blank-360-docente" | "blank-360-estudiante" | "blank-360-directivo" | "blank-360-acudiente" | "blank-360-autoevaluacion" | "blank-360-administrativo" | "blank-rubrica";
+  action?: "blank-pdf" | "blank-360-docente" | "blank-360-estudiante" | "blank-360-directivo" | "blank-360-acudiente" | "blank-360-autoevaluacion" | "blank-360-administrativo" | "blank-rubrica" | "blank-ambiente-acudientes" | "blank-ambiente-estudiantes" | "blank-ambiente-docentes";
 }
 
 interface SidebarSection {
