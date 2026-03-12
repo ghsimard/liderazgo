@@ -195,6 +195,8 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
           onSubmit={handleSubmit}
           submitting={submitting}
           fichaInfo={fichaInfo}
+          readOnly={alreadySubmitted}
+          savedAnswers={existingResponses}
         />
       </div>
     </div>
