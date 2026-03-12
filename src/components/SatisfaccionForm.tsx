@@ -91,16 +91,23 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
             {section.description && <p className="text-sm text-muted-foreground">{section.description}</p>}
           </CardHeader>
           <CardContent className="space-y-5">
-            {section.questions.map((q) => (
-              <QuestionRenderer
-                key={q.key}
-                question={q}
-                value={answers[q.key]}
-                onChange={(v) => set(q.key, v)}
-                onCheckboxChange={(val, checked) => handleCheckboxMax3(q.key, val, checked, q.maxSelect || 3)}
-                onGridChange={(rowKey, val) => setGrid(q.key, rowKey, val)}
-              />
-            ))}
+            {section.questions.map((q) => {
+              // Handle conditional visibility
+              if (q.conditionalOn) {
+                const parentVal = answers[q.conditionalOn.key];
+                if (parentVal !== q.conditionalOn.value) return null;
+              }
+              return (
+                <QuestionRenderer
+                  key={q.key}
+                  question={q}
+                  value={answers[q.key]}
+                  onChange={(v) => set(q.key, v)}
+                  onCheckboxChange={(val, checked) => handleCheckboxMax3(q.key, val, checked, q.maxSelect || 3)}
+                  onGridChange={(rowKey, val) => setGrid(q.key, rowKey, val)}
+                />
+              );
+            })}
           </CardContent>
         </Card>
       ))}
