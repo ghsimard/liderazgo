@@ -153,7 +153,7 @@ export default function AdminSatisfaccionStats({ regions }: { regions: string[] 
                   if (q.type === "grid-sino") {
                     if (cellVal === "si") positiveCount++;
                   } else if (q.type === "grid-frequency") {
-                    if (cellVal === "frecuentemente" || cellVal === "siempre") positiveCount++;
+                    if (cellVal === "frecuentemente" || cellVal === "siempre" || cellVal === "algunas_veces") positiveCount++;
                   } else if (q.type === "grid-logistic") {
                     if (cellVal === "3" || cellVal === "4") positiveCount++;
                   }
