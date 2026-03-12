@@ -31,7 +31,7 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const set = (key: string, value: any) => setAnswers((prev) => ({ ...prev, [key]: value }));
+  const set = (key: string, value: any) => { if (!readOnly) setAnswers((prev) => ({ ...prev, [key]: value })); };
 
   const handleCheckboxMax3 = (key: string, value: string, checked: boolean, max: number) => {
     const current: string[] = answers[key] || [];
