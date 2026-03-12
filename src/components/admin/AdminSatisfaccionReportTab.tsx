@@ -310,7 +310,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
             data.push({ label: row.label, value: total > 0 ? Math.round((positiveCount / total) * 10000) / 100 : 0, count: positiveCount });
           }
           data.sort((a, b) => b.value - a.value);
-          sections.push({ title: section.title, type: "grid", data });
+          sections.push({ title: section.title, type: "grid", questionKey: q.key, data });
         }
       }
     }
