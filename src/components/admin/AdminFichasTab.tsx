@@ -432,14 +432,14 @@ export default function AdminFichasTab() {
               </TableRow>
             ) : (
               fichas.map((f) => (
-                <TableRow key={f.id}>
+                <TableRow key={f.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/admin/ficha/${f.id}`)}>
                   <TableCell className="font-medium whitespace-nowrap">{f.nombres_apellidos}</TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{f.region}</Badge></TableCell>
                   <TableCell className="max-w-[200px] truncate" title={f.nombre_ie}>{f.nombre_ie}</TableCell>
                   <TableCell className="text-sm">{genderizeRole(f.cargo_actual, f.genero)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{f.correo_personal}</TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(f.created_at)}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="icon" onClick={() => handleDownloadPdf(f)} title="Descargar PDF">
                         <FileDown className="w-4 h-4" />
