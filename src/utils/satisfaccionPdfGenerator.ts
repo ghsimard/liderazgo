@@ -82,6 +82,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     filterType, filterModule, filterRegion, totalResponses,
     showLogoRlt, showLogoClt, extraLogos,
     reportContent, sectionStats, generalSatisfaction, overallSatisfaction, comments,
+    executiveSummary,
   } = opts;
 
   // Load logos with proportional sizing
