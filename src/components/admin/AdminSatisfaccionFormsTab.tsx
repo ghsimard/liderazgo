@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Save, RotateCcw, Plus, Trash2, Eye, Pencil, GripVertical, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Save, RotateCcw, Plus, Trash2, Eye, Pencil, GripVertical, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FORM_TYPE_LABELS, asistenciaForm, interludioForm, intensivoForm } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionSection, SatisfaccionQuestion, QuestionType, SatisfaccionOption } from "@/data/satisfaccionData";
