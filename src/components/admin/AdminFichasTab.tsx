@@ -439,7 +439,7 @@ export default function AdminFichasTab() {
                   <TableCell className="text-sm">{genderizeRole(f.cargo_actual, f.genero)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{f.correo_personal}</TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(f.created_at)}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="icon" onClick={() => handleDownloadPdf(f)} title="Descargar PDF">
                         <FileDown className="w-4 h-4" />
