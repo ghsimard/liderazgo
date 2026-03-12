@@ -264,7 +264,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
             <TabsTrigger value="invitaciones" className="gap-1.5"><Users className="w-4 h-4" /> Invitaciones</TabsTrigger>
             <TabsTrigger value="informes-inicial" className="gap-1.5"><FileBarChart className="w-4 h-4" /> Informes Inicial</TabsTrigger>
             <TabsTrigger value="informes-final" className="gap-1.5"><FileBarChart2 className="w-4 h-4" /> Informes Final</TabsTrigger>
-            <TabsTrigger value="blancos" className="gap-1.5"><Printer className="w-4 h-4" /> PDF en Blanco</TabsTrigger>
+            
             <TabsTrigger value="configuracion" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
           </TabsList>
 
