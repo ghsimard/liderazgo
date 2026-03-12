@@ -225,6 +225,7 @@ function getHubTitle(activeTab: string): string {
     mensajes: "Mensajes",
     changelog: "Changelog",
     "purge-data": "Purgar datos",
+    papelera: "Papelera",
   };
   return titleMap[activeTab] || "Panel";
 }
