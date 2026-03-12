@@ -60,6 +60,7 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
         }
         const userRegion = fichaObj.region;
         setRegion(userRegion);
+        setFichaInfo(fichaObj);
 
         // Check availability
         const { data: config } = await supabase
