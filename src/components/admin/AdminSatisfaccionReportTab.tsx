@@ -613,7 +613,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
 
 // ── Section Editor Component ──
 function SectionEditor({
-  section, index, total, onUpdate, onRemove, onMove, stats,
+  section, index, total, onUpdate, onRemove, onMove, stats, dragHandleProps, isDragging,
 }: {
   section: ReportSection;
   index: number;
@@ -622,92 +622,108 @@ function SectionEditor({
   onRemove: () => void;
   onMove: (dir: -1 | 1) => void;
   stats: any;
+  dragHandleProps?: any;
+  isDragging?: boolean;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   const isAuto = section.type === "ficha_tecnica" || section.type === "satisfaction_summary" || section.type === "comments_annex";
   const chartData = section.type === "chart_analysis" && stats
     ? stats.sections.find((s: any) => s.title === section.chartSectionTitle)
     : null;
 
   return (
-    <Card className={`border-l-4 ${section.enabled ? "border-l-primary/40" : "border-l-muted opacity-60"}`}>
-      <CardContent className="py-3 px-4 space-y-2">
-        {/* Header */}
-        <div className="flex items-center gap-2">
-          <div className="flex flex-col gap-0">
-            <button onClick={() => onMove(-1)} disabled={index === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 p-0.5">
-              <ChevronUp className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={() => onMove(1)} disabled={index === total - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 p-0.5">
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
+    <Card className={`border-l-4 transition-shadow ${isDragging ? "shadow-lg ring-2 ring-primary/30" : ""} ${section.enabled ? "border-l-primary/40" : "border-l-muted opacity-60"}`}>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <div className="flex items-center gap-2 py-2 px-3">
+          {/* Drag handle */}
+          <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-0.5">
+            <GripVertical className="w-4 h-4" />
           </div>
+
+          {/* Expand toggle */}
+          <CollapsibleTrigger asChild>
+            <button className="text-muted-foreground hover:text-foreground p-0.5 transition-transform">
+              <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`} />
+            </button>
+          </CollapsibleTrigger>
+
+          {/* Icon + Title */}
           <div className="flex items-center gap-1.5 text-muted-foreground">
             {SECTION_TYPE_ICONS[section.type]}
           </div>
-          <Input
-            value={section.title}
-            onChange={e => onUpdate({ title: e.target.value })}
-            className="flex-1 h-8 text-sm font-semibold"
-          />
+          <span className="flex-1 text-sm font-semibold truncate">{section.title}</span>
+
           <Badge variant="outline" className="text-xs shrink-0">{SECTION_TYPE_LABELS[section.type]}</Badge>
           <label className="flex items-center gap-1 text-xs shrink-0">
-            <input type="checkbox" checked={section.enabled} onChange={e => onUpdate({ enabled: e.target.checked })} className="rounded" />
+            <input type="checkbox" checked={section.enabled} onChange={e => { e.stopPropagation(); onUpdate({ enabled: e.target.checked }); }} className="rounded" />
           </label>
           <Button variant="ghost" size="sm" onClick={onRemove} className="text-destructive hover:text-destructive h-7 w-7 p-0">
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </div>
 
-        {/* Content editor based on type */}
-        {section.enabled && (
-          <>
-            {(section.type === "text" || section.type === "chart_analysis") && (
-              <Textarea
-                value={section.content || ""}
-                onChange={e => onUpdate({ content: e.target.value })}
-                rows={section.type === "chart_analysis" ? 4 : 5}
-                placeholder={section.type === "chart_analysis" ? "Escriba el análisis de este bloque…" : "Escriba el contenido de esta sección…"}
-                className="text-sm"
-              />
-            )}
+        <CollapsibleContent>
+          <CardContent className="pt-0 pb-3 px-4 space-y-2">
+            {/* Editable title */}
+            <Input
+              value={section.title}
+              onChange={e => onUpdate({ title: e.target.value })}
+              className="h-8 text-sm font-semibold"
+              placeholder="Título de la sección"
+            />
 
-            {section.type === "chart_analysis" && (
-              <div className="text-xs text-muted-foreground">
-                {chartData ? (
-                  <span className="text-emerald-600">✓ Gráfico disponible: {chartData.data.length} indicadores</span>
-                ) : (
-                  <span className="text-amber-600">⚠ Sin datos para gráfico "{section.chartSectionTitle}"</span>
+            {/* Content editor based on type */}
+            {section.enabled && (
+              <>
+                {(section.type === "text" || section.type === "chart_analysis") && (
+                  <Textarea
+                    value={section.content || ""}
+                    onChange={e => onUpdate({ content: e.target.value })}
+                    rows={section.type === "chart_analysis" ? 4 : 5}
+                    placeholder={section.type === "chart_analysis" ? "Escriba el análisis de este bloque…" : "Escriba el contenido de esta sección…"}
+                    className="text-sm"
+                  />
                 )}
-              </div>
-            )}
 
-            {isAuto && (
-              <p className="text-xs text-muted-foreground italic">
-                {section.type === "ficha_tecnica" && "Se genera automáticamente con los datos de la encuesta"}
-                {section.type === "satisfaction_summary" && "Se calcula automáticamente a partir de los bloques temáticos"}
-                {section.type === "comments_annex" && "Se incluyen automáticamente las respuestas abiertas de los participantes"}
-              </p>
-            )}
+                {section.type === "chart_analysis" && (
+                  <div className="text-xs text-muted-foreground">
+                    {chartData ? (
+                      <span className="text-emerald-600">✓ Gráfico disponible: {chartData.data.length} indicadores</span>
+                    ) : (
+                      <span className="text-amber-600">⚠ Sin datos para gráfico "{section.chartSectionTitle}"</span>
+                    )}
+                  </div>
+                )}
 
-            {section.type === "satisfaction_summary" && section.content !== undefined && (
-              <Textarea
-                value={section.content || ""}
-                onChange={e => onUpdate({ content: e.target.value })}
-                rows={3}
-                placeholder="Texto introductorio para la sección de satisfacción general (opcional)…"
-                className="text-sm"
-              />
-            )}
+                {isAuto && (
+                  <p className="text-xs text-muted-foreground italic">
+                    {section.type === "ficha_tecnica" && "Se genera automáticamente con los datos de la encuesta"}
+                    {section.type === "satisfaction_summary" && "Se calcula automáticamente a partir de los bloques temáticos"}
+                    {section.type === "comments_annex" && "Se incluyen automáticamente las respuestas abiertas de los participantes"}
+                  </p>
+                )}
 
-            {section.type === "bullet_list" && (
-              <BulletListEditor
-                bullets={section.bullets || []}
-                onChange={bullets => onUpdate({ bullets })}
-              />
+                {section.type === "satisfaction_summary" && section.content !== undefined && (
+                  <Textarea
+                    value={section.content || ""}
+                    onChange={e => onUpdate({ content: e.target.value })}
+                    rows={3}
+                    placeholder="Texto introductorio para la sección de satisfacción general (opcional)…"
+                    className="text-sm"
+                  />
+                )}
+
+                {section.type === "bullet_list" && (
+                  <BulletListEditor
+                    bullets={section.bullets || []}
+                    onChange={bullets => onUpdate({ bullets })}
+                  />
+                )}
+              </>
             )}
-          </>
-        )}
-      </CardContent>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
     </Card>
   );
 }
