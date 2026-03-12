@@ -4,7 +4,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit, FileDown } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit, FileDown, Link2, PlayCircle, FlagTriangleRight, FileBarChart, FileBarChart2, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, getToken } from "@/utils/apiFetch";
 import { supabase as cloudClient } from "@/utils/dbClient";
@@ -234,68 +234,133 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
         </div>
       );
 
+    case "encuesta360":
     case "enlaces360":
+    case "ponderaciones":
+    case "encuestas360":
+    case "encuestas360final":
+    case "reportes360":
+    case "reportes360final":
+    case "invitaciones":
+    case "blancos-360": {
+      const sub360Map: Record<string, string> = {
+        encuesta360: "formularios",
+        enlaces360: "formularios",
+        ponderaciones: "configuracion",
+        encuestas360: "inicial",
+        encuestas360final: "final",
+        reportes360: "informes-inicial",
+        reportes360final: "informes-final",
+        invitaciones: "invitaciones",
+        "blancos-360": "blancos",
+      };
+      const defaultSub = sub360Map[activeTab] || "formularios";
       return (
-        <div className="space-y-8">
-          <p className="text-sm text-muted-foreground">Copia el enlace de cada formulario 360° para compartirlo.</p>
-          {categories.filter((cat) => cat.title.startsWith("360°")).map((cat) => (
-            <section key={cat.title} className="space-y-4">
-              <h3 className="text-base font-semibold border-b pb-2">{cat.title}</h3>
-              {cat.forms && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {cat.forms.map((f) => <FormCard key={f.path} form={f} />)}
-                </div>
-              )}
-            </section>
-          ))}
-        </div>
+        <Tabs defaultValue={defaultSub} className="space-y-4">
+          <TabsList className="flex-wrap h-auto gap-1">
+            <TabsTrigger value="formularios" className="gap-1.5"><Link2 className="w-4 h-4" /> Formularios</TabsTrigger>
+            <TabsTrigger value="configuracion" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
+            <TabsTrigger value="inicial" className="gap-1.5"><PlayCircle className="w-4 h-4" /> Inicial</TabsTrigger>
+            <TabsTrigger value="final" className="gap-1.5"><FlagTriangleRight className="w-4 h-4" /> Final</TabsTrigger>
+            <TabsTrigger value="invitaciones" className="gap-1.5"><Users className="w-4 h-4" /> Invitaciones</TabsTrigger>
+            <TabsTrigger value="informes-inicial" className="gap-1.5"><FileBarChart className="w-4 h-4" /> Informes Inicial</TabsTrigger>
+            <TabsTrigger value="informes-final" className="gap-1.5"><FileBarChart2 className="w-4 h-4" /> Informes Final</TabsTrigger>
+            <TabsTrigger value="blancos" className="gap-1.5"><Printer className="w-4 h-4" /> PDF en Blanco</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="formularios">
+            <div className="space-y-8">
+              <p className="text-sm text-muted-foreground">Copia el enlace de cada formulario 360° para compartirlo.</p>
+              {categories.filter((cat) => cat.title.startsWith("360°")).map((cat) => (
+                <section key={cat.title} className="space-y-4">
+                  <h3 className="text-base font-semibold border-b pb-2">{cat.title}</h3>
+                  {cat.forms && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {cat.forms.map((f) => <FormCard key={f.path} form={f} />)}
+                    </div>
+                  )}
+                </section>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="configuracion">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-muted-foreground">Gestión completa de competencias 360°</h3>
+              <Button size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
+                <Plus className="w-4 h-4" /> Asistente de creación
+              </Button>
+            </div>
+            <AdminCompetencyWizard
+              open={wizardOpen}
+              onOpenChange={setWizardOpen}
+              onComplete={() => setWizardRefreshKey((k) => k + 1)}
+            />
+            <Tabs defaultValue="dominios">
+              <TabsList className="mb-4 flex-wrap h-auto gap-1">
+                <TabsTrigger value="dominios" className="gap-1.5"><Layers className="w-4 h-4" /> Dominios</TabsTrigger>
+                <TabsTrigger value="competencias" className="gap-1.5"><ListTree className="w-4 h-4" /> Competencias</TabsTrigger>
+                <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
+                <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
+                <TabsTrigger value="papelera" className="gap-1.5"><Trash2 className="w-4 h-4" /> Papelera</TabsTrigger>
+              </TabsList>
+              <TabsContent value="dominios"><AdminDomainsManager key={wizardRefreshKey} /></TabsContent>
+              <TabsContent value="competencias"><AdminCompetenciesManager key={wizardRefreshKey} /></TabsContent>
+              <TabsContent value="items"><AdminItemsManager key={wizardRefreshKey} /></TabsContent>
+              <TabsContent value="pesos"><AdminWeightsTab key={wizardRefreshKey} /></TabsContent>
+              <TabsContent value="papelera"><AdminTrashManager /></TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          <TabsContent value="inicial">
+            <AdminEncuestas360Tab fase="inicial" />
+          </TabsContent>
+          <TabsContent value="final">
+            <AdminEncuestas360Tab fase="final" />
+          </TabsContent>
+          <TabsContent value="invitaciones">
+            <AdminInvitacionesTab />
+          </TabsContent>
+          <TabsContent value="informes-inicial">
+            <AdminReporte360Tab fase="inicial" />
+          </TabsContent>
+          <TabsContent value="informes-final">
+            <AdminReporte360Tab fase="final" />
+          </TabsContent>
+          <TabsContent value="blancos">
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold border-b pb-2">PDF en Blanco — Encuesta 360°</h3>
+              <p className="text-sm text-muted-foreground">Descarga los formularios 360° en blanco (PDF).</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  { name: "Acudiente", path: "/formulario-360-acudiente", icon: Users },
+                  { name: "Administrativo", path: "/formulario-360-administrativo", icon: ClipboardList },
+                  { name: "Autoevaluación", path: "/formulario-360-autoevaluacion", icon: FileText },
+                  { name: "Directivo Par", path: "/formulario-360-directivo", icon: School },
+                  { name: "Docente", path: "/formulario-360-docente", icon: BookOpen },
+                  { name: "Estudiante", path: "/formulario-360-estudiante", icon: GraduationCap },
+                ].map((f) => (
+                  <Card key={f.path} className="hover:shadow-md transition-shadow">
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <div className="rounded-lg bg-primary/10 p-2.5">
+                        <f.icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <span className="text-sm font-medium flex-1">{f.name}</span>
+                      <BlankPdfButton path={f.path} />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       );
+    }
 
     case "fichas":
       return <AdminFichasTab />;
-
     case "geography":
       return <AdminGeographyTab />;
-
-    case "ponderaciones":
-      return (
-        <>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-muted-foreground">Gestión completa de competencias 360°</h3>
-            <Button size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
-              <Plus className="w-4 h-4" /> Asistente de creación
-            </Button>
-          </div>
-          <AdminCompetencyWizard
-            open={wizardOpen}
-            onOpenChange={setWizardOpen}
-            onComplete={() => setWizardRefreshKey((k) => k + 1)}
-          />
-          <Tabs defaultValue="dominios">
-            <TabsList className="mb-4 flex-wrap h-auto gap-1">
-              <TabsTrigger value="dominios" className="gap-1.5"><Layers className="w-4 h-4" /> Dominios</TabsTrigger>
-              <TabsTrigger value="competencias" className="gap-1.5"><ListTree className="w-4 h-4" /> Competencias</TabsTrigger>
-              <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
-              <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
-              <TabsTrigger value="papelera" className="gap-1.5"><Trash2 className="w-4 h-4" /> Papelera</TabsTrigger>
-            </TabsList>
-            <TabsContent value="dominios"><AdminDomainsManager key={wizardRefreshKey} /></TabsContent>
-            <TabsContent value="competencias"><AdminCompetenciesManager key={wizardRefreshKey} /></TabsContent>
-            <TabsContent value="items"><AdminItemsManager key={wizardRefreshKey} /></TabsContent>
-            <TabsContent value="pesos"><AdminWeightsTab key={wizardRefreshKey} /></TabsContent>
-            <TabsContent value="papelera"><AdminTrashManager /></TabsContent>
-          </Tabs>
-        </>
-      );
-
-    case "encuestas360":
-      return <AdminEncuestas360Tab fase="inicial" />;
-    case "reportes360":
-      return <AdminReporte360Tab fase="inicial" />;
-    case "encuestas360final":
-      return <AdminEncuestas360Tab fase="final" />;
-    case "reportes360final":
-      return <AdminReporte360Tab fase="final" />;
     case "users":
       return <AdminUsersTab isSuperAdmin={isSuperAdmin} />;
     case "mel":
@@ -304,39 +369,10 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return <AdminMelRubricasTab />;
     case "mel-config":
       return <AdminMelConfigTab />;
-    case "invitaciones":
-      return <AdminInvitacionesTab />;
     case "rubricas":
       return <AdminRubricasTab />;
     case "informe-modulo":
       return <AdminInformeModuloTab />;
-    case "blancos-360":
-      return (
-        <div className="space-y-4">
-          <h3 className="text-base font-semibold border-b pb-2">PDF en Blanco — Encuesta 360°</h3>
-          <p className="text-sm text-muted-foreground">Descarga los formularios 360° en blanco (PDF).</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[
-              { name: "Acudiente", path: "/formulario-360-acudiente", icon: Users },
-              { name: "Administrativo", path: "/formulario-360-administrativo", icon: ClipboardList },
-              { name: "Autoevaluación", path: "/formulario-360-autoevaluacion", icon: FileText },
-              { name: "Directivo Par", path: "/formulario-360-directivo", icon: School },
-              { name: "Docente", path: "/formulario-360-docente", icon: BookOpen },
-              { name: "Estudiante", path: "/formulario-360-estudiante", icon: GraduationCap },
-            ].map((f) => (
-              <Card key={f.path} className="hover:shadow-md transition-shadow">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="rounded-lg bg-primary/10 p-2.5">
-                    <f.icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <span className="text-sm font-medium flex-1">{f.name}</span>
-                  <BlankPdfButton path={f.path} />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      );
     case "blancos-ambiente":
     case "ambiente-escolar":
       return (
