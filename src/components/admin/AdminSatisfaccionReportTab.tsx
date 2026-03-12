@@ -686,7 +686,14 @@ function SectionEditor({
                 {section.type === "chart_analysis" && (
                   <div className="text-xs text-muted-foreground">
                     {chartData ? (
-                      <span className="text-emerald-600">✓ Gráfico disponible: {chartData.data.length} indicadores</span>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewChart(chartData)}
+                        className="text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        ✓ Gráfico disponible: {chartData.data.length} indicadores — clic para ver
+                      </button>
                     ) : (
                       <span className="text-amber-600">⚠ Sin datos para gráfico "{section.chartSectionTitle}"</span>
                     )}
