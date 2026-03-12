@@ -120,6 +120,9 @@ const sections: SidebarSection[] = [
       { tab: "enlace-ambiente-acudientes", label: "Encuesta Acudiente", icon: Link2, linkUrl: "/encuesta-ambiente-acudientes" },
       { tab: "enlace-ambiente-estudiantes", label: "Encuesta Estudiante", icon: Link2, linkUrl: "/encuesta-ambiente-estudiantes" },
       { tab: "enlace-ambiente-docentes", label: "Encuesta Docente", icon: Link2, linkUrl: "/encuesta-ambiente-docentes" },
+      { tab: "blank-ambiente-acudientes", label: "Blanco: Acudiente", icon: Printer, action: "blank-ambiente-acudientes" },
+      { tab: "blank-ambiente-estudiantes", label: "Blanco: Estudiante", icon: Printer, action: "blank-ambiente-estudiantes" },
+      { tab: "blank-ambiente-docentes", label: "Blanco: Docente", icon: Printer, action: "blank-ambiente-docentes" },
     ],
   },
   {
