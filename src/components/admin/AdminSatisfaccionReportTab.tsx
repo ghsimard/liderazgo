@@ -1000,10 +1000,22 @@ function SectionEditor({
                 )}
 
                 {section.type === "bullet_list" && (
-                  <BulletListEditor
-                    bullets={section.bullets || []}
-                    onChange={bullets => onUpdate({ bullets })}
-                  />
+                  <div className="space-y-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateAI("bullet_list")}
+                      disabled={aiLoading || !stats || totalResponses === 0}
+                      className="gap-1.5 text-xs h-7"
+                    >
+                      {aiLoading ? <Loader2 className="animate-spin h-3 w-3" /> : <Sparkles className="w-3 h-3" />}
+                      {aiLoading ? "Generando…" : "Generar viñetas con IA"}
+                    </Button>
+                    <BulletListEditor
+                      bullets={section.bullets || []}
+                      onChange={bullets => onUpdate({ bullets })}
+                    />
+                  </div>
                 )}
               </>
             )}
