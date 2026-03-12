@@ -36,6 +36,9 @@ const Sugerencias = lazy(() => import("./pages/Sugerencias"));
 const Evaluacion = lazy(() => import("./pages/Evaluacion"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
 const InformeModulo = lazy(() => import("./pages/InformeModulo"));
+const EncuestaAmbienteAcudientes = lazy(() => import("./pages/EncuestaAmbienteAcudientes"));
+const EncuestaAmbienteEstudiantes = lazy(() => import("./pages/EncuestaAmbienteEstudiantes"));
+const EncuestaAmbienteDocentes = lazy(() => import("./pages/EncuestaAmbienteDocentes"));
 
 const queryClient = new QueryClient();
 
