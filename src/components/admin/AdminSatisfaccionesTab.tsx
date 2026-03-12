@@ -161,6 +161,11 @@ export default function AdminSatisfaccionesTab() {
   // Search filter
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Delete confirmations
+  const [deleteOneId, setDeleteOneId] = useState<string | null>(null);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   // Detail dialog
   const [detailResponse, setDetailResponse] = useState<ResponseRow | null>(null);
 
