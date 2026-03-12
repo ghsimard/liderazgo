@@ -22,7 +22,7 @@ interface SatisfaccionFormProps {
   fichaInfo?: Record<string, any> | null;
 }
 
-export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubmit, submitting }: SatisfaccionFormProps) {
+export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubmit, submitting, fichaInfo }: SatisfaccionFormProps) {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const { toast } = useToast();
 
