@@ -25,6 +25,8 @@ import {
   Trash2,
   Activity,
   Printer,
+  ThumbsUp,
+  Award,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
