@@ -717,6 +717,10 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
                           onRemove={() => removeSection(section.id)}
                           onMove={(dir) => moveSection(section.id, dir)}
                           stats={stats}
+                          filterType={filterType}
+                          filterModule={filterModule}
+                          filterRegion={filterRegion}
+                          totalResponses={responses.length}
                           dragHandleProps={dragProvided.dragHandleProps}
                           isDragging={snapshot.isDragging}
                         />
