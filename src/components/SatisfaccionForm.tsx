@@ -105,25 +105,25 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Nombre(s)</Label>
-                <Input value={fichaInfo.nombres || ""} disabled className="bg-muted/50" />
+              <div>
+                <p className="text-xs text-muted-foreground">Nombre(s)</p>
+                <p className="text-sm font-medium text-foreground">{fichaInfo.nombres || "—"}</p>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Apellido(s)</Label>
-                <Input value={fichaInfo.apellidos || ""} disabled className="bg-muted/50" />
+              <div>
+                <p className="text-xs text-muted-foreground">Apellido(s)</p>
+                <p className="text-sm font-medium text-foreground">{fichaInfo.apellidos || "—"}</p>
               </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs text-muted-foreground">Rol en la Institución Educativa</Label>
-                <Input value={genderizeRole(fichaInfo.cargo_actual, fichaInfo.genero) || ""} disabled className="bg-muted/50" />
+              <div className="sm:col-span-2">
+                <p className="text-xs text-muted-foreground">Rol en la Institución Educativa</p>
+                <p className="text-sm font-medium text-foreground">{genderizeRole(fichaInfo.cargo_actual, fichaInfo.genero) || "—"}</p>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Correo electrónico de contacto</Label>
-                <Input value={fichaInfo.correo_personal || fichaInfo.correo_institucional || ""} disabled className="bg-muted/50" />
+              <div>
+                <p className="text-xs text-muted-foreground">Correo electrónico de contacto</p>
+                <p className="text-sm font-medium text-foreground">{fichaInfo.correo_personal || fichaInfo.correo_institucional || "—"}</p>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Institución Educativa</Label>
-                <Input value={fichaInfo.nombre_ie || ""} disabled className="bg-muted/50" />
+              <div>
+                <p className="text-xs text-muted-foreground">Institución Educativa</p>
+                <p className="text-sm font-medium text-foreground">{fichaInfo.nombre_ie || "—"}</p>
               </div>
             </div>
           </CardContent>
