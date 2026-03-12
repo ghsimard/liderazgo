@@ -357,18 +357,82 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       );
     }
 
+    case "fichas-rlt":
     case "fichas":
-      return <AdminFichasTab />;
     case "geography":
-      return <AdminGeographyTab />;
+    case "enlace-ficha":
+    case "blank-pdf": {
+      const subFichasMap: Record<string, string> = {
+        "fichas-rlt": "lista",
+        fichas: "lista",
+        geography: "regiones",
+        "enlace-ficha": "enlace",
+        "blank-pdf": "enlace",
+      };
+      const defaultSubFichas = subFichasMap[activeTab] || "lista";
+      return (
+        <Tabs defaultValue={defaultSubFichas} className="space-y-4">
+          <TabsList className="flex-wrap h-auto gap-1">
+            <TabsTrigger value="enlace" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlace y PDF</TabsTrigger>
+            <TabsTrigger value="lista" className="gap-1.5"><FileText className="w-4 h-4" /> Lista</TabsTrigger>
+            <TabsTrigger value="regiones" className="gap-1.5"><MapPin className="w-4 h-4" /> Regiones</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="enlace">
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-base font-semibold border-b pb-2">Enlace de la Ficha RLT</h3>
+                <p className="text-sm text-muted-foreground">Comparte el enlace de la ficha de información con los directivos.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <FormCard form={{ name: "Ficha de Información", path: "/", icon: FileText }} />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="lista">
+            <AdminFichasTab />
+          </TabsContent>
+
+          <TabsContent value="regiones">
+            <AdminGeographyTab />
+          </TabsContent>
+        </Tabs>
+      );
+    }
+
     case "users":
       return <AdminUsersTab isSuperAdmin={isSuperAdmin} />;
     case "mel":
-      return <AdminMelTab />;
     case "mel-rubricas":
-      return <AdminMelRubricasTab />;
-    case "mel-config":
-      return <AdminMelConfigTab />;
+    case "mel-config": {
+      const subMelMap: Record<string, string> = {
+        mel: "mel-360",
+        "mel-rubricas": "mel-rubricas",
+        "mel-config": "mel-config",
+      };
+      const defaultSubMel = subMelMap[activeTab] || "mel-360";
+      return (
+        <Tabs defaultValue={defaultSubMel} className="space-y-4">
+          <TabsList className="flex-wrap h-auto gap-1">
+            <TabsTrigger value="mel-360" className="gap-1.5"><TrendingUp className="w-4 h-4" /> MEL 360°</TabsTrigger>
+            <TabsTrigger value="mel-rubricas" className="gap-1.5"><ClipboardList className="w-4 h-4" /> MEL Rúbricas</TabsTrigger>
+            <TabsTrigger value="mel-config" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="mel-360">
+            <AdminMelTab />
+          </TabsContent>
+          <TabsContent value="mel-rubricas">
+            <AdminMelRubricasTab />
+          </TabsContent>
+          <TabsContent value="mel-config">
+            <AdminMelConfigTab />
+          </TabsContent>
+        </Tabs>
+      );
+    }
+
     case "rubricas":
       return <AdminRubricasTab />;
     case "informe-modulo":
