@@ -12,6 +12,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
 
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
+import { generarPDFAmbienteEscolarEnBlanco } from "@/utils/blankAmbienteEscolarPdfGenerator";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 import AdminSidebar from "@/components/admin/AdminSidebar";
@@ -115,6 +116,10 @@ const FORM_PATH_TO_BLANK: Record<string, string> = {
   "/formulario-360-final-estudiante": "estudiante",
   
   "/": "ficha",
+
+  "/encuesta-acudiente": "ambiente_acudientes",
+  "/encuesta-estudiante": "ambiente_estudiantes",
+  "/encuesta-docente": "ambiente_docentes",
 };
 
 function CopyLinkButton({ path }: { path: string }) {
@@ -152,6 +157,9 @@ function BlankPdfButton({ path }: { path: string }) {
     try {
       if (blankType === "ficha") {
         await generarPDFFichaEnBlanco(logos, flags);
+      } else if (blankType.startsWith("ambiente_")) {
+        const ambienteType = blankType.replace("ambiente_", "") as "acudientes" | "estudiantes" | "docentes";
+        await generarPDFAmbienteEscolarEnBlanco(ambienteType, logos, flags);
       } else {
         await generarPDFEncuesta360EnBlanco(blankType, logos, flags);
       }
