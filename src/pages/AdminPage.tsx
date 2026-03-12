@@ -338,40 +338,40 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
         </div>
       );
     case "blancos-ambiente":
-      return (
-        <div className="space-y-4">
-          <h3 className="text-base font-semibold border-b pb-2">PDF en Blanco — Ambiente Escolar</h3>
-          <p className="text-sm text-muted-foreground">Descarga los formularios de ambiente escolar en blanco (PDF).</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[
-              { name: "Encuesta Acudiente", path: "/encuesta-ambiente-acudientes", icon: Users },
-              { name: "Encuesta Estudiante", path: "/encuesta-ambiente-estudiantes", icon: GraduationCap },
-              { name: "Encuesta Docente", path: "/encuesta-ambiente-docentes", icon: BookOpen },
-            ].map((f) => (
-              <Card key={f.path} className="hover:shadow-md transition-shadow">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="rounded-lg bg-primary/10 p-2.5">
-                    <f.icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <span className="text-sm font-medium flex-1">{f.name}</span>
-                  <BlankPdfButton path={f.path} />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      );
     case "ambiente-escolar":
       return (
-        <div className="space-y-4">
-          <h3 className="text-base font-semibold border-b pb-2">Ambiente Escolar</h3>
-          <p className="text-sm text-muted-foreground">Copia el enlace de cada encuesta para compartirlo.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[
-              { name: "Encuesta Acudiente", path: "/encuesta-ambiente-acudientes", icon: Users },
-              { name: "Encuesta Estudiante", path: "/encuesta-ambiente-estudiantes", icon: GraduationCap },
-              { name: "Encuesta Docente", path: "/encuesta-ambiente-docentes", icon: BookOpen },
-            ].map((f) => <FormCard key={f.path} form={f} />)}
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold border-b pb-2">Enlaces de Encuestas</h3>
+            <p className="text-sm text-muted-foreground">Copia el enlace de cada encuesta para compartirlo.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                { name: "Encuesta Acudiente", path: "/encuesta-ambiente-acudientes", icon: Users },
+                { name: "Encuesta Estudiante", path: "/encuesta-ambiente-estudiantes", icon: GraduationCap },
+                { name: "Encuesta Docente", path: "/encuesta-ambiente-docentes", icon: BookOpen },
+              ].map((f) => <FormCard key={f.path} form={f} />)}
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold border-b pb-2">PDF en Blanco</h3>
+            <p className="text-sm text-muted-foreground">Descarga los formularios de ambiente escolar en blanco (PDF).</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                { name: "Encuesta Acudiente", path: "/encuesta-ambiente-acudientes", icon: Users },
+                { name: "Encuesta Estudiante", path: "/encuesta-ambiente-estudiantes", icon: GraduationCap },
+                { name: "Encuesta Docente", path: "/encuesta-ambiente-docentes", icon: BookOpen },
+              ].map((f) => (
+                <Card key={f.path} className="hover:shadow-md transition-shadow">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <div className="rounded-lg bg-primary/10 p-2.5">
+                      <f.icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium flex-1">{f.name}</span>
+                    <BlankPdfButton path={f.path} />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       );
