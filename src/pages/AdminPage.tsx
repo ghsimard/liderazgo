@@ -373,10 +373,14 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return (
         <Tabs defaultValue={defaultSubFichas} className="space-y-4">
           <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="enlace" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlace y PDF</TabsTrigger>
             <TabsTrigger value="lista" className="gap-1.5"><FileText className="w-4 h-4" /> Lista</TabsTrigger>
+            <TabsTrigger value="enlace" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlace y PDF</TabsTrigger>
             <TabsTrigger value="regiones" className="gap-1.5"><MapPin className="w-4 h-4" /> Configuración</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="lista">
+            <AdminFichasTab />
+          </TabsContent>
 
           <TabsContent value="enlace">
             <div className="space-y-6">
@@ -388,10 +392,6 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
                 </div>
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="lista">
-            <AdminFichasTab />
           </TabsContent>
 
           <TabsContent value="regiones">
