@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, Eye, ToggleLeft, ToggleRight, User, Calendar, MapPin, FileText, MessageSquare, CheckCircle2, XCircle, MinusCircle } from "lucide-react";
+import { Loader2, RefreshCw, Eye, ToggleLeft, ToggleRight, User, Calendar, MapPin, FileText, MessageSquare, CheckCircle2, XCircle, MinusCircle, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FORM_TYPE_LABELS, asistenciaForm, interludioForm, intensivoForm } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion, SatisfaccionOption } from "@/data/satisfaccionData";
