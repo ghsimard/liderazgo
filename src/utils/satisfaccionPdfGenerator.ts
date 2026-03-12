@@ -293,6 +293,46 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   const sectionPages: { title: string; page: number; isSubsection?: boolean }[] = [];
 
   // ══════════════════════════════════════════
+  // EXECUTIVE SUMMARY PAGE (optional)
+  // ══════════════════════════════════════════
+  if (executiveSummary && executiveSummary.trim()) {
+    doc.addPage();
+    y = drawHeader();
+
+    // Title
+    y += 4;
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 60, 90);
+    doc.text("RESUMEN EJECUTIVO", pageW / 2, y, { align: "center" });
+    y += 4;
+
+    // Decorative line
+    doc.setDrawColor(30, 60, 90);
+    doc.setLineWidth(0.4);
+    doc.line(pageW / 2 - 30, y, pageW / 2 + 30, y);
+    y += 8;
+
+    // Summary text
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const summaryParagraphs = executiveSummary.split("\n");
+    for (const para of summaryParagraphs) {
+      if (!para.trim()) { y += 4; continue; }
+      const lines = doc.splitTextToSize(para.trim(), contentW);
+      for (const line of lines) {
+        y = checkPageBreak(6);
+        doc.text(line, margin, y);
+        y += 5;
+      }
+      y += 3;
+    }
+
+    drawFooter();
+  }
+
+  // ══════════════════════════════════════════
   // CONTENT PAGES
   // ══════════════════════════════════════════
   doc.addPage();
