@@ -39,6 +39,9 @@ const InformeModulo = lazy(() => import("./pages/InformeModulo"));
 const EncuestaAmbienteAcudientes = lazy(() => import("./pages/EncuestaAmbienteAcudientes"));
 const EncuestaAmbienteEstudiantes = lazy(() => import("./pages/EncuestaAmbienteEstudiantes"));
 const EncuestaAmbienteDocentes = lazy(() => import("./pages/EncuestaAmbienteDocentes"));
+const SatisfaccionAsistencia = lazy(() => import("./pages/SatisfaccionAsistencia"));
+const SatisfaccionInterludio = lazy(() => import("./pages/SatisfaccionInterludio"));
+const SatisfaccionIntensivo = lazy(() => import("./pages/SatisfaccionIntensivo"));
 
 const queryClient = new QueryClient();
 
@@ -90,6 +93,11 @@ const App = () => (
                 <Route path="/encuesta-ambiente-acudientes" element={<EncuestaAmbienteAcudientes />} />
                 <Route path="/encuesta-ambiente-estudiantes" element={<EncuestaAmbienteEstudiantes />} />
                 <Route path="/encuesta-ambiente-docentes" element={<EncuestaAmbienteDocentes />} />
+
+                {/* Satisfacción */}
+                <Route path="/satisfaccion-asistencia" element={<SatisfaccionAsistencia />} />
+                <Route path="/satisfaccion-interludio" element={<SatisfaccionInterludio />} />
+                <Route path="/satisfaccion-intensivo" element={<SatisfaccionIntensivo />} />
 
                 {/* Legal / Contact / Suggestions */}
                 <Route path="/derechos-contacto" element={<DerechosContacto />} />

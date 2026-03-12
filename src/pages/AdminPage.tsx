@@ -38,6 +38,7 @@ import AdminInvitacionesTab from "@/components/admin/AdminInvitacionesTab";
 import AdminActivityLogTab from "@/components/admin/AdminActivityLogTab";
 import AdminInformeModuloTab from "@/components/admin/AdminInformeModuloTab";
 import AdminPurgeDataTab from "@/components/admin/AdminPurgeDataTab";
+import AdminSatisfaccionesTab from "@/components/admin/AdminSatisfaccionesTab";
 
 interface FormItem {
   name: string;
@@ -375,12 +376,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
         </div>
       );
     case "satisfacciones":
-      return (
-        <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
-          <h3 className="text-lg font-semibold">Satisfacciones</h3>
-          <p className="text-sm text-muted-foreground">Esta sección está en construcción.</p>
-        </div>
-      );
+      return <AdminSatisfaccionesTab />;
     case "certificaciones":
       return (
         <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
