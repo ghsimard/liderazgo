@@ -300,11 +300,6 @@ export default function AdminSatisfaccionesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <Button variant="outline" size="sm" onClick={fetchData} className="gap-1.5">
-          <RefreshCw className="w-4 h-4" /> Actualizar
-        </Button>
-      </div>
 
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
         <TabsList className="flex-wrap h-auto gap-1 sticky top-0 z-10 bg-background py-2">
