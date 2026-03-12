@@ -1,63 +1,32 @@
 
 
-## Probleme actuel
+## Plan: Outil de création de graphiques par question
 
-Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
+### Probleme actuel
+Les sections "Grafico + Analisis" sont liees a un **bloc entier** du formulaire (`chartSectionTitle`). L'admin ne peut pas choisir **quelles questions specifiques** inclure dans un graphique, ni combiner des questions de blocs differents.
 
-## Proposition : Sidebar avec sections groupees
-
-Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
-
-### Structure proposee
-
-```text
-┌──────────────────┬──────────────────────────────────┐
-│  SIDEBAR         │  CONTENU                         │
-│                  │                                  │
-│  ▼ Formularios   │                                  │
-│    Enlaces       │                                  │
-│                  │                                  │
-│  ▼ Fichas RLT    │                                  │
-│    Lista         │                                  │
-│    Regiones      │                                  │
-│                  │                                  │
-│  ▼ Encuesta 360° │                                  │
-│    Config        │                                  │
-│    Inicial       │                                  │
-│    Final         │                                  │
-│    Informes Ini. │                                  │
-│    Informes Fin. │                                  │
-│                  │                                  │
-│  ▼ Analisis      │                                  │
-│    MEL           │                                  │
-│    Rubricas      │                                  │
-│                  │                                  │
-│  ▼ Sistema       │                                  │
-│    Admins        │                                  │
-│    Apreciaciones*│                                  │
-│    Mensajes*     │                                  │
-│    Changelog*    │                                  │
-│                  │  (* = superadmin only)            │
-└──────────────────┴──────────────────────────────────┘
-```
+### Solution
+Ajouter un **selecteur de questions** dans les sections `chart_analysis`, permettant de choisir une ou plusieurs questions du formulaire. Les donnees du graphique seront calculees dynamiquement a partir des reponses en DB pour les questions selectionnees.
 
 ### Modifications
 
-1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
+**1. `src/components/admin/AdminSatisfaccionReportTab.tsx`**
 
-2. **Modifier `src/pages/AdminPage.tsx`** :
-   - Envelopper le layout dans `SidebarProvider`
-   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
-   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
-   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
-   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
+- Etendre l'interface `ReportSection` avec un champ optionnel `selectedQuestionKeys: string[]` pour stocker les cles de questions selectionnees (en plus du `chartSectionTitle` existant qui reste comme fallback)
+- Ajouter un composant `QuestionPicker` dans le `SectionEditor` pour les sections `chart_analysis` :
+  - Liste toutes les questions chartables (radio, likert4, checkbox-max3, grid-sino, grid-frequency, grid-logistic) du formulaire actif
+  - Checkboxes pour selectionner/deselectionner des questions
+  - Groupees par section du formulaire pour la lisibilite
+- Modifier le calcul de `chartData` : si `selectedQuestionKeys` est defini, filtrer les stats pour ne garder que les questions selectionnees au lieu de matcher par `chartSectionTitle`
+- Mettre a jour la preview du graphique pour refleter la selection
 
-3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
+**2. Logique de calcul des stats (dans le meme fichier)**
 
-### Points techniques
+- Enrichir chaque entree de `stats.sections` avec un champ `questionKey` pour pouvoir les identifier individuellement
+- Permettre le filtrage par `questionKey[]` dans le `ChartPreview`
 
-- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
-- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
-- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
-- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
+### Compatibilite
+- Les rapports existants avec `chartSectionTitle` continuent de fonctionner (fallback)
+- Les nouveaux rapports peuvent utiliser `selectedQuestionKeys` pour un controle fin
+- La sauvegarde en DB reste dans le meme champ JSONB `content`
 
