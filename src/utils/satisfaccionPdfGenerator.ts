@@ -53,6 +53,7 @@ interface ReportSection {
   bullets?: string[];
   chartSectionTitle?: string;
   enabled: boolean;
+  isSubsection?: boolean;
 }
 
 export interface SatisfaccionReportOptions {

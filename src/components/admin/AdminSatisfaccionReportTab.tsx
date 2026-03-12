@@ -66,6 +66,8 @@ interface ReportSection {
   chartSectionTitle?: string;
   /** Whether to include this section */
   enabled: boolean;
+  /** If true, numbered as sub-section (e.g. 1.1 instead of 2) */
+  isSubsection?: boolean;
 }
 
 interface ReportContent {
