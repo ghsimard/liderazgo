@@ -288,7 +288,7 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
   }
 }
 
-function GridQuestion({ question: q, value, onGridChange }: { question: SatisfaccionQuestion; value: Record<string, string>; onGridChange: (rowKey: string, val: string) => void }) {
+function GridQuestion({ question: q, value, onGridChange, disabled }: { question: SatisfaccionQuestion; value: Record<string, string>; onGridChange: (rowKey: string, val: string) => void; disabled?: boolean }) {
   const columns = q.columns || [];
 
   return (
