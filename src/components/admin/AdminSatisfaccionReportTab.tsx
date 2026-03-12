@@ -999,7 +999,7 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
           return (
             <div key={i} className="space-y-0.5">
               <div className="flex justify-between text-xs">
-                <span className="text-foreground truncate max-w-[70%]">{item.label}</span>
+                <span className="text-foreground break-words leading-tight">{item.label}</span>
                 <span className="font-semibold text-foreground">{item.value}%</span>
               </div>
               <div className="h-5 bg-muted rounded overflow-hidden">
