@@ -300,7 +300,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
                 if (cellVal !== undefined && cellVal !== null && cellVal !== "") {
                   total++;
                   if (q.type === "grid-sino" && cellVal === "si") positiveCount++;
-                  else if (q.type === "grid-frequency" && (cellVal === "frecuentemente" || cellVal === "siempre")) positiveCount++;
+                  else if (q.type === "grid-frequency" && (cellVal === "frecuentemente" || cellVal === "siempre" || cellVal === "algunas_veces")) positiveCount++;
                   else if (q.type === "grid-logistic" && (cellVal === "3" || cellVal === "4")) positiveCount++;
                 }
               }
