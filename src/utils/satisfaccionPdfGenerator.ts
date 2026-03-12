@@ -140,20 +140,25 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     return 38;
   };
 
-  // ── Footer ──
+  // ── Footer (page numbers filled in second pass) ──
   const drawFooter = () => {
-    const totalPages = doc.getNumberOfPages() - 1; // exclude cover
-    const currentPage = doc.getNumberOfPages() - 1;
     // Cosmo logo bottom-left
     if (cosmoB64) {
       const dim = logoH(cosmoSize.width, cosmoSize.height, 8);
       doc.addImage(cosmoB64, "PNG", margin, pageH - 14, dim.w, dim.h);
     }
-    // Page number bottom-right
-    doc.setFontSize(8);
-    doc.setTextColor(130, 130, 130);
-    doc.text(String(pn - 1), pageW - margin, pageH - 8, { align: "right" }); // page 1 = cover
-    doc.setTextColor(30, 30, 30);
+  };
+
+  // Fill page numbers "X/N" after all pages are created
+  const fillPageNumbers = () => {
+    const totalPages = doc.getNumberOfPages() - 1; // exclude cover
+    for (let p = 2; p <= doc.getNumberOfPages(); p++) {
+      doc.setPage(p);
+      doc.setFontSize(8);
+      doc.setTextColor(130, 130, 130);
+      doc.text(`${p - 1}/${totalPages}`, pageW - margin, pageH - 8, { align: "right" });
+      doc.setTextColor(30, 30, 30);
+    }
   };
 
   let y = 0;
