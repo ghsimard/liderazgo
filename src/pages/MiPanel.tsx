@@ -84,20 +84,7 @@ function SatisfaccionPanel({ cedula, navigate }: { cedula: string; navigate: Ret
         .eq("region", userRegion)
         .eq("is_active", true);
 
-      // Check which ones are already submitted (includes inactive forms)
-      const { data: submitted } = await supabase
-        .from("satisfaccion_responses")
-        .select("form_type,module_number")
-        .eq("cedula", cedula)
-        .eq("region", userRegion);
-
-      const activeSet = new Set((configs || []).map((c: any) => `${c.form_type}-${c.module_number}`));
-      const doneSet = new Set((submitted || []).map((s: any) => `${s.form_type}-${s.module_number}`));
-
-      // Merge: active forms + already-submitted forms (even if now inactive)
-      const mergedKeys = new Set([...activeSet, ...doneSet]);
-
-      if (mergedKeys.size === 0) {
+      if (!configs || (Array.isArray(configs) && configs.length === 0)) {
         setHasAny(false);
         setLoading(false);
         return;
@@ -105,15 +92,20 @@ function SatisfaccionPanel({ cedula, navigate }: { cedula: string; navigate: Ret
 
       setHasAny(true);
 
+      // Check which ones are already submitted
+      const { data: submitted } = await supabase
+        .from("satisfaccion_responses")
+        .select("form_type,module_number")
+        .eq("cedula", cedula);
+
+      const doneSet = new Set((submitted || []).map((s: any) => `${s.form_type}-${s.module_number}`));
+
       setActiveForms(
-        Array.from(mergedKeys).map((key) => {
-          const [form_type, mod] = (key as string).split("-");
-          return {
-            form_type,
-            module_number: parseInt(mod, 10),
-            done: doneSet.has(key),
-          };
-        }).sort((a, b) => a.module_number - b.module_number || a.form_type.localeCompare(b.form_type))
+        (configs as any[]).map((c) => ({
+          form_type: c.form_type,
+          module_number: c.module_number,
+          done: doneSet.has(`${c.form_type}-${c.module_number}`),
+        }))
       );
       setLoading(false);
     };
