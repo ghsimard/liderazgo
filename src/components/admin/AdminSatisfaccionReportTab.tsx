@@ -937,6 +937,41 @@ function SectionEditor({
           )}
         </DialogContent>
       </Dialog>
+      {/* Ficha técnica preview modal */}
+      <Dialog open={showFichaPreview} onOpenChange={setShowFichaPreview}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base flex items-center gap-2">
+              <TableIcon className="w-4 h-4" />
+              Ficha Técnica de la Encuesta
+            </DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-bold">Ítem</TableHead>
+                <TableHead className="font-bold">Detalle</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[
+                ["Nombre del instrumento", `Encuesta de satisfacción ${FORM_TYPE_LABELS[filterType] || filterType} ${filterModule}`],
+                ["Entidad responsable", "Sistema de evaluación del Programa RLT"],
+                ["Objetivo", "Recoger percepciones sobre la experiencia formativa y oportunidades de mejora"],
+                ["Región", filterRegion],
+                ["Módulo", `Módulo ${filterModule}`],
+                ["Total respuestas válidas", String(totalResponses)],
+                ["Modalidad", "En línea, mediante formulario digital"],
+              ].map(([item, detail], i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium text-muted-foreground text-sm">{item}</TableCell>
+                  <TableCell className="text-sm">{detail}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
