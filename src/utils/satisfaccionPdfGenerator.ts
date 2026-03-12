@@ -15,24 +15,70 @@ import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 function htmlToPlainText(html: string): string {
   if (!html) return "";
   let text = html;
-  // Convert block-level elements to newlines
   text = text.replace(/<\/p>/gi, "\n");
   text = text.replace(/<br\s*\/?>/gi, "\n");
   text = text.replace(/<\/li>/gi, "\n");
   text = text.replace(/<li[^>]*>/gi, "• ");
   text = text.replace(/<\/(?:div|h[1-6]|tr|blockquote)>/gi, "\n");
-  // Remove all remaining tags
   text = text.replace(/<[^>]+>/g, "");
-  // Decode common HTML entities
   text = text.replace(/&amp;/g, "&");
   text = text.replace(/&lt;/g, "<");
   text = text.replace(/&gt;/g, ">");
   text = text.replace(/&quot;/g, '"');
   text = text.replace(/&#39;/g, "'");
   text = text.replace(/&nbsp;/g, " ");
-  // Clean up extra whitespace
   text = text.replace(/\n{3,}/g, "\n\n");
   return text.trim();
+}
+
+/** Decode HTML entities only */
+function decodeEntities(s: string): string {
+  return s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ");
+}
+
+/** Parse HTML into styled segments: { text, bold, italic } */
+interface StyledSegment { text: string; bold: boolean; italic: boolean; }
+
+function parseHtmlToSegments(html: string): { paragraphs: StyledSegment[][] } {
+  if (!html) return { paragraphs: [] };
+  // Normalize: split by block-level elements into paragraphs
+  let normalized = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "¶")
+    .replace(/<\/li>/gi, "¶")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<\/(?:div|h[1-6]|tr|blockquote)>/gi, "¶")
+    .replace(/<p[^>]*>/gi, "");
+
+  const rawParagraphs = normalized.split("¶").map(p => p.trim()).filter(Boolean);
+  const paragraphs: StyledSegment[][] = [];
+
+  for (const rawP of rawParagraphs) {
+    const lines = rawP.split("\n");
+    for (const line of lines) {
+      const segments: StyledSegment[] = [];
+      // Parse inline formatting tags
+      const regex = /(<\/?(?:strong|b|em|i|u|s)(?:\s[^>]*)?>)/gi;
+      const parts = line.split(regex);
+      let bold = false;
+      let italic = false;
+      for (const part of parts) {
+        if (!part) continue;
+        const lower = part.toLowerCase();
+        if (lower === "<strong>" || lower === "<b>") { bold = true; continue; }
+        if (lower === "</strong>" || lower === "</b>") { bold = false; continue; }
+        if (lower === "<em>" || lower === "<i>") { italic = true; continue; }
+        if (lower === "</em>" || lower === "</i>") { italic = false; continue; }
+        if (/^<\/?(?:u|s)(?:\s|>)/i.test(part)) continue; // skip underline/strikethrough tags
+        // Strip any remaining tags from this part
+        const clean = decodeEntities(part.replace(/<[^>]+>/g, ""));
+        if (clean) segments.push({ text: clean, bold, italic });
+      }
+      if (segments.length > 0) paragraphs.push(segments);
+    }
+  }
+  return { paragraphs };
 }
 
 function loadImageAsBase64(src: string): Promise<string> {
