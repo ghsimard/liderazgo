@@ -502,6 +502,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       y = drawHeader();
 
       sectionNum++;
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
       writeSectionTitle(section.title);
 
       doc.setFontSize(9);
