@@ -285,7 +285,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
   // Cosmo logo at bottom of cover
   if (cosmoB64) {
-    const dim = logoH(cosmoSize.width, cosmoSize.height, 10);
+    const dim = logoH(cosmoSize.width, cosmoSize.height, 14);
     doc.addImage(cosmoB64, "PNG", pageW / 2 - dim.w / 2, pageH - 20, dim.w, dim.h);
   }
 
