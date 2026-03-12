@@ -71,11 +71,16 @@ interface ReportSection {
   isSubsection?: boolean;
 }
 
+interface ExtraLogoEntry {
+  src: string;
+  scale: number; // percentage 10-200, default 100
+}
+
 interface ReportContent {
   reportTitle: string;
   reportSubtitle: string;
   sections: ReportSection[];
-  extraLogos: string[];
+  extraLogos: ExtraLogoEntry[];
   executiveSummaryEnabled?: boolean;
   executiveSummary?: string;
 }
