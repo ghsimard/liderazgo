@@ -311,6 +311,57 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return <AdminRubricasTab />;
     case "informe-modulo":
       return <AdminInformeModuloTab />;
+    case "blancos-360":
+      return (
+        <div className="space-y-4">
+          <h3 className="text-base font-semibold border-b pb-2">PDF en Blanco — Encuesta 360°</h3>
+          <p className="text-sm text-muted-foreground">Descarga los formularios 360° en blanco (PDF).</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              { name: "Acudiente", path: "/formulario-360-acudiente", icon: Users },
+              { name: "Administrativo", path: "/formulario-360-administrativo", icon: ClipboardList },
+              { name: "Autoevaluación", path: "/formulario-360-autoevaluacion", icon: FileText },
+              { name: "Directivo Par", path: "/formulario-360-directivo", icon: School },
+              { name: "Docente", path: "/formulario-360-docente", icon: BookOpen },
+              { name: "Estudiante", path: "/formulario-360-estudiante", icon: GraduationCap },
+            ].map((f) => (
+              <Card key={f.path} className="hover:shadow-md transition-shadow">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="rounded-lg bg-primary/10 p-2.5">
+                    <f.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium flex-1">{f.name}</span>
+                  <BlankPdfButton path={f.path} />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      );
+    case "blancos-ambiente":
+      return (
+        <div className="space-y-4">
+          <h3 className="text-base font-semibold border-b pb-2">PDF en Blanco — Ambiente Escolar</h3>
+          <p className="text-sm text-muted-foreground">Descarga los formularios de ambiente escolar en blanco (PDF).</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              { name: "Encuesta Acudiente", path: "/encuesta-ambiente-acudientes", icon: Users },
+              { name: "Encuesta Estudiante", path: "/encuesta-ambiente-estudiantes", icon: GraduationCap },
+              { name: "Encuesta Docente", path: "/encuesta-ambiente-docentes", icon: BookOpen },
+            ].map((f) => (
+              <Card key={f.path} className="hover:shadow-md transition-shadow">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="rounded-lg bg-primary/10 p-2.5">
+                    <f.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium flex-1">{f.name}</span>
+                  <BlankPdfButton path={f.path} />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      );
     case "ambiente-escolar":
       return (
         <div className="space-y-4">
