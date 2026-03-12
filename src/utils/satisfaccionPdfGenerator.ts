@@ -6,10 +6,9 @@
  * - Sections: text, chart+analysis, ficha técnica, satisfaction summary, bullet lists, comments annex
  */
 import jsPDF from "jspdf";
-import logoRLTDark from "@/assets/logo_rlt.png";
-import logoCLTDark from "@/assets/logo_clt_dark.png";
-import logoCosmo from "@/assets/logo_cosmo.png";
-import logoCosmoWhite from "@/assets/logo_cosmo_white.png";
+import logoRLT from "@/assets/logo_rlt_white.png";
+import logoCLT from "@/assets/logo_clt_white.png";
+import logoCosmo from "@/assets/logo_cosmo_dark.png";
 import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 
 function loadImageAsBase64(src: string): Promise<string> {
@@ -85,10 +84,10 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
   // Load logos with proportional sizing
   const [rltB64, rltSize, cltB64, cltSize, cosmoB64, cosmoSize] = await Promise.all([
-    showLogoRlt ? loadImageAsBase64(logoRLTDark) : Promise.resolve(""),
-    showLogoRlt ? getImageNaturalSize(logoRLTDark) : Promise.resolve({ width: 1, height: 1 }),
-    showLogoClt ? loadImageAsBase64(logoCLTDark) : Promise.resolve(""),
-    showLogoClt ? getImageNaturalSize(logoCLTDark) : Promise.resolve({ width: 1, height: 1 }),
+    showLogoRlt ? loadImageAsBase64(logoRLT) : Promise.resolve(""),
+    showLogoRlt ? getImageNaturalSize(logoRLT) : Promise.resolve({ width: 1, height: 1 }),
+    showLogoClt ? loadImageAsBase64(logoCLT) : Promise.resolve(""),
+    showLogoClt ? getImageNaturalSize(logoCLT) : Promise.resolve({ width: 1, height: 1 }),
     loadImageAsBase64(logoCosmo),
     getImageNaturalSize(logoCosmo),
   ]);
