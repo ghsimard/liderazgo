@@ -925,19 +925,26 @@ function SectionEditor({
                 )}
 
                 {section.type === "chart_analysis" && (
-                  <div className="text-xs text-muted-foreground">
-                    {chartData ? (
-                      <button
-                        type="button"
-                        onClick={() => setPreviewChart(chartData)}
-                        className="text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        ✓ Gráfico disponible ({CHART_TYPE_LABELS[section.chartType || "horizontal_bar"]}): {chartData.data.length} indicadores — clic para ver/cambiar
-                      </button>
-                    ) : (
-                      <span className="text-amber-600">⚠ Sin datos para gráfico "{section.chartSectionTitle}"</span>
-                    )}
+                  <div className="space-y-2">
+                    <QuestionPicker
+                      filterType={filterType}
+                      selectedKeys={section.selectedQuestionKeys || []}
+                      onChange={(keys) => onUpdate({ selectedQuestionKeys: keys })}
+                    />
+                    <div className="text-xs text-muted-foreground">
+                      {chartData ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewChart(chartData)}
+                          className="text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          ✓ Gráfico disponible ({CHART_TYPE_LABELS[section.chartType || "horizontal_bar"]}): {chartData.data.length} indicadores — clic para ver/cambiar
+                        </button>
+                      ) : (
+                        <span className="text-amber-600">⚠ Seleccione preguntas o verifique que hay datos disponibles</span>
+                      )}
+                    </div>
                   </div>
                 )}
 
