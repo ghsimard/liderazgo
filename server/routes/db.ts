@@ -64,6 +64,8 @@ const PUBLIC_INSERT_TABLES = new Set([
   "informe_modulo_equipo",
   "informe_directivo",
   "informe_asistencia",
+  "encuestas_ambiente_escolar",
+  "satisfaccion_responses",
 ]);
 
 // Tables that allow public updates (no auth required for PATCH)
