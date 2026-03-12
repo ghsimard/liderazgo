@@ -287,8 +287,8 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     doc.addImage(cosmoB64, "PNG", pageW / 2 - dim.w / 2, pageH - 20, dim.w, dim.h);
   }
 
-  // Track section page numbers
-  const sectionPages: { title: string; page: number }[] = [];
+  // Track section page numbers and subsection status
+  const sectionPages: { title: string; page: number; isSubsection?: boolean }[] = [];
 
   // ══════════════════════════════════════════
   // CONTENT PAGES
