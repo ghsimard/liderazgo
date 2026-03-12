@@ -74,10 +74,7 @@ const sections: SidebarSection[] = [
     label: "Fichas RLT",
     icon: FolderOpen,
     items: [
-      { tab: "enlace-ficha", label: "Enlace Ficha", icon: Link2, linkUrl: "https://884bdecf-dfd4-47e7-ac2b-4a0fa0ab7c80.lovableproject.com/" },
-      { tab: "blank-pdf", label: "Ficha en Blanco", icon: Printer, action: "blank-pdf" },
-      { tab: "fichas", label: "Lista", icon: FileText },
-      { tab: "geography", label: "Regiones", icon: MapPin },
+      { tab: "fichas-rlt", label: "Fichas RLT", icon: FolderOpen },
     ],
   },
   {
@@ -126,9 +123,7 @@ const sections: SidebarSection[] = [
     label: "MEL",
     icon: TrendingUp,
     items: [
-      { tab: "mel", label: "MEL 360°", icon: TrendingUp },
-      { tab: "mel-rubricas", label: "MEL Rúbricas", icon: ClipboardCheck },
-      { tab: "mel-config", label: "Configuración", icon: Settings2 },
+      { tab: "mel", label: "MEL", icon: TrendingUp },
     ],
     separatorAfter: true,
   },
