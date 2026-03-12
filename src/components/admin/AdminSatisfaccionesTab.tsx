@@ -20,6 +20,7 @@ import { FORM_TYPE_LABELS, asistenciaForm, interludioForm, intensivoForm } from 
 import type { SatisfaccionFormDef, SatisfaccionQuestion, SatisfaccionOption } from "@/data/satisfaccionData";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import AdminSatisfaccionStats from "./AdminSatisfaccionStats";
 
 const FORM_TYPES = ["asistencia", "interludio", "intensivo"] as const;
 const MODULES = [1, 2, 3, 4];
@@ -310,6 +311,7 @@ export default function AdminSatisfaccionesTab() {
         <TabsList>
           <TabsTrigger value="config">Configuración</TabsTrigger>
           <TabsTrigger value="responses">Respuestas</TabsTrigger>
+          <TabsTrigger value="stats">Estadísticas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="config" className="space-y-6 mt-4">
@@ -454,6 +456,10 @@ export default function AdminSatisfaccionesTab() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="stats" className="mt-4">
+          <AdminSatisfaccionStats regions={regions} />
         </TabsContent>
       </Tabs>
 
