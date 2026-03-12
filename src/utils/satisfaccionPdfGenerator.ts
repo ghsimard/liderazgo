@@ -116,14 +116,23 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   const drawHeader = () => {
     // RLT logo top-left
     if (showLogoRlt && rltB64) {
+    // Position logic: if both logos, left/right. If only one, put it on the right.
+    const hasRlt = showLogoRlt && !!rltB64;
+    const hasClt = showLogoClt && !!cltB64;
+
+    if (hasRlt && hasClt) {
+      const dimRlt = logoH(rltSize.width, rltSize.height, 18);
+      doc.addImage(rltB64, "PNG", margin, 8, dimRlt.w, dimRlt.h);
+      const dimClt = logoH(cltSize.width, cltSize.height, 18);
+      doc.addImage(cltB64, "PNG", pageW - margin - dimClt.w, 8, dimClt.w, dimClt.h);
+    } else if (hasRlt) {
       const dim = logoH(rltSize.width, rltSize.height, 18);
-      doc.addImage(rltB64, "PNG", margin, 8, dim.w, dim.h);
-    }
-    // CLT logo top-right
-    if (showLogoClt && cltB64) {
+      doc.addImage(rltB64, "PNG", pageW - margin - dim.w, 8, dim.w, dim.h);
+    } else if (hasClt) {
       const dim = logoH(cltSize.width, cltSize.height, 18);
       doc.addImage(cltB64, "PNG", pageW - margin - dim.w, 8, dim.w, dim.h);
     }
+
     // Thin separator line
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.3);
@@ -133,7 +142,8 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
   // ── Footer ──
   const drawFooter = () => {
-    const pn = doc.getNumberOfPages();
+    const totalPages = doc.getNumberOfPages() - 1; // exclude cover
+    const currentPage = doc.getNumberOfPages() - 1;
     // Cosmo logo bottom-left
     if (cosmoB64) {
       const dim = logoH(cosmoSize.width, cosmoSize.height, 8);
