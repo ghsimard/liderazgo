@@ -1,20 +1,16 @@
 /**
  * PDF generator for Satisfaction survey reports.
- * Generates a client-side PDF with:
- * - Cover page with programme logos + optional extra logos
- * - Ficha técnica
- * - Statistics per section (horizontal bars)
- * - General satisfaction summary
+ * Matches the reference report format:
+ * - Cover page with programme + partner logos, title, table of contents
+ * - Content pages with header (RLT logo), footer (COSMO + page number)
+ * - Sections: text, chart+analysis, ficha técnica, satisfaction summary, bullet lists, comments annex
  */
 import jsPDF from "jspdf";
-import logoRLTWhite from "@/assets/logo_rlt_white.png";
-import logoCLTWhite from "@/assets/logo_clt_white.png";
-import logoCosmoWhite from "@/assets/logo_cosmo_white.png";
 import logoRLTDark from "@/assets/logo_rlt.png";
 import logoCLTDark from "@/assets/logo_clt_dark.png";
 import logoCosmo from "@/assets/logo_cosmo.png";
-import { FORM_TYPE_LABELS, SATISFACCION_FORMS } from "@/data/satisfaccionData";
-import type { SatisfaccionFormDef } from "@/data/satisfaccionData";
+import logoCosmoWhite from "@/assets/logo_cosmo_white.png";
+import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 
 function loadImageAsBase64(src: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -46,271 +42,498 @@ function getImageNaturalSize(src: string): Promise<{ width: number; height: numb
 
 interface SectionStat {
   title: string;
-  type: "checkbox" | "grid" | "likert" | "other";
+  type: string;
   data: { label: string; value: number; count: number }[];
 }
 
-export interface SatisfaccionPdfOptions {
+interface ReportSection {
+  id: string;
+  type: string;
+  title: string;
+  content?: string;
+  bullets?: string[];
+  chartSectionTitle?: string;
+  enabled: boolean;
+}
+
+export interface SatisfaccionReportOptions {
   filterType: string;
   filterModule: string;
   filterRegion: string;
-  responses: any[];
+  totalResponses: number;
   showLogoRlt: boolean;
   showLogoClt: boolean;
-  extraLogos: string[]; // base64 data URLs
+  extraLogos: string[];
+  reportContent: {
+    reportTitle: string;
+    reportSubtitle: string;
+    sections: ReportSection[];
+    extraLogos: string[];
+  };
   sectionStats: SectionStat[];
   generalSatisfaction: { label: string; value: number }[];
   overallSatisfaction: number;
+  comments: string[];
 }
 
-export async function generateSatisfaccionPdf(opts: SatisfaccionPdfOptions): Promise<void> {
+export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions): Promise<void> {
   const {
-    filterType, filterModule, filterRegion, responses,
+    filterType, filterModule, filterRegion, totalResponses,
     showLogoRlt, showLogoClt, extraLogos,
-    sectionStats, generalSatisfaction, overallSatisfaction,
+    reportContent, sectionStats, generalSatisfaction, overallSatisfaction, comments,
   } = opts;
+
+  // Load logos with proportional sizing
+  const [rltB64, rltSize, cltB64, cltSize, cosmoB64, cosmoSize] = await Promise.all([
+    showLogoRlt ? loadImageAsBase64(logoRLTDark) : Promise.resolve(""),
+    showLogoRlt ? getImageNaturalSize(logoRLTDark) : Promise.resolve({ width: 1, height: 1 }),
+    showLogoClt ? loadImageAsBase64(logoCLTDark) : Promise.resolve(""),
+    showLogoClt ? getImageNaturalSize(logoCLTDark) : Promise.resolve({ width: 1, height: 1 }),
+    loadImageAsBase64(logoCosmo),
+    getImageNaturalSize(logoCosmo),
+  ]);
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const margin = 15;
+  const margin = 20;
   const contentW = pageW - margin * 2;
 
-  // Load logos
-  const [rltB64, cltB64, cosmoB64] = await Promise.all([
-    showLogoRlt ? loadImageAsBase64(logoRLTWhite) : Promise.resolve(""),
-    showLogoClt ? loadImageAsBase64(logoCLTWhite) : Promise.resolve(""),
-    loadImageAsBase64(logoCosmoWhite),
-  ]);
-
-  const [rltDarkB64, cltDarkB64, cosmoDarkB64] = await Promise.all([
-    showLogoRlt ? loadImageAsBase64(logoRLTDark) : Promise.resolve(""),
-    showLogoClt ? loadImageAsBase64(logoCLTDark) : Promise.resolve(""),
-    loadImageAsBase64(logoCosmo),
-  ]);
-
-  // ── Cover page ──
-  // Dark background
-  doc.setFillColor(30, 41, 59); // slate-800
-  doc.rect(0, 0, pageW, pageH, "F");
-
-  // Programme logos at top
-  const logoH = 22;
-  const logoW = 28;
-  const logoY = 30;
-
-  const activeProgrammeLogos: string[] = [];
-  if (showRltLogo(rltB64)) activeProgrammeLogos.push(rltB64);
-  if (showCltLogo(cltB64)) activeProgrammeLogos.push(cltB64);
-
-  if (activeProgrammeLogos.length === 2) {
-    doc.addImage(activeProgrammeLogos[0], "PNG", margin + 10, logoY, logoW, logoH);
-    doc.addImage(activeProgrammeLogos[1], "PNG", pageW - margin - 10 - logoW, logoY, logoW, logoH);
-  } else if (activeProgrammeLogos.length === 1) {
-    doc.addImage(activeProgrammeLogos[0], "PNG", pageW / 2 - logoW / 2, logoY, logoW, logoH);
-  }
-
-  // Cosmo logo centered below programme logos
-  if (cosmoB64) {
-    const cosmoW = 35;
-    const cosmoH = 14;
-    doc.addImage(cosmoB64, "PNG", pageW / 2 - cosmoW / 2, logoY + logoH + 8, cosmoW, cosmoH);
-  }
-
-  // Title
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(24);
-  doc.setFont("helvetica", "bold");
-  const titleY = logoY + logoH + 45;
-  doc.text("Informe de Satisfacción", pageW / 2, titleY, { align: "center" });
-
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "normal");
-  doc.text(FORM_TYPE_LABELS[filterType] || filterType, pageW / 2, titleY + 12, { align: "center" });
-
-  // Module + Region
-  doc.setFontSize(12);
-  const moduleLabel = filterModule === "all" ? "Todos los módulos" : `Módulo ${filterModule}`;
-  const regionLabel = filterRegion === "all" ? "Todas las regiones" : filterRegion;
-  doc.text(`${moduleLabel} — ${regionLabel}`, pageW / 2, titleY + 26, { align: "center" });
-
-  // Date
-  doc.setFontSize(10);
-  doc.text(new Date().toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" }), pageW / 2, titleY + 38, { align: "center" });
-
-  // Extra logos at bottom of cover page
-  if (extraLogos.length > 0) {
-    const extraY = pageH - 50;
-    const extraH = 20;
-    const totalW = extraLogos.length * 30 + (extraLogos.length - 1) * 8;
-    let startX = pageW / 2 - totalW / 2;
-    for (const logo of extraLogos) {
-      try {
-        doc.addImage(logo, "PNG", startX, extraY, 30, extraH);
-      } catch { /* skip invalid */ }
-      startX += 38;
-    }
-  }
-
-  // ── Page 2+: Content pages ──
-  doc.addPage();
-
-  // Header for content pages
-  const drawContentHeader = () => {
-    const hLogoH = 12;
-    const hLogoW = 16;
-    const hY = 8;
-    if (showLogoRlt && rltDarkB64) {
-      doc.addImage(rltDarkB64, "PNG", margin, hY, hLogoW, hLogoH);
-    }
-    if (showLogoClt && cltDarkB64) {
-      doc.addImage(cltDarkB64, "PNG", pageW - margin - hLogoW, hY, hLogoW, hLogoH);
-    }
-    return hY + hLogoH + 5;
+  // ── Helper: proportional logo dimensions ──
+  const logoH = (naturalW: number, naturalH: number, targetH: number) => {
+    const w = (targetH * naturalW) / naturalH;
+    return { w, h: targetH };
   };
 
-  let y = drawContentHeader();
+  // ── Header for content pages ──
+  const drawHeader = () => {
+    // RLT logo top-right
+    if (showLogoRlt && rltB64) {
+      const dim = logoH(rltSize.width, rltSize.height, 14);
+      doc.addImage(rltB64, "PNG", pageW - margin - dim.w, 8, dim.w, dim.h);
+    }
+    // Thin separator line
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(margin, 24, pageW - margin, 24);
+    return 28;
+  };
 
-  // Footer
-  const drawFooter = (pageNum: number) => {
-    doc.setFontSize(7);
-    doc.setTextColor(150, 150, 150);
-    doc.text(`Página ${pageNum}`, pageW / 2, pageH - 8, { align: "center" });
+  // ── Footer ──
+  const drawFooter = () => {
+    const pn = doc.getNumberOfPages();
+    // Cosmo logo bottom-left
+    if (cosmoB64) {
+      const dim = logoH(cosmoSize.width, cosmoSize.height, 8);
+      doc.addImage(cosmoB64, "PNG", margin, pageH - 14, dim.w, dim.h);
+    }
+    // Page number bottom-right
+    doc.setFontSize(8);
+    doc.setTextColor(130, 130, 130);
+    doc.text(String(pn - 1), pageW - margin, pageH - 8, { align: "right" }); // page 1 = cover
     doc.setTextColor(30, 30, 30);
   };
 
+  let y = 0;
+
   const checkPageBreak = (needed: number): number => {
-    if (y + needed > pageH - 20) {
-      drawFooter(doc.getNumberOfPages());
+    if (y + needed > pageH - 22) {
+      drawFooter();
       doc.addPage();
-      y = drawContentHeader();
+      y = drawHeader();
     }
     return y;
   };
 
-  // Ficha técnica
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
-  doc.text("Ficha Técnica", margin, y);
-  y += 8;
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  const fichaRows = [
-    ["Tipo de encuesta", FORM_TYPE_LABELS[filterType] || filterType],
-    ["Módulo", moduleLabel],
-    ["Región", regionLabel],
-    ["Total de respuestas", String(responses.length)],
-  ];
-
-  for (const [label, value] of fichaRows) {
-    doc.setFont("helvetica", "bold");
-    doc.text(label + ":", margin, y);
+  // ── Wrap text and advance y ──
+  const writeText = (text: string, fontSize: number = 10, lineSpacing: number = 5) => {
+    doc.setFontSize(fontSize);
     doc.setFont("helvetica", "normal");
-    doc.text(value, margin + 50, y);
-    y += 6;
-  }
+    const paragraphs = text.split("\n");
+    for (const para of paragraphs) {
+      if (!para.trim()) { y += lineSpacing; continue; }
+      const lines = doc.splitTextToSize(para.trim(), contentW);
+      for (const line of lines) {
+        y = checkPageBreak(lineSpacing + 2);
+        doc.text(line, margin, y);
+        y += lineSpacing;
+      }
+      y += 1;
+    }
+  };
 
-  y += 8;
-
-  // Sections
-  for (const section of sectionStats) {
-    y = checkPageBreak(30);
-
+  const writeSectionTitle = (title: string, numbered?: string) => {
+    y = checkPageBreak(14);
+    y += 4;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 41, 59);
-    doc.text(section.title, margin, y);
-    y += 7;
-
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(30, 30, 30);
-
-    for (const item of section.data) {
-      y = checkPageBreak(12);
-
-      // Label (wrapped)
-      const lines = doc.splitTextToSize(item.label, contentW - 45);
-      doc.text(lines, margin, y);
-      const lineH = lines.length * 4;
-
-      // Bar
-      const barX = margin + contentW - 40;
-      const barW = 35;
-      const barH = 4;
-      const barY = y - 3;
-      // Background
-      doc.setFillColor(230, 230, 230);
-      doc.rect(barX, barY, barW, barH, "F");
-      // Fill
-      const fillW = (item.value / 100) * barW;
-      if (item.value >= 80) {
-        doc.setFillColor(34, 197, 94); // green
-      } else if (item.value >= 60) {
-        doc.setFillColor(59, 130, 246); // blue
-      } else if (item.value >= 40) {
-        doc.setFillColor(251, 191, 36); // amber
-      } else {
-        doc.setFillColor(239, 68, 68); // red
-      }
-      doc.rect(barX, barY, fillW, barH, "F");
-
-      // Percentage text
-      doc.setFontSize(8);
-      doc.text(`${item.value}%`, barX + barW + 2, barY + 3.5);
-      doc.setFontSize(9);
-
-      y += Math.max(lineH, 6) + 2;
+    doc.setTextColor(30, 60, 90);
+    const prefix = numbered ? `${numbered} ` : "";
+    const lines = doc.splitTextToSize(prefix + title, contentW);
+    for (const line of lines) {
+      doc.text(line, margin, y);
+      y += 6;
     }
+    doc.setTextColor(30, 30, 30);
+    y += 2;
+  };
 
-    y += 5;
+  // ══════════════════════════════════════════
+  // COVER PAGE
+  // ══════════════════════════════════════════
+
+  // White background (default)
+  // Partner logos at top (extra logos + RLT)
+  let coverY = 25;
+
+  // Extra logos first (centered row), then RLT below
+  if (extraLogos.length > 0) {
+    const extraH = 18;
+    const gap = 15;
+    // Load and measure each extra logo
+    const loadedExtras: { b64: string; w: number }[] = [];
+    for (const logo of extraLogos) {
+      try {
+        const size = await getImageNaturalSize(logo);
+        const dim = logoH(size.width, size.height, extraH);
+        loadedExtras.push({ b64: logo, w: dim.w });
+      } catch { /* skip */ }
+    }
+    const totalExtrasW = loadedExtras.reduce((sum, e) => sum + e.w, 0) + (loadedExtras.length - 1) * gap;
+    let x = pageW / 2 - totalExtrasW / 2;
+    for (const extra of loadedExtras) {
+      doc.addImage(extra.b64, "PNG", x, coverY, extra.w, extraH);
+      x += extra.w + gap;
+    }
+    coverY += extraH + 10;
   }
 
-  // General satisfaction
-  if (generalSatisfaction.length > 0) {
-    y = checkPageBreak(40);
+  // RLT logo centered
+  if (showLogoRlt && rltB64) {
+    const dim = logoH(rltSize.width, rltSize.height, 22);
+    doc.addImage(rltB64, "PNG", pageW / 2 - dim.w / 2, coverY, dim.w, dim.h);
+    coverY += dim.h + 8;
+  }
 
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 41, 59);
-    doc.text("Nivel General de Satisfacción", margin, y);
-    y += 10;
+  // Programme title
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text("PROGRAMA RECTORES LÍDERES TRANSFORMADORES", pageW / 2, coverY + 5, { align: "center" });
+  // Underline
+  const titleW = doc.getTextWidth("PROGRAMA RECTORES LÍDERES TRANSFORMADORES");
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(0.5);
+  doc.line(pageW / 2 - titleW / 2, coverY + 7, pageW / 2 + titleW / 2, coverY + 7);
+  coverY += 18;
 
-    doc.setFontSize(22);
-    doc.setTextColor(34, 97, 184);
-    doc.text(`${overallSatisfaction}%`, pageW / 2, y, { align: "center" });
-    y += 10;
+  // Report title
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  const titleLines = doc.splitTextToSize(reportContent.reportTitle, contentW);
+  for (const line of titleLines) {
+    doc.text(line, pageW / 2, coverY, { align: "center" });
+    coverY += 6;
+  }
+  coverY += 2;
 
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(30, 30, 30);
+  // Subtitle
+  if (reportContent.reportSubtitle) {
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "italic");
+    doc.text(`"${reportContent.reportSubtitle}"`, pageW / 2, coverY, { align: "center" });
+    coverY += 12;
+  } else {
+    coverY += 6;
+  }
 
-    for (const gs of generalSatisfaction) {
-      y = checkPageBreak(10);
-      const lines = doc.splitTextToSize(gs.label, contentW - 30);
-      doc.text(lines, margin, y);
+  // Table of contents
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(59, 130, 246); // blue
+  doc.text("Tabla de contenido", margin, coverY);
+  coverY += 7;
+
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(9);
+  doc.setTextColor(60, 60, 60);
+  const enabledSections = reportContent.sections.filter(s => s.enabled);
+  enabledSections.forEach((section, i) => {
+    const label = `${section.title}`;
+    doc.text(label, margin + 4, coverY);
+    coverY += 5;
+  });
+  doc.setTextColor(30, 30, 30);
+
+  // Cosmo logo at bottom of cover
+  if (cosmoB64) {
+    const dim = logoH(cosmoSize.width, cosmoSize.height, 10);
+    doc.addImage(cosmoB64, "PNG", margin, pageH - 20, dim.w, dim.h);
+  }
+  // Page 1
+  doc.setFontSize(8);
+  doc.setTextColor(130, 130, 130);
+  doc.text("1", pageW - margin, pageH - 8, { align: "right" });
+  doc.setTextColor(30, 30, 30);
+
+  // ══════════════════════════════════════════
+  // CONTENT PAGES
+  // ══════════════════════════════════════════
+  doc.addPage();
+  y = drawHeader();
+
+  let sectionNum = 0;
+
+  for (const section of enabledSections) {
+    if (section.type === "text") {
+      sectionNum++;
+      writeSectionTitle(section.title, String(sectionNum));
+      if (section.content) {
+        writeText(section.content);
+      }
+      y += 4;
+    }
+
+    if (section.type === "ficha_tecnica") {
+      sectionNum++;
+      writeSectionTitle(section.title, String(sectionNum));
+      y = checkPageBreak(50);
+
+      // Draw table
+      const formLabel = FORM_TYPE_LABELS[filterType] || filterType;
+      const rows = [
+        ["Nombre del instrumento", `Encuesta de satisfacción ${formLabel} ${filterModule}`],
+        ["Entidad responsable", "Sistema de evaluación del Programa RLT"],
+        ["Objetivo de la encuesta", "Recoger percepciones sobre la experiencia formativa y oportunidades de mejora"],
+        ["Región", filterRegion],
+        ["Módulo", `Módulo ${filterModule}`],
+        ["Total de respuestas válidas", String(totalResponses)],
+        ["Modalidad", "En línea, mediante formulario digital"],
+      ];
+
+      const colW1 = 55;
+      const colW2 = contentW - colW1;
+      const rowH = 7;
+
+      // Header row
+      doc.setFillColor(70, 100, 130);
+      doc.rect(margin, y, contentW, rowH, "F");
+      doc.setFontSize(8);
       doc.setFont("helvetica", "bold");
-      doc.text(`${gs.value}%`, pageW - margin, y, { align: "right" });
+      doc.setTextColor(255, 255, 255);
+      doc.text("Ítem", margin + 3, y + 5);
+      doc.text("Detalle", margin + colW1 + 3, y + 5);
+      y += rowH;
+      doc.setTextColor(30, 30, 30);
+
+      for (let ri = 0; ri < rows.length; ri++) {
+        y = checkPageBreak(rowH + 2);
+        const bg = ri % 2 === 0 ? 245 : 255;
+        doc.setFillColor(bg, bg, bg);
+        doc.rect(margin, y, contentW, rowH, "F");
+        doc.setDrawColor(220, 220, 220);
+        doc.rect(margin, y, contentW, rowH, "S");
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.text(rows[ri][0], margin + 3, y + 5);
+        doc.setFont("helvetica", "normal");
+        const detailLines = doc.splitTextToSize(rows[ri][1], colW2 - 6);
+        doc.text(detailLines[0], margin + colW1 + 3, y + 5);
+        y += rowH;
+      }
+      y += 8;
+    }
+
+    if (section.type === "chart_analysis") {
+      sectionNum++;
+      writeSectionTitle(section.title, String(sectionNum));
+
+      // Find matching stats section
+      const chartData = sectionStats.find(s => s.title === section.chartSectionTitle);
+      if (chartData && chartData.data.length > 0) {
+        // Chart title
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(60, 60, 60);
+        doc.text(chartData.title, pageW / 2, y, { align: "center" });
+        y += 6;
+        doc.setTextColor(30, 30, 30);
+
+        // Horizontal bar chart
+        const barMaxW = contentW - 50;
+        const barH = 5;
+        const rowGap = 8;
+        const maxVal = Math.max(...chartData.data.map(d => d.value), 1);
+
+        for (const item of chartData.data) {
+          y = checkPageBreak(rowGap + 4);
+
+          // Label (truncated)
+          doc.setFontSize(7.5);
+          doc.setFont("helvetica", "normal");
+          const labelLines = doc.splitTextToSize(item.label, contentW - 20);
+          doc.text(labelLines[0], margin, y + 3.5);
+          const labelW = Math.min(doc.getTextWidth(labelLines[0]) + 4, contentW * 0.5);
+
+          // Bar
+          const barX = margin + Math.max(labelW, 60);
+          const availBarW = pageW - margin - barX - 20;
+          const barW = (item.value / Math.max(maxVal, 100)) * availBarW;
+
+          // Bar background
+          doc.setFillColor(235, 235, 235);
+          doc.rect(barX, y, availBarW, barH, "F");
+
+          // Bar fill (gradient-like using primary color)
+          if (item.value >= 80) doc.setFillColor(190, 30, 80); // magenta/pink like reference
+          else if (item.value >= 60) doc.setFillColor(220, 60, 100);
+          else if (item.value >= 40) doc.setFillColor(240, 100, 130);
+          else doc.setFillColor(250, 150, 170);
+          doc.rect(barX, y, barW, barH, "F");
+
+          // Percentage label
+          doc.setFontSize(7.5);
+          doc.setFont("helvetica", "bold");
+          doc.text(`${item.value}%`, barX + availBarW + 2, y + 3.8);
+          doc.setFont("helvetica", "normal");
+
+          y += rowGap;
+        }
+        y += 4;
+      }
+
+      // Analysis text
+      if (section.content) {
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 60, 90);
+        y = checkPageBreak(10);
+        doc.text("ANÁLISIS:", margin, y);
+        y += 6;
+        doc.setTextColor(30, 30, 30);
+        writeText(section.content);
+      }
+      y += 4;
+    }
+
+    if (section.type === "satisfaction_summary") {
+      sectionNum++;
+      writeSectionTitle(section.title, String(sectionNum));
+
+      if (section.content) {
+        writeText(section.content);
+        y += 2;
+      }
+
+      if (generalSatisfaction.length > 0) {
+        y = checkPageBreak(25);
+
+        // Overall percentage
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text("El nivel de satisfacción general alcanzó un sólido", margin, y);
+        y += 6;
+
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 100, 170);
+        doc.text(`${overallSatisfaction}%`, margin + 5, y);
+        y += 10;
+        doc.setTextColor(30, 30, 30);
+
+        // Breakdown
+        doc.setFontSize(9);
+        for (const gs of generalSatisfaction) {
+          y = checkPageBreak(7);
+          doc.setFont("helvetica", "normal");
+          doc.text(`• ${gs.label}:`, margin + 5, y);
+          doc.setFont("helvetica", "bold");
+          doc.text(`${gs.value}%`, margin + contentW - 15, y, { align: "right" });
+          y += 6;
+        }
+      }
+      y += 6;
+    }
+
+    if (section.type === "bullet_list") {
+      sectionNum++;
+      writeSectionTitle(section.title, String(sectionNum));
+
+      if (section.bullets && section.bullets.length > 0) {
+        for (const bullet of section.bullets) {
+          if (!bullet.trim()) continue;
+
+          // Check if it's a category header (short text, < 60 chars) vs description
+          const lines = bullet.split("\n");
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            y = checkPageBreak(7);
+
+            if (line.startsWith("- ") || line.startsWith("• ")) {
+              doc.setFontSize(9);
+              doc.setFont("helvetica", "normal");
+              const wrapped = doc.splitTextToSize(line, contentW - 10);
+              for (const wl of wrapped) {
+                y = checkPageBreak(5);
+                doc.text(wl, margin + 8, y);
+                y += 4.5;
+              }
+            } else {
+              // Category header
+              doc.setFontSize(10);
+              doc.setFont("helvetica", "bold");
+              const wrapped = doc.splitTextToSize(line, contentW - 5);
+              for (const wl of wrapped) {
+                y = checkPageBreak(6);
+                doc.text(wl, margin + 3, y);
+                y += 5.5;
+              }
+            }
+          }
+          y += 2;
+        }
+      }
+      y += 4;
+    }
+
+    if (section.type === "comments_annex") {
+      // Start new page for annex
+      drawFooter();
+      doc.addPage();
+      y = drawHeader();
+
+      sectionNum++;
+      writeSectionTitle(section.title);
+
+      doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
-      y += lines.length * 4 + 3;
+
+      for (const comment of comments) {
+        const wrapped = doc.splitTextToSize(comment, contentW - 10);
+        const neededH = wrapped.length * 4.5 + 4;
+        y = checkPageBreak(neededH);
+
+        for (const line of wrapped) {
+          doc.text(line, margin + 3, y);
+          y += 4.5;
+        }
+        y += 3;
+      }
     }
   }
 
   // Final footer
-  drawFooter(doc.getNumberOfPages());
+  drawFooter();
+
+  // Fix page numbers (skip cover page)
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 2; p <= totalPages; p++) {
+    doc.setPage(p);
+    // Page number already drawn via drawFooter, but let's ensure consistency
+  }
 
   // Download
   const formLabel = FORM_TYPE_LABELS[filterType] || filterType;
-  const modLabel = filterModule === "all" ? "todos" : `mod${filterModule}`;
-  const regLabel = filterRegion === "all" ? "todas" : filterRegion.replace(/\s+/g, "_");
-  doc.save(`satisfaccion_${formLabel}_${modLabel}_${regLabel}.pdf`);
-}
-
-function showRltLogo(b64: string): boolean {
-  return b64 !== "";
-}
-function showCltLogo(b64: string): boolean {
-  return b64 !== "";
+  const regLabel = filterRegion.replace(/\s+/g, "_");
+  doc.save(`Informe_Satisfaccion_${formLabel}_${filterModule}_${regLabel}.pdf`);
 }
