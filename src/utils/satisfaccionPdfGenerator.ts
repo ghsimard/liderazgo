@@ -195,7 +195,8 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   };
 
   // ── Wrap text and advance y ──
-  const writeText = (text: string, fontSize: number = 10, lineSpacing: number = 5) => {
+  const writeText = (rawText: string, fontSize: number = 10, lineSpacing: number = 5) => {
+    const text = htmlToPlainText(rawText);
     doc.setFontSize(fontSize);
     doc.setFont("helvetica", "normal");
     const paragraphs = text.split("\n");
