@@ -22,10 +22,12 @@ interface SatisfaccionFormProps {
   onSubmit: (respuestas: Record<string, any>) => Promise<void>;
   submitting?: boolean;
   fichaInfo?: Record<string, any> | null;
+  readOnly?: boolean;
+  savedAnswers?: Record<string, any> | null;
 }
 
-export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubmit, submitting, fichaInfo }: SatisfaccionFormProps) {
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubmit, submitting, fichaInfo, readOnly, savedAnswers }: SatisfaccionFormProps) {
+  const [answers, setAnswers] = useState<Record<string, any>>(savedAnswers || {});
   const { toast } = useToast();
   const navigate = useNavigate();
 
