@@ -122,8 +122,8 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     // Thin separator line
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.3);
-    doc.line(margin, 24, pageW - margin, 24);
-    return 34;
+    doc.line(margin, 28, pageW - margin, 28);
+    return 38;
   };
 
   // ── Footer ──
