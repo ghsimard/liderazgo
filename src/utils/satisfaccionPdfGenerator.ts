@@ -373,9 +373,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     }
 
     if (section.type === "chart_analysis") {
-      sectionNum++;
+      const num = getNumber(section.isSubsection);
       sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
-      writeSectionTitle(section.title, String(sectionNum));
+      writeSectionTitle(section.title, num, section.isSubsection);
 
       // Find matching stats section
       const chartData = sectionStats.find(s => s.title === section.chartSectionTitle);
