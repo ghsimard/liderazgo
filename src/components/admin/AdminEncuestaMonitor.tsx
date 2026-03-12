@@ -35,7 +35,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   const [rows, setRows] = useState<DirectivoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterMode, setFilterMode] = useState<"all" | "incomplete" | "complete">("incomplete");
+  const [filterMode, setFilterMode] = useState<"all" | "incomplete" | "complete">("all");
 
   useEffect(() => {
     loadData();
