@@ -440,7 +440,7 @@ Vérifier que ces dépendances sont présentes :
 - [x] `routes/images.ts` — Upload/delete images app
 - [x] `routes/db.ts` — Proxy DB générique (toutes les tables)
 - [x] `routes/rpc.ts` — 12 fonctions RPC
-- [x] `routes/export.ts` — Export SQL complet (35+ tables)
+- [x] `routes/export.ts` — Export SQL complet (38+ tables)
 - [x] `routes/storage.ts` — Upload/delete fichiers
 - [x] `routes/rubrica-analysis.ts` — Analyse IA (Grok)
 - [x] `routes/github.ts` — Changelog GitHub
