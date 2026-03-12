@@ -10,7 +10,7 @@ import { supabase } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -286,7 +286,7 @@ export default function AdminSatisfaccionFormsTab() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Descripción</Label>
-                <Textarea value={formDef.description} onChange={e => setFormDef(prev => ({ ...prev, description: e.target.value }))} rows={3} />
+                <RichTextEditor value={formDef.description || ""} onChange={val => setFormDef(prev => ({ ...prev, description: val }))} minHeight="80px" />
               </div>
             </CardContent>
           </Card>
@@ -311,10 +311,10 @@ export default function AdminSatisfaccionFormsTab() {
                       className="font-semibold"
                       placeholder="Título de la sección"
                     />
-                    <Input
+                    <RichTextEditor
                       value={section.description || ""}
-                      onChange={e => updateSection(si, { description: e.target.value || undefined })}
-                      className="text-sm"
+                      onChange={val => updateSection(si, { description: val || undefined })}
+                      minHeight="60px"
                       placeholder="Descripción (opcional)"
                     />
                   </div>
