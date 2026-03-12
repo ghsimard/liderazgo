@@ -269,7 +269,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           const data = (q.options || []).map(o => ({
             label: o.label, value: totalResponses > 0 ? Math.round((counts[o.value] / totalResponses) * 10000) / 100 : 0, count: counts[o.value],
           })).sort((a, b) => b.value - a.value);
-          sections.push({ title: section.title, type: "checkbox", data });
+          sections.push({ title: section.title, type: "checkbox", questionKey: q.key, data });
         }
 
         if (q.type === "radio" || q.type === "likert4") {
