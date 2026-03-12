@@ -653,8 +653,9 @@ function SectionEditor({
           <div className="flex items-center gap-1.5 text-muted-foreground">
             {SECTION_TYPE_ICONS[section.type]}
           </div>
-          <span className="flex-1 text-sm font-semibold truncate">{section.title}</span>
+          <span className={`flex-1 text-sm truncate ${section.isSubsection ? "font-normal pl-3 text-muted-foreground" : "font-semibold"}`}>{section.title}</span>
 
+          {section.isSubsection && <Badge variant="secondary" className="text-[10px] shrink-0">Sub</Badge>}
           <Badge variant="outline" className="text-xs shrink-0">{SECTION_TYPE_LABELS[section.type]}</Badge>
           <label className="flex items-center gap-1 text-xs shrink-0">
             <input type="checkbox" checked={section.enabled} onChange={e => { e.stopPropagation(); onUpdate({ enabled: e.target.checked }); }} className="rounded" />
