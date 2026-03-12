@@ -461,6 +461,7 @@ export default function AdminEditFicha() {
   // Load ficha and reset form
   useEffect(() => {
     if (isCreateMode || !id || !isAdmin) return;
+    if (geo.loading) return;
     (async () => {
       const { data, error } = await supabase.from("fichas_rlt").select("*").eq("id", id).single();
       if (error || !data) {
@@ -491,7 +492,7 @@ export default function AdminEditFicha() {
 
       setLoadingFicha(false);
     })();
-  }, [id, isAdmin]);
+  }, [id, isAdmin, geo.loading]);
 
   // Cedula verification (create mode)
   const verificarCedula = async () => {
