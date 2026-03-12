@@ -593,6 +593,56 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
         </CardContent>
       </Card>
 
+      {/* Executive Summary */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Resumen Ejecutivo
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="exec-summary-toggle" className="text-xs text-muted-foreground">Incluir</Label>
+              <Switch
+                id="exec-summary-toggle"
+                checked={!!reportContent.executiveSummaryEnabled}
+                onCheckedChange={(checked) => setReportContent(prev => ({ ...prev, executiveSummaryEnabled: checked }))}
+              />
+            </div>
+          </div>
+        </CardHeader>
+        {reportContent.executiveSummaryEnabled && (
+          <CardContent className="space-y-3 pt-0">
+            <p className="text-xs text-muted-foreground">
+              Se mostrará en una página dedicada justo después de la portada. Puede generarlo con IA o escribirlo manualmente.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateExecutiveSummary}
+                disabled={generatingAI || !stats || responses.length === 0}
+                className="gap-1.5"
+              >
+                {generatingAI ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                {generatingAI ? "Generando…" : "Generar con IA"}
+              </Button>
+              {reportContent.executiveSummary && (
+                <Badge variant="secondary" className="text-xs">
+                  {reportContent.executiveSummary.length} caracteres
+                </Badge>
+              )}
+            </div>
+            <Textarea
+              value={reportContent.executiveSummary || ""}
+              onChange={e => setReportContent(prev => ({ ...prev, executiveSummary: e.target.value }))}
+              placeholder="Escriba o genere el resumen ejecutivo del informe…"
+              className="min-h-[120px] text-sm"
+            />
+          </CardContent>
+        )}
+      </Card>
+
       {/* Sections */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
