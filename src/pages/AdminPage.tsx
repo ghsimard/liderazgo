@@ -282,7 +282,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       const defaultSub = sub360Map[activeTab] || "formularios";
       return (
         <Tabs defaultValue={defaultSub} className="space-y-4">
-          <TabsList className="flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-background py-2">
+          <TabsList className="flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md">
             <TabsTrigger value="formularios" className="gap-1.5"><Link2 className="w-4 h-4" /> Formularios</TabsTrigger>
             <TabsTrigger value="inicial" className="gap-1.5"><PlayCircle className="w-4 h-4" /> Inicial</TabsTrigger>
             <TabsTrigger value="final" className="gap-1.5"><FlagTriangleRight className="w-4 h-4" /> Final</TabsTrigger>
