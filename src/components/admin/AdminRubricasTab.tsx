@@ -113,7 +113,7 @@ export default function AdminRubricasTab() {
     <Tabs defaultValue="evaluadores">
       <TabsList className="mb-4">
         <TabsTrigger value="evaluadores" className="gap-1.5">
-          <UserCheck className="w-4 h-4" /> Evaluadores y asignaciones
+          <UserCheck className="w-4 h-4" /> Configuración
         </TabsTrigger>
         <TabsTrigger value="informes" className="gap-1.5">
           <FileText className="w-4 h-4" /> Informes por módulo
