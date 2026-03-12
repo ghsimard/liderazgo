@@ -473,10 +473,12 @@ function ResponseDetailDialog({
   response,
   onClose,
   getName,
+  getIE,
 }: {
   response: ResponseRow | null;
   onClose: () => void;
   getName: (cedula: string) => string;
+  getIE: (cedula: string) => string;
 }) {
   if (!response) return null;
 
