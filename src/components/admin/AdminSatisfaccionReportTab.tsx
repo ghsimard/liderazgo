@@ -369,6 +369,19 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
     });
   };
 
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const from = result.source.index;
+    const to = result.destination.index;
+    if (from === to) return;
+    setReportContent(prev => {
+      const newSections = [...prev.sections];
+      const [moved] = newSections.splice(from, 1);
+      newSections.splice(to, 0, moved);
+      return { ...prev, sections: newSections };
+    });
+  };
+
   // Extra logos
   const handleAddLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
