@@ -495,6 +495,14 @@ export default function AdminSatisfaccionesTab() {
                       <Badge variant="outline" className="text-xs">{FORM_TYPE_LABELS[r.form_type] || r.form_type}</Badge>
                       <Badge variant="secondary" className="text-xs">Mód. {r.module_number}</Badge>
                       <Eye className="w-4 h-4 text-muted-foreground" />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => { e.stopPropagation(); setDeleteOneId(r.id); }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
