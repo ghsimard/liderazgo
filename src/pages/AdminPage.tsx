@@ -305,11 +305,25 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
           <p className="text-sm text-muted-foreground">Copia el enlace de cada encuesta para compartirlo.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
-              { name: "Encuesta Docente", path: "/encuesta-docente", icon: BookOpen },
-              { name: "Encuesta Acudiente", path: "/encuesta-acudiente", icon: Users },
-              { name: "Encuesta Estudiante", path: "/encuesta-estudiante", icon: GraduationCap },
+              { name: "Encuesta Acudiente", path: "/encuesta-ambiente-acudientes", icon: Users },
+              { name: "Encuesta Estudiante", path: "/encuesta-ambiente-estudiantes", icon: GraduationCap },
+              { name: "Encuesta Docente", path: "/encuesta-ambiente-docentes", icon: BookOpen },
             ].map((f) => <FormCard key={f.path} form={f} />)}
           </div>
+        </div>
+      );
+    case "satisfacciones":
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
+          <h3 className="text-lg font-semibold">Satisfacciones</h3>
+          <p className="text-sm text-muted-foreground">Esta sección está en construcción.</p>
+        </div>
+      );
+    case "certificaciones":
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
+          <h3 className="text-lg font-semibold">Certificaciones</h3>
+          <p className="text-sm text-muted-foreground">Esta sección está en construcción.</p>
         </div>
       );
     case "reviews":
