@@ -1411,6 +1411,7 @@ export default function FichaRLTForm() {
                 <DatePickerField
                   value={watch("fecha_vinculacion_servicio") ?? ""}
                   onChange={(v) => setValue("fecha_vinculacion_servicio", v)}
+                  yearRange={{ min: new Date().getFullYear() - 50, max: new Date().getFullYear() }}
                 />
               </FormFieldWrapper>
 
@@ -1418,6 +1419,7 @@ export default function FichaRLTForm() {
                 <DatePickerField
                   value={watch("fecha_nombramiento_cargo") ?? ""}
                   onChange={(v) => setValue("fecha_nombramiento_cargo", v)}
+                  yearRange={{ min: new Date().getFullYear() - 50, max: new Date().getFullYear() }}
                 />
               </FormFieldWrapper>
 
@@ -1425,6 +1427,7 @@ export default function FichaRLTForm() {
                 <DatePickerField
                   value={watch("fecha_nombramiento_ie") ?? ""}
                   onChange={(v) => setValue("fecha_nombramiento_ie", v)}
+                  yearRange={{ min: new Date().getFullYear() - 50, max: new Date().getFullYear() }}
                 />
               </FormFieldWrapper>
 
