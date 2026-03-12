@@ -562,35 +562,51 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   // ══════════════════════════════════════════
   doc.setPage(1);
   let tocEntryY = tocY;
-  doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
+
+  // Regenerate numbering for TOC
+  let tocMain = 0;
+  let tocSub = 0;
 
   for (let i = 0; i < sectionPages.length; i++) {
     const entry = sectionPages[i];
-    const pageNum = entry.page - 1; // subtract cover page
+    const pageNum = entry.page - 1;
 
-    // Section number + title
+    let numStr: string;
+    if (entry.isSubsection) {
+      tocSub++;
+      numStr = `${tocMain}.${tocSub}`;
+    } else {
+      tocMain++;
+      tocSub = 0;
+      numStr = String(tocMain);
+    }
+
+    const indent = entry.isSubsection ? margin + 10 : margin + 4;
+    doc.setFont("helvetica", entry.isSubsection ? "normal" : "bold");
     doc.setTextColor(60, 60, 60);
-    const label = `${i + 1}. ${entry.title}`;
-    const truncated = label.length > 70 ? label.slice(0, 67) + "…" : label;
-    doc.text(truncated, margin + 4, tocEntryY);
+    const label = `${numStr}  ${entry.title}`;
+    const maxLabelW = pageW - margin - indent - 20;
+    const truncated = doc.getTextWidth(label) > maxLabelW
+      ? label.slice(0, Math.floor(maxLabelW / 2)) + "…"
+      : label;
+    doc.text(truncated, indent, tocEntryY);
 
     // Dotted leader + page number
     const labelW = doc.getTextWidth(truncated);
     const pageNumStr = String(pageNum);
     const pageNumW = doc.getTextWidth(pageNumStr);
-    const dotsStart = margin + 4 + labelW + 2;
+    const dotsStart = indent + labelW + 2;
     const dotsEnd = pageW - margin - pageNumW - 2;
 
-    // Draw dots
     doc.setTextColor(180, 180, 180);
+    doc.setFont("helvetica", "normal");
     let dotX = dotsStart;
     while (dotX < dotsEnd) {
       doc.text(".", dotX, tocEntryY);
       dotX += 2;
     }
 
-    // Page number right-aligned
     doc.setTextColor(60, 60, 60);
     doc.setFont("helvetica", "bold");
     doc.text(pageNumStr, pageW - margin, tocEntryY, { align: "right" });
