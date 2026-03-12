@@ -99,9 +99,9 @@ export async function generarPDFAmbienteEscolarEnBlanco(
     if (cosmoB64) doc.addImage(cosmoB64, "PNG", (pageW - cosmoW) / 2, logoY + 1, cosmoW, cosmoH);
   };
 
-  const drawHeader = () => {
+  const drawHeader = (isFirstPage = false) => {
     drawLogos();
-    y = 24;
+    y = isFirstPage ? 30 : 24;
   };
 
   const drawFooter = (pageNum: number, totalPages: number) => {
@@ -122,7 +122,7 @@ export async function generarPDFAmbienteEscolarEnBlanco(
 
   // ── Page 1: Title + Intro ──
 
-  drawHeader();
+  drawHeader(true);
 
   // Title
   doc.setFontSize(13);
