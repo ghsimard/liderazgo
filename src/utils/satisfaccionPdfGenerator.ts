@@ -123,7 +123,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.3);
     doc.line(margin, 24, pageW - margin, 24);
-    return 28;
+    return 34;
   };
 
   // ── Footer ──
