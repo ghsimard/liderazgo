@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { genderizeRole } from "@/utils/genderizeRole";
 import type { SatisfaccionFormDef, SatisfaccionQuestion, SatisfaccionOption } from "@/data/satisfaccionData";
 
 interface SatisfaccionFormProps {
@@ -80,7 +81,7 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
     const enriched = { ...answers };
     enriched.fecha_sesion = new Date().toISOString().slice(0, 10);
     if (fichaInfo) {
-      enriched.rol_ie = fichaInfo.cargo_actual || "";
+      enriched.rol_ie = genderizeRole(fichaInfo.cargo_actual, fichaInfo.genero) || "";
       enriched.nombre_completo = fichaInfo.nombres_apellidos || "";
       enriched.correo = fichaInfo.correo_personal || fichaInfo.correo_institucional || "";
       enriched.institucion = fichaInfo.nombre_ie || "";
@@ -110,7 +111,7 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Rol en la Institución Educativa</Label>
-                <Input value={fichaInfo.cargo_actual || ""} disabled className="bg-muted/50" />
+                <Input value={genderizeRole(fichaInfo.cargo_actual, fichaInfo.genero) || ""} disabled className="bg-muted/50" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Nombre(s) y apellido(s) completos</Label>
