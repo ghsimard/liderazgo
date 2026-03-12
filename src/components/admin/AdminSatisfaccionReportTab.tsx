@@ -754,7 +754,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
 
 // ── Section Editor Component ──
 function SectionEditor({
-  section, index, total, onUpdate, onRemove, onMove, stats, dragHandleProps, isDragging,
+  section, index, total, onUpdate, onRemove, onMove, stats, filterType, filterModule, filterRegion, totalResponses, dragHandleProps, isDragging,
 }: {
   section: ReportSection;
   index: number;
@@ -763,11 +763,16 @@ function SectionEditor({
   onRemove: () => void;
   onMove: (dir: -1 | 1) => void;
   stats: any;
+  filterType: string;
+  filterModule: string;
+  filterRegion: string;
+  totalResponses: number;
   dragHandleProps?: any;
   isDragging?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [previewChart, setPreviewChart] = useState<any>(null);
+  const [showFichaPreview, setShowFichaPreview] = useState(false);
   const isAuto = section.type === "ficha_tecnica" || section.type === "satisfaction_summary" || section.type === "comments_annex";
   const chartData = section.type === "chart_analysis" && stats
     ? stats.sections.find((s: any) => s.title === section.chartSectionTitle)
