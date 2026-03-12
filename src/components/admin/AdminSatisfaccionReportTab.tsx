@@ -13,7 +13,7 @@
  * - Recomendaciones (text)
  * - Anexo: comentarios textuales (auto)
  */
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -160,31 +160,36 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
   const loadReportContent = useCallback(async () => {
     if (!filterRegion || filterModule === "all") return;
     setLoading(true);
-    const { data } = await supabase
-      .from("satisfaccion_report_content")
-      .select("*")
-      .eq("form_type", filterType)
-      .eq("module_number", parseInt(filterModule))
-      .eq("region", filterRegion)
-      .maybeSingle();
+    try {
+      const { data } = await supabase
+        .from("satisfaccion_report_content")
+        .select("*")
+        .eq("form_type", filterType)
+        .eq("module_number", parseInt(filterModule))
+        .eq("region", filterRegion)
+        .maybeSingle();
 
-    if (data?.content) {
-      const saved = data.content as any;
-      setReportContent({
-        reportTitle: saved.reportTitle || "INFORME EXTENDIDO – ENCUESTA DE SATISFACCIÓN",
-        reportSubtitle: saved.reportSubtitle || "",
-        sections: saved.sections || buildDefaultSections(filterType),
-        extraLogos: (data as any).extra_logos || [],
-      });
-    } else {
-      setReportContent({
-        reportTitle: `INFORME EXTENDIDO – ENCUESTA DE SATISFACCIÓN ${FORM_TYPE_LABELS[filterType]?.toUpperCase() || ""} ${filterModule}`,
-        reportSubtitle: "",
-        sections: buildDefaultSections(filterType),
-        extraLogos: [],
-      });
+      if (data?.content) {
+        const saved = data.content as any;
+        setReportContent({
+          reportTitle: saved.reportTitle || "INFORME EXTENDIDO – ENCUESTA DE SATISFACCIÓN",
+          reportSubtitle: saved.reportSubtitle || "",
+          sections: saved.sections || buildDefaultSections(filterType),
+          extraLogos: (data as any).extra_logos || [],
+        });
+      } else {
+        setReportContent({
+          reportTitle: `INFORME EXTENDIDO – ENCUESTA DE SATISFACCIÓN ${FORM_TYPE_LABELS[filterType]?.toUpperCase() || ""} ${filterModule}`,
+          reportSubtitle: "",
+          sections: buildDefaultSections(filterType),
+          extraLogos: [],
+        });
+      }
+    } catch (err) {
+      console.error("Error loading report content:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [filterType, filterModule, filterRegion]);
 
   useEffect(() => { loadReportContent(); }, [loadReportContent]);
@@ -328,6 +333,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
     }));
   };
 
+  const sectionsEndRef = useRef<HTMLDivElement>(null);
+
   const addSection = (type: SectionType) => {
     const newSection: ReportSection = {
       id: generateId(),
@@ -338,6 +345,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
       enabled: true,
     };
     setReportContent(prev => ({ ...prev, sections: [...prev.sections, newSection] }));
+    toast({ title: `Sección "${SECTION_TYPE_LABELS[type]}" agregada` });
+    setTimeout(() => sectionsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   };
 
   const removeSection = (id: string) => {
@@ -545,6 +554,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
             stats={stats}
           />
         ))}
+        <div ref={sectionsEndRef} />
       </div>
 
       {/* Actions */}
