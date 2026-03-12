@@ -586,6 +586,51 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
           y += chartH + 8;
 
+        } else if (chartType === "vertical_bar") {
+          // ── VERTICAL BAR CHART ──
+          const chartH = 70;
+          y = checkPageBreak(chartH + 30);
+          const n = chartData.data.length;
+          const maxVal = Math.max(...chartData.data.map((d: any) => d.value), 100);
+          const totalBarArea = contentW - 10;
+          const barW = Math.min(totalBarArea / n - 2, 18);
+          const gap = (totalBarArea - barW * n) / (n + 1);
+          const baseY = y + chartH;
+
+          // Grid lines
+          doc.setDrawColor(220, 220, 220);
+          doc.setLineWidth(0.2);
+          for (let pct = 0; pct <= 100; pct += 25) {
+            const gy = baseY - (pct / maxVal) * chartH;
+            doc.line(margin, gy, pageW - margin, gy);
+            doc.setFontSize(6);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(150, 150, 150);
+            doc.text(`${pct}%`, margin - 1, gy + 1.5, { align: "right" });
+          }
+
+          chartData.data.forEach((item: any, i: number) => {
+            const barH = (item.value / maxVal) * chartH;
+            const barX = margin + gap + i * (barW + gap);
+            const c = CHART_COLORS[i % CHART_COLORS.length];
+            doc.setFillColor(c[0], c[1], c[2]);
+            doc.rect(barX, baseY - barH, barW, barH, "F");
+
+            // Value on top
+            doc.setFontSize(6.5);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(30, 30, 30);
+            doc.text(`${item.value}%`, barX + barW / 2, baseY - barH - 2, { align: "center" });
+
+            // Label below (rotated would be complex, use truncated horizontal)
+            doc.setFontSize(5.5);
+            doc.setFont("helvetica", "normal");
+            const lbl = item.label.length > 15 ? item.label.substring(0, 12) + "…" : item.label;
+            doc.text(lbl, barX + barW / 2, baseY + 4, { align: "center" });
+          });
+
+          y = baseY + 12;
+
         } else {
           // ── HORIZONTAL BAR CHART (default) ──
           const barMaxW = contentW - 50;

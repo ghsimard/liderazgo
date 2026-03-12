@@ -55,10 +55,11 @@ interface RegionRow {
 /** Section types for the report builder */
 type SectionType = "text" | "chart_analysis" | "ficha_tecnica" | "satisfaction_summary" | "comments_annex" | "bullet_list";
 
-type ChartType = "horizontal_bar" | "radar" | "pie";
+type ChartType = "horizontal_bar" | "vertical_bar" | "radar" | "pie";
 
 const CHART_TYPE_LABELS: Record<ChartType, string> = {
   horizontal_bar: "Barras horizontales",
+  vertical_bar: "Barras verticales",
   radar: "Araña / Radar",
   pie: "Circular (Pie)",
 };
@@ -828,33 +829,19 @@ function SectionEditor({
                 )}
 
                 {section.type === "chart_analysis" && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <Label className="text-xs shrink-0">Tipo de gráfico:</Label>
-                      <select
-                        value={section.chartType || "horizontal_bar"}
-                        onChange={e => onUpdate({ chartType: e.target.value as ChartType })}
-                        className="border rounded px-2 py-1 text-xs bg-background"
+                  <div className="text-xs text-muted-foreground">
+                    {chartData ? (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewChart(chartData)}
+                        className="text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
                       >
-                        {(Object.keys(CHART_TYPE_LABELS) as ChartType[]).map(ct => (
-                          <option key={ct} value={ct}>{CHART_TYPE_LABELS[ct]}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {chartData ? (
-                        <button
-                          type="button"
-                          onClick={() => setPreviewChart(chartData)}
-                          className="text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          ✓ Gráfico disponible: {chartData.data.length} indicadores — clic para ver
-                        </button>
-                      ) : (
-                        <span className="text-amber-600">⚠ Sin datos para gráfico "{section.chartSectionTitle}"</span>
-                      )}
-                    </div>
+                        <Eye className="w-3.5 h-3.5" />
+                        ✓ Gráfico disponible ({CHART_TYPE_LABELS[section.chartType || "horizontal_bar"]}): {chartData.data.length} indicadores — clic para ver/cambiar
+                      </button>
+                    ) : (
+                      <span className="text-amber-600">⚠ Sin datos para gráfico "{section.chartSectionTitle}"</span>
+                    )}
                   </div>
                 )}
 
@@ -887,35 +874,37 @@ function SectionEditor({
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Chart preview modal */}
+      {/* Chart preview modal with type selector */}
       <Dialog open={!!previewChart} onOpenChange={() => setPreviewChart(null)}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base">{previewChart?.title}</DialogTitle>
           </DialogHeader>
           {previewChart && (
-            <div className="space-y-2">
-              {previewChart.data.map((item: any, i: number) => {
-                const maxVal = Math.max(...previewChart.data.map((d: any) => d.value), 1);
-                const barWidth = Math.max((item.value / maxVal) * 100, 2);
-                const barColor = item.value >= 80 ? "bg-emerald-500" : item.value >= 60 ? "bg-amber-500" : "bg-destructive";
-                return (
-                  <div key={i} className="space-y-0.5">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-foreground truncate max-w-[70%]">{item.label}</span>
-                      <span className="font-semibold text-foreground">{item.value}%</span>
-                    </div>
-                    <div className="h-5 bg-muted rounded overflow-hidden">
-                      <div
-                        className={`h-full ${barColor} rounded transition-all`}
-                        style={{ width: `${barWidth}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="space-y-4">
+              {/* Chart type selector */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {(Object.keys(CHART_TYPE_LABELS) as ChartType[]).map(ct => (
+                  <button
+                    key={ct}
+                    type="button"
+                    onClick={() => onUpdate({ chartType: ct })}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      (section.chartType || "horizontal_bar") === ct
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted text-muted-foreground border-border hover:bg-accent"
+                    }`}
+                  >
+                    {CHART_TYPE_LABELS[ct]}
+                  </button>
+                ))}
+              </div>
+
+              {/* Live chart preview */}
+              <ChartPreview data={previewChart.data} chartType={section.chartType || "horizontal_bar"} />
+
               <p className="text-xs text-muted-foreground pt-2">
-                Tipo: {previewChart.type} · {previewChart.data.length} indicadores
+                {previewChart.data.length} indicadores
               </p>
             </div>
           )}
@@ -923,6 +912,163 @@ function SectionEditor({
       </Dialog>
     </Card>
   );
+}
+
+// ── Chart Preview Component ──
+const PREVIEW_COLORS = [
+  "hsl(var(--primary))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+  "hsl(var(--accent))",
+];
+
+function ChartPreview({ data, chartType }: { data: { label: string; value: number }[]; chartType: ChartType }) {
+  const maxVal = Math.max(...data.map(d => d.value), 1);
+
+  if (chartType === "horizontal_bar") {
+    return (
+      <div className="space-y-2">
+        {data.map((item, i) => {
+          const barWidth = Math.max((item.value / maxVal) * 100, 2);
+          return (
+            <div key={i} className="space-y-0.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-foreground truncate max-w-[70%]">{item.label}</span>
+                <span className="font-semibold text-foreground">{item.value}%</span>
+              </div>
+              <div className="h-5 bg-muted rounded overflow-hidden">
+                <div className="h-full rounded transition-all" style={{ width: `${barWidth}%`, backgroundColor: PREVIEW_COLORS[i % PREVIEW_COLORS.length] }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (chartType === "vertical_bar") {
+    const barW = Math.max(100 / data.length - 2, 4);
+    return (
+      <div className="flex items-end gap-1 justify-center" style={{ height: 200 }}>
+        {data.map((item, i) => {
+          const barH = Math.max((item.value / maxVal) * 170, 4);
+          return (
+            <div key={i} className="flex flex-col items-center gap-1" style={{ width: `${barW}%`, maxWidth: 60 }}>
+              <span className="text-[10px] font-semibold text-foreground">{item.value}%</span>
+              <div className="w-full rounded-t transition-all" style={{ height: barH, backgroundColor: PREVIEW_COLORS[i % PREVIEW_COLORS.length] }} />
+              <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 w-full">{item.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (chartType === "pie") {
+    const total = data.reduce((s, d) => s + d.value, 0) || 1;
+    let cumAngle = 0;
+    const slices = data.map((item, i) => {
+      const angle = (item.value / total) * 360;
+      const startAngle = cumAngle;
+      cumAngle += angle;
+      return { ...item, startAngle, angle, color: PREVIEW_COLORS[i % PREVIEW_COLORS.length] };
+    });
+
+    const r = 80;
+    const cx = 90, cy = 90;
+    const toRad = (deg: number) => (deg - 90) * Math.PI / 180;
+
+    return (
+      <div className="flex items-center gap-6 justify-center">
+        <svg width={180} height={180} viewBox="0 0 180 180">
+          {slices.map((s, i) => {
+            const startRad = toRad(s.startAngle);
+            const endRad = toRad(s.startAngle + s.angle);
+            const largeArc = s.angle > 180 ? 1 : 0;
+            const x1 = cx + r * Math.cos(startRad);
+            const y1 = cy + r * Math.sin(startRad);
+            const x2 = cx + r * Math.cos(endRad);
+            const y2 = cy + r * Math.sin(endRad);
+            return (
+              <path
+                key={i}
+                d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc},1 ${x2},${y2} Z`}
+                fill={s.color}
+                stroke="hsl(var(--background))"
+                strokeWidth={1.5}
+              />
+            );
+          })}
+        </svg>
+        <div className="space-y-1.5 text-xs max-w-[200px]">
+          {data.map((item, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: PREVIEW_COLORS[i % PREVIEW_COLORS.length] }} />
+              <span className="text-foreground truncate">{item.label}: {item.value}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (chartType === "radar") {
+    const n = data.length;
+    const r = 70;
+    const cx = 110, cy = 100;
+    const angleStep = (2 * Math.PI) / n;
+
+    const points = data.map((item, i) => {
+      const a = -Math.PI / 2 + i * angleStep;
+      const val = (Math.min(item.value, 100) / 100) * r;
+      return { x: cx + val * Math.cos(a), y: cy + val * Math.sin(a) };
+    });
+    const polyPoints = points.map(p => `${p.x},${p.y}`).join(" ");
+
+    return (
+      <div className="flex items-center gap-4 justify-center">
+        <svg width={220} height={200} viewBox="0 0 220 200">
+          {/* Grid rings */}
+          {[0.25, 0.5, 0.75, 1].map(ring => (
+            <polygon
+              key={ring}
+              points={Array.from({ length: n }, (_, i) => {
+                const a = -Math.PI / 2 + i * angleStep;
+                return `${cx + r * ring * Math.cos(a)},${cy + r * ring * Math.sin(a)}`;
+              }).join(" ")}
+              fill="none"
+              stroke="hsl(var(--border))"
+              strokeWidth={0.5}
+            />
+          ))}
+          {/* Axes */}
+          {Array.from({ length: n }, (_, i) => {
+            const a = -Math.PI / 2 + i * angleStep;
+            return <line key={i} x1={cx} y1={cy} x2={cx + r * Math.cos(a)} y2={cy + r * Math.sin(a)} stroke="hsl(var(--border))" strokeWidth={0.5} />;
+          })}
+          {/* Data polygon */}
+          <polygon points={polyPoints} fill="hsl(var(--primary) / 0.15)" stroke="hsl(var(--primary))" strokeWidth={2} />
+          {/* Labels */}
+          {data.map((item, i) => {
+            const a = -Math.PI / 2 + i * angleStep;
+            const lx = cx + (r + 18) * Math.cos(a);
+            const ly = cy + (r + 18) * Math.sin(a);
+            const anchor = Math.cos(a) < -0.1 ? "end" : Math.cos(a) > 0.1 ? "start" : "middle";
+            const lbl = item.label.length > 20 ? item.label.substring(0, 17) + "…" : item.label;
+            return (
+              <text key={i} x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle" className="fill-foreground" fontSize={8}>
+                {lbl} ({item.value}%)
+              </text>
+            );
+          })}
+        </svg>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 // ── Bullet List Editor ──
