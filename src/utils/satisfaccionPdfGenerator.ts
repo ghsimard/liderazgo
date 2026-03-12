@@ -246,22 +246,19 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     coverY += 6;
   }
 
-  // Table of contents
+  // Table of contents placeholder — will be filled after content is rendered
+  const tocStartY = coverY;
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(59, 130, 246); // blue
+  doc.setTextColor(59, 130, 246);
   doc.text("Tabla de contenido", margin, coverY);
   coverY += 7;
 
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
-  doc.setTextColor(60, 60, 60);
+  // Reserve space for TOC entries (we'll come back to fill page numbers)
   const enabledSections = reportContent.sections.filter(s => s.enabled);
-  enabledSections.forEach((section, i) => {
-    const label = `${section.title}`;
-    doc.text(label, margin + 4, coverY);
-    coverY += 5;
-  });
+  const tocY = coverY; // save for later
+  coverY += enabledSections.length * 5 + 4;
+
   doc.setTextColor(30, 30, 30);
 
   // Cosmo logo at bottom of cover
@@ -269,11 +266,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     const dim = logoH(cosmoSize.width, cosmoSize.height, 10);
     doc.addImage(cosmoB64, "PNG", margin, pageH - 20, dim.w, dim.h);
   }
-  // Page 1
-  doc.setFontSize(8);
-  doc.setTextColor(130, 130, 130);
-  doc.text("1", pageW - margin, pageH - 8, { align: "right" });
-  doc.setTextColor(30, 30, 30);
+
+  // Track section page numbers
+  const sectionPages: { title: string; page: number }[] = [];
 
   // ══════════════════════════════════════════
   // CONTENT PAGES
