@@ -463,6 +463,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
         generalSatisfaction: stats.generalSatisfaction,
         overallSatisfaction: stats.overallSatisfaction,
         comments: stats.comments,
+        executiveSummary: reportContent.executiveSummaryEnabled ? reportContent.executiveSummary : undefined,
       });
       toast({ title: "PDF generado exitosamente" });
     } catch (err: any) {
