@@ -110,19 +110,19 @@ export default function AdminRubricasTab() {
   };
 
   return (
-    <Tabs defaultValue="evaluadores">
+    <Tabs defaultValue="resultados">
       <TabsList className="mb-4">
-        <TabsTrigger value="evaluadores" className="gap-1.5">
-          <UserCheck className="w-4 h-4" /> Configuración
+        <TabsTrigger value="resultados" className="gap-1.5">
+          <ClipboardList className="w-4 h-4" /> Resultados
         </TabsTrigger>
         <TabsTrigger value="informes" className="gap-1.5">
           <FileText className="w-4 h-4" /> Informes por módulo
         </TabsTrigger>
-        <TabsTrigger value="resultados" className="gap-1.5">
-          <ClipboardList className="w-4 h-4" /> Resultados
-        </TabsTrigger>
         <TabsTrigger value="regional" className="gap-1.5">
           <BarChart3 className="w-4 h-4" /> Informe regional
+        </TabsTrigger>
+        <TabsTrigger value="evaluadores" className="gap-1.5">
+          <UserCheck className="w-4 h-4" /> Configuración
         </TabsTrigger>
       </TabsList>
 

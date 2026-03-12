@@ -259,13 +259,13 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
         <Tabs defaultValue={defaultSub} className="space-y-4">
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="formularios" className="gap-1.5"><Link2 className="w-4 h-4" /> Formularios</TabsTrigger>
-            <TabsTrigger value="configuracion" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
             <TabsTrigger value="inicial" className="gap-1.5"><PlayCircle className="w-4 h-4" /> Inicial</TabsTrigger>
             <TabsTrigger value="final" className="gap-1.5"><FlagTriangleRight className="w-4 h-4" /> Final</TabsTrigger>
             <TabsTrigger value="invitaciones" className="gap-1.5"><Users className="w-4 h-4" /> Invitaciones</TabsTrigger>
             <TabsTrigger value="informes-inicial" className="gap-1.5"><FileBarChart className="w-4 h-4" /> Informes Inicial</TabsTrigger>
             <TabsTrigger value="informes-final" className="gap-1.5"><FileBarChart2 className="w-4 h-4" /> Informes Final</TabsTrigger>
             <TabsTrigger value="blancos" className="gap-1.5"><Printer className="w-4 h-4" /> PDF en Blanco</TabsTrigger>
+            <TabsTrigger value="configuracion" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
           </TabsList>
 
           <TabsContent value="formularios">
