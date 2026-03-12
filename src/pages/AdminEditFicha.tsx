@@ -482,10 +482,17 @@ export default function AdminEditFicha() {
 
       reset(formData);
 
-      // Initialiser municipioSeleccionado selon la région
+      // Initialiser municipioSeleccionado selon la région et l'institution sauvegardée
       const munis = geo.getMunicipiosForRegion(region);
       if (munis.length === 1) {
         setMunicipioSeleccionado(munis[0]);
+      } else if (munis.length > 1 && data.nombre_ie) {
+        // Déduire le municipio à partir de l'institution sauvegardée
+        const found = munis.find((m) => {
+          const insts = geo.getInstitucionesForMunicipio(region, m);
+          return insts.includes(data.nombre_ie);
+        });
+        setMunicipioSeleccionado(found ?? "");
       } else {
         setMunicipioSeleccionado("");
       }
