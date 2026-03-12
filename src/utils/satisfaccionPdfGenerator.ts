@@ -15,24 +15,70 @@ import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 function htmlToPlainText(html: string): string {
   if (!html) return "";
   let text = html;
-  // Convert block-level elements to newlines
   text = text.replace(/<\/p>/gi, "\n");
   text = text.replace(/<br\s*\/?>/gi, "\n");
   text = text.replace(/<\/li>/gi, "\n");
   text = text.replace(/<li[^>]*>/gi, "• ");
   text = text.replace(/<\/(?:div|h[1-6]|tr|blockquote)>/gi, "\n");
-  // Remove all remaining tags
   text = text.replace(/<[^>]+>/g, "");
-  // Decode common HTML entities
   text = text.replace(/&amp;/g, "&");
   text = text.replace(/&lt;/g, "<");
   text = text.replace(/&gt;/g, ">");
   text = text.replace(/&quot;/g, '"');
   text = text.replace(/&#39;/g, "'");
   text = text.replace(/&nbsp;/g, " ");
-  // Clean up extra whitespace
   text = text.replace(/\n{3,}/g, "\n\n");
   return text.trim();
+}
+
+/** Decode HTML entities only */
+function decodeEntities(s: string): string {
+  return s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ");
+}
+
+/** Parse HTML into styled segments: { text, bold, italic } */
+interface StyledSegment { text: string; bold: boolean; italic: boolean; }
+
+function parseHtmlToSegments(html: string): { paragraphs: StyledSegment[][] } {
+  if (!html) return { paragraphs: [] };
+  // Normalize: split by block-level elements into paragraphs
+  let normalized = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "¶")
+    .replace(/<\/li>/gi, "¶")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<\/(?:div|h[1-6]|tr|blockquote)>/gi, "¶")
+    .replace(/<p[^>]*>/gi, "");
+
+  const rawParagraphs = normalized.split("¶").map(p => p.trim()).filter(Boolean);
+  const paragraphs: StyledSegment[][] = [];
+
+  for (const rawP of rawParagraphs) {
+    const lines = rawP.split("\n");
+    for (const line of lines) {
+      const segments: StyledSegment[] = [];
+      // Parse inline formatting tags
+      const regex = /(<\/?(?:strong|b|em|i|u|s)(?:\s[^>]*)?>)/gi;
+      const parts = line.split(regex);
+      let bold = false;
+      let italic = false;
+      for (const part of parts) {
+        if (!part) continue;
+        const lower = part.toLowerCase();
+        if (lower === "<strong>" || lower === "<b>") { bold = true; continue; }
+        if (lower === "</strong>" || lower === "</b>") { bold = false; continue; }
+        if (lower === "<em>" || lower === "<i>") { italic = true; continue; }
+        if (lower === "</em>" || lower === "</i>") { italic = false; continue; }
+        if (/^<\/?(?:u|s)(?:\s|>)/i.test(part)) continue; // skip underline/strikethrough tags
+        // Strip any remaining tags from this part
+        const clean = decodeEntities(part.replace(/<[^>]+>/g, ""));
+        if (clean) segments.push({ text: clean, bold, italic });
+      }
+      if (segments.length > 0) paragraphs.push(segments);
+    }
+  }
+  return { paragraphs };
 }
 
 function loadImageAsBase64(src: string): Promise<string> {
@@ -194,20 +240,65 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     return y;
   };
 
-  // ── Wrap text and advance y ──
+  // ── Write a single styled segment run on the current line ──
+  const writeStyledLine = (segments: StyledSegment[], startX: number, maxW: number, fontSize: number, lineSpacing: number) => {
+    // Flatten segments into words with style, then wrap manually
+    interface Word { text: string; bold: boolean; italic: boolean; width: number; }
+    const words: Word[] = [];
+    for (const seg of segments) {
+      const style = seg.bold && seg.italic ? "bolditalic" : seg.bold ? "bold" : seg.italic ? "italic" : "normal";
+      doc.setFont("helvetica", style);
+      doc.setFontSize(fontSize);
+      const parts = seg.text.split(/(\s+)/);
+      for (const p of parts) {
+        if (!p) continue;
+        words.push({ text: p, bold: seg.bold, italic: seg.italic, width: doc.getTextWidth(p) });
+      }
+    }
+    // Line-wrap
+    let lineWords: Word[] = [];
+    let lineW = 0;
+    const flushLine = () => {
+      if (lineWords.length === 0) return;
+      y = checkPageBreak(lineSpacing + 2);
+      let cx = startX;
+      for (const w of lineWords) {
+        const style = w.bold && w.italic ? "bolditalic" : w.bold ? "bold" : w.italic ? "italic" : "normal";
+        doc.setFont("helvetica", style);
+        doc.setFontSize(fontSize);
+        doc.text(w.text, cx, y);
+        cx += w.width;
+      }
+      y += lineSpacing;
+      lineWords = [];
+      lineW = 0;
+    };
+    for (const w of words) {
+      if (lineW + w.width > maxW && lineWords.length > 0) flushLine();
+      lineWords.push(w);
+      lineW += w.width;
+    }
+    flushLine();
+  };
+
+  // ── Wrap text and advance y (rich text aware) ──
   const writeText = (rawText: string, fontSize: number = 10, lineSpacing: number = 5) => {
-    const text = htmlToPlainText(rawText);
-    doc.setFontSize(fontSize);
-    doc.setFont("helvetica", "normal");
-    const paragraphs = text.split("\n");
-    for (const para of paragraphs) {
-      if (!para.trim()) { y += lineSpacing; continue; }
-      const lines = doc.splitTextToSize(para.trim(), contentW);
+    const { paragraphs } = parseHtmlToSegments(rawText);
+    if (paragraphs.length === 0) {
+      // Fallback for plain text without HTML
+      const text = htmlToPlainText(rawText);
+      doc.setFontSize(fontSize);
+      doc.setFont("helvetica", "normal");
+      const lines = doc.splitTextToSize(text, contentW);
       for (const line of lines) {
         y = checkPageBreak(lineSpacing + 2);
         doc.text(line, margin, y);
         y += lineSpacing;
       }
+      return;
+    }
+    for (const segments of paragraphs) {
+      writeStyledLine(segments, margin, contentW, fontSize, lineSpacing);
       y += 1;
     }
   };
