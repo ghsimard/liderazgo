@@ -56,6 +56,11 @@ interface ReportSection {
   isSubsection?: boolean;
 }
 
+export interface ExtraLogo {
+  src: string;
+  scale: number; // percentage 10-200, default 100
+}
+
 export interface SatisfaccionReportOptions {
   filterType: string;
   filterModule: string;
@@ -63,12 +68,12 @@ export interface SatisfaccionReportOptions {
   totalResponses: number;
   showLogoRlt: boolean;
   showLogoClt: boolean;
-  extraLogos: string[];
+  extraLogos: ExtraLogo[];
   reportContent: {
     reportTitle: string;
     reportSubtitle: string;
     sections: ReportSection[];
-    extraLogos: string[];
+    extraLogos: ExtraLogo[];
   };
   sectionStats: SectionStat[];
   generalSatisfaction: { label: string; value: number }[];
@@ -109,16 +114,23 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
   // ── Header for content pages (and cover) ──
   const drawHeader = () => {
-    // RLT logo top-left
-    if (showLogoRlt && rltB64) {
+    // Position logic: if both logos, left/right. If only one, put it on the right.
+    const hasRlt = showLogoRlt && !!rltB64;
+    const hasClt = showLogoClt && !!cltB64;
+
+    if (hasRlt && hasClt) {
+      const dimRlt = logoH(rltSize.width, rltSize.height, 18);
+      doc.addImage(rltB64, "PNG", margin, 8, dimRlt.w, dimRlt.h);
+      const dimClt = logoH(cltSize.width, cltSize.height, 18);
+      doc.addImage(cltB64, "PNG", pageW - margin - dimClt.w, 8, dimClt.w, dimClt.h);
+    } else if (hasRlt) {
       const dim = logoH(rltSize.width, rltSize.height, 18);
-      doc.addImage(rltB64, "PNG", margin, 8, dim.w, dim.h);
-    }
-    // CLT logo top-right
-    if (showLogoClt && cltB64) {
+      doc.addImage(rltB64, "PNG", pageW - margin - dim.w, 8, dim.w, dim.h);
+    } else if (hasClt) {
       const dim = logoH(cltSize.width, cltSize.height, 18);
       doc.addImage(cltB64, "PNG", pageW - margin - dim.w, 8, dim.w, dim.h);
     }
+
     // Thin separator line
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.3);
@@ -126,19 +138,25 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     return 38;
   };
 
-  // ── Footer ──
+  // ── Footer (page numbers filled in second pass) ──
   const drawFooter = () => {
-    const pn = doc.getNumberOfPages();
     // Cosmo logo bottom-left
     if (cosmoB64) {
       const dim = logoH(cosmoSize.width, cosmoSize.height, 8);
       doc.addImage(cosmoB64, "PNG", margin, pageH - 14, dim.w, dim.h);
     }
-    // Page number bottom-right
-    doc.setFontSize(8);
-    doc.setTextColor(130, 130, 130);
-    doc.text(String(pn - 1), pageW - margin, pageH - 8, { align: "right" }); // page 1 = cover
-    doc.setTextColor(30, 30, 30);
+  };
+
+  // Fill page numbers "X/N" after all pages are created
+  const fillPageNumbers = () => {
+    const totalPages = doc.getNumberOfPages() - 1; // exclude cover
+    for (let p = 2; p <= doc.getNumberOfPages(); p++) {
+      doc.setPage(p);
+      doc.setFontSize(8);
+      doc.setTextColor(130, 130, 130);
+      doc.text(`${p - 1}/${totalPages}`, pageW - margin, pageH - 8, { align: "right" });
+      doc.setTextColor(30, 30, 30);
+    }
   };
 
   let y = 0;
@@ -197,24 +215,28 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
   // Extra/partner logos below header (centered)
   if (extraLogos.length > 0) {
-    const extraH = 16;
+    const baseH = 16;
     const gap = 15;
-    const loadedExtras: { b64: string; w: number }[] = [];
+    const loadedExtras: { b64: string; w: number; h: number }[] = [];
     for (const logo of extraLogos) {
       try {
-        const size = await getImageNaturalSize(logo);
-        const dim = logoH(size.width, size.height, extraH);
-        loadedExtras.push({ b64: logo, w: dim.w });
+        const size = await getImageNaturalSize(logo.src);
+        const scaleFactor = (logo.scale || 100) / 100;
+        const targetH = baseH * scaleFactor;
+        const dim = logoH(size.width, size.height, targetH);
+        loadedExtras.push({ b64: logo.src, w: dim.w, h: dim.h });
       } catch { /* skip */ }
     }
     if (loadedExtras.length > 0) {
+      const maxH = Math.max(...loadedExtras.map(e => e.h));
       const totalExtrasW = loadedExtras.reduce((sum, e) => sum + e.w, 0) + (loadedExtras.length - 1) * gap;
       let x = pageW / 2 - totalExtrasW / 2;
       for (const extra of loadedExtras) {
-        doc.addImage(extra.b64, "PNG", x, coverY, extra.w, extraH);
+        const yOffset = coverY + (maxH - extra.h) / 2; // vertically center
+        doc.addImage(extra.b64, "PNG", x, yOffset, extra.w, extra.h);
         x += extra.w + gap;
       }
-      coverY += extraH + 10;
+      coverY += maxH + 10;
     }
   }
 
@@ -658,6 +680,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   }
 
   doc.setTextColor(30, 30, 30);
+
+  // Fill page numbers on all content pages
+  fillPageNumbers();
 
   // Download
   const formLabel = FORM_TYPE_LABELS[filterType] || filterType;
