@@ -674,12 +674,11 @@ function SectionEditor({
             {section.enabled && (
               <>
                 {(section.type === "text" || section.type === "chart_analysis") && (
-                  <Textarea
+                  <RichTextEditor
                     value={section.content || ""}
-                    onChange={e => onUpdate({ content: e.target.value })}
-                    rows={section.type === "chart_analysis" ? 4 : 5}
+                    onChange={val => onUpdate({ content: val })}
                     placeholder={section.type === "chart_analysis" ? "Escriba el análisis de este bloque…" : "Escriba el contenido de esta sección…"}
-                    className="text-sm"
+                    minHeight={section.type === "chart_analysis" ? "80px" : "120px"}
                   />
                 )}
 
