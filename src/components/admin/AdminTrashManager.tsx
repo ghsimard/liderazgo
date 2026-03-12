@@ -36,6 +36,7 @@ const TYPE_LABELS: Record<string, string> = {
   municipio: "Municipio",
   institucion: "Institución",
   admin_user: "Administrador",
+  satisfaccion_response: "Respuesta Satisfacción",
 };
 
 export default function AdminTrashManager() {
@@ -125,6 +126,9 @@ export default function AdminTrashManager() {
       } else if (record.record_type === "institucion") {
         if (d.institucion) await supabase.from("instituciones").insert([d.institucion]);
         if (d.region_instituciones?.length > 0) await supabase.from("region_instituciones").insert(d.region_instituciones.map(({ id, ...rest }: any) => rest));
+      } else if (record.record_type === "satisfaccion_response") {
+        const { id, ...rest } = d;
+        await supabase.from("satisfaccion_responses").insert([{ id, ...rest }]);
       }
 
       await supabase.from("deleted_records").delete().eq("id", record.id);
