@@ -244,18 +244,18 @@ export default function AdminSatisfaccionesTab() {
     fetchData();
   };
 
-  /** Fetch names for a list of cedulas */
+  /** Fetch names + institution for a list of cedulas */
   const fetchNames = async (cedulas: string[]) => {
     const unknown = cedulas.filter((c) => !namesMap[c]);
     if (unknown.length === 0) return;
     const { data } = await supabase
       .from("fichas_rlt")
-      .select("numero_cedula,nombres,apellidos,nombres_apellidos")
+      .select("numero_cedula,nombres,apellidos,nombres_apellidos,nombre_ie")
       .in("numero_cedula", unknown);
     const newMap = { ...namesMap };
     (data || []).forEach((f: any) => {
       const fullName = (f.nombres && f.apellidos) ? `${f.nombres} ${f.apellidos}` : f.nombres_apellidos;
-      if (f.numero_cedula) newMap[f.numero_cedula] = fullName;
+      if (f.numero_cedula) newMap[f.numero_cedula] = { name: fullName, ie: f.nombre_ie || "" };
     });
     setNamesMap(newMap);
   };
