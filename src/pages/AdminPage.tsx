@@ -468,6 +468,8 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return isSuperAdmin ? <AdminChangelogTab /> : null;
     case "purge-data":
       return isSuperAdmin ? <AdminPurgeDataTab /> : null;
+    case "papelera":
+      return <AdminTrashManager />;
     default:
       return null;
   }
