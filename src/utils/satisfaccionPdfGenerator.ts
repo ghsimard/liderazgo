@@ -84,10 +84,10 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
   // Load logos with proportional sizing
   const [rltB64, rltSize, cltB64, cltSize, cosmoB64, cosmoSize] = await Promise.all([
-    showLogoRlt ? loadImageAsBase64(logoRLTDark) : Promise.resolve(""),
-    showLogoRlt ? getImageNaturalSize(logoRLTDark) : Promise.resolve({ width: 1, height: 1 }),
-    showLogoClt ? loadImageAsBase64(logoCLTDark) : Promise.resolve(""),
-    showLogoClt ? getImageNaturalSize(logoCLTDark) : Promise.resolve({ width: 1, height: 1 }),
+    showLogoRlt ? loadImageAsBase64(logoRLT) : Promise.resolve(""),
+    showLogoRlt ? getImageNaturalSize(logoRLT) : Promise.resolve({ width: 1, height: 1 }),
+    showLogoClt ? loadImageAsBase64(logoCLT) : Promise.resolve(""),
+    showLogoClt ? getImageNaturalSize(logoCLT) : Promise.resolve({ width: 1, height: 1 }),
     loadImageAsBase64(logoCosmo),
     getImageNaturalSize(logoCosmo),
   ]);
