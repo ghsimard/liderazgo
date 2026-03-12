@@ -732,16 +732,15 @@ function BulletListEditor({ bullets, onChange }: { bullets: string[]; onChange: 
       {bullets.map((b, i) => (
         <div key={i} className="flex gap-2 items-start">
           <span className="text-xs text-muted-foreground mt-2">•</span>
-          <Textarea
+          <RichTextEditor
             value={b}
-            onChange={e => {
+            onChange={val => {
               const newBullets = [...bullets];
-              newBullets[i] = e.target.value;
+              newBullets[i] = val;
               onChange(newBullets);
             }}
-            rows={2}
-            className="flex-1 text-sm"
             placeholder="Punto de la lista…"
+            minHeight="50px"
           />
           <Button variant="ghost" size="sm" onClick={() => onChange(bullets.filter((_, idx) => idx !== i))} className="text-destructive h-7 w-7 p-0 shrink-0">
             <X className="w-3 h-3" />
