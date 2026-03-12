@@ -296,7 +296,19 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   doc.addPage();
   y = drawHeader();
 
-  let sectionNum = 0;
+  let mainNum = 0;
+  let subNum = 0;
+
+  const getNumber = (isSubsection?: boolean) => {
+    if (isSubsection) {
+      subNum++;
+      return `${mainNum}.${subNum}`;
+    } else {
+      mainNum++;
+      subNum = 0;
+      return String(mainNum);
+    }
+  };
 
   for (const section of enabledSections) {
     if (section.type === "text") {
