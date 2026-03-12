@@ -257,7 +257,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       const defaultSub = sub360Map[activeTab] || "formularios";
       return (
         <Tabs defaultValue={defaultSub} className="space-y-4">
-          <TabsList className="flex-wrap h-auto gap-1 sticky top-0 z-10 bg-background py-2 max-md:flex-nowrap max-md:overflow-x-auto max-md:justify-start">
+          <TabsList className="flex-wrap h-auto gap-1 sticky top-0 z-10 bg-background py-2">
             <TabsTrigger value="formularios" className="gap-1.5"><Link2 className="w-4 h-4" /> Formularios</TabsTrigger>
             <TabsTrigger value="inicial" className="gap-1.5"><PlayCircle className="w-4 h-4" /> Inicial</TabsTrigger>
             <TabsTrigger value="final" className="gap-1.5"><FlagTriangleRight className="w-4 h-4" /> Final</TabsTrigger>
@@ -346,7 +346,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       const defaultSubFichas = subFichasMap[activeTab] || "lista";
       return (
         <Tabs defaultValue={defaultSubFichas} className="space-y-4">
-          <TabsList className="flex-wrap h-auto gap-1 sticky top-0 z-10 bg-background py-2 max-md:flex-nowrap max-md:overflow-x-auto max-md:justify-start">
+          <TabsList className="flex-wrap h-auto gap-1 sticky top-0 z-10 bg-background py-2">
             <TabsTrigger value="lista" className="gap-1.5"><FileText className="w-4 h-4" /> Lista</TabsTrigger>
             <TabsTrigger value="enlace" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlace y PDF</TabsTrigger>
             <TabsTrigger value="regiones" className="gap-1.5"><MapPin className="w-4 h-4" /> Configuración</TabsTrigger>
@@ -388,7 +388,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       const defaultSubMel = subMelMap[activeTab] || "mel-360";
       return (
         <Tabs defaultValue={defaultSubMel} className="space-y-4">
-          <TabsList className="flex-wrap h-auto gap-1 sticky top-0 z-10 bg-background py-2 max-md:flex-nowrap max-md:overflow-x-auto max-md:justify-start">
+          <TabsList className="flex-wrap h-auto gap-1 sticky top-0 z-10 bg-background py-2">
             <TabsTrigger value="mel-360" className="gap-1.5"><TrendingUp className="w-4 h-4" /> MEL 360°</TabsTrigger>
             <TabsTrigger value="mel-rubricas" className="gap-1.5"><ClipboardList className="w-4 h-4" /> MEL Rúbricas</TabsTrigger>
             <TabsTrigger value="mel-config" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
