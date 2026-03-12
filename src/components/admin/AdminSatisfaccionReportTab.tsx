@@ -1085,7 +1085,7 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
     const n = data.length;
     if (n < 3) return <p className="text-xs text-muted-foreground text-center py-4">Se necesitan al menos 3 indicadores para el gráfico radar.</p>;
     const r = 70;
-    const cx = 110, cy = 100;
+    const cx = 150, cy = 130;
     const angleStep = (2 * Math.PI) / n;
 
     const points = data.map((item, i) => {
@@ -1096,8 +1096,8 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
     const polyPoints = points.map(p => `${p.x},${p.y}`).join(" ");
 
     return (
-      <div className="flex items-center gap-4 justify-center">
-        <svg width={220} height={200} viewBox="0 0 220 200">
+      <div className="flex flex-col items-center gap-4 justify-center">
+        <svg width={300} height={260} viewBox="0 0 300 260">
           {/* Grid rings */}
           {[0.25, 0.5, 0.75, 1].map(ring => (
             <polygon
@@ -1121,13 +1121,12 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
           {/* Labels */}
           {data.map((item, i) => {
             const a = -Math.PI / 2 + i * angleStep;
-            const lx = cx + (r + 18) * Math.cos(a);
-            const ly = cy + (r + 18) * Math.sin(a);
+            const lx = cx + (r + 24) * Math.cos(a);
+            const ly = cy + (r + 24) * Math.sin(a);
             const anchor = Math.cos(a) < -0.1 ? "end" : Math.cos(a) > 0.1 ? "start" : "middle";
-            const lbl = item.label.length > 20 ? item.label.substring(0, 17) + "…" : item.label;
             return (
               <text key={i} x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle" fill="#374151" fontSize={8}>
-                {lbl} ({item.value}%)
+                {item.label} ({item.value}%)
               </text>
             );
           })}
