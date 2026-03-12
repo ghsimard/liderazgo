@@ -308,6 +308,8 @@ export default function AdminSatisfaccionesTab() {
           <TabsTrigger value="config">Configuración</TabsTrigger>
           <TabsTrigger value="responses">Respuestas</TabsTrigger>
           <TabsTrigger value="stats">Estadísticas</TabsTrigger>
+          <TabsTrigger value="report">Informe PDF</TabsTrigger>
+          <TabsTrigger value="forms">Formularios</TabsTrigger>
         </TabsList>
 
         <TabsContent value="config" className="space-y-6 mt-4">
