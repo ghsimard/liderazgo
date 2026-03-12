@@ -554,6 +554,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
             stats={stats}
           />
         ))}
+        <div ref={sectionsEndRef} />
       </div>
 
       {/* Actions */}
