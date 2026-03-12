@@ -533,9 +533,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       doc.addPage();
       y = drawHeader();
 
-      sectionNum++;
+      const num = getNumber(section.isSubsection);
       sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
-      writeSectionTitle(section.title);
+      writeSectionTitle(section.title, num, section.isSubsection);
 
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
