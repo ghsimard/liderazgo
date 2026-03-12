@@ -12,6 +12,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
 
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
+import { generarPDFAmbienteEscolarEnBlanco } from "@/utils/blankAmbienteEscolarPdfGenerator";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 import AdminSidebar from "@/components/admin/AdminSidebar";
