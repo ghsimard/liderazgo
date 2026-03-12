@@ -1048,6 +1048,9 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
       <div className="flex items-center gap-6 justify-center">
         <svg width={180} height={180} viewBox="0 0 180 180">
           {slices.map((s, i) => {
+            if (s.angle >= 359.99) {
+              return <circle key={i} cx={cx} cy={cy} r={r} fill={s.color} stroke="#ffffff" strokeWidth={1.5} />;
+            }
             const startRad = toRad(s.startAngle);
             const endRad = toRad(s.startAngle + s.angle);
             const largeArc = s.angle > 180 ? 1 : 0;
@@ -1060,7 +1063,7 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
                 key={i}
                 d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc},1 ${x2},${y2} Z`}
                 fill={s.color}
-                stroke="hsl(var(--background))"
+                stroke="#ffffff"
                 strokeWidth={1.5}
               />
             );
