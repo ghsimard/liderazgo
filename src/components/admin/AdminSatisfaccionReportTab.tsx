@@ -55,10 +55,11 @@ interface RegionRow {
 /** Section types for the report builder */
 type SectionType = "text" | "chart_analysis" | "ficha_tecnica" | "satisfaction_summary" | "comments_annex" | "bullet_list";
 
-type ChartType = "horizontal_bar" | "radar" | "pie";
+type ChartType = "horizontal_bar" | "vertical_bar" | "radar" | "pie";
 
 const CHART_TYPE_LABELS: Record<ChartType, string> = {
   horizontal_bar: "Barras horizontales",
+  vertical_bar: "Barras verticales",
   radar: "Araña / Radar",
   pie: "Circular (Pie)",
 };
