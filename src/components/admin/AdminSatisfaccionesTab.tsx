@@ -117,6 +117,38 @@ export default function AdminSatisfaccionesTab() {
     fetchData();
   };
 
+  const bulkSetActive = async (formType: string | null, active: boolean) => {
+    const now = new Date().toISOString();
+    // Build upserts for all region/module combos for the given formType (or all types)
+    const types = formType ? [formType] : [...FORM_TYPES];
+    const upserts: any[] = [];
+
+    for (const ft of types) {
+      for (const region of regions) {
+        for (const m of MODULES) {
+          const existing = getConfig(ft, m, region);
+          if (existing) {
+            // Only update if state differs
+            if (existing.is_active !== active) {
+              upserts.push({ id: existing.id, form_type: ft, module_number: m, region, is_active: active, updated_at: now });
+            }
+          } else if (active) {
+            // Create new config only when enabling
+            upserts.push({ form_type: ft, module_number: m, region, is_active: true, updated_at: now });
+          }
+        }
+      }
+    }
+
+    if (upserts.length === 0) return;
+
+    const { error } = await supabase.from("satisfaccion_config").upsert(upserts as any, { onConflict: "id" });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+    fetchData();
+  };
+
   const updateDates = async (id: string, field: "available_from" | "available_until", value: string) => {
     const { error } = await supabase
       .from("satisfaccion_config")
