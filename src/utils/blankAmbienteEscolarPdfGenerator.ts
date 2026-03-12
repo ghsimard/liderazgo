@@ -350,7 +350,7 @@ export async function generarPDFAmbienteEscolarEnBlanco(
   const totalPages = doc.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p);
-    drawFooter();
+    drawFooter(p, totalPages);
   }
 
   doc.save(`encuesta_ambiente_escolar_${formType}_blanco.pdf`);
