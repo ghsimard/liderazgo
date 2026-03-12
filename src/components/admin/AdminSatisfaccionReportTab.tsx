@@ -158,6 +158,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
     reportSubtitle: "",
     sections: buildDefaultSections("intensivo"),
     extraLogos: [],
+    executiveSummaryEnabled: false,
+    executiveSummary: "",
   });
 
   useEffect(() => {
