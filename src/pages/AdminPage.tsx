@@ -375,7 +375,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="enlace" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlace y PDF</TabsTrigger>
             <TabsTrigger value="lista" className="gap-1.5"><FileText className="w-4 h-4" /> Lista</TabsTrigger>
-            <TabsTrigger value="regiones" className="gap-1.5"><MapPin className="w-4 h-4" /> Regiones</TabsTrigger>
+            <TabsTrigger value="regiones" className="gap-1.5"><MapPin className="w-4 h-4" /> Configuración</TabsTrigger>
           </TabsList>
 
           <TabsContent value="enlace">
