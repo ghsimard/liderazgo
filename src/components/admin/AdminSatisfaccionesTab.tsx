@@ -7,13 +7,14 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/utils/dbClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, Eye, ToggleLeft, ToggleRight, User, Calendar, MapPin, FileText, MessageSquare, CheckCircle2, XCircle, MinusCircle } from "lucide-react";
+import { Loader2, RefreshCw, Eye, ToggleLeft, ToggleRight, User, Calendar, MapPin, FileText, MessageSquare, CheckCircle2, XCircle, MinusCircle, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FORM_TYPE_LABELS, asistenciaForm, interludioForm, intensivoForm } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion, SatisfaccionOption } from "@/data/satisfaccionData";
@@ -150,8 +151,11 @@ export default function AdminSatisfaccionesTab() {
   const [filterModule, setFilterModule] = useState<string>("all");
   const [filterRegion, setFilterRegion] = useState<string>("all");
 
-  // Names cache: cedula -> nombre
-  const [namesMap, setNamesMap] = useState<Record<string, string>>({});
+  // Names & institution cache: cedula -> { name, ie }
+  const [namesMap, setNamesMap] = useState<Record<string, { name: string; ie: string }>>({});
+
+  // Search filter
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Detail dialog
   const [detailResponse, setDetailResponse] = useState<ResponseRow | null>(null);
@@ -240,18 +244,18 @@ export default function AdminSatisfaccionesTab() {
     fetchData();
   };
 
-  /** Fetch names for a list of cedulas */
+  /** Fetch names + institution for a list of cedulas */
   const fetchNames = async (cedulas: string[]) => {
     const unknown = cedulas.filter((c) => !namesMap[c]);
     if (unknown.length === 0) return;
     const { data } = await supabase
       .from("fichas_rlt")
-      .select("numero_cedula,nombres,apellidos,nombres_apellidos")
+      .select("numero_cedula,nombres,apellidos,nombres_apellidos,nombre_ie")
       .in("numero_cedula", unknown);
     const newMap = { ...namesMap };
     (data || []).forEach((f: any) => {
       const fullName = (f.nombres && f.apellidos) ? `${f.nombres} ${f.apellidos}` : f.nombres_apellidos;
-      if (f.numero_cedula) newMap[f.numero_cedula] = fullName;
+      if (f.numero_cedula) newMap[f.numero_cedula] = { name: fullName, ie: f.nombre_ie || "" };
     });
     setNamesMap(newMap);
   };
@@ -275,7 +279,19 @@ export default function AdminSatisfaccionesTab() {
     if (activeSubTab === "responses") fetchResponses();
   }, [activeSubTab, filterType, filterModule, filterRegion]);
 
-  const getName = (cedula: string) => namesMap[cedula] || cedula;
+  const getName = (cedula: string) => namesMap[cedula]?.name || cedula;
+  const getIE = (cedula: string) => namesMap[cedula]?.ie || "";
+
+  // Client-side search filtering
+  const filteredResponses = useMemo(() => {
+    if (!searchQuery.trim()) return responses;
+    const q = searchQuery.toLowerCase().trim();
+    return responses.filter((r) => {
+      const name = getName(r.cedula).toLowerCase();
+      const ie = getIE(r.cedula).toLowerCase();
+      return name.includes(q) || ie.includes(q) || r.cedula.includes(q);
+    });
+  }, [responses, searchQuery, namesMap]);
 
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>;
@@ -361,7 +377,19 @@ export default function AdminSatisfaccionesTab() {
         </TabsContent>
 
         <TabsContent value="responses" className="space-y-4 mt-4">
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-1 flex-1 min-w-[200px]">
+              <Label className="text-xs">Buscar por nombre o institución</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Nombre del directivo o institución…"
+                  className="pl-9 h-8 text-sm"
+                />
+              </div>
+            </div>
             <div className="space-y-1">
               <Label className="text-xs">Tipo</Label>
               <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="border rounded px-2 py-1 text-sm bg-background">
@@ -387,16 +415,17 @@ export default function AdminSatisfaccionesTab() {
 
           {loadingResponses ? (
             <div className="flex justify-center py-8"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>
-          ) : responses.length === 0 ? (
+          ) : filteredResponses.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
                 <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                <p>Sin respuestas registradas</p>
+                <p>{responses.length > 0 ? "Sin resultados para la búsqueda" : "Sin respuestas registradas"}</p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-3">
-              {responses.map((r) => (
+              {searchQuery && <p className="text-xs text-muted-foreground">{filteredResponses.length} de {responses.length} respuestas</p>}
+              {filteredResponses.map((r) => (
                 <Card key={r.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setDetailResponse(r)}>
                   <CardContent className="py-3 px-4 flex items-center gap-4">
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -404,6 +433,9 @@ export default function AdminSatisfaccionesTab() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{getName(r.cedula)}</p>
+                      {getIE(r.cedula) && (
+                        <p className="text-xs text-muted-foreground truncate">{getIE(r.cedula)}</p>
+                      )}
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                         <MapPin className="w-3 h-3" />
                         <span>{r.region}</span>
@@ -430,6 +462,7 @@ export default function AdminSatisfaccionesTab() {
         response={detailResponse}
         onClose={() => setDetailResponse(null)}
         getName={getName}
+        getIE={getIE}
       />
     </div>
   );
@@ -440,10 +473,12 @@ function ResponseDetailDialog({
   response,
   onClose,
   getName,
+  getIE,
 }: {
   response: ResponseRow | null;
   onClose: () => void;
   getName: (cedula: string) => string;
+  getIE: (cedula: string) => string;
 }) {
   if (!response) return null;
 
@@ -465,6 +500,7 @@ function ResponseDetailDialog({
               <div>
                 <p className="font-medium">{getName(response.cedula)}</p>
                 <p className="text-xs text-muted-foreground">CC {response.cedula}</p>
+                {getIE(response.cedula) && <p className="text-xs text-muted-foreground">{getIE(response.cedula)}</p>}
               </div>
             </div>
             <div className="flex items-center gap-2 text-sm">
