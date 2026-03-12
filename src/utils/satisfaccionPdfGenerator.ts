@@ -56,6 +56,11 @@ interface ReportSection {
   isSubsection?: boolean;
 }
 
+export interface ExtraLogo {
+  src: string;
+  scale: number; // percentage 10-200, default 100
+}
+
 export interface SatisfaccionReportOptions {
   filterType: string;
   filterModule: string;
@@ -63,7 +68,7 @@ export interface SatisfaccionReportOptions {
   totalResponses: number;
   showLogoRlt: boolean;
   showLogoClt: boolean;
-  extraLogos: string[];
+  extraLogos: ExtraLogo[];
   reportContent: {
     reportTitle: string;
     reportSubtitle: string;
