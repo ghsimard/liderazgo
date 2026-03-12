@@ -516,7 +516,7 @@ export default function AdminPage() {
         <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} isSuperAdmin={isSuperAdmin} />
 
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="bg-primary text-primary-foreground sticky top-0 z-10">
+          <header className="bg-primary text-primary-foreground sticky top-0 z-20">
             <div className="px-4 py-3 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <SidebarTrigger className="text-primary-foreground hover:bg-primary-foreground/10" />
