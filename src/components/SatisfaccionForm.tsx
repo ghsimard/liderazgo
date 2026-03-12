@@ -19,9 +19,10 @@ interface SatisfaccionFormProps {
   region: string;
   onSubmit: (respuestas: Record<string, any>) => Promise<void>;
   submitting?: boolean;
+  fichaInfo?: Record<string, any> | null;
 }
 
-export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubmit, submitting }: SatisfaccionFormProps) {
+export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubmit, submitting, fichaInfo }: SatisfaccionFormProps) {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const { toast } = useToast();
 
@@ -85,6 +86,31 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
         <p className="text-sm text-muted-foreground">Módulo {moduleNumber} — {region}</p>
         <p className="text-sm text-muted-foreground">{formDef.description}</p>
       </div>
+
+      {/* Identity card from ficha */}
+      {fichaInfo && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Información del participante</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Nombre(s) y apellido(s) completos</Label>
+                <Input value={fichaInfo.nombres_apellidos || ""} disabled className="bg-muted/50" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Correo electrónico de contacto</Label>
+                <Input value={fichaInfo.correo_personal || fichaInfo.correo_institucional || ""} disabled className="bg-muted/50" />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label className="text-xs text-muted-foreground">Nombre completo de la Institución Educativa</Label>
+                <Input value={fichaInfo.nombre_ie || ""} disabled className="bg-muted/50" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {formDef.sections.map((section, si) => (
         <Card key={si}>
