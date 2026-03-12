@@ -328,6 +328,30 @@ export type Database = {
         }
         Relationships: []
       }
+      encuestas_ambiente_escolar: {
+        Row: {
+          created_at: string
+          id: string
+          institucion_educativa: string
+          respuestas: Json
+          tipo_formulario: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          institucion_educativa: string
+          respuestas?: Json
+          tipo_formulario: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          institucion_educativa?: string
+          respuestas?: Json
+          tipo_formulario?: string
+        }
+        Relationships: []
+      }
       entidades_territoriales: {
         Row: {
           created_at: string
