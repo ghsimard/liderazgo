@@ -1022,7 +1022,7 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
             <div key={i} className="flex flex-col items-center gap-1" style={{ width: `${barW}%`, maxWidth: 60 }}>
               <span className="text-[10px] font-semibold text-foreground">{item.value}%</span>
               <div className="w-full rounded-t transition-all" style={{ height: barH, backgroundColor: PREVIEW_COLORS[i % PREVIEW_COLORS.length] }} />
-              <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 w-full">{item.label}</span>
+              <span className="text-[9px] text-muted-foreground text-center leading-tight w-full break-words">{item.label}</span>
             </div>
           );
         })}
