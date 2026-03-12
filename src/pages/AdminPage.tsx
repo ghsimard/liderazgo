@@ -204,6 +204,31 @@ function FormCard({ form }: { form: FormItem }) {
   );
 }
 
+function getHubTitle(activeTab: string): string {
+  const titleMap: Record<string, string> = {
+    formularios: "Enlaces",
+    encuesta360: "Encuesta 360°", enlaces360: "Encuesta 360°", ponderaciones: "Encuesta 360°",
+    encuestas360: "Encuesta 360°", encuestas360final: "Encuesta 360°",
+    reportes360: "Encuesta 360°", reportes360final: "Encuesta 360°",
+    invitaciones: "Encuesta 360°", "blancos-360": "Encuesta 360°",
+    "fichas-rlt": "Fichas RLT", fichas: "Fichas RLT", geography: "Fichas RLT",
+    "enlace-ficha": "Fichas RLT", "blank-pdf": "Fichas RLT",
+    rubricas: "Rúbricas",
+    "informe-modulo": "Informe de Módulo",
+    "ambiente-escolar": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar",
+    satisfacciones: "Satisfacciones",
+    certificaciones: "Certificaciones",
+    mel: "MEL", "mel-rubricas": "MEL", "mel-config": "MEL",
+    users: "Administradores",
+    "activity-log": "Registro de Actividad",
+    reviews: "Apreciaciones",
+    mensajes: "Mensajes",
+    changelog: "Changelog",
+    "purge-data": "Purgar datos",
+  };
+  return titleMap[activeTab] || "Panel";
+}
+
 function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperAdmin: boolean }) {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
