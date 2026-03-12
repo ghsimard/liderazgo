@@ -1471,6 +1471,30 @@ export type Database = {
         }
         Relationships: []
       }
+      satisfaccion_form_definitions: {
+        Row: {
+          definition: Json
+          form_type: string
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          definition?: Json
+          form_type: string
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          definition?: Json
+          form_type?: string
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       satisfaccion_responses: {
         Row: {
           cedula: string
