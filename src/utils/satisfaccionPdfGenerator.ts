@@ -240,20 +240,65 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     return y;
   };
 
-  // ── Wrap text and advance y ──
+  // ── Write a single styled segment run on the current line ──
+  const writeStyledLine = (segments: StyledSegment[], startX: number, maxW: number, fontSize: number, lineSpacing: number) => {
+    // Flatten segments into words with style, then wrap manually
+    interface Word { text: string; bold: boolean; italic: boolean; width: number; }
+    const words: Word[] = [];
+    for (const seg of segments) {
+      const style = seg.bold && seg.italic ? "bolditalic" : seg.bold ? "bold" : seg.italic ? "italic" : "normal";
+      doc.setFont("helvetica", style);
+      doc.setFontSize(fontSize);
+      const parts = seg.text.split(/(\s+)/);
+      for (const p of parts) {
+        if (!p) continue;
+        words.push({ text: p, bold: seg.bold, italic: seg.italic, width: doc.getTextWidth(p) });
+      }
+    }
+    // Line-wrap
+    let lineWords: Word[] = [];
+    let lineW = 0;
+    const flushLine = () => {
+      if (lineWords.length === 0) return;
+      y = checkPageBreak(lineSpacing + 2);
+      let cx = startX;
+      for (const w of lineWords) {
+        const style = w.bold && w.italic ? "bolditalic" : w.bold ? "bold" : w.italic ? "italic" : "normal";
+        doc.setFont("helvetica", style);
+        doc.setFontSize(fontSize);
+        doc.text(w.text, cx, y);
+        cx += w.width;
+      }
+      y += lineSpacing;
+      lineWords = [];
+      lineW = 0;
+    };
+    for (const w of words) {
+      if (lineW + w.width > maxW && lineWords.length > 0) flushLine();
+      lineWords.push(w);
+      lineW += w.width;
+    }
+    flushLine();
+  };
+
+  // ── Wrap text and advance y (rich text aware) ──
   const writeText = (rawText: string, fontSize: number = 10, lineSpacing: number = 5) => {
-    const text = htmlToPlainText(rawText);
-    doc.setFontSize(fontSize);
-    doc.setFont("helvetica", "normal");
-    const paragraphs = text.split("\n");
-    for (const para of paragraphs) {
-      if (!para.trim()) { y += lineSpacing; continue; }
-      const lines = doc.splitTextToSize(para.trim(), contentW);
+    const { paragraphs } = parseHtmlToSegments(rawText);
+    if (paragraphs.length === 0) {
+      // Fallback for plain text without HTML
+      const text = htmlToPlainText(rawText);
+      doc.setFontSize(fontSize);
+      doc.setFont("helvetica", "normal");
+      const lines = doc.splitTextToSize(text, contentW);
       for (const line of lines) {
         y = checkPageBreak(lineSpacing + 2);
         doc.text(line, margin, y);
         y += lineSpacing;
       }
+      return;
+    }
+    for (const segments of paragraphs) {
+      writeStyledLine(segments, margin, contentW, fontSize, lineSpacing);
       y += 1;
     }
   };
