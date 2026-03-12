@@ -300,8 +300,7 @@ export default function AdminSatisfaccionesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Encuestas de Satisfacción</h2>
+      <div className="flex items-center justify-end">
         <Button variant="outline" size="sm" onClick={fetchData} className="gap-1.5">
           <RefreshCw className="w-4 h-4" /> Actualizar
         </Button>
