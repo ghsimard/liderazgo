@@ -279,7 +279,19 @@ export default function AdminSatisfaccionesTab() {
     if (activeSubTab === "responses") fetchResponses();
   }, [activeSubTab, filterType, filterModule, filterRegion]);
 
-  const getName = (cedula: string) => namesMap[cedula] || cedula;
+  const getName = (cedula: string) => namesMap[cedula]?.name || cedula;
+  const getIE = (cedula: string) => namesMap[cedula]?.ie || "";
+
+  // Client-side search filtering
+  const filteredResponses = useMemo(() => {
+    if (!searchQuery.trim()) return responses;
+    const q = searchQuery.toLowerCase().trim();
+    return responses.filter((r) => {
+      const name = getName(r.cedula).toLowerCase();
+      const ie = getIE(r.cedula).toLowerCase();
+      return name.includes(q) || ie.includes(q) || r.cedula.includes(q);
+    });
+  }, [responses, searchQuery, namesMap]);
 
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>;
