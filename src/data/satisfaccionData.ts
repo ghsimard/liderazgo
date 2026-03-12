@@ -25,6 +25,8 @@ export interface SatisfaccionQuestion {
   columns?: SatisfaccionOption[];
   required?: boolean;
   maxSelect?: number;
+  /** Show this question only when another question has a specific value */
+  conditionalOn?: { key: string; value: string };
 }
 
 export interface SatisfaccionSection {
