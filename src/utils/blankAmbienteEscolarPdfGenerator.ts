@@ -56,10 +56,11 @@ export async function generarPDFAmbienteEscolarEnBlanco(
   const showRlt = logoFlags.showLogoRlt ?? true;
   const showClt = logoFlags.showLogoClt ?? true;
 
-  const [rltB64, cltB64, cosmoB64] = await Promise.all([
+  const [rltB64, cltB64, cosmoB64, cosmoSize] = await Promise.all([
     showRlt ? loadImageAsBase64(logoSources.logoRLT) : Promise.resolve(""),
     showClt ? loadImageAsBase64(logoSources.logoCLTDark) : Promise.resolve(""),
     loadImageAsBase64(logoSources.logoCosmo),
+    getImageNaturalSize(logoSources.logoCosmo),
   ]);
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -92,9 +93,9 @@ export async function generarPDFAmbienteEscolarEnBlanco(
     if (showRlt && rltB64) doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
     if (showClt && cltB64) doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
 
-    // Cosmo centered
+    // Cosmo centered — proportional
     const cosmoH = 12;
-    const cosmoW = 18;
+    const cosmoW = cosmoH * (cosmoSize.width / cosmoSize.height);
     if (cosmoB64) doc.addImage(cosmoB64, "PNG", (pageW - cosmoW) / 2, logoY + 1, cosmoW, cosmoH);
   };
 
@@ -103,11 +104,15 @@ export async function generarPDFAmbienteEscolarEnBlanco(
     y = 24;
   };
 
-  const drawFooter = () => {
-    const footerY = pageH - 8;
+  const drawFooter = (pageNum: number, totalPages: number) => {
+    const cosmoTargetH = 7;
+    const cosmoLogoW = cosmoTargetH * (cosmoSize.width / cosmoSize.height);
+    const cosmoY = pageH - 13;
+    if (cosmoB64) doc.addImage(cosmoB64, "PNG", margin, cosmoY, cosmoLogoW, cosmoTargetH);
     doc.setFontSize(7);
-    doc.setTextColor(150, 150, 150);
-    doc.text("Encuesta de Ambiente Escolar – Formulario en blanco", pageW / 2, footerY, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text(`${pageNum}/${totalPages}`, pageW - margin, cosmoY + cosmoTargetH / 2 + 1, { align: "right" });
   };
 
   const wrapText = (text: string, maxW: number, fontSize: number): string[] => {
@@ -345,7 +350,7 @@ export async function generarPDFAmbienteEscolarEnBlanco(
   const totalPages = doc.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p);
-    drawFooter();
+    drawFooter(p, totalPages);
   }
 
   doc.save(`encuesta_ambiente_escolar_${formType}_blanco.pdf`);
