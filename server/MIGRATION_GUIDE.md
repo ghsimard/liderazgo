@@ -534,7 +534,7 @@ server/
     └── email.ts              ← POST /api/email/send (Resend)
 ```
 
-### Fichiers FRONTEND migrés (✅ 32/32)
+### Fichiers FRONTEND migrés (✅ 37/37)
 
 ```
 src/utils/apiFetch.ts                           ← CRÉÉ — wrapper fetch centralisé
@@ -548,10 +548,13 @@ src/pages/AdminLogin.tsx                        ← MIGRÉ
 src/pages/AdminPage.tsx                         ← MIGRÉ
 src/pages/AdminEditFicha.tsx                    ← MIGRÉ
 src/pages/FichaRLT.tsx                          ← MIGRÉ
+src/pages/MiPanel.tsx                           ← MIGRÉ
 src/hooks/useAdminAuth.ts                       ← MIGRÉ
 src/hooks/useAppImages.ts                       ← MIGRÉ
 src/hooks/useGeographicData.ts                  ← MIGRÉ
 src/components/Encuesta360Form.tsx              ← MIGRÉ
+src/components/AmbienteEscolarForm.tsx          ← MIGRÉ
+src/components/SatisfaccionPage.tsx             ← MIGRÉ
 src/components/admin/AdminFichasTab.tsx          ← MIGRÉ
 src/components/admin/AdminEncuestas360Tab.tsx     ← MIGRÉ
 src/components/admin/AdminEncuestaMonitor.tsx     ← MIGRÉ
@@ -565,6 +568,8 @@ src/components/admin/AdminTrashManager.tsx        ← MIGRÉ
 src/components/admin/AdminUsersTab.tsx            ← MIGRÉ
 src/components/admin/AdminImagesTab.tsx           ← MIGRÉ
 src/components/admin/AdminReporte360Tab.tsx        ← MIGRÉ
+src/components/admin/AdminSatisfaccionesTab.tsx   ← MIGRÉ
+src/components/admin/AdminSatisfaccionStats.tsx   ← MIGRÉ
 src/components/admin/AdminMelTab.tsx              ← MIGRÉ
 src/components/admin/AdminMelRubricasTab.tsx      ← MIGRÉ
 src/components/admin/AdminMelConfigTab.tsx        ← MIGRÉ — config KPIs + groupes
