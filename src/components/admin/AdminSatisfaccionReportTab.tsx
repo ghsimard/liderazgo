@@ -160,31 +160,36 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
   const loadReportContent = useCallback(async () => {
     if (!filterRegion || filterModule === "all") return;
     setLoading(true);
-    const { data } = await supabase
-      .from("satisfaccion_report_content")
-      .select("*")
-      .eq("form_type", filterType)
-      .eq("module_number", parseInt(filterModule))
-      .eq("region", filterRegion)
-      .maybeSingle();
+    try {
+      const { data } = await supabase
+        .from("satisfaccion_report_content")
+        .select("*")
+        .eq("form_type", filterType)
+        .eq("module_number", parseInt(filterModule))
+        .eq("region", filterRegion)
+        .maybeSingle();
 
-    if (data?.content) {
-      const saved = data.content as any;
-      setReportContent({
-        reportTitle: saved.reportTitle || "INFORME EXTENDIDO – ENCUESTA DE SATISFACCIÓN",
-        reportSubtitle: saved.reportSubtitle || "",
-        sections: saved.sections || buildDefaultSections(filterType),
-        extraLogos: (data as any).extra_logos || [],
-      });
-    } else {
-      setReportContent({
-        reportTitle: `INFORME EXTENDIDO – ENCUESTA DE SATISFACCIÓN ${FORM_TYPE_LABELS[filterType]?.toUpperCase() || ""} ${filterModule}`,
-        reportSubtitle: "",
-        sections: buildDefaultSections(filterType),
-        extraLogos: [],
-      });
+      if (data?.content) {
+        const saved = data.content as any;
+        setReportContent({
+          reportTitle: saved.reportTitle || "INFORME EXTENDIDO – ENCUESTA DE SATISFACCIÓN",
+          reportSubtitle: saved.reportSubtitle || "",
+          sections: saved.sections || buildDefaultSections(filterType),
+          extraLogos: (data as any).extra_logos || [],
+        });
+      } else {
+        setReportContent({
+          reportTitle: `INFORME EXTENDIDO – ENCUESTA DE SATISFACCIÓN ${FORM_TYPE_LABELS[filterType]?.toUpperCase() || ""} ${filterModule}`,
+          reportSubtitle: "",
+          sections: buildDefaultSections(filterType),
+          extraLogos: [],
+        });
+      }
+    } catch (err) {
+      console.error("Error loading report content:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [filterType, filterModule, filterRegion]);
 
   useEffect(() => { loadReportContent(); }, [loadReportContent]);
