@@ -398,3 +398,24 @@ export const FORM_TYPE_LABELS: Record<string, string> = {
   interludio: "Interludio",
   intensivo: "Intensivo",
 };
+
+/**
+ * Load a form definition from DB (custom) or fall back to static default.
+ * Used by public-facing satisfaction pages.
+ */
+export async function loadFormDefinition(
+  formType: string,
+  supabaseClient: { from: (table: string) => any }
+): Promise<SatisfaccionFormDef> {
+  try {
+    const { data } = await supabaseClient
+      .from("satisfaccion_form_definitions")
+      .select("definition")
+      .eq("form_type", formType)
+      .maybeSingle();
+    if (data?.definition) return data.definition as SatisfaccionFormDef;
+  } catch {
+    // fallback to static
+  }
+  return SATISFACCION_FORMS[formType] || asistenciaForm;
+}
