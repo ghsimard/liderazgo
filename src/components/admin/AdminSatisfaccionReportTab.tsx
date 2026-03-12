@@ -979,12 +979,24 @@ function SectionEditor({
                 )}
 
                 {section.type === "satisfaction_summary" && section.content !== undefined && (
-                  <RichTextEditor
-                    value={section.content || ""}
-                    onChange={val => onUpdate({ content: val })}
-                    placeholder="Texto introductorio para la sección de satisfacción general (opcional)…"
-                    minHeight="60px"
-                  />
+                  <div className="space-y-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateAI("satisfaction_summary")}
+                      disabled={aiLoading || !stats || totalResponses === 0}
+                      className="gap-1.5 text-xs h-7"
+                    >
+                      {aiLoading ? <Loader2 className="animate-spin h-3 w-3" /> : <Sparkles className="w-3 h-3" />}
+                      {aiLoading ? "Generando…" : "Generar con IA"}
+                    </Button>
+                    <RichTextEditor
+                      value={section.content || ""}
+                      onChange={val => onUpdate({ content: val })}
+                      placeholder="Texto introductorio para la sección de satisfacción general (opcional)…"
+                      minHeight="60px"
+                    />
+                  </div>
                 )}
 
                 {section.type === "bullet_list" && (
