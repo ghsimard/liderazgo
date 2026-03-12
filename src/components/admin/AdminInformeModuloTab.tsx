@@ -8,7 +8,7 @@ import AdminEvalIndividualTab from "./AdminEvalIndividualTab";
 export default function AdminInformeModuloTab() {
   return (
     <Tabs defaultValue="asistencia">
-      <TabsList className="mb-4 flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-background py-2">
+      <TabsList className="hub-tabs mb-4 flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md rounded-lg">
         <TabsTrigger value="asistencia" className="gap-1.5">
           <CalendarCheck className="w-4 h-4" /> Asistencia
         </TabsTrigger>
