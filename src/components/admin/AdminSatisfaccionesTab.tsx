@@ -377,7 +377,19 @@ export default function AdminSatisfaccionesTab() {
         </TabsContent>
 
         <TabsContent value="responses" className="space-y-4 mt-4">
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-1 flex-1 min-w-[200px]">
+              <Label className="text-xs">Buscar por nombre o institución</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Nombre del directivo o institución…"
+                  className="pl-9 h-8 text-sm"
+                />
+              </div>
+            </div>
             <div className="space-y-1">
               <Label className="text-xs">Tipo</Label>
               <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="border rounded px-2 py-1 text-sm bg-background">
@@ -403,16 +415,17 @@ export default function AdminSatisfaccionesTab() {
 
           {loadingResponses ? (
             <div className="flex justify-center py-8"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>
-          ) : responses.length === 0 ? (
+          ) : filteredResponses.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
                 <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                <p>Sin respuestas registradas</p>
+                <p>{responses.length > 0 ? "Sin resultados para la búsqueda" : "Sin respuestas registradas"}</p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-3">
-              {responses.map((r) => (
+              {searchQuery && <p className="text-xs text-muted-foreground">{filteredResponses.length} de {responses.length} respuestas</p>}
+              {filteredResponses.map((r) => (
                 <Card key={r.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setDetailResponse(r)}>
                   <CardContent className="py-3 px-4 flex items-center gap-4">
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -420,6 +433,9 @@ export default function AdminSatisfaccionesTab() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{getName(r.cedula)}</p>
+                      {getIE(r.cedula) && (
+                        <p className="text-xs text-muted-foreground truncate">{getIE(r.cedula)}</p>
+                      )}
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                         <MapPin className="w-3 h-3" />
                         <span>{r.region}</span>
