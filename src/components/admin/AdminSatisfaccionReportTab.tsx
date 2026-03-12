@@ -188,6 +188,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           reportSubtitle: saved.reportSubtitle || "",
           sections: saved.sections || buildDefaultSections(filterType),
           extraLogos: (data as any).extra_logos || [],
+          executiveSummaryEnabled: saved.executiveSummaryEnabled ?? false,
+          executiveSummary: saved.executiveSummary || "",
         });
       } else {
         setReportContent({
@@ -195,6 +197,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           reportSubtitle: "",
           sections: buildDefaultSections(filterType),
           extraLogos: [],
+          executiveSummaryEnabled: false,
+          executiveSummary: "",
         });
       }
     } catch (err) {
