@@ -701,12 +701,11 @@ function SectionEditor({
                 )}
 
                 {section.type === "satisfaction_summary" && section.content !== undefined && (
-                  <Textarea
+                  <RichTextEditor
                     value={section.content || ""}
-                    onChange={e => onUpdate({ content: e.target.value })}
-                    rows={3}
+                    onChange={val => onUpdate({ content: val })}
                     placeholder="Texto introductorio para la sección de satisfacción general (opcional)…"
-                    className="text-sm"
+                    minHeight="60px"
                   />
                 )}
 
