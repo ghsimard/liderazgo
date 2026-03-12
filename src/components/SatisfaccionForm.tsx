@@ -111,7 +111,7 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Rol en la Institución Educativa</Label>
-                <Input value={fichaInfo.cargo_actual || ""} disabled className="bg-muted/50" />
+                <Input value={genderizeRole(fichaInfo.cargo_actual, fichaInfo.genero) || ""} disabled className="bg-muted/50" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Nombre(s) y apellido(s) completos</Label>
