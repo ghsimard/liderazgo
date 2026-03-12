@@ -89,9 +89,9 @@ const categories: FormCategory[] = [
       {
         title: "Ambiente Escolar",
         forms: [
-          { name: "Encuesta Docente", path: "/encuesta-docente", icon: BookOpen },
-          { name: "Encuesta Acudiente", path: "/encuesta-acudiente", icon: Users },
-          { name: "Encuesta Estudiante", path: "/encuesta-estudiante", icon: GraduationCap },
+          { name: "Encuesta Docente", path: "/encuesta-ambiente-docentes", icon: BookOpen },
+          { name: "Encuesta Acudiente", path: "/encuesta-ambiente-acudientes", icon: Users },
+          { name: "Encuesta Estudiante", path: "/encuesta-ambiente-estudiantes", icon: GraduationCap },
         ],
       },
     ],
