@@ -91,9 +91,9 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
 
   return (
     <div className="space-y-6">
-      <div className="text-center space-y-1">
-        <h1 className="text-xl font-bold text-foreground">{formDef.title}</h1>
-        <p className="text-sm text-muted-foreground">Módulo {moduleNumber} — {region}</p>
+      <div className="text-left space-y-2">
+        <h1 className="text-xl font-bold text-foreground text-center">{formDef.title}</h1>
+        <p className="text-sm text-muted-foreground text-center">Módulo {moduleNumber} — {region}</p>
         {formDef.description.split("\n\n").map((p, i) => (
           <p key={i} className="text-sm text-muted-foreground">{p}</p>
         ))}

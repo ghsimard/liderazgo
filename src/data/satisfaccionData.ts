@@ -76,7 +76,7 @@ const LIKERT4_SATISFACTION: SatisfaccionOption[] = [
 export const asistenciaForm: SatisfaccionFormDef = {
   formType: "asistencia",
   title: "Registro de asistencia - RLT - CLT",
-  description: "En el marco del Programa Rectores Líderes Transformadores y Coordinadores Líderes Transformadores, queremos llevar un control organizado de la asistencia a los eventos programados.\n\nEste formulario tiene como único propósito registrar su participación en dichas actividades. La información que usted proporcione será confidencial y se utilizará únicamente para fines administrativos. Agradecemos su compromiso y participación activa.",
+  description: "En el marco del Programa Rectores Líderes Transformadores y Coordinadores Líderes Transformadores, queremos llevar un control organizado de la asistencia a los eventos programados.\n\nEste formulario tiene como único propósito registrar su participación en dichas actividades. La información que usted proporcione será confidencial y se utilizará únicamente para fines administrativos.\n\nAgradecemos su compromiso y participación activa.",
   sections: [
     {
       title: "Información de la sesión",
