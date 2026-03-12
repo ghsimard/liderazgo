@@ -118,7 +118,6 @@ function SatisfaccionPanel({ cedula, navigate }: { cedula: string; navigate: Ret
   return (
     <div className="space-y-2">
       <Button
-        variant="outline"
         className="w-full h-14 justify-start gap-3 text-base"
         onClick={() => setOpen(!open)}
       >
@@ -398,7 +397,6 @@ export default function MiPanel() {
                 {roleInfo.is_directivo && (
                   <Button
                     className="w-full h-14 justify-start gap-3 text-base"
-                    variant="outline"
                     onClick={() => navigate("/encuesta-360?fase=final")}
                   >
                     <FileBarChart className="h-5 w-5" />
