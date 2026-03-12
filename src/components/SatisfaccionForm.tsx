@@ -194,15 +194,18 @@ interface QRProps {
   onChange: (v: any) => void;
   onCheckboxChange: (val: string, checked: boolean) => void;
   onGridChange: (rowKey: string, val: string) => void;
+  disabled?: boolean;
 }
 
-function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGridChange }: QRProps) {
+function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGridChange, disabled }: QRProps) {
+  const disabledClass = disabled ? "opacity-70 pointer-events-none" : "";
+
   switch (q.type) {
     case "date":
       return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${disabledClass}`}>
           <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
-          <Input type="date" value={value || ""} onChange={(e) => onChange(e.target.value)} className="max-w-xs" />
+          <Input type="date" value={value || ""} onChange={(e) => onChange(e.target.value)} className="max-w-xs" disabled={disabled} />
         </div>
       );
 
