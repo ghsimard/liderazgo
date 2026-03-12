@@ -63,24 +63,23 @@ const FREQUENCY4: SatisfaccionOption[] = [
   { value: "nunca", label: "Nunca" },
 ];
 
-const LIKERT4_SATISFACTION: SatisfaccionOption[] = [
-  { value: "1", label: "Muy insatisfecho" },
-  { value: "2", label: "Insatisfecho" },
-  { value: "3", label: "Satisfecho" },
-  { value: "4", label: "Muy satisfecho" },
-];
-
 // ═══════════════════════════════════════════════════════════
 // ASISTENCIA
 // ═══════════════════════════════════════════════════════════
 export const asistenciaForm: SatisfaccionFormDef = {
   formType: "asistencia",
-  title: "Registro de asistencia - RLT - CLT",
-  description: "En el marco del Programa Rectores Líderes Transformadores y Coordinadores Líderes Transformadores, queremos llevar un control organizado de la asistencia a los eventos programados.\n\nEste formulario tiene como único propósito registrar su participación en dichas actividades. La información que usted proporcione será confidencial y se utilizará únicamente para fines administrativos.\n\nAgradecemos su compromiso y participación activa.",
+  title: "Registro de asistencia - RLT",
+  description: "En el marco del Programa Rectores Líderes Transformadores queremos llevar un control organizado de la asistencia a los eventos programados.\n\nEste formulario tiene como único propósito registrar su participación en dichas actividades. La información que usted proporcione será confidencial y se utilizará únicamente para fines administrativos.\n\nAgradecemos su compromiso y participación activa.",
   sections: [
     {
       title: "Información de la sesión",
       questions: [
+        {
+          key: "fecha_registro",
+          label: "Selecciona la fecha en la que estás diligenciando este formulario",
+          type: "date",
+          required: true,
+        },
         {
           key: "tipo_actividad",
           label: "Elige la actividad en la que estás participando hoy",
@@ -143,11 +142,11 @@ export const asistenciaForm: SatisfaccionFormDef = {
 export const interludioForm: SatisfaccionFormDef = {
   formType: "interludio",
   title: "Encuesta de Satisfacción — Interludio",
-  description: "Evalúe su experiencia durante el período de interludio.",
+  description: "Para RLT es muy importante conocer su valiosa opinión sobre las actividades y los logros alcanzados durante el desarrollo de los interludios. Así mismo un insumo para el mejoramiento su visión sobre los facilitadores y coaches que le acompañan en este proceso de formación.\n\nPor favor lea muy cuidadosamente cada uno de los enunciados que se presentan a continuación y señale la respuesta que, en cada caso, refleje su percepción. Agradecemos sus comentarios al final de la encuesta.\n\nLa información recopilada por medio de esta encuesta es anónima y confidencial y solo será utilizada con fines estadísticos y para emprender acciones de mejoramiento a futuro.",
   sections: [
     {
       title: "Actividades más valiosas",
-      description: "Seleccione las 3 actividades que más le aportaron durante el interludio.",
+      description: "De la siguiente lista señale las tres (3) actividades que más le aportaron en su formación como líder transformador.",
       questions: [
         {
           key: "top3_actividades",
@@ -156,30 +155,31 @@ export const interludioForm: SatisfaccionFormDef = {
           maxSelect: 3,
           required: true,
           options: [
-            { value: "sesion_grupal_coaching", label: "Sesión grupal de coaching" },
-            { value: "intercambio_pares", label: "Intercambio de pares" },
-            { value: "acompanamiento_individual", label: "Acompañamiento individual (coaching)" },
-            { value: "acompanamiento_sitio", label: "Acompañamiento en sitio" },
-            { value: "comunidad_practica", label: "Comunidad de práctica" },
-            { value: "actividades_autoformacion", label: "Actividades de autoformación" },
-            { value: "reto_estrategico", label: "Reto estratégico" },
+            { value: "socializacion_rlt_clt", label: "Socialización del Programa RLT y CLT" },
+            { value: "trabajo_colaborativo_ie", label: "Trabajo colaborativo en la Institución Educativa" },
+            { value: "valor_ser_reloj", label: "El valor de ser y de ser con otros (El reloj)" },
+            { value: "conversaciones_transformadoras", label: "Conversaciones transformadoras" },
+            { value: "buzon_afecto", label: "Buzón del afecto" },
+            { value: "intercambio_pares", label: "Intercambio entre pares" },
+            { value: "sesion_coaching_grupal", label: "Sesión de coaching grupal" },
           ],
         },
       ],
     },
     {
-      title: "Logros del interludio",
+      title: "Desarrollo del interludio",
+      description: "Por favor señale con una X la opción que considere más apropiada en cada una de las siguientes preguntas.",
       questions: [
         {
-          key: "logros",
+          key: "desarrollo",
           label: "",
           type: "grid-sino",
           rows: [
-            { key: "logro_objetivos", label: "Se cumplieron los objetivos planteados para el interludio." },
-            { key: "logro_herramientas", label: "Las herramientas y recursos proporcionados fueron útiles." },
-            { key: "logro_acompanamiento", label: "El acompañamiento recibido fue oportuno y pertinente." },
-            { key: "logro_comunidad", label: "Participé activamente en la comunidad de práctica." },
-            { key: "logro_reto", label: "Avancé significativamente en mi reto estratégico." },
+            { key: "desarrollo_tematicas", label: "¿Las temáticas y actividades en el interludio aportaron para fortalecer su liderazgo en la institución educativa?" },
+            { key: "desarrollo_participacion", label: "¿Las actividades programadas para el interludio promovieron la participación de los diferentes actores de la comunidad educativa?" },
+            { key: "desarrollo_concordancia", label: "¿Las actividades y temáticas propuestas para el interludio tienen concordancia con lo desarrollado en el intensivo?" },
+            { key: "desarrollo_metodologia", label: "¿Fue efectiva la metodología utilizada para el acompañamiento durante el interludio?" },
+            { key: "desarrollo_documentos", label: "¿Los documentos y guías aportados por el equipo local fueron útiles para el desarrollo de las actividades propuestas para el interludio?" },
           ],
           columns: SINO_PARCIAL,
           required: true,
@@ -187,18 +187,18 @@ export const interludioForm: SatisfaccionFormDef = {
       ],
     },
     {
-      title: "Frecuencia del facilitador",
-      description: "¿Con qué frecuencia el/la facilitador(a)...",
+      title: "Facilitador pedagógico",
+      description: "Por favor señale con una X la opción que considere más apropiada en cuanto a la frecuencia en que se dieron las siguientes situaciones con su facilitador pedagógico.",
       questions: [
         {
-          key: "frecuencia_facilitador",
+          key: "facilitador_pedagogico",
           label: "",
           type: "grid-frequency",
           rows: [
-            { key: "fac_retroalimentacion", label: "Brindó retroalimentación oportuna." },
-            { key: "fac_escucha", label: "Mostró escucha activa y empatía." },
-            { key: "fac_motivacion", label: "Motivó mi participación en las actividades." },
-            { key: "fac_comunicacion", label: "Mantuvo una comunicación clara y constante." },
+            { key: "fac_duracion", label: "La duración de su acompañamiento me resultó suficiente para desarrollar los objetivos previstos." },
+            { key: "fac_participacion", label: "Me apoyó para promover la participación de los diferentes actores de la comunidad educativa en el acompañamiento situado." },
+            { key: "fac_orientaciones", label: "Me fueron muy útiles las orientaciones ofrecidas para desarrollar las actividades del acompañamiento situado." },
+            { key: "fac_dominio", label: "Demostró dominio de las temáticas propuestas para el acompañamiento situado." },
           ],
           columns: FREQUENCY4,
           required: true,
@@ -206,17 +206,17 @@ export const interludioForm: SatisfaccionFormDef = {
       ],
     },
     {
-      title: "Frecuencia del coach",
-      description: "¿Con qué frecuencia el/la coach...",
+      title: "Coach",
+      description: "Por favor señale con una X la opción que considere más apropiada en cuanto a la frecuencia en que se dieron las siguientes situaciones con su coach.",
       questions: [
         {
-          key: "frecuencia_coach",
+          key: "coach",
           label: "",
           type: "grid-frequency",
           rows: [
-            { key: "coach_orientacion", label: "Brindó orientación pertinente para mi práctica." },
-            { key: "coach_reflexion", label: "Promovió la reflexión sobre mi gestión." },
-            { key: "coach_seguimiento", label: "Realizó seguimiento a mis compromisos." },
+            { key: "coach_duracion", label: "La duración de la sesión de coaching fue suficiente para lograr los objetivos previstos." },
+            { key: "coach_transformacion", label: "La sesión de coaching me permitió identificar acciones a implementar para mi transformación personal." },
+            { key: "coach_gestion", label: "La sesión de coaching me permitió fortalecer mi gestión como líder de la institución educativa." },
           ],
           columns: FREQUENCY4,
           required: true,
@@ -225,17 +225,17 @@ export const interludioForm: SatisfaccionFormDef = {
     },
     {
       title: "Autoevaluación",
-      description: "¿Con qué frecuencia usted...",
+      description: "Por favor señale con una X la opción que considere más apropiada en cuanto a la frecuencia en que se dieron las siguientes situaciones en el interludio.",
       questions: [
         {
           key: "autoevaluacion",
           label: "",
           type: "grid-frequency",
           rows: [
-            { key: "auto_tareas", label: "Cumplí con las tareas y compromisos asumidos." },
-            { key: "auto_tiempo", label: "Dediqué tiempo suficiente a las actividades del programa." },
-            { key: "auto_aprendizajes", label: "Apliqué los aprendizajes en mi institución." },
-            { key: "auto_participacion", label: "Participé activamente en las sesiones programadas." },
+            { key: "auto_colaboracion", label: "Trabajé colaborativamente con mi equipo institucional en las actividades del interludio." },
+            { key: "auto_guias", label: "Me apoyé en las guías entregadas para llevar a cabo las actividades programadas en el interludio." },
+            { key: "auto_aprendizajes", label: "Puse en práctica los aprendizajes del intensivo." },
+            { key: "auto_participacion", label: "Promoví la participación de diferentes actores de la comunidad educativa en las actividades." },
           ],
           columns: FREQUENCY4,
           required: true,
@@ -243,12 +243,13 @@ export const interludioForm: SatisfaccionFormDef = {
       ],
     },
     {
-      title: "Comentarios",
+      title: "Oportunidades de mejora",
       questions: [
         {
-          key: "comentarios",
-          label: "¿Tiene algún comentario o sugerencia sobre el interludio?",
+          key: "oportunidades_mejora",
+          label: "Por favor, registre a continuación las oportunidades de mejora que usted tiene o que el equipo local tiene frente al interludio.",
           type: "textarea",
+          required: true,
         },
       ],
     },
