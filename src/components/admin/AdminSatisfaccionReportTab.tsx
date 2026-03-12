@@ -1069,11 +1069,11 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
             );
           })}
         </svg>
-        <div className="space-y-1.5 text-xs max-w-[200px]">
+        <div className="space-y-1.5 text-xs flex-1 min-w-0">
           {data.map((item, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: PREVIEW_COLORS[i % PREVIEW_COLORS.length] }} />
-              <span className="text-foreground truncate">{item.label}: {item.value}%</span>
+            <div key={i} className="flex items-start gap-2">
+              <div className="w-3 h-3 rounded-sm shrink-0 mt-0.5" style={{ backgroundColor: PREVIEW_COLORS[i % PREVIEW_COLORS.length] }} />
+              <span className="text-foreground break-words leading-tight">{item.label}: {item.value}%</span>
             </div>
           ))}
         </div>
