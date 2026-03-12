@@ -408,7 +408,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
     }
     const reader = new FileReader();
     reader.onload = () => {
-      setReportContent(prev => ({ ...prev, extraLogos: [...prev.extraLogos, reader.result as string] }));
+      setReportContent(prev => ({ ...prev, extraLogos: [...prev.extraLogos, { src: reader.result as string, scale: 100 }] }));
     };
     reader.readAsDataURL(file);
     e.target.value = "";
