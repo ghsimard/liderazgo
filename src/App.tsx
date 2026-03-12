@@ -86,6 +86,11 @@ const App = () => (
                 <Route path="/rubrica-evaluacion" element={<RubricaEvaluacion />} />
                 <Route path="/informe-modulo" element={<InformeModulo />} />
 
+                {/* Ambiente Escolar */}
+                <Route path="/encuesta-ambiente-acudientes" element={<EncuestaAmbienteAcudientes />} />
+                <Route path="/encuesta-ambiente-estudiantes" element={<EncuestaAmbienteEstudiantes />} />
+                <Route path="/encuesta-ambiente-docentes" element={<EncuestaAmbienteDocentes />} />
+
                 {/* Legal / Contact / Suggestions */}
                 <Route path="/derechos-contacto" element={<DerechosContacto />} />
                 <Route path="/contacto" element={<Contacto />} />
