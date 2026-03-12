@@ -196,10 +196,28 @@ export default function AdminSatisfaccionesTab() {
         </TabsList>
 
         <TabsContent value="config" className="space-y-6 mt-4">
+          {/* Global bulk actions */}
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => bulkSetActive(null, true)}>
+              <ToggleRight className="w-4 h-4" /> Activar todo
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => bulkSetActive(null, false)}>
+              <ToggleLeft className="w-4 h-4" /> Desactivar todo
+            </Button>
+          </div>
+
           {FORM_TYPES.map((ft) => (
             <Card key={ft}>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">{FORM_TYPE_LABELS[ft]}</CardTitle>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" className="gap-1 text-xs h-7" onClick={() => bulkSetActive(ft, true)}>
+                    <ToggleRight className="w-3.5 h-3.5" /> Activar
+                  </Button>
+                  <Button variant="ghost" size="sm" className="gap-1 text-xs h-7" onClick={() => bulkSetActive(ft, false)}>
+                    <ToggleLeft className="w-3.5 h-3.5" /> Desactivar
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
