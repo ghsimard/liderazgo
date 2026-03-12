@@ -14,8 +14,9 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, Eye, ToggleLeft, ToggleRight, User, Calendar, MapPin, FileText, MessageSquare, CheckCircle2, XCircle, MinusCircle, Search } from "lucide-react";
+import { Loader2, RefreshCw, Eye, ToggleLeft, ToggleRight, User, Calendar, MapPin, FileText, MessageSquare, CheckCircle2, XCircle, MinusCircle, Search, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { FORM_TYPE_LABELS, asistenciaForm, interludioForm, intensivoForm } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion, SatisfaccionOption } from "@/data/satisfaccionData";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -160,6 +161,11 @@ export default function AdminSatisfaccionesTab() {
   // Search filter
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Delete confirmations
+  const [deleteOneId, setDeleteOneId] = useState<string | null>(null);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   // Detail dialog
   const [detailResponse, setDetailResponse] = useState<ResponseRow | null>(null);
 
@@ -296,6 +302,42 @@ export default function AdminSatisfaccionesTab() {
     });
   }, [responses, searchQuery, namesMap]);
 
+  const deleteOne = async (id: string) => {
+    setDeleting(true);
+    const { error } = await supabase.from("satisfaccion_responses").delete().eq("id", id);
+    setDeleting(false);
+    if (error) {
+      toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Respuesta eliminada" });
+      setResponses((prev) => prev.filter((r) => r.id !== id));
+      // Update counts
+      fetchData();
+    }
+    setDeleteOneId(null);
+  };
+
+  const deleteAll = async () => {
+    setDeleting(true);
+    const ids = filteredResponses.map((r) => r.id);
+    // Delete in batches of 100
+    for (let i = 0; i < ids.length; i += 100) {
+      const batch = ids.slice(i, i + 100);
+      const { error } = await supabase.from("satisfaccion_responses").delete().in("id", batch);
+      if (error) {
+        toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
+        setDeleting(false);
+        setShowDeleteAll(false);
+        return;
+      }
+    }
+    setDeleting(false);
+    setShowDeleteAll(false);
+    toast({ title: `${ids.length} respuestas eliminadas` });
+    fetchResponses();
+    fetchData();
+  };
+
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>;
   }
@@ -411,7 +453,12 @@ export default function AdminSatisfaccionesTab() {
                 {regions.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
-          </div>
+            </div>
+            {filteredResponses.length > 0 && (
+              <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setShowDeleteAll(true)}>
+                <Trash2 className="w-4 h-4" /> Eliminar {filteredResponses.length === responses.length ? "todas" : `${filteredResponses.length} filtradas`} ({filteredResponses.length})
+              </Button>
+            )}
 
           {loadingResponses ? (
             <div className="flex justify-center py-8"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>
@@ -448,6 +495,14 @@ export default function AdminSatisfaccionesTab() {
                       <Badge variant="outline" className="text-xs">{FORM_TYPE_LABELS[r.form_type] || r.form_type}</Badge>
                       <Badge variant="secondary" className="text-xs">Mód. {r.module_number}</Badge>
                       <Eye className="w-4 h-4 text-muted-foreground" />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => { e.stopPropagation(); setDeleteOneId(r.id); }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -476,6 +531,53 @@ export default function AdminSatisfaccionesTab() {
         getName={getName}
         getIE={getIE}
       />
+
+      {/* Delete one confirmation */}
+      <AlertDialog open={!!deleteOneId} onOpenChange={() => setDeleteOneId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta respuesta?</AlertDialogTitle>
+            <AlertDialogDescription>Esta acción no se puede deshacer. La respuesta será eliminada permanentemente.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleting}
+              onClick={() => deleteOneId && deleteOne(deleteOneId)}
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete all confirmation */}
+      <AlertDialog open={showDeleteAll} onOpenChange={setShowDeleteAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar {filteredResponses.length} respuestas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará permanentemente {filteredResponses.length === responses.length
+                ? "todas las respuestas de satisfacción"
+                : `las ${filteredResponses.length} respuestas que coinciden con los filtros actuales`
+              }. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleting}
+              onClick={deleteAll}
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+              Eliminar {filteredResponses.length}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
