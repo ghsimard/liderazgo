@@ -462,6 +462,7 @@ export default function AdminSatisfaccionesTab() {
         response={detailResponse}
         onClose={() => setDetailResponse(null)}
         getName={getName}
+        getIE={getIE}
       />
     </div>
   );
