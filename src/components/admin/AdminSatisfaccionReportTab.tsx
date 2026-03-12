@@ -1084,9 +1084,31 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
   if (chartType === "radar") {
     const n = data.length;
     if (n < 3) return <p className="text-xs text-muted-foreground text-center py-4">Se necesitan al menos 3 indicadores para el gráfico radar.</p>;
-    const r = 70;
-    const cx = 150, cy = 130;
+
+    const svgWidth = 620;
+    const svgHeight = 360;
+    const padding = 20;
+    const r = 95;
+    const cx = svgWidth / 2;
+    const cy = svgHeight / 2;
     const angleStep = (2 * Math.PI) / n;
+
+    const wrapLabel = (text: string, maxChars = 30) => {
+      const words = text.split(" ");
+      const lines: string[] = [];
+      let current = "";
+      words.forEach((word) => {
+        const candidate = current ? `${current} ${word}` : word;
+        if (candidate.length <= maxChars) {
+          current = candidate;
+        } else {
+          if (current) lines.push(current);
+          current = word;
+        }
+      });
+      if (current) lines.push(current);
+      return lines.length ? lines : [text];
+    };
 
     const points = data.map((item, i) => {
       const a = -Math.PI / 2 + i * angleStep;
@@ -1096,8 +1118,8 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
     const polyPoints = points.map(p => `${p.x},${p.y}`).join(" ");
 
     return (
-      <div className="flex flex-col items-center gap-4 justify-center">
-        <svg width={300} height={260} viewBox="0 0 300 260">
+      <div className="w-full overflow-x-auto">
+        <svg className="mx-auto min-w-[620px]" width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
           {/* Grid rings */}
           {[0.25, 0.5, 0.75, 1].map(ring => (
             <polygon
@@ -1111,22 +1133,45 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
               strokeWidth={0.5}
             />
           ))}
+
           {/* Axes */}
           {Array.from({ length: n }, (_, i) => {
             const a = -Math.PI / 2 + i * angleStep;
             return <line key={i} x1={cx} y1={cy} x2={cx + r * Math.cos(a)} y2={cy + r * Math.sin(a)} stroke="#d1d5db" strokeWidth={0.5} />;
           })}
+
           {/* Data polygon */}
           <polygon points={polyPoints} fill="rgba(37, 99, 235, 0.15)" stroke="#2563eb" strokeWidth={2} />
+
           {/* Labels */}
           {data.map((item, i) => {
             const a = -Math.PI / 2 + i * angleStep;
-            const lx = cx + (r + 24) * Math.cos(a);
-            const ly = cy + (r + 24) * Math.sin(a);
-            const anchor = Math.cos(a) < -0.1 ? "end" : Math.cos(a) > 0.1 ? "start" : "middle";
+            const labelRadius = r + 42;
+            let lx = cx + labelRadius * Math.cos(a);
+            const ly = cy + labelRadius * Math.sin(a);
+
+            const cosA = Math.cos(a);
+            const anchor: "start" | "middle" | "end" = cosA < -0.15 ? "end" : cosA > 0.15 ? "start" : "middle";
+
+            const labelText = `${item.label} (${item.value}%)`;
+            const lines = wrapLabel(labelText, 28);
+            const longestLine = Math.max(...lines.map(line => line.length));
+            const approxWidth = longestLine * 5.2;
+
+            const minX = padding + (anchor === "end" ? approxWidth : anchor === "middle" ? approxWidth / 2 : 0);
+            const maxX = svgWidth - padding - (anchor === "start" ? approxWidth : anchor === "middle" ? approxWidth / 2 : 0);
+            lx = Math.max(minX, Math.min(maxX, lx));
+
+            const lineHeight = 10;
+            const firstLineY = ly - ((lines.length - 1) * lineHeight) / 2;
+
             return (
-              <text key={i} x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle" fill="#374151" fontSize={8}>
-                {item.label} ({item.value}%)
+              <text key={i} x={lx} y={firstLineY} textAnchor={anchor} fill="hsl(var(--foreground))" fontSize={8}>
+                {lines.map((line, lineIndex) => (
+                  <tspan key={lineIndex} x={lx} dy={lineIndex === 0 ? 0 : lineHeight}>
+                    {line}
+                  </tspan>
+                ))}
               </text>
             );
           })}
