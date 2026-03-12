@@ -246,22 +246,19 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     coverY += 6;
   }
 
-  // Table of contents
+  // Table of contents placeholder — will be filled after content is rendered
+  const tocStartY = coverY;
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(59, 130, 246); // blue
+  doc.setTextColor(59, 130, 246);
   doc.text("Tabla de contenido", margin, coverY);
   coverY += 7;
 
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
-  doc.setTextColor(60, 60, 60);
+  // Reserve space for TOC entries (we'll come back to fill page numbers)
   const enabledSections = reportContent.sections.filter(s => s.enabled);
-  enabledSections.forEach((section, i) => {
-    const label = `${section.title}`;
-    doc.text(label, margin + 4, coverY);
-    coverY += 5;
-  });
+  const tocY = coverY; // save for later
+  coverY += enabledSections.length * 5 + 4;
+
   doc.setTextColor(30, 30, 30);
 
   // Cosmo logo at bottom of cover
@@ -269,11 +266,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     const dim = logoH(cosmoSize.width, cosmoSize.height, 10);
     doc.addImage(cosmoB64, "PNG", margin, pageH - 20, dim.w, dim.h);
   }
-  // Page 1
-  doc.setFontSize(8);
-  doc.setTextColor(130, 130, 130);
-  doc.text("1", pageW - margin, pageH - 8, { align: "right" });
-  doc.setTextColor(30, 30, 30);
+
+  // Track section page numbers
+  const sectionPages: { title: string; page: number }[] = [];
 
   // ══════════════════════════════════════════
   // CONTENT PAGES
@@ -286,6 +281,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   for (const section of enabledSections) {
     if (section.type === "text") {
       sectionNum++;
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
       writeSectionTitle(section.title, String(sectionNum));
       if (section.content) {
         writeText(section.content);
@@ -295,6 +291,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "ficha_tecnica") {
       sectionNum++;
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
       writeSectionTitle(section.title, String(sectionNum));
       y = checkPageBreak(50);
 
@@ -345,6 +342,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "chart_analysis") {
       sectionNum++;
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
       writeSectionTitle(section.title, String(sectionNum));
 
       // Find matching stats section
@@ -417,6 +415,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "satisfaction_summary") {
       sectionNum++;
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
       writeSectionTitle(section.title, String(sectionNum));
 
       if (section.content) {
@@ -456,6 +455,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "bullet_list") {
       sectionNum++;
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
       writeSectionTitle(section.title, String(sectionNum));
 
       if (section.bullets && section.bullets.length > 0) {
@@ -502,6 +502,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       y = drawHeader();
 
       sectionNum++;
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
       writeSectionTitle(section.title);
 
       doc.setFontSize(9);
@@ -524,12 +525,49 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   // Final footer
   drawFooter();
 
-  // Fix page numbers (skip cover page)
-  const totalPages = doc.getNumberOfPages();
-  for (let p = 2; p <= totalPages; p++) {
-    doc.setPage(p);
-    // Page number already drawn via drawFooter, but let's ensure consistency
+  // ══════════════════════════════════════════
+  // FILL TABLE OF CONTENTS WITH PAGE NUMBERS
+  // ══════════════════════════════════════════
+  doc.setPage(1);
+  let tocEntryY = tocY;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+
+  for (let i = 0; i < sectionPages.length; i++) {
+    const entry = sectionPages[i];
+    const pageNum = entry.page - 1; // subtract cover page
+
+    // Section number + title
+    doc.setTextColor(60, 60, 60);
+    const label = `${i + 1}. ${entry.title}`;
+    const truncated = label.length > 70 ? label.slice(0, 67) + "…" : label;
+    doc.text(truncated, margin + 4, tocEntryY);
+
+    // Dotted leader + page number
+    const labelW = doc.getTextWidth(truncated);
+    const pageNumStr = String(pageNum);
+    const pageNumW = doc.getTextWidth(pageNumStr);
+    const dotsStart = margin + 4 + labelW + 2;
+    const dotsEnd = pageW - margin - pageNumW - 2;
+
+    // Draw dots
+    doc.setTextColor(180, 180, 180);
+    let dotX = dotsStart;
+    while (dotX < dotsEnd) {
+      doc.text(".", dotX, tocEntryY);
+      dotX += 2;
+    }
+
+    // Page number right-aligned
+    doc.setTextColor(60, 60, 60);
+    doc.setFont("helvetica", "bold");
+    doc.text(pageNumStr, pageW - margin, tocEntryY, { align: "right" });
+    doc.setFont("helvetica", "normal");
+
+    tocEntryY += 5;
   }
+
+  doc.setTextColor(30, 30, 30);
 
   // Download
   const formLabel = FORM_TYPE_LABELS[filterType] || filterType;
