@@ -216,7 +216,7 @@ function getHubTitle(activeTab: string): string {
     rubricas: "Rúbricas",
     "informe-modulo": "Informe de Módulo",
     "ambiente-escolar": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar",
-    satisfacciones: "Satisfacciones",
+    satisfacciones: "Encuestas de satisfacción",
     certificaciones: "Certificaciones",
     mel: "MEL", "mel-rubricas": "MEL", "mel-config": "MEL",
     users: "Administradores",
