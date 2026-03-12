@@ -455,6 +455,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "bullet_list") {
       sectionNum++;
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
       writeSectionTitle(section.title, String(sectionNum));
 
       if (section.bullets && section.bullets.length > 0) {
