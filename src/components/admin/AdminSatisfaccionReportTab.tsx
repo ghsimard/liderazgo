@@ -667,13 +667,24 @@ function SectionEditor({
 
         <CollapsibleContent>
           <CardContent className="pt-0 pb-3 px-4 space-y-2">
-            {/* Editable title */}
-            <Input
-              value={section.title}
-              onChange={e => onUpdate({ title: e.target.value })}
-              className="h-8 text-sm font-semibold"
-              placeholder="Título de la sección"
-            />
+            {/* Subsection toggle + Editable title */}
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!section.isSubsection}
+                  onChange={e => onUpdate({ isSubsection: e.target.checked })}
+                  className="rounded"
+                />
+                Sub-sección
+              </label>
+              <Input
+                value={section.title}
+                onChange={e => onUpdate({ title: e.target.value })}
+                className="h-8 text-sm font-semibold flex-1"
+                placeholder="Título de la sección"
+              />
+            </div>
 
             {/* Content editor based on type */}
             {section.enabled && (
