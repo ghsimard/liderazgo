@@ -281,6 +281,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   for (const section of enabledSections) {
     if (section.type === "text") {
       sectionNum++;
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
       writeSectionTitle(section.title, String(sectionNum));
       if (section.content) {
         writeText(section.content);
