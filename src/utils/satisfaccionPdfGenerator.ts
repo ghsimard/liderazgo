@@ -750,9 +750,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       writeSectionTitle(section.title, num, section.isSubsection);
 
       if (section.bullets && section.bullets.length > 0) {
-        for (const bullet of section.bullets) {
+        for (const rawBullet of section.bullets) {
+          const bullet = htmlToPlainText(rawBullet);
           if (!bullet.trim()) continue;
-
           // Check if it's a category header (short text, < 60 chars) vs description
           const lines = bullet.split("\n");
           for (const line of lines) {
