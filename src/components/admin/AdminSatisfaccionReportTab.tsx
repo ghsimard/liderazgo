@@ -444,8 +444,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           sections: reportContent.sections,
           executiveSummaryEnabled: reportContent.executiveSummaryEnabled,
           executiveSummary: reportContent.executiveSummary,
+          extraLogos: reportContent.extraLogos,
         },
-        extra_logos: reportContent.extraLogos,
         updated_at: new Date().toISOString(),
       } as any, { onConflict: "form_type,module_number,region" });
 
