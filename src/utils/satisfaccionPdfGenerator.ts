@@ -6,8 +6,8 @@
  * - Sections: text, chart+analysis, ficha técnica, satisfaction summary, bullet lists, comments annex
  */
 import jsPDF from "jspdf";
-import logoRLT from "@/assets/logo_rlt_white.png";
-import logoCLT from "@/assets/logo_clt_white.png";
+import logoRLT from "@/assets/logo_rlt.png";
+import logoCLT from "@/assets/logo_clt_dark.png";
 import logoCosmo from "@/assets/logo_cosmo_dark.png";
 import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 
@@ -111,19 +111,19 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   const drawHeader = () => {
     // RLT logo top-left
     if (showLogoRlt && rltB64) {
-      const dim = logoH(rltSize.width, rltSize.height, 14);
+      const dim = logoH(rltSize.width, rltSize.height, 18);
       doc.addImage(rltB64, "PNG", margin, 8, dim.w, dim.h);
     }
     // CLT logo top-right
     if (showLogoClt && cltB64) {
-      const dim = logoH(cltSize.width, cltSize.height, 14);
+      const dim = logoH(cltSize.width, cltSize.height, 18);
       doc.addImage(cltB64, "PNG", pageW - margin - dim.w, 8, dim.w, dim.h);
     }
     // Thin separator line
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.3);
-    doc.line(margin, 24, pageW - margin, 24);
-    return 34;
+    doc.line(margin, 28, pageW - margin, 28);
+    return 38;
   };
 
   // ── Footer ──
@@ -285,7 +285,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
   // Cosmo logo at bottom of cover
   if (cosmoB64) {
-    const dim = logoH(cosmoSize.width, cosmoSize.height, 10);
+    const dim = logoH(cosmoSize.width, cosmoSize.height, 14);
     doc.addImage(cosmoB64, "PNG", pageW / 2 - dim.w / 2, pageH - 20, dim.w, dim.h);
   }
 

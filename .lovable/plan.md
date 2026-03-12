@@ -1,30 +1,63 @@
 
 
-## Plan : Logos lisibles sur fond clair + tailles augmentées
+## Probleme actuel
 
-### Problème
-- Les logos RLT et CLT en en-tête utilisent les versions `_white` (fond blanc sur transparent → invisibles sur fond clair)
-- Le logo Cosmo en bas de page titre est petit (10mm)
-- Les logos en en-tête sont à 14mm de haut
+Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
 
-### Solution
+## Proposition : Sidebar avec sections groupees
 
-**Fichier** : `src/utils/satisfaccionPdfGenerator.ts`
+Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
 
-1. **Changer les imports** (lignes 9-11) :
-   - `logo_rlt_white.png` → `logo_rlt.png` (version sombre, lisible sur fond clair)
-   - `logo_clt_white.png` → `logo_clt_dark.png` (version sombre, lisible sur fond clair)
-   - `logo_cosmo_dark.png` reste inchangé (déjà la version sombre)
+### Structure proposee
 
-2. **Augmenter la taille des logos en en-tête** (lignes 114, 119) :
-   - Passer la hauteur cible de `14` → `18` mm
+```text
+┌──────────────────┬──────────────────────────────────┐
+│  SIDEBAR         │  CONTENU                         │
+│                  │                                  │
+│  ▼ Formularios   │                                  │
+│    Enlaces       │                                  │
+│                  │                                  │
+│  ▼ Fichas RLT    │                                  │
+│    Lista         │                                  │
+│    Regiones      │                                  │
+│                  │                                  │
+│  ▼ Encuesta 360° │                                  │
+│    Config        │                                  │
+│    Inicial       │                                  │
+│    Final         │                                  │
+│    Informes Ini. │                                  │
+│    Informes Fin. │                                  │
+│                  │                                  │
+│  ▼ Analisis      │                                  │
+│    MEL           │                                  │
+│    Rubricas      │                                  │
+│                  │                                  │
+│  ▼ Sistema       │                                  │
+│    Admins        │                                  │
+│    Apreciaciones*│                                  │
+│    Mensajes*     │                                  │
+│    Changelog*    │                                  │
+│                  │  (* = superadmin only)            │
+└──────────────────┴──────────────────────────────────┘
+```
 
-3. **Ajuster la ligne séparatrice** (ligne 125) :
-   - Déplacer de `y=24` → `y=28` pour accommoder les logos plus grands
+### Modifications
 
-4. **Ajuster le retour de `drawHeader`** (ligne 126) :
-   - `return 34` → `return 38` pour maintenir l'espacement
+1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
 
-5. **Augmenter le logo Cosmo sur la page titre** (ligne 288) :
-   - Hauteur de `10` → `14` mm
+2. **Modifier `src/pages/AdminPage.tsx`** :
+   - Envelopper le layout dans `SidebarProvider`
+   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
+   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
+   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
+   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
+
+3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
+
+### Points techniques
+
+- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
+- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
+- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
+- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
 
