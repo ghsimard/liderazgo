@@ -258,6 +258,7 @@ export async function generarPDFAmbienteEscolarEnBlanco(
     if (section.title === "Prácticas Pedagógicas") {
       doc.addPage();
       drawHeader();
+      y += 6;
     } else {
       ensureSpace(20);
     }
