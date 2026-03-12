@@ -25,6 +25,8 @@ import {
   Trash2,
   Activity,
   Printer,
+  ThumbsUp,
+  Award,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
@@ -117,6 +119,20 @@ const sections: SidebarSection[] = [
       { tab: "enlace-ambiente-acudientes", label: "Encuesta Acudiente", icon: Link2, linkUrl: "/encuesta-ambiente-acudientes" },
       { tab: "enlace-ambiente-estudiantes", label: "Encuesta Estudiante", icon: Link2, linkUrl: "/encuesta-ambiente-estudiantes" },
       { tab: "enlace-ambiente-docentes", label: "Encuesta Docente", icon: Link2, linkUrl: "/encuesta-ambiente-docentes" },
+    ],
+  },
+  {
+    label: "Satisfacciones",
+    icon: ThumbsUp,
+    items: [
+      { tab: "satisfacciones", label: "Satisfacciones", icon: ThumbsUp },
+    ],
+  },
+  {
+    label: "Certificaciones",
+    icon: Award,
+    items: [
+      { tab: "certificaciones", label: "Certificaciones", icon: Award },
     ],
   },
   {
