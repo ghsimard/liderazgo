@@ -48,6 +48,8 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
   const validate = (): boolean => {
     for (const section of formDef.sections) {
       for (const q of section.questions) {
+        // Skip conditional questions that aren't visible
+        if (q.conditionalOn && answers[q.conditionalOn.key] !== q.conditionalOn.value) continue;
         if (!q.required) continue;
         const val = answers[q.key];
         if (q.type === "checkbox-max3") {
