@@ -249,7 +249,7 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
 
     case "checkbox-max3":
       return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${disabledClass}`}>
           <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
           <div className="space-y-1.5">
             {q.options?.map((opt) => {
@@ -260,6 +260,7 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
                     id={`${q.key}-${opt.value}`}
                     checked={checked}
                     onCheckedChange={(c) => onCheckboxChange(opt.value, !!c)}
+                    disabled={disabled}
                   />
                   <Label htmlFor={`${q.key}-${opt.value}`} className="font-normal cursor-pointer">{opt.label}</Label>
                 </div>
@@ -272,13 +273,13 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
     case "grid-sino":
     case "grid-frequency":
     case "grid-logistic":
-      return <GridQuestion question={q} value={value || {}} onGridChange={onGridChange} />;
+      return <GridQuestion question={q} value={value || {}} onGridChange={onGridChange} disabled={disabled} />;
 
     case "textarea":
       return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${disabledClass}`}>
           <Label className="font-medium">{q.label}</Label>
-          <Textarea value={value || ""} onChange={(e) => onChange(e.target.value)} rows={3} placeholder="Escriba aquí..." />
+          <Textarea value={value || ""} onChange={(e) => onChange(e.target.value)} rows={3} placeholder="Escriba aquí..." disabled={disabled} />
         </div>
       );
 
