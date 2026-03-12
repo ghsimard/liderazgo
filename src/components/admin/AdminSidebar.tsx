@@ -204,7 +204,7 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
     setGeneratingPdf(true);
     const logos = {
       logoRLT: images.logo_rlt_white,
-      logoCLTDark: images.logo_clt_dark,
+      logoCLTDark: images.logo_clt_white,
       logoCosmo: images.logo_cosmo,
     };
     try {
