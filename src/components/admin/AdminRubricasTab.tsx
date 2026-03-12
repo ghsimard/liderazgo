@@ -111,7 +111,7 @@ export default function AdminRubricasTab() {
 
   return (
     <Tabs defaultValue="resultados">
-      <TabsList className="mb-4 sticky top-0 z-10 bg-background py-2">
+      <TabsList className="mb-4 sticky top-0 z-10 bg-background py-2 max-md:flex-nowrap max-md:overflow-x-auto max-md:justify-start max-md:w-full">
         <TabsTrigger value="resultados" className="gap-1.5">
           <ClipboardList className="w-4 h-4" /> Resultados
         </TabsTrigger>
