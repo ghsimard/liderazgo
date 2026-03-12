@@ -302,7 +302,7 @@ export default function AdminSatisfaccionesTab() {
     <div className="space-y-4">
 
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-        <TabsList className="flex-wrap h-auto gap-1 sticky top-0 z-10 bg-background py-2">
+        <TabsList className="flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-background py-2">
           <TabsTrigger value="config">Configuración</TabsTrigger>
           <TabsTrigger value="responses">Respuestas</TabsTrigger>
           <TabsTrigger value="stats">Estadísticas</TabsTrigger>
