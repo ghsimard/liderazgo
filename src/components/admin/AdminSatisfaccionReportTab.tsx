@@ -203,7 +203,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           reportTitle: saved.reportTitle || "INFORME EXTENDIDO – ENCUESTA DE SATISFACCIÓN",
           reportSubtitle: saved.reportSubtitle || "",
           sections: saved.sections || buildDefaultSections(filterType),
-          extraLogos: ((data as any).extra_logos || []).map((l: any) => typeof l === 'string' ? { src: l, scale: 100 } : l),
+          extraLogos: (saved.extraLogos || (data as any).extra_logos || []).map((l: any) => typeof l === 'string' ? { src: l, scale: 100 } : l),
           executiveSummaryEnabled: saved.executiveSummaryEnabled ?? false,
           executiveSummary: saved.executiveSummary || "",
         });
