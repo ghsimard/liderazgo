@@ -441,6 +441,39 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
     setSaving(false);
   };
 
+  // Generate Executive Summary with AI
+  const handleGenerateExecutiveSummary = async () => {
+    if (!stats || responses.length === 0) {
+      toast({ title: "Se necesitan datos para generar el resumen", variant: "destructive" });
+      return;
+    }
+    setGeneratingAI(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-executive-summary", {
+        body: {
+          reportTitle: reportContent.reportTitle,
+          filterType,
+          filterModule,
+          filterRegion,
+          totalResponses: stats.totalResponses,
+          sectionTitles: reportContent.sections.filter(s => s.enabled).map(s => s.title),
+          generalSatisfaction: stats.generalSatisfaction,
+          overallSatisfaction: stats.overallSatisfaction,
+          commentsCount: stats.comments.length,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.summary) {
+        setReportContent(prev => ({ ...prev, executiveSummary: data.summary }));
+        toast({ title: "Resumen ejecutivo generado" });
+      }
+    } catch (err: any) {
+      toast({ title: "Error generando resumen", description: err.message, variant: "destructive" });
+    }
+    setGeneratingAI(false);
+  };
+
   // Generate PDF
   const handleGenerate = async () => {
     if (!stats || responses.length === 0) {
