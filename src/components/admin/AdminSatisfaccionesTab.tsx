@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, Eye } from "lucide-react";
+import { Loader2, RefreshCw, Eye, ToggleLeft, ToggleRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 
@@ -117,6 +117,38 @@ export default function AdminSatisfaccionesTab() {
     fetchData();
   };
 
+  const bulkSetActive = async (formType: string | null, active: boolean) => {
+    const now = new Date().toISOString();
+    // Build upserts for all region/module combos for the given formType (or all types)
+    const types = formType ? [formType] : [...FORM_TYPES];
+    const upserts: any[] = [];
+
+    for (const ft of types) {
+      for (const region of regions) {
+        for (const m of MODULES) {
+          const existing = getConfig(ft, m, region);
+          if (existing) {
+            // Only update if state differs
+            if (existing.is_active !== active) {
+              upserts.push({ id: existing.id, form_type: ft, module_number: m, region, is_active: active, updated_at: now });
+            }
+          } else if (active) {
+            // Create new config only when enabling
+            upserts.push({ form_type: ft, module_number: m, region, is_active: true, updated_at: now });
+          }
+        }
+      }
+    }
+
+    if (upserts.length === 0) return;
+
+    const { error } = await supabase.from("satisfaccion_config").upsert(upserts as any, { onConflict: "id" });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+    fetchData();
+  };
+
   const updateDates = async (id: string, field: "available_from" | "available_until", value: string) => {
     const { error } = await supabase
       .from("satisfaccion_config")
@@ -164,10 +196,28 @@ export default function AdminSatisfaccionesTab() {
         </TabsList>
 
         <TabsContent value="config" className="space-y-6 mt-4">
+          {/* Global bulk actions */}
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => bulkSetActive(null, true)}>
+              <ToggleRight className="w-4 h-4" /> Activar todo
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => bulkSetActive(null, false)}>
+              <ToggleLeft className="w-4 h-4" /> Desactivar todo
+            </Button>
+          </div>
+
           {FORM_TYPES.map((ft) => (
             <Card key={ft}>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">{FORM_TYPE_LABELS[ft]}</CardTitle>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" className="gap-1 text-xs h-7" onClick={() => bulkSetActive(ft, true)}>
+                    <ToggleRight className="w-3.5 h-3.5" /> Activar
+                  </Button>
+                  <Button variant="ghost" size="sm" className="gap-1 text-xs h-7" onClick={() => bulkSetActive(ft, false)}>
+                    <ToggleLeft className="w-3.5 h-3.5" /> Desactivar
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
