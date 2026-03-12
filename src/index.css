@@ -229,3 +229,18 @@
   pointer-events: none;
   opacity: 0.6;
 }
+
+/* Hub sub-navigation tabs with dark background */
+.hub-tabs > button[data-state="inactive"] {
+  color: hsl(0 0% 100% / 0.75);
+  background: transparent;
+}
+.hub-tabs > button[data-state="inactive"]:hover {
+  color: hsl(0 0% 100%);
+  background: hsl(0 0% 100% / 0.12);
+}
+.hub-tabs > button[data-state="active"] {
+  color: hsl(var(--primary));
+  background: hsl(0 0% 100%);
+  box-shadow: 0 1px 4px hsl(0 0% 0% / 0.15);
+}
