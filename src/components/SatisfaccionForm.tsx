@@ -140,6 +140,14 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
         </div>
       );
 
+    case "text":
+      return (
+        <div className="space-y-2">
+          <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
+          <Input type="text" value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder="Escriba aquí..." />
+        </div>
+      );
+
     case "radio":
       return (
         <div className="space-y-2">
