@@ -36,6 +36,7 @@ const TYPE_LABELS: Record<string, string> = {
   municipio: "Municipio",
   institucion: "Institución",
   admin_user: "Administrador",
+  satisfaccion_response: "Respuesta Satisfacción",
 };
 
 export default function AdminTrashManager() {
