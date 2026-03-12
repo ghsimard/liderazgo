@@ -182,14 +182,33 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   // ══════════════════════════════════════════
 
   // White background (default)
-  // Partner logos at top (extra logos + RLT)
   let coverY = 25;
 
-  // Extra logos first (centered row), then RLT below
-  if (extraLogos.length > 0) {
-    const extraH = 18;
+  // Official programme logos first (RLT + CLT centered)
+  const officialLogos: { b64: string; w: number; h: number }[] = [];
+  if (showLogoRlt && rltB64) {
+    const dim = logoH(rltSize.width, rltSize.height, 22);
+    officialLogos.push({ b64: rltB64, w: dim.w, h: dim.h });
+  }
+  if (showLogoClt && cltB64) {
+    const dim = logoH(cltSize.width, cltSize.height, 22);
+    officialLogos.push({ b64: cltB64, w: dim.w, h: dim.h });
+  }
+  if (officialLogos.length > 0) {
     const gap = 15;
-    // Load and measure each extra logo
+    const totalW = officialLogos.reduce((sum, l) => sum + l.w, 0) + (officialLogos.length - 1) * gap;
+    let x = pageW / 2 - totalW / 2;
+    for (const logo of officialLogos) {
+      doc.addImage(logo.b64, "PNG", x, coverY, logo.w, logo.h);
+      x += logo.w + gap;
+    }
+    coverY += 22 + 10;
+  }
+
+  // Extra/partner logos below official ones
+  if (extraLogos.length > 0) {
+    const extraH = 16;
+    const gap = 15;
     const loadedExtras: { b64: string; w: number }[] = [];
     for (const logo of extraLogos) {
       try {
@@ -198,20 +217,15 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
         loadedExtras.push({ b64: logo, w: dim.w });
       } catch { /* skip */ }
     }
-    const totalExtrasW = loadedExtras.reduce((sum, e) => sum + e.w, 0) + (loadedExtras.length - 1) * gap;
-    let x = pageW / 2 - totalExtrasW / 2;
-    for (const extra of loadedExtras) {
-      doc.addImage(extra.b64, "PNG", x, coverY, extra.w, extraH);
-      x += extra.w + gap;
+    if (loadedExtras.length > 0) {
+      const totalExtrasW = loadedExtras.reduce((sum, e) => sum + e.w, 0) + (loadedExtras.length - 1) * gap;
+      let x = pageW / 2 - totalExtrasW / 2;
+      for (const extra of loadedExtras) {
+        doc.addImage(extra.b64, "PNG", x, coverY, extra.w, extraH);
+        x += extra.w + gap;
+      }
+      coverY += extraH + 8;
     }
-    coverY += extraH + 10;
-  }
-
-  // RLT logo centered
-  if (showLogoRlt && rltB64) {
-    const dim = logoH(rltSize.width, rltSize.height, 22);
-    doc.addImage(rltB64, "PNG", pageW / 2 - dim.w / 2, coverY, dim.w, dim.h);
-    coverY += dim.h + 8;
   }
 
   // Programme title
