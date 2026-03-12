@@ -138,7 +138,6 @@ function SatisfaccionPanel({ cedula, navigate }: { cedula: string; navigate: Ret
               variant={f.done ? "ghost" : "outline"}
               size="sm"
               className="w-full justify-start gap-2 h-9"
-              disabled={f.done}
               onClick={() => navigate(`/satisfaccion-${f.form_type}?module=${f.module_number}`)}
             >
               {f.done ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <ThumbsUp className="h-3.5 w-3.5" />}
