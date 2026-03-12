@@ -287,7 +287,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
             const data = (q.options || []).map(o => ({
               label: o.label, value: totalResponses > 0 ? Math.round((counts[o.value] / totalResponses) * 10000) / 100 : 0, count: counts[o.value],
             }));
-            sections.push({ title: section.title, type: "other", data });
+            sections.push({ title: section.title, type: "other", questionKey: q.key, data });
           }
         }
 
