@@ -74,6 +74,7 @@ export interface SatisfaccionReportOptions {
   generalSatisfaction: { label: string; value: number }[];
   overallSatisfaction: number;
   comments: string[];
+  executiveSummary?: string;
 }
 
 export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions): Promise<void> {
