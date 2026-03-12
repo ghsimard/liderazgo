@@ -1,63 +1,32 @@
 
 
-## Probleme actuel
+## Diagnostic: Les boutons "+ Texto", "+ Gráfico" fonctionnent mais la nouvelle section s'ajoute en bas
 
-Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
+Le code est structurellement correct — `addSection` ajoute bien une nouvelle section au state. Le problème le plus probable est l'un des deux suivants :
 
-## Proposition : Sidebar avec sections groupees
+1. **Scroll** : La section est ajoutée en bas de la liste (après ~12 sections par défaut) et la page ne scrolle pas automatiquement vers elle → l'utilisateur ne la voit pas.
+2. **Re-fetch parasite** : Si la requête DB échoue silencieusement, un re-render pourrait écraser la section ajoutée.
 
-Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
+### Corrections à appliquer
 
-### Structure proposee
+**Fichier : `src/components/admin/AdminSatisfaccionReportTab.tsx`**
+
+1. **Auto-scroll vers la nouvelle section** : Ajouter un `useRef` + `scrollIntoView` quand une section est ajoutée via les boutons.
+
+2. **Feedback visuel** : Afficher un toast "Sección agregada" pour confirmer l'action et guider l'utilisateur vers le bas.
+
+3. **Protéger contre les erreurs DB** : Encapsuler la query `loadReportContent` dans un try/catch pour garantir que `setLoading(false)` est toujours appelé même en cas d'erreur réseau.
 
 ```text
-┌──────────────────┬──────────────────────────────────┐
-│  SIDEBAR         │  CONTENU                         │
-│                  │                                  │
-│  ▼ Formularios   │                                  │
-│    Enlaces       │                                  │
-│                  │                                  │
-│  ▼ Fichas RLT    │                                  │
-│    Lista         │                                  │
-│    Regiones      │                                  │
-│                  │                                  │
-│  ▼ Encuesta 360° │                                  │
-│    Config        │                                  │
-│    Inicial       │                                  │
-│    Final         │                                  │
-│    Informes Ini. │                                  │
-│    Informes Fin. │                                  │
-│                  │                                  │
-│  ▼ Analisis      │                                  │
-│    MEL           │                                  │
-│    Rubricas      │                                  │
-│                  │                                  │
-│  ▼ Sistema       │                                  │
-│    Admins        │                                  │
-│    Apreciaciones*│                                  │
-│    Mensajes*     │                                  │
-│    Changelog*    │                                  │
-│                  │  (* = superadmin only)            │
-└──────────────────┴──────────────────────────────────┘
+Changements dans addSection():
+  1. Après setReportContent → setTimeout(() => scrollRef.scrollIntoView())
+  2. toast({ title: "Sección agregada" })
+  
+Changements dans loadReportContent():
+  1. try/catch autour de la query
+  2. finally { setLoading(false) }
 ```
 
-### Modifications
-
-1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
-
-2. **Modifier `src/pages/AdminPage.tsx`** :
-   - Envelopper le layout dans `SidebarProvider`
-   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
-   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
-   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
-   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
-
-3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
-
-### Points techniques
-
-- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
-- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
-- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
-- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
+### Fichiers modifiés
+- `src/components/admin/AdminSatisfaccionReportTab.tsx` — 3 petites modifications
 
