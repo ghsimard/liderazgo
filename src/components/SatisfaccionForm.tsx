@@ -219,9 +219,9 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
 
     case "radio":
       return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${disabledClass}`}>
           <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
-          <RadioGroup value={value || ""} onValueChange={onChange} className="space-y-1.5">
+          <RadioGroup value={value || ""} onValueChange={onChange} className="space-y-1.5" disabled={disabled}>
             {q.options?.map((opt) => (
               <div key={opt.value} className="flex items-center gap-2">
                 <RadioGroupItem value={opt.value} id={`${q.key}-${opt.value}`} />
