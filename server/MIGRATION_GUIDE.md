@@ -515,7 +515,7 @@ Ces formulaires réutilisent le composant `Encuesta360Form` avec la prop `fase="
 server/
 ├── index.ts                  ← Point d'entrée (enregistre 10 groupes de routes)
 ├── db.ts                     ← Pool pg + helpers query/queryOne
-├── schema.sql                ← Schéma complet (35+ tables + fonctions RPC)
+├── schema.sql                ← Schéma complet (38+ tables + fonctions RPC)
 ├── seed.sql                  ← Données de référence (360°, géographie, settings)
 ├── seed-rubricas.sql         ← Données de seed pour les rubriques
 ├── create-admin.js           ← Script de création admin sécurisé
