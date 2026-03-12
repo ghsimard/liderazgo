@@ -24,7 +24,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Loader2, FileDown, Upload, X, Save, Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, BarChart3, FileText, List, Table as TableIcon, MessageSquare, Image as ImageIcon, GripVertical } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, FileDown, Upload, X, Save, Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, BarChart3, FileText, List, Table as TableIcon, MessageSquare, Image as ImageIcon, GripVertical, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FORM_TYPE_LABELS, SATISFACCION_FORMS } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion } from "@/data/satisfaccionData";
@@ -624,6 +625,7 @@ function SectionEditor({
   isDragging?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [previewChart, setPreviewChart] = useState<any>(null);
   const isAuto = section.type === "ficha_tecnica" || section.type === "satisfaction_summary" || section.type === "comments_annex";
   const chartData = section.type === "chart_analysis" && stats
     ? stats.sections.find((s: any) => s.title === section.chartSectionTitle)
@@ -685,7 +687,14 @@ function SectionEditor({
                 {section.type === "chart_analysis" && (
                   <div className="text-xs text-muted-foreground">
                     {chartData ? (
-                      <span className="text-emerald-600">✓ Gráfico disponible: {chartData.data.length} indicadores</span>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewChart(chartData)}
+                        className="text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        ✓ Gráfico disponible: {chartData.data.length} indicadores — clic para ver
+                      </button>
                     ) : (
                       <span className="text-amber-600">⚠ Sin datos para gráfico "{section.chartSectionTitle}"</span>
                     )}
@@ -720,6 +729,41 @@ function SectionEditor({
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Chart preview modal */}
+      <Dialog open={!!previewChart} onOpenChange={() => setPreviewChart(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base">{previewChart?.title}</DialogTitle>
+          </DialogHeader>
+          {previewChart && (
+            <div className="space-y-2">
+              {previewChart.data.map((item: any, i: number) => {
+                const maxVal = Math.max(...previewChart.data.map((d: any) => d.value), 1);
+                const barWidth = Math.max((item.value / maxVal) * 100, 2);
+                const barColor = item.value >= 80 ? "bg-emerald-500" : item.value >= 60 ? "bg-amber-500" : "bg-destructive";
+                return (
+                  <div key={i} className="space-y-0.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-foreground truncate max-w-[70%]">{item.label}</span>
+                      <span className="font-semibold text-foreground">{item.value}%</span>
+                    </div>
+                    <div className="h-5 bg-muted rounded overflow-hidden">
+                      <div
+                        className={`h-full ${barColor} rounded transition-all`}
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="text-xs text-muted-foreground pt-2">
+                Tipo: {previewChart.type} · {previewChart.data.length} indicadores
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
