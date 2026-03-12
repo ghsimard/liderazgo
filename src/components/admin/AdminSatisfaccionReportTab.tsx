@@ -999,7 +999,7 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
           return (
             <div key={i} className="space-y-0.5">
               <div className="flex justify-between text-xs">
-                <span className="text-foreground truncate max-w-[70%]">{item.label}</span>
+                <span className="text-foreground break-words leading-tight">{item.label}</span>
                 <span className="font-semibold text-foreground">{item.value}%</span>
               </div>
               <div className="h-5 bg-muted rounded overflow-hidden">
@@ -1022,7 +1022,7 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
             <div key={i} className="flex flex-col items-center gap-1" style={{ width: `${barW}%`, maxWidth: 60 }}>
               <span className="text-[10px] font-semibold text-foreground">{item.value}%</span>
               <div className="w-full rounded-t transition-all" style={{ height: barH, backgroundColor: PREVIEW_COLORS[i % PREVIEW_COLORS.length] }} />
-              <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 w-full">{item.label}</span>
+              <span className="text-[9px] text-muted-foreground text-center leading-tight w-full break-words">{item.label}</span>
             </div>
           );
         })}
@@ -1069,11 +1069,11 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
             );
           })}
         </svg>
-        <div className="space-y-1.5 text-xs max-w-[200px]">
+        <div className="space-y-1.5 text-xs flex-1 min-w-0">
           {data.map((item, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: PREVIEW_COLORS[i % PREVIEW_COLORS.length] }} />
-              <span className="text-foreground truncate">{item.label}: {item.value}%</span>
+            <div key={i} className="flex items-start gap-2">
+              <div className="w-3 h-3 rounded-sm shrink-0 mt-0.5" style={{ backgroundColor: PREVIEW_COLORS[i % PREVIEW_COLORS.length] }} />
+              <span className="text-foreground break-words leading-tight">{item.label}: {item.value}%</span>
             </div>
           ))}
         </div>
@@ -1085,7 +1085,7 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
     const n = data.length;
     if (n < 3) return <p className="text-xs text-muted-foreground text-center py-4">Se necesitan al menos 3 indicadores para el gráfico radar.</p>;
     const r = 70;
-    const cx = 110, cy = 100;
+    const cx = 150, cy = 130;
     const angleStep = (2 * Math.PI) / n;
 
     const points = data.map((item, i) => {
@@ -1096,8 +1096,8 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
     const polyPoints = points.map(p => `${p.x},${p.y}`).join(" ");
 
     return (
-      <div className="flex items-center gap-4 justify-center">
-        <svg width={220} height={200} viewBox="0 0 220 200">
+      <div className="flex flex-col items-center gap-4 justify-center">
+        <svg width={300} height={260} viewBox="0 0 300 260">
           {/* Grid rings */}
           {[0.25, 0.5, 0.75, 1].map(ring => (
             <polygon
@@ -1121,13 +1121,12 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
           {/* Labels */}
           {data.map((item, i) => {
             const a = -Math.PI / 2 + i * angleStep;
-            const lx = cx + (r + 18) * Math.cos(a);
-            const ly = cy + (r + 18) * Math.sin(a);
+            const lx = cx + (r + 24) * Math.cos(a);
+            const ly = cy + (r + 24) * Math.sin(a);
             const anchor = Math.cos(a) < -0.1 ? "end" : Math.cos(a) > 0.1 ? "start" : "middle";
-            const lbl = item.label.length > 20 ? item.label.substring(0, 17) + "…" : item.label;
             return (
               <text key={i} x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle" fill="#374151" fontSize={8}>
-                {lbl} ({item.value}%)
+                {item.label} ({item.value}%)
               </text>
             );
           })}
