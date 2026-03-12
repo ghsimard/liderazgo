@@ -3,6 +3,7 @@
  * Renders sections/questions from a SatisfaccionFormDef and collects answers as a flat object.
  */
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +27,7 @@ interface SatisfaccionFormProps {
 export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubmit, submitting, fichaInfo }: SatisfaccionFormProps) {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const set = (key: string, value: any) => setAnswers((prev) => ({ ...prev, [key]: value }));
 
@@ -91,6 +93,9 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
 
   return (
     <div className="space-y-6">
+      <Button variant="ghost" size="sm" onClick={() => navigate("/mi-panel")} className="mb-2">
+        ← Volver a mi panel
+      </Button>
       <div className="text-left space-y-2">
         <h1 className="text-xl font-bold text-foreground text-center">{formDef.title}</h1>
         <p className="text-sm text-muted-foreground text-center">Módulo {moduleNumber} — {region}</p>
