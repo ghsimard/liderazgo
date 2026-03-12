@@ -116,6 +116,10 @@ const FORM_PATH_TO_BLANK: Record<string, string> = {
   "/formulario-360-final-estudiante": "estudiante",
   
   "/": "ficha",
+
+  "/encuesta-acudiente": "ambiente_acudientes",
+  "/encuesta-estudiante": "ambiente_estudiantes",
+  "/encuesta-docente": "ambiente_docentes",
 };
 
 function CopyLinkButton({ path }: { path: string }) {
