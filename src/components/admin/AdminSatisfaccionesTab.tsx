@@ -500,6 +500,7 @@ function ResponseDetailDialog({
               <div>
                 <p className="font-medium">{getName(response.cedula)}</p>
                 <p className="text-xs text-muted-foreground">CC {response.cedula}</p>
+                {getIE(response.cedula) && <p className="text-xs text-muted-foreground">{getIE(response.cedula)}</p>}
               </div>
             </div>
             <div className="flex items-center gap-2 text-sm">
