@@ -416,19 +416,20 @@ export default function AdminFichasTab() {
               <TableHead>Cargo</TableHead>
               <TableHead>Correo</TableHead>
               <TableHead>Enviado (COT)</TableHead>
+              <TableHead>Modificado (COT)</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                   <RefreshCw className="animate-spin w-5 h-5 mx-auto" />
                 </TableCell>
               </TableRow>
             ) : fichas.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No se encontraron fichas.</TableCell>
+                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No se encontraron fichas.</TableCell>
               </TableRow>
             ) : (
               fichas.map((f) => (
@@ -439,6 +440,7 @@ export default function AdminFichasTab() {
                   <TableCell className="text-sm">{genderizeRole(f.cargo_actual, f.genero)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{f.correo_personal}</TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(f.created_at)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime((f as any).updated_at)}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="icon" onClick={() => handleDownloadPdf(f)} title="Descargar PDF">

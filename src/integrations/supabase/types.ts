@@ -436,6 +436,7 @@ export type Database = {
           titulo_especializacion: string | null
           titulo_maestria: string | null
           titulo_pregrado: string | null
+          updated_at: string
           zona_sede: string | null
         }
         Insert: {
@@ -503,6 +504,7 @@ export type Database = {
           titulo_especializacion?: string | null
           titulo_maestria?: string | null
           titulo_pregrado?: string | null
+          updated_at?: string
           zona_sede?: string | null
         }
         Update: {
@@ -570,6 +572,7 @@ export type Database = {
           titulo_especializacion?: string | null
           titulo_maestria?: string | null
           titulo_pregrado?: string | null
+          updated_at?: string
           zona_sede?: string | null
         }
         Relationships: []
