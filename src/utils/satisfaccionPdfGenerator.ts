@@ -11,6 +11,30 @@ import logoCLT from "@/assets/logo_clt_white.png";
 import logoCosmo from "@/assets/logo_cosmo.png";
 import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 
+/** Strip HTML tags and decode entities, preserving line breaks */
+function htmlToPlainText(html: string): string {
+  if (!html) return "";
+  let text = html;
+  // Convert block-level elements to newlines
+  text = text.replace(/<\/p>/gi, "\n");
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<\/li>/gi, "\n");
+  text = text.replace(/<li[^>]*>/gi, "• ");
+  text = text.replace(/<\/(?:div|h[1-6]|tr|blockquote)>/gi, "\n");
+  // Remove all remaining tags
+  text = text.replace(/<[^>]+>/g, "");
+  // Decode common HTML entities
+  text = text.replace(/&amp;/g, "&");
+  text = text.replace(/&lt;/g, "<");
+  text = text.replace(/&gt;/g, ">");
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&#39;/g, "'");
+  text = text.replace(/&nbsp;/g, " ");
+  // Clean up extra whitespace
+  text = text.replace(/\n{3,}/g, "\n\n");
+  return text.trim();
+}
+
 function loadImageAsBase64(src: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -171,7 +195,8 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   };
 
   // ── Wrap text and advance y ──
-  const writeText = (text: string, fontSize: number = 10, lineSpacing: number = 5) => {
+  const writeText = (rawText: string, fontSize: number = 10, lineSpacing: number = 5) => {
+    const text = htmlToPlainText(rawText);
     doc.setFontSize(fontSize);
     doc.setFont("helvetica", "normal");
     const paragraphs = text.split("\n");
@@ -339,7 +364,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const summaryParagraphs = executiveSummary.split("\n");
+    const summaryParagraphs = htmlToPlainText(executiveSummary).split("\n");
     for (const para of summaryParagraphs) {
       if (!para.trim()) { y += 4; continue; }
       const lines = doc.splitTextToSize(para.trim(), contentW);
@@ -725,9 +750,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       writeSectionTitle(section.title, num, section.isSubsection);
 
       if (section.bullets && section.bullets.length > 0) {
-        for (const bullet of section.bullets) {
+        for (const rawBullet of section.bullets) {
+          const bullet = htmlToPlainText(rawBullet);
           if (!bullet.trim()) continue;
-
           // Check if it's a category header (short text, < 60 chars) vs description
           const lines = bullet.split("\n");
           for (const line of lines) {
