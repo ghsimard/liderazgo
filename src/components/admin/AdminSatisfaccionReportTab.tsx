@@ -76,6 +76,8 @@ interface ReportContent {
   reportSubtitle: string;
   sections: ReportSection[];
   extraLogos: string[];
+  executiveSummaryEnabled?: boolean;
+  executiveSummary?: string;
 }
 
 const SECTION_TYPE_LABELS: Record<SectionType, string> = {
