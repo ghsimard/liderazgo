@@ -486,9 +486,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     }
 
     if (section.type === "bullet_list") {
-      sectionNum++;
+      const num = getNumber(section.isSubsection);
       sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
-      writeSectionTitle(section.title, String(sectionNum));
+      writeSectionTitle(section.title, num, section.isSubsection);
 
       if (section.bullets && section.bullets.length > 0) {
         for (const bullet of section.bullets) {
