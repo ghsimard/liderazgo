@@ -91,14 +91,7 @@ const sections: SidebarSection[] = [
     label: "Encuesta 360°",
     icon: Gauge,
     items: [
-      { tab: "enlaces360", label: "Formularios", icon: Link2 },
-      { tab: "ponderaciones", label: "Configuración", icon: Settings2 },
-      { tab: "encuestas360", label: "Inicial", icon: PlayCircle },
-      { tab: "encuestas360final", label: "Final", icon: FlagTriangleRight },
-      { tab: "invitaciones", label: "Invitaciones", icon: Users },
-      { tab: "reportes360", label: "Informes Inicial", icon: FileBarChart },
-      { tab: "reportes360final", label: "Informes Final", icon: FileBarChart2 },
-      { tab: "blancos-360", label: "PDF en Blanco", icon: Printer },
+      { tab: "encuesta360", label: "Encuesta 360°", icon: Gauge },
     ],
   },
   {
