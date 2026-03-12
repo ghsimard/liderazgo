@@ -77,23 +77,20 @@ function SatisfaccionPanel({ cedula, region: roleInfo, navigate }: { cedula: str
     if (!open) return;
     setLoading(true);
     const load = async () => {
-      // Get user region from ficha
-      const { data: ficha } = await supabase
-        .from("fichas_rlt")
-        .select("region")
-        .eq("numero_cedula", cedula)
-        .limit(1);
-      const userRegion = (Array.isArray(ficha) ? ficha[0] : ficha)?.region;
+      // Get user region via SECURITY DEFINER RPC (bypasses RLS on fichas_rlt)
+      const { data: fichaData } = await supabase.rpc("get_ficha_by_cedula", { p_cedula: cedula });
+      const fichaObj = fichaData as any;
+      const userRegion = fichaObj?.region;
       if (!userRegion) { setLoading(false); return; }
 
-      // Get active configs for this region
+      // Get active configs for this region (public SELECT)
       const { data: configs } = await supabase
         .from("satisfaccion_config")
         .select("form_type,module_number")
         .eq("region", userRegion)
         .eq("is_active", true);
 
-      if (!configs || configs.length === 0) { setActiveForms([]); setLoading(false); return; }
+      if (!configs || (Array.isArray(configs) && configs.length === 0)) { setActiveForms([]); setLoading(false); return; }
 
       // Check which ones are already submitted
       const { data: submitted } = await supabase

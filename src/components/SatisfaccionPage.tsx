@@ -49,19 +49,15 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
 
     const init = async () => {
       try {
-        // Get region from fichas_rlt
-        const { data: ficha } = await supabase
-          .from("fichas_rlt")
-          .select("region")
-          .eq("numero_cedula", cedula)
-          .limit(1);
-        const row = Array.isArray(ficha) ? ficha[0] : ficha;
-        if (!row) {
+        // Get region via SECURITY DEFINER RPC (bypasses RLS on fichas_rlt)
+        const { data: fichaData } = await supabase.rpc("get_ficha_by_cedula", { p_cedula: cedula });
+        const fichaObj = fichaData as any;
+        if (!fichaObj) {
           setError("No se encontró su ficha. Contacte al administrador.");
           setLoading(false);
           return;
         }
-        const userRegion = (row as any).region;
+        const userRegion = fichaObj.region;
         setRegion(userRegion);
 
         // Check availability
