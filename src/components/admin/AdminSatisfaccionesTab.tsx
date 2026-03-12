@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw, Eye, ToggleLeft, ToggleRight, User, Calendar, MapPin, FileText, MessageSquare, CheckCircle2, XCircle, MinusCircle, Search, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { FORM_TYPE_LABELS, asistenciaForm, interludioForm, intensivoForm } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion, SatisfaccionOption } from "@/data/satisfaccionData";
 import { ScrollArea } from "@/components/ui/scroll-area";
