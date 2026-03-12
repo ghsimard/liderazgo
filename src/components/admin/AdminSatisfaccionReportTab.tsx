@@ -148,6 +148,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
+  const [generatingAI, setGeneratingAI] = useState(false);
   const [responses, setResponses] = useState<ResponseRow[]>([]);
   const [regionData, setRegionData] = useState<RegionRow[]>([]);
 
