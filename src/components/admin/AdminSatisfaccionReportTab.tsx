@@ -625,6 +625,7 @@ function SectionEditor({
   isDragging?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [previewChart, setPreviewChart] = useState<any>(null);
   const isAuto = section.type === "ficha_tecnica" || section.type === "satisfaction_summary" || section.type === "comments_annex";
   const chartData = section.type === "chart_analysis" && stats
     ? stats.sections.find((s: any) => s.title === section.chartSectionTitle)
