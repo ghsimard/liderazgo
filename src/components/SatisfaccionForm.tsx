@@ -19,6 +19,7 @@ interface SatisfaccionFormProps {
   region: string;
   onSubmit: (respuestas: Record<string, any>) => Promise<void>;
   submitting?: boolean;
+  fichaInfo?: Record<string, any> | null;
 }
 
 export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubmit, submitting }: SatisfaccionFormProps) {
