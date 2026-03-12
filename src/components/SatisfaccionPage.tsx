@@ -31,6 +31,7 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
   const [fichaInfo, setFichaInfo] = useState<Record<string, any> | null>(null);
   const [error, setError] = useState("");
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [existingResponses, setExistingResponses] = useState<Record<string, any> | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -91,16 +92,18 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
           return;
         }
 
-        // Check duplicate
+        // Check duplicate and fetch existing responses
         const { data: existing } = await supabase
           .from("satisfaccion_responses")
-          .select("id")
+          .select("id,respuestas")
           .eq("form_type", formType)
           .eq("module_number", moduleNumber)
           .eq("cedula", cedula)
           .limit(1);
-        if (existing && (Array.isArray(existing) ? existing.length > 0 : !!existing)) {
+        const existingRow = Array.isArray(existing) ? existing[0] : existing;
+        if (existingRow) {
           setAlreadySubmitted(true);
+          setExistingResponses((existingRow as any).respuestas || {});
         }
       } catch {
         setError("Error al verificar disponibilidad.");
@@ -159,19 +162,15 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
     );
   }
 
-  if (alreadySubmitted || submitted) {
+  if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <Card className="max-w-md w-full">
           <CardContent className="flex flex-col items-center py-12 space-y-4">
             <CheckCircle2 className="h-12 w-12 text-emerald-600" />
-            <h2 className="text-lg font-semibold">
-              {submitted ? "¡Encuesta enviada!" : "Ya respondió esta encuesta"}
-            </h2>
+            <h2 className="text-lg font-semibold">¡Encuesta enviada!</h2>
             <p className="text-sm text-muted-foreground text-center">
-              {submitted
-                ? "Gracias por completar la encuesta de satisfacción."
-                : `Ya envió la encuesta de ${FORM_TYPE_LABELS[formType]} para el módulo ${moduleNumber}.`}
+              Gracias por completar la encuesta de satisfacción.
             </p>
             <Button variant="outline" onClick={() => navigate("/mi-panel")}>Volver a Mi Panel</Button>
           </CardContent>
@@ -196,6 +195,8 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
           onSubmit={handleSubmit}
           submitting={submitting}
           fichaInfo={fichaInfo}
+          readOnly={alreadySubmitted}
+          savedAnswers={existingResponses}
         />
       </div>
     </div>

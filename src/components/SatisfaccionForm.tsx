@@ -22,14 +22,16 @@ interface SatisfaccionFormProps {
   onSubmit: (respuestas: Record<string, any>) => Promise<void>;
   submitting?: boolean;
   fichaInfo?: Record<string, any> | null;
+  readOnly?: boolean;
+  savedAnswers?: Record<string, any> | null;
 }
 
-export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubmit, submitting, fichaInfo }: SatisfaccionFormProps) {
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubmit, submitting, fichaInfo, readOnly, savedAnswers }: SatisfaccionFormProps) {
+  const [answers, setAnswers] = useState<Record<string, any>>(savedAnswers || {});
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const set = (key: string, value: any) => setAnswers((prev) => ({ ...prev, [key]: value }));
+  const set = (key: string, value: any) => { if (!readOnly) setAnswers((prev) => ({ ...prev, [key]: value })); };
 
   const handleCheckboxMax3 = (key: string, value: string, checked: boolean, max: number) => {
     const current: string[] = answers[key] || [];
@@ -96,6 +98,14 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
       <Button variant="ghost" size="sm" onClick={() => navigate("/mi-panel")} className="mb-2">
         ← Volver a mi panel
       </Button>
+
+      {readOnly && (
+        <div className="bg-muted border border-border rounded-lg px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
+          <span className="text-base">🔒</span>
+          Ya respondió esta encuesta. Sus respuestas se muestran en modo de lectura.
+        </div>
+      )}
+
       <div className="text-left space-y-2">
         <h1 className="text-xl font-bold text-foreground text-center">{formDef.title}</h1>
         <p className="text-sm text-muted-foreground text-center">Módulo {moduleNumber} — {region}</p>
@@ -158,6 +168,7 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
                   onChange={(v) => set(q.key, v)}
                   onCheckboxChange={(val, checked) => handleCheckboxMax3(q.key, val, checked, q.maxSelect || 3)}
                   onGridChange={(rowKey, val) => setGrid(q.key, rowKey, val)}
+                  disabled={readOnly}
                 />
               );
             })}
@@ -165,11 +176,13 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
         </Card>
       ))}
 
-      <div className="flex justify-center">
-        <Button size="lg" onClick={handleSubmit} disabled={submitting} className="min-w-[200px]">
-          {submitting ? "Enviando…" : "Enviar encuesta"}
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-center">
+          <Button size="lg" onClick={handleSubmit} disabled={submitting} className="min-w-[200px]">
+            {submitting ? "Enviando…" : "Enviar encuesta"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -181,31 +194,34 @@ interface QRProps {
   onChange: (v: any) => void;
   onCheckboxChange: (val: string, checked: boolean) => void;
   onGridChange: (rowKey: string, val: string) => void;
+  disabled?: boolean;
 }
 
-function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGridChange }: QRProps) {
+function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGridChange, disabled }: QRProps) {
+  const disabledClass = disabled ? "opacity-70 pointer-events-none" : "";
+
   switch (q.type) {
     case "date":
       return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${disabledClass}`}>
           <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
-          <Input type="date" value={value || ""} onChange={(e) => onChange(e.target.value)} className="max-w-xs" />
+          <Input type="date" value={value || ""} onChange={(e) => onChange(e.target.value)} className="max-w-xs" disabled={disabled} />
         </div>
       );
 
     case "text":
       return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${disabledClass}`}>
           <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
-          <Input type="text" value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder="Escriba aquí..." />
+          <Input type="text" value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder="Escriba aquí..." disabled={disabled} />
         </div>
       );
 
     case "radio":
       return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${disabledClass}`}>
           <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
-          <RadioGroup value={value || ""} onValueChange={onChange} className="space-y-1.5">
+          <RadioGroup value={value || ""} onValueChange={onChange} className="space-y-1.5" disabled={disabled}>
             {q.options?.map((opt) => (
               <div key={opt.value} className="flex items-center gap-2">
                 <RadioGroupItem value={opt.value} id={`${q.key}-${opt.value}`} />
@@ -218,9 +234,9 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
 
     case "likert4":
       return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${disabledClass}`}>
           <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
-          <RadioGroup value={value || ""} onValueChange={onChange} className="flex flex-wrap gap-3">
+          <RadioGroup value={value || ""} onValueChange={onChange} className="flex flex-wrap gap-3" disabled={disabled}>
             {q.options?.map((opt) => (
               <div key={opt.value} className="flex items-center gap-1.5">
                 <RadioGroupItem value={opt.value} id={`${q.key}-${opt.value}`} />
@@ -233,7 +249,7 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
 
     case "checkbox-max3":
       return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${disabledClass}`}>
           <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
           <div className="space-y-1.5">
             {q.options?.map((opt) => {
@@ -244,6 +260,7 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
                     id={`${q.key}-${opt.value}`}
                     checked={checked}
                     onCheckedChange={(c) => onCheckboxChange(opt.value, !!c)}
+                    disabled={disabled}
                   />
                   <Label htmlFor={`${q.key}-${opt.value}`} className="font-normal cursor-pointer">{opt.label}</Label>
                 </div>
@@ -256,13 +273,13 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
     case "grid-sino":
     case "grid-frequency":
     case "grid-logistic":
-      return <GridQuestion question={q} value={value || {}} onGridChange={onGridChange} />;
+      return <GridQuestion question={q} value={value || {}} onGridChange={onGridChange} disabled={disabled} />;
 
     case "textarea":
       return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${disabledClass}`}>
           <Label className="font-medium">{q.label}</Label>
-          <Textarea value={value || ""} onChange={(e) => onChange(e.target.value)} rows={3} placeholder="Escriba aquí..." />
+          <Textarea value={value || ""} onChange={(e) => onChange(e.target.value)} rows={3} placeholder="Escriba aquí..." disabled={disabled} />
         </div>
       );
 
@@ -271,11 +288,11 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
   }
 }
 
-function GridQuestion({ question: q, value, onGridChange }: { question: SatisfaccionQuestion; value: Record<string, string>; onGridChange: (rowKey: string, val: string) => void }) {
+function GridQuestion({ question: q, value, onGridChange, disabled }: { question: SatisfaccionQuestion; value: Record<string, string>; onGridChange: (rowKey: string, val: string) => void; disabled?: boolean }) {
   const columns = q.columns || [];
 
   return (
-    <div className="space-y-2">
+    <div className={`space-y-2 ${disabled ? "opacity-70 pointer-events-none" : ""}`}>
       {q.label && <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
