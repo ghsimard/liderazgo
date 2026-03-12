@@ -1153,11 +1153,11 @@ export default function AdminEditFicha() {
                   <input id="sedes_urbana" type="number" min={0} max={999} {...register("sedes_urbana")} placeholder="0" className="form-input w-20 text-center shrink-0 !min-h-0 !py-1.5 !pt-1.5" />
                 </div>
 
-                <div className="flex items-center justify-between gap-3 pt-1 border-t border-border">
+                <div className="flex flex-col items-center gap-0.5 pt-1 border-t border-border">
                   <span className="text-sm font-semibold text-muted-foreground whitespace-nowrap">
                     Número total de sedes <span className="text-xs font-normal text-muted-foreground/70">(incluye la sede principal)</span>
                   </span>
-                  <span className="w-20 text-center font-semibold text-sm shrink-0">{totalSedes}</span>
+                  <span className="font-semibold text-sm">{totalSedes}</span>
                 </div>
               </div>
 
