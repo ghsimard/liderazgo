@@ -412,7 +412,7 @@ export default function MiPanel() {
 
                 {/* Satisfacción button */}
                 {roleInfo.is_directivo && (
-                  <SatisfaccionPanel cedula={cedula} region={roleInfo} navigate={navigate} />
+                  <SatisfaccionPanel cedula={cedula} navigate={navigate} />
                 )}
               </>
             )}
