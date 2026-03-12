@@ -560,18 +560,38 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           </div>
         </div>
 
-        {reportContent.sections.map((section, si) => (
-          <SectionEditor
-            key={section.id}
-            section={section}
-            index={si}
-            total={reportContent.sections.length}
-            onUpdate={(updates) => updateSection(section.id, updates)}
-            onRemove={() => removeSection(section.id)}
-            onMove={(dir) => moveSection(section.id, dir)}
-            stats={stats}
-          />
-        ))}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="report-sections">
+            {(provided) => (
+              <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
+                {reportContent.sections.map((section, si) => (
+                  <Draggable key={section.id} draggableId={section.id} index={si}>
+                    {(dragProvided, snapshot) => (
+                      <div
+                        ref={dragProvided.innerRef}
+                        {...dragProvided.draggableProps}
+                        style={dragProvided.draggableProps.style}
+                      >
+                        <SectionEditor
+                          section={section}
+                          index={si}
+                          total={reportContent.sections.length}
+                          onUpdate={(updates) => updateSection(section.id, updates)}
+                          onRemove={() => removeSection(section.id)}
+                          onMove={(dir) => moveSection(section.id, dir)}
+                          stats={stats}
+                          dragHandleProps={dragProvided.dragHandleProps}
+                          isDragging={snapshot.isDragging}
+                        />
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
         <div ref={sectionsEndRef} />
       </div>
 
