@@ -880,6 +880,35 @@ function SectionEditor({
                   </p>
                 )}
 
+                {section.type === "satisfaction_summary" && stats && (
+                  <div className="space-y-3 pt-1">
+                    {/* Overall */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                      <div className="text-2xl font-bold text-primary">{stats.overallSatisfaction ?? 0}%</div>
+                      <span className="text-sm text-muted-foreground">Satisfacción general</span>
+                    </div>
+                    {/* Per-block breakdown */}
+                    {stats.generalSatisfaction && stats.generalSatisfaction.length > 0 && (
+                      <div className="space-y-2">
+                        {stats.generalSatisfaction.map((gs: { label: string; value: number }, i: number) => (
+                          <div key={i} className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-muted-foreground break-words leading-tight flex-1 mr-2">{gs.label}</span>
+                              <span className="font-semibold text-foreground whitespace-nowrap">{gs.value}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-primary/70 transition-all"
+                                style={{ width: `${Math.min(gs.value, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {section.type === "satisfaction_summary" && section.content !== undefined && (
                   <RichTextEditor
                     value={section.content || ""}
