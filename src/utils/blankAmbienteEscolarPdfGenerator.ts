@@ -104,11 +104,15 @@ export async function generarPDFAmbienteEscolarEnBlanco(
     y = 24;
   };
 
-  const drawFooter = () => {
-    const footerY = pageH - 8;
+  const drawFooter = (pageNum: number, totalPages: number) => {
+    const cosmoTargetH = 7;
+    const cosmoLogoW = cosmoTargetH * (cosmoSize.width / cosmoSize.height);
+    const cosmoY = pageH - 13;
+    if (cosmoB64) doc.addImage(cosmoB64, "PNG", margin, cosmoY, cosmoLogoW, cosmoTargetH);
     doc.setFontSize(7);
-    doc.setTextColor(150, 150, 150);
-    doc.text("Encuesta de Ambiente Escolar – Formulario en blanco", pageW / 2, footerY, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text(`${pageNum}/${totalPages}`, pageW - margin, cosmoY + cosmoTargetH / 2 + 1, { align: "right" });
   };
 
   const wrapText = (text: string, maxW: number, fontSize: number): string[] => {
