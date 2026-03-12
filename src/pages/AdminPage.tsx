@@ -156,9 +156,7 @@ function BlankPdfButton({ path }: { path: string }) {
   const handleRegionConfirm = async (flags: { showLogoRlt: boolean; showLogoClt: boolean }) => {
     if (loading) return;
     setLoading(true);
-    const logoRLT = images.logo_rlt_white;
-    const logoCLT = blankType.startsWith("ambiente_") ? images.logo_clt_white : images.logo_clt_dark;
-    const logos = { logoRLT, logoCLTDark: logoCLT, logoCosmo: images.logo_cosmo };
+    const logos = { logoRLT: images.logo_rlt_white, logoCLTDark: images.logo_clt_white, logoCosmo: images.logo_cosmo };
     try {
       if (blankType === "ficha") {
         await generarPDFFichaEnBlanco(logos, flags);
