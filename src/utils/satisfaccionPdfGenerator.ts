@@ -525,12 +525,49 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   // Final footer
   drawFooter();
 
-  // Fix page numbers (skip cover page)
-  const totalPages = doc.getNumberOfPages();
-  for (let p = 2; p <= totalPages; p++) {
-    doc.setPage(p);
-    // Page number already drawn via drawFooter, but let's ensure consistency
+  // ══════════════════════════════════════════
+  // FILL TABLE OF CONTENTS WITH PAGE NUMBERS
+  // ══════════════════════════════════════════
+  doc.setPage(1);
+  let tocEntryY = tocY;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+
+  for (let i = 0; i < sectionPages.length; i++) {
+    const entry = sectionPages[i];
+    const pageNum = entry.page - 1; // subtract cover page
+
+    // Section number + title
+    doc.setTextColor(60, 60, 60);
+    const label = `${i + 1}. ${entry.title}`;
+    const truncated = label.length > 70 ? label.slice(0, 67) + "…" : label;
+    doc.text(truncated, margin + 4, tocEntryY);
+
+    // Dotted leader + page number
+    const labelW = doc.getTextWidth(truncated);
+    const pageNumStr = String(pageNum);
+    const pageNumW = doc.getTextWidth(pageNumStr);
+    const dotsStart = margin + 4 + labelW + 2;
+    const dotsEnd = pageW - margin - pageNumW - 2;
+
+    // Draw dots
+    doc.setTextColor(180, 180, 180);
+    let dotX = dotsStart;
+    while (dotX < dotsEnd) {
+      doc.text(".", dotX, tocEntryY);
+      dotX += 2;
+    }
+
+    // Page number right-aligned
+    doc.setTextColor(60, 60, 60);
+    doc.setFont("helvetica", "bold");
+    doc.text(pageNumStr, pageW - margin, tocEntryY, { align: "right" });
+    doc.setFont("helvetica", "normal");
+
+    tocEntryY += 5;
   }
+
+  doc.setTextColor(30, 30, 30);
 
   // Download
   const formLabel = FORM_TYPE_LABELS[filterType] || filterType;
