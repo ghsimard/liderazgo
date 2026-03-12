@@ -48,6 +48,8 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
   const validate = (): boolean => {
     for (const section of formDef.sections) {
       for (const q of section.questions) {
+        // Skip conditional questions that aren't visible
+        if (q.conditionalOn && answers[q.conditionalOn.key] !== q.conditionalOn.value) continue;
         if (!q.required) continue;
         const val = answers[q.key];
         if (q.type === "checkbox-max3") {
@@ -91,16 +93,23 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
             {section.description && <p className="text-sm text-muted-foreground">{section.description}</p>}
           </CardHeader>
           <CardContent className="space-y-5">
-            {section.questions.map((q) => (
-              <QuestionRenderer
-                key={q.key}
-                question={q}
-                value={answers[q.key]}
-                onChange={(v) => set(q.key, v)}
-                onCheckboxChange={(val, checked) => handleCheckboxMax3(q.key, val, checked, q.maxSelect || 3)}
-                onGridChange={(rowKey, val) => setGrid(q.key, rowKey, val)}
-              />
-            ))}
+            {section.questions.map((q) => {
+              // Handle conditional visibility
+              if (q.conditionalOn) {
+                const parentVal = answers[q.conditionalOn.key];
+                if (parentVal !== q.conditionalOn.value) return null;
+              }
+              return (
+                <QuestionRenderer
+                  key={q.key}
+                  question={q}
+                  value={answers[q.key]}
+                  onChange={(v) => set(q.key, v)}
+                  onCheckboxChange={(val, checked) => handleCheckboxMax3(q.key, val, checked, q.maxSelect || 3)}
+                  onGridChange={(rowKey, val) => setGrid(q.key, rowKey, val)}
+                />
+              );
+            })}
           </CardContent>
         </Card>
       ))}
@@ -130,6 +139,14 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
         <div className="space-y-2">
           <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
           <Input type="date" value={value || ""} onChange={(e) => onChange(e.target.value)} className="max-w-xs" />
+        </div>
+      );
+
+    case "text":
+      return (
+        <div className="space-y-2">
+          <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
+          <Input type="text" value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder="Escriba aquí..." />
         </div>
       );
 

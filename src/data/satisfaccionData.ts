@@ -7,7 +7,7 @@
  * Each form is filled once per module (1-4).
  */
 
-export type QuestionType = "radio" | "checkbox-max3" | "likert4" | "grid-sino" | "grid-frequency" | "grid-logistic" | "textarea" | "date";
+export type QuestionType = "radio" | "checkbox-max3" | "likert4" | "grid-sino" | "grid-frequency" | "grid-logistic" | "textarea" | "date" | "text";
 
 export interface SatisfaccionOption {
   value: string;
@@ -25,6 +25,8 @@ export interface SatisfaccionQuestion {
   columns?: SatisfaccionOption[];
   required?: boolean;
   maxSelect?: number;
+  /** Show this question only when another question has a specific value */
+  conditionalOn?: { key: string; value: string };
 }
 
 export interface SatisfaccionSection {
@@ -43,8 +45,8 @@ export interface SatisfaccionFormDef {
 // ── Scales ──
 const LIKERT4_AGREEMENT: SatisfaccionOption[] = [
   { value: "1", label: "Totalmente en desacuerdo" },
-  { value: "2", label: "En desacuerdo" },
-  { value: "3", label: "De acuerdo" },
+  { value: "2", label: "Algo en desacuerdo" },
+  { value: "3", label: "Algo de acuerdo" },
   { value: "4", label: "Totalmente de acuerdo" },
 ];
 
@@ -73,21 +75,38 @@ const LIKERT4_SATISFACTION: SatisfaccionOption[] = [
 // ═══════════════════════════════════════════════════════════
 export const asistenciaForm: SatisfaccionFormDef = {
   formType: "asistencia",
-  title: "Encuesta de Satisfacción — Asistencia",
-  description: "Evalúe su experiencia en la sesión de hoy.",
+  title: "Registro de asistencia - RLT - CLT",
+  description: "En el marco del Programa Rectores Líderes Transformadores y Coordinadores Líderes Transformadores, queremos llevar un control organizado de la asistencia a los eventos programados. Este formulario tiene como único propósito registrar su participación en dichas actividades. La información que usted proporcione será confidencial y se utilizará únicamente para fines administrativos. Agradecemos su compromiso y participación activa.",
   sections: [
     {
       title: "Información de la sesión",
       questions: [
         {
           key: "fecha_sesion",
-          label: "Fecha de la sesión",
+          label: "Selecciona la fecha en la que estás diligenciando este formulario",
           type: "date",
           required: true,
         },
         {
+          key: "rol_ie",
+          label: "¿Cuál es tu rol en la Institución Educativa?",
+          type: "radio",
+          required: true,
+          options: [
+            { value: "rector", label: "Rector" },
+            { value: "coordinador", label: "Coordinador" },
+            { value: "otro", label: "Otro" },
+          ],
+        },
+        {
+          key: "rol_otro_detalle",
+          label: "Si seleccionaste la opción \"Otro\", por favor indicanos qué rol desempeñas.",
+          type: "text",
+          conditionalOn: { key: "rol_ie", value: "otro" },
+        },
+        {
           key: "tipo_actividad",
-          label: "Tipo de actividad",
+          label: "Elige la actividad en la que estás participando hoy",
           type: "radio",
           required: true,
           options: [
@@ -97,7 +116,7 @@ export const asistenciaForm: SatisfaccionFormDef = {
         },
         {
           key: "grupo",
-          label: "Grupo",
+          label: "¿A qué grupo perteneces?",
           type: "radio",
           required: true,
           options: [
@@ -113,14 +132,14 @@ export const asistenciaForm: SatisfaccionFormDef = {
       questions: [
         {
           key: "objetivo_cumplido",
-          label: "El objetivo de la sesión se cumplió satisfactoriamente.",
+          label: "¿Se cumplió el objetivo del encuentro?",
           type: "likert4",
           options: LIKERT4_AGREEMENT,
           required: true,
         },
         {
           key: "valor_sesion",
-          label: "La sesión aportó valor a mi práctica como directivo.",
+          label: "¿La sesión agrega valor a su proceso de liderazgo transformador?",
           type: "likert4",
           options: LIKERT4_AGREEMENT,
           required: true,
@@ -132,8 +151,9 @@ export const asistenciaForm: SatisfaccionFormDef = {
       questions: [
         {
           key: "comentarios",
-          label: "¿Tiene algún comentario o sugerencia sobre la sesión?",
+          label: "Déjenos sus comentarios",
           type: "textarea",
+          required: true,
         },
       ],
     },
