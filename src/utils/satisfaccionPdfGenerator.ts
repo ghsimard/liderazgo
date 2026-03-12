@@ -313,7 +313,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   for (const section of enabledSections) {
     if (section.type === "text") {
       const num = getNumber(section.isSubsection);
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
       writeSectionTitle(section.title, num, section.isSubsection);
       if (section.content) {
         writeText(section.content);
@@ -323,7 +323,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "ficha_tecnica") {
       const num = getNumber(section.isSubsection);
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
       writeSectionTitle(section.title, num, section.isSubsection);
       y = checkPageBreak(50);
 
@@ -374,7 +374,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "chart_analysis") {
       const num = getNumber(section.isSubsection);
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
       writeSectionTitle(section.title, num, section.isSubsection);
 
       // Find matching stats section
@@ -447,7 +447,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "satisfaction_summary") {
       const num = getNumber(section.isSubsection);
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
       writeSectionTitle(section.title, num, section.isSubsection);
 
       if (section.content) {
@@ -487,7 +487,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "bullet_list") {
       const num = getNumber(section.isSubsection);
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
       writeSectionTitle(section.title, num, section.isSubsection);
 
       if (section.bullets && section.bullets.length > 0) {
@@ -534,7 +534,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       y = drawHeader();
 
       const num = getNumber(section.isSubsection);
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
       writeSectionTitle(section.title, num, section.isSubsection);
 
       doc.setFontSize(9);
