@@ -415,6 +415,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "satisfaction_summary") {
       sectionNum++;
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
       writeSectionTitle(section.title, String(sectionNum));
 
       if (section.content) {
