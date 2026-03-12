@@ -427,8 +427,8 @@ Vérifier que ces dépendances sont présentes :
 
 ### Base de données
 - [ ] PostgreSQL créé sur Render
-- [ ] `server/schema.sql` exécuté (tables `users`, `user_roles`, `app_images`, `mel_kpi_*`, `informe_*`, fonctions RPC)
-- [ ] Export SQL importé (35+ tables métier)
+- [ ] `server/schema.sql` exécuté (tables `users`, `user_roles`, `app_images`, `mel_kpi_*`, `informe_*`, `satisfaccion_*`, `encuestas_ambiente_escolar`, fonctions RPC)
+- [ ] Export SQL importé (38+ tables métier)
 - [ ] FK `user_roles` redirigée vers `public.users`
 - [ ] Utilisateurs admin créés avec mots de passe bcrypt
 - [ ] RLS policies supprimées du script
