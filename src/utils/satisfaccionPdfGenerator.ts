@@ -364,7 +364,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const summaryParagraphs = executiveSummary.split("\n");
+    const summaryParagraphs = htmlToPlainText(executiveSummary).split("\n");
     for (const para of summaryParagraphs) {
       if (!para.trim()) { y += 4; continue; }
       const lines = doc.splitTextToSize(para.trim(), contentW);
