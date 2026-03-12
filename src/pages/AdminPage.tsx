@@ -388,7 +388,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       const defaultSubMel = subMelMap[activeTab] || "mel-360";
       return (
         <Tabs defaultValue={defaultSubMel} className="space-y-4">
-          <TabsList className="flex-wrap h-auto gap-1 sticky top-0 z-10 bg-background py-2">
+          <TabsList className="flex-wrap h-auto gap-1 sticky top-0 z-10 bg-background py-2 max-md:flex-nowrap max-md:overflow-x-auto max-md:justify-start">
             <TabsTrigger value="mel-360" className="gap-1.5"><TrendingUp className="w-4 h-4" /> MEL 360°</TabsTrigger>
             <TabsTrigger value="mel-rubricas" className="gap-1.5"><ClipboardList className="w-4 h-4" /> MEL Rúbricas</TabsTrigger>
             <TabsTrigger value="mel-config" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
