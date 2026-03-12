@@ -1323,6 +1323,81 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
   return null;
 }
 
+// ── Question Picker for chart_analysis sections ──
+function QuestionPicker({
+  filterType,
+  selectedKeys,
+  onChange,
+}: {
+  filterType: string;
+  selectedKeys: string[];
+  onChange: (keys: string[]) => void;
+}) {
+  const formDef = SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined;
+  if (!formDef) return null;
+
+  const chartableTypes = new Set(["radio", "likert4", "checkbox-max3", "grid-sino", "grid-frequency", "grid-logistic"]);
+
+  const groups = formDef.sections
+    .map((section) => ({
+      sectionTitle: section.title,
+      questions: section.questions.filter((q) => chartableTypes.has(q.type)),
+    }))
+    .filter((g) => g.questions.length > 0);
+
+  const toggleKey = (key: string) => {
+    onChange(
+      selectedKeys.includes(key)
+        ? selectedKeys.filter((k) => k !== key)
+        : [...selectedKeys, key]
+    );
+  };
+
+  const allKeys = groups.flatMap((g) => g.questions.map((q) => q.key));
+  const allSelected = allKeys.length > 0 && allKeys.every((k) => selectedKeys.includes(k));
+
+  return (
+    <div className="space-y-2 border rounded-lg p-3 bg-muted/20">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-semibold">Preguntas incluidas en el gráfico</Label>
+        <button
+          type="button"
+          onClick={() => onChange(allSelected ? [] : allKeys)}
+          className="text-[10px] text-primary hover:underline"
+        >
+          {allSelected ? "Deseleccionar todo" : "Seleccionar todo"}
+        </button>
+      </div>
+      {groups.map((group) => (
+        <div key={group.sectionTitle} className="space-y-1">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+            {group.sectionTitle}
+          </p>
+          {group.questions.map((q) => (
+            <label
+              key={q.key}
+              className="flex items-start gap-2 cursor-pointer hover:bg-muted/40 rounded px-1.5 py-1 transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={selectedKeys.includes(q.key)}
+                onChange={() => toggleKey(q.key)}
+                className="mt-0.5 h-3.5 w-3.5 rounded border-border accent-primary"
+              />
+              <span className="text-xs text-foreground leading-tight">
+                {q.label || q.key}
+                <Badge variant="outline" className="ml-1.5 text-[9px] px-1 py-0">
+                  {q.type}
+                </Badge>
+              </span>
+            </label>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Bullet List Editor ──
 function BulletListEditor({ bullets, onChange }: { bullets: string[]; onChange: (bullets: string[]) => void }) {
   return (
