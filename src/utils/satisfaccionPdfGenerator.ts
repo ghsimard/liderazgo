@@ -186,11 +186,11 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   // COVER PAGE
   // ══════════════════════════════════════════
 
-  // Draw header on cover page (same as content pages)
+  // Draw header on cover page
   drawHeader();
-  let coverY = 35;
+  let coverY = 40;
 
-  // Extra/partner logos below header
+  // Extra/partner logos below header (centered)
   if (extraLogos.length > 0) {
     const extraH = 16;
     const gap = 15;
@@ -209,53 +209,71 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
         doc.addImage(extra.b64, "PNG", x, coverY, extra.w, extraH);
         x += extra.w + gap;
       }
-      coverY += extraH + 8;
+      coverY += extraH + 10;
     }
   }
 
+  // Push title to roughly 1/3 of the page for a proper cover feel
+  coverY = Math.max(coverY, 80);
+
   // Programme title
-  doc.setFontSize(12);
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
-  doc.text("PROGRAMA RECTORES LÍDERES TRANSFORMADORES", pageW / 2, coverY + 5, { align: "center" });
+  doc.setTextColor(30, 60, 90);
+  doc.text("PROGRAMA RECTORES LÍDERES TRANSFORMADORES", pageW / 2, coverY, { align: "center" });
   // Underline
   const titleW = doc.getTextWidth("PROGRAMA RECTORES LÍDERES TRANSFORMADORES");
-  doc.setDrawColor(30, 30, 30);
+  doc.setDrawColor(30, 60, 90);
   doc.setLineWidth(0.5);
-  doc.line(pageW / 2 - titleW / 2, coverY + 7, pageW / 2 + titleW / 2, coverY + 7);
-  coverY += 18;
+  doc.line(pageW / 2 - titleW / 2, coverY + 2, pageW / 2 + titleW / 2, coverY + 2);
+  coverY += 20;
 
-  // Report title
-  doc.setFontSize(11);
+  // Decorative line
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.3);
+  doc.line(pageW / 2 - 40, coverY, pageW / 2 + 40, coverY);
+  coverY += 12;
+
+  // Report title (larger)
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
-  const titleLines = doc.splitTextToSize(reportContent.reportTitle, contentW);
+  doc.setTextColor(30, 30, 30);
+  const titleLines = doc.splitTextToSize(reportContent.reportTitle, contentW - 20);
   for (const line of titleLines) {
     doc.text(line, pageW / 2, coverY, { align: "center" });
-    coverY += 6;
+    coverY += 7;
   }
-  coverY += 2;
+  coverY += 4;
 
   // Subtitle
   if (reportContent.reportSubtitle) {
     doc.setFontSize(11);
     doc.setFont("helvetica", "italic");
+    doc.setTextColor(80, 80, 80);
     doc.text(`"${reportContent.reportSubtitle}"`, pageW / 2, coverY, { align: "center" });
-    coverY += 12;
+    coverY += 15;
   } else {
-    coverY += 6;
+    coverY += 8;
   }
 
-  // Table of contents placeholder — will be filled after content is rendered
-  const tocStartY = coverY;
+  doc.setTextColor(30, 30, 30);
+
+  // Region + Module info
   doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Región: ${filterRegion}  ·  Módulo ${filterModule}`, pageW / 2, coverY, { align: "center" });
+  coverY += 15;
+
+  // Table of contents placeholder — will be filled after content is rendered
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(59, 130, 246);
-  doc.text("Tabla de contenido", margin, coverY);
-  coverY += 7;
+  doc.setTextColor(30, 60, 90);
+  doc.text("TABLA DE CONTENIDO", pageW / 2, coverY, { align: "center" });
+  coverY += 8;
 
   // Reserve space for TOC entries (we'll come back to fill page numbers)
   const enabledSections = reportContent.sections.filter(s => s.enabled);
-  const tocY = coverY; // save for later
+  const tocY = coverY;
   coverY += enabledSections.length * 5 + 4;
 
   doc.setTextColor(30, 30, 30);
@@ -263,7 +281,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   // Cosmo logo at bottom of cover
   if (cosmoB64) {
     const dim = logoH(cosmoSize.width, cosmoSize.height, 10);
-    doc.addImage(cosmoB64, "PNG", margin, pageH - 20, dim.w, dim.h);
+    doc.addImage(cosmoB64, "PNG", pageW / 2 - dim.w / 2, pageH - 20, dim.w, dim.h);
   }
 
   // Track section page numbers
