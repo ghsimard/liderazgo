@@ -70,6 +70,7 @@ const PUBLIC_INSERT_TABLES = new Set([
 
 // Tables that allow public updates (no auth required for PATCH)
 const PUBLIC_UPDATE_TABLES = new Set([
+  "fichas_rlt",
   "rubrica_evaluaciones",
   "rubrica_seguimientos",
   "rubrica_submission_dates",
