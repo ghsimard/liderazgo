@@ -63,6 +63,101 @@ function BlankFichaPdfButton() {
   );
 }
 
+function SatisfaccionPanel({ cedula, region: roleInfo, navigate }: { cedula: string; region: CedulaRoleResult; navigate: ReturnType<typeof useNavigate> }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [activeForms, setActiveForms] = useState<{ form_type: string; module_number: number; done: boolean }[]>([]);
+
+  const fetchActiveForms = async () => {
+    if (!open) { setOpen(true); return; }
+    setOpen(false);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    const load = async () => {
+      // Get user region from ficha
+      const { data: ficha } = await supabase
+        .from("fichas_rlt")
+        .select("region")
+        .eq("numero_cedula", cedula)
+        .limit(1);
+      const userRegion = (Array.isArray(ficha) ? ficha[0] : ficha)?.region;
+      if (!userRegion) { setLoading(false); return; }
+
+      // Get active configs for this region
+      const { data: configs } = await supabase
+        .from("satisfaccion_config")
+        .select("form_type,module_number")
+        .eq("region", userRegion)
+        .eq("is_active", true);
+
+      if (!configs || configs.length === 0) { setActiveForms([]); setLoading(false); return; }
+
+      // Check which ones are already submitted
+      const { data: submitted } = await supabase
+        .from("satisfaccion_responses")
+        .select("form_type,module_number")
+        .eq("cedula", cedula);
+
+      const doneSet = new Set((submitted || []).map((s: any) => `${s.form_type}-${s.module_number}`));
+
+      setActiveForms(
+        (configs as any[]).map((c) => ({
+          form_type: c.form_type,
+          module_number: c.module_number,
+          done: doneSet.has(`${c.form_type}-${c.module_number}`),
+        }))
+      );
+      setLoading(false);
+    };
+    load();
+  }, [open, cedula]);
+
+  return (
+    <div className="space-y-2">
+      <Button
+        variant="outline"
+        className="w-full h-14 justify-start gap-3 text-base"
+        onClick={() => setOpen(!open)}
+      >
+        <ThumbsUp className="h-5 w-5" />
+        <div className="text-left flex-1">
+          <div className="font-semibold">Satisfacción</div>
+          <div className="text-xs text-muted-foreground">Encuestas de satisfacción</div>
+        </div>
+        {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </Button>
+
+      {open && (
+        <div className="pl-4 space-y-1.5">
+          {loading ? (
+            <div className="flex justify-center py-3"><Loader2 className="animate-spin h-4 w-4 text-muted-foreground" /></div>
+          ) : activeForms.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-2">No hay encuestas disponibles actualmente.</p>
+          ) : (
+            activeForms.map((f) => (
+              <Button
+                key={`${f.form_type}-${f.module_number}`}
+                variant={f.done ? "ghost" : "outline"}
+                size="sm"
+                className="w-full justify-start gap-2 h-9"
+                disabled={f.done}
+                onClick={() => navigate(`/satisfaccion-${f.form_type}?module=${f.module_number}`)}
+              >
+                {f.done ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <ThumbsUp className="h-3.5 w-3.5" />}
+                <span className="text-sm">{FORM_TYPE_LABELS[f.form_type]} — Módulo {f.module_number}</span>
+                {f.done && <Badge variant="secondary" className="ml-auto text-xs">Completada</Badge>}
+              </Button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MiPanel() {
   const navigate = useNavigate();
   const cedula = sessionStorage.getItem("user_cedula") ?? "";
