@@ -28,6 +28,7 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
 
   const [loading, setLoading] = useState(true);
   const [region, setRegion] = useState("");
+  const [fichaInfo, setFichaInfo] = useState<Record<string, any> | null>(null);
   const [error, setError] = useState("");
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [submitted, setSubmitted] = useState(false);
