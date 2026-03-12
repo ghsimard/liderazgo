@@ -23,9 +23,10 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, FileDown, Upload, X, Save, Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, BarChart3, FileText, List, Table as TableIcon, MessageSquare, Image as ImageIcon, GripVertical, Eye } from "lucide-react";
+import { Loader2, FileDown, Upload, X, Save, Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, BarChart3, FileText, List, Table as TableIcon, MessageSquare, Image as ImageIcon, GripVertical, Eye, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FORM_TYPE_LABELS, SATISFACCION_FORMS } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion } from "@/data/satisfaccionData";
@@ -75,6 +76,8 @@ interface ReportContent {
   reportSubtitle: string;
   sections: ReportSection[];
   extraLogos: string[];
+  executiveSummaryEnabled?: boolean;
+  executiveSummary?: string;
 }
 
 const SECTION_TYPE_LABELS: Record<SectionType, string> = {
@@ -145,6 +148,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
+  const [generatingAI, setGeneratingAI] = useState(false);
   const [responses, setResponses] = useState<ResponseRow[]>([]);
   const [regionData, setRegionData] = useState<RegionRow[]>([]);
 
@@ -154,6 +158,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
     reportSubtitle: "",
     sections: buildDefaultSections("intensivo"),
     extraLogos: [],
+    executiveSummaryEnabled: false,
+    executiveSummary: "",
   });
 
   useEffect(() => {
@@ -182,6 +188,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           reportSubtitle: saved.reportSubtitle || "",
           sections: saved.sections || buildDefaultSections(filterType),
           extraLogos: (data as any).extra_logos || [],
+          executiveSummaryEnabled: saved.executiveSummaryEnabled ?? false,
+          executiveSummary: saved.executiveSummary || "",
         });
       } else {
         setReportContent({
@@ -189,6 +197,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           reportSubtitle: "",
           sections: buildDefaultSections(filterType),
           extraLogos: [],
+          executiveSummaryEnabled: false,
+          executiveSummary: "",
         });
       }
     } catch (err) {
@@ -416,6 +426,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           reportTitle: reportContent.reportTitle,
           reportSubtitle: reportContent.reportSubtitle,
           sections: reportContent.sections,
+          executiveSummaryEnabled: reportContent.executiveSummaryEnabled,
+          executiveSummary: reportContent.executiveSummary,
         },
         extra_logos: reportContent.extraLogos,
         updated_at: new Date().toISOString(),
@@ -427,6 +439,39 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
       toast({ title: "Informe guardado" });
     }
     setSaving(false);
+  };
+
+  // Generate Executive Summary with AI
+  const handleGenerateExecutiveSummary = async () => {
+    if (!stats || responses.length === 0) {
+      toast({ title: "Se necesitan datos para generar el resumen", variant: "destructive" });
+      return;
+    }
+    setGeneratingAI(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-executive-summary", {
+        body: {
+          reportTitle: reportContent.reportTitle,
+          filterType,
+          filterModule,
+          filterRegion,
+          totalResponses: stats.totalResponses,
+          sectionTitles: reportContent.sections.filter(s => s.enabled).map(s => s.title),
+          generalSatisfaction: stats.generalSatisfaction,
+          overallSatisfaction: stats.overallSatisfaction,
+          commentsCount: stats.comments.length,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.summary) {
+        setReportContent(prev => ({ ...prev, executiveSummary: data.summary }));
+        toast({ title: "Resumen ejecutivo generado" });
+      }
+    } catch (err: any) {
+      toast({ title: "Error generando resumen", description: err.message, variant: "destructive" });
+    }
+    setGeneratingAI(false);
   };
 
   // Generate PDF
@@ -451,6 +496,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
         generalSatisfaction: stats.generalSatisfaction,
         overallSatisfaction: stats.overallSatisfaction,
         comments: stats.comments,
+        executiveSummary: reportContent.executiveSummaryEnabled ? reportContent.executiveSummary : undefined,
       });
       toast({ title: "PDF generado exitosamente" });
     } catch (err: any) {
@@ -545,6 +591,56 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
             </div>
           </div>
         </CardContent>
+      </Card>
+
+      {/* Executive Summary */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Resumen Ejecutivo
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="exec-summary-toggle" className="text-xs text-muted-foreground">Incluir</Label>
+              <Switch
+                id="exec-summary-toggle"
+                checked={!!reportContent.executiveSummaryEnabled}
+                onCheckedChange={(checked) => setReportContent(prev => ({ ...prev, executiveSummaryEnabled: checked }))}
+              />
+            </div>
+          </div>
+        </CardHeader>
+        {reportContent.executiveSummaryEnabled && (
+          <CardContent className="space-y-3 pt-0">
+            <p className="text-xs text-muted-foreground">
+              Se mostrará en una página dedicada justo después de la portada. Puede generarlo con IA o escribirlo manualmente.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateExecutiveSummary}
+                disabled={generatingAI || !stats || responses.length === 0}
+                className="gap-1.5"
+              >
+                {generatingAI ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                {generatingAI ? "Generando…" : "Generar con IA"}
+              </Button>
+              {reportContent.executiveSummary && (
+                <Badge variant="secondary" className="text-xs">
+                  {reportContent.executiveSummary.length} caracteres
+                </Badge>
+              )}
+            </div>
+            <Textarea
+              value={reportContent.executiveSummary || ""}
+              onChange={e => setReportContent(prev => ({ ...prev, executiveSummary: e.target.value }))}
+              placeholder="Escriba o genere el resumen ejecutivo del informe…"
+              className="min-h-[120px] text-sm"
+            />
+          </CardContent>
+        )}
       </Card>
 
       {/* Sections */}
