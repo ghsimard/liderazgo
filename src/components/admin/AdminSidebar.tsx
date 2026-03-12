@@ -122,6 +122,20 @@ const sections: SidebarSection[] = [
     ],
   },
   {
+    label: "Satisfacciones",
+    icon: ThumbsUp,
+    items: [
+      { tab: "satisfacciones", label: "Satisfacciones", icon: ThumbsUp },
+    ],
+  },
+  {
+    label: "Certificaciones",
+    icon: Award,
+    items: [
+      { tab: "certificaciones", label: "Certificaciones", icon: Award },
+    ],
+  },
+  {
     label: "MEL",
     icon: TrendingUp,
     items: [
