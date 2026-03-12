@@ -302,6 +302,42 @@ export default function AdminSatisfaccionesTab() {
     });
   }, [responses, searchQuery, namesMap]);
 
+  const deleteOne = async (id: string) => {
+    setDeleting(true);
+    const { error } = await supabase.from("satisfaccion_responses").delete().eq("id", id);
+    setDeleting(false);
+    if (error) {
+      toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Respuesta eliminada" });
+      setResponses((prev) => prev.filter((r) => r.id !== id));
+      // Update counts
+      fetchData();
+    }
+    setDeleteOneId(null);
+  };
+
+  const deleteAll = async () => {
+    setDeleting(true);
+    const ids = filteredResponses.map((r) => r.id);
+    // Delete in batches of 100
+    for (let i = 0; i < ids.length; i += 100) {
+      const batch = ids.slice(i, i + 100);
+      const { error } = await supabase.from("satisfaccion_responses").delete().in("id", batch);
+      if (error) {
+        toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
+        setDeleting(false);
+        setShowDeleteAll(false);
+        return;
+      }
+    }
+    setDeleting(false);
+    setShowDeleteAll(false);
+    toast({ title: `${ids.length} respuestas eliminadas` });
+    fetchResponses();
+    fetchData();
+  };
+
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>;
   }
