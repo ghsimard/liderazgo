@@ -114,8 +114,6 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
   // ── Header for content pages (and cover) ──
   const drawHeader = () => {
-    // RLT logo top-left
-    if (showLogoRlt && rltB64) {
     // Position logic: if both logos, left/right. If only one, put it on the right.
     const hasRlt = showLogoRlt && !!rltB64;
     const hasClt = showLogoClt && !!cltB64;
