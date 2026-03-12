@@ -1143,7 +1143,7 @@ export default function AdminEditFicha() {
                   <label htmlFor="sedes_rural" className="text-sm font-medium whitespace-nowrap">
                     Número de sedes en zona rural<span className="required-star ml-0.5">*</span>
                   </label>
-                  <input id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0" className="form-input w-20 text-center shrink-0" />
+                  <input id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0" className="form-input w-20 text-center shrink-0 !min-h-0 !py-1.5 !pt-1.5" />
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
