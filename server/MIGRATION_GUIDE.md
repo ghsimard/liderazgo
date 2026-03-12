@@ -136,7 +136,7 @@ server/
 │   ├── rubrica-analysis.ts ← Analyse IA rubriques (Grok)
 │   ├── github.ts         ← Changelog GitHub commits
 │   └── email.ts          ← Envoi d'emails (Resend)
-├── schema.sql            ← Schéma complet (35+ tables + fonctions RPC)
+├── schema.sql            ← Schéma complet (38+ tables + fonctions RPC)
 └── package.json
 ```
 
@@ -176,10 +176,10 @@ Route unique qui remplace **tous** les appels `supabase.from("table").select/ins
 | `/api/db/:table` | POST | Conditionnel | INSERT, UPDATE, DELETE, UPSERT via `_method` |
 
 **Tables en lecture publique** (GET sans auth) :
-`domains_360`, `competencies_360`, `competency_weights`, `items_360`, `item_texts_360`, `entidades_territoriales`, `municipios`, `instituciones`, `regiones`, `region_municipios`, `region_instituciones`, `app_images`, `app_settings`, `rubrica_submission_dates`, `rubrica_modules`, `rubrica_items`, `rubrica_evaluadores`, `rubrica_asignaciones`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `encuesta_invitaciones`, `mel_kpi_config`, `mel_kpi_groups`, `mel_kpi_group_items`, `informe_modulo`, `informe_modulo_equipo`, `informe_directivo`, `informe_asistencia`
+`domains_360`, `competencies_360`, `competency_weights`, `items_360`, `item_texts_360`, `entidades_territoriales`, `municipios`, `instituciones`, `regiones`, `region_municipios`, `region_instituciones`, `app_images`, `app_settings`, `rubrica_submission_dates`, `rubrica_modules`, `rubrica_items`, `rubrica_evaluadores`, `rubrica_asignaciones`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `encuesta_invitaciones`, `mel_kpi_config`, `mel_kpi_groups`, `mel_kpi_group_items`, `informe_modulo`, `informe_modulo_equipo`, `informe_directivo`, `informe_asistencia`, `satisfaccion_config`, `satisfaccion_responses`, `encuestas_ambiente_escolar`
 
 **Tables en insertion publique** (POST sans auth) :
-`fichas_rlt`, `encuestas_360`, `rubrica_submission_dates`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `site_reviews`, `contact_messages`, `encuesta_invitaciones`, `user_activity_log`, `informe_modulo`, `informe_modulo_equipo`, `informe_directivo`, `informe_asistencia`
+`fichas_rlt`, `encuestas_360`, `rubrica_submission_dates`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `site_reviews`, `contact_messages`, `encuesta_invitaciones`, `user_activity_log`, `informe_modulo`, `informe_modulo_equipo`, `informe_directivo`, `informe_asistencia`, `encuestas_ambiente_escolar`, `satisfaccion_responses`
 
 **Toutes les autres opérations** (UPDATE, DELETE, écriture sur tables non-publiques) : **admin requis**.
 
@@ -208,7 +208,7 @@ Options supportées : `select`, `order`, `limit`, `range(from,to)`, `single`, `h
 
 | Route | Méthode | Auth | Description |
 |---|---|---|---|
-| `/api/export` | GET | SuperAdmin | Export SQL complet (35+ tables + users + fichiers base64) |
+| `/api/export` | GET | SuperAdmin | Export SQL complet (38+ tables + users + fichiers base64) |
 
 #### Analyse IA Rubriques (`routes/rubrica-analysis.ts`)
 
@@ -427,8 +427,8 @@ Vérifier que ces dépendances sont présentes :
 
 ### Base de données
 - [ ] PostgreSQL créé sur Render
-- [ ] `server/schema.sql` exécuté (tables `users`, `user_roles`, `app_images`, `mel_kpi_*`, `informe_*`, fonctions RPC)
-- [ ] Export SQL importé (35+ tables métier)
+- [ ] `server/schema.sql` exécuté (tables `users`, `user_roles`, `app_images`, `mel_kpi_*`, `informe_*`, `satisfaccion_*`, `encuestas_ambiente_escolar`, fonctions RPC)
+- [ ] Export SQL importé (38+ tables métier)
 - [ ] FK `user_roles` redirigée vers `public.users`
 - [ ] Utilisateurs admin créés avec mots de passe bcrypt
 - [ ] RLS policies supprimées du script
@@ -440,7 +440,7 @@ Vérifier que ces dépendances sont présentes :
 - [x] `routes/images.ts` — Upload/delete images app
 - [x] `routes/db.ts` — Proxy DB générique (toutes les tables)
 - [x] `routes/rpc.ts` — 12 fonctions RPC
-- [x] `routes/export.ts` — Export SQL complet (35+ tables)
+- [x] `routes/export.ts` — Export SQL complet (38+ tables)
 - [x] `routes/storage.ts` — Upload/delete fichiers
 - [x] `routes/rubrica-analysis.ts` — Analyse IA (Grok)
 - [x] `routes/github.ts` — Changelog GitHub
@@ -475,6 +475,9 @@ Vérifier que ces dépendances sont présentes :
 - [ ] Gestion géographique fonctionne
 - [ ] Gestion Config 360° (domaines, compétences, items, poids) fonctionne
 - [ ] Corbeille (suppression, restauration, purge) fonctionne
+- [ ] Encuestas Ambiente Escolar (soumission) fonctionne
+- [ ] Satisfaccion config (activation/désactivation) fonctionne
+- [ ] Satisfaccion responses (soumission + stats) fonctionne
 
 ---
 
@@ -515,7 +518,7 @@ Ces formulaires réutilisent le composant `Encuesta360Form` avec la prop `fase="
 server/
 ├── index.ts                  ← Point d'entrée (enregistre 10 groupes de routes)
 ├── db.ts                     ← Pool pg + helpers query/queryOne
-├── schema.sql                ← Schéma complet (35+ tables + fonctions RPC)
+├── schema.sql                ← Schéma complet (38+ tables + fonctions RPC)
 ├── seed.sql                  ← Données de référence (360°, géographie, settings)
 ├── seed-rubricas.sql         ← Données de seed pour les rubriques
 ├── create-admin.js           ← Script de création admin sécurisé
@@ -534,7 +537,7 @@ server/
     └── email.ts              ← POST /api/email/send (Resend)
 ```
 
-### Fichiers FRONTEND migrés (✅ 32/32)
+### Fichiers FRONTEND migrés (✅ 37/37)
 
 ```
 src/utils/apiFetch.ts                           ← CRÉÉ — wrapper fetch centralisé
@@ -548,10 +551,13 @@ src/pages/AdminLogin.tsx                        ← MIGRÉ
 src/pages/AdminPage.tsx                         ← MIGRÉ
 src/pages/AdminEditFicha.tsx                    ← MIGRÉ
 src/pages/FichaRLT.tsx                          ← MIGRÉ
+src/pages/MiPanel.tsx                           ← MIGRÉ
 src/hooks/useAdminAuth.ts                       ← MIGRÉ
 src/hooks/useAppImages.ts                       ← MIGRÉ
 src/hooks/useGeographicData.ts                  ← MIGRÉ
 src/components/Encuesta360Form.tsx              ← MIGRÉ
+src/components/AmbienteEscolarForm.tsx          ← MIGRÉ
+src/components/SatisfaccionPage.tsx             ← MIGRÉ
 src/components/admin/AdminFichasTab.tsx          ← MIGRÉ
 src/components/admin/AdminEncuestas360Tab.tsx     ← MIGRÉ
 src/components/admin/AdminEncuestaMonitor.tsx     ← MIGRÉ
@@ -565,6 +571,8 @@ src/components/admin/AdminTrashManager.tsx        ← MIGRÉ
 src/components/admin/AdminUsersTab.tsx            ← MIGRÉ
 src/components/admin/AdminImagesTab.tsx           ← MIGRÉ
 src/components/admin/AdminReporte360Tab.tsx        ← MIGRÉ
+src/components/admin/AdminSatisfaccionesTab.tsx   ← MIGRÉ
+src/components/admin/AdminSatisfaccionStats.tsx   ← MIGRÉ
 src/components/admin/AdminMelTab.tsx              ← MIGRÉ
 src/components/admin/AdminMelRubricasTab.tsx      ← MIGRÉ
 src/components/admin/AdminMelConfigTab.tsx        ← MIGRÉ — config KPIs + groupes
