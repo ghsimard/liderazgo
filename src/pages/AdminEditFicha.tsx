@@ -1138,7 +1138,7 @@ export default function AdminEditFicha() {
                 />
               </FormFieldWrapper>
 
-              <div className="md:col-span-2 flex flex-col gap-3 max-w-[380px]">
+              <div className="flex flex-col gap-3 max-w-[340px]">
                 <div className="flex items-center justify-between gap-3">
                   <label htmlFor="sedes_rural" className="text-sm font-medium whitespace-nowrap">
                     Número de sedes en zona rural<span className="required-star ml-0.5">*</span>
