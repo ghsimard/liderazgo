@@ -6,8 +6,8 @@
  * - Sections: text, chart+analysis, ficha técnica, satisfaction summary, bullet lists, comments annex
  */
 import jsPDF from "jspdf";
-import logoRLT from "@/assets/logo_rlt.png";
-import logoCLT from "@/assets/logo_clt_dark.png";
+import logoRLT from "@/assets/logo_rlt_white.png";
+import logoCLT from "@/assets/logo_clt_white.png";
 import logoCosmo from "@/assets/logo_cosmo_dark.png";
 import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 
