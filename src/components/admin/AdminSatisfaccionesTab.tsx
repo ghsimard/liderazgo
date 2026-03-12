@@ -459,6 +459,14 @@ export default function AdminSatisfaccionesTab() {
         <TabsContent value="stats" className="mt-4">
           <AdminSatisfaccionStats regions={regions} />
         </TabsContent>
+
+        <TabsContent value="report" className="mt-4">
+          <AdminSatisfaccionReportTab regions={regions} />
+        </TabsContent>
+
+        <TabsContent value="forms" className="mt-4">
+          <AdminSatisfaccionFormsTab />
+        </TabsContent>
       </Tabs>
 
       {/* Detail dialog */}
