@@ -426,6 +426,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           reportTitle: reportContent.reportTitle,
           reportSubtitle: reportContent.reportSubtitle,
           sections: reportContent.sections,
+          executiveSummaryEnabled: reportContent.executiveSummaryEnabled,
+          executiveSummary: reportContent.executiveSummary,
         },
         extra_logos: reportContent.extraLogos,
         updated_at: new Date().toISOString(),
