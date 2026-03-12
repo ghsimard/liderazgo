@@ -333,6 +333,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
     }));
   };
 
+  const sectionsEndRef = useRef<HTMLDivElement>(null);
+
   const addSection = (type: SectionType) => {
     const newSection: ReportSection = {
       id: generateId(),
@@ -343,6 +345,8 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
       enabled: true,
     };
     setReportContent(prev => ({ ...prev, sections: [...prev.sections, newSection] }));
+    toast({ title: `Sección "${SECTION_TYPE_LABELS[type]}" agregada` });
+    setTimeout(() => sectionsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   };
 
   const removeSection = (id: string) => {
