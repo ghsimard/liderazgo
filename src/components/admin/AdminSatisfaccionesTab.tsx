@@ -151,8 +151,11 @@ export default function AdminSatisfaccionesTab() {
   const [filterModule, setFilterModule] = useState<string>("all");
   const [filterRegion, setFilterRegion] = useState<string>("all");
 
-  // Names cache: cedula -> nombre
-  const [namesMap, setNamesMap] = useState<Record<string, string>>({});
+  // Names & institution cache: cedula -> { name, ie }
+  const [namesMap, setNamesMap] = useState<Record<string, { name: string; ie: string }>>({});
+
+  // Search filter
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Detail dialog
   const [detailResponse, setDetailResponse] = useState<ResponseRow | null>(null);
