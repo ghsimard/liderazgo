@@ -27,6 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, FileDown, Upload, X, Save, Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, BarChart3, FileText, List, Table as TableIcon, MessageSquare, Image as ImageIcon, GripVertical, Eye, Sparkles } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { FORM_TYPE_LABELS, SATISFACCION_FORMS } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion } from "@/data/satisfaccionData";
@@ -717,6 +718,10 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
                           onRemove={() => removeSection(section.id)}
                           onMove={(dir) => moveSection(section.id, dir)}
                           stats={stats}
+                          filterType={filterType}
+                          filterModule={filterModule}
+                          filterRegion={filterRegion}
+                          totalResponses={responses.length}
                           dragHandleProps={dragProvided.dragHandleProps}
                           isDragging={snapshot.isDragging}
                         />
@@ -750,7 +755,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
 
 // ── Section Editor Component ──
 function SectionEditor({
-  section, index, total, onUpdate, onRemove, onMove, stats, dragHandleProps, isDragging,
+  section, index, total, onUpdate, onRemove, onMove, stats, filterType, filterModule, filterRegion, totalResponses, dragHandleProps, isDragging,
 }: {
   section: ReportSection;
   index: number;
@@ -759,11 +764,16 @@ function SectionEditor({
   onRemove: () => void;
   onMove: (dir: -1 | 1) => void;
   stats: any;
+  filterType: string;
+  filterModule: string;
+  filterRegion: string;
+  totalResponses: number;
   dragHandleProps?: any;
   isDragging?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [previewChart, setPreviewChart] = useState<any>(null);
+  const [showFichaPreview, setShowFichaPreview] = useState(false);
   const isAuto = section.type === "ficha_tecnica" || section.type === "satisfaction_summary" || section.type === "comments_annex";
   const chartData = section.type === "chart_analysis" && stats
     ? stats.sections.find((s: any) => s.title === section.chartSectionTitle)
@@ -851,6 +861,17 @@ function SectionEditor({
                   </div>
                 )}
 
+                {section.type === "ficha_tecnica" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFichaPreview(true)}
+                    className="text-xs text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Ver ficha técnica ({totalResponses} respuestas)
+                  </button>
+                )}
+
                 {isAuto && (
                   <p className="text-xs text-muted-foreground italic">
                     {section.type === "ficha_tecnica" && "Se genera automáticamente con los datos de la encuesta"}
@@ -914,6 +935,41 @@ function SectionEditor({
               </p>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      {/* Ficha técnica preview modal */}
+      <Dialog open={showFichaPreview} onOpenChange={setShowFichaPreview}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base flex items-center gap-2">
+              <TableIcon className="w-4 h-4" />
+              Ficha Técnica de la Encuesta
+            </DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-bold">Ítem</TableHead>
+                <TableHead className="font-bold">Detalle</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[
+                ["Nombre del instrumento", `Encuesta de satisfacción ${FORM_TYPE_LABELS[filterType] || filterType} ${filterModule}`],
+                ["Entidad responsable", "Sistema de evaluación del Programa RLT"],
+                ["Objetivo", "Recoger percepciones sobre la experiencia formativa y oportunidades de mejora"],
+                ["Región", filterRegion],
+                ["Módulo", `Módulo ${filterModule}`],
+                ["Total respuestas válidas", String(totalResponses)],
+                ["Modalidad", "En línea, mediante formulario digital"],
+              ].map(([item, detail], i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium text-muted-foreground text-sm">{item}</TableCell>
+                  <TableCell className="text-sm">{detail}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </DialogContent>
       </Dialog>
     </Card>
