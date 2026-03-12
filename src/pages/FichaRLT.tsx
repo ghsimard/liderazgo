@@ -123,11 +123,13 @@ function DatePickerField({
   value,
   onChange,
   disabled = false,
+  yearRange,
 }: {
   value: string;
   onChange: (val: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  yearRange?: { min: number; max: number };
 }) {
   const parsed = value ? new Date(value + "T12:00:00") : undefined;
 
@@ -149,8 +151,8 @@ function DatePickerField({
   };
 
   const currentYear = new Date().getFullYear();
-  const minYear = currentYear - 70;
-  const maxYear = currentYear - 18;
+  const minYear = yearRange?.min ?? currentYear - 70;
+  const maxYear = yearRange?.max ?? currentYear - 18;
   const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => maxYear - i);
   const months = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
