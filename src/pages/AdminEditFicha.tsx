@@ -492,7 +492,7 @@ export default function AdminEditFicha() {
 
       setLoadingFicha(false);
     })();
-  }, [id, isAdmin]);
+  }, [id, isAdmin, geo.loading]);
 
   // Cedula verification (create mode)
   const verificarCedula = async () => {
