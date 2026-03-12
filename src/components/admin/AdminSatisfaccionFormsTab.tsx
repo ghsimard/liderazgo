@@ -311,10 +311,10 @@ export default function AdminSatisfaccionFormsTab() {
                       className="font-semibold"
                       placeholder="Título de la sección"
                     />
-                    <Input
+                    <RichTextEditor
                       value={section.description || ""}
-                      onChange={e => updateSection(si, { description: e.target.value || undefined })}
-                      className="text-sm"
+                      onChange={val => updateSection(si, { description: val || undefined })}
+                      minHeight="60px"
                       placeholder="Descripción (opcional)"
                     />
                   </div>
