@@ -217,6 +217,10 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
     try {
       if (pendingAction === "blank-pdf") {
         await generarPDFFichaEnBlanco(logos, flags);
+      } else if (pendingAction.startsWith("blank-ambiente-")) {
+        const ambienteType = pendingAction.replace("blank-ambiente-", "") as "acudientes" | "estudiantes" | "docentes";
+        const ambienteLogos = { ...logos, logoCLTDark: images.logo_clt_white };
+        await generarPDFAmbienteEscolarEnBlanco(ambienteType, ambienteLogos, flags);
       } else if (pendingAction.startsWith("blank-360-")) {
         const formType = pendingAction.replace("blank-360-", "");
         await generarPDFEncuesta360EnBlanco(formType, logos, flags);
