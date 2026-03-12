@@ -98,6 +98,14 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
       <Button variant="ghost" size="sm" onClick={() => navigate("/mi-panel")} className="mb-2">
         ← Volver a mi panel
       </Button>
+
+      {readOnly && (
+        <div className="bg-muted border border-border rounded-lg px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
+          <span className="text-base">🔒</span>
+          Ya respondió esta encuesta. Sus respuestas se muestran en modo de lectura.
+        </div>
+      )}
+
       <div className="text-left space-y-2">
         <h1 className="text-xl font-bold text-foreground text-center">{formDef.title}</h1>
         <p className="text-sm text-muted-foreground text-center">Módulo {moduleNumber} — {region}</p>
