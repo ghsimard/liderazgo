@@ -304,14 +304,23 @@ export default function AdminSatisfaccionesTab() {
 
   const deleteOne = async (id: string) => {
     setDeleting(true);
+    // Archive to trash before deleting
+    const target = responses.find((r) => r.id === id);
+    if (target) {
+      const label = `${getName(target.cedula)} — ${FORM_TYPE_LABELS[target.form_type] || target.form_type} M${target.module_number}`;
+      await supabase.from("deleted_records").insert({
+        record_type: "satisfaccion_response",
+        record_label: label,
+        deleted_data: target,
+      });
+    }
     const { error } = await supabase.from("satisfaccion_responses").delete().eq("id", id);
     setDeleting(false);
     if (error) {
       toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Respuesta eliminada" });
+      toast({ title: "Respuesta eliminada (puede restaurarse desde la Papelera)" });
       setResponses((prev) => prev.filter((r) => r.id !== id));
-      // Update counts
       fetchData();
     }
     setDeleteOneId(null);
@@ -319,8 +328,16 @@ export default function AdminSatisfaccionesTab() {
 
   const deleteAll = async () => {
     setDeleting(true);
+    // Archive all to trash before deleting
+    const trashRecords = filteredResponses.map((r) => ({
+      record_type: "satisfaccion_response",
+      record_label: `${getName(r.cedula)} — ${FORM_TYPE_LABELS[r.form_type] || r.form_type} M${r.module_number}`,
+      deleted_data: r,
+    }));
+    for (let i = 0; i < trashRecords.length; i += 100) {
+      await supabase.from("deleted_records").insert(trashRecords.slice(i, i + 100));
+    }
     const ids = filteredResponses.map((r) => r.id);
-    // Delete in batches of 100
     for (let i = 0; i < ids.length; i += 100) {
       const batch = ids.slice(i, i + 100);
       const { error } = await supabase.from("satisfaccion_responses").delete().in("id", batch);
@@ -333,7 +350,7 @@ export default function AdminSatisfaccionesTab() {
     }
     setDeleting(false);
     setShowDeleteAll(false);
-    toast({ title: `${ids.length} respuestas eliminadas` });
+    toast({ title: `${ids.length} respuestas eliminadas (pueden restaurarse desde la Papelera)` });
     fetchResponses();
     fetchData();
   };
