@@ -443,6 +443,8 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
       // Find matching stats section
       const chartData = sectionStats.find(s => s.title === section.chartSectionTitle);
+      const chartType = (section as any).chartType || "horizontal_bar";
+
       if (chartData && chartData.data.length > 0) {
         // Chart title
         doc.setFontSize(9);
@@ -452,47 +454,170 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
         y += 6;
         doc.setTextColor(30, 30, 30);
 
-        // Horizontal bar chart
-        const barMaxW = contentW - 50;
-        const barH = 5;
-        const rowGap = 8;
-        const maxVal = Math.max(...chartData.data.map(d => d.value), 1);
+        const CHART_COLORS = [
+          [190, 30, 80], [40, 120, 180], [60, 170, 100], [230, 150, 30],
+          [130, 80, 180], [220, 80, 40], [50, 180, 180], [180, 60, 140],
+          [100, 140, 60], [200, 100, 60], [70, 100, 200], [180, 180, 40],
+        ];
 
-        for (const item of chartData.data) {
-          y = checkPageBreak(rowGap + 4);
+        if (chartType === "pie") {
+          // ── PIE CHART ──
+          const chartH = Math.min(80, contentW * 0.4);
+          y = checkPageBreak(chartH + 30);
+          const cx = pageW / 2 - 20;
+          const cy = y + chartH / 2;
+          const radius = chartH / 2 - 2;
+          const total = chartData.data.reduce((s: number, d: any) => s + d.value, 0) || 1;
 
-          // Label (truncated)
-          doc.setFontSize(7.5);
+          let startAngle = -Math.PI / 2;
+          chartData.data.forEach((item: any, i: number) => {
+            const sliceAngle = (item.value / total) * 2 * Math.PI;
+            const endAngle = startAngle + sliceAngle;
+            const c = CHART_COLORS[i % CHART_COLORS.length];
+            doc.setFillColor(c[0], c[1], c[2]);
+
+            // Draw pie slice as filled triangle fan
+            const steps = Math.max(Math.ceil(sliceAngle / 0.05), 2);
+            const points: number[][] = [[cx, cy]];
+            for (let s = 0; s <= steps; s++) {
+              const a = startAngle + (sliceAngle * s) / steps;
+              points.push([cx + radius * Math.cos(a), cy + radius * Math.sin(a)]);
+            }
+            // Draw using triangle fan
+            for (let t = 1; t < points.length - 1; t++) {
+              doc.triangle(
+                points[0][0], points[0][1],
+                points[t][0], points[t][1],
+                points[t + 1][0], points[t + 1][1],
+                "F"
+              );
+            }
+            startAngle = endAngle;
+          });
+
+          // Legend on the right
+          const legendX = cx + radius + 12;
+          let legendY = y + 4;
+          doc.setFontSize(7);
+          chartData.data.forEach((item: any, i: number) => {
+            const c = CHART_COLORS[i % CHART_COLORS.length];
+            doc.setFillColor(c[0], c[1], c[2]);
+            doc.rect(legendX, legendY - 2.5, 3, 3, "F");
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(30, 30, 30);
+            const lbl = item.label.length > 35 ? item.label.substring(0, 32) + "…" : item.label;
+            doc.text(`${lbl}: ${item.value}%`, legendX + 5, legendY);
+            legendY += 4.5;
+          });
+
+          y += chartH + 8;
+
+        } else if (chartType === "radar") {
+          // ── RADAR / SPIDER CHART ──
+          const chartH = Math.min(90, contentW * 0.45);
+          y = checkPageBreak(chartH + 20);
+          const cx = pageW / 2;
+          const cy = y + chartH / 2;
+          const radius = chartH / 2 - 8;
+          const n = chartData.data.length;
+          const angleStep = (2 * Math.PI) / n;
+
+          // Draw grid circles and axes
+          doc.setDrawColor(200, 200, 200);
+          doc.setLineWidth(0.2);
+          for (let ring = 1; ring <= 4; ring++) {
+            const r = (radius * ring) / 4;
+            // Draw polygon for ring
+            for (let i = 0; i < n; i++) {
+              const a1 = -Math.PI / 2 + i * angleStep;
+              const a2 = -Math.PI / 2 + (i + 1) * angleStep;
+              doc.line(cx + r * Math.cos(a1), cy + r * Math.sin(a1), cx + r * Math.cos(a2), cy + r * Math.sin(a2));
+            }
+          }
+          // Axis lines
+          for (let i = 0; i < n; i++) {
+            const a = -Math.PI / 2 + i * angleStep;
+            doc.line(cx, cy, cx + radius * Math.cos(a), cy + radius * Math.sin(a));
+          }
+
+          // Draw data polygon
+          doc.setDrawColor(190, 30, 80);
+          doc.setFillColor(190, 30, 80);
+          doc.setLineWidth(0.6);
+          const maxVal = 100;
+          const dataPoints: number[][] = [];
+          for (let i = 0; i < n; i++) {
+            const a = -Math.PI / 2 + i * angleStep;
+            const r = (Math.min(chartData.data[i].value, maxVal) / maxVal) * radius;
+            dataPoints.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+          }
+          // Draw filled polygon with transparency
+          for (let i = 0; i < dataPoints.length; i++) {
+            const next = dataPoints[(i + 1) % dataPoints.length];
+            doc.line(dataPoints[i][0], dataPoints[i][1], next[0], next[1]);
+          }
+          // Fill using triangle fan (semi-transparent effect via lighter color)
+          doc.setFillColor(190, 30, 80);
+          // @ts-ignore - setGState may not be typed
+          if (typeof doc.setGState === "function") {
+            // @ts-ignore
+            const gs = new (doc as any).GState({ opacity: 0.15 });
+            doc.setGState(gs);
+            for (let i = 1; i < dataPoints.length - 1; i++) {
+              doc.triangle(dataPoints[0][0], dataPoints[0][1], dataPoints[i][0], dataPoints[i][1], dataPoints[i + 1][0], dataPoints[i + 1][1], "F");
+            }
+            // @ts-ignore
+            const gsNormal = new (doc as any).GState({ opacity: 1 });
+            doc.setGState(gsNormal);
+          }
+
+          // Labels around the chart
+          doc.setFontSize(6.5);
           doc.setFont("helvetica", "normal");
-          const labelLines = doc.splitTextToSize(item.label, contentW - 20);
-          doc.text(labelLines[0], margin, y + 3.5);
-          const labelW = Math.min(doc.getTextWidth(labelLines[0]) + 4, contentW * 0.5);
+          doc.setTextColor(30, 30, 30);
+          for (let i = 0; i < n; i++) {
+            const a = -Math.PI / 2 + i * angleStep;
+            const lx = cx + (radius + 7) * Math.cos(a);
+            const ly = cy + (radius + 7) * Math.sin(a);
+            const lbl = chartData.data[i].label.length > 25 ? chartData.data[i].label.substring(0, 22) + "…" : chartData.data[i].label;
+            const align: "left" | "center" | "right" = Math.cos(a) < -0.1 ? "right" : Math.cos(a) > 0.1 ? "left" : "center";
+            doc.text(`${lbl} (${chartData.data[i].value}%)`, lx, ly, { align });
+          }
 
-          // Bar
-          const barX = margin + Math.max(labelW, 60);
-          const availBarW = pageW - margin - barX - 20;
-          const barW = (item.value / Math.max(maxVal, 100)) * availBarW;
+          y += chartH + 8;
 
-          // Bar background
-          doc.setFillColor(235, 235, 235);
-          doc.rect(barX, y, availBarW, barH, "F");
+        } else {
+          // ── HORIZONTAL BAR CHART (default) ──
+          const barMaxW = contentW - 50;
+          const barH = 5;
+          const rowGap = 8;
+          const maxVal = Math.max(...chartData.data.map((d: any) => d.value), 1);
 
-          // Bar fill (gradient-like using primary color)
-          if (item.value >= 80) doc.setFillColor(190, 30, 80); // magenta/pink like reference
-          else if (item.value >= 60) doc.setFillColor(220, 60, 100);
-          else if (item.value >= 40) doc.setFillColor(240, 100, 130);
-          else doc.setFillColor(250, 150, 170);
-          doc.rect(barX, y, barW, barH, "F");
-
-          // Percentage label
-          doc.setFontSize(7.5);
-          doc.setFont("helvetica", "bold");
-          doc.text(`${item.value}%`, barX + availBarW + 2, y + 3.8);
-          doc.setFont("helvetica", "normal");
-
-          y += rowGap;
+          for (const item of chartData.data) {
+            y = checkPageBreak(rowGap + 4);
+            doc.setFontSize(7.5);
+            doc.setFont("helvetica", "normal");
+            const labelLines = doc.splitTextToSize(item.label, contentW - 20);
+            doc.text(labelLines[0], margin, y + 3.5);
+            const labelW = Math.min(doc.getTextWidth(labelLines[0]) + 4, contentW * 0.5);
+            const barX = margin + Math.max(labelW, 60);
+            const availBarW = pageW - margin - barX - 20;
+            const barW = (item.value / Math.max(maxVal, 100)) * availBarW;
+            doc.setFillColor(235, 235, 235);
+            doc.rect(barX, y, availBarW, barH, "F");
+            if (item.value >= 80) doc.setFillColor(190, 30, 80);
+            else if (item.value >= 60) doc.setFillColor(220, 60, 100);
+            else if (item.value >= 40) doc.setFillColor(240, 100, 130);
+            else doc.setFillColor(250, 150, 170);
+            doc.rect(barX, y, barW, barH, "F");
+            doc.setFontSize(7.5);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${item.value}%`, barX + availBarW + 2, y + 3.8);
+            doc.setFont("helvetica", "normal");
+            y += rowGap;
+          }
+          y += 4;
         }
-        y += 4;
       }
 
       // Analysis text

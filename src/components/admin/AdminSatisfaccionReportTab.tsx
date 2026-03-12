@@ -55,6 +55,14 @@ interface RegionRow {
 /** Section types for the report builder */
 type SectionType = "text" | "chart_analysis" | "ficha_tecnica" | "satisfaction_summary" | "comments_annex" | "bullet_list";
 
+type ChartType = "horizontal_bar" | "radar" | "pie";
+
+const CHART_TYPE_LABELS: Record<ChartType, string> = {
+  horizontal_bar: "Barras horizontales",
+  radar: "Araña / Radar",
+  pie: "Circular (Pie)",
+};
+
 interface ReportSection {
   id: string;
   type: SectionType;
@@ -65,6 +73,8 @@ interface ReportSection {
   bullets?: string[];
   /** For chart_analysis: which survey section to chart */
   chartSectionTitle?: string;
+  /** Chart visualization type */
+  chartType?: ChartType;
   /** Whether to include this section */
   enabled: boolean;
   /** If true, numbered as sub-section (e.g. 1.1 instead of 2) */
@@ -818,19 +828,33 @@ function SectionEditor({
                 )}
 
                 {section.type === "chart_analysis" && (
-                  <div className="text-xs text-muted-foreground">
-                    {chartData ? (
-                      <button
-                        type="button"
-                        onClick={() => setPreviewChart(chartData)}
-                        className="text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Label className="text-xs shrink-0">Tipo de gráfico:</Label>
+                      <select
+                        value={section.chartType || "horizontal_bar"}
+                        onChange={e => onUpdate({ chartType: e.target.value as ChartType })}
+                        className="border rounded px-2 py-1 text-xs bg-background"
                       >
-                        <Eye className="w-3.5 h-3.5" />
-                        ✓ Gráfico disponible: {chartData.data.length} indicadores — clic para ver
-                      </button>
-                    ) : (
-                      <span className="text-amber-600">⚠ Sin datos para gráfico "{section.chartSectionTitle}"</span>
-                    )}
+                        {(Object.keys(CHART_TYPE_LABELS) as ChartType[]).map(ct => (
+                          <option key={ct} value={ct}>{CHART_TYPE_LABELS[ct]}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {chartData ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewChart(chartData)}
+                          className="text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          ✓ Gráfico disponible: {chartData.data.length} indicadores — clic para ver
+                        </button>
+                      ) : (
+                        <span className="text-amber-600">⚠ Sin datos para gráfico "{section.chartSectionTitle}"</span>
+                      )}
+                    </div>
                   </div>
                 )}
 
