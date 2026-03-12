@@ -1,63 +1,33 @@
 
 
-## Probleme actuel
+## Diagnostic
 
-Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
+The Region field appears empty because of a **race condition** between two async operations:
 
-## Proposition : Sidebar avec sections groupees
+1. `useGeographicData()` fetches regions from the database (takes time)
+2. The ficha-loading `useEffect` (line 462) runs immediately and calls `reset(formData)` with the region value
 
-Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
+The problem: the `useEffect` at line 462 does **not** depend on `geo.loading`. It runs before `geo.regionNames` is populated. So:
+- `geo.getEntidadesForRegion(region)` returns `[]` (regiones array is empty)
+- `geo.getMunicipiosForRegion(region)` returns `[]`
+- The `<FormSelect>` for region has no `options` yet when the form value is set
+- When geo data finally loads, the select gets its options but the dependent logic (entidad, municipio) was already run against empty data
 
-### Structure proposee
+## Fix
 
-```text
-┌──────────────────┬──────────────────────────────────┐
-│  SIDEBAR         │  CONTENU                         │
-│                  │                                  │
-│  ▼ Formularios   │                                  │
-│    Enlaces       │                                  │
-│                  │                                  │
-│  ▼ Fichas RLT    │                                  │
-│    Lista         │                                  │
-│    Regiones      │                                  │
-│                  │                                  │
-│  ▼ Encuesta 360° │                                  │
-│    Config        │                                  │
-│    Inicial       │                                  │
-│    Final         │                                  │
-│    Informes Ini. │                                  │
-│    Informes Fin. │                                  │
-│                  │                                  │
-│  ▼ Analisis      │                                  │
-│    MEL           │                                  │
-│    Rubricas      │                                  │
-│                  │                                  │
-│  ▼ Sistema       │                                  │
-│    Admins        │                                  │
-│    Apreciaciones*│                                  │
-│    Mensajes*     │                                  │
-│    Changelog*    │                                  │
-│                  │  (* = superadmin only)            │
-└──────────────────┴──────────────────────────────────┘
+**File: `src/pages/AdminEditFicha.tsx`**
+
+Add `geo.loading` as a dependency to the ficha-loading useEffect (line 462), and skip execution while geo is still loading:
+
+```typescript
+useEffect(() => {
+  if (isCreateMode || !id || !isAdmin) return;
+  if (geo.loading) return;  // ← wait for geographic data
+  (async () => {
+    // ... existing ficha load logic
+  })();
+}, [id, isAdmin, geo.loading]);  // ← add geo.loading dependency
 ```
 
-### Modifications
-
-1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
-
-2. **Modifier `src/pages/AdminPage.tsx`** :
-   - Envelopper le layout dans `SidebarProvider`
-   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
-   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
-   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
-   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
-
-3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
-
-### Points techniques
-
-- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
-- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
-- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
-- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
+This ensures the ficha data is loaded and the form is reset **only after** geographic data is available, so the region select has its options and the entidad/municipio cascading logic works correctly.
 
