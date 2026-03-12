@@ -683,6 +683,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
   doc.setTextColor(30, 30, 30);
 
+  // Fill page numbers on all content pages
+  fillPageNumbers();
+
   // Download
   const formLabel = FORM_TYPE_LABELS[filterType] || filterType;
   const regLabel = filterRegion.replace(/\s+/g, "_");
