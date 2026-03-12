@@ -531,6 +531,53 @@ export default function AdminSatisfaccionesTab() {
         getName={getName}
         getIE={getIE}
       />
+
+      {/* Delete one confirmation */}
+      <AlertDialog open={!!deleteOneId} onOpenChange={() => setDeleteOneId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta respuesta?</AlertDialogTitle>
+            <AlertDialogDescription>Esta acción no se puede deshacer. La respuesta será eliminada permanentemente.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleting}
+              onClick={() => deleteOneId && deleteOne(deleteOneId)}
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete all confirmation */}
+      <AlertDialog open={showDeleteAll} onOpenChange={setShowDeleteAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar {filteredResponses.length} respuestas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará permanentemente {filteredResponses.length === responses.length
+                ? "todas las respuestas de satisfacción"
+                : `las ${filteredResponses.length} respuestas que coinciden con los filtros actuales`
+              }. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleting}
+              onClick={deleteAll}
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+              Eliminar {filteredResponses.length}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
