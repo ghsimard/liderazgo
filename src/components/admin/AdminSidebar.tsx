@@ -115,9 +115,9 @@ const sections: SidebarSection[] = [
     icon: School,
     items: [
       { tab: "ambiente-escolar", label: "Encuestas", icon: School },
-      { tab: "enlace-ambiente-acudientes", label: "Form. Acudientes", icon: Link2, linkUrl: "/encuesta-ambiente-acudientes" },
-      { tab: "enlace-ambiente-estudiantes", label: "Form. Estudiantes", icon: Link2, linkUrl: "/encuesta-ambiente-estudiantes" },
-      { tab: "enlace-ambiente-docentes", label: "Form. Docentes", icon: Link2, linkUrl: "/encuesta-ambiente-docentes" },
+      { tab: "enlace-ambiente-acudientes", label: "Encuesta Acudiente", icon: Link2, linkUrl: "/encuesta-ambiente-acudientes" },
+      { tab: "enlace-ambiente-estudiantes", label: "Encuesta Estudiante", icon: Link2, linkUrl: "/encuesta-ambiente-estudiantes" },
+      { tab: "enlace-ambiente-docentes", label: "Encuesta Docente", icon: Link2, linkUrl: "/encuesta-ambiente-docentes" },
     ],
   },
   {
