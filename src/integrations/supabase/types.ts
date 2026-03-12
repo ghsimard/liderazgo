@@ -1495,6 +1495,39 @@ export type Database = {
         }
         Relationships: []
       }
+      satisfaccion_report_content: {
+        Row: {
+          content: Json
+          extra_logos: string[] | null
+          form_type: string
+          id: string
+          module_number: number
+          region: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: Json
+          extra_logos?: string[] | null
+          form_type: string
+          id?: string
+          module_number: number
+          region: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: Json
+          extra_logos?: string[] | null
+          form_type?: string
+          id?: string
+          module_number?: number
+          region?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       satisfaccion_responses: {
         Row: {
           cedula: string
