@@ -282,7 +282,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           if (q.type === "likert4") {
             const positive = (counts["3"] || 0) + (counts["4"] || 0);
             const pct = totalResponses > 0 ? Math.round((positive / totalResponses) * 10000) / 100 : 0;
-            sections.push({ title: section.title, type: "likert", data: [{ label: q.label, value: pct, count: positive }] });
+            sections.push({ title: section.title, type: "likert", questionKey: q.key, data: [{ label: q.label, value: pct, count: positive }] });
           } else {
             const data = (q.options || []).map(o => ({
               label: o.label, value: totalResponses > 0 ? Math.round((counts[o.value] / totalResponses) * 10000) / 100 : 0, count: counts[o.value],
