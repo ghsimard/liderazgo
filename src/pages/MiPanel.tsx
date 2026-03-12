@@ -320,6 +320,11 @@ export default function MiPanel() {
                     </div>
                   </Button>
                 )}
+
+                {/* Satisfacción button */}
+                {roleInfo.is_directivo && (
+                  <SatisfaccionPanel cedula={cedula} region={roleInfo} navigate={navigate} />
+                )}
               </>
             )}
 
