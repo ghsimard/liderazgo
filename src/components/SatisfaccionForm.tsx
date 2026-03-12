@@ -94,7 +94,9 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
       <div className="text-center space-y-1">
         <h1 className="text-xl font-bold text-foreground">{formDef.title}</h1>
         <p className="text-sm text-muted-foreground">Módulo {moduleNumber} — {region}</p>
-        <p className="text-sm text-muted-foreground">{formDef.description}</p>
+        {formDef.description.split("\n\n").map((p, i) => (
+          <p key={i} className="text-sm text-muted-foreground">{p}</p>
+        ))}
       </div>
 
       {/* Identity card from ficha */}
