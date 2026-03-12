@@ -212,24 +212,28 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
   // Extra/partner logos below header (centered)
   if (extraLogos.length > 0) {
-    const extraH = 16;
+    const baseH = 16;
     const gap = 15;
-    const loadedExtras: { b64: string; w: number }[] = [];
+    const loadedExtras: { b64: string; w: number; h: number }[] = [];
     for (const logo of extraLogos) {
       try {
-        const size = await getImageNaturalSize(logo);
-        const dim = logoH(size.width, size.height, extraH);
-        loadedExtras.push({ b64: logo, w: dim.w });
+        const size = await getImageNaturalSize(logo.src);
+        const scaleFactor = (logo.scale || 100) / 100;
+        const targetH = baseH * scaleFactor;
+        const dim = logoH(size.width, size.height, targetH);
+        loadedExtras.push({ b64: logo.src, w: dim.w, h: dim.h });
       } catch { /* skip */ }
     }
     if (loadedExtras.length > 0) {
+      const maxH = Math.max(...loadedExtras.map(e => e.h));
       const totalExtrasW = loadedExtras.reduce((sum, e) => sum + e.w, 0) + (loadedExtras.length - 1) * gap;
       let x = pageW / 2 - totalExtrasW / 2;
       for (const extra of loadedExtras) {
-        doc.addImage(extra.b64, "PNG", x, coverY, extra.w, extraH);
+        const yOffset = coverY + (maxH - extra.h) / 2; // vertically center
+        doc.addImage(extra.b64, "PNG", x, yOffset, extra.w, extra.h);
         x += extra.w + gap;
       }
-      coverY += extraH + 10;
+      coverY += maxH + 10;
     }
   }
 
