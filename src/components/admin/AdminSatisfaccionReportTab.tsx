@@ -729,6 +729,41 @@ function SectionEditor({
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Chart preview modal */}
+      <Dialog open={!!previewChart} onOpenChange={() => setPreviewChart(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base">{previewChart?.title}</DialogTitle>
+          </DialogHeader>
+          {previewChart && (
+            <div className="space-y-2">
+              {previewChart.data.map((item: any, i: number) => {
+                const maxVal = Math.max(...previewChart.data.map((d: any) => d.value), 1);
+                const barWidth = Math.max((item.value / maxVal) * 100, 2);
+                const barColor = item.value >= 80 ? "bg-emerald-500" : item.value >= 60 ? "bg-amber-500" : "bg-destructive";
+                return (
+                  <div key={i} className="space-y-0.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-foreground truncate max-w-[70%]">{item.label}</span>
+                      <span className="font-semibold text-foreground">{item.value}%</span>
+                    </div>
+                    <div className="h-5 bg-muted rounded overflow-hidden">
+                      <div
+                        className={`h-full ${barColor} rounded transition-all`}
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="text-xs text-muted-foreground pt-2">
+                Tipo: {previewChart.type} · {previewChart.data.length} indicadores
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
