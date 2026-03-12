@@ -1435,6 +1435,72 @@ export type Database = {
         }
         Relationships: []
       }
+      satisfaccion_config: {
+        Row: {
+          available_from: string | null
+          available_until: string | null
+          created_at: string
+          form_type: string
+          id: string
+          is_active: boolean
+          module_number: number
+          region: string
+          updated_at: string
+        }
+        Insert: {
+          available_from?: string | null
+          available_until?: string | null
+          created_at?: string
+          form_type: string
+          id?: string
+          is_active?: boolean
+          module_number: number
+          region: string
+          updated_at?: string
+        }
+        Update: {
+          available_from?: string | null
+          available_until?: string | null
+          created_at?: string
+          form_type?: string
+          id?: string
+          is_active?: boolean
+          module_number?: number
+          region?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      satisfaccion_responses: {
+        Row: {
+          cedula: string
+          created_at: string
+          form_type: string
+          id: string
+          module_number: number
+          region: string
+          respuestas: Json
+        }
+        Insert: {
+          cedula: string
+          created_at?: string
+          form_type: string
+          id?: string
+          module_number: number
+          region: string
+          respuestas?: Json
+        }
+        Update: {
+          cedula?: string
+          created_at?: string
+          form_type?: string
+          id?: string
+          module_number?: number
+          region?: string
+          respuestas?: Json
+        }
+        Relationships: []
+      }
       site_reviews: {
         Row: {
           comentario: string | null
