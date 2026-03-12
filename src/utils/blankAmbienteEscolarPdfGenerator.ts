@@ -254,7 +254,13 @@ export async function generarPDFAmbienteEscolarEnBlanco(
   const colCount = freqOpts.length;
 
   for (const section of likertSections) {
-    ensureSpace(20);
+    // Force "Prácticas Pedagógicas" to start on a new page
+    if (section.title === "Prácticas Pedagógicas") {
+      doc.addPage();
+      drawHeader();
+    } else {
+      ensureSpace(20);
+    }
 
     // Section title
     doc.setFontSize(11);
