@@ -106,19 +106,23 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Rol en la Institución Educativa</Label>
-                <Input value={genderizeRole(fichaInfo.cargo_actual, fichaInfo.genero) || ""} disabled className="bg-muted/50" />
+                <Label className="text-xs text-muted-foreground">Nombre(s)</Label>
+                <Input value={fichaInfo.nombres || ""} disabled className="bg-muted/50" />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Nombre(s) y apellido(s) completos</Label>
-                <Input value={fichaInfo.nombres_apellidos || ""} disabled className="bg-muted/50" />
+                <Label className="text-xs text-muted-foreground">Apellido(s)</Label>
+                <Input value={fichaInfo.apellidos || ""} disabled className="bg-muted/50" />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label className="text-xs text-muted-foreground">Rol en la Institución Educativa</Label>
+                <Input value={genderizeRole(fichaInfo.cargo_actual, fichaInfo.genero) || ""} disabled className="bg-muted/50" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Correo electrónico de contacto</Label>
                 <Input value={fichaInfo.correo_personal || fichaInfo.correo_institucional || ""} disabled className="bg-muted/50" />
               </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs text-muted-foreground">Nombre completo de la Institución Educativa</Label>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Institución Educativa</Label>
                 <Input value={fichaInfo.nombre_ie || ""} disabled className="bg-muted/50" />
               </div>
             </div>
