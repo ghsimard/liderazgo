@@ -122,7 +122,7 @@ export async function generarPDFAmbienteEscolarEnBlanco(
 
   // ── Page 1: Title + Intro ──
 
-  drawHeader();
+  drawHeader(true);
 
   // Title
   doc.setFontSize(13);
