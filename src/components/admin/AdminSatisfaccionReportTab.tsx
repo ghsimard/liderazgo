@@ -771,13 +771,70 @@ function SectionEditor({
   dragHandleProps?: any;
   isDragging?: boolean;
 }) {
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [previewChart, setPreviewChart] = useState<any>(null);
   const [showFichaPreview, setShowFichaPreview] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const isAuto = section.type === "ficha_tecnica" || section.type === "satisfaction_summary" || section.type === "comments_annex";
   const chartData = section.type === "chart_analysis" && stats
     ? stats.sections.find((s: any) => s.title === section.chartSectionTitle)
     : null;
+
+  const handleGenerateAI = async (targetType?: string) => {
+    const effectiveType = targetType || section.type;
+    // Check if content exists and confirm overwrite
+    if (effectiveType === "bullet_list") {
+      if (section.bullets && section.bullets.some(b => b.trim())) {
+        if (!confirm("¿Reemplazar las viñetas existentes con contenido generado por IA?")) return;
+      }
+    } else {
+      if (section.content && section.content.replace(/<[^>]*>/g, "").trim()) {
+        if (!confirm("¿Reemplazar el contenido existente con texto generado por IA?")) return;
+      }
+    }
+
+    setAiLoading(true);
+    try {
+      const body: any = {
+        sectionType: effectiveType === "chart_analysis" ? "chart_analysis" : effectiveType === "satisfaction_summary" ? "satisfaction_summary" : effectiveType === "bullet_list" ? "bullet_list" : "text",
+        sectionTitle: section.title,
+        filterType,
+        filterModule,
+        filterRegion,
+        totalResponses,
+        overallSatisfaction: stats?.overallSatisfaction,
+      };
+
+      if (effectiveType === "chart_analysis" && chartData) {
+        body.chartData = chartData.data.map((d: any) => ({ label: d.label, value: d.value }));
+      }
+      if (effectiveType === "satisfaction_summary" || effectiveType === "bullet_list") {
+        body.generalStats = stats?.generalSatisfaction || [];
+      }
+      if (effectiveType === "bullet_list" && stats?.comments) {
+        body.comments = stats.comments.slice(0, 20);
+      }
+
+      const { data, error } = await supabase.functions.invoke("generate-section-text", { body });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.text) {
+        if (effectiveType === "bullet_list") {
+          // Split by ||| separator
+          const bullets = data.text.split("|||").map((b: string) => b.trim()).filter((b: string) => b);
+          onUpdate({ bullets: bullets.length > 0 ? bullets : [data.text] });
+        } else {
+          onUpdate({ content: data.text });
+        }
+        toast({ title: "Texto generado con IA" });
+      }
+    } catch (err: any) {
+      toast({ title: "Error generando texto", description: err.message, variant: "destructive" });
+    }
+    setAiLoading(false);
+  };
 
   return (
     <Card className={`border-l-4 transition-shadow ${isDragging ? "shadow-lg ring-2 ring-primary/30" : ""} ${section.enabled ? "border-l-primary/40" : "border-l-muted opacity-60"}`}>
@@ -836,12 +893,24 @@ function SectionEditor({
             {section.enabled && (
               <>
                 {(section.type === "text" || section.type === "chart_analysis") && (
-                  <RichTextEditor
-                    value={section.content || ""}
-                    onChange={val => onUpdate({ content: val })}
-                    placeholder={section.type === "chart_analysis" ? "Escriba el análisis de este bloque…" : "Escriba el contenido de esta sección…"}
-                    minHeight={section.type === "chart_analysis" ? "80px" : "120px"}
-                  />
+                  <div className="space-y-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateAI(section.type)}
+                      disabled={aiLoading || !stats || totalResponses === 0}
+                      className="gap-1.5 text-xs h-7"
+                    >
+                      {aiLoading ? <Loader2 className="animate-spin h-3 w-3" /> : <Sparkles className="w-3 h-3" />}
+                      {aiLoading ? "Generando…" : "Generar con IA"}
+                    </Button>
+                    <RichTextEditor
+                      value={section.content || ""}
+                      onChange={val => onUpdate({ content: val })}
+                      placeholder={section.type === "chart_analysis" ? "Escriba el análisis de este bloque…" : "Escriba el contenido de esta sección…"}
+                      minHeight={section.type === "chart_analysis" ? "80px" : "120px"}
+                    />
+                  </div>
                 )}
 
                 {section.type === "chart_analysis" && (
@@ -910,19 +979,43 @@ function SectionEditor({
                 )}
 
                 {section.type === "satisfaction_summary" && section.content !== undefined && (
-                  <RichTextEditor
-                    value={section.content || ""}
-                    onChange={val => onUpdate({ content: val })}
-                    placeholder="Texto introductorio para la sección de satisfacción general (opcional)…"
-                    minHeight="60px"
-                  />
+                  <div className="space-y-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateAI("satisfaction_summary")}
+                      disabled={aiLoading || !stats || totalResponses === 0}
+                      className="gap-1.5 text-xs h-7"
+                    >
+                      {aiLoading ? <Loader2 className="animate-spin h-3 w-3" /> : <Sparkles className="w-3 h-3" />}
+                      {aiLoading ? "Generando…" : "Generar con IA"}
+                    </Button>
+                    <RichTextEditor
+                      value={section.content || ""}
+                      onChange={val => onUpdate({ content: val })}
+                      placeholder="Texto introductorio para la sección de satisfacción general (opcional)…"
+                      minHeight="60px"
+                    />
+                  </div>
                 )}
 
                 {section.type === "bullet_list" && (
-                  <BulletListEditor
-                    bullets={section.bullets || []}
-                    onChange={bullets => onUpdate({ bullets })}
-                  />
+                  <div className="space-y-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateAI("bullet_list")}
+                      disabled={aiLoading || !stats || totalResponses === 0}
+                      className="gap-1.5 text-xs h-7"
+                    >
+                      {aiLoading ? <Loader2 className="animate-spin h-3 w-3" /> : <Sparkles className="w-3 h-3" />}
+                      {aiLoading ? "Generando…" : "Generar viñetas con IA"}
+                    </Button>
+                    <BulletListEditor
+                      bullets={section.bullets || []}
+                      onChange={bullets => onUpdate({ bullets })}
+                    />
+                  </div>
                 )}
               </>
             )}
