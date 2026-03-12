@@ -260,6 +260,7 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
           if (visibleItems.length === 0) return null;
 
           let rendered: React.ReactNode;
+          const isSingleItem = visibleItems.length === 1;
 
           if (collapsed) {
             const SectionIcon = section.icon;
@@ -276,6 +277,28 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
                         tooltip={section.label}
                       >
                         <SectionIcon className="h-4 w-4 shrink-0" />
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          } else if (isSingleItem) {
+            const item = visibleItems[0];
+            const Icon = item.icon;
+            const active = activeTab === item.tab;
+            rendered = (
+              <SidebarGroup key={section.label}>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => item.action ? handleBlankAction(item.action) : handleTabClick(item.tab)}
+                        isActive={active}
+                        tooltip={section.label}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span>{section.label}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>
