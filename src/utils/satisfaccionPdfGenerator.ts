@@ -73,7 +73,7 @@ export interface SatisfaccionReportOptions {
     reportTitle: string;
     reportSubtitle: string;
     sections: ReportSection[];
-    extraLogos: string[];
+    extraLogos: ExtraLogo[];
   };
   sectionStats: SectionStat[];
   generalSatisfaction: { label: string; value: number }[];
