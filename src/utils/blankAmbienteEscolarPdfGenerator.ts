@@ -93,9 +93,9 @@ export async function generarPDFAmbienteEscolarEnBlanco(
     if (showRlt && rltB64) doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
     if (showClt && cltB64) doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
 
-    // Cosmo centered
+    // Cosmo centered — proportional
     const cosmoH = 12;
-    const cosmoW = 18;
+    const cosmoW = cosmoH * (cosmoSize.width / cosmoSize.height);
     if (cosmoB64) doc.addImage(cosmoB64, "PNG", (pageW - cosmoW) / 2, logoY + 1, cosmoW, cosmoH);
   };
 
