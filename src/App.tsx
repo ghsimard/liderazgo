@@ -94,6 +94,11 @@ const App = () => (
                 <Route path="/encuesta-ambiente-estudiantes" element={<EncuestaAmbienteEstudiantes />} />
                 <Route path="/encuesta-ambiente-docentes" element={<EncuestaAmbienteDocentes />} />
 
+                {/* Satisfacción */}
+                <Route path="/satisfaccion-asistencia" element={<SatisfaccionAsistencia />} />
+                <Route path="/satisfaccion-interludio" element={<SatisfaccionInterludio />} />
+                <Route path="/satisfaccion-intensivo" element={<SatisfaccionIntensivo />} />
+
                 {/* Legal / Contact / Suggestions */}
                 <Route path="/derechos-contacto" element={<DerechosContacto />} />
                 <Route path="/contacto" element={<Contacto />} />
