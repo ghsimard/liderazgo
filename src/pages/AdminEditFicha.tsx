@@ -672,11 +672,11 @@ export default function AdminEditFicha() {
         <div className="max-w-4xl mx-auto px-3 sm:px-4 pt-4">
           <button
             type="button"
-            onClick={() => navigate("/admin")}
+            onClick={() => navigate("/admin?tab=fichas-rlt")}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Volver al panel de administración
+            Volver al menú Fichas
           </button>
         </div>
 
