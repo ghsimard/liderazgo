@@ -76,7 +76,16 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    await onSubmit(answers);
+    // Auto-inject date and rol from ficha
+    const enriched = { ...answers };
+    enriched.fecha_sesion = new Date().toISOString().slice(0, 10);
+    if (fichaInfo) {
+      enriched.rol_ie = fichaInfo.cargo_actual || "";
+      enriched.nombre_completo = fichaInfo.nombres_apellidos || "";
+      enriched.correo = fichaInfo.correo_personal || fichaInfo.correo_institucional || "";
+      enriched.institucion = fichaInfo.nombre_ie || "";
+    }
+    await onSubmit(enriched);
   };
 
   return (
