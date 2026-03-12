@@ -167,20 +167,22 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     }
   };
 
-  const writeSectionTitle = (title: string, numbered?: string) => {
+  const writeSectionTitle = (title: string, numbered?: string, isSubsection?: boolean) => {
     y = checkPageBreak(14);
-    y += 4;
-    doc.setFontSize(12);
+    y += isSubsection ? 2 : 4;
+    doc.setFontSize(isSubsection ? 11 : 12);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 60, 90);
+    doc.setTextColor(isSubsection ? 50 : 30, isSubsection ? 80 : 60, isSubsection ? 110 : 90);
     const prefix = numbered ? `${numbered} ` : "";
-    const lines = doc.splitTextToSize(prefix + title, contentW);
+    const indentX = isSubsection ? margin + 6 : margin;
+    const maxW = isSubsection ? contentW - 6 : contentW;
+    const lines = doc.splitTextToSize(prefix + title, maxW);
     for (const line of lines) {
-      doc.text(line, margin, y);
+      doc.text(line, indentX, y);
       y += 6;
     }
     doc.setTextColor(30, 30, 30);
-    y += 2;
+    y += isSubsection ? 1 : 2;
   };
 
   // ══════════════════════════════════════════
