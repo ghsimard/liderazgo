@@ -438,9 +438,9 @@ export default function AmbienteEscolarForm({ formType }: AmbienteEscolarFormPro
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         {/* Header logos */}
         <div className="flex items-center justify-center gap-6 flex-wrap">
-          <img src={images.logo_rlt} alt="RLT" className="h-20 object-contain" />
+          <img src={images.logo_rlt_white} alt="RLT" className="h-20 object-contain" />
           <img src={images.logo_cosmo} alt="COSMO" className="h-16 object-contain" />
-          <img src={images.logo_clt_dark} alt="CLT" className="h-20 object-contain" />
+          <img src={images.logo_clt_white} alt="CLT" className="h-20 object-contain" />
         </div>
 
         {/* Title */}
