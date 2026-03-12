@@ -286,7 +286,7 @@ export default function AdminSatisfaccionFormsTab() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Descripción</Label>
-                <Textarea value={formDef.description} onChange={e => setFormDef(prev => ({ ...prev, description: e.target.value }))} rows={3} />
+                <RichTextEditor value={formDef.description || ""} onChange={val => setFormDef(prev => ({ ...prev, description: val }))} minHeight="80px" />
               </div>
             </CardContent>
           </Card>
