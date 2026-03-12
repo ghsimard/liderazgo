@@ -11,6 +11,30 @@ import logoCLT from "@/assets/logo_clt_white.png";
 import logoCosmo from "@/assets/logo_cosmo.png";
 import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 
+/** Strip HTML tags and decode entities, preserving line breaks */
+function htmlToPlainText(html: string): string {
+  if (!html) return "";
+  let text = html;
+  // Convert block-level elements to newlines
+  text = text.replace(/<\/p>/gi, "\n");
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<\/li>/gi, "\n");
+  text = text.replace(/<li[^>]*>/gi, "• ");
+  text = text.replace(/<\/(?:div|h[1-6]|tr|blockquote)>/gi, "\n");
+  // Remove all remaining tags
+  text = text.replace(/<[^>]+>/g, "");
+  // Decode common HTML entities
+  text = text.replace(/&amp;/g, "&");
+  text = text.replace(/&lt;/g, "<");
+  text = text.replace(/&gt;/g, ">");
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&#39;/g, "'");
+  text = text.replace(/&nbsp;/g, " ");
+  // Clean up extra whitespace
+  text = text.replace(/\n{3,}/g, "\n\n");
+  return text.trim();
+}
+
 function loadImageAsBase64(src: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
