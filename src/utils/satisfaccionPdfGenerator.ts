@@ -111,12 +111,12 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   const drawHeader = () => {
     // RLT logo top-left
     if (showLogoRlt && rltB64) {
-      const dim = logoH(rltSize.width, rltSize.height, 14);
+      const dim = logoH(rltSize.width, rltSize.height, 18);
       doc.addImage(rltB64, "PNG", margin, 8, dim.w, dim.h);
     }
     // CLT logo top-right
     if (showLogoClt && cltB64) {
-      const dim = logoH(cltSize.width, cltSize.height, 14);
+      const dim = logoH(cltSize.width, cltSize.height, 18);
       doc.addImage(cltB64, "PNG", pageW - margin - dim.w, 8, dim.w, dim.h);
     }
     // Thin separator line
