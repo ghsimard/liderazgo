@@ -264,7 +264,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
             <TabsTrigger value="invitaciones" className="gap-1.5"><Users className="w-4 h-4" /> Invitaciones</TabsTrigger>
             <TabsTrigger value="informes-inicial" className="gap-1.5"><FileBarChart className="w-4 h-4" /> Informes Inicial</TabsTrigger>
             <TabsTrigger value="informes-final" className="gap-1.5"><FileBarChart2 className="w-4 h-4" /> Informes Final</TabsTrigger>
-            <TabsTrigger value="blancos" className="gap-1.5"><Printer className="w-4 h-4" /> PDF en Blanco</TabsTrigger>
+            
             <TabsTrigger value="configuracion" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
           </TabsList>
 
@@ -326,32 +326,6 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
           </TabsContent>
           <TabsContent value="informes-final">
             <AdminReporte360Tab fase="final" />
-          </TabsContent>
-          <TabsContent value="blancos">
-            <div className="space-y-4">
-              <h3 className="text-base font-semibold border-b pb-2">PDF en Blanco — Encuesta 360°</h3>
-              <p className="text-sm text-muted-foreground">Descarga los formularios 360° en blanco (PDF).</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {[
-                  { name: "Acudiente", path: "/formulario-360-acudiente", icon: Users },
-                  { name: "Administrativo", path: "/formulario-360-administrativo", icon: ClipboardList },
-                  { name: "Autoevaluación", path: "/formulario-360-autoevaluacion", icon: FileText },
-                  { name: "Directivo Par", path: "/formulario-360-directivo", icon: School },
-                  { name: "Docente", path: "/formulario-360-docente", icon: BookOpen },
-                  { name: "Estudiante", path: "/formulario-360-estudiante", icon: GraduationCap },
-                ].map((f) => (
-                  <Card key={f.path} className="hover:shadow-md transition-shadow">
-                    <CardContent className="flex items-center gap-3 p-4">
-                      <div className="rounded-lg bg-primary/10 p-2.5">
-                        <f.icon className="w-5 h-5 text-primary" />
-                      </div>
-                      <span className="text-sm font-medium flex-1">{f.name}</span>
-                      <BlankPdfButton path={f.path} />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
           </TabsContent>
         </Tabs>
       );
