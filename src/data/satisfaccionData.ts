@@ -7,7 +7,7 @@
  * Each form is filled once per module (1-4).
  */
 
-export type QuestionType = "radio" | "checkbox-max3" | "likert4" | "grid-sino" | "grid-frequency" | "grid-logistic" | "textarea" | "date";
+export type QuestionType = "radio" | "checkbox-max3" | "likert4" | "grid-sino" | "grid-frequency" | "grid-logistic" | "textarea" | "date" | "text";
 
 export interface SatisfaccionOption {
   value: string;
