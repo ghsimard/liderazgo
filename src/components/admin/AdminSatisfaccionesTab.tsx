@@ -3,23 +3,31 @@
  * - Toggle availability per region/module/type
  * - View response counts and details
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/utils/dbClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, Eye, ToggleLeft, ToggleRight } from "lucide-react";
+import { Loader2, RefreshCw, Eye, ToggleLeft, ToggleRight, User, Calendar, MapPin, FileText, MessageSquare, CheckCircle2, XCircle, MinusCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
+import { FORM_TYPE_LABELS, asistenciaForm, interludioForm, intensivoForm } from "@/data/satisfaccionData";
+import type { SatisfaccionFormDef, SatisfaccionQuestion, SatisfaccionOption } from "@/data/satisfaccionData";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 const FORM_TYPES = ["asistencia", "interludio", "intensivo"] as const;
 const MODULES = [1, 2, 3, 4];
+
+const FORM_DEFS: Record<string, SatisfaccionFormDef> = {
+  asistencia: asistenciaForm,
+  interludio: interludioForm,
+  intensivo: intensivoForm,
+};
 
 interface ConfigRow {
   id: string;
@@ -41,6 +49,92 @@ interface ResponseRow {
   created_at: string;
 }
 
+/** Build a flat map of question key -> question def for a given form type */
+function buildQuestionMap(formType: string): Map<string, SatisfaccionQuestion> {
+  const def = FORM_DEFS[formType];
+  if (!def) return new Map();
+  const map = new Map<string, SatisfaccionQuestion>();
+  for (const section of def.sections) {
+    for (const q of section.questions) {
+      map.set(q.key, q);
+    }
+  }
+  return map;
+}
+
+/** Find the label for a given option value */
+function findOptionLabel(options: SatisfaccionOption[] | undefined, value: string): string {
+  if (!options) return value;
+  return options.find((o) => o.value === value)?.label ?? value;
+}
+
+/** Render a single answer value nicely */
+function RenderAnswer({ question, value }: { question?: SatisfaccionQuestion; value: any }) {
+  if (value === null || value === undefined || value === "") {
+    return <span className="text-muted-foreground italic">Sin respuesta</span>;
+  }
+
+  if (!question) {
+    return <span className="text-foreground">{String(value)}</span>;
+  }
+
+  // Textarea / text
+  if (question.type === "textarea" || question.type === "text" || question.type === "date") {
+    return <span className="text-foreground">{String(value)}</span>;
+  }
+
+  // Radio / likert4
+  if (question.type === "radio" || question.type === "likert4") {
+    const label = findOptionLabel(question.options, String(value));
+    if (question.type === "likert4") {
+      const num = parseInt(String(value));
+      const colors = ["", "text-red-600", "text-orange-500", "text-blue-600", "text-emerald-600"];
+      return <span className={`font-medium ${colors[num] || ""}`}>{label}</span>;
+    }
+    return <Badge variant="secondary">{label}</Badge>;
+  }
+
+  // Checkbox
+  if (question.type === "checkbox-max3") {
+    if (Array.isArray(value)) {
+      return (
+        <div className="flex flex-wrap gap-1">
+          {value.map((v: string, i: number) => (
+            <Badge key={i} variant="outline" className="text-xs">{findOptionLabel(question.options, v)}</Badge>
+          ))}
+        </div>
+      );
+    }
+    return <Badge variant="outline">{findOptionLabel(question.options, String(value))}</Badge>;
+  }
+
+  // Grid types
+  if (question.type === "grid-sino" || question.type === "grid-frequency" || question.type === "grid-logistic") {
+    if (typeof value === "object" && !Array.isArray(value)) {
+      return (
+        <div className="space-y-1.5 mt-1">
+          {question.rows?.map((row) => {
+            const rowVal = value[row.key];
+            const colLabel = findOptionLabel(question.columns, String(rowVal));
+            const icon = rowVal === "si" ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> :
+                         rowVal === "no" ? <XCircle className="w-3.5 h-3.5 text-red-500" /> :
+                         rowVal === "parcialmente" ? <MinusCircle className="w-3.5 h-3.5 text-orange-500" /> : null;
+            return (
+              <div key={row.key} className="flex items-start gap-2 text-xs">
+                {icon}
+                <span className="text-muted-foreground flex-1">{row.label}</span>
+                <Badge variant="outline" className="text-xs shrink-0">{colLabel}</Badge>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+  }
+
+  return <span className="text-foreground">{JSON.stringify(value)}</span>;
+}
+
 export default function AdminSatisfaccionesTab() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -56,22 +150,22 @@ export default function AdminSatisfaccionesTab() {
   const [filterModule, setFilterModule] = useState<string>("all");
   const [filterRegion, setFilterRegion] = useState<string>("all");
 
+  // Names cache: cedula -> nombre
+  const [namesMap, setNamesMap] = useState<Record<string, string>>({});
+
   // Detail dialog
   const [detailResponse, setDetailResponse] = useState<ResponseRow | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch regions
       const { data: regData } = await supabase.from("regiones").select("nombre").order("nombre");
       const regionNames = (regData || []).map((r: any) => r.nombre);
       setRegions(regionNames);
 
-      // Fetch configs
       const { data: cfgData } = await supabase.from("satisfaccion_config").select("*").order("region").order("form_type").order("module_number");
       setConfigs((cfgData || []) as ConfigRow[]);
 
-      // Fetch response counts
       const { data: respData } = await supabase.from("satisfaccion_responses").select("form_type,module_number,region");
       const counts: Record<string, number> = {};
       (respData || []).forEach((r: any) => {
@@ -119,7 +213,6 @@ export default function AdminSatisfaccionesTab() {
 
   const bulkSetActive = async (formType: string | null, active: boolean) => {
     const now = new Date().toISOString();
-    // Build upserts for all region/module combos for the given formType (or all types)
     const types = formType ? [formType] : [...FORM_TYPES];
     const upserts: any[] = [];
 
@@ -128,12 +221,10 @@ export default function AdminSatisfaccionesTab() {
         for (const m of MODULES) {
           const existing = getConfig(ft, m, region);
           if (existing) {
-            // Only update if state differs
             if (existing.is_active !== active) {
               upserts.push({ id: existing.id, form_type: ft, module_number: m, region, is_active: active, updated_at: now });
             }
           } else if (active) {
-            // Create new config only when enabling
             upserts.push({ form_type: ft, module_number: m, region, is_active: true, updated_at: now });
           }
         }
@@ -149,16 +240,20 @@ export default function AdminSatisfaccionesTab() {
     fetchData();
   };
 
-  const updateDates = async (id: string, field: "available_from" | "available_until", value: string) => {
-    const { error } = await supabase
-      .from("satisfaccion_config")
-      .update({ [field]: value || null, updated_at: new Date().toISOString() } as any)
-      .eq("id", id);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      fetchData();
-    }
+  /** Fetch names for a list of cedulas */
+  const fetchNames = async (cedulas: string[]) => {
+    const unknown = cedulas.filter((c) => !namesMap[c]);
+    if (unknown.length === 0) return;
+    const { data } = await supabase
+      .from("fichas_rlt")
+      .select("numero_cedula,nombres,apellidos,nombres_apellidos")
+      .in("numero_cedula", unknown);
+    const newMap = { ...namesMap };
+    (data || []).forEach((f: any) => {
+      const fullName = (f.nombres && f.apellidos) ? `${f.nombres} ${f.apellidos}` : f.nombres_apellidos;
+      if (f.numero_cedula) newMap[f.numero_cedula] = fullName;
+    });
+    setNamesMap(newMap);
   };
 
   const fetchResponses = async () => {
@@ -168,13 +263,19 @@ export default function AdminSatisfaccionesTab() {
     if (filterModule !== "all") query = query.eq("module_number", parseInt(filterModule));
     if (filterRegion !== "all") query = query.eq("region", filterRegion);
     const { data } = await query.limit(500);
-    setResponses((data || []) as ResponseRow[]);
+    const rows = (data || []) as ResponseRow[];
+    setResponses(rows);
+    // Fetch names
+    const cedulas = [...new Set(rows.map((r) => r.cedula))];
+    await fetchNames(cedulas);
     setLoadingResponses(false);
   };
 
   useEffect(() => {
     if (activeSubTab === "responses") fetchResponses();
   }, [activeSubTab, filterType, filterModule, filterRegion]);
+
+  const getName = (cedula: string) => namesMap[cedula] || cedula;
 
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>;
@@ -286,62 +387,144 @@ export default function AdminSatisfaccionesTab() {
 
           {loadingResponses ? (
             <div className="flex justify-center py-8"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>
+          ) : responses.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                <p>Sin respuestas registradas</p>
+              </CardContent>
+            </Card>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cédula</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Módulo</TableHead>
-                  <TableHead>Región</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {responses.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">Sin respuestas</TableCell>
-                  </TableRow>
-                ) : responses.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-mono text-sm">{r.cedula}</TableCell>
-                    <TableCell><Badge variant="outline">{FORM_TYPE_LABELS[r.form_type] || r.form_type}</Badge></TableCell>
-                    <TableCell>{r.module_number}</TableCell>
-                    <TableCell>{r.region}</TableCell>
-                    <TableCell className="text-sm">{new Date(r.created_at).toLocaleDateString("es-CO")}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => setDetailResponse(r)}><Eye className="w-4 h-4" /></Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="grid gap-3">
+              {responses.map((r) => (
+                <Card key={r.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setDetailResponse(r)}>
+                  <CardContent className="py-3 px-4 flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <User className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{getName(r.cedula)}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        <MapPin className="w-3 h-3" />
+                        <span>{r.region}</span>
+                        <span>·</span>
+                        <Calendar className="w-3 h-3" />
+                        <span>{new Date(r.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant="outline" className="text-xs">{FORM_TYPE_LABELS[r.form_type] || r.form_type}</Badge>
+                      <Badge variant="secondary" className="text-xs">Mód. {r.module_number}</Badge>
+                      <Eye className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </TabsContent>
       </Tabs>
 
       {/* Detail dialog */}
-      <Dialog open={!!detailResponse} onOpenChange={() => setDetailResponse(null)}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Detalle de respuesta</DialogTitle>
-          </DialogHeader>
-          {detailResponse && (
-            <div className="space-y-3 text-sm">
-              <div><strong>Cédula:</strong> {detailResponse.cedula}</div>
-              <div><strong>Tipo:</strong> {FORM_TYPE_LABELS[detailResponse.form_type]}</div>
-              <div><strong>Módulo:</strong> {detailResponse.module_number}</div>
-              <div><strong>Región:</strong> {detailResponse.region}</div>
-              <div><strong>Fecha:</strong> {new Date(detailResponse.created_at).toLocaleString("es-CO")}</div>
-              <hr />
-              <pre className="bg-muted p-3 rounded text-xs overflow-x-auto whitespace-pre-wrap">
-                {JSON.stringify(detailResponse.respuestas, null, 2)}
-              </pre>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ResponseDetailDialog
+        response={detailResponse}
+        onClose={() => setDetailResponse(null)}
+        getName={getName}
+      />
     </div>
+  );
+}
+
+/** Beautiful detail dialog for a single response */
+function ResponseDetailDialog({
+  response,
+  onClose,
+  getName,
+}: {
+  response: ResponseRow | null;
+  onClose: () => void;
+  getName: (cedula: string) => string;
+}) {
+  if (!response) return null;
+
+  const questionMap = buildQuestionMap(response.form_type);
+  const formDef = FORM_DEFS[response.form_type];
+  const respuestas = response.respuestas || {};
+
+  return (
+    <Dialog open={!!response} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b bg-muted/30">
+          <DialogHeader>
+            <DialogTitle className="text-lg">{FORM_TYPE_LABELS[response.form_type]} — Módulo {response.module_number}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2 text-sm">
+              <User className="w-4 h-4 text-primary" />
+              <div>
+                <p className="font-medium">{getName(response.cedula)}</p>
+                <p className="text-xs text-muted-foreground">CC {response.cedula}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="w-4 h-4 text-primary" />
+              <div>
+                <p className="font-medium">{response.region}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(response.created_at).toLocaleString("es-CO", {
+                    day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+                  })}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Body - structured answers */}
+        <ScrollArea className="flex-1 px-6 py-4">
+          <div className="space-y-6">
+            {formDef ? (
+              formDef.sections.map((section, si) => {
+                // Check if any question in this section has answers
+                const hasAnswers = section.questions.some((q) => respuestas[q.key] !== undefined && respuestas[q.key] !== null && respuestas[q.key] !== "");
+                if (!hasAnswers) return null;
+
+                return (
+                  <div key={si}>
+                    <h3 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      {section.title}
+                    </h3>
+                    <div className="space-y-3">
+                      {section.questions.map((q) => {
+                        const val = respuestas[q.key];
+                        if (val === undefined || val === null || val === "") return null;
+
+                        return (
+                          <div key={q.key} className="bg-muted/40 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground mb-1.5 leading-snug">{q.label}</p>
+                            <RenderAnswer question={q} value={val} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {si < formDef.sections.length - 1 && <Separator className="mt-4" />}
+                  </div>
+                );
+              })
+            ) : (
+              // Fallback: raw key-value
+              Object.entries(respuestas).map(([key, val]) => (
+                <div key={key} className="bg-muted/40 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground mb-1">{key}</p>
+                  <p className="text-sm">{typeof val === "object" ? JSON.stringify(val) : String(val)}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 }
