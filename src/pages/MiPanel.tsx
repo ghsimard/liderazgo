@@ -107,7 +107,7 @@ function SatisfaccionPanel({ cedula, navigate }: { cedula: string; navigate: Ret
 
       setActiveForms(
         Array.from(mergedKeys).map((key) => {
-          const [form_type, mod] = key.split("-");
+          const [form_type, mod] = (key as string).split("-");
           return {
             form_type,
             module_number: parseInt(mod, 10),
