@@ -292,7 +292,7 @@ function GridQuestion({ question: q, value, onGridChange, disabled }: { question
   const columns = q.columns || [];
 
   return (
-    <div className="space-y-2">
+    <div className={`space-y-2 ${disabled ? "opacity-70 pointer-events-none" : ""}`}>
       {q.label && <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
