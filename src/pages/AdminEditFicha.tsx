@@ -105,9 +105,11 @@ function DatePickerField({
   onChange: (val: string) => void;
   disabled?: boolean;
 }) {
+  const normalizeDate = (v: string) => v ? v.substring(0, 10) : "";
+
   const getparts = (v: string) => {
     if (!v) return { d: "" as const, m: "" as const, y: "" as const };
-    const parsed = new Date(v + "T12:00:00");
+    const parsed = new Date(normalizeDate(v) + "T12:00:00");
     return { d: parsed.getDate() as number, m: parsed.getMonth() as number, y: parsed.getFullYear() as number };
   };
 
@@ -119,7 +121,7 @@ function DatePickerField({
 
   useEffect(() => {
     if (value) {
-      const d = new Date(value + "T12:00:00");
+      const d = new Date(normalizeDate(value) + "T12:00:00");
       setDay(d.getDate());
       setMonth(d.getMonth());
       setYear(d.getFullYear());
