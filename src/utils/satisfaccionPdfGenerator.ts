@@ -53,6 +53,7 @@ interface ReportSection {
   bullets?: string[];
   chartSectionTitle?: string;
   enabled: boolean;
+  isSubsection?: boolean;
 }
 
 export interface SatisfaccionReportOptions {
@@ -166,20 +167,22 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     }
   };
 
-  const writeSectionTitle = (title: string, numbered?: string) => {
+  const writeSectionTitle = (title: string, numbered?: string, isSubsection?: boolean) => {
     y = checkPageBreak(14);
-    y += 4;
-    doc.setFontSize(12);
+    y += isSubsection ? 2 : 4;
+    doc.setFontSize(isSubsection ? 11 : 12);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 60, 90);
+    doc.setTextColor(isSubsection ? 50 : 30, isSubsection ? 80 : 60, isSubsection ? 110 : 90);
     const prefix = numbered ? `${numbered} ` : "";
-    const lines = doc.splitTextToSize(prefix + title, contentW);
+    const indentX = isSubsection ? margin + 6 : margin;
+    const maxW = isSubsection ? contentW - 6 : contentW;
+    const lines = doc.splitTextToSize(prefix + title, maxW);
     for (const line of lines) {
-      doc.text(line, margin, y);
+      doc.text(line, indentX, y);
       y += 6;
     }
     doc.setTextColor(30, 30, 30);
-    y += 2;
+    y += isSubsection ? 1 : 2;
   };
 
   // ══════════════════════════════════════════
@@ -284,8 +287,8 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     doc.addImage(cosmoB64, "PNG", pageW / 2 - dim.w / 2, pageH - 20, dim.w, dim.h);
   }
 
-  // Track section page numbers
-  const sectionPages: { title: string; page: number }[] = [];
+  // Track section page numbers and subsection status
+  const sectionPages: { title: string; page: number; isSubsection?: boolean }[] = [];
 
   // ══════════════════════════════════════════
   // CONTENT PAGES
@@ -293,13 +296,25 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   doc.addPage();
   y = drawHeader();
 
-  let sectionNum = 0;
+  let mainNum = 0;
+  let subNum = 0;
+
+  const getNumber = (isSubsection?: boolean) => {
+    if (isSubsection) {
+      subNum++;
+      return `${mainNum}.${subNum}`;
+    } else {
+      mainNum++;
+      subNum = 0;
+      return String(mainNum);
+    }
+  };
 
   for (const section of enabledSections) {
     if (section.type === "text") {
-      sectionNum++;
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
-      writeSectionTitle(section.title, String(sectionNum));
+      const num = getNumber(section.isSubsection);
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
+      writeSectionTitle(section.title, num, section.isSubsection);
       if (section.content) {
         writeText(section.content);
       }
@@ -307,9 +322,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     }
 
     if (section.type === "ficha_tecnica") {
-      sectionNum++;
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
-      writeSectionTitle(section.title, String(sectionNum));
+      const num = getNumber(section.isSubsection);
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
+      writeSectionTitle(section.title, num, section.isSubsection);
       y = checkPageBreak(50);
 
       // Draw table
@@ -358,9 +373,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     }
 
     if (section.type === "chart_analysis") {
-      sectionNum++;
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
-      writeSectionTitle(section.title, String(sectionNum));
+      const num = getNumber(section.isSubsection);
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
+      writeSectionTitle(section.title, num, section.isSubsection);
 
       // Find matching stats section
       const chartData = sectionStats.find(s => s.title === section.chartSectionTitle);
@@ -431,9 +446,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     }
 
     if (section.type === "satisfaction_summary") {
-      sectionNum++;
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
-      writeSectionTitle(section.title, String(sectionNum));
+      const num = getNumber(section.isSubsection);
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
+      writeSectionTitle(section.title, num, section.isSubsection);
 
       if (section.content) {
         writeText(section.content);
@@ -471,9 +486,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     }
 
     if (section.type === "bullet_list") {
-      sectionNum++;
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
-      writeSectionTitle(section.title, String(sectionNum));
+      const num = getNumber(section.isSubsection);
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
+      writeSectionTitle(section.title, num, section.isSubsection);
 
       if (section.bullets && section.bullets.length > 0) {
         for (const bullet of section.bullets) {
@@ -518,9 +533,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       doc.addPage();
       y = drawHeader();
 
-      sectionNum++;
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
-      writeSectionTitle(section.title);
+      const num = getNumber(section.isSubsection);
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
+      writeSectionTitle(section.title, num, section.isSubsection);
 
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
@@ -547,35 +562,51 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   // ══════════════════════════════════════════
   doc.setPage(1);
   let tocEntryY = tocY;
-  doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
+
+  // Regenerate numbering for TOC
+  let tocMain = 0;
+  let tocSub = 0;
 
   for (let i = 0; i < sectionPages.length; i++) {
     const entry = sectionPages[i];
-    const pageNum = entry.page - 1; // subtract cover page
+    const pageNum = entry.page - 1;
 
-    // Section number + title
+    let numStr: string;
+    if (entry.isSubsection) {
+      tocSub++;
+      numStr = `${tocMain}.${tocSub}`;
+    } else {
+      tocMain++;
+      tocSub = 0;
+      numStr = String(tocMain);
+    }
+
+    const indent = entry.isSubsection ? margin + 10 : margin + 4;
+    doc.setFont("helvetica", entry.isSubsection ? "normal" : "bold");
     doc.setTextColor(60, 60, 60);
-    const label = `${i + 1}. ${entry.title}`;
-    const truncated = label.length > 70 ? label.slice(0, 67) + "…" : label;
-    doc.text(truncated, margin + 4, tocEntryY);
+    const label = `${numStr}  ${entry.title}`;
+    const maxLabelW = pageW - margin - indent - 20;
+    const truncated = doc.getTextWidth(label) > maxLabelW
+      ? label.slice(0, Math.floor(maxLabelW / 2)) + "…"
+      : label;
+    doc.text(truncated, indent, tocEntryY);
 
     // Dotted leader + page number
     const labelW = doc.getTextWidth(truncated);
     const pageNumStr = String(pageNum);
     const pageNumW = doc.getTextWidth(pageNumStr);
-    const dotsStart = margin + 4 + labelW + 2;
+    const dotsStart = indent + labelW + 2;
     const dotsEnd = pageW - margin - pageNumW - 2;
 
-    // Draw dots
     doc.setTextColor(180, 180, 180);
+    doc.setFont("helvetica", "normal");
     let dotX = dotsStart;
     while (dotX < dotsEnd) {
       doc.text(".", dotX, tocEntryY);
       dotX += 2;
     }
 
-    // Page number right-aligned
     doc.setTextColor(60, 60, 60);
     doc.setFont("helvetica", "bold");
     doc.text(pageNumStr, pageW - margin, tocEntryY, { align: "right" });

@@ -66,6 +66,8 @@ interface ReportSection {
   chartSectionTitle?: string;
   /** Whether to include this section */
   enabled: boolean;
+  /** If true, numbered as sub-section (e.g. 1.1 instead of 2) */
+  isSubsection?: boolean;
 }
 
 interface ReportContent {
@@ -651,8 +653,9 @@ function SectionEditor({
           <div className="flex items-center gap-1.5 text-muted-foreground">
             {SECTION_TYPE_ICONS[section.type]}
           </div>
-          <span className="flex-1 text-sm font-semibold truncate">{section.title}</span>
+          <span className={`flex-1 text-sm truncate ${section.isSubsection ? "font-normal pl-3 text-muted-foreground" : "font-semibold"}`}>{section.title}</span>
 
+          {section.isSubsection && <Badge variant="secondary" className="text-[10px] shrink-0">Sub</Badge>}
           <Badge variant="outline" className="text-xs shrink-0">{SECTION_TYPE_LABELS[section.type]}</Badge>
           <label className="flex items-center gap-1 text-xs shrink-0">
             <input type="checkbox" checked={section.enabled} onChange={e => { e.stopPropagation(); onUpdate({ enabled: e.target.checked }); }} className="rounded" />
@@ -664,13 +667,24 @@ function SectionEditor({
 
         <CollapsibleContent>
           <CardContent className="pt-0 pb-3 px-4 space-y-2">
-            {/* Editable title */}
-            <Input
-              value={section.title}
-              onChange={e => onUpdate({ title: e.target.value })}
-              className="h-8 text-sm font-semibold"
-              placeholder="Título de la sección"
-            />
+            {/* Subsection toggle + Editable title */}
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!section.isSubsection}
+                  onChange={e => onUpdate({ isSubsection: e.target.checked })}
+                  className="rounded"
+                />
+                Sub-sección
+              </label>
+              <Input
+                value={section.title}
+                onChange={e => onUpdate({ title: e.target.value })}
+                className="h-8 text-sm font-semibold flex-1"
+                placeholder="Título de la sección"
+              />
+            </div>
 
             {/* Content editor based on type */}
             {section.enabled && (
