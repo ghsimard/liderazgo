@@ -57,10 +57,10 @@ const SINO_PARCIAL: SatisfaccionOption[] = [
 ];
 
 const FREQUENCY4: SatisfaccionOption[] = [
-  { value: "nunca", label: "Nunca" },
-  { value: "pocas_veces", label: "Pocas veces" },
-  { value: "frecuentemente", label: "Frecuentemente" },
   { value: "siempre", label: "Siempre" },
+  { value: "algunas_veces", label: "Algunas veces" },
+  { value: "casi_nunca", label: "Casi nunca" },
+  { value: "nunca", label: "Nunca" },
 ];
 
 const LIKERT4_SATISFACTION: SatisfaccionOption[] = [
