@@ -92,16 +92,18 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
           return;
         }
 
-        // Check duplicate
+        // Check duplicate and fetch existing responses
         const { data: existing } = await supabase
           .from("satisfaccion_responses")
-          .select("id")
+          .select("id,respuestas")
           .eq("form_type", formType)
           .eq("module_number", moduleNumber)
           .eq("cedula", cedula)
           .limit(1);
-        if (existing && (Array.isArray(existing) ? existing.length > 0 : !!existing)) {
+        const existingRow = Array.isArray(existing) ? existing[0] : existing;
+        if (existingRow) {
           setAlreadySubmitted(true);
+          setExistingResponses((existingRow as any).respuestas || {});
         }
       } catch {
         setError("Error al verificar disponibilidad.");
