@@ -322,9 +322,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     }
 
     if (section.type === "ficha_tecnica") {
-      sectionNum++;
+      const num = getNumber(section.isSubsection);
       sectionPages.push({ title: section.title, page: doc.getNumberOfPages() });
-      writeSectionTitle(section.title, String(sectionNum));
+      writeSectionTitle(section.title, num, section.isSubsection);
       y = checkPageBreak(50);
 
       // Draw table
