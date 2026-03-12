@@ -475,6 +475,9 @@ Vérifier que ces dépendances sont présentes :
 - [ ] Gestion géographique fonctionne
 - [ ] Gestion Config 360° (domaines, compétences, items, poids) fonctionne
 - [ ] Corbeille (suppression, restauration, purge) fonctionne
+- [ ] Encuestas Ambiente Escolar (soumission) fonctionne
+- [ ] Satisfaccion config (activation/désactivation) fonctionne
+- [ ] Satisfaccion responses (soumission + stats) fonctionne
 
 ---
 
