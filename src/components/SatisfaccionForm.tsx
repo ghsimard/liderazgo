@@ -175,11 +175,13 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
         </Card>
       ))}
 
-      <div className="flex justify-center">
-        <Button size="lg" onClick={handleSubmit} disabled={submitting} className="min-w-[200px]">
-          {submitting ? "Enviando…" : "Enviar encuesta"}
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-center">
+          <Button size="lg" onClick={handleSubmit} disabled={submitting} className="min-w-[200px]">
+            {submitting ? "Enviando…" : "Enviar encuesta"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
