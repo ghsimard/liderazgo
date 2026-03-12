@@ -978,12 +978,14 @@ function SectionEditor({
 
 // ── Chart Preview Component ──
 const PREVIEW_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  "hsl(var(--accent))",
+  "#2563eb",
+  "#16a34a",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#06b6d4",
+  "#ec4899",
+  "#f97316",
 ];
 
 function ChartPreview({ data, chartType }: { data: { label: string; value: number }[]; chartType: ChartType }) {
