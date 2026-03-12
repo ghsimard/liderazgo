@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
+import { generarPDFAmbienteEscolarEnBlanco } from "@/utils/blankAmbienteEscolarPdfGenerator";
 
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 import {
@@ -54,7 +55,7 @@ interface SidebarItem {
   icon: React.ElementType;
   superadminOnly?: boolean;
   linkUrl?: string;
-  action?: "blank-pdf" | "blank-360-docente" | "blank-360-estudiante" | "blank-360-directivo" | "blank-360-acudiente" | "blank-360-autoevaluacion" | "blank-360-administrativo" | "blank-rubrica";
+  action?: "blank-pdf" | "blank-360-docente" | "blank-360-estudiante" | "blank-360-directivo" | "blank-360-acudiente" | "blank-360-autoevaluacion" | "blank-360-administrativo" | "blank-rubrica" | "blank-ambiente-acudientes" | "blank-ambiente-estudiantes" | "blank-ambiente-docentes";
 }
 
 interface SidebarSection {
@@ -119,6 +120,9 @@ const sections: SidebarSection[] = [
       { tab: "enlace-ambiente-acudientes", label: "Encuesta Acudiente", icon: Link2, linkUrl: "/encuesta-ambiente-acudientes" },
       { tab: "enlace-ambiente-estudiantes", label: "Encuesta Estudiante", icon: Link2, linkUrl: "/encuesta-ambiente-estudiantes" },
       { tab: "enlace-ambiente-docentes", label: "Encuesta Docente", icon: Link2, linkUrl: "/encuesta-ambiente-docentes" },
+      { tab: "blank-ambiente-acudientes", label: "Blanco: Acudiente", icon: Printer, action: "blank-ambiente-acudientes" },
+      { tab: "blank-ambiente-estudiantes", label: "Blanco: Estudiante", icon: Printer, action: "blank-ambiente-estudiantes" },
+      { tab: "blank-ambiente-docentes", label: "Blanco: Docente", icon: Printer, action: "blank-ambiente-docentes" },
     ],
   },
   {
@@ -213,6 +217,10 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
     try {
       if (pendingAction === "blank-pdf") {
         await generarPDFFichaEnBlanco(logos, flags);
+      } else if (pendingAction.startsWith("blank-ambiente-")) {
+        const ambienteType = pendingAction.replace("blank-ambiente-", "") as "acudientes" | "estudiantes" | "docentes";
+        const ambienteLogos = { ...logos, logoCLTDark: images.logo_clt_white };
+        await generarPDFAmbienteEscolarEnBlanco(ambienteType, ambienteLogos, flags);
       } else if (pendingAction.startsWith("blank-360-")) {
         const formType = pendingAction.replace("blank-360-", "");
         await generarPDFEncuesta360EnBlanco(formType, logos, flags);
