@@ -157,6 +157,9 @@ function BlankPdfButton({ path }: { path: string }) {
     try {
       if (blankType === "ficha") {
         await generarPDFFichaEnBlanco(logos, flags);
+      } else if (blankType.startsWith("ambiente_")) {
+        const ambienteType = blankType.replace("ambiente_", "") as "acudientes" | "estudiantes" | "docentes";
+        await generarPDFAmbienteEscolarEnBlanco(ambienteType, logos, flags);
       } else {
         await generarPDFEncuesta360EnBlanco(blankType, logos, flags);
       }
