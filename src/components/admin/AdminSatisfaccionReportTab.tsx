@@ -73,8 +73,10 @@ interface ReportSection {
   content?: string;
   /** For bullet_list */
   bullets?: string[];
-  /** For chart_analysis: which survey section to chart */
+  /** For chart_analysis: which survey section to chart (legacy fallback) */
   chartSectionTitle?: string;
+  /** For chart_analysis: specific question keys to include in the chart */
+  selectedQuestionKeys?: string[];
   /** Chart visualization type */
   chartType?: ChartType;
   /** Whether to include this section */
