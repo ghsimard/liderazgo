@@ -1083,6 +1083,7 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
 
   if (chartType === "radar") {
     const n = data.length;
+    if (n < 3) return <p className="text-xs text-muted-foreground text-center py-4">Se necesitan al menos 3 indicadores para el gráfico radar.</p>;
     const r = 70;
     const cx = 110, cy = 100;
     const angleStep = (2 * Math.PI) / n;
@@ -1106,17 +1107,17 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
                 return `${cx + r * ring * Math.cos(a)},${cy + r * ring * Math.sin(a)}`;
               }).join(" ")}
               fill="none"
-              stroke="hsl(var(--border))"
+              stroke="#d1d5db"
               strokeWidth={0.5}
             />
           ))}
           {/* Axes */}
           {Array.from({ length: n }, (_, i) => {
             const a = -Math.PI / 2 + i * angleStep;
-            return <line key={i} x1={cx} y1={cy} x2={cx + r * Math.cos(a)} y2={cy + r * Math.sin(a)} stroke="hsl(var(--border))" strokeWidth={0.5} />;
+            return <line key={i} x1={cx} y1={cy} x2={cx + r * Math.cos(a)} y2={cy + r * Math.sin(a)} stroke="#d1d5db" strokeWidth={0.5} />;
           })}
           {/* Data polygon */}
-          <polygon points={polyPoints} fill="hsl(var(--primary) / 0.15)" stroke="hsl(var(--primary))" strokeWidth={2} />
+          <polygon points={polyPoints} fill="rgba(37, 99, 235, 0.15)" stroke="#2563eb" strokeWidth={2} />
           {/* Labels */}
           {data.map((item, i) => {
             const a = -Math.PI / 2 + i * angleStep;
@@ -1125,7 +1126,7 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
             const anchor = Math.cos(a) < -0.1 ? "end" : Math.cos(a) > 0.1 ? "start" : "middle";
             const lbl = item.label.length > 20 ? item.label.substring(0, 17) + "…" : item.label;
             return (
-              <text key={i} x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle" className="fill-foreground" fontSize={8}>
+              <text key={i} x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle" fill="#374151" fontSize={8}>
                 {lbl} ({item.value}%)
               </text>
             );
