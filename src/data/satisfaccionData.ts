@@ -374,7 +374,7 @@ export const intensivoForm: SatisfaccionFormDef = {
     },
     {
       title: "Comentarios y sugerencias",
-      description: "A continuación encontrarás cuatro temas. Si considera que alguno de estos tiene oportunidades de mejora, por favor escribe el número del tema antes de tu comentario. Si no tienes observaciones sobre algún tema, puedes omitirlo.\n\n1. Desarrollo del intensivo\n2. Desempeño del equipo local facilitador(es) y coach(es)\n3. Organización logística\n4. Tu propia participación\n\nEjemplo:\n1. Podrían haber incluido más actividades prácticas.\n2. Sugiero mejorar la gestión de los tiempos en los desplazamientos.",
+      description: "A continuación encontrarás cuatro temas. Si considera que alguno de estos tiene oportunidades de mejora, por favor escribe el número del tema antes de tu comentario. Si no tienes observaciones sobre algún tema, puedes omitirlo.<br/><br/><b>Temas:</b><br/><br/>1. Desarrollo del intensivo<br/>2. Desempeño del equipo local facilitador(es) y coach(es)<br/>3. Organización logística<br/>4. Tu propia participación<br/><br/><b>Ejemplo:</b><br/>1. Podrían haber incluido más actividades prácticas.<br/>2. Sugiero mejorar la gestión de los tiempos en los desplazamientos.",
       questions: [
         {
           key: "comentarios_generales",
