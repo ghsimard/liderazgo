@@ -576,8 +576,26 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
             <p className="text-xs text-muted-foreground">Los logos RLT/CLT/Cosmo se incluyen automáticamente. Agregue hasta 3 logos de aliados.</p>
             <div className="flex flex-wrap gap-3 items-center">
               {reportContent.extraLogos.map((logo, i) => (
-                <div key={i} className="relative group border rounded-lg p-2 bg-muted/30">
-                  <img src={logo} alt={`Logo ${i + 1}`} className="h-10 w-auto object-contain" />
+                <div key={i} className="relative group border rounded-lg p-2 bg-muted/30 space-y-1.5">
+                  <img src={logo.src} alt={`Logo ${i + 1}`} className="h-10 w-auto object-contain" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">{logo.scale}%</span>
+                    <input
+                      type="range"
+                      min={30}
+                      max={200}
+                      step={5}
+                      value={logo.scale}
+                      onChange={(e) => {
+                        const newScale = Number(e.target.value);
+                        setReportContent(prev => ({
+                          ...prev,
+                          extraLogos: prev.extraLogos.map((l, idx) => idx === i ? { ...l, scale: newScale } : l),
+                        }));
+                      }}
+                      className="w-20 h-1 accent-primary"
+                    />
+                  </div>
                   <button
                     onClick={() => setReportContent(prev => ({ ...prev, extraLogos: prev.extraLogos.filter((_, idx) => idx !== i) }))}
                     className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
