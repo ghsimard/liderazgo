@@ -56,10 +56,11 @@ export async function generarPDFAmbienteEscolarEnBlanco(
   const showRlt = logoFlags.showLogoRlt ?? true;
   const showClt = logoFlags.showLogoClt ?? true;
 
-  const [rltB64, cltB64, cosmoB64] = await Promise.all([
+  const [rltB64, cltB64, cosmoB64, cosmoSize] = await Promise.all([
     showRlt ? loadImageAsBase64(logoSources.logoRLT) : Promise.resolve(""),
     showClt ? loadImageAsBase64(logoSources.logoCLTDark) : Promise.resolve(""),
     loadImageAsBase64(logoSources.logoCosmo),
+    getImageNaturalSize(logoSources.logoCosmo),
   ]);
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
