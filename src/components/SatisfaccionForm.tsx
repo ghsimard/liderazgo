@@ -76,7 +76,16 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    await onSubmit(answers);
+    // Auto-inject date and rol from ficha
+    const enriched = { ...answers };
+    enriched.fecha_sesion = new Date().toISOString().slice(0, 10);
+    if (fichaInfo) {
+      enriched.rol_ie = fichaInfo.cargo_actual || "";
+      enriched.nombre_completo = fichaInfo.nombres_apellidos || "";
+      enriched.correo = fichaInfo.correo_personal || fichaInfo.correo_institucional || "";
+      enriched.institucion = fichaInfo.nombre_ie || "";
+    }
+    await onSubmit(enriched);
   };
 
   return (
@@ -95,6 +104,14 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Fecha</Label>
+                <Input value={new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })} disabled className="bg-muted/50" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Rol en la Institución Educativa</Label>
+                <Input value={fichaInfo.cargo_actual || ""} disabled className="bg-muted/50" />
+              </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Nombre(s) y apellido(s) completos</Label>
                 <Input value={fichaInfo.nombres_apellidos || ""} disabled className="bg-muted/50" />

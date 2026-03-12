@@ -82,29 +82,6 @@ export const asistenciaForm: SatisfaccionFormDef = {
       title: "Información de la sesión",
       questions: [
         {
-          key: "fecha_sesion",
-          label: "Selecciona la fecha en la que estás diligenciando este formulario",
-          type: "date",
-          required: true,
-        },
-        {
-          key: "rol_ie",
-          label: "¿Cuál es tu rol en la Institución Educativa?",
-          type: "radio",
-          required: true,
-          options: [
-            { value: "rector", label: "Rector" },
-            { value: "coordinador", label: "Coordinador" },
-            { value: "otro", label: "Otro" },
-          ],
-        },
-        {
-          key: "rol_otro_detalle",
-          label: "Si seleccionaste la opción \"Otro\", por favor indicanos qué rol desempeñas.",
-          type: "text",
-          conditionalOn: { key: "rol_ie", value: "otro" },
-        },
-        {
           key: "tipo_actividad",
           label: "Elige la actividad en la que estás participando hoy",
           type: "radio",
