@@ -44,6 +44,9 @@ const PUBLIC_READ_TABLES = new Set([
   "informe_modulo_equipo",
   "informe_directivo",
   "informe_asistencia",
+  "satisfaccion_config",
+  "satisfaccion_responses",
+  "encuestas_ambiente_escolar",
 ]);
 
 // Tables that allow public inserts (no auth required for POST without _method)
