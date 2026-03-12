@@ -208,7 +208,7 @@ Options supportées : `select`, `order`, `limit`, `range(from,to)`, `single`, `h
 
 | Route | Méthode | Auth | Description |
 |---|---|---|---|
-| `/api/export` | GET | SuperAdmin | Export SQL complet (35+ tables + users + fichiers base64) |
+| `/api/export` | GET | SuperAdmin | Export SQL complet (38+ tables + users + fichiers base64) |
 
 #### Analyse IA Rubriques (`routes/rubrica-analysis.ts`)
 
