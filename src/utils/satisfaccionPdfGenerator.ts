@@ -186,31 +186,11 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   // COVER PAGE
   // ══════════════════════════════════════════
 
-  // White background (default)
-  let coverY = 25;
+  // Draw header on cover page (same as content pages)
+  drawHeader();
+  let coverY = 35;
 
-  // Official programme logos first (RLT + CLT centered)
-  const officialLogos: { b64: string; w: number; h: number }[] = [];
-  if (showLogoRlt && rltB64) {
-    const dim = logoH(rltSize.width, rltSize.height, 22);
-    officialLogos.push({ b64: rltB64, w: dim.w, h: dim.h });
-  }
-  if (showLogoClt && cltB64) {
-    const dim = logoH(cltSize.width, cltSize.height, 22);
-    officialLogos.push({ b64: cltB64, w: dim.w, h: dim.h });
-  }
-  if (officialLogos.length > 0) {
-    const gap = 15;
-    const totalW = officialLogos.reduce((sum, l) => sum + l.w, 0) + (officialLogos.length - 1) * gap;
-    let x = pageW / 2 - totalW / 2;
-    for (const logo of officialLogos) {
-      doc.addImage(logo.b64, "PNG", x, coverY, logo.w, logo.h);
-      x += logo.w + gap;
-    }
-    coverY += 22 + 10;
-  }
-
-  // Extra/partner logos below official ones
+  // Extra/partner logos below header
   if (extraLogos.length > 0) {
     const extraH = 16;
     const gap = 15;
