@@ -20,6 +20,7 @@ import { FORM_TYPE_LABELS, asistenciaForm, interludioForm, intensivoForm } from 
 import type { SatisfaccionFormDef, SatisfaccionQuestion, SatisfaccionOption } from "@/data/satisfaccionData";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import AdminSatisfaccionStats from "./AdminSatisfaccionStats";
 
 const FORM_TYPES = ["asistencia", "interludio", "intensivo"] as const;
 const MODULES = [1, 2, 3, 4];
