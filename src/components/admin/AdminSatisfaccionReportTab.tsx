@@ -253,7 +253,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
     const formDef = SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined;
     if (!formDef || responses.length === 0) return null;
     const totalResponses = responses.length;
-    const sections: { title: string; type: string; data: { label: string; value: number; count: number }[] }[] = [];
+    const sections: { title: string; type: string; questionKey: string; data: { label: string; value: number; count: number }[] }[] = [];
 
     for (const section of formDef.sections) {
       for (const q of section.questions) {
