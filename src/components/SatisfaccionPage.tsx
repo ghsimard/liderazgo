@@ -195,6 +195,7 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
           region={region}
           onSubmit={handleSubmit}
           submitting={submitting}
+          fichaInfo={fichaInfo}
         />
       </div>
     </div>
