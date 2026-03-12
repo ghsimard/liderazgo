@@ -211,9 +211,9 @@ function QuestionRenderer({ question: q, value, onChange, onCheckboxChange, onGr
 
     case "text":
       return (
-        <div className="space-y-2">
+        <div className={`space-y-2 ${disabledClass}`}>
           <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>
-          <Input type="text" value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder="Escriba aquí..." />
+          <Input type="text" value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder="Escriba aquí..." disabled={disabled} />
         </div>
       );
 
