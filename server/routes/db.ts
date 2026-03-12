@@ -110,6 +110,9 @@ const ALLOWED_TABLES = new Set([
   "informe_modulo_equipo",
   "informe_directivo",
   "informe_asistencia",
+  "encuestas_ambiente_escolar",
+  "satisfaccion_config",
+  "satisfaccion_responses",
 ]);
 
 // ── Helpers ────────────────────────────────────────────

@@ -521,6 +521,47 @@ CREATE TABLE IF NOT EXISTS public.informe_asistencia (
 );
 
 -- ============================================================
+-- Encuestas Ambiente Escolar
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.encuestas_ambiente_escolar (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tipo_formulario TEXT NOT NULL,
+  institucion_educativa TEXT NOT NULL,
+  respuestas JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ============================================================
+-- Satisfaccion Config & Responses
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.satisfaccion_config (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  form_type TEXT NOT NULL,
+  module_number INTEGER NOT NULL,
+  region TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT false,
+  available_from TIMESTAMPTZ,
+  available_until TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.satisfaccion_responses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cedula TEXT NOT NULL,
+  form_type TEXT NOT NULL,
+  module_number INTEGER NOT NULL,
+  region TEXT NOT NULL,
+  respuestas JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_satisfaccion_responses_cedula ON public.satisfaccion_responses(cedula);
+CREATE INDEX IF NOT EXISTS idx_satisfaccion_config_region ON public.satisfaccion_config(region);
+
+-- ============================================================
 -- RPC functions for Informe de Módulo
 -- ============================================================
 
