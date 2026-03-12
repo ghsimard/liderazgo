@@ -136,7 +136,7 @@ server/
 │   ├── rubrica-analysis.ts ← Analyse IA rubriques (Grok)
 │   ├── github.ts         ← Changelog GitHub commits
 │   └── email.ts          ← Envoi d'emails (Resend)
-├── schema.sql            ← Schéma complet (35+ tables + fonctions RPC)
+├── schema.sql            ← Schéma complet (38+ tables + fonctions RPC)
 └── package.json
 ```
 
