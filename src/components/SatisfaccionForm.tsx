@@ -168,6 +168,7 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
                   onChange={(v) => set(q.key, v)}
                   onCheckboxChange={(val, checked) => handleCheckboxMax3(q.key, val, checked, q.maxSelect || 3)}
                   onGridChange={(rowKey, val) => setGrid(q.key, rowKey, val)}
+                  disabled={readOnly}
                 />
               );
             })}
