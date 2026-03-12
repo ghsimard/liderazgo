@@ -1150,7 +1150,7 @@ export default function AdminEditFicha() {
                   <label htmlFor="sedes_urbana" className="text-sm font-medium whitespace-nowrap">
                     Número de sedes en zona urbana<span className="required-star ml-0.5">*</span>
                   </label>
-                  <input id="sedes_urbana" type="number" min={0} max={999} {...register("sedes_urbana")} placeholder="0" className="form-input w-20 text-center shrink-0" />
+                  <input id="sedes_urbana" type="number" min={0} max={999} {...register("sedes_urbana")} placeholder="0" className="form-input w-20 text-center shrink-0 !min-h-0 !py-1.5 !pt-1.5" />
                 </div>
 
                 <div className="flex items-center justify-between gap-3 pt-1 border-t border-border">
