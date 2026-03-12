@@ -29,9 +29,6 @@ import { FORM_TYPE_LABELS, SATISFACCION_FORMS } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion } from "@/data/satisfaccionData";
 import { generateSatisfaccionReport } from "@/utils/satisfaccionPdfGenerator";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { FORM_TYPE_LABELS, SATISFACCION_FORMS } from "@/data/satisfaccionData";
-import type { SatisfaccionFormDef, SatisfaccionQuestion } from "@/data/satisfaccionData";
-import { generateSatisfaccionReport } from "@/utils/satisfaccionPdfGenerator";
 
 const FORM_TYPES = ["asistencia", "interludio", "intensivo"] as const;
 const MODULES = [1, 2, 3, 4];
