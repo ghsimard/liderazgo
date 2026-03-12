@@ -453,7 +453,12 @@ export default function AdminSatisfaccionesTab() {
                 {regions.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
-          </div>
+            </div>
+            {filteredResponses.length > 0 && (
+              <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setShowDeleteAll(true)}>
+                <Trash2 className="w-4 h-4" /> Eliminar {filteredResponses.length === responses.length ? "todas" : `${filteredResponses.length} filtradas`} ({filteredResponses.length})
+              </Button>
+            )}
 
           {loadingResponses ? (
             <div className="flex justify-center py-8"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>
