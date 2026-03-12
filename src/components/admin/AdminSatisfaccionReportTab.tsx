@@ -893,12 +893,24 @@ function SectionEditor({
             {section.enabled && (
               <>
                 {(section.type === "text" || section.type === "chart_analysis") && (
-                  <RichTextEditor
-                    value={section.content || ""}
-                    onChange={val => onUpdate({ content: val })}
-                    placeholder={section.type === "chart_analysis" ? "Escriba el análisis de este bloque…" : "Escriba el contenido de esta sección…"}
-                    minHeight={section.type === "chart_analysis" ? "80px" : "120px"}
-                  />
+                  <div className="space-y-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateAI(section.type)}
+                      disabled={aiLoading || !stats || totalResponses === 0}
+                      className="gap-1.5 text-xs h-7"
+                    >
+                      {aiLoading ? <Loader2 className="animate-spin h-3 w-3" /> : <Sparkles className="w-3 h-3" />}
+                      {aiLoading ? "Generando…" : "Generar con IA"}
+                    </Button>
+                    <RichTextEditor
+                      value={section.content || ""}
+                      onChange={val => onUpdate({ content: val })}
+                      placeholder={section.type === "chart_analysis" ? "Escriba el análisis de este bloque…" : "Escriba el contenido de esta sección…"}
+                      minHeight={section.type === "chart_analysis" ? "80px" : "120px"}
+                    />
+                  </div>
                 )}
 
                 {section.type === "chart_analysis" && (
