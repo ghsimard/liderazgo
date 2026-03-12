@@ -162,19 +162,15 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
     );
   }
 
-  if (alreadySubmitted || submitted) {
+  if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <Card className="max-w-md w-full">
           <CardContent className="flex flex-col items-center py-12 space-y-4">
             <CheckCircle2 className="h-12 w-12 text-emerald-600" />
-            <h2 className="text-lg font-semibold">
-              {submitted ? "¡Encuesta enviada!" : "Ya respondió esta encuesta"}
-            </h2>
+            <h2 className="text-lg font-semibold">¡Encuesta enviada!</h2>
             <p className="text-sm text-muted-foreground text-center">
-              {submitted
-                ? "Gracias por completar la encuesta de satisfacción."
-                : `Ya envió la encuesta de ${FORM_TYPE_LABELS[formType]} para el módulo ${moduleNumber}.`}
+              Gracias por completar la encuesta de satisfacción.
             </p>
             <Button variant="outline" onClick={() => navigate("/mi-panel")}>Volver a Mi Panel</Button>
           </CardContent>
