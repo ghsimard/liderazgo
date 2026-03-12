@@ -179,7 +179,7 @@ Route unique qui remplace **tous** les appels `supabase.from("table").select/ins
 `domains_360`, `competencies_360`, `competency_weights`, `items_360`, `item_texts_360`, `entidades_territoriales`, `municipios`, `instituciones`, `regiones`, `region_municipios`, `region_instituciones`, `app_images`, `app_settings`, `rubrica_submission_dates`, `rubrica_modules`, `rubrica_items`, `rubrica_evaluadores`, `rubrica_asignaciones`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `encuesta_invitaciones`, `mel_kpi_config`, `mel_kpi_groups`, `mel_kpi_group_items`, `informe_modulo`, `informe_modulo_equipo`, `informe_directivo`, `informe_asistencia`, `satisfaccion_config`, `satisfaccion_responses`, `encuestas_ambiente_escolar`
 
 **Tables en insertion publique** (POST sans auth) :
-`fichas_rlt`, `encuestas_360`, `rubrica_submission_dates`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `site_reviews`, `contact_messages`, `encuesta_invitaciones`, `user_activity_log`, `informe_modulo`, `informe_modulo_equipo`, `informe_directivo`, `informe_asistencia`
+`fichas_rlt`, `encuestas_360`, `rubrica_submission_dates`, `rubrica_evaluaciones`, `rubrica_seguimientos`, `site_reviews`, `contact_messages`, `encuesta_invitaciones`, `user_activity_log`, `informe_modulo`, `informe_modulo_equipo`, `informe_directivo`, `informe_asistencia`, `encuestas_ambiente_escolar`, `satisfaccion_responses`
 
 **Toutes les autres opérations** (UPDATE, DELETE, écriture sur tables non-publiques) : **admin requis**.
 
