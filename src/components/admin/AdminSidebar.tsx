@@ -133,6 +133,7 @@ const sections: SidebarSection[] = [
     items: [
       { tab: "users", label: "Administradores", icon: Users },
       { tab: "activity-log", label: "Registro de Actividad", icon: Activity },
+      { tab: "papelera", label: "Papelera", icon: Trash2 },
       { tab: "reviews", label: "Apreciaciones", icon: Star, superadminOnly: true },
       { tab: "mensajes", label: "Mensajes", icon: MessageSquare, superadminOnly: true },
       { tab: "changelog", label: "Changelog", icon: GitCommit, superadminOnly: true },
