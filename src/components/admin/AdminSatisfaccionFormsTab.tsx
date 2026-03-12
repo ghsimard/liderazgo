@@ -511,6 +511,3 @@ function QuestionEditor({
     </div>
   );
 }
-
-// Re-export X from lucide
-import { X } from "lucide-react";
