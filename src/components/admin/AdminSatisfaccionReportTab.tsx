@@ -73,8 +73,10 @@ interface ReportSection {
   content?: string;
   /** For bullet_list */
   bullets?: string[];
-  /** For chart_analysis: which survey section to chart */
+  /** For chart_analysis: which survey section to chart (legacy fallback) */
   chartSectionTitle?: string;
+  /** For chart_analysis: specific question keys to include in the chart */
+  selectedQuestionKeys?: string[];
   /** Chart visualization type */
   chartType?: ChartType;
   /** Whether to include this section */
@@ -251,7 +253,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
     const formDef = SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined;
     if (!formDef || responses.length === 0) return null;
     const totalResponses = responses.length;
-    const sections: { title: string; type: string; data: { label: string; value: number; count: number }[] }[] = [];
+    const sections: { title: string; type: string; questionKey: string; data: { label: string; value: number; count: number }[] }[] = [];
 
     for (const section of formDef.sections) {
       for (const q of section.questions) {
@@ -267,7 +269,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           const data = (q.options || []).map(o => ({
             label: o.label, value: totalResponses > 0 ? Math.round((counts[o.value] / totalResponses) * 10000) / 100 : 0, count: counts[o.value],
           })).sort((a, b) => b.value - a.value);
-          sections.push({ title: section.title, type: "checkbox", data });
+          sections.push({ title: section.title, type: "checkbox", questionKey: q.key, data });
         }
 
         if (q.type === "radio" || q.type === "likert4") {
@@ -280,12 +282,12 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
           if (q.type === "likert4") {
             const positive = (counts["3"] || 0) + (counts["4"] || 0);
             const pct = totalResponses > 0 ? Math.round((positive / totalResponses) * 10000) / 100 : 0;
-            sections.push({ title: section.title, type: "likert", data: [{ label: q.label, value: pct, count: positive }] });
+            sections.push({ title: section.title, type: "likert", questionKey: q.key, data: [{ label: q.label, value: pct, count: positive }] });
           } else {
             const data = (q.options || []).map(o => ({
               label: o.label, value: totalResponses > 0 ? Math.round((counts[o.value] / totalResponses) * 10000) / 100 : 0, count: counts[o.value],
             }));
-            sections.push({ title: section.title, type: "other", data });
+            sections.push({ title: section.title, type: "other", questionKey: q.key, data });
           }
         }
 
@@ -308,7 +310,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
             data.push({ label: row.label, value: total > 0 ? Math.round((positiveCount / total) * 10000) / 100 : 0, count: positiveCount });
           }
           data.sort((a, b) => b.value - a.value);
-          sections.push({ title: section.title, type: "grid", data });
+          sections.push({ title: section.title, type: "grid", questionKey: q.key, data });
         }
       }
     }
@@ -777,9 +779,18 @@ function SectionEditor({
   const [showFichaPreview, setShowFichaPreview] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const isAuto = section.type === "ficha_tecnica" || section.type === "satisfaction_summary" || section.type === "comments_annex";
-  const chartData = section.type === "chart_analysis" && stats
-    ? stats.sections.find((s: any) => s.title === section.chartSectionTitle)
-    : null;
+  // Compute chart data: prefer selectedQuestionKeys, fallback to chartSectionTitle
+  const chartData = useMemo(() => {
+    if (section.type !== "chart_analysis" || !stats) return null;
+    if (section.selectedQuestionKeys && section.selectedQuestionKeys.length > 0) {
+      const matched = stats.sections.filter((s: any) => section.selectedQuestionKeys!.includes(s.questionKey));
+      if (matched.length === 0) return null;
+      // Merge all matched data into one virtual section
+      const mergedData = matched.flatMap((s: any) => s.data);
+      return { title: section.chartSectionTitle || section.title, type: matched[0].type, data: mergedData };
+    }
+    return stats.sections.find((s: any) => s.title === section.chartSectionTitle) || null;
+  }, [section.type, section.selectedQuestionKeys, section.chartSectionTitle, section.title, stats]);
 
   const handleGenerateAI = async (targetType?: string) => {
     const effectiveType = targetType || section.type;
@@ -914,19 +925,26 @@ function SectionEditor({
                 )}
 
                 {section.type === "chart_analysis" && (
-                  <div className="text-xs text-muted-foreground">
-                    {chartData ? (
-                      <button
-                        type="button"
-                        onClick={() => setPreviewChart(chartData)}
-                        className="text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        ✓ Gráfico disponible ({CHART_TYPE_LABELS[section.chartType || "horizontal_bar"]}): {chartData.data.length} indicadores — clic para ver/cambiar
-                      </button>
-                    ) : (
-                      <span className="text-amber-600">⚠ Sin datos para gráfico "{section.chartSectionTitle}"</span>
-                    )}
+                  <div className="space-y-2">
+                    <QuestionPicker
+                      filterType={filterType}
+                      selectedKeys={section.selectedQuestionKeys || []}
+                      onChange={(keys) => onUpdate({ selectedQuestionKeys: keys })}
+                    />
+                    <div className="text-xs text-muted-foreground">
+                      {chartData ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewChart(chartData)}
+                          className="text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          ✓ Gráfico disponible ({CHART_TYPE_LABELS[section.chartType || "horizontal_bar"]}): {chartData.data.length} indicadores — clic para ver/cambiar
+                        </button>
+                      ) : (
+                        <span className="text-amber-600">⚠ Seleccione preguntas o verifique que hay datos disponibles</span>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -1303,6 +1321,81 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
   }
 
   return null;
+}
+
+// ── Question Picker for chart_analysis sections ──
+function QuestionPicker({
+  filterType,
+  selectedKeys,
+  onChange,
+}: {
+  filterType: string;
+  selectedKeys: string[];
+  onChange: (keys: string[]) => void;
+}) {
+  const formDef = SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined;
+  if (!formDef) return null;
+
+  const chartableTypes = new Set(["radio", "likert4", "checkbox-max3", "grid-sino", "grid-frequency", "grid-logistic"]);
+
+  const groups = formDef.sections
+    .map((section) => ({
+      sectionTitle: section.title,
+      questions: section.questions.filter((q) => chartableTypes.has(q.type)),
+    }))
+    .filter((g) => g.questions.length > 0);
+
+  const toggleKey = (key: string) => {
+    onChange(
+      selectedKeys.includes(key)
+        ? selectedKeys.filter((k) => k !== key)
+        : [...selectedKeys, key]
+    );
+  };
+
+  const allKeys = groups.flatMap((g) => g.questions.map((q) => q.key));
+  const allSelected = allKeys.length > 0 && allKeys.every((k) => selectedKeys.includes(k));
+
+  return (
+    <div className="space-y-2 border rounded-lg p-3 bg-muted/20">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-semibold">Preguntas incluidas en el gráfico</Label>
+        <button
+          type="button"
+          onClick={() => onChange(allSelected ? [] : allKeys)}
+          className="text-[10px] text-primary hover:underline"
+        >
+          {allSelected ? "Deseleccionar todo" : "Seleccionar todo"}
+        </button>
+      </div>
+      {groups.map((group) => (
+        <div key={group.sectionTitle} className="space-y-1">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+            {group.sectionTitle}
+          </p>
+          {group.questions.map((q) => (
+            <label
+              key={q.key}
+              className="flex items-start gap-2 cursor-pointer hover:bg-muted/40 rounded px-1.5 py-1 transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={selectedKeys.includes(q.key)}
+                onChange={() => toggleKey(q.key)}
+                className="mt-0.5 h-3.5 w-3.5 rounded border-border accent-primary"
+              />
+              <span className="text-xs text-foreground leading-tight">
+                {q.label || q.key}
+                <Badge variant="outline" className="ml-1.5 text-[9px] px-1 py-0">
+                  {q.type}
+                </Badge>
+              </span>
+            </label>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ── Bullet List Editor ──
