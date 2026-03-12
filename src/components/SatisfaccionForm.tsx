@@ -105,6 +105,14 @@ export default function SatisfaccionForm({ formDef, moduleNumber, region, onSubm
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Fecha</Label>
+                <Input value={new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })} disabled className="bg-muted/50" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Rol en la Institución Educativa</Label>
+                <Input value={fichaInfo.cargo_actual || ""} disabled className="bg-muted/50" />
+              </div>
+              <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Nombre(s) y apellido(s) completos</Label>
                 <Input value={fichaInfo.nombres_apellidos || ""} disabled className="bg-muted/50" />
               </div>
