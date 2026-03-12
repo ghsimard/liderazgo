@@ -860,6 +860,17 @@ function SectionEditor({
                   </div>
                 )}
 
+                {section.type === "ficha_tecnica" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFichaPreview(true)}
+                    className="text-xs text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Ver ficha técnica ({totalResponses} respuestas)
+                  </button>
+                )}
+
                 {isAuto && (
                   <p className="text-xs text-muted-foreground italic">
                     {section.type === "ficha_tecnica" && "Se genera automáticamente con los datos de la encuesta"}
