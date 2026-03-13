@@ -355,7 +355,7 @@ function HorizontalBarSection({
   // Truncate labels for chart display
   const chartData = data.map((d) => ({
     ...d,
-    shortLabel: d.label.length > 50 ? d.label.substring(0, 47) + "…" : d.label,
+    shortLabel: d.label,
   }));
 
   const maxVal = Math.max(...data.map(d => d.value), 1);
