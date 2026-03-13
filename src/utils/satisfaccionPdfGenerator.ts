@@ -195,7 +195,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     // Cosmo logo bottom-left
     if (cosmoB64) {
       const dim = logoH(cosmoSize.width, cosmoSize.height, 8);
-      doc.addImage(cosmoB64, "PNG", margin, pageH - 14, dim.w, dim.h);
+      doc.addImage(cosmoB64, "PNG", margin, pageH - 18, dim.w, dim.h);
     }
   };
 
