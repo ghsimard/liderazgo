@@ -567,7 +567,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     if (section.type === "chart_analysis") {
       const num = getNumber(section.isSubsection);
 
-      // Find matching stats section: prefer selectedQuestionKeys, fallback to chartSectionTitle
+      // Only render chart when selectedQuestionKeys has items (no fallback)
       let chartData: SectionStat | null = null;
       if (section.selectedQuestionKeys && section.selectedQuestionKeys.length > 0) {
         const matched = sectionStats.filter(s => s.questionKey && section.selectedQuestionKeys!.includes(s.questionKey));
@@ -575,9 +575,6 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
           const mergedData = matched.flatMap(s => s.data);
           chartData = { title: section.chartSectionTitle || section.title, type: matched[0].type, data: mergedData };
         }
-      }
-      if (!chartData) {
-        chartData = sectionStats.find(s => s.title === section.chartSectionTitle) || null;
       }
       const chartType = section.chartType || (section as any).chartType || "horizontal_bar";
 
