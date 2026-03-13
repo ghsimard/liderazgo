@@ -531,7 +531,7 @@ export default function AdminSatisfaccionesTab() {
           <AdminSatisfaccionStats regions={regions} />
         </TabsContent>
 
-        <TabsContent value="report" className="mt-4" forceMount style={{ display: undefined }}>
+        <TabsContent value="report" className="mt-4 data-[state=inactive]:hidden" forceMount>
           <AdminSatisfaccionReportTab regions={regions} />
         </TabsContent>
 
