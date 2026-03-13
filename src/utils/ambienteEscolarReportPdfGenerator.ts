@@ -761,8 +761,8 @@ export async function generarAmbienteEscolarReportPDF(
     }
   }
 
-  // Help box at bottom of Encuestados
-  drawHelpBox(HELP_BOX_ENCUESTADOS);
+  // Highlighted note at bottom of Encuestados
+  drawHighlightedNote(HELP_BOX_ENCUESTADOS);
 
   drawPageFooter(pageNum);
 
