@@ -27,7 +27,7 @@ import { CheckCircle, Download, RefreshCw, Send, AlertCircle, ArrowLeft, Edit, S
 
 // ── Schema de validación ─────────────────────────────────────
 const schema = z.object({
-  acepta_datos: z.enum(["Sí", "No", ""]).refine((v) => v === "Sí", { message: "Debe aceptar el tratamiento de datos personales" }),
+  acepta_datos: z.literal(true, { errorMap: () => ({ message: "Debe aceptar el tratamiento de datos personales" }) }),
   nombres: z.string().min(2, "Ingrese sus nombres"),
   apellidos: z.string().min(2, "Ingrese sus apellidos"),
   genero: z.string().min(1, "Seleccione su género"),
