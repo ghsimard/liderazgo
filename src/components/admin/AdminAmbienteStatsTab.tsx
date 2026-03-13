@@ -378,7 +378,7 @@ export default function AdminAmbienteStatsTab() {
       // 12 docentes, 25 estudiantes, 8 acudientes
       for (let i = 0; i < 12; i++) fakeSubs.push({ tipo_formulario: "docentes", respuestas: buildFakeResponses(DOCENTES_LIKERT, "docentes") });
       for (let i = 0; i < 25; i++) fakeSubs.push({ tipo_formulario: "estudiantes", respuestas: buildFakeResponses(ESTUDIANTES_LIKERT, "estudiantes") });
-      for (let i = 0; i < 8; i++) fakeSubs.push({ tipo_formulario: "acudientes", respuestas: buildFakeResponses(ACUDIENTES_LIKERT, "acudientes") });
+      for (let i = 0; i < 200; i++) fakeSubs.push({ tipo_formulario: "acudientes", respuestas: buildFakeResponses(ACUDIENTES_LIKERT, "acudientes") });
 
       await generarAmbienteEscolarReportPDF(
         {
