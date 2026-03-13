@@ -465,7 +465,7 @@ export default function FichaRLTForm() {
 
         // Map DB row to form values
         const formData: Partial<FormData> = {
-          acepta_datos: !!data.acepta_datos,
+          acepta_datos: !!data.acepta_datos as any,
           nombres: data.nombres ?? "",
           apellidos: data.apellidos ?? "",
           genero: data.genero ?? "",
