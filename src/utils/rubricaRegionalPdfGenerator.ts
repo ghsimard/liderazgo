@@ -305,7 +305,7 @@ export async function generarPDFRegionalRubricas(
       }
     }
 
-    addFooter();
+    addHeaderAndFooter();
   }
 
   doc.save(`Informe_Regional_Rubricas_${new Date().toISOString().slice(0, 10)}.pdf`);
