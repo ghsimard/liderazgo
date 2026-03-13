@@ -252,7 +252,11 @@ export default function AdminAmbienteStatsTab() {
   };
 
   const handleGeneratePDF = async () => {
-    if (selectedIE === "__all__") return;
+    if (selectedIE === "__all__") {
+      // Generate ZIP with all institutions in the current filter
+      await handleBatchExport();
+      return;
+    }
     setGenerating(true);
     try {
       const reportData = buildReportData(selectedIE);
@@ -458,11 +462,15 @@ export default function AdminAmbienteStatsTab() {
             <Button
               size="sm"
               onClick={handleGeneratePDF}
-              disabled={selectedIE === "__all__" || generating}
+              disabled={generating || batchGenerating || institutionOptions.length === 0}
               className="gap-1.5"
             >
-              {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {generating ? "Generando…" : "Generar Informe"}
+              {(generating || (selectedIE === "__all__" && batchGenerating)) ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {(generating || (selectedIE === "__all__" && batchGenerating))
+                ? "Generando…"
+                : selectedIE === "__all__"
+                  ? `Generar Informe ZIP (${institutionOptions.length})`
+                  : "Generar Informe"}
             </Button>
             <Button
               size="sm"
@@ -489,7 +497,7 @@ export default function AdminAmbienteStatsTab() {
             <Progress value={batchProgress} className="h-2" />
           )}
           {selectedIE === "__all__" && !batchGenerating && (
-            <p className="text-xs text-muted-foreground">Seleccione una institución para generar un informe individual.</p>
+            <p className="text-xs text-muted-foreground">Con "Todas las instituciones", se generará un ZIP con todos los informes de la selección actual.</p>
           )}
         </CardContent>
       </Card>
