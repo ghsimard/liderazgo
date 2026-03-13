@@ -19,9 +19,8 @@ import type { Tables } from "@/integrations/supabase/types";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
 import { MultiSelect } from "@/components/ui/multi-select";
 import JSZip from "jszip";
-import logoRLTWhite from "@/assets/logo_rlt_white.png";
-import logoCLTWhite from "@/assets/logo_clt_white.png";
-import logoCosmoWhite from "@/assets/logo_cosmo_white.png";
+import { useAppImages } from "@/hooks/useAppImages";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 
 type Ficha = Tables<"fichas_rlt">;
 const PAGE_SIZE = 20;
