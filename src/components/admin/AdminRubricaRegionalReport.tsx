@@ -12,6 +12,7 @@ import { Loader2, BarChart3, Sparkles, RefreshCw, FileDown } from "lucide-react"
 import { useAppImages } from "@/hooks/useAppImages";
 import { useGeographicData } from "@/hooks/useGeographicData";
 import { generarPDFRegionalRubricas, type RegionalModuleData } from "@/utils/rubricaRegionalPdfGenerator";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 
 interface RubricaModule {
   id: string;

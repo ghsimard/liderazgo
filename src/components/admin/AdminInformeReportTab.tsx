@@ -10,6 +10,7 @@ import { Loader2, Download, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 import {
   generarPDFInformeModulo,
   type InformeModuloPdfData,

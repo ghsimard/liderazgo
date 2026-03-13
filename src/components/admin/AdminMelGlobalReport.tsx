@@ -9,6 +9,7 @@ import { RefreshCw, TrendingUp, TrendingDown, Minus, Users, BarChart3, Download 
 import { Button } from "@/components/ui/button";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarMelGlobalPDF } from "@/utils/melGlobalPdfGenerator";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,

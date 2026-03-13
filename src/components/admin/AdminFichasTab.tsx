@@ -319,7 +319,8 @@ export default function AdminFichasTab() {
         const isRector = cargo.includes("rector");
         const isCoordinador = cargo.includes("coordinador");
         const datosPDF: Record<string, unknown> = { ...f };
-        const blob = await generarPDFFicha(datosPDF, { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite }, { showLogoRlt: isRector, showLogoClt: isCoordinador }, { returnBlob: true });
+        const pdfLogos = getPdfLogoSources(images);
+        const blob = await generarPDFFicha(datosPDF, { logoRLT: pdfLogos.logoRLT, logoCLTDark: pdfLogos.logoCLT, logoCosmo: pdfLogos.logoCosmo }, { showLogoRlt: isRector, showLogoClt: isCoordinador }, { returnBlob: true });
         if (blob) {
           const fileName = `Ficha_${String(f.apellidos ?? f.nombres ?? "ficha").replace(/\s+/g, "_")}_${String(f.nombres ?? "").replace(/\s+/g, "_")}.pdf`;
           zip.file(fileName, blob);

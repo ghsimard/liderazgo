@@ -354,7 +354,7 @@ export default function AdminAmbienteStatsTab() {
           entidadTerritorial: "Secretaría de Educación de Medellín",
           submissions: fakeSubs,
         },
-        { logoRLT: images.logo_rlt_white, logoCLT: images.logo_clt || images.logo_clt_white, logoCosmo: images.logo_cosmo },
+        getPdfLogoSources(images),
         { showLogoRlt: true, showLogoClt: true }
       );
       toast({ title: "Demo PDF generado", description: "PDF de ejemplo descargado con datos ficticios" });

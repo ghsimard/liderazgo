@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarMelPDF } from "@/utils/reporte360MelPdfGenerator";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 import { Progress } from "@/components/ui/progress";
 import JSZip from "jszip";
 import AdminMelGlobalReport from "./AdminMelGlobalReport";
