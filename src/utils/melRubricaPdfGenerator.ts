@@ -56,8 +56,8 @@ export async function generarMelRubricasPDF(
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C_LIGHT);
-    doc.text("Programa RLT y CLT · Informe MEL Rúbricas", margin, pageH - 8);
-    doc.text(String(pn), pageW - margin, pageH - 8, { align: "right" });
+    doc.text("Programa RLT y CLT · Informe MEL Rúbricas", margin, pageH - 14);
+    doc.text(String(pn), pageW - margin, pageH - 14, { align: "right" });
   };
 
   // ═══════════════════════════════════════════
@@ -129,7 +129,7 @@ export async function generarMelRubricasPDF(
   // ═══════════════════════════════════════════
   doc.addPage();
   pageNum++;
-  y = 22;
+  y = 28;
 
   y = drawSectionTitle(doc, "INDICADORES MEL RÚBRICAS", margin, y);
   y += 6;
@@ -159,11 +159,11 @@ export async function generarMelRubricasPDF(
   ];
 
   for (const item of kpiItems) {
-    if (y + 38 > pageH - 15) {
+    if (y + 38 > pageH - 28) {
       drawPageFooter(pageNum);
       doc.addPage();
       pageNum++;
-      y = 22;
+      y = 28;
     }
     y = drawKpiBlock(doc, item.label, item.description, item.kpi, margin, y, contentW);
     y += 6;
@@ -179,7 +179,7 @@ export async function generarMelRubricasPDF(
   // ═══════════════════════════════════════════
   doc.addPage();
   pageNum++;
-  y = 22;
+  y = 28;
 
   y = drawSectionTitle(doc, "RESULTADOS INDIVIDUALES", margin, y);
   y += 3;
@@ -207,11 +207,11 @@ export async function generarMelRubricasPDF(
   drawTableHeader();
 
   data.directivos.forEach((d, rowIdx) => {
-    if (y + rowH > pageH - 15) {
+    if (y + rowH > pageH - 28) {
       drawPageFooter(pageNum);
       doc.addPage();
       pageNum++;
-      y = 22;
+      y = 28;
       drawTableHeader();
     }
 

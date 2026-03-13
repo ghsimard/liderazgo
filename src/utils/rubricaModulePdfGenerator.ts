@@ -65,7 +65,7 @@ export async function generarPDFRubricaModulo(
   let y = 0;
 
   const addFooter = () => {
-    const footerY = pageH - 15;
+    const footerY = pageH - 18;
     const cosmoDims = logoDims(cosmoSize.width, cosmoSize.height, FOOTER_COSMO_H + 1);
     try { doc.addImage(cosmoB64, "PNG", margin, footerY - 4, cosmoDims.w, cosmoDims.h); } catch {}
     doc.setFontSize(8);
@@ -79,10 +79,10 @@ export async function generarPDFRubricaModulo(
   };
 
   const checkPageBreak = (needed: number) => {
-    if (y + needed > pageH - 25) {
+    if (y + needed > pageH - 28) {
       addFooter();
       doc.addPage();
-      y = 25;
+      y = 28;
     }
   };
 
@@ -128,7 +128,7 @@ export async function generarPDFRubricaModulo(
 
   // ── DETAIL PAGES ──
   doc.addPage();
-  y = 25;
+  y = 28;
 
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");

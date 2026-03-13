@@ -19,6 +19,13 @@ export const COVER_LOGO_H = 24;   // Cover page programme logos
 export const HEADER_LOGO_H = 14;  // Interior page header logos
 export const FOOTER_COSMO_H = 7;  // Footer Cosmo logo
 
+// ── Standard layout spacing (mm) ─────────────────────────────────
+// Use these across ALL PDF generators for consistent spacing.
+export const HEADER_LOGO_Y = 8;           // Y position where header logos are drawn
+export const CONTENT_START_Y = 32;        // Y where body content begins (below header logos + gap)
+export const FOOTER_Y_OFFSET = 18;       // Footer cosmo drawn at pageH - FOOTER_Y_OFFSET
+export const CONTENT_BOTTOM_MARGIN = 28;  // Content must stop at pageH - this value
+
 // ── Image loading utilities ───────────────────────────────────────
 
 /** Convert an image URL / imported asset to a base64 data URL */
@@ -201,7 +208,7 @@ export function drawFooterCosmo(
   },
 ): void {
   const targetH = opts.targetH ?? FOOTER_COSMO_H;
-  const footerY = opts.footerY ?? (opts.pageH - 14);
+  const footerY = opts.footerY ?? (opts.pageH - FOOTER_Y_OFFSET);
   const dims = logoDims(logos.cosmoSize.width, logos.cosmoSize.height, targetH);
 
   if (logos.cosmoB64) {

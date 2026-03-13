@@ -195,7 +195,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     // Cosmo logo bottom-left
     if (cosmoB64) {
       const dim = logoH(cosmoSize.width, cosmoSize.height, 8);
-      doc.addImage(cosmoB64, "PNG", margin, pageH - 14, dim.w, dim.h);
+      doc.addImage(cosmoB64, "PNG", margin, pageH - 18, dim.w, dim.h);
     }
   };
 
@@ -206,7 +206,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       doc.setPage(p);
       doc.setFontSize(8);
       doc.setTextColor(130, 130, 130);
-      doc.text(`${p - 1}/${totalPages}`, pageW - margin, pageH - 8, { align: "right" });
+      doc.text(`${p - 1}/${totalPages}`, pageW - margin, pageH - 14, { align: "right" });
       doc.setTextColor(30, 30, 30);
     }
   };
@@ -214,7 +214,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   let y = 0;
 
   const checkPageBreak = (needed: number): number => {
-    if (y + needed > pageH - 22) {
+    if (y + needed > pageH - 28) {
       drawFooter();
       doc.addPage();
       y = drawHeader();
