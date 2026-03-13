@@ -363,6 +363,7 @@ export default function AdminAmbienteStatsTab() {
     setGenerating(false);
   };
 
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
         <RefreshCw className="animate-spin w-6 h-6 text-muted-foreground" />
