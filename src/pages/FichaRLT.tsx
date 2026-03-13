@@ -622,7 +622,7 @@ export default function FichaRLTForm() {
     const toInt = (v: string | undefined) => (v ? parseInt(v) : null);
 
     const payload = {
-      acepta_datos: data.acepta_datos === "Sí",
+      acepta_datos: data.acepta_datos,
       nombres: data.nombres,
       apellidos: data.apellidos,
       nombres_apellidos: `${data.nombres} ${data.apellidos}`,
