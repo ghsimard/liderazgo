@@ -431,7 +431,7 @@ export async function generarAmbienteEscolarReportPDF(
   doc.setFont("helvetica", "bold");
   doc.setTextColor(26, 58, 107);
   doc.text("ENCUESTADOS", margin, y);
-  y += 10;
+    y += 6;
 
   const pieColors = ["#2196F3", "#FF9800", "#4CAF50", "#9C27B0", "#F44336", "#607D8B", "#795548", "#009688", "#E91E63", "#3F51B5", "#CDDC39", "#FF5722", "#00BCD4", "#8BC34A"];
 
