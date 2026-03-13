@@ -118,6 +118,7 @@ function getImageNaturalSize(src: string): Promise<{ width: number; height: numb
 interface SectionStat {
   title: string;
   type: string;
+  questionKey?: string;
   data: { label: string; value: number; count: number }[];
 }
 
@@ -128,6 +129,8 @@ interface ReportSection {
   content?: string;
   bullets?: string[];
   chartSectionTitle?: string;
+  selectedQuestionKeys?: string[];
+  chartType?: string;
   enabled: boolean;
   isSubsection?: boolean;
 }
@@ -316,12 +319,10 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     doc.setFontSize(isSubsection ? 11 : 12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(isSubsection ? 50 : 30, isSubsection ? 80 : 60, isSubsection ? 110 : 90);
-    const prefix = numbered ? `${numbered} ` : "";
-    const indentX = isSubsection ? margin + 6 : margin;
-    const maxW = isSubsection ? contentW - 6 : contentW;
-    const lines = doc.splitTextToSize(prefix + title, maxW);
+    const prefix = numbered ? `${numbered}. ` : "";
+    const lines = doc.splitTextToSize(prefix + title, contentW);
     for (const line of lines) {
-      doc.text(line, indentX, y);
+      doc.text(line, margin, y);
       y += 6;
     }
     doc.setTextColor(30, 30, 30);
@@ -562,9 +563,19 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     if (section.type === "chart_analysis") {
       const num = getNumber(section.isSubsection);
 
-      // Find matching stats section
-      const chartData = sectionStats.find(s => s.title === section.chartSectionTitle);
-      const chartType = (section as any).chartType || "horizontal_bar";
+      // Find matching stats section: prefer selectedQuestionKeys, fallback to chartSectionTitle
+      let chartData: SectionStat | null = null;
+      if (section.selectedQuestionKeys && section.selectedQuestionKeys.length > 0) {
+        const matched = sectionStats.filter(s => s.questionKey && section.selectedQuestionKeys!.includes(s.questionKey));
+        if (matched.length > 0) {
+          const mergedData = matched.flatMap(s => s.data);
+          chartData = { title: section.chartSectionTitle || section.title, type: matched[0].type, data: mergedData };
+        }
+      }
+      if (!chartData) {
+        chartData = sectionStats.find(s => s.title === section.chartSectionTitle) || null;
+      }
+      const chartType = section.chartType || (section as any).chartType || "horizontal_bar";
 
       // Pre-calculate total height needed for section title + chart title + chart body
       // so we can do a single page-break check and keep everything together
@@ -974,14 +985,14 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     let numStr: string;
     if (entry.isSubsection) {
       tocSub++;
-      numStr = `${tocMain}.${tocSub}`;
+      numStr = `${tocMain}.${tocSub}.`;
     } else {
       tocMain++;
       tocSub = 0;
-      numStr = String(tocMain);
+      numStr = `${tocMain}.`;
     }
 
-    const indent = entry.isSubsection ? margin + 10 : margin + 4;
+    const indent = margin + 4;
     doc.setFont("helvetica", entry.isSubsection ? "normal" : "bold");
     doc.setTextColor(60, 60, 60);
     const label = `${numStr}  ${entry.title}`;
