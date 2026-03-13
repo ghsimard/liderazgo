@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Progress } from "@/components/ui/progress";
 import { RefreshCw, Users, BookOpen, GraduationCap, Filter, Download, FileText, FlaskConical } from "lucide-react";
-import { ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, FREQUENCY_OPTIONS, JORNADA_OPTIONS, type LikertSection } from "@/data/ambienteEscolarData";
+import { ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, FREQUENCY_OPTIONS, JORNADA_OPTIONS, GRADOS_COMPLETOS, GRADOS_ESTUDIANTE, ANOS_OPTIONS, FUENTES_RETROALIMENTACION, type LikertSection } from "@/data/ambienteEscolarData";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { generarAmbienteEscolarReportPDF, type AmbienteReportData } from "@/utils/ambienteEscolarReportPdfGenerator";
 import { useAppImages } from "@/hooks/useAppImages";
