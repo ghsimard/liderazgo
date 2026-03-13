@@ -1,33 +1,6 @@
 import jsPDF from "jspdf";
 import { genderizeRole } from "@/utils/genderizeRole";
-
-function loadImageAsBase64(src: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
-
-function getImageNaturalSize(src: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
+import { loadImageAsBase64, getImageNaturalSize, logoDims, COVER_LOGO_H, FOOTER_COSMO_H } from "@/utils/pdfLogoHelper";
 
 const NIVEL_LABELS: Record<string, string> = {
   avanzado: "Avanzado",
