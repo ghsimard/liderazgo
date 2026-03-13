@@ -936,15 +936,23 @@ export async function generarAmbienteEscolarReportPDF(
   for (let itemIdx = 0; itemIdx < UNIFIED_REPORT_ITEMS.length; itemIdx++) {
     const item = UNIFIED_REPORT_ITEMS[itemIdx];
 
-    // Detect section change — add gap separator
+    // Detect section change — draw section title bar
     if (item.section !== currentSection) {
       if (currentSection) {
-        sectionRanges.push({ section: currentSection, startY: sectionStartY, endY: y, page: pageNum });
-        y += 4; // gap between sections
+        y += 2; // small gap between sections
       }
       currentSection = item.section;
-      sectionStartY = y;
       sectionItemIdx = 0;
+
+      // Section title bar
+      ensureSpace(8);
+      doc.setFillColor(70, 70, 70);
+      doc.rect(margin, y, contentW, 6, "F");
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.text(item.section.toUpperCase(), margin + contentW / 2, y + 4.2, { align: "center" });
+      y += 7;
     }
 
     const textLines = wrapText(item.reportText, col0W - 4, 6.5);
