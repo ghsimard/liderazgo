@@ -973,7 +973,16 @@ export async function generarAmbienteEscolarReportPDF(
       doc.text("N = Nunca / Casi nunca", margin, y); y += 6;
 
       drawUnifiedTableHeader();
-      sectionStartY = y;
+      if (currentSection) {
+        // Re-draw section title bar on new page
+        doc.setFillColor(70, 70, 70);
+        doc.rect(margin, y - 1, contentW, 6, "F");
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(255, 255, 255);
+        doc.text(currentSection.toUpperCase() + " (cont.)", margin + contentW / 2, y + 3.2, { align: "center" });
+        y += 7;
+      }
     }
 
     // Alternating row background
