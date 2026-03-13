@@ -938,8 +938,23 @@ export async function generarAmbienteEscolarReportPDF(
       currentSection = item.section;
       sectionItemIdx = 0;
 
-      // Section title bar
-      ensureSpace(8);
+      // Section title bar — if page break needed, redraw table header
+      if (y + 8 > bottomLimit) {
+        drawPageFooter(pageNum);
+        doc.addPage();
+        pageNum++;
+        drawPageHeader();
+
+        // S/A/N legend repeat
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(30, 30, 30);
+        doc.text("S = Siempre / Casi Siempre", margin, y); y += 4;
+        doc.text("A = A veces", margin, y); y += 4;
+        doc.text("N = Nunca / Casi nunca", margin, y); y += 6;
+
+        drawUnifiedTableHeader();
+      }
       doc.setFillColor(70, 70, 70);
       doc.rect(margin, y, contentW, 6, "F");
       doc.setFontSize(8);
