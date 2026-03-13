@@ -208,7 +208,7 @@ export function drawFooterCosmo(
   },
 ): void {
   const targetH = opts.targetH ?? FOOTER_COSMO_H;
-  const footerY = opts.footerY ?? (opts.pageH - 14);
+  const footerY = opts.footerY ?? (opts.pageH - FOOTER_Y_OFFSET);
   const dims = logoDims(logos.cosmoSize.width, logos.cosmoSize.height, targetH);
 
   if (logos.cosmoB64) {
