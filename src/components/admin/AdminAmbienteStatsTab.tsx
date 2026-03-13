@@ -4,12 +4,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { DOCENTES_LIKERT, ESTUDIANTES_LIKERT, ACUDIENTES_LIKERT } from "@/data/ambienteEscolarData";
 import { Button } from "@/components/ui/button";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Progress } from "@/components/ui/progress";
-import { RefreshCw, Users, BookOpen, GraduationCap, Filter, Download, FileText } from "lucide-react";
-import { ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, FREQUENCY_OPTIONS, type LikertSection } from "@/data/ambienteEscolarData";
+import { RefreshCw, Users, BookOpen, GraduationCap, Filter, Download, FileText, FlaskConical } from "lucide-react";
+import { ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, FREQUENCY_OPTIONS, JORNADA_OPTIONS, type LikertSection } from "@/data/ambienteEscolarData";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { generarAmbienteEscolarReportPDF, type AmbienteReportData } from "@/utils/ambienteEscolarReportPdfGenerator";
 import { useAppImages } from "@/hooks/useAppImages";
