@@ -522,7 +522,15 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
         sectionStats: stats.sections,
         generalSatisfaction: stats.generalSatisfaction,
         overallSatisfaction: stats.overallSatisfaction,
-        comments: stats.comments,
+        comments: (() => {
+          const annexSection = reportContent.sections.find(s => s.type === "comments_annex" && s.enabled);
+          if (annexSection?.selectedCommentIndices && annexSection.selectedCommentIndices.length > 0) {
+            return annexSection.selectedCommentIndices
+              .filter(i => i >= 0 && i < stats.comments.length)
+              .map(i => stats.comments[i]);
+          }
+          return stats.comments;
+        })(),
         executiveSummary: reportContent.executiveSummaryEnabled ? reportContent.executiveSummary : undefined,
       });
       toast({ title: "PDF generado exitosamente" });
