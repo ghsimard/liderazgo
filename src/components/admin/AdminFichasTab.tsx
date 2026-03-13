@@ -288,7 +288,8 @@ export default function AdminFichasTab() {
     const isRector = cargo.includes("rector");
     const isCoordinador = cargo.includes("coordinador");
     const datosPDF: Record<string, unknown> = { ...f };
-    generarPDFFicha(datosPDF, { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite }, { showLogoRlt: isRector, showLogoClt: isCoordinador });
+    const pdfLogos = getPdfLogoSources(images);
+    generarPDFFicha(datosPDF, { logoRLT: pdfLogos.logoRLT, logoCLTDark: pdfLogos.logoCLT, logoCosmo: pdfLogos.logoCosmo }, { showLogoRlt: isRector, showLogoClt: isCoordinador });
   };
 
   const [batchLoading, setBatchLoading] = useState(false);
