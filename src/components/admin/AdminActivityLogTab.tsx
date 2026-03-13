@@ -271,6 +271,17 @@ export default function AdminActivityLogTab({ isSuperAdmin = false }: { isSuperA
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-3 items-end">
             <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Región</label>
+              <MultiSelect
+                options={regiones}
+                selected={selRegions}
+                onChange={(v) => { setSelRegions(v); setPage(0); }}
+                placeholder="Todas las regiones"
+                className="w-52"
+              />
+            </div>
+
+            <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Cédula</label>
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
