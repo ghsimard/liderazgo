@@ -868,8 +868,9 @@ export async function generarAmbienteEscolarReportPDF(
   doc.text("FORTALEZAS Y RETOS", margin, y);
   y += 8;
 
-  // Highlighted note (matching old PDF: simple line, no box)
-  drawHighlightedNote(HELP_BOX_FORTALEZAS);
+  // Help box (matching old PDF: boxed with ! icon)
+  drawHelpBox(HELP_BOX_FORTALEZAS);
+  y += 2;
 
   // S/A/N legend
   doc.setFontSize(8);
