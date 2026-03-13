@@ -11,6 +11,23 @@ import logoCLT from "@/assets/logo_clt_white.png";
 import logoCosmo from "@/assets/logo_cosmo.png";
 import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 
+/** Decode HTML entities only (including Spanish accented characters) */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ")
+    .replace(/&Aacute;/g, "Á").replace(/&aacute;/g, "á")
+    .replace(/&Eacute;/g, "É").replace(/&eacute;/g, "é")
+    .replace(/&Iacute;/g, "Í").replace(/&iacute;/g, "í")
+    .replace(/&Oacute;/g, "Ó").replace(/&oacute;/g, "ó")
+    .replace(/&Uacute;/g, "Ú").replace(/&uacute;/g, "ú")
+    .replace(/&Ntilde;/g, "Ñ").replace(/&ntilde;/g, "ñ")
+    .replace(/&iquest;/g, "¿").replace(/&iexcl;/g, "¡")
+    .replace(/&Uuml;/g, "Ü").replace(/&uuml;/g, "ü")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
+}
+
 /** Strip HTML tags and decode entities, preserving line breaks */
 function htmlToPlainText(html: string): string {
   if (!html) return "";
@@ -21,20 +38,9 @@ function htmlToPlainText(html: string): string {
   text = text.replace(/<li[^>]*>/gi, "• ");
   text = text.replace(/<\/(?:div|h[1-6]|tr|blockquote)>/gi, "\n");
   text = text.replace(/<[^>]+>/g, "");
-  text = text.replace(/&amp;/g, "&");
-  text = text.replace(/&lt;/g, "<");
-  text = text.replace(/&gt;/g, ">");
-  text = text.replace(/&quot;/g, '"');
-  text = text.replace(/&#39;/g, "'");
-  text = text.replace(/&nbsp;/g, " ");
+  text = decodeEntities(text);
   text = text.replace(/\n{3,}/g, "\n\n");
   return text.trim();
-}
-
-/** Decode HTML entities only */
-function decodeEntities(s: string): string {
-  return s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ");
 }
 
 /** Parse HTML into styled segments: { text, bold, italic } */
@@ -304,7 +310,8 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   };
 
   const writeSectionTitle = (title: string, numbered?: string, isSubsection?: boolean) => {
-    y = checkPageBreak(14);
+    // Reserve enough space for title + beginning of paragraph to keep them together
+    y = checkPageBreak(isSubsection ? 22 : 30);
     y += isSubsection ? 2 : 4;
     doc.setFontSize(isSubsection ? 11 : 12);
     doc.setFont("helvetica", "bold");
@@ -763,9 +770,12 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
           const rowGap = 10;
           const maxVal = Math.max(...chartData.data.map((d: any) => d.value), 1);
 
+          // Pre-calculate total chart height to prevent page splits
+          const totalChartH = chartData.data.length * (rowGap + 3) + 4;
+          y = checkPageBreak(Math.min(totalChartH, pageH - 60));
+
           for (let idx = 0; idx < chartData.data.length; idx++) {
             const item = chartData.data[idx];
-            y = checkPageBreak(rowGap + 6);
 
             // Label line: label on the left, value% on the right
             doc.setFontSize(7.5);
