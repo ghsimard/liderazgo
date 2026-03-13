@@ -308,9 +308,9 @@ export async function generarPDFFicha(
   // ── Disclaimer on page 1 ──
   const totalPages = (doc.internal as { getNumberOfPages?: () => number }).getNumberOfPages?.() ?? 1;
 
-  const cosmoTargetH = 8;
-  const cosmoLogoW = cosmoTargetH * (cosmoSize.width / cosmoSize.height);
-  const cosmoLogoH = cosmoTargetH;
+  const cosmoDims = logoDims(cosmoSize.width, cosmoSize.height, FOOTER_COSMO_H);
+  const cosmoLogoW = cosmoDims.w;
+  const cosmoLogoH = cosmoDims.h;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
 
