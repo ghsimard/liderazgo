@@ -75,12 +75,6 @@ export const asistenciaForm: SatisfaccionFormDef = {
       title: "Información de la sesión",
       questions: [
         {
-          key: "fecha_registro",
-          label: "Selecciona la fecha en la que estás diligenciando este formulario",
-          type: "date",
-          required: true,
-        },
-        {
           key: "tipo_actividad",
           label: "Elige la actividad en la que estás participando hoy",
           type: "radio",
