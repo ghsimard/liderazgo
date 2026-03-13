@@ -272,12 +272,12 @@ export async function generarAmbienteEscolarReportPDF(
     const noteH = Math.max(7, lines.length * lineH + 2);
     const noteY = Math.min(y, bottomLimit - noteH);
 
-    doc.setFillColor(255, 244, 163);
+    doc.setFillColor(70, 70, 70);
     doc.rect(margin, noteY, contentW, noteH, "F");
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(30, 30, 30);
+    doc.setTextColor(255, 255, 255);
     doc.text(lines, margin + 2, noteY + 3.4);
 
     y = noteY + noteH + 1.5;
