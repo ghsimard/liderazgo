@@ -956,9 +956,6 @@ export async function generarAmbienteEscolarReportPDF(
     const rowH = Math.max(10, textLines.length * 3 + 4);
 
     if (y + rowH > bottomLimit) {
-      if (currentSection) {
-        sectionRanges.push({ section: currentSection, startY: sectionStartY, endY: y, page: pageNum });
-      }
       drawPageFooter(pageNum);
       doc.addPage();
       pageNum++;
