@@ -1061,13 +1061,14 @@ export async function generarAmbienteEscolarReportPDF(
     doc.setLineWidth(0.15);
     doc.rect(margin, range.startY, sectionLabelW, sectionH);
 
-    // Rotated text
+    // Rotated text centered inside the label column
     doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(80, 80, 80);
 
     const sectionLabel = range.section.toUpperCase();
-    doc.text(sectionLabel, margin + sectionLabelW / 2 + 1, midY, {
+    const textX = margin + sectionLabelW / 2;
+    doc.text(sectionLabel, textX, midY, {
       align: "center",
       angle: 90,
     });
