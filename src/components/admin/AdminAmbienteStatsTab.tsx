@@ -259,7 +259,7 @@ export default function AdminAmbienteStatsTab() {
       const flags = getLogoFlags(selectedIE);
       await generarAmbienteEscolarReportPDF(
         reportData,
-        { logoRLT: images.logo_rlt_white, logoCLT: images.logo_clt || images.logo_clt_white, logoCosmo: images.logo_cosmo },
+        getPdfLogoSources(images),
         flags
       );
       toast({ title: "PDF generado", description: `Informe descargado para ${selectedIE}` });
