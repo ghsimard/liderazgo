@@ -207,11 +207,11 @@ export async function generarMelRubricasPDF(
   drawTableHeader();
 
   data.directivos.forEach((d, rowIdx) => {
-    if (y + rowH > pageH - 15) {
+    if (y + rowH > pageH - 28) {
       drawPageFooter(pageNum);
       doc.addPage();
       pageNum++;
-      y = 22;
+      y = 28;
       drawTableHeader();
     }
 
