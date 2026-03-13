@@ -619,7 +619,7 @@ function ResponseDetailDialog({
 
   return (
     <Dialog open={!!response} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b bg-muted/30">
           <DialogHeader>
@@ -649,7 +649,7 @@ function ResponseDetailDialog({
         </div>
 
         {/* Body - structured answers */}
-        <ScrollArea className="flex-1 px-6 py-4">
+        <ScrollArea className="flex-1 min-h-0 px-6 py-4">
           <div className="space-y-6">
             {formDef ? (
               formDef.sections.map((section, si) => {

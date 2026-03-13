@@ -1,28 +1,63 @@
 
 
-## Problème
+## Probleme actuel
 
-La modale `ResponseDetailDialog` dans `AdminSatisfaccionesTab.tsx` utilise `DialogContent` avec `flex flex-col max-h-[85vh]`, et un `ScrollArea` avec `flex-1` pour le corps. Cependant, le `DialogContent` global (dans `dialog.tsx`) applique `overflow-y-auto max-h-[90vh]`, ce qui entre en conflit : le contenu entier s'étend au lieu de laisser le `ScrollArea` gérer le défilement.
+Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
 
-## Solution
+## Proposition : Sidebar avec sections groupees
 
-Ajouter `overflow-hidden` sur le `DialogContent` de cette modale spécifique (ligne 622) pour neutraliser le `overflow-y-auto` global. Cela forcera le `ScrollArea` interne à devenir la seule zone scrollable, avec l'en-tête qui reste fixe en haut.
+Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
 
-### Modification
+### Structure proposee
 
-**`src/components/admin/AdminSatisfaccionesTab.tsx` — ligne 622**
-
-Changer :
-```tsx
-<DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
+```text
+┌──────────────────┬──────────────────────────────────┐
+│  SIDEBAR         │  CONTENU                         │
+│                  │                                  │
+│  ▼ Formularios   │                                  │
+│    Enlaces       │                                  │
+│                  │                                  │
+│  ▼ Fichas RLT    │                                  │
+│    Lista         │                                  │
+│    Regiones      │                                  │
+│                  │                                  │
+│  ▼ Encuesta 360° │                                  │
+│    Config        │                                  │
+│    Inicial       │                                  │
+│    Final         │                                  │
+│    Informes Ini. │                                  │
+│    Informes Fin. │                                  │
+│                  │                                  │
+│  ▼ Analisis      │                                  │
+│    MEL           │                                  │
+│    Rubricas      │                                  │
+│                  │                                  │
+│  ▼ Sistema       │                                  │
+│    Admins        │                                  │
+│    Apreciaciones*│                                  │
+│    Mensajes*     │                                  │
+│    Changelog*    │                                  │
+│                  │  (* = superadmin only)            │
+└──────────────────┴──────────────────────────────────┘
 ```
-En :
-```tsx
-<DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
-```
 
-Ajout aussi de `min-h-0` sur le `ScrollArea` (ligne 652) pour garantir que flex-1 fonctionne correctement dans un conteneur flex :
-```tsx
-<ScrollArea className="flex-1 min-h-0 px-6 py-4">
-```
+### Modifications
+
+1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
+
+2. **Modifier `src/pages/AdminPage.tsx`** :
+   - Envelopper le layout dans `SidebarProvider`
+   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
+   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
+   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
+   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
+
+3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
+
+### Points techniques
+
+- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
+- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
+- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
+- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
 
