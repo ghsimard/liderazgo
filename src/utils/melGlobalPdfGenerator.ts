@@ -271,7 +271,7 @@ export async function generarMelGlobalPDF(
   // ═══════════════════════════════════════════
   doc.addPage();
   pageNum++;
-  y = 22;
+  y = 28;
 
   if (domainImg) {
     y = drawSectionTitle(doc, "PROGRESIÓN POR DOMINIO", margin, y);
@@ -281,11 +281,11 @@ export async function generarMelGlobalPDF(
     y += imgH + 8;
   }
 
-  if (y + 10 + agg.domainDeltas.length * 7 > pageH - 15) {
+  if (y + 10 + agg.domainDeltas.length * 7 > pageH - 28) {
     drawPageFooter(pageNum);
     doc.addPage();
     pageNum++;
-    y = 22;
+    y = 28;
   }
   y = drawSectionTitle(doc, "DELTAS PROMEDIO POR DOMINIO", margin, y);
   y += 3;
@@ -298,7 +298,7 @@ export async function generarMelGlobalPDF(
   // ═══════════════════════════════════════════
   doc.addPage();
   pageNum++;
-  y = 22;
+  y = 28;
 
   if (radarImg) {
     y = drawSectionTitle(doc, "COMPARACIÓN INICIAL VS FINAL", margin, y);
@@ -309,15 +309,15 @@ export async function generarMelGlobalPDF(
   }
 
   if (compImg) {
-    if (y + 80 > pageH - 15) {
+    if (y + 80 > pageH - 28) {
       drawPageFooter(pageNum);
       doc.addPage();
       pageNum++;
-      y = 22;
+      y = 28;
     }
     y = drawSectionTitle(doc, "DELTAS POR COMPETENCIA", margin, y);
     y += 3;
-    const compH = Math.min(88, pageH - y - 20);
+    const compH = Math.min(88, pageH - y - 28);
     doc.addImage(compImg, "PNG", margin, y, contentW, compH);
     y += compH + 8;
   }
@@ -329,7 +329,7 @@ export async function generarMelGlobalPDF(
   // ═══════════════════════════════════════════
   doc.addPage();
   pageNum++;
-  y = 22;
+  y = 28;
 
   y = drawSectionTitle(doc, "DETALLE POR COMPETENCIA", margin, y);
   y += 3;
