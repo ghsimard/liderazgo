@@ -252,7 +252,11 @@ export default function AdminAmbienteStatsTab() {
   };
 
   const handleGeneratePDF = async () => {
-    if (selectedIE === "__all__") return;
+    if (selectedIE === "__all__") {
+      // Generate ZIP with all institutions in the current filter
+      await handleBatchExport();
+      return;
+    }
     setGenerating(true);
     try {
       const reportData = buildReportData(selectedIE);
