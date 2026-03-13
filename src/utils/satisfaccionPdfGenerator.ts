@@ -317,12 +317,10 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     doc.setFontSize(isSubsection ? 11 : 12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(isSubsection ? 50 : 30, isSubsection ? 80 : 60, isSubsection ? 110 : 90);
-    const prefix = numbered ? `${numbered} ` : "";
-    const indentX = isSubsection ? margin + 6 : margin;
-    const maxW = isSubsection ? contentW - 6 : contentW;
-    const lines = doc.splitTextToSize(prefix + title, maxW);
+    const prefix = numbered ? `${numbered}. ` : "";
+    const lines = doc.splitTextToSize(prefix + title, contentW);
     for (const line of lines) {
-      doc.text(line, indentX, y);
+      doc.text(line, margin, y);
       y += 6;
     }
     doc.setTextColor(30, 30, 30);
