@@ -40,6 +40,7 @@ interface FichaFilterData {
 export default function AdminFichasTab() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { images } = useAppImages();
 
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [total, setTotal] = useState(0);
