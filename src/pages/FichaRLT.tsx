@@ -106,7 +106,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const defaultValues: Partial<FormData> = {
-  acepta_datos: "" as any,
+  acepta_datos: false as any,
   lengua_materna: "Español",
   enfermedad_base: "No",
   discapacidad: "No",
