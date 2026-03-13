@@ -746,25 +746,42 @@ export async function generarAmbienteEscolarReportPDF(
 
       if (totalGrados > 0) {
         const barH = 8;
-        let bx = margin;
+        const labelSpace = 5;
 
-        // Draw segmented bar
+        // Pre-compute segments
+        const segments: { label: string; pct: number; segW: number; color: [number, number, number] }[] = [];
         for (let i = 0; i < gradoLabels.length; i++) {
           const pct = (gradoCounts[gradoLabels[i]] / totalGrados) * 100;
           if (pct === 0) continue;
-          const segW = (pct / 100) * contentW;
-          const [r, g2, b] = segColors[i % segColors.length];
-          doc.setFillColor(r, g2, b);
-          doc.rect(bx, y, segW, barH, "F");
+          segments.push({
+            label: gradoLabels[i],
+            pct,
+            segW: (pct / 100) * contentW,
+            color: segColors[i % segColors.length],
+          });
+        }
 
-          // Show percentage above segment if wide enough
-          if (pct >= 4) {
-            doc.setFontSize(5.5);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(255, 255, 255);
-            doc.text(`${Math.round(pct)}%`, bx + segW / 2, y + barH / 2 + 1.5, { align: "center" });
+        // Draw percentage labels above the bar
+        let bx = margin;
+        doc.setFontSize(5.5);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 30, 30);
+        for (const seg of segments) {
+          if (seg.pct >= 1) {
+            doc.text(`${Math.round(seg.pct)}%`, bx + seg.segW / 2, y + labelSpace - 1, { align: "center" });
           }
-          bx += segW;
+          bx += seg.segW;
+        }
+
+        y += labelSpace;
+
+        // Draw segmented bar
+        bx = margin;
+        for (const seg of segments) {
+          const [r, g2, b] = seg.color;
+          doc.setFillColor(r, g2, b);
+          doc.rect(bx, y, seg.segW, barH, "F");
+          bx += seg.segW;
         }
 
         y += barH + 4;
@@ -772,23 +789,19 @@ export async function generarAmbienteEscolarReportPDF(
         // Legend (multi-line, ~5 per row)
         const perRow = 5;
         let lx = margin;
-        let legendItems = gradoLabels.filter(g => gradoCounts[g] > 0);
-        for (let i = 0; i < legendItems.length; i++) {
+        for (let i = 0; i < segments.length; i++) {
           if (i > 0 && i % perRow === 0) {
             lx = margin;
             y += 5;
           }
-          const gLabel = legendItems[i];
-          const idx = gradoLabels.indexOf(gLabel);
-          const pct = Math.round((gradoCounts[gLabel] / totalGrados) * 100);
-          const [r, g2, b] = segColors[idx % segColors.length];
+          const seg = segments[i];
+          const [r, g2, b] = seg.color;
           doc.setFillColor(r, g2, b);
           doc.rect(lx, y, 2.5, 2.5, "F");
           doc.setFontSize(6);
           doc.setFont("helvetica", "normal");
           doc.setTextColor(30, 30, 30);
-          const txt = `${gLabel} - ${pct}%`;
-          doc.text(txt, lx + 3.5, y + 2);
+          doc.text(`${seg.label} - ${Math.round(seg.pct)}%`, lx + 3.5, y + 2);
           lx += 32;
         }
         y += 8;
