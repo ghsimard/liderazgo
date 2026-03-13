@@ -648,7 +648,7 @@ function ResponseDetailDialog({
         </div>
 
         {/* Body - structured answers */}
-        <ScrollArea className="flex-1 min-h-0 px-6 py-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
           <div className="space-y-6">
             {formDef ? (
               formDef.sections.map((section, si) => {
@@ -689,7 +689,7 @@ function ResponseDetailDialog({
               ))
             )}
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
