@@ -513,7 +513,9 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       const num = getNumber(section.isSubsection);
       sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
       writeSectionTitle(section.title, num, section.isSubsection);
-      y = checkPageBreak(50);
+      // Ensure entire table (header + all rows) stays on one page
+      const totalTableH = rowH * (rows.length + 1) + 4;
+      y = checkPageBreak(totalTableH);
 
       // Draw table
       const formLabel = FORM_TYPE_LABELS[filterType] || filterType;
