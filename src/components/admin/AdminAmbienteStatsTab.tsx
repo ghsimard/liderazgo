@@ -348,16 +348,19 @@ export default function AdminAmbienteStatsTab() {
           r.anos_estudiando = ANOS_OPTIONS[Math.floor(Math.random() * ANOS_OPTIONS.length)];
           r.grado = GRADOS_ESTUDIANTE[Math.floor(Math.random() * GRADOS_ESTUDIANTE.length)];
         } else if (formType === "acudientes") {
-          // Weighted distribution: most pick common grades, a few pick rare ones for <1% demo
-          const weighted = ["3°","4°","5°","6°","7°","8°","9°","5°","6°","7°","3°","4°","5°","6°","7°","8°","9°","10°","11°"];
+          // Weighted pool ensuring all 14 grades appear; rare ones have fewer entries for <1% segments
+          const weighted = [
+            "Primera infancia",
+            "Preescolar", "Preescolar",
+            "1°", "1°", "2°", "2°",
+            "3°","3°","3°", "4°","4°","4°", "5°","5°","5°","5°",
+            "6°","6°","6°","6°", "7°","7°","7°","7°", "8°","8°","8°",
+            "9°","9°","9°", "10°","10°", "11°","11°",
+            "12°",
+          ];
           const numGrados = 1 + Math.floor(Math.random() * 2);
-          if (Math.random() < 0.02) {
-            // Rare: pick "Primera infancia" or "12°" to create <1% segments
-            r.grados = [Math.random() < 0.5 ? "Primera infancia" : "12°"];
-          } else {
-            const shuffled = [...weighted].sort(() => Math.random() - 0.5);
-            r.grados = shuffled.slice(0, numGrados);
-          }
+          const shuffled = [...weighted].sort(() => Math.random() - 0.5);
+          r.grados = shuffled.slice(0, numGrados);
         }
 
         for (const sec of likert) {
