@@ -531,7 +531,7 @@ export default function AdminSatisfaccionesTab() {
           <AdminSatisfaccionStats regions={regions} />
         </TabsContent>
 
-        <TabsContent value="report" className="mt-4">
+        <TabsContent value="report" className="mt-4" forceMount>
           <AdminSatisfaccionReportTab regions={regions} />
         </TabsContent>
 
