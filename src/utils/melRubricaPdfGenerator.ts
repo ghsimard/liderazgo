@@ -6,49 +6,7 @@
 import jsPDF from "jspdf";
 import type { MelRubricaData, DirectivoRubricaResult, MelRubricaKPIs } from "./melRubricaCalculator";
 import { NIVEL_LABELS } from "./melRubricaCalculator";
-
-// ── Grayscale tokens ──
-const C_BLACK: [number, number, number] = [30, 30, 30];
-const C_DARK: [number, number, number] = [60, 60, 60];
-const C_MID: [number, number, number] = [120, 120, 120];
-const C_LIGHT: [number, number, number] = [170, 170, 170];
-const C_SUBTLE: [number, number, number] = [200, 200, 200];
-const C_BG: [number, number, number] = [240, 240, 240];
-const C_STRIPE: [number, number, number] = [248, 248, 248];
-const C_HEADER_BG: [number, number, number] = [50, 50, 50];
-const C_WHITE: [number, number, number] = [255, 255, 255];
-
-function pctStr(n: number): string { return `${n.toFixed(1)}%`; }
-
-// ── Image helpers ──
-
-function loadImageAsBase64(src: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
-
-function getImageNaturalSize(src: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
+import { loadImageAsBase64, getImageNaturalSize, logoDims, COVER_LOGO_H } from "@/utils/pdfLogoHelper";
 
 // ── Types ──
 
