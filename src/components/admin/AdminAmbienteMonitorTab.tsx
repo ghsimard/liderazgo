@@ -37,12 +37,16 @@ export default function AdminAmbienteMonitorTab() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [contactDialog, setContactDialog] = useState<Directivo | null>(null);
+  const [filterRegion, setFilterRegion] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchText, setSearchText] = useState("");
+  const { regionNames, getInstitucionesForRegion } = useGeographicData();
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       const [fichasRes, subRes] = await Promise.all([
-        supabase.from("fichas_rlt").select("nombre_ie, nombres_apellidos, correo_personal, correo_institucional, celular_personal, telefono_ie, prefiere_correo, cargo_actual"),
+        supabase.from("fichas_rlt").select("nombre_ie, nombres_apellidos, correo_personal, correo_institucional, celular_personal, telefono_ie, prefiere_correo, cargo_actual, region"),
         supabase.from("encuestas_ambiente_escolar").select("institucion_educativa, tipo_formulario"),
       ]);
       setDirectivos((fichasRes.data as Directivo[]) || []);
