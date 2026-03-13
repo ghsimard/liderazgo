@@ -12,6 +12,7 @@ import { Loader2, BarChart3, Sparkles, RefreshCw, FileDown } from "lucide-react"
 import { useAppImages } from "@/hooks/useAppImages";
 import { useGeographicData } from "@/hooks/useGeographicData";
 import { generarPDFRegionalRubricas, type RegionalModuleData } from "@/utils/rubricaRegionalPdfGenerator";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 
 interface RubricaModule {
   id: string;
@@ -312,9 +313,7 @@ export default function AdminRubricaRegionalReport() {
       await generarPDFRegionalRubricas(
         { modules: reportModules, globalStats, regionName: displayRegionName },
         {
-          logoRLT: images.logo_rlt_white,
-          logoCLT: images.logo_clt,
-          logoCosmo: images.logo_cosmo,
+          ...getPdfLogoSources(images),
           showLogoRLT: showRLT,
           showLogoCLT: showCLT,
         },

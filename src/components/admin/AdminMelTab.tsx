@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { useAppImages } from "@/hooks/useAppImages";
 import { generarMelPDF } from "@/utils/reporte360MelPdfGenerator";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 import { Progress } from "@/components/ui/progress";
 import JSZip from "jszip";
 import AdminMelGlobalReport from "./AdminMelGlobalReport";
@@ -61,9 +62,10 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
     if (!data) return;
     setDownloading(true);
     try {
+      const pdfLogos = getPdfLogoSources(images);
       await generarMelPDF(data, {
-        logoRLT: images.logo_rlt_white || images.logo_rlt,
-        logoCLT: images.logo_clt || images.logo_clt_white,
+        logoRLT: pdfLogos.logoRLT,
+        logoCLT: pdfLogos.logoCLT,
         showRLT: logoConfig.showRLT,
         showCLT: logoConfig.showCLT,
       });
@@ -423,9 +425,10 @@ export default function AdminMelTab() {
     setBulkExporting(true);
     setBulkProgress({ current: 0, total: filteredDirectivos.length });
     const zip = new JSZip();
+    const pdfSrc = getPdfLogoSources(images);
     const baseLogos = {
-      logoRLT: images.logo_rlt_white || images.logo_rlt,
-      logoCLT: images.logo_clt || images.logo_clt_white,
+      logoRLT: pdfSrc.logoRLT,
+      logoCLT: pdfSrc.logoCLT,
     };
 
     // Pre-fetch region logo configs

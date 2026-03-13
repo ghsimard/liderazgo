@@ -19,9 +19,8 @@ import type { Tables } from "@/integrations/supabase/types";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
 import { MultiSelect } from "@/components/ui/multi-select";
 import JSZip from "jszip";
-import logoRLTWhite from "@/assets/logo_rlt_white.png";
-import logoCLTWhite from "@/assets/logo_clt_white.png";
-import logoCosmoWhite from "@/assets/logo_cosmo_white.png";
+import { useAppImages } from "@/hooks/useAppImages";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 
 type Ficha = Tables<"fichas_rlt">;
 const PAGE_SIZE = 20;
@@ -41,6 +40,7 @@ interface FichaFilterData {
 export default function AdminFichasTab() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { images } = useAppImages();
 
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [total, setTotal] = useState(0);
@@ -289,7 +289,8 @@ export default function AdminFichasTab() {
     const isRector = cargo.includes("rector");
     const isCoordinador = cargo.includes("coordinador");
     const datosPDF: Record<string, unknown> = { ...f };
-    generarPDFFicha(datosPDF, { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite }, { showLogoRlt: isRector, showLogoClt: isCoordinador });
+    const pdfLogos = getPdfLogoSources(images);
+    generarPDFFicha(datosPDF, { logoRLT: pdfLogos.logoRLT, logoCLTDark: pdfLogos.logoCLT, logoCosmo: pdfLogos.logoCosmo }, { showLogoRlt: isRector, showLogoClt: isCoordinador });
   };
 
   const [batchLoading, setBatchLoading] = useState(false);
@@ -319,7 +320,8 @@ export default function AdminFichasTab() {
         const isRector = cargo.includes("rector");
         const isCoordinador = cargo.includes("coordinador");
         const datosPDF: Record<string, unknown> = { ...f };
-        const blob = await generarPDFFicha(datosPDF, { logoRLT: logoRLTWhite, logoCLTDark: logoCLTWhite, logoCosmo: logoCosmoWhite }, { showLogoRlt: isRector, showLogoClt: isCoordinador }, { returnBlob: true });
+        const pdfLogos = getPdfLogoSources(images);
+        const blob = await generarPDFFicha(datosPDF, { logoRLT: pdfLogos.logoRLT, logoCLTDark: pdfLogos.logoCLT, logoCosmo: pdfLogos.logoCosmo }, { showLogoRlt: isRector, showLogoClt: isCoordinador }, { returnBlob: true });
         if (blob) {
           const fileName = `Ficha_${String(f.apellidos ?? f.nombres ?? "ficha").replace(/\s+/g, "_")}_${String(f.nombres ?? "").replace(/\s+/g, "_")}.pdf`;
           zip.file(fileName, blob);

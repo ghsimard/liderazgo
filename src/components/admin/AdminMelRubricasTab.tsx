@@ -3,6 +3,7 @@ import { supabase } from "@/utils/dbClient";
 import { calcularMelRubricas, NIVEL_LABELS, type MelRubricaData, type DirectivoRubricaResult, type MelRubricaKPIs } from "@/utils/melRubricaCalculator";
 import { generarMelRubricasPDF } from "@/utils/melRubricaPdfGenerator";
 import { useAppImages } from "@/hooks/useAppImages";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MultiSelect } from "@/components/ui/multi-select";
@@ -226,9 +227,10 @@ export default function AdminMelRubricasTab() {
     if (!melData) return;
     setGeneratingPdf(true);
     try {
+      const pdfLogos = getPdfLogoSources(images);
       await generarMelRubricasPDF(melData, {
-        logoRLT: images.logo_rlt_white,
-        logoCLT: images.logo_clt,
+        logoRLT: pdfLogos.logoRLT,
+        logoCLT: pdfLogos.logoCLT,
         showRLT: regionLogoConfig.showRLT,
         showCLT: regionLogoConfig.showCLT,
       }, filterLabel, { showIndividualResults: showIndividual });

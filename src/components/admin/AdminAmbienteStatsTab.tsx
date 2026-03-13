@@ -12,6 +12,7 @@ import { ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, FREQUENCY_OPTIO
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { generarAmbienteEscolarReportPDF, type AmbienteReportData } from "@/utils/ambienteEscolarReportPdfGenerator";
 import { useAppImages } from "@/hooks/useAppImages";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 import { useToast } from "@/hooks/use-toast";
 import JSZip from "jszip";
 
@@ -258,7 +259,7 @@ export default function AdminAmbienteStatsTab() {
       const flags = getLogoFlags(selectedIE);
       await generarAmbienteEscolarReportPDF(
         reportData,
-        { logoRLT: images.logo_rlt_white, logoCLT: images.logo_clt || images.logo_clt_white, logoCosmo: images.logo_cosmo },
+        getPdfLogoSources(images),
         flags
       );
       toast({ title: "PDF generado", description: `Informe descargado para ${selectedIE}` });
@@ -283,7 +284,7 @@ export default function AdminAmbienteStatsTab() {
           const flags = getLogoFlags(ie);
           const blob = await generarAmbienteEscolarReportPDF(
             reportData,
-            { logoRLT: images.logo_rlt_white, logoCLT: images.logo_clt || images.logo_clt_white, logoCosmo: images.logo_cosmo },
+            getPdfLogoSources(images),
             flags,
             { returnBlob: true }
           );
@@ -353,7 +354,7 @@ export default function AdminAmbienteStatsTab() {
           entidadTerritorial: "Secretaría de Educación de Medellín",
           submissions: fakeSubs,
         },
-        { logoRLT: images.logo_rlt_white, logoCLT: images.logo_clt || images.logo_clt_white, logoCosmo: images.logo_cosmo },
+        getPdfLogoSources(images),
         { showLogoRlt: true, showLogoClt: true }
       );
       toast({ title: "Demo PDF generado", description: "PDF de ejemplo descargado con datos ficticios" });
