@@ -1045,7 +1045,7 @@ export async function generarAmbienteEscolarReportPDF(
     // Row border
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.15);
-    doc.line(tableLeft, y + rowH, tableLeft + tableRowW, y + rowH);
+    doc.line(tableLeft, y + rowH, tableLeft + contentW, y + rowH);
 
     y += rowH;
     sectionItemIdx++;
