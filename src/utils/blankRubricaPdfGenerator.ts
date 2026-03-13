@@ -83,11 +83,15 @@ export async function generarPDFRubricaEnBlanco(
   let y = 0;
 
   const drawLogos = () => {
-    const logoH = 14;
-    const logoW = 18;
     const logoY = 6;
-    if (showRlt && rltB64) doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
-    if (showClt && cltB64) doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
+    if (showRlt && rltB64) {
+      const d = logoDims(rltSize.width, rltSize.height, HEADER_LOGO_H);
+      doc.addImage(rltB64, "PNG", margin, logoY, d.w, d.h);
+    }
+    if (showClt && cltB64) {
+      const d = logoDims(cltSize.width, cltSize.height, HEADER_LOGO_H);
+      doc.addImage(cltB64, "PNG", pageW - margin - d.w, logoY, d.w, d.h);
+    }
   };
 
   const drawHeader = () => {
