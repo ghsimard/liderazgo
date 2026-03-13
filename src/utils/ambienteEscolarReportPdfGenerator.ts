@@ -1051,45 +1051,6 @@ export async function generarAmbienteEscolarReportPDF(
     sectionItemIdx++;
   }
 
-  // Close last section range
-  if (currentSection) {
-    sectionRanges.push({ section: currentSection, startY: sectionStartY, endY: y, page: pageNum });
-  }
-
-  // Draw vertical section labels by going back to each page
-  const totalPages = doc.getNumberOfPages();
-  const currentPage = pageNum;
-  for (const range of sectionRanges) {
-    doc.setPage(range.page);
-    const sectionH = range.endY - range.startY;
-    const midY = range.startY + sectionH / 2;
-
-    // Section background stripe
-    doc.setFillColor(240, 240, 240);
-    doc.rect(margin, range.startY, sectionLabelW, sectionH, "F");
-
-    // Border
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.15);
-    doc.rect(margin, range.startY, sectionLabelW, sectionH);
-
-    // Rotated text centered inside the label column
-    // With angle:90 in jsPDF, the text rotates counter-clockwise around (x,y)
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(80, 80, 80);
-
-    const sectionLabel = range.section.toUpperCase();
-    // Position: horizontally centered in the label column, vertically centered in the section
-    doc.text(sectionLabel, margin + sectionLabelW / 2 + 1, midY, {
-      align: "center",
-      angle: 90,
-      baseline: "middle",
-    });
-  }
-  // Go back to current page
-  doc.setPage(currentPage);
-
   y += 8;
 
   // ════════════════════════════════════════════════════════════
