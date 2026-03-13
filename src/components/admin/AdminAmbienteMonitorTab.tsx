@@ -56,7 +56,7 @@ export default function AdminAmbienteMonitorTab() {
     load();
   }, []);
 
-  const { rows, totals } = useMemo(() => {
+  const { rows, totals, filteredRows, filteredTotals } = useMemo(() => {
     const institutions = new Set<string>();
     directivos.forEach((d) => institutions.add(d.nombre_ie));
     submissions.forEach((s) => institutions.add(s.institucion_educativa));
@@ -73,15 +73,43 @@ export default function AdminAmbienteMonitorTab() {
     }
 
     const sorted = Array.from(institutions).sort();
+    const allRows = sorted.map((ie) => ({ ie, ...countMap[ie], directivo: directivos.find((d) => d.nombre_ie === ie) }));
     const totalD = sorted.reduce((a, ie) => a + countMap[ie].docentes, 0);
     const totalE = sorted.reduce((a, ie) => a + countMap[ie].estudiantes, 0);
     const totalA = sorted.reduce((a, ie) => a + countMap[ie].acudientes, 0);
 
+    // Apply filters
+    let regionInstitutions: string[] | null = null;
+    if (filterRegion !== "all") {
+      regionInstitutions = getInstitucionesForRegion(filterRegion);
+    }
+
+    const filtered = allRows.filter((r) => {
+      if (regionInstitutions && !regionInstitutions.includes(r.ie)) return false;
+      if (searchText) {
+        const q = searchText.toLowerCase();
+        if (!r.ie.toLowerCase().includes(q)) return false;
+      }
+      if (filterStatus === "sin") return r.docentes + r.estudiantes + r.acudientes === 0;
+      if (filterStatus === "pocas") {
+        const total = r.docentes + r.estudiantes + r.acudientes;
+        return total > 0 && total < 75;
+      }
+      if (filterStatus === "suficientes") return r.docentes + r.estudiantes + r.acudientes >= 75;
+      return true;
+    });
+
+    const fD = filtered.reduce((a, r) => a + r.docentes, 0);
+    const fE = filtered.reduce((a, r) => a + r.estudiantes, 0);
+    const fA = filtered.reduce((a, r) => a + r.acudientes, 0);
+
     return {
-      rows: sorted.map((ie) => ({ ie, ...countMap[ie], directivo: directivos.find((d) => d.nombre_ie === ie) })),
+      rows: allRows,
       totals: { docentes: totalD, estudiantes: totalE, acudientes: totalA, total: totalD + totalE + totalA },
+      filteredRows: filtered,
+      filteredTotals: { docentes: fD, estudiantes: fE, acudientes: fA, total: fD + fE + fA },
     };
-  }, [directivos, submissions]);
+  }, [directivos, submissions, filterRegion, searchText, filterStatus, getInstitucionesForRegion]);
 
   if (loading) {
     return (
