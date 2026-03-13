@@ -317,7 +317,52 @@ export default function AdminAmbienteStatsTab() {
     setBatchProgress(0);
   };
 
-  if (loading) {
+  // ── Demo PDF with fictitious data ──
+  const handleDemoPDF = async () => {
+    setGenerating(true);
+    try {
+      const freq = ["Siempre", "Casi siempre", "A veces", "Casi nunca", "Nunca"];
+      const jornadas = JORNADA_OPTIONS;
+      const buildFakeResponses = (likert: LikertSection[]) => {
+        const r: Record<string, string> = {};
+        r.jornada = jornadas[Math.floor(Math.random() * jornadas.length)];
+        for (const sec of likert) {
+          for (const item of sec.items) {
+            // Weighted random: favour positive answers
+            const weights = [40, 25, 20, 10, 5];
+            const roll = Math.random() * 100;
+            let cum = 0;
+            for (let i = 0; i < 5; i++) {
+              cum += weights[i];
+              if (roll < cum) { r[item.id] = freq[i]; break; }
+            }
+          }
+        }
+        return r;
+      };
+
+      const fakeSubs: AmbienteReportData["submissions"] = [];
+      // 12 docentes, 25 estudiantes, 8 acudientes
+      for (let i = 0; i < 12; i++) fakeSubs.push({ tipo_formulario: "docentes", respuestas: buildFakeResponses(DOCENTES_LIKERT) });
+      for (let i = 0; i < 25; i++) fakeSubs.push({ tipo_formulario: "estudiantes", respuestas: buildFakeResponses(ESTUDIANTES_LIKERT) });
+      for (let i = 0; i < 8; i++) fakeSubs.push({ tipo_formulario: "acudientes", respuestas: buildFakeResponses(ACUDIENTES_LIKERT) });
+
+      await generarAmbienteEscolarReportPDF(
+        {
+          institucion: "I.E. Ejemplo Ficticio de Medellín",
+          entidadTerritorial: "Secretaría de Educación de Medellín",
+          submissions: fakeSubs,
+        },
+        { logoRLT: images.logo_rlt_white, logoCLT: images.logo_clt || images.logo_clt_white, logoCosmo: images.logo_cosmo },
+        { showLogoRlt: true, showLogoClt: true }
+      );
+      toast({ title: "Demo PDF generado", description: "PDF de ejemplo descargado con datos ficticios" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setGenerating(false);
+  };
+
     return (
       <div className="flex items-center justify-center py-16">
         <RefreshCw className="animate-spin w-6 h-6 text-muted-foreground" />
