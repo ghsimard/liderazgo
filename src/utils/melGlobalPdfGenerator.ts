@@ -202,7 +202,7 @@ export async function generarMelGlobalPDF(
   // ═══════════════════════════════════════════
   doc.addPage();
   pageNum++;
-  y = 22;
+  y = 28;
 
   y = drawSectionTitle(doc, "RESUMEN GLOBAL", margin, y);
   y += 4;
@@ -247,11 +247,11 @@ export async function generarMelGlobalPDF(
   y += 6;
 
   // ── INDICATOR: OBSERVADORES ──
-  if (y + 55 > pageH - 15) {
+  if (y + 55 > pageH - 28) {
     drawPageFooter(pageNum);
     doc.addPage();
     pageNum++;
-    y = 22;
+    y = 28;
   }
 
   y = drawSectionTitle(doc, "INDICADOR MEL: OBSERVADORES", margin, y);
