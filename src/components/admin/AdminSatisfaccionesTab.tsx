@@ -623,6 +623,7 @@ function ResponseDetailDialog({
         <div className="px-6 pt-6 pb-4 border-b bg-muted/30">
           <DialogHeader>
             <DialogTitle className="text-lg">{FORM_TYPE_LABELS[response.form_type]} — Módulo {response.module_number}</DialogTitle>
+            <DialogDescription className="sr-only">Détail complet des réponses de satisfaction.</DialogDescription>
           </DialogHeader>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2 text-sm">
