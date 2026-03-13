@@ -15,11 +15,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw, Eye, ToggleLeft, ToggleRight, User, Calendar, MapPin, FileText, MessageSquare, CheckCircle2, XCircle, MinusCircle, Search, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { FORM_TYPE_LABELS, asistenciaForm, interludioForm, intensivoForm } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion, SatisfaccionOption } from "@/data/satisfaccionData";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import AdminSatisfaccionStats from "./AdminSatisfaccionStats";
 import AdminSatisfaccionReportTab from "./AdminSatisfaccionReportTab";
@@ -624,6 +623,7 @@ function ResponseDetailDialog({
         <div className="px-6 pt-6 pb-4 border-b bg-muted/30">
           <DialogHeader>
             <DialogTitle className="text-lg">{FORM_TYPE_LABELS[response.form_type]} — Módulo {response.module_number}</DialogTitle>
+            <DialogDescription className="sr-only">Détail complet des réponses de satisfaction.</DialogDescription>
           </DialogHeader>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2 text-sm">
@@ -649,7 +649,7 @@ function ResponseDetailDialog({
         </div>
 
         {/* Body - structured answers */}
-        <ScrollArea className="flex-1 min-h-0 px-6 py-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
           <div className="space-y-6">
             {formDef ? (
               formDef.sections.map((section, si) => {
@@ -690,7 +690,7 @@ function ResponseDetailDialog({
               ))
             )}
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
