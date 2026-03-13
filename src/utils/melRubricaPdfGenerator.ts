@@ -159,11 +159,11 @@ export async function generarMelRubricasPDF(
   ];
 
   for (const item of kpiItems) {
-    if (y + 38 > pageH - 15) {
+    if (y + 38 > pageH - 28) {
       drawPageFooter(pageNum);
       doc.addPage();
       pageNum++;
-      y = 22;
+      y = 28;
     }
     y = drawKpiBlock(doc, item.label, item.description, item.kpi, margin, y, contentW);
     y += 6;
