@@ -1016,11 +1016,9 @@ export async function generarAmbienteEscolarReportPDF(
           if (san.total > 0) {
             doc.text(`${val}%`, cellX + colSanW / 2, y + rowH / 2 + 1, { align: "center" });
           } else {
-            doc.setTextColor(150, 150, 150);
-            doc.setFontSize(6);
-            doc.setFont("helvetica", "italic");
-            doc.text("Sin", cellX + colSanW / 2, y + rowH / 2 - 1, { align: "center" });
-            doc.text("datos", cellX + colSanW / 2, y + rowH / 2 + 2, { align: "center" });
+            // Black cell, no text
+            doc.setFillColor(30, 30, 30);
+            doc.rect(cellX, y, colSanW, rowH, "F");
           }
         }
       } else {
