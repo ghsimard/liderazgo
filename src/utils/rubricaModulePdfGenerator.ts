@@ -88,8 +88,8 @@ export async function generarPDFRubricaModulo(
 
   // ── COVER PAGE ──
   // Calculate total content height to center vertically
-  const rltTargetH = 24;
-  const rltW = rltTargetH * (rltSize.width / rltSize.height);
+  const rltTargetH = COVER_LOGO_H;
+  const rltW = logoDims(rltSize.width, rltSize.height, rltTargetH).w;
   const infoLines = [
     `${genderizeRole("Directivo", data.genero)}: ${data.directivoNombre}`,
     `Institución: ${data.institucion}`,

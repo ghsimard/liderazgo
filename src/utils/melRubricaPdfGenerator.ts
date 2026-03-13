@@ -53,9 +53,9 @@ export async function generarMelRubricasPDF(
   // ═══════════════════════════════════════════
   const showRLT = logoSources.showRLT !== false;
   const showCLT = logoSources.showCLT !== false;
-  const logoTargetH = 24;
-  const rltW = (rltSize.width / rltSize.height) * logoTargetH;
-  const cltW = (cltSize.width / cltSize.height) * logoTargetH;
+  const logoTargetH = COVER_LOGO_H;
+  const rltW = logoDims(rltSize.width, rltSize.height, logoTargetH).w;
+  const cltW = logoDims(cltSize.width, cltSize.height, logoTargetH).w;
 
   if (showRLT && showCLT) {
     // Both logos: left and right

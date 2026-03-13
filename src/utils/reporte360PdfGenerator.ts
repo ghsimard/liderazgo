@@ -105,14 +105,11 @@ export async function generarReporte360PDF(
   // ════════════════════════════════════════════════════════════
   drawPageHeader();
 
-  // Logos at natural size reduced by 50% (pixels to mm at 96 DPI: px * 25.4 / 96)
-  const pxToMm = 25.4 / 96 * 0.50;
-  const rltW = rltSize.width * pxToMm;
-  const rltH = rltSize.height * pxToMm;
-  const cltW = cltSize.width * pxToMm;
-  const cltH = cltSize.height * pxToMm;
-  doc.addImage(rltB64, "PNG", margin, 25, rltW, rltH);
-  doc.addImage(cltB64, "PNG", pageW - margin - cltW, 25, cltW, cltH);
+  // Logos at fixed height, proportional width
+  const rltDims = logoDims(rltSize.width, rltSize.height, COVER_LOGO_H);
+  const cltDims = logoDims(cltSize.width, cltSize.height, COVER_LOGO_H);
+  doc.addImage(rltB64, "PNG", margin, 25, rltDims.w, rltDims.h);
+  doc.addImage(cltB64, "PNG", pageW - margin - cltDims.w, 25, cltDims.w, cltDims.h);
 
   // Title block
   let y = 75;

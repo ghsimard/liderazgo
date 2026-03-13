@@ -142,9 +142,9 @@ export async function generarMelGlobalPDF(
   // ═══════════════════════════════════════════
   const showRLT = logoSources.showRLT !== false;
   const showCLT = logoSources.showCLT !== false;
-  const logoTargetH = 24;
-  const rltW = (rltSize.width / rltSize.height) * logoTargetH;
-  const cltW = (cltSize.width / cltSize.height) * logoTargetH;
+  const logoTargetH = COVER_LOGO_H;
+  const rltW = logoDims(rltSize.width, rltSize.height, logoTargetH).w;
+  const cltW = logoDims(cltSize.width, cltSize.height, logoTargetH).w;
   if (showRLT && showCLT) {
     doc.addImage(rltB64, "PNG", margin, 28, rltW, logoTargetH);
     doc.addImage(cltB64, "PNG", pageW - margin - cltW, 28, cltW, logoTargetH);
