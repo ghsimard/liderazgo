@@ -785,25 +785,25 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
             [236, 72, 153],  // #ec4899
             [249, 115, 22],  // #f97316
           ];
-          const barH = 4.5;
-          const rowGap = 10;
-          const maxVal = Math.max(...chartData.data.map((d: any) => d.value), 1);
+          const barH = 5;
+          const rowGap = 11;
+
+          // Filter out items with 0%
+          const filteredData = chartData.data.filter((d: any) => d.value > 0);
 
           // Pre-calculate total chart height to prevent page splits
-          const totalChartH = chartData.data.length * (rowGap + 3) + 4;
+          const totalChartH = filteredData.length * (rowGap + 3) + 4;
           y = checkPageBreak(Math.min(totalChartH, pageH - 60));
 
-          for (let idx = 0; idx < chartData.data.length; idx++) {
-            const item = chartData.data[idx];
+          for (let idx = 0; idx < filteredData.length; idx++) {
+            const item = filteredData[idx];
 
-            // Label line: label on the left, value% on the right
+            // Label line
             doc.setFontSize(7.5);
             doc.setFont("helvetica", "normal");
             doc.setTextColor(30, 30, 30);
-            const labelLines = doc.splitTextToSize(item.label, contentW - 25);
+            const labelLines = doc.splitTextToSize(item.label, contentW);
             doc.text(labelLines[0], margin, y);
-            doc.setFont("helvetica", "bold");
-            doc.text(`${item.value}%`, margin + contentW, y, { align: "right" });
             y += 3;
 
             // Background bar (full width, light gray)
@@ -811,11 +811,17 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
             doc.setFillColor(230, 230, 230);
             doc.roundedRect(margin, y, contentW, barH, barRadius, barRadius, "F");
 
-            // Foreground bar (colored, proportional width)
-            const barW = Math.max((item.value / maxVal) * contentW, contentW * 0.02);
+            // Foreground bar (colored, width = percentage of full bar)
+            const barW = Math.max((item.value / 100) * contentW, contentW * 0.02);
             const c = HBAR_COLORS[idx % HBAR_COLORS.length];
             doc.setFillColor(c[0], c[1], c[2]);
             doc.roundedRect(margin, y, barW, barH, barRadius, barRadius, "F");
+
+            // Value on the bar (right-aligned inside)
+            doc.setFontSize(7);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(30, 30, 30);
+            doc.text(`${item.value}%`, margin + contentW - 2, y + barH - 1.2, { align: "right" });
 
             doc.setFont("helvetica", "normal");
             y += barH + (rowGap - barH - 3);

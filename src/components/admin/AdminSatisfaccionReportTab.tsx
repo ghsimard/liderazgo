@@ -1207,25 +1207,23 @@ const PREVIEW_COLORS = [
 ];
 
 function ChartPreview({ data, chartType }: { data: { label: string; value: number }[]; chartType: ChartType }) {
-  const maxVal = Math.max(...data.map(d => d.value), 1);
+  const filtered = data.filter(d => d.value > 0);
+  const maxVal = Math.max(...filtered.map(d => d.value), 1);
 
   if (chartType === "horizontal_bar") {
     return (
       <div className="space-y-2">
-        {data.map((item, i) => {
-          const barWidth = Math.max((item.value / maxVal) * 100, 2);
-          return (
-            <div key={i} className="space-y-0.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-foreground break-words leading-tight">{item.label}</span>
-                <span className="font-semibold text-foreground">{item.value}%</span>
-              </div>
-              <div className="h-5 bg-muted rounded overflow-hidden">
-                <div className="h-full rounded transition-all" style={{ width: `${barWidth}%`, backgroundColor: PREVIEW_COLORS[i % PREVIEW_COLORS.length] }} />
-              </div>
+        {filtered.map((item, i) => (
+          <div key={i} className="space-y-0.5">
+            <div className="flex justify-between text-xs">
+              <span className="text-foreground break-words leading-tight">{item.label}</span>
             </div>
-          );
-        })}
+            <div className="relative h-6 bg-muted rounded overflow-hidden">
+              <div className="h-full rounded transition-all" style={{ width: `${item.value}%`, backgroundColor: PREVIEW_COLORS[i % PREVIEW_COLORS.length] }} />
+              <span className="absolute inset-y-0 right-2 flex items-center text-[10px] font-bold text-foreground">{item.value}%</span>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
