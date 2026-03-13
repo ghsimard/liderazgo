@@ -310,7 +310,8 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   };
 
   const writeSectionTitle = (title: string, numbered?: string, isSubsection?: boolean) => {
-    y = checkPageBreak(14);
+    // Reserve enough space for title + beginning of paragraph to keep them together
+    y = checkPageBreak(isSubsection ? 22 : 30);
     y += isSubsection ? 2 : 4;
     doc.setFontSize(isSubsection ? 11 : 12);
     doc.setFont("helvetica", "bold");
