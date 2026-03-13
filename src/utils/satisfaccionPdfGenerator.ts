@@ -561,12 +561,31 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "chart_analysis") {
       const num = getNumber(section.isSubsection);
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
-      writeSectionTitle(section.title, num, section.isSubsection);
 
       // Find matching stats section
       const chartData = sectionStats.find(s => s.title === section.chartSectionTitle);
       const chartType = (section as any).chartType || "horizontal_bar";
+
+      // Pre-calculate total height needed for section title + chart title + chart body
+      // so we can do a single page-break check and keep everything together
+      let estimatedChartH = 20; // section title (~14) + chart title (~6)
+      if (chartData && chartData.data.length > 0) {
+        if (chartType === "pie") {
+          estimatedChartH += Math.min(80, contentW * 0.4) + 30;
+        } else if (chartType === "radar") {
+          estimatedChartH += Math.min(90, contentW * 0.45) + 20;
+        } else if (chartType === "vertical_bar") {
+          estimatedChartH += 70 + 30;
+        } else {
+          // horizontal bar
+          estimatedChartH += chartData.data.length * 13 + 10;
+        }
+      }
+      // If it fits on the current page, keep it together; otherwise break before the title
+      y = checkPageBreak(Math.min(estimatedChartH, pageH - 60));
+
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
+      writeSectionTitle(section.title, num, section.isSubsection);
 
       if (chartData && chartData.data.length > 0) {
         // Chart title
