@@ -511,8 +511,6 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
 
     if (section.type === "ficha_tecnica") {
       const num = getNumber(section.isSubsection);
-      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
-      writeSectionTitle(section.title, num, section.isSubsection);
 
       // Draw table
       const formLabel = FORM_TYPE_LABELS[filterType] || filterType;
@@ -530,8 +528,12 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       const colW2 = contentW - colW1;
       const rowH = 7;
 
-      // Ensure entire table (header + all rows) stays on one page
-      y = checkPageBreak(rowH * (rows.length + 1) + 4);
+      // Ensure title + entire table stays on one page
+      const totalBlockH = 20 + rowH * (rows.length + 1) + 4;
+      y = checkPageBreak(Math.min(totalBlockH, pageH - 60));
+
+      sectionPages.push({ title: section.title, page: doc.getNumberOfPages(), isSubsection: section.isSubsection });
+      writeSectionTitle(section.title, num, section.isSubsection);
 
       // Header row
       doc.setFillColor(70, 100, 130);
