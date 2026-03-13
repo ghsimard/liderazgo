@@ -986,10 +986,9 @@ export async function generarAmbienteEscolarReportPDF(
     }
 
     // Alternating row background
-    const tableRowW = contentW - sectionLabelW;
     if (sectionItemIdx % 2 === 0) {
       doc.setFillColor(250, 250, 250);
-      doc.rect(tableLeft, y, tableRowW, rowH, "F");
+      doc.rect(tableLeft, y, contentW, rowH, "F");
     }
 
     // Item text
