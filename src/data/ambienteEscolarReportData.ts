@@ -72,7 +72,7 @@ export const UNIFIED_REPORT_ITEMS: UnifiedReportItem[] = [
   {
     reportText: "Los docentes de la Institución Educativa se comunican de manera asertiva.",
     section: "Comunicación",
-    docentes: "com_6", estudiantes: undefined, acudientes: "com_6",
+    docentes: "com_6", estudiantes: "com_4", acudientes: "com_6",
   },
   // ── Prácticas Pedagógicas ──
   {
