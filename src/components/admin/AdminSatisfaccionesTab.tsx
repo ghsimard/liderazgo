@@ -619,7 +619,7 @@ function ResponseDetailDialog({
 
   return (
     <Dialog open={!!response} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b bg-muted/30">
           <DialogHeader>
