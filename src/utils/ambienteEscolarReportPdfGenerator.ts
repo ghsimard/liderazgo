@@ -160,7 +160,7 @@ export async function generarAmbienteEscolarReportPDF(
   let y = 0;
 
   // ── Helpers ──
-  const pxToMm = 25.4 / 96 * 0.50;
+  // pxToMm removed — use logoDims() from pdfLogoHelper instead
 
   const ensureSpace = (needed: number) => {
     if (y + needed > pageH - 20) {
