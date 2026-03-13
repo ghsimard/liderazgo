@@ -717,46 +717,81 @@ export async function generarAmbienteEscolarReportPDF(
 
     // ── ACUDIENTES demographics ──
     else if (role === "acudientes") {
-      ensureSpace(35);
+      ensureSpace(45);
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30, 30, 30);
       doc.text("¿En qué grado se encuentran los estudiantes que representa?", margin, y + 4);
       y += 8;
 
-      // Grados pie chart
-      const gradoGroupsAcu = ["Preescolar", "Primaria", "Secundaria", "Media"];
-      const gradoCountsAcu: Record<string, number> = {};
-      gradoGroupsAcu.forEach(g => gradoCountsAcu[g] = 0);
+      // Count individual grades
+      const gradoLabels = ["Primera infancia", "Preescolar", "1°", "2°", "3°", "4°", "5°", "6°", "7°", "8°", "9°", "10°", "11°", "12°"];
+      const gradoCounts: Record<string, number> = {};
+      gradoLabels.forEach(g => gradoCounts[g] = 0);
       for (const sub of roleSubs) {
         const grados = sub.respuestas?.grados as string[] || [];
         for (const g of grados) {
-          if (["Primera infancia", "Preescolar"].includes(g)) gradoCountsAcu["Preescolar"]++;
-          else if (["1°", "2°", "3°", "4°", "5°"].includes(g)) gradoCountsAcu["Primaria"]++;
-          else if (["6°", "7°", "8°", "9°"].includes(g)) gradoCountsAcu["Secundaria"]++;
-          else if (["10°", "11°", "12°"].includes(g)) gradoCountsAcu["Media"]++;
+          if (gradoCounts[g] !== undefined) gradoCounts[g]++;
         }
       }
+      const totalGrados = gradoLabels.reduce((s, g) => s + gradoCounts[g], 0);
 
-      const acuPieData = gradoGroupsAcu.map((g, i) => ({ label: g, value: gradoCountsAcu[g], color: pieColors[i] }));
-      const hasAcuData = acuPieData.some(d => d.value > 0);
-      if (hasAcuData) {
-        const acuPieUrl = drawPieChart(acuPieData, 200);
-        doc.addImage(acuPieUrl, "PNG", margin, y, 30, 30);
+      // Segmented bar colors
+      const segColors: [number, number, number][] = [
+        [63, 81, 181], [33, 150, 243], [0, 188, 212], [0, 150, 136],
+        [76, 175, 80], [139, 195, 74], [205, 220, 57], [255, 235, 59],
+        [255, 193, 7], [255, 152, 0], [255, 87, 34], [244, 67, 54],
+        [156, 39, 176], [121, 85, 72],
+      ];
 
-        let lyAcu = y + 2;
-        for (const d of acuPieData) {
-          doc.setFillColor(d.color);
-          doc.rect(margin + 33, lyAcu, 3, 3, "F");
-          doc.setFontSize(7);
+      if (totalGrados > 0) {
+        const barH = 8;
+        let bx = margin;
+
+        // Draw segmented bar
+        for (let i = 0; i < gradoLabels.length; i++) {
+          const pct = (gradoCounts[gradoLabels[i]] / totalGrados) * 100;
+          if (pct === 0) continue;
+          const segW = (pct / 100) * contentW;
+          const [r, g2, b] = segColors[i % segColors.length];
+          doc.setFillColor(r, g2, b);
+          doc.rect(bx, y, segW, barH, "F");
+
+          // Show percentage above segment if wide enough
+          if (pct >= 4) {
+            doc.setFontSize(5.5);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(255, 255, 255);
+            doc.text(`${Math.round(pct)}%`, bx + segW / 2, y + barH / 2 + 1.5, { align: "center" });
+          }
+          bx += segW;
+        }
+
+        y += barH + 4;
+
+        // Legend (multi-line, ~5 per row)
+        const perRow = 5;
+        let lx = margin;
+        let legendItems = gradoLabels.filter(g => gradoCounts[g] > 0);
+        for (let i = 0; i < legendItems.length; i++) {
+          if (i > 0 && i % perRow === 0) {
+            lx = margin;
+            y += 5;
+          }
+          const gLabel = legendItems[i];
+          const idx = gradoLabels.indexOf(gLabel);
+          const pct = Math.round((gradoCounts[gLabel] / totalGrados) * 100);
+          const [r, g2, b] = segColors[idx % segColors.length];
+          doc.setFillColor(r, g2, b);
+          doc.rect(lx, y, 2.5, 2.5, "F");
+          doc.setFontSize(6);
           doc.setFont("helvetica", "normal");
           doc.setTextColor(30, 30, 30);
-          doc.text(`${d.label}: ${d.value}`, margin + 38, lyAcu + 2.5);
-          lyAcu += 5;
+          const txt = `${gLabel} - ${pct}%`;
+          doc.text(txt, lx + 3.5, y + 2);
+          lx += 32;
         }
-        y += 35;
-      } else {
-        y += 5;
+        y += 8;
       }
     }
   }
