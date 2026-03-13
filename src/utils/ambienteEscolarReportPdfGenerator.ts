@@ -806,12 +806,9 @@ export async function generarAmbienteEscolarReportPDF(
       doc.text(sec, margin, y + barH / 2 + 1);
 
       if (count === 0 || san.total === 0) {
-        // "Sin información" centered in bar area
-        doc.setFillColor(230, 230, 230);
+        // Black cell, no text
+        doc.setFillColor(30, 30, 30);
         doc.rect(margin + labelW, y, barW, barH, "F");
-        doc.setTextColor(120, 120, 120);
-        doc.setFontSize(8);
-        doc.text("Sin información", margin + labelW + barW / 2, y + barH / 2 + 1, { align: "center" });
       } else {
         let bx = margin + labelW;
         for (const key of ["S", "A", "N"] as SANKey[]) {
@@ -1019,21 +1016,17 @@ export async function generarAmbienteEscolarReportPDF(
           if (san.total > 0) {
             doc.text(`${val}%`, cellX + colSanW / 2, y + rowH / 2 + 1, { align: "center" });
           } else {
-            doc.setTextColor(150, 150, 150);
-            doc.setFontSize(6);
-            doc.setFont("helvetica", "italic");
-            doc.text("Sin", cellX + colSanW / 2, y + rowH / 2 - 1, { align: "center" });
-            doc.text("datos", cellX + colSanW / 2, y + rowH / 2 + 2, { align: "center" });
+            // Black cell, no text
+            doc.setFillColor(30, 30, 30);
+            doc.rect(cellX, y, colSanW, rowH, "F");
           }
         }
       } else {
         for (let si = 0; si < 3; si++) {
           const cellX = cx + si * colSanW;
-          doc.setTextColor(150, 150, 150);
-          doc.setFontSize(6);
-          doc.setFont("helvetica", "italic");
-          doc.text("Sin", cellX + colSanW / 2, y + rowH / 2 - 1, { align: "center" });
-          doc.text("datos", cellX + colSanW / 2, y + rowH / 2 + 2, { align: "center" });
+          // Black cell, no text
+          doc.setFillColor(30, 30, 30);
+          doc.rect(cellX, y, colSanW, rowH, "F");
         }
       }
       cx += colGroupW;
