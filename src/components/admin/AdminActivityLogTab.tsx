@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/utils/dbClient";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -17,10 +17,9 @@ import {
 import { cn } from "@/lib/utils";
 import {
   CalendarIcon, Search, RefreshCw, Loader2, Trash2, ChevronLeft, ChevronRight,
-  LogIn, LogOut, FileText, ClipboardCheck, Send, Star, MessageSquare, Eye, Activity, Filter,
+  LogIn, LogOut, FileText, ClipboardCheck, Send, Star, MessageSquare, Eye, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
-import { MultiSelect } from "@/components/ui/multi-select";
 
 interface ActivityLog {
   id: string;
@@ -93,65 +92,21 @@ export default function AdminActivityLogTab({ isSuperAdmin = false }: { isSuperA
   const [showPurgeDialog, setShowPurgeDialog] = useState(false);
   const [purgeDays, setPurgeDays] = useState("90");
 
-  // Region / geography filter data
-  const [regiones, setRegiones] = useState<{ value: string; label: string }[]>([]);
-  const [cedulasByRegion, setCedulasByRegion] = useState<Record<string, string[]>>({});
-  const [selRegions, setSelRegions] = useState<string[]>([]);
-
   // Filters
   const [cedulaFilter, setCedulaFilter] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
 
-  // Load regions and cedula mapping once
-  useEffect(() => {
-    (async () => {
-      const [{ data: regs }, { data: fichas }] = await Promise.all([
-        supabase.from("regiones").select("nombre").order("nombre"),
-        supabase.from("fichas_rlt").select("numero_cedula, region"),
-      ]);
-      setRegiones((regs ?? []).map(r => ({ value: r.nombre, label: r.nombre })));
-      const map: Record<string, string[]> = {};
-      for (const f of fichas ?? []) {
-        if (!f.numero_cedula || !f.region) continue;
-        if (!map[f.region]) map[f.region] = [];
-        map[f.region].push(f.numero_cedula);
-      }
-      setCedulasByRegion(map);
-    })();
-  }, []);
-
-  // Compute cedulas for selected regions
-  const regionCedulas = useMemo(() => {
-    if (selRegions.length === 0) return null;
-    const set = new Set<string>();
-    for (const r of selRegions) {
-      for (const c of cedulasByRegion[r] ?? []) set.add(c);
-    }
-    return [...set];
-  }, [selRegions, cedulasByRegion]);
-
-  const fetchLogs = useCallback(async () => {
+  const fetchLogs = async () => {
     setLoading(true);
     try {
-      // If region filter active but no matching cedulas, return empty
-      if (regionCedulas && regionCedulas.length === 0) {
-        setLogs([]);
-        setTotalCount(0);
-        setLoading(false);
-        return;
-      }
-
       let q = supabase
         .from("user_activity_log")
         .select("id,cedula,action_type,action_detail,page_path,created_at", { count: "exact" })
         .order("created_at", { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-      if (regionCedulas) {
-        q = q.in("cedula", regionCedulas);
-      }
       if (cedulaFilter.trim()) {
         q = q.ilike("cedula", `%${cedulaFilter.trim()}%`);
       }
@@ -176,11 +131,11 @@ export default function AdminActivityLogTab({ isSuperAdmin = false }: { isSuperA
     } finally {
       setLoading(false);
     }
-  }, [page, regionCedulas, cedulaFilter, actionFilter, dateFrom, dateTo]);
+  };
 
   useEffect(() => {
     fetchLogs();
-  }, [fetchLogs]);
+  }, [page]);
 
   const handleSearch = () => {
     setPage(0);
@@ -190,10 +145,10 @@ export default function AdminActivityLogTab({ isSuperAdmin = false }: { isSuperA
   const handleClear = () => {
     setCedulaFilter("");
     setActionFilter("all");
-    setSelRegions([]);
     setDateFrom(undefined);
     setDateTo(undefined);
     setPage(0);
+    setTimeout(fetchLogs, 0);
   };
 
   const handlePurge = async () => {
@@ -270,17 +225,6 @@ export default function AdminActivityLogTab({ isSuperAdmin = false }: { isSuperA
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-3 items-end">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Región</label>
-              <MultiSelect
-                options={regiones}
-                selected={selRegions}
-                onChange={(v) => { setSelRegions(v); setPage(0); }}
-                placeholder="Todas las regiones"
-                className="w-52"
-              />
-            </div>
-
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Cédula</label>
               <div className="relative">
