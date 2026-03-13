@@ -12,6 +12,7 @@ import { ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, FREQUENCY_OPTIO
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { generarAmbienteEscolarReportPDF, type AmbienteReportData } from "@/utils/ambienteEscolarReportPdfGenerator";
 import { useAppImages } from "@/hooks/useAppImages";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 import { useToast } from "@/hooks/use-toast";
 import JSZip from "jszip";
 
