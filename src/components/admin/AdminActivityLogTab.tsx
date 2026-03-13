@@ -132,15 +132,26 @@ export default function AdminActivityLogTab({ isSuperAdmin = false }: { isSuperA
     return [...set];
   }, [selRegions, cedulasByRegion]);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
+      // If region filter active but no matching cedulas, return empty
+      if (regionCedulas && regionCedulas.length === 0) {
+        setLogs([]);
+        setTotalCount(0);
+        setLoading(false);
+        return;
+      }
+
       let q = supabase
         .from("user_activity_log")
         .select("id,cedula,action_type,action_detail,page_path,created_at", { count: "exact" })
         .order("created_at", { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
+      if (regionCedulas) {
+        q = q.in("cedula", regionCedulas);
+      }
       if (cedulaFilter.trim()) {
         q = q.ilike("cedula", `%${cedulaFilter.trim()}%`);
       }
@@ -165,11 +176,11 @@ export default function AdminActivityLogTab({ isSuperAdmin = false }: { isSuperA
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, regionCedulas, cedulaFilter, actionFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchLogs();
-  }, [page]);
+  }, [fetchLogs]);
 
   const handleSearch = () => {
     setPage(0);
@@ -179,10 +190,10 @@ export default function AdminActivityLogTab({ isSuperAdmin = false }: { isSuperA
   const handleClear = () => {
     setCedulaFilter("");
     setActionFilter("all");
+    setSelRegions([]);
     setDateFrom(undefined);
     setDateTo(undefined);
     setPage(0);
-    setTimeout(fetchLogs, 0);
   };
 
   const handlePurge = async () => {
