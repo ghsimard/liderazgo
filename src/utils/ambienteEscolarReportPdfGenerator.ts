@@ -850,8 +850,8 @@ export async function generarAmbienteEscolarReportPDF(
     y += 10;
   }
 
-  // Help box
-  drawHelpBox(HELP_BOX_RESUMEN);
+  // Highlighted note
+  drawHighlightedNote(HELP_BOX_RESUMEN);
 
   drawPageFooter(pageNum);
 
