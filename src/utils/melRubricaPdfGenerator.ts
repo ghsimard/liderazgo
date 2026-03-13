@@ -129,7 +129,7 @@ export async function generarMelRubricasPDF(
   // ═══════════════════════════════════════════
   doc.addPage();
   pageNum++;
-  y = 22;
+  y = 28;
 
   y = drawSectionTitle(doc, "INDICADORES MEL RÚBRICAS", margin, y);
   y += 6;

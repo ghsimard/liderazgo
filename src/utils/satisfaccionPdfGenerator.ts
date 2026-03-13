@@ -214,7 +214,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
   let y = 0;
 
   const checkPageBreak = (needed: number): number => {
-    if (y + needed > pageH - 22) {
+    if (y + needed > pageH - 28) {
       drawFooter();
       doc.addPage();
       y = drawHeader();

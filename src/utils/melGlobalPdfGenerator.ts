@@ -131,8 +131,8 @@ export async function generarMelGlobalPDF(
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C_LIGHT);
-    doc.text("Programa RLT y CLT · Informe Global MEL", margin, pageH - 8);
-    doc.text(String(pn), pageW - margin, pageH - 8, { align: "right" });
+    doc.text("Programa RLT y CLT · Informe Global MEL", margin, pageH - 14);
+    doc.text(String(pn), pageW - margin, pageH - 14, { align: "right" });
   };
 
   let pageNum = 1;

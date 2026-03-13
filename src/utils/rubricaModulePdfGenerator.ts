@@ -128,7 +128,7 @@ export async function generarPDFRubricaModulo(
 
   // ── DETAIL PAGES ──
   doc.addPage();
-  y = 25;
+  y = 28;
 
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");

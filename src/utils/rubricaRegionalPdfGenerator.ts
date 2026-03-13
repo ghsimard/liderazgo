@@ -68,15 +68,13 @@ export async function generarPDFRegionalRubricas(
   const contentW = pageW - margin * 2;
   let y = 0;
 
-  const CONTENT_START_Y = 8 + HEADER_LOGO_H + 4; // after header logos
-
   const addHeaderAndFooter = () => {
     drawPageHeaderLogos(doc, logos, { margin, pageW });
     drawFooterCosmo(doc, logos, { margin, pageW, pageH, pageNum: doc.getNumberOfPages() });
   };
 
   const checkPageBreak = (needed: number) => {
-    if (y + needed > pageH - 25) {
+    if (y + needed > pageH - CONTENT_BOTTOM_MARGIN) {
       addHeaderAndFooter();
       doc.addPage();
       y = CONTENT_START_Y;

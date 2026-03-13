@@ -163,7 +163,7 @@ export async function generarAmbienteEscolarReportPDF(
   // pxToMm removed — use logoDims() from pdfLogoHelper instead
 
   const ensureSpace = (needed: number) => {
-    if (y + needed > pageH - 20) {
+    if (y + needed > pageH - 28) {
       doc.addPage();
       drawPageHeader();
     }
@@ -175,13 +175,13 @@ export async function generarAmbienteEscolarReportPDF(
     doc.setTextColor(100, 100, 100);
     doc.text("Programa RLT y CLT", margin, 10);
     doc.text("Encuesta de Ambiente Escolar", pageW - margin, 10, { align: "right" });
-    y = 18;
+    y = 22;
   };
 
   const drawPageFooter = (pageNum: number) => {
     const cosmoH = 7;
     const cosmoW = cosmoH * (cosmoSize.width / cosmoSize.height);
-    const fY = pageH - 12;
+    const fY = pageH - 18;
     if (cosmoB64) doc.addImage(cosmoB64, "PNG", margin, fY, cosmoW, cosmoH);
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");

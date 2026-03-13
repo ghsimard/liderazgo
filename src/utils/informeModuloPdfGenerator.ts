@@ -110,7 +110,7 @@ export async function generarPDFInformeModulo(
   let isFirstPage = true;
 
   const addFooter = () => {
-    const footerY = pageH - 12;
+    const footerY = pageH - 18;
     if (imgMap.cosmo) {
       const h = 7;
       const w = h * (imgMap.cosmo.widthPx / imgMap.cosmo.heightPx);
@@ -122,17 +122,17 @@ export async function generarPDFInformeModulo(
   };
 
   const ensureSpace = (needed: number) => {
-    if (y + needed > pageH - 20) {
+    if (y + needed > pageH - 28) {
       addFooter();
       doc.addPage();
-      y = 20;
+      y = 26;
     }
   };
 
   const newPage = () => {
     if (!isFirstPage) { addFooter(); doc.addPage(); }
     isFirstPage = false;
-    y = 20;
+    y = 26;
   };
 
   const drawSectionTitle = (title: string) => {
