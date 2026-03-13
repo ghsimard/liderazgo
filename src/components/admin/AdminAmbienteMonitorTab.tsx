@@ -119,14 +119,65 @@ export default function AdminAmbienteMonitorTab() {
     );
   }
 
+  const hasFilters = filterRegion !== "all" || filterStatus !== "all" || searchText !== "";
+
   return (
     <div className="space-y-4">
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <Select value={filterRegion} onValueChange={setFilterRegion}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Región" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las regiones</SelectItem>
+            {regionNames.map((r) => (
+              <SelectItem key={r} value={r}>{r}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value="sin">Sin respuestas</SelectItem>
+            <SelectItem value="pocas">Pocas (&lt;75)</SelectItem>
+            <SelectItem value="suficientes">Suficientes (75+)</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar institución..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="pl-9"
+          />
+          {searchText && (
+            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setSearchText("")}>
+              <X className="w-3 h-3" />
+            </Button>
+          )}
+        </div>
+
+        {hasFilters && (
+          <Button variant="outline" size="sm" onClick={() => { setFilterRegion("all"); setFilterStatus("all"); setSearchText(""); }}>
+            <X className="w-3 h-3 mr-1" /> Limpiar filtros
+          </Button>
+        )}
+      </div>
+
+      {/* Summary */}
       <div className="flex flex-wrap gap-4 text-sm">
-        <span className="font-medium">Total: {totals.total} respuestas</span>
-        <span>Docentes: <strong>{totals.docentes}</strong></span>
-        <span>Estudiantes: <strong>{totals.estudiantes}</strong></span>
-        <span>Acudientes: <strong>{totals.acudientes}</strong></span>
-        <span className="ml-auto text-muted-foreground">{rows.length} instituciones</span>
+        <span className="font-medium">Total: {filteredTotals.total} respuestas{hasFilters ? ` (de ${totals.total})` : ""}</span>
+        <span>Docentes: <strong>{filteredTotals.docentes}</strong></span>
+        <span>Estudiantes: <strong>{filteredTotals.estudiantes}</strong></span>
+        <span>Acudientes: <strong>{filteredTotals.acudientes}</strong></span>
+        <span className="ml-auto text-muted-foreground">{filteredRows.length}{hasFilters ? ` de ${rows.length}` : ""} instituciones</span>
       </div>
 
       <div className="flex flex-wrap gap-2 text-xs">
@@ -146,7 +197,13 @@ export default function AdminAmbienteMonitorTab() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((r) => (
+          {filteredRows.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                No se encontraron instituciones con los filtros seleccionados.
+              </TableCell>
+            </TableRow>
+          ) : filteredRows.map((r) => (
             <TableRow key={r.ie}>
               <TableCell className="font-medium text-sm">{r.ie}</TableCell>
               <TableCell className="text-center"><CountBadge count={r.docentes} /></TableCell>
