@@ -265,6 +265,24 @@ export async function generarAmbienteEscolarReportPDF(
     y += boxH + 2;
   };
 
+  // ── Compact highlighted note (used on ENCUESTADOS) ──
+  const drawHighlightedNote = (text: string) => {
+    const lines = wrapText(text, contentW - 6, 10);
+    const lineH = 4.2;
+    const noteH = Math.max(7, lines.length * lineH + 2);
+    const noteY = Math.min(y, bottomLimit - noteH);
+
+    doc.setFillColor(255, 244, 163);
+    doc.rect(margin, noteY, contentW, noteH, "F");
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(30, 30, 30);
+    doc.text(lines, margin + 2, noteY + 3.4);
+
+    y = noteY + noteH + 1.5;
+  };
+
   const ROLES = ["docentes", "estudiantes", "acudientes"] as const;
   const ROLE_LABELS: Record<string, string> = {
     docentes: "DOCENTES",
