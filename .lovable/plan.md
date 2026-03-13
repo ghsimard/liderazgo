@@ -1,53 +1,63 @@
 
 
-## Integration de RLT-Stats dans Ambiente Escolar
+## Probleme actuel
 
-### Contexte
-L'application RLT-Stats (GitHub) offre deux vues principales :
-1. **MonitoringSurvey** : tableau de bord montrant le nombre de soumissions (docentes/estudiantes/acudientes) par ecole, avec indicateurs colores et dialog de contact du directivo.
-2. **FrequencyChart** : analyse des frequences de reponses (Siempre/Casi siempre/A veces/Casi nunca/Nunca) par question et par section, avec filtre par ecole, graphiques et classement.
+Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
 
-L'ancienne app utilisait la table `rectores` (equivalente a `fichas_rlt`) et des tables `docentes_form_submissions`, etc. (equivalentes a `encuestas_ambiente_escolar`). Aucune migration de base de donnees n'est necessaire.
+## Proposition : Sidebar avec sections groupees
 
-### Plan d'implementation
+Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
 
-#### 1. Transformer "Ambiente Escolar" en Hub a onglets
-**Fichier** : `src/pages/AdminPage.tsx`
-- Remplacer le cas simple `ambiente-escolar` par un Hub a onglets (pattern identique a MEL/360), avec :
-  - **Monitoreo** : onglet par defaut
-  - **Estadísticas** : analyse des frequences
-  - **Enlaces** : les liens existants des enquetes (ce qui est la actuellement)
-- Ajouter les sous-routes `ambiente-monitoreo`, `ambiente-estadisticas` au `titleMap` et au `switch`
+### Structure proposee
 
-#### 2. Creer `AdminAmbienteMonitorTab.tsx`
-**Fichier** : `src/components/admin/AdminAmbienteMonitorTab.tsx`
+```text
+┌──────────────────┬──────────────────────────────────┐
+│  SIDEBAR         │  CONTENU                         │
+│                  │                                  │
+│  ▼ Formularios   │                                  │
+│    Enlaces       │                                  │
+│                  │                                  │
+│  ▼ Fichas RLT    │                                  │
+│    Lista         │                                  │
+│    Regiones      │                                  │
+│                  │                                  │
+│  ▼ Encuesta 360° │                                  │
+│    Config        │                                  │
+│    Inicial       │                                  │
+│    Final         │                                  │
+│    Informes Ini. │                                  │
+│    Informes Fin. │                                  │
+│                  │                                  │
+│  ▼ Analisis      │                                  │
+│    MEL           │                                  │
+│    Rubricas      │                                  │
+│                  │                                  │
+│  ▼ Sistema       │                                  │
+│    Admins        │                                  │
+│    Apreciaciones*│                                  │
+│    Mensajes*     │                                  │
+│    Changelog*    │                                  │
+│                  │  (* = superadmin only)            │
+└──────────────────┴──────────────────────────────────┘
+```
 
-Reproduit le MonitoringSurvey en Shadcn/Tailwind :
-- Charge `fichas_rlt` (directivos) et `encuestas_ambiente_escolar` (soumissions)
-- Tableau listant chaque institution avec le nombre de soumissions par type (docentes/estudiantes/acudientes)
-- Badges colores : rouge=0, jaune=1-24, vert=25+
-- Ligne de totaux en haut
-- Legende avec decompte par categorie
-- Dialog de contact affichant les coordonnees du directivo depuis `fichas_rlt` (correo_personal, correo_institucional, celular_personal, telefono_ie, prefiere_correo)
-- Calculs entierement cote client, pas d'edge function
+### Modifications
 
-#### 3. Creer `AdminAmbienteStatsTab.tsx`
-**Fichier** : `src/components/admin/AdminAmbienteStatsTab.tsx`
+1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
 
-Reproduit le FrequencyChart en Shadcn/Recharts :
-- Combobox de filtre par institution (depuis `fichas_rlt.nombre_ie`)
-- Charge `encuestas_ambiente_escolar` et calcule les frequences cote client depuis `respuestas` JSONB
-- Pour chaque type (docentes/estudiantes/acudientes), affiche un tableau par section (Comunicacion/Practicas Pedagogicas/Convivencia) avec les pourcentages pour chaque option Likert (Siempre/Casi siempre/A veces/Casi nunca/Nunca)
-- Utilise les definitions de questions de `ambienteEscolarData.ts` (ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT)
-- Graphiques avec Recharts (deja installe) : barres empilees pour les frequences par section
+2. **Modifier `src/pages/AdminPage.tsx`** :
+   - Envelopper le layout dans `SidebarProvider`
+   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
+   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
+   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
+   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
 
-#### 4. Mettre a jour la sidebar
-**Fichier** : `src/components/admin/AdminSidebar.tsx`
-- La section "Ambiente Escolar" reste un item unique dans la sidebar (comme actuellement), mais le hub interne gere les sous-onglets
+3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
 
-### Details techniques
-- Toutes les donnees proviennent de `fichas_rlt` et `encuestas_ambiente_escolar` (aucune reference a `rectores`)
-- Les calculs de frequences se font en iterant `respuestas` JSONB cote client
-- Les composants utilisent Shadcn (Table, Badge, Dialog, Tabs) et Recharts
-- Le pattern de hub suit exactement celui de MEL (TabsList sticky avec style primaire)
+### Points techniques
+
+- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
+- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
+- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
+- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
 

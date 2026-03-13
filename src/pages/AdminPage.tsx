@@ -39,6 +39,8 @@ import AdminActivityLogTab from "@/components/admin/AdminActivityLogTab";
 import AdminInformeModuloTab from "@/components/admin/AdminInformeModuloTab";
 import AdminPurgeDataTab from "@/components/admin/AdminPurgeDataTab";
 import AdminSatisfaccionesTab from "@/components/admin/AdminSatisfaccionesTab";
+import AdminAmbienteMonitorTab from "@/components/admin/AdminAmbienteMonitorTab";
+import AdminAmbienteStatsTab from "@/components/admin/AdminAmbienteStatsTab";
 
 interface FormItem {
   name: string;
@@ -215,7 +217,7 @@ function getHubTitle(activeTab: string): string {
     "enlace-ficha": "Fichas RLT", "blank-pdf": "Fichas RLT",
     rubricas: "Rúbricas",
     "informe-modulo": "Informe de Módulo",
-    "ambiente-escolar": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar",
+    "ambiente-escolar": "Ambiente Escolar", "ambiente-monitoreo": "Ambiente Escolar", "ambiente-estadisticas": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar",
     satisfacciones: "Encuestas de Satisfacción",
     certificaciones: "Certificaciones",
     mel: "MEL", "mel-rubricas": "MEL", "mel-config": "MEL",
@@ -437,19 +439,45 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       return <AdminInformeModuloTab />;
     case "blancos-ambiente":
     case "ambiente-escolar":
+    case "ambiente-monitoreo":
+    case "ambiente-estadisticas": {
+      const subAmbienteMap: Record<string, string> = {
+        "ambiente-escolar": "monitoreo",
+        "ambiente-monitoreo": "monitoreo",
+        "ambiente-estadisticas": "estadisticas",
+        "blancos-ambiente": "enlaces",
+      };
+      const defaultSubAmbiente = subAmbienteMap[activeTab] || "monitoreo";
       return (
-        <div className="space-y-4">
-          <h3 className="text-base font-semibold border-b pb-2">Enlaces de Encuestas</h3>
-          <p className="text-sm text-muted-foreground">Copia el enlace de cada encuesta para compartirlo.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[
-              { name: "Encuesta Acudiente", path: "/encuesta-ambiente-acudientes", icon: Users },
-              { name: "Encuesta Estudiante", path: "/encuesta-ambiente-estudiantes", icon: GraduationCap },
-              { name: "Encuesta Docente", path: "/encuesta-ambiente-docentes", icon: BookOpen },
-            ].map((f) => <FormCard key={f.path} form={f} />)}
-          </div>
-        </div>
+        <Tabs defaultValue={defaultSubAmbiente} className="space-y-4">
+          <TabsList className="hub-tabs flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md rounded-lg">
+            <TabsTrigger value="monitoreo" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Monitoreo</TabsTrigger>
+            <TabsTrigger value="estadisticas" className="gap-1.5"><TrendingUp className="w-4 h-4" /> Estadísticas</TabsTrigger>
+            <TabsTrigger value="enlaces" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlaces</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="monitoreo">
+            <AdminAmbienteMonitorTab />
+          </TabsContent>
+          <TabsContent value="estadisticas">
+            <AdminAmbienteStatsTab />
+          </TabsContent>
+          <TabsContent value="enlaces">
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold border-b pb-2">Enlaces de Encuestas</h3>
+              <p className="text-sm text-muted-foreground">Copia el enlace de cada encuesta para compartirlo.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  { name: "Encuesta Acudiente", path: "/encuesta-ambiente-acudientes", icon: Users },
+                  { name: "Encuesta Estudiante", path: "/encuesta-ambiente-estudiantes", icon: GraduationCap },
+                  { name: "Encuesta Docente", path: "/encuesta-ambiente-docentes", icon: BookOpen },
+                ].map((f) => <FormCard key={f.path} form={f} />)}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       );
+    }
     case "satisfacciones":
       return <AdminSatisfaccionesTab />;
     case "certificaciones":
