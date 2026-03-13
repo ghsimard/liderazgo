@@ -497,7 +497,7 @@ export default function AdminAmbienteStatsTab() {
             <Progress value={batchProgress} className="h-2" />
           )}
           {selectedIE === "__all__" && !batchGenerating && (
-            <p className="text-xs text-muted-foreground">Seleccione una institución para generar un informe individual.</p>
+            <p className="text-xs text-muted-foreground">Con "Todas las instituciones", se generará un ZIP con todos los informes de la selección actual.</p>
           )}
         </CardContent>
       </Card>
