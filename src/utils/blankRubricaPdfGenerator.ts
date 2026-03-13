@@ -68,6 +68,9 @@ export async function generarPDFRubricaEnBlanco(
 
   if (modules.length === 0) throw new Error("No rubrica modules found");
 
+  const rltSize = showRlt ? await getImageNaturalSize(logoSources.logoRLT) : { width: 1, height: 1 };
+  const cltSize = showClt ? await getImageNaturalSize(logoSources.logoCLTDark) : { width: 1, height: 1 };
+
   const [rltB64, cltB64, cosmoB64, cosmoSize] = await Promise.all([
     showRlt ? loadImageAsBase64(logoSources.logoRLT) : Promise.resolve(""),
     showClt ? loadImageAsBase64(logoSources.logoCLTDark) : Promise.resolve(""),

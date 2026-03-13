@@ -51,16 +51,19 @@ export async function generarPDFFichaEnBlanco(
   let y = 0;
 
   // ── Header ──
+  const rltNatSize = showRlt ? await getImageNaturalSize(logoSources.logoRLT) : { width: 1, height: 1 };
+  const cltNatSize = showClt ? await getImageNaturalSize(logoSources.logoCLTDark) : { width: 1, height: 1 };
+
   const drawHeader = () => {
-    const logoH = 18;
-    const logoW = 22;
     const logoY = 10;
     const rltLeft = showRlt;
     if (showRlt && rltB64) {
-      doc.addImage(rltB64, "PNG", rltLeft ? margin : pageW - margin - logoW, logoY, logoW, logoH);
+      const d = logoDims(rltNatSize.width, rltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(rltB64, "PNG", rltLeft ? margin : pageW - margin - d.w, logoY, d.w, d.h);
     }
     if (showClt && cltB64) {
-      doc.addImage(cltB64, "PNG", rltLeft ? pageW - margin - logoW : margin, logoY, logoW, logoH);
+      const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(cltB64, "PNG", rltLeft ? pageW - margin - d.w : margin, logoY, d.w, d.h);
     }
     const textStartY = logoY + logoH + 4;
     doc.setTextColor(30, 30, 30);

@@ -63,11 +63,17 @@ export async function generarPDFEncuesta360EnBlanco(
   let y = 0;
 
   const drawLogos = () => {
-    const logoH = 16;
-    const logoW = 20;
     const logoY = 8;
-    if (showRlt && rltB64) doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
-    if (showClt && cltB64) doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
+    if (showRlt && rltB64) {
+      const rltNatSize = rltSize;
+      const d = logoDims(rltNatSize.width, rltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(rltB64, "PNG", margin, logoY, d.w, d.h);
+    }
+    if (showClt && cltB64) {
+      const cltNatSize = cltSize;
+      const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(cltB64, "PNG", pageW - margin - d.w, logoY, d.w, d.h);
+    }
   };
 
   const drawHeader = () => {
