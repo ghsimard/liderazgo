@@ -118,6 +118,7 @@ function getImageNaturalSize(src: string): Promise<{ width: number; height: numb
 interface SectionStat {
   title: string;
   type: string;
+  questionKey?: string;
   data: { label: string; value: number; count: number }[];
 }
 
