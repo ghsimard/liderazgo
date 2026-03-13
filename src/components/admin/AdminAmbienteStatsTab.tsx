@@ -284,7 +284,7 @@ export default function AdminAmbienteStatsTab() {
           const flags = getLogoFlags(ie);
           const blob = await generarAmbienteEscolarReportPDF(
             reportData,
-            { logoRLT: images.logo_rlt_white, logoCLT: images.logo_clt || images.logo_clt_white, logoCosmo: images.logo_cosmo },
+            getPdfLogoSources(images),
             flags,
             { returnBlob: true }
           );
