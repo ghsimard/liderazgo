@@ -1,16 +1,12 @@
 import jsPDF from "jspdf";
-import { loadImageWithSize as loadImageWithSizeHelper } from "@/utils/pdfLogoHelper";
-
-interface LoadedImage {
-  b64: string;
-  widthPx: number;
-  heightPx: number;
-}
-
-async function loadImageWithSize(src: string): Promise<LoadedImage> {
-  const r = await loadImageWithSizeHelper(src);
-  return { b64: r.b64, widthPx: r.width, heightPx: r.height };
-}
+import {
+  loadPdfLogos,
+  drawCoverLogos,
+  drawPageHeaderLogos,
+  drawFooterCosmo,
+  HEADER_LOGO_H,
+  type LoadedLogos,
+} from "@/utils/pdfLogoHelper";
 
 const NIVEL_COLORS = {
   avanzado: { r: 5, g: 150, b: 105 },
@@ -57,23 +53,11 @@ export async function generarPDFRegionalRubricas(
   data: RegionalReportData,
   logoSources: RegionalPdfLogos,
 ): Promise<void> {
-  const imagePromises: Promise<LoadedImage>[] = [];
-  const imageKeys: string[] = [];
-
-  if (logoSources.showLogoRLT) {
-    imagePromises.push(loadImageWithSize(logoSources.logoRLT));
-    imageKeys.push("rlt");
-  }
-  if (logoSources.showLogoCLT) {
-    imagePromises.push(loadImageWithSize(logoSources.logoCLT));
-    imageKeys.push("clt");
-  }
-  imagePromises.push(loadImageWithSize(logoSources.logoCosmo));
-  imageKeys.push("cosmo");
-
-  const loadedImages = await Promise.all(imagePromises);
-  const imgMap: Record<string, LoadedImage> = {};
-  imageKeys.forEach((k, i) => { imgMap[k] = loadedImages[i]; });
+  const logos: LoadedLogos = await loadPdfLogos(
+    { logoRLT: logoSources.logoRLT, logoCLT: logoSources.logoCLT, logoCosmo: logoSources.logoCosmo },
+    logoSources.showLogoRLT,
+    logoSources.showLogoCLT,
+  );
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -82,60 +66,24 @@ export async function generarPDFRegionalRubricas(
   const contentW = pageW - margin * 2;
   let y = 0;
 
-  const addFooter = () => {
-    const footerY = pageH - 15;
-    const cosmoTargetH = 8;
-    const cosmoW = cosmoTargetH * (imgMap.cosmo.widthPx / imgMap.cosmo.heightPx);
-    try { doc.addImage(imgMap.cosmo.b64, "PNG", margin, footerY - 4, cosmoW, cosmoTargetH); } catch {}
-    doc.setFontSize(8);
-    doc.setTextColor(128, 128, 128);
-    doc.text(`Página ${doc.getNumberOfPages()}`, pageW - margin, footerY, { align: "right" });
+  const CONTENT_START_Y = 8 + HEADER_LOGO_H + 4; // after header logos
+
+  const addHeaderAndFooter = () => {
+    drawPageHeaderLogos(doc, logos, { margin, pageW });
+    drawFooterCosmo(doc, logos, { margin, pageW, pageH, pageNum: doc.getNumberOfPages() });
   };
 
   const checkPageBreak = (needed: number) => {
     if (y + needed > pageH - 25) {
-      addFooter();
+      addHeaderAndFooter();
       doc.addPage();
-      y = 25;
+      y = CONTENT_START_Y;
     }
   };
 
   // ── COVER PAGE ──
   y = 30;
-
-  // Show logos based on region configuration — 50% of natural size (96 DPI → mm)
-  const DPI = 96;
-  const PX_TO_MM = 25.4 / DPI;
-  const SCALE = 0.5;
-
-  const LOGO_TARGET_H = 31; // fixed height in mm for both logos
-  const logosToDraw: { b64: string; wMm: number; hMm: number }[] = [];
-  if (logoSources.showLogoRLT && imgMap.rlt) {
-    const li = imgMap.rlt;
-    const w = LOGO_TARGET_H * (li.widthPx / li.heightPx);
-    logosToDraw.push({ b64: li.b64, wMm: w, hMm: LOGO_TARGET_H });
-  }
-  if (logoSources.showLogoCLT && imgMap.clt) {
-    const li = imgMap.clt;
-    const w = LOGO_TARGET_H * (li.widthPx / li.heightPx);
-    logosToDraw.push({ b64: li.b64, wMm: w, hMm: LOGO_TARGET_H });
-  }
-
-  if (logosToDraw.length === 1) {
-    const l = logosToDraw[0];
-    try { doc.addImage(l.b64, "PNG", pageW / 2 - l.wMm / 2, y, l.wMm, l.hMm); } catch {}
-    y += l.hMm + 20;
-  } else if (logosToDraw.length === 2) {
-    const gap = 15;
-    const totalW = logosToDraw[0].wMm + gap + logosToDraw[1].wMm;
-    const startX = (pageW - totalW) / 2;
-    const maxH = Math.max(logosToDraw[0].hMm, logosToDraw[1].hMm);
-    try { doc.addImage(logosToDraw[0].b64, "PNG", startX, y + (maxH - logosToDraw[0].hMm) / 2, logosToDraw[0].wMm, logosToDraw[0].hMm); } catch {}
-    try { doc.addImage(logosToDraw[1].b64, "PNG", startX + logosToDraw[0].wMm + gap, y + (maxH - logosToDraw[1].hMm) / 2, logosToDraw[1].wMm, logosToDraw[1].hMm); } catch {}
-    y += maxH + 20;
-  } else {
-    y += 10;
-  }
+  y = drawCoverLogos(doc, logos, { y, pageW, targetH: 31 }) + 20;
 
   doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
@@ -166,7 +114,7 @@ export async function generarPDFRegionalRubricas(
   y += 7;
   doc.text(`Tasa Avanzado: ${data.globalStats.avanzadoRate}%`, pageW / 2, y, { align: "center" });
 
-  addFooter();
+  drawFooterCosmo(doc, logos, { margin, pageW, pageH, pageNum: 1 });
 
   // ── MODULE PAGES ──
   for (const mod of data.modules) {
@@ -174,7 +122,7 @@ export async function generarPDFRegionalRubricas(
     if (!hasData) continue;
 
     doc.addPage();
-    y = 25;
+    y = CONTENT_START_Y;
 
     // Module title
     doc.setFontSize(13);
@@ -357,7 +305,7 @@ export async function generarPDFRegionalRubricas(
       }
     }
 
-    addFooter();
+    addHeaderAndFooter();
   }
 
   doc.save(`Informe_Regional_Rubricas_${new Date().toISOString().slice(0, 10)}.pdf`);
