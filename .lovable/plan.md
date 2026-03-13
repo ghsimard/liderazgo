@@ -1,63 +1,54 @@
 
 
-## Probleme actuel
+## Analyse : Comment les dimensions de logos sont calculées dans les PDF
 
-Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
+L'investigation révèle **3 approches différentes** utilisées à travers les 12 générateurs, ce qui explique les incohérences :
 
-## Proposition : Sidebar avec sections groupees
-
-Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
-
-### Structure proposee
+### Approches actuelles
 
 ```text
-┌──────────────────┬──────────────────────────────────┐
-│  SIDEBAR         │  CONTENU                         │
-│                  │                                  │
-│  ▼ Formularios   │                                  │
-│    Enlaces       │                                  │
-│                  │                                  │
-│  ▼ Fichas RLT    │                                  │
-│    Lista         │                                  │
-│    Regiones      │                                  │
-│                  │                                  │
-│  ▼ Encuesta 360° │                                  │
-│    Config        │                                  │
-│    Inicial       │                                  │
-│    Final         │                                  │
-│    Informes Ini. │                                  │
-│    Informes Fin. │                                  │
-│                  │                                  │
-│  ▼ Analisis      │                                  │
-│    MEL           │                                  │
-│    Rubricas      │                                  │
-│                  │                                  │
-│  ▼ Sistema       │                                  │
-│    Admins        │                                  │
-│    Apreciaciones*│                                  │
-│    Mensajes*     │                                  │
-│    Changelog*    │                                  │
-│                  │  (* = superadmin only)            │
-└──────────────────┴──────────────────────────────────┘
+Approche                      Fichiers                           Résultat
+─────────────────────────────────────────────────────────────────────────────
+A) pxToMm = 25.4/96 * 0.50   reporte360, ambienteReport         Dépend de la résolution
+   → w = naturalPx * pxToMm                                      du fichier image source
+                                                                  (ex: image 400px → 53mm,
+                                                                   image 800px → 106mm !)
+
+B) Hauteur fixe + ratio       melGlobal, reporte360Mel,          ✅ Correct et stable
+   → logoTargetH = 24mm       melRubrica, satisfaccion           Toujours la même taille
+   → w = (natW/natH) * 24                                        quel que soit le fichier
+
+C) Dimensions hardcodées      pdfGenerator, blankFicha,          ⚠ Déforme le logo
+   → logoW = 22, logoH = 18   blankEncuesta, blankRubrica,       si le ratio réel ≠
+   → logoW = 18, logoH = 14   blankAmbiente                      22/18 ou 18/14
 ```
 
-### Modifications
+### Problème principal
 
-1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
+**L'approche A** (utilisée par `reporte360PdfGenerator` et `ambienteEscolarReportPdfGenerator`) fait dépendre la taille du logo de la résolution pixel de l'image source. Si quelqu'un uploade un logo 2× plus grand en pixels, il sera 2× plus grand dans le PDF.
 
-2. **Modifier `src/pages/AdminPage.tsx`** :
-   - Envelopper le layout dans `SidebarProvider`
-   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
-   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
-   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
-   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
+**L'approche C** ignore le ratio d'aspect naturel du logo — les logos apparaissent étirés ou écrasés.
 
-3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
+### Solution recommandée
 
-### Points techniques
+**Standardiser sur l'approche B** dans `pdfLogoHelper.ts` :
 
-- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
-- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
-- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
-- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
+```typescript
+// Constantes centralisées
+const COVER_LOGO_H = 24;   // mm — logos sur page de couverture
+const HEADER_LOGO_H = 10;  // mm — logos en en-tête pages intérieures
+const FOOTER_COSMO_H = 7;  // mm — logo Cosmo en footer
+
+// Calcul proportionnel (préserve le ratio d'aspect)
+function logoDims(naturalW: number, naturalH: number, targetH: number) {
+  return { w: (naturalW / naturalH) * targetH, h: targetH };
+}
+```
+
+Cette approche :
+- Fixe une **hauteur cible en mm** (indépendante de la résolution du fichier source)
+- Calcule la **largeur proportionnellement** au ratio naturel (pas de déformation)
+- Produit un résultat **identique** quelle que soit la taille en pixels de l'image uploadée
+
+Cela sera intégré dans le `pdfLogoHelper.ts` du plan déjà approuvé, avec les constantes `COVER_LOGO_H = 24`, `HEADER_LOGO_H = 10`, `FOOTER_COSMO_H = 7` appliquées uniformément aux 12 générateurs.
 
