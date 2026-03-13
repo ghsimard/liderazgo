@@ -462,11 +462,15 @@ export default function AdminAmbienteStatsTab() {
             <Button
               size="sm"
               onClick={handleGeneratePDF}
-              disabled={selectedIE === "__all__" || generating}
+              disabled={generating || batchGenerating || institutionOptions.length === 0}
               className="gap-1.5"
             >
-              {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {generating ? "Generando…" : "Generar Informe"}
+              {(generating || (selectedIE === "__all__" && batchGenerating)) ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {(generating || (selectedIE === "__all__" && batchGenerating))
+                ? "Generando…"
+                : selectedIE === "__all__"
+                  ? `Generar Informe ZIP (${institutionOptions.length})`
+                  : "Generar Informe"}
             </Button>
             <Button
               size="sm"
