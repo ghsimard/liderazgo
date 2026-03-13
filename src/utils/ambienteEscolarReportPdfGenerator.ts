@@ -246,27 +246,23 @@ export async function generarAmbienteEscolarReportPDF(
 
   // ── Draw a help box with ! icon ──
   const drawHelpBox = (text: string) => {
-    const lines = wrapText(text, contentW - 16, 7.5);
-    const boxH = Math.max(10, lines.length * 3.5 + 6);
-    ensureSpace(boxH + 3);
-    // Red accent bar on left
+    const lines = wrapText(text, contentW - 14, 7);
+    const boxH = Math.max(8, lines.length * 3 + 5);
+    ensureSpace(boxH + 2);
     doc.setFillColor(180, 0, 0);
-    doc.rect(margin, y, 3, boxH, "F");
-    // Box border
+    doc.rect(margin, y, 2.5, boxH, "F");
     doc.setDrawColor(180, 0, 0);
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(0.4);
     doc.rect(margin, y, contentW, boxH);
-    // Exclamation mark
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(180, 0, 0);
-    doc.text("!", margin + 7, y + boxH / 2 + 2, { align: "center" });
-    // Text
-    doc.setFontSize(7.5);
+    doc.text("!", margin + 6, y + boxH / 2 + 1.5, { align: "center" });
+    doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
-    doc.text(lines, margin + 14, y + 4);
-    y += boxH + 3;
+    doc.text(lines, margin + 12, y + 3.5);
+    y += boxH + 2;
   };
 
   const ROLES = ["docentes", "estudiantes", "acudientes"] as const;
