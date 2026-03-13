@@ -1054,9 +1054,8 @@ export async function generarAmbienteEscolarReportPDF(
   doc.text("RETOS PARA EL DIRECTIVO EVALUADO", margin, y);
   y += 6;
 
-  // Help box for retos
-  drawHelpBox(HELP_BOX_RETOS);
-  y += 2;
+  // Highlighted note for retos
+  drawHighlightedNote(HELP_BOX_RETOS);
 
   // Lined box for writing
   const retosH = Math.min(50, bottomLimit - y - 5);
