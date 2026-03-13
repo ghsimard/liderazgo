@@ -129,6 +129,8 @@ interface ReportSection {
   content?: string;
   bullets?: string[];
   chartSectionTitle?: string;
+  selectedQuestionKeys?: string[];
+  chartType?: string;
   enabled: boolean;
   isSubsection?: boolean;
 }
