@@ -927,11 +927,8 @@ export async function generarAmbienteEscolarReportPDF(
 
   drawUnifiedTableHeader();
 
-  // Group items by section for the vertical section label
   let currentSection: SectionName | null = null;
-  let sectionStartY = y;
-  const sectionRanges: { section: string; startY: number; endY: number; page: number }[] = [];
-  let sectionItemIdx = 0; // for alternating rows within each section
+  let sectionItemIdx = 0;
 
   for (let itemIdx = 0; itemIdx < UNIFIED_REPORT_ITEMS.length; itemIdx++) {
     const item = UNIFIED_REPORT_ITEMS[itemIdx];
