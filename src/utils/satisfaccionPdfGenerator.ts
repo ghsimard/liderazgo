@@ -985,14 +985,14 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     let numStr: string;
     if (entry.isSubsection) {
       tocSub++;
-      numStr = `${tocMain}.${tocSub}`;
+      numStr = `${tocMain}.${tocSub}.`;
     } else {
       tocMain++;
       tocSub = 0;
-      numStr = String(tocMain);
+      numStr = `${tocMain}.`;
     }
 
-    const indent = entry.isSubsection ? margin + 10 : margin + 4;
+    const indent = margin + 4;
     doc.setFont("helvetica", entry.isSubsection ? "normal" : "bold");
     doc.setTextColor(60, 60, 60);
     const label = `${numStr}  ${entry.title}`;
