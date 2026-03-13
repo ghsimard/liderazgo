@@ -890,7 +890,7 @@ export async function generarAmbienteEscolarReportPDF(
   // Draw table header
   const drawUnifiedTableHeader = () => {
     // Role group headers
-    let hx = margin + col0W;
+    let hx = tableLeft + col0W;
     const topH = 5;
     for (const role of ROLES) {
       doc.setFillColor(220, 220, 220);
@@ -905,13 +905,13 @@ export async function generarAmbienteEscolarReportPDF(
 
     // S/A/N sub-headers + "Item de la encuesta"
     doc.setFillColor(240, 240, 240);
-    doc.rect(margin, y, col0W, 5, "F");
+    doc.rect(tableLeft, y, col0W, 5, "F");
     doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    doc.text("Item de la encuesta", margin + col0W / 2, y + 3.5, { align: "center" });
+    doc.text("Item de la encuesta", tableLeft + col0W / 2, y + 3.5, { align: "center" });
 
-    hx = margin + col0W;
+    hx = tableLeft + col0W;
     for (const _role of ROLES) {
       doc.setFillColor(240, 240, 240);
       doc.rect(hx, y, colGroupW, 5, "F");
