@@ -1,16 +1,12 @@
 import jsPDF from "jspdf";
-import { loadImageWithSize as loadImageWithSizeHelper } from "@/utils/pdfLogoHelper";
-
-interface LoadedImage {
-  b64: string;
-  widthPx: number;
-  heightPx: number;
-}
-
-async function loadImageWithSize(src: string): Promise<LoadedImage> {
-  const r = await loadImageWithSizeHelper(src);
-  return { b64: r.b64, widthPx: r.width, heightPx: r.height };
-}
+import {
+  loadPdfLogos,
+  drawCoverLogos,
+  drawPageHeaderLogos,
+  drawFooterCosmo,
+  HEADER_LOGO_H,
+  type LoadedLogos,
+} from "@/utils/pdfLogoHelper";
 
 const NIVEL_COLORS = {
   avanzado: { r: 5, g: 150, b: 105 },
