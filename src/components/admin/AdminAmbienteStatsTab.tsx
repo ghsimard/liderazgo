@@ -324,12 +324,33 @@ export default function AdminAmbienteStatsTab() {
     try {
       const freq = ["Siempre", "Casi siempre", "A veces", "Casi nunca", "Nunca"];
       const jornadas = JORNADA_OPTIONS;
-      const buildFakeResponses = (likert: LikertSection[]) => {
-        const r: Record<string, string> = {};
+      const buildFakeResponses = (likert: LikertSection[], formType: string): Record<string, any> => {
+        const r: Record<string, any> = {};
+        const jornadas = JORNADA_OPTIONS;
         r.jornada = jornadas[Math.floor(Math.random() * jornadas.length)];
+
+        if (formType === "docentes") {
+          r.anos_docente = ANOS_OPTIONS[Math.floor(Math.random() * ANOS_OPTIONS.length)];
+          // Pick 1-3 random grados
+          const numGrados = 1 + Math.floor(Math.random() * 3);
+          const shuffled = [...GRADOS_COMPLETOS].sort(() => Math.random() - 0.5);
+          r.grados = shuffled.slice(0, numGrados);
+          r.jornadas = [jornadas[Math.floor(Math.random() * jornadas.length)]];
+          // Pick 1-2 fuentes
+          const numFuentes = 1 + Math.floor(Math.random() * 2);
+          const shuffledF = [...FUENTES_RETROALIMENTACION].sort(() => Math.random() - 0.5);
+          r.fuentes_retroalimentacion = shuffledF.slice(0, numFuentes);
+        } else if (formType === "estudiantes") {
+          r.anos_estudiando = ANOS_OPTIONS[Math.floor(Math.random() * ANOS_OPTIONS.length)];
+          r.grado = GRADOS_ESTUDIANTE[Math.floor(Math.random() * GRADOS_ESTUDIANTE.length)];
+        } else if (formType === "acudientes") {
+          const numGrados = 1 + Math.floor(Math.random() * 2);
+          const shuffled = [...GRADOS_COMPLETOS].sort(() => Math.random() - 0.5);
+          r.grados = shuffled.slice(0, numGrados);
+        }
+
         for (const sec of likert) {
           for (const item of sec.items) {
-            // Weighted random: favour positive answers
             const weights = [40, 25, 20, 10, 5];
             const roll = Math.random() * 100;
             let cum = 0;
@@ -344,9 +365,9 @@ export default function AdminAmbienteStatsTab() {
 
       const fakeSubs: AmbienteReportData["submissions"] = [];
       // 12 docentes, 25 estudiantes, 8 acudientes
-      for (let i = 0; i < 12; i++) fakeSubs.push({ tipo_formulario: "docentes", respuestas: buildFakeResponses(DOCENTES_LIKERT) });
-      for (let i = 0; i < 25; i++) fakeSubs.push({ tipo_formulario: "estudiantes", respuestas: buildFakeResponses(ESTUDIANTES_LIKERT) });
-      for (let i = 0; i < 8; i++) fakeSubs.push({ tipo_formulario: "acudientes", respuestas: buildFakeResponses(ACUDIENTES_LIKERT) });
+      for (let i = 0; i < 12; i++) fakeSubs.push({ tipo_formulario: "docentes", respuestas: buildFakeResponses(DOCENTES_LIKERT, "docentes") });
+      for (let i = 0; i < 25; i++) fakeSubs.push({ tipo_formulario: "estudiantes", respuestas: buildFakeResponses(ESTUDIANTES_LIKERT, "estudiantes") });
+      for (let i = 0; i < 8; i++) fakeSubs.push({ tipo_formulario: "acudientes", respuestas: buildFakeResponses(ACUDIENTES_LIKERT, "acudientes") });
 
       await generarAmbienteEscolarReportPDF(
         {
