@@ -3,9 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Users, BookOpen, GraduationCap } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { Progress } from "@/components/ui/progress";
+import { RefreshCw, Users, BookOpen, GraduationCap, Filter, Download, FileText } from "lucide-react";
 import { ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, FREQUENCY_OPTIONS, type LikertSection } from "@/data/ambienteEscolarData";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { generarAmbienteEscolarReportPDF, type AmbienteReportData } from "@/utils/ambienteEscolarReportPdfGenerator";
+import { useAppImages } from "@/hooks/useAppImages";
+import { useToast } from "@/hooks/use-toast";
+import JSZip from "jszip";
 
 const FORM_TYPES = [
   { key: "docentes", label: "Docentes", icon: BookOpen, likert: DOCENTES_LIKERT },
@@ -25,6 +33,18 @@ interface RawSubmission {
   institucion_educativa: string;
   tipo_formulario: string;
   respuestas: Record<string, string>;
+}
+
+interface FichaInfo {
+  nombre_ie: string;
+  region: string;
+  entidad_territorial: string | null;
+}
+
+interface RegionInfo {
+  nombre: string;
+  mostrar_logo_rlt: boolean;
+  mostrar_logo_clt: boolean;
 }
 
 function computeFrequencies(
@@ -121,34 +141,181 @@ function FrequencyChart({ data }: { data: ReturnType<typeof computeFrequencies> 
 }
 
 export default function AdminAmbienteStatsTab() {
+  const { images } = useAppImages();
+  const { toast } = useToast();
   const [submissions, setSubmissions] = useState<RawSubmission[]>([]);
-  const [institutions, setInstitutions] = useState<string[]>([]);
-  const [selectedIE, setSelectedIE] = useState("__all__");
+  const [fichas, setFichas] = useState<FichaInfo[]>([]);
+  const [regions, setRegions] = useState<RegionInfo[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Filters
+  const [selRegions, setSelRegions] = useState<string[]>([]);
+  const [selEntidades, setSelEntidades] = useState<string[]>([]);
+  const [selectedIE, setSelectedIE] = useState("__all__");
+
+  // PDF state
+  const [generating, setGenerating] = useState(false);
+  const [batchGenerating, setBatchGenerating] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(0);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [subRes, ieRes] = await Promise.all([
+      const [subRes, fichaRes, regRes] = await Promise.all([
         supabase.from("encuestas_ambiente_escolar").select("institucion_educativa, tipo_formulario, respuestas"),
-        supabase.from("fichas_rlt").select("nombre_ie"),
+        supabase.from("fichas_rlt").select("nombre_ie, region, entidad_territorial"),
+        supabase.from("regiones").select("nombre, mostrar_logo_rlt, mostrar_logo_clt"),
       ]);
-      const subs = (subRes.data || []) as RawSubmission[];
-      setSubmissions(subs);
-
-      const ieSet = new Set<string>();
-      (ieRes.data || []).forEach((r: any) => ieSet.add(r.nombre_ie));
-      subs.forEach((s) => ieSet.add(s.institucion_educativa));
-      setInstitutions(Array.from(ieSet).sort());
+      setSubmissions((subRes.data || []) as RawSubmission[]);
+      setFichas((fichaRes.data || []) as FichaInfo[]);
+      setRegions((regRes.data || []) as RegionInfo[]);
       setLoading(false);
     }
     load();
   }, []);
 
+  // Clear downstream filters
+  useEffect(() => { setSelEntidades([]); setSelectedIE("__all__"); }, [selRegions]);
+  useEffect(() => { setSelectedIE("__all__"); }, [selEntidades]);
+
+  // Build institution list from submissions + fichas, filtered by region/entidad
+  const institutionOptions = useMemo(() => {
+    // All institutions that have submissions
+    const ieFromSubs = new Set(submissions.map((s) => s.institucion_educativa));
+
+    // Map IE → region/entidad from fichas
+    const ieInfo = new Map<string, FichaInfo>();
+    for (const f of fichas) {
+      ieInfo.set(f.nombre_ie, f);
+    }
+
+    let ieList = Array.from(ieFromSubs);
+
+    if (selRegions.length > 0) {
+      ieList = ieList.filter((ie) => {
+        const info = ieInfo.get(ie);
+        return info && selRegions.includes(info.region);
+      });
+    }
+    if (selEntidades.length > 0) {
+      ieList = ieList.filter((ie) => {
+        const info = ieInfo.get(ie);
+        return info && info.entidad_territorial && selEntidades.includes(info.entidad_territorial);
+      });
+    }
+
+    return ieList.sort();
+  }, [submissions, fichas, selRegions, selEntidades]);
+
+  const regionOptions = useMemo(() => {
+    const vals = [...new Set(fichas.map((f) => f.region).filter(Boolean))].sort();
+    return vals.map((v) => ({ value: v, label: v }));
+  }, [fichas]);
+
+  const entidadOptions = useMemo(() => {
+    let pool = fichas;
+    if (selRegions.length > 0) pool = pool.filter((f) => selRegions.includes(f.region));
+    const vals = [...new Set(pool.map((f) => f.entidad_territorial).filter(Boolean) as string[])].sort();
+    return vals.map((v) => ({ value: v, label: v }));
+  }, [fichas, selRegions]);
+
   const filtered = useMemo(() => {
-    if (selectedIE === "__all__") return submissions;
+    if (selectedIE === "__all__") {
+      // Filter by region/entidad via institutionOptions
+      if (selRegions.length === 0 && selEntidades.length === 0) return submissions;
+      return submissions.filter((s) => institutionOptions.includes(s.institucion_educativa));
+    }
     return submissions.filter((s) => s.institucion_educativa === selectedIE);
-  }, [submissions, selectedIE]);
+  }, [submissions, selectedIE, institutionOptions, selRegions, selEntidades]);
+
+  const hasFilters = selRegions.length > 0 || selEntidades.length > 0;
+
+  // ── PDF generation ──
+  const getLogoFlags = (ie: string) => {
+    const fichaInfo = fichas.find((f) => f.nombre_ie === ie);
+    if (!fichaInfo) return { showLogoRlt: true, showLogoClt: true };
+    const regionInfo = regions.find((r) => r.nombre === fichaInfo.region);
+    if (!regionInfo) return { showLogoRlt: true, showLogoClt: true };
+    return { showLogoRlt: regionInfo.mostrar_logo_rlt, showLogoClt: regionInfo.mostrar_logo_clt };
+  };
+
+  const buildReportData = (ie: string): AmbienteReportData => {
+    const fichaInfo = fichas.find((f) => f.nombre_ie === ie);
+    return {
+      institucion: ie,
+      entidadTerritorial: fichaInfo?.entidad_territorial || "",
+      submissions: submissions
+        .filter((s) => s.institucion_educativa === ie)
+        .map((s) => ({ tipo_formulario: s.tipo_formulario, respuestas: s.respuestas })),
+    };
+  };
+
+  const handleGeneratePDF = async () => {
+    if (selectedIE === "__all__") return;
+    setGenerating(true);
+    try {
+      const reportData = buildReportData(selectedIE);
+      const flags = getLogoFlags(selectedIE);
+      await generarAmbienteEscolarReportPDF(
+        reportData,
+        { logoRLT: images.logo_rlt_white, logoCLT: images.logo_clt || images.logo_clt_white, logoCosmo: images.logo_cosmo },
+        flags
+      );
+      toast({ title: "PDF generado", description: `Informe descargado para ${selectedIE}` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setGenerating(false);
+  };
+
+  const handleBatchExport = async () => {
+    if (institutionOptions.length === 0) return;
+    setBatchGenerating(true);
+    setBatchProgress(0);
+    try {
+      const zip = new JSZip();
+      let count = 0;
+      for (let i = 0; i < institutionOptions.length; i++) {
+        const ie = institutionOptions[i];
+        try {
+          const reportData = buildReportData(ie);
+          if (reportData.submissions.length === 0) continue;
+          const flags = getLogoFlags(ie);
+          const blob = await generarAmbienteEscolarReportPDF(
+            reportData,
+            { logoRLT: images.logo_rlt_white, logoCLT: images.logo_clt || images.logo_clt_white, logoCosmo: images.logo_cosmo },
+            flags,
+            { returnBlob: true }
+          );
+          if (blob) {
+            const safeName = ie.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, "").replace(/\s+/g, "_");
+            zip.file(`Informe_Ambiente_${safeName}.pdf`, blob);
+            count++;
+          }
+        } catch {
+          // skip failed
+        }
+        setBatchProgress(Math.round(((i + 1) / institutionOptions.length) * 100));
+      }
+      if (count === 0) {
+        toast({ title: "Sin informes", description: "No se pudo generar ningún informe", variant: "destructive" });
+        setBatchGenerating(false);
+        return;
+      }
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Informes_Ambiente_Escolar_${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "ZIP descargado", description: `${count} informe(s) generados` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setBatchGenerating(false);
+    setBatchProgress(0);
+  };
 
   if (loading) {
     return (
@@ -160,19 +327,97 @@ export default function AdminAmbienteStatsTab() {
 
   return (
     <div className="space-y-4">
+      {/* Cascade filters */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Filter className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Filtros</span>
+            {hasFilters && (
+              <button
+                onClick={() => { setSelRegions([]); setSelEntidades([]); setSelectedIE("__all__"); }}
+                className="text-xs text-muted-foreground hover:text-foreground underline ml-auto"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Región</label>
+              <MultiSelect
+                options={regionOptions}
+                selected={selRegions}
+                onChange={setSelRegions}
+                placeholder="Todas las regiones"
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Entidad Territorial</label>
+              <MultiSelect
+                options={entidadOptions}
+                selected={selEntidades}
+                onChange={setSelEntidades}
+                placeholder="Todas las entidades"
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Institución</label>
+              <Select value={selectedIE} onValueChange={setSelectedIE}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Todas las instituciones" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas las instituciones</SelectItem>
+                  {institutionOptions.map((ie) => (
+                    <SelectItem key={ie} value={ie}>{ie}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* PDF Export */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <FileText className="w-5 h-5 text-primary" />
+            <span className="text-sm font-medium">Informes PDF</span>
+            <Button
+              size="sm"
+              onClick={handleGeneratePDF}
+              disabled={selectedIE === "__all__" || generating}
+              className="gap-1.5"
+            >
+              {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {generating ? "Generando…" : "Generar Informe"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleBatchExport}
+              disabled={institutionOptions.length === 0 || batchGenerating}
+              className="gap-1.5"
+            >
+              {batchGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {batchGenerating ? "Generando ZIP…" : `Exportar ZIP (${institutionOptions.length})`}
+            </Button>
+          </div>
+          {batchGenerating && (
+            <Progress value={batchProgress} className="h-2" />
+          )}
+          {selectedIE === "__all__" && !batchGenerating && (
+            <p className="text-xs text-muted-foreground">Seleccione una institución para generar un informe individual.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Stats */}
       <div className="flex items-center gap-3 flex-wrap">
-        <label className="text-sm font-medium">Institución:</label>
-        <Select value={selectedIE} onValueChange={setSelectedIE}>
-          <SelectTrigger className="w-72">
-            <SelectValue placeholder="Todas las instituciones" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Todas las instituciones</SelectItem>
-            {institutions.map((ie) => (
-              <SelectItem key={ie} value={ie}>{ie}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <span className="text-xs text-muted-foreground ml-auto">{filtered.length} respuestas</span>
       </div>
 
