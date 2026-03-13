@@ -179,7 +179,7 @@ export async function generarMelRubricasPDF(
   // ═══════════════════════════════════════════
   doc.addPage();
   pageNum++;
-  y = 22;
+  y = 28;
 
   y = drawSectionTitle(doc, "RESULTADOS INDIVIDUALES", margin, y);
   y += 3;
