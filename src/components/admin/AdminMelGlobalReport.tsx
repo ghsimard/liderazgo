@@ -196,11 +196,12 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
     if (!agg) return;
     setDownloading(true);
     try {
+      const pdfLogos = getPdfLogoSources(images);
       await generarMelGlobalPDF(
         agg,
         {
-          logoRLT: images.logo_rlt_white || images.logo_rlt,
-          logoCLT: images.logo_clt || images.logo_clt_white,
+          logoRLT: pdfLogos.logoRLT,
+          logoCLT: pdfLogos.logoCLT,
           showRLT: regionLogoConfig.showRLT,
           showCLT: regionLogoConfig.showCLT,
         },

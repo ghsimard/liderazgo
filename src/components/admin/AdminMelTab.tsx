@@ -424,9 +424,10 @@ export default function AdminMelTab() {
     setBulkExporting(true);
     setBulkProgress({ current: 0, total: filteredDirectivos.length });
     const zip = new JSZip();
+    const pdfSrc = getPdfLogoSources(images);
     const baseLogos = {
-      logoRLT: images.logo_rlt_white || images.logo_rlt,
-      logoCLT: images.logo_clt || images.logo_clt_white,
+      logoRLT: pdfSrc.logoRLT,
+      logoCLT: pdfSrc.logoCLT,
     };
 
     // Pre-fetch region logo configs

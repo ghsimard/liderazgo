@@ -226,9 +226,10 @@ export default function AdminMelRubricasTab() {
     if (!melData) return;
     setGeneratingPdf(true);
     try {
+      const pdfLogos = getPdfLogoSources(images);
       await generarMelRubricasPDF(melData, {
-        logoRLT: images.logo_rlt_white,
-        logoCLT: images.logo_clt,
+        logoRLT: pdfLogos.logoRLT,
+        logoCLT: pdfLogos.logoCLT,
         showRLT: regionLogoConfig.showRLT,
         showCLT: regionLogoConfig.showCLT,
       }, filterLabel, { showIndividualResults: showIndividual });
