@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/utils/dbClient";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -17,9 +17,10 @@ import {
 import { cn } from "@/lib/utils";
 import {
   CalendarIcon, Search, RefreshCw, Loader2, Trash2, ChevronLeft, ChevronRight,
-  LogIn, LogOut, FileText, ClipboardCheck, Send, Star, MessageSquare, Eye, Activity,
+  LogIn, LogOut, FileText, ClipboardCheck, Send, Star, MessageSquare, Eye, Activity, Filter,
 } from "lucide-react";
 import { toast } from "sonner";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 interface ActivityLog {
   id: string;
@@ -92,11 +93,44 @@ export default function AdminActivityLogTab({ isSuperAdmin = false }: { isSuperA
   const [showPurgeDialog, setShowPurgeDialog] = useState(false);
   const [purgeDays, setPurgeDays] = useState("90");
 
+  // Region / geography filter data
+  const [regiones, setRegiones] = useState<{ value: string; label: string }[]>([]);
+  const [cedulasByRegion, setCedulasByRegion] = useState<Record<string, string[]>>({});
+  const [selRegions, setSelRegions] = useState<string[]>([]);
+
   // Filters
   const [cedulaFilter, setCedulaFilter] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
+
+  // Load regions and cedula mapping once
+  useEffect(() => {
+    (async () => {
+      const [{ data: regs }, { data: fichas }] = await Promise.all([
+        supabase.from("regiones").select("nombre").order("nombre"),
+        supabase.from("fichas_rlt").select("numero_cedula, region"),
+      ]);
+      setRegiones((regs ?? []).map(r => ({ value: r.nombre, label: r.nombre })));
+      const map: Record<string, string[]> = {};
+      for (const f of fichas ?? []) {
+        if (!f.numero_cedula || !f.region) continue;
+        if (!map[f.region]) map[f.region] = [];
+        map[f.region].push(f.numero_cedula);
+      }
+      setCedulasByRegion(map);
+    })();
+  }, []);
+
+  // Compute cedulas for selected regions
+  const regionCedulas = useMemo(() => {
+    if (selRegions.length === 0) return null;
+    const set = new Set<string>();
+    for (const r of selRegions) {
+      for (const c of cedulasByRegion[r] ?? []) set.add(c);
+    }
+    return [...set];
+  }, [selRegions, cedulasByRegion]);
 
   const fetchLogs = async () => {
     setLoading(true);
