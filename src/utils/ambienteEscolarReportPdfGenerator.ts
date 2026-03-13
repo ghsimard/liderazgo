@@ -1062,15 +1062,17 @@ export async function generarAmbienteEscolarReportPDF(
     doc.rect(margin, range.startY, sectionLabelW, sectionH);
 
     // Rotated text centered inside the label column
+    // With angle:90 in jsPDF, the text rotates counter-clockwise around (x,y)
     doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(80, 80, 80);
 
     const sectionLabel = range.section.toUpperCase();
-    const textX = margin + sectionLabelW / 2;
-    doc.text(sectionLabel, textX, midY, {
+    // Position: horizontally centered in the label column, vertically centered in the section
+    doc.text(sectionLabel, margin + sectionLabelW / 2 + 1, midY, {
       align: "center",
       angle: 90,
+      baseline: "middle",
     });
   }
   // Go back to current page
