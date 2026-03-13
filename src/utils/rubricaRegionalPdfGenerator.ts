@@ -5,6 +5,8 @@ import {
   drawPageHeaderLogos,
   drawFooterCosmo,
   HEADER_LOGO_H,
+  CONTENT_START_Y,
+  CONTENT_BOTTOM_MARGIN,
   type LoadedLogos,
 } from "@/utils/pdfLogoHelper";
 
