@@ -65,7 +65,7 @@ export async function generarPDFFichaEnBlanco(
       const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
       doc.addImage(cltB64, "PNG", rltLeft ? pageW - margin - d.w : margin, logoY, d.w, d.h);
     }
-    const textStartY = logoY + logoH + 4;
+    const textStartY = logoY + HEADER_LOGO_H + 4;
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");

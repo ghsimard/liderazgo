@@ -55,6 +55,9 @@ export async function generarPDFEncuesta360EnBlanco(
     getImageNaturalSize(logoSources.logoCosmo),
   ]);
 
+  const rltNatSize = showRlt ? await getImageNaturalSize(logoSources.logoRLT) : { width: 1, height: 1 };
+  const cltNatSize = showClt ? await getImageNaturalSize(logoSources.logoCLTDark) : { width: 1, height: 1 };
+
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -65,12 +68,10 @@ export async function generarPDFEncuesta360EnBlanco(
   const drawLogos = () => {
     const logoY = 8;
     if (showRlt && rltB64) {
-      const rltNatSize = rltSize;
       const d = logoDims(rltNatSize.width, rltNatSize.height, HEADER_LOGO_H);
       doc.addImage(rltB64, "PNG", margin, logoY, d.w, d.h);
     }
     if (showClt && cltB64) {
-      const cltNatSize = cltSize;
       const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
       doc.addImage(cltB64, "PNG", pageW - margin - d.w, logoY, d.w, d.h);
     }

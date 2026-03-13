@@ -78,6 +78,8 @@ export async function generarPDFAmbienteEscolarEnBlanco(
       : DOCENTES_LIKERT;
 
   // ── Helpers ──
+  const rltNatSize = showRlt ? await getImageNaturalSize(logoSources.logoRLT) : { width: 1, height: 1 };
+  const cltNatSize = showClt ? await getImageNaturalSize(logoSources.logoCLTDark) : { width: 1, height: 1 };
 
   const ensureSpace = (needed: number) => {
     if (y + needed > pageH - 15) {
@@ -87,16 +89,19 @@ export async function generarPDFAmbienteEscolarEnBlanco(
   };
 
   const drawLogos = () => {
-    const logoH = 14;
-    const logoW = 18;
     const logoY = 6;
-    if (showRlt && rltB64) doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
-    if (showClt && cltB64) doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
+    if (showRlt && rltB64) {
+      const d = logoDims(rltNatSize.width, rltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(rltB64, "PNG", margin, logoY, d.w, d.h);
+    }
+    if (showClt && cltB64) {
+      const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(cltB64, "PNG", pageW - margin - d.w, logoY, d.w, d.h);
+    }
 
     // Cosmo centered — proportional
-    const cosmoH = 12;
-    const cosmoW = cosmoH * (cosmoSize.width / cosmoSize.height);
-    if (cosmoB64) doc.addImage(cosmoB64, "PNG", (pageW - cosmoW) / 2, logoY + 1, cosmoW, cosmoH);
+    const cosmoD = logoDims(cosmoSize.width, cosmoSize.height, 12);
+    if (cosmoB64) doc.addImage(cosmoB64, "PNG", (pageW - cosmoD.w) / 2, logoY + 1, cosmoD.w, cosmoD.h);
   };
 
   const drawHeader = (isFirstPage = false) => {
