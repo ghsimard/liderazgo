@@ -13,34 +13,7 @@ import {
   DOCENTES_LIKERT,
   type LikertSection,
 } from "@/data/ambienteEscolarData";
-
-function loadImageAsBase64(src: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
-
-function getImageNaturalSize(src: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
+import { loadImageAsBase64, getImageNaturalSize, logoDims, HEADER_LOGO_H, FOOTER_COSMO_H } from "@/utils/pdfLogoHelper";
 
 interface LogoSources {
   logoRLT: string;
@@ -78,6 +51,8 @@ export async function generarPDFAmbienteEscolarEnBlanco(
       : DOCENTES_LIKERT;
 
   // ── Helpers ──
+  const rltNatSize = showRlt ? await getImageNaturalSize(logoSources.logoRLT) : { width: 1, height: 1 };
+  const cltNatSize = showClt ? await getImageNaturalSize(logoSources.logoCLTDark) : { width: 1, height: 1 };
 
   const ensureSpace = (needed: number) => {
     if (y + needed > pageH - 15) {
@@ -87,16 +62,19 @@ export async function generarPDFAmbienteEscolarEnBlanco(
   };
 
   const drawLogos = () => {
-    const logoH = 14;
-    const logoW = 18;
     const logoY = 6;
-    if (showRlt && rltB64) doc.addImage(rltB64, "PNG", margin, logoY, logoW, logoH);
-    if (showClt && cltB64) doc.addImage(cltB64, "PNG", pageW - margin - logoW, logoY, logoW, logoH);
+    if (showRlt && rltB64) {
+      const d = logoDims(rltNatSize.width, rltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(rltB64, "PNG", margin, logoY, d.w, d.h);
+    }
+    if (showClt && cltB64) {
+      const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(cltB64, "PNG", pageW - margin - d.w, logoY, d.w, d.h);
+    }
 
     // Cosmo centered — proportional
-    const cosmoH = 12;
-    const cosmoW = cosmoH * (cosmoSize.width / cosmoSize.height);
-    if (cosmoB64) doc.addImage(cosmoB64, "PNG", (pageW - cosmoW) / 2, logoY + 1, cosmoW, cosmoH);
+    const cosmoD = logoDims(cosmoSize.width, cosmoSize.height, 12);
+    if (cosmoB64) doc.addImage(cosmoB64, "PNG", (pageW - cosmoD.w) / 2, logoY + 1, cosmoD.w, cosmoD.h);
   };
 
   const drawHeader = (isFirstPage = false) => {

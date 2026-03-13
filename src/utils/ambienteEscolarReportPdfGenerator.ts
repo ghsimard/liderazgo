@@ -14,35 +14,7 @@ import {
   getQuestionText,
   type SectionName,
 } from "@/data/ambienteEscolarReportData";
-
-// ── Image loader ──
-function loadImageAsBase64(src: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const c = document.createElement("canvas");
-      c.width = img.naturalWidth;
-      c.height = img.naturalHeight;
-      const ctx = c.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, 0, 0);
-      resolve(c.toDataURL("image/png"));
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
-
-function getImageNaturalSize(src: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
+import { loadImageAsBase64, getImageNaturalSize, logoDims, COVER_LOGO_H, FOOTER_COSMO_H } from "@/utils/pdfLogoHelper";
 
 // ── Types ──
 export interface AmbienteReportData {
@@ -188,7 +160,7 @@ export async function generarAmbienteEscolarReportPDF(
   let y = 0;
 
   // ── Helpers ──
-  const pxToMm = 25.4 / 96 * 0.50;
+  // pxToMm removed — use logoDims() from pdfLogoHelper instead
 
   const ensureSpace = (needed: number) => {
     if (y + needed > pageH - 20) {
@@ -245,22 +217,20 @@ export async function generarAmbienteEscolarReportPDF(
   // Logos
   if (showRlt && rltB64) {
     const rltSize = await getImageNaturalSize(logoSources.logoRLT);
-    const rltW = rltSize.width * pxToMm;
-    const rltH = rltSize.height * pxToMm;
+    const rltDims = logoDims(rltSize.width, rltSize.height, COVER_LOGO_H);
     if (showClt) {
-      doc.addImage(rltB64, "PNG", margin, 20, rltW, rltH);
+      doc.addImage(rltB64, "PNG", margin, 20, rltDims.w, rltDims.h);
     } else {
-      doc.addImage(rltB64, "PNG", (pageW - rltW) / 2, 20, rltW, rltH);
+      doc.addImage(rltB64, "PNG", (pageW - rltDims.w) / 2, 20, rltDims.w, rltDims.h);
     }
   }
   if (showClt && cltB64) {
     const cltSize = await getImageNaturalSize(logoSources.logoCLT);
-    const cltW = cltSize.width * pxToMm;
-    const cltH = cltSize.height * pxToMm;
+    const cltDims = logoDims(cltSize.width, cltSize.height, COVER_LOGO_H);
     if (showRlt) {
-      doc.addImage(cltB64, "PNG", pageW - margin - cltW, 20, cltW, cltH);
+      doc.addImage(cltB64, "PNG", pageW - margin - cltDims.w, 20, cltDims.w, cltDims.h);
     } else {
-      doc.addImage(cltB64, "PNG", (pageW - cltW) / 2, 20, cltW, cltH);
+      doc.addImage(cltB64, "PNG", (pageW - cltDims.w) / 2, 20, cltDims.w, cltDims.h);
     }
   }
 

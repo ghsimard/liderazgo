@@ -1,33 +1,5 @@
 import jsPDF from "jspdf";
-
-/** Convert an image URL (imported asset) to a base64 data URL */
-function loadImageAsBase64(src: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
-
-function getImageNaturalSize(src: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
+import { loadImageAsBase64, getImageNaturalSize, logoDims, HEADER_LOGO_H, FOOTER_COSMO_H } from "@/utils/pdfLogoHelper";
 
 export async function generarPDFFichaEnBlanco(
   logoSources: { logoRLT: string; logoCLTDark: string; logoCosmo: string },
@@ -51,18 +23,21 @@ export async function generarPDFFichaEnBlanco(
   let y = 0;
 
   // ── Header ──
+  const rltNatSize = showRlt ? await getImageNaturalSize(logoSources.logoRLT) : { width: 1, height: 1 };
+  const cltNatSize = showClt ? await getImageNaturalSize(logoSources.logoCLTDark) : { width: 1, height: 1 };
+
   const drawHeader = () => {
-    const logoH = 18;
-    const logoW = 22;
     const logoY = 10;
     const rltLeft = showRlt;
     if (showRlt && rltB64) {
-      doc.addImage(rltB64, "PNG", rltLeft ? margin : pageW - margin - logoW, logoY, logoW, logoH);
+      const d = logoDims(rltNatSize.width, rltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(rltB64, "PNG", rltLeft ? margin : pageW - margin - d.w, logoY, d.w, d.h);
     }
     if (showClt && cltB64) {
-      doc.addImage(cltB64, "PNG", rltLeft ? pageW - margin - logoW : margin, logoY, logoW, logoH);
+      const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(cltB64, "PNG", rltLeft ? pageW - margin - d.w : margin, logoY, d.w, d.h);
     }
-    const textStartY = logoY + logoH + 4;
+    const textStartY = logoY + HEADER_LOGO_H + 4;
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");

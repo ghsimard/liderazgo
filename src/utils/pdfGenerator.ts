@@ -1,34 +1,6 @@
 import jsPDF from "jspdf";
 import { genderizeRole } from "@/utils/genderizeRole";
-
-/** Convert an image URL (imported asset) to a base64 data URL */
-function loadImageAsBase64(src: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
-
-function getImageNaturalSize(src: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
+import { loadImageAsBase64, getImageNaturalSize, logoDims, HEADER_LOGO_H, FOOTER_COSMO_H } from "@/utils/pdfLogoHelper";
 
 export interface PdfLogos {
   logoRLT: string;
@@ -60,19 +32,19 @@ export async function generarPDFFicha(
   let y = 0;
 
   // ── Header (white background, logos + centered text) ──
-  const drawHeader = () => {
-    const logoH = 18;
-    const logoW = 22;
-    const logoY = 10;
+  const rltNatSize = showRlt ? await getImageNaturalSize(logoSources.logoRLT) : { width: 1, height: 1 };
+  const cltNatSize = showClt ? await getImageNaturalSize(logoSources.logoCLTDark) : { width: 1, height: 1 };
 
-    // Place logos based on cargo: the "primary" logo goes left, the other right
-    // When both show, RLT left by default; when only CLT, CLT goes left
+  const drawHeader = () => {
+    const logoY = 10;
     const rltLeft = showRlt;
     if (showRlt && rltB64) {
-      doc.addImage(rltB64, "PNG", rltLeft ? margin : pageW - margin - logoW, logoY, logoW, logoH);
+      const d = logoDims(rltNatSize.width, rltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(rltB64, "PNG", rltLeft ? margin : pageW - margin - d.w, logoY, d.w, d.h);
     }
     if (showClt && cltB64) {
-      doc.addImage(cltB64, "PNG", rltLeft ? pageW - margin - logoW : margin, logoY, logoW, logoH);
+      const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(cltB64, "PNG", rltLeft ? pageW - margin - d.w : margin, logoY, d.w, d.h);
     }
 
     // Centered program titles
@@ -121,15 +93,15 @@ export async function generarPDFFicha(
   };
 
   const drawPageHeader = () => {
-    const logoH = 18;
-    const logoW = 22;
     const logoY = 10;
     const rltLeft2 = showRlt;
     if (showRlt && rltB64) {
-      doc.addImage(rltB64, "PNG", rltLeft2 ? margin : pageW - margin - logoW, logoY, logoW, logoH);
+      const d = logoDims(rltNatSize.width, rltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(rltB64, "PNG", rltLeft2 ? margin : pageW - margin - d.w, logoY, d.w, d.h);
     }
     if (showClt && cltB64) {
-      doc.addImage(cltB64, "PNG", rltLeft2 ? pageW - margin - logoW : margin, logoY, logoW, logoH);
+      const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(cltB64, "PNG", rltLeft2 ? pageW - margin - d.w : margin, logoY, d.w, d.h);
     }
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
@@ -336,9 +308,9 @@ export async function generarPDFFicha(
   // ── Disclaimer on page 1 ──
   const totalPages = (doc.internal as { getNumberOfPages?: () => number }).getNumberOfPages?.() ?? 1;
 
-  const cosmoTargetH = 8;
-  const cosmoLogoW = cosmoTargetH * (cosmoSize.width / cosmoSize.height);
-  const cosmoLogoH = cosmoTargetH;
+  const cosmoDims = logoDims(cosmoSize.width, cosmoSize.height, FOOTER_COSMO_H);
+  const cosmoLogoW = cosmoDims.w;
+  const cosmoLogoH = cosmoDims.h;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
 

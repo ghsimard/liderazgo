@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import type { AggregatedMel } from "./melGlobalTypes";
+import { loadImageAsBase64, getImageNaturalSize, logoDims, COVER_LOGO_H } from "@/utils/pdfLogoHelper";
 
 // ── Grayscale design tokens (monochrome print) ──
 const C_BLACK: [number, number, number] = [30, 30, 30];
@@ -20,36 +21,6 @@ function deltaSign(n: number): string {
 }
 function pctStr(n: number): string {
   return `${n.toFixed(1)}%`;
-}
-
-// ── Image helpers ──
-
-function loadImageAsBase64(src: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
-
-function getImageNaturalSize(src: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
 }
 
 function svgToDataUrl(svgEl: SVGSVGElement, width: number, height: number): Promise<string> {
@@ -171,9 +142,9 @@ export async function generarMelGlobalPDF(
   // ═══════════════════════════════════════════
   const showRLT = logoSources.showRLT !== false;
   const showCLT = logoSources.showCLT !== false;
-  const logoTargetH = 24;
-  const rltW = (rltSize.width / rltSize.height) * logoTargetH;
-  const cltW = (cltSize.width / cltSize.height) * logoTargetH;
+  const logoTargetH = COVER_LOGO_H;
+  const rltW = logoDims(rltSize.width, rltSize.height, logoTargetH).w;
+  const cltW = logoDims(cltSize.width, cltSize.height, logoTargetH).w;
   if (showRLT && showCLT) {
     doc.addImage(rltB64, "PNG", margin, 28, rltW, logoTargetH);
     doc.addImage(cltB64, "PNG", pageW - margin - cltW, 28, cltW, logoTargetH);

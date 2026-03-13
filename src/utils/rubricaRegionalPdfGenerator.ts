@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { loadImageWithSize as loadImageWithSizeHelper } from "@/utils/pdfLogoHelper";
 
 interface LoadedImage {
   b64: string;
@@ -6,22 +7,9 @@ interface LoadedImage {
   heightPx: number;
 }
 
-function loadImageWithSize(src: string): Promise<LoadedImage> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, 0, 0);
-      resolve({ b64: canvas.toDataURL("image/png"), widthPx: img.naturalWidth, heightPx: img.naturalHeight });
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
+async function loadImageWithSize(src: string): Promise<LoadedImage> {
+  const r = await loadImageWithSizeHelper(src);
+  return { b64: r.b64, widthPx: r.width, heightPx: r.height };
 }
 
 const NIVEL_COLORS = {

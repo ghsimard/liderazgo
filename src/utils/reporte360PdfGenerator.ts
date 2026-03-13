@@ -7,35 +7,7 @@ import {
   COMPETENCY_LABELS,
   COMPETENCY_DOMAIN_MARK,
 } from "@/data/reporte360Phrases";
-
-// ── Image loader ──
-function loadImageAsBase64(src: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
-
-function getImageNaturalSize(src: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
+import { loadImageAsBase64, getImageNaturalSize, logoDims, COVER_LOGO_H, FOOTER_COSMO_H } from "@/utils/pdfLogoHelper";
 
 // ── Color constants (grayscale for black-ink-only printing) ──
 const COLOR_DIRECTIVO: [number, number, number] = [30, 30, 30];       // near-black
@@ -133,14 +105,11 @@ export async function generarReporte360PDF(
   // ════════════════════════════════════════════════════════════
   drawPageHeader();
 
-  // Logos at natural size reduced by 50% (pixels to mm at 96 DPI: px * 25.4 / 96)
-  const pxToMm = 25.4 / 96 * 0.50;
-  const rltW = rltSize.width * pxToMm;
-  const rltH = rltSize.height * pxToMm;
-  const cltW = cltSize.width * pxToMm;
-  const cltH = cltSize.height * pxToMm;
-  doc.addImage(rltB64, "PNG", margin, 25, rltW, rltH);
-  doc.addImage(cltB64, "PNG", pageW - margin - cltW, 25, cltW, cltH);
+  // Logos at fixed height, proportional width
+  const rltDims = logoDims(rltSize.width, rltSize.height, COVER_LOGO_H);
+  const cltDims = logoDims(cltSize.width, cltSize.height, COVER_LOGO_H);
+  doc.addImage(rltB64, "PNG", margin, 25, rltDims.w, rltDims.h);
+  doc.addImage(cltB64, "PNG", pageW - margin - cltDims.w, 25, cltDims.w, cltDims.h);
 
   // Title block
   let y = 75;
