@@ -748,34 +748,48 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
           y = baseY + 12;
 
         } else {
-          // ── HORIZONTAL BAR CHART (default) ──
-          const barMaxW = contentW - 50;
-          const barH = 5;
-          const rowGap = 8;
+          // ── HORIZONTAL BAR CHART (default) ── matches online preview
+          const HBAR_COLORS: [number, number, number][] = [
+            [37, 99, 235],   // #2563eb
+            [22, 163, 106],  // #16a34a
+            [245, 158, 11],  // #f59e0b
+            [239, 68, 68],   // #ef4444
+            [139, 92, 246],  // #8b5cf6
+            [6, 182, 212],   // #06b6d4
+            [236, 72, 153],  // #ec4899
+            [249, 115, 22],  // #f97316
+          ];
+          const barH = 4.5;
+          const rowGap = 10;
           const maxVal = Math.max(...chartData.data.map((d: any) => d.value), 1);
 
-          for (const item of chartData.data) {
-            y = checkPageBreak(rowGap + 4);
+          for (let idx = 0; idx < chartData.data.length; idx++) {
+            const item = chartData.data[idx];
+            y = checkPageBreak(rowGap + 6);
+
+            // Label line: label on the left, value% on the right
             doc.setFontSize(7.5);
             doc.setFont("helvetica", "normal");
-            const labelLines = doc.splitTextToSize(item.label, contentW - 20);
-            doc.text(labelLines[0], margin, y + 3.5);
-            const labelW = Math.min(doc.getTextWidth(labelLines[0]) + 4, contentW * 0.5);
-            const barX = margin + Math.max(labelW, 60);
-            const availBarW = pageW - margin - barX - 20;
-            const barW = (item.value / Math.max(maxVal, 100)) * availBarW;
-            doc.setFillColor(235, 235, 235);
-            doc.rect(barX, y, availBarW, barH, "F");
-            if (item.value >= 80) doc.setFillColor(190, 30, 80);
-            else if (item.value >= 60) doc.setFillColor(220, 60, 100);
-            else if (item.value >= 40) doc.setFillColor(240, 100, 130);
-            else doc.setFillColor(250, 150, 170);
-            doc.rect(barX, y, barW, barH, "F");
-            doc.setFontSize(7.5);
+            doc.setTextColor(30, 30, 30);
+            const labelLines = doc.splitTextToSize(item.label, contentW - 25);
+            doc.text(labelLines[0], margin, y);
             doc.setFont("helvetica", "bold");
-            doc.text(`${item.value}%`, barX + availBarW + 2, y + 3.8);
+            doc.text(`${item.value}%`, margin + contentW, y, { align: "right" });
+            y += 3;
+
+            // Background bar (full width, light gray)
+            const barRadius = 2;
+            doc.setFillColor(230, 230, 230);
+            doc.roundedRect(margin, y, contentW, barH, barRadius, barRadius, "F");
+
+            // Foreground bar (colored, proportional width)
+            const barW = Math.max((item.value / maxVal) * contentW, contentW * 0.02);
+            const c = HBAR_COLORS[idx % HBAR_COLORS.length];
+            doc.setFillColor(c[0], c[1], c[2]);
+            doc.roundedRect(margin, y, barW, barH, barRadius, barRadius, "F");
+
             doc.setFont("helvetica", "normal");
-            y += rowGap;
+            y += barH + (rowGap - barH - 3);
           }
           y += 4;
         }
