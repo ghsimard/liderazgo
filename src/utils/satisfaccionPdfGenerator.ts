@@ -992,7 +992,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       numStr = `${tocMain}.`;
     }
 
-    const indent = margin + 4;
+    const indent = entry.isSubsection ? margin + 10 : margin + 4;
     doc.setFont("helvetica", entry.isSubsection ? "normal" : "bold");
     doc.setTextColor(60, 60, 60);
     const label = `${numStr}  ${entry.title}`;
