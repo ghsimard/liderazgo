@@ -83,6 +83,8 @@ interface ReportSection {
   enabled: boolean;
   /** If true, numbered as sub-section (e.g. 1.1 instead of 2) */
   isSubsection?: boolean;
+  /** For comments_annex: indices of selected comments (undefined = all selected) */
+  selectedCommentIndices?: number[];
 }
 
 interface ExtraLogoEntry {
