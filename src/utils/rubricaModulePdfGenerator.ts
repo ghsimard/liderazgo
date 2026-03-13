@@ -66,9 +66,8 @@ export async function generarPDFRubricaModulo(
 
   const addFooter = () => {
     const footerY = pageH - 15;
-    const cosmoTargetH = 8;
-    const cosmoW = cosmoTargetH * (cosmoSize.width / cosmoSize.height);
-    try { doc.addImage(cosmoB64, "PNG", margin, footerY - 4, cosmoW, cosmoTargetH); } catch {}
+    const cosmoDims = logoDims(cosmoSize.width, cosmoSize.height, FOOTER_COSMO_H + 1);
+    try { doc.addImage(cosmoB64, "PNG", margin, footerY - 4, cosmoDims.w, cosmoDims.h); } catch {}
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
     doc.text(
