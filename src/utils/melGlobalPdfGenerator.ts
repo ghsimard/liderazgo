@@ -539,11 +539,11 @@ function drawCompetencyTable(
   drawHeader();
 
   comps.forEach((c, i) => {
-    if (y > pageH - 18) {
+    if (y > pageH - 28) {
       drawPageFooter(pageNum);
       doc.addPage();
       pageNum++;
-      y = 22;
+      y = 28;
       drawHeader();
     }
 
