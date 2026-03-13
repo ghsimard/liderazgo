@@ -4,7 +4,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RefreshCw, Mail, Phone, Eye } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RefreshCw, Mail, Phone, Eye, Search, X } from "lucide-react";
+import { useGeographicData } from "@/hooks/useGeographicData";
 
 interface Directivo {
   nombre_ie: string;
@@ -15,6 +18,7 @@ interface Directivo {
   telefono_ie: string | null;
   prefiere_correo: string;
   cargo_actual: string;
+  region: string;
 }
 
 interface Submission {
