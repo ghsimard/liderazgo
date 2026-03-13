@@ -880,12 +880,11 @@ export async function generarAmbienteEscolarReportPDF(
   doc.text("A = A veces", margin, y); y += 4;
   doc.text("N = Nunca / Casi nunca", margin, y); y += 6;
 
-  // Table dimensions — reserve left column for vertical section label
-  const sectionLabelW = 14;
-  const col0W = (contentW - sectionLabelW) * 0.38;
-  const colGroupW = (contentW - sectionLabelW - col0W) / 3;
+  // Table dimensions — full width, no vertical label column
+  const col0W = contentW * 0.38;
+  const colGroupW = (contentW - col0W) / 3;
   const colSanW = colGroupW / 3;
-  const tableLeft = margin + sectionLabelW;
+  const tableLeft = margin;
 
   // Draw table header
   const drawUnifiedTableHeader = () => {
@@ -928,33 +927,35 @@ export async function generarAmbienteEscolarReportPDF(
 
   drawUnifiedTableHeader();
 
-  // Group items by section for the vertical section label
   let currentSection: SectionName | null = null;
-  let sectionStartY = y;
-  const sectionRanges: { section: string; startY: number; endY: number; page: number }[] = [];
-  let sectionItemIdx = 0; // for alternating rows within each section
+  let sectionItemIdx = 0;
 
   for (let itemIdx = 0; itemIdx < UNIFIED_REPORT_ITEMS.length; itemIdx++) {
     const item = UNIFIED_REPORT_ITEMS[itemIdx];
 
-    // Detect section change — add gap separator
+    // Detect section change — draw section title bar
     if (item.section !== currentSection) {
       if (currentSection) {
-        sectionRanges.push({ section: currentSection, startY: sectionStartY, endY: y, page: pageNum });
-        y += 4; // gap between sections
+        y += 2; // small gap between sections
       }
       currentSection = item.section;
-      sectionStartY = y;
       sectionItemIdx = 0;
+
+      // Section title bar
+      ensureSpace(8);
+      doc.setFillColor(70, 70, 70);
+      doc.rect(margin, y, contentW, 6, "F");
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.text(item.section.toUpperCase(), margin + contentW / 2, y + 4.2, { align: "center" });
+      y += 7;
     }
 
     const textLines = wrapText(item.reportText, col0W - 4, 6.5);
     const rowH = Math.max(10, textLines.length * 3 + 4);
 
     if (y + rowH > bottomLimit) {
-      if (currentSection) {
-        sectionRanges.push({ section: currentSection, startY: sectionStartY, endY: y, page: pageNum });
-      }
       drawPageFooter(pageNum);
       doc.addPage();
       pageNum++;
@@ -969,14 +970,22 @@ export async function generarAmbienteEscolarReportPDF(
       doc.text("N = Nunca / Casi nunca", margin, y); y += 6;
 
       drawUnifiedTableHeader();
-      sectionStartY = y;
+      if (currentSection) {
+        // Re-draw section title bar on new page
+        doc.setFillColor(70, 70, 70);
+        doc.rect(margin, y - 1, contentW, 6, "F");
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(255, 255, 255);
+        doc.text(currentSection.toUpperCase() + " (cont.)", margin + contentW / 2, y + 3.2, { align: "center" });
+        y += 7;
+      }
     }
 
     // Alternating row background
-    const tableRowW = contentW - sectionLabelW;
     if (sectionItemIdx % 2 === 0) {
       doc.setFillColor(250, 250, 250);
-      doc.rect(tableLeft, y, tableRowW, rowH, "F");
+      doc.rect(tableLeft, y, contentW, rowH, "F");
     }
 
     // Item text
@@ -1033,50 +1042,11 @@ export async function generarAmbienteEscolarReportPDF(
     // Row border
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.15);
-    doc.line(tableLeft, y + rowH, tableLeft + tableRowW, y + rowH);
+    doc.line(tableLeft, y + rowH, tableLeft + contentW, y + rowH);
 
     y += rowH;
     sectionItemIdx++;
   }
-
-  // Close last section range
-  if (currentSection) {
-    sectionRanges.push({ section: currentSection, startY: sectionStartY, endY: y, page: pageNum });
-  }
-
-  // Draw vertical section labels by going back to each page
-  const totalPages = doc.getNumberOfPages();
-  const currentPage = pageNum;
-  for (const range of sectionRanges) {
-    doc.setPage(range.page);
-    const sectionH = range.endY - range.startY;
-    const midY = range.startY + sectionH / 2;
-
-    // Section background stripe
-    doc.setFillColor(240, 240, 240);
-    doc.rect(margin, range.startY, sectionLabelW, sectionH, "F");
-
-    // Border
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.15);
-    doc.rect(margin, range.startY, sectionLabelW, sectionH);
-
-    // Rotated text centered inside the label column
-    // With angle:90 in jsPDF, the text rotates counter-clockwise around (x,y)
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(80, 80, 80);
-
-    const sectionLabel = range.section.toUpperCase();
-    // Position: horizontally centered in the label column, vertically centered in the section
-    doc.text(sectionLabel, margin + sectionLabelW / 2 + 1, midY, {
-      align: "center",
-      angle: 90,
-      baseline: "middle",
-    });
-  }
-  // Go back to current page
-  doc.setPage(currentPage);
 
   y += 8;
 
