@@ -1,63 +1,30 @@
 
 
-## Probleme actuel
+## Plan: Convertir "Autorización de datos personales" en Checkbox obligatoire
 
-Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
+### Changements nécessaires dans `src/pages/FichaRLT.tsx`:
 
-## Proposition : Sidebar avec sections groupees
+**1. Modification du schéma (ligne ~30)**
+- Remplacer le `z.enum(["Sí", "No", ""])` par `z.literal(true)` avec message d'erreur personnalisé
+- Le champ doit être exactement `true` (coché) pour passer la validation
 
-Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
+**2. Valeurs par défaut (ligne ~109)**
+- Changer `acepta_datos: "" as any` → `acepta_datos: false`
 
-### Structure proposee
+**3. Mapping DB → Formulaire (ligne ~467)**
+- Changer `(data.acepta_datos ? "Sí" : "No")` → `!!data.acepta_datos` (conversion booléenne directe)
 
-```text
-┌──────────────────┬──────────────────────────────────┐
-│  SIDEBAR         │  CONTENU                         │
-│                  │                                  │
-│  ▼ Formularios   │                                  │
-│    Enlaces       │                                  │
-│                  │                                  │
-│  ▼ Fichas RLT    │                                  │
-│    Lista         │                                  │
-│    Regiones      │                                  │
-│                  │                                  │
-│  ▼ Encuesta 360° │                                  │
-│    Config        │                                  │
-│    Inicial       │                                  │
-│    Final         │                                  │
-│    Informes Ini. │                                  │
-│    Informes Fin. │                                  │
-│                  │                                  │
-│  ▼ Analisis      │                                  │
-│    MEL           │                                  │
-│    Rubricas      │                                  │
-│                  │                                  │
-│  ▼ Sistema       │                                  │
-│    Admins        │                                  │
-│    Apreciaciones*│                                  │
-│    Mensajes*     │                                  │
-│    Changelog*    │                                  │
-│                  │  (* = superadmin only)            │
-└──────────────────┴──────────────────────────────────┘
-```
+**4. Payload vers DB (ligne ~625)**
+- Changer `data.acepta_datos === "Sí"` → `data.acepta_datos` (déjà booléen)
 
-### Modifications
+**5. Interface utilisateur (lignes ~980-996)**
+- Remplacer le `FormRadioGroup` par un composant `Checkbox` avec label cliquable
+- Le texte d'autorisation devient le label du checkbox
+- Importer le composant `Checkbox` de `@/components/ui/checkbox`
 
-1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
+**6. Imports**
+- Ajouter l'import du `Checkbox` depuis les composants UI
 
-2. **Modifier `src/pages/AdminPage.tsx`** :
-   - Envelopper le layout dans `SidebarProvider`
-   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
-   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
-   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
-   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
-
-3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
-
-### Points techniques
-
-- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
-- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
-- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
-- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
+### Impact sur les données existantes
+**Aucun impact.** La colonne `acepta_datos` dans la table `fichas_rlt` est déjà un `boolean`. Les fiches existantes avec `true` resteront valides, celles avec `false` devront cocher la case pour soumettre à nouveau.
 
