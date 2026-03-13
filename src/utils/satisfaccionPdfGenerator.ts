@@ -206,7 +206,7 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
       doc.setPage(p);
       doc.setFontSize(8);
       doc.setTextColor(130, 130, 130);
-      doc.text(`${p - 1}/${totalPages}`, pageW - margin, pageH - 8, { align: "right" });
+      doc.text(`${p - 1}/${totalPages}`, pageW - margin, pageH - 14, { align: "right" });
       doc.setTextColor(30, 30, 30);
     }
   };
