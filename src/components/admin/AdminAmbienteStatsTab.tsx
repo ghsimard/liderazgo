@@ -348,9 +348,16 @@ export default function AdminAmbienteStatsTab() {
           r.anos_estudiando = ANOS_OPTIONS[Math.floor(Math.random() * ANOS_OPTIONS.length)];
           r.grado = GRADOS_ESTUDIANTE[Math.floor(Math.random() * GRADOS_ESTUDIANTE.length)];
         } else if (formType === "acudientes") {
+          // Weighted distribution: most pick common grades, a few pick rare ones for <1% demo
+          const weighted = ["3°","4°","5°","6°","7°","8°","9°","5°","6°","7°","3°","4°","5°","6°","7°","8°","9°","10°","11°"];
           const numGrados = 1 + Math.floor(Math.random() * 2);
-          const shuffled = [...GRADOS_COMPLETOS].sort(() => Math.random() - 0.5);
-          r.grados = shuffled.slice(0, numGrados);
+          if (Math.random() < 0.02) {
+            // Rare: pick "Primera infancia" or "12°" to create <1% segments
+            r.grados = [Math.random() < 0.5 ? "Primera infancia" : "12°"];
+          } else {
+            const shuffled = [...weighted].sort(() => Math.random() - 0.5);
+            r.grados = shuffled.slice(0, numGrados);
+          }
         }
 
         for (const sec of likert) {
@@ -371,7 +378,7 @@ export default function AdminAmbienteStatsTab() {
       // 12 docentes, 25 estudiantes, 8 acudientes
       for (let i = 0; i < 12; i++) fakeSubs.push({ tipo_formulario: "docentes", respuestas: buildFakeResponses(DOCENTES_LIKERT, "docentes") });
       for (let i = 0; i < 25; i++) fakeSubs.push({ tipo_formulario: "estudiantes", respuestas: buildFakeResponses(ESTUDIANTES_LIKERT, "estudiantes") });
-      for (let i = 0; i < 8; i++) fakeSubs.push({ tipo_formulario: "acudientes", respuestas: buildFakeResponses(ACUDIENTES_LIKERT, "acudientes") });
+      for (let i = 0; i < 200; i++) fakeSubs.push({ tipo_formulario: "acudientes", respuestas: buildFakeResponses(ACUDIENTES_LIKERT, "acudientes") });
 
       await generarAmbienteEscolarReportPDF(
         {
