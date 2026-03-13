@@ -24,10 +24,11 @@ import {
 import { cn } from "@/lib/utils";
 import { PhoneInputWithCountry } from "@/components/PhoneInputWithCountry";
 import { CheckCircle, Download, RefreshCw, Send, AlertCircle, ArrowLeft, Edit, Save } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // ── Schema de validación ─────────────────────────────────────
 const schema = z.object({
-  acepta_datos: z.enum(["Sí", "No", ""]).refine((v) => v === "Sí", { message: "Debe aceptar el tratamiento de datos personales" }),
+  acepta_datos: z.literal(true, { errorMap: () => ({ message: "Debe aceptar el tratamiento de datos personales" }) }),
   nombres: z.string().min(2, "Ingrese sus nombres"),
   apellidos: z.string().min(2, "Ingrese sus apellidos"),
   genero: z.string().min(1, "Seleccione su género"),
@@ -106,7 +107,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const defaultValues: Partial<FormData> = {
-  acepta_datos: "" as any,
+  acepta_datos: false as any,
   lengua_materna: "Español",
   enfermedad_base: "No",
   discapacidad: "No",
@@ -464,7 +465,7 @@ export default function FichaRLTForm() {
 
         // Map DB row to form values
         const formData: Partial<FormData> = {
-          acepta_datos: (data.acepta_datos ? "Sí" : "No") as any,
+          acepta_datos: !!data.acepta_datos as any,
           nombres: data.nombres ?? "",
           apellidos: data.apellidos ?? "",
           genero: data.genero ?? "",
@@ -622,7 +623,7 @@ export default function FichaRLTForm() {
     const toInt = (v: string | undefined) => (v ? parseInt(v) : null);
 
     const payload = {
-      acepta_datos: data.acepta_datos === "Sí",
+      acepta_datos: data.acepta_datos,
       nombres: data.nombres,
       apellidos: data.apellidos,
       nombres_apellidos: `${data.nombres} ${data.apellidos}`,
@@ -978,16 +979,17 @@ export default function FichaRLTForm() {
                   de protección de datos de Colombia.{" "}
                   <span className="required-star">*</span>
                 </p>
-                <FormRadioGroup
-                  name="acepta_datos"
-                  options={[
-                    { value: "Sí", label: "Sí" },
-                    { value: "No", label: "No" },
-                  ]}
-                  value={watch("acepta_datos") as string}
-                  onChange={(v) => setValue("acepta_datos", v as any)}
-                  hasError={!!errors.acepta_datos}
-                />
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="acepta_datos"
+                    checked={watch("acepta_datos") === true}
+                    onCheckedChange={(checked) => setValue("acepta_datos", checked === true ? true : (false as any), { shouldValidate: true })}
+                    className={cn(errors.acepta_datos && "border-destructive")}
+                  />
+                  <label htmlFor="acepta_datos" className="text-sm cursor-pointer select-none leading-relaxed">
+                    Sí, acepto
+                  </label>
+                </div>
                 {errors.acepta_datos && (
                   <p className="field-error flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
