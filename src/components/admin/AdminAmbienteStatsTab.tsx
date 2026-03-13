@@ -452,6 +452,16 @@ export default function AdminAmbienteStatsTab() {
               {batchGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               {batchGenerating ? "Generando ZIP…" : `Exportar ZIP (${institutionOptions.length})`}
             </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleDemoPDF}
+              disabled={generating}
+              className="gap-1.5"
+            >
+              {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
+              Demo PDF
+            </Button>
           </div>
           {batchGenerating && (
             <Progress value={batchProgress} className="h-2" />
