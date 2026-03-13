@@ -932,17 +932,20 @@ export async function generarAmbienteEscolarReportPDF(
   let currentSection: SectionName | null = null;
   let sectionStartY = y;
   const sectionRanges: { section: string; startY: number; endY: number; page: number }[] = [];
+  let sectionItemIdx = 0; // for alternating rows within each section
 
   for (let itemIdx = 0; itemIdx < UNIFIED_REPORT_ITEMS.length; itemIdx++) {
     const item = UNIFIED_REPORT_ITEMS[itemIdx];
 
-    // Detect section change
+    // Detect section change — add gap separator
     if (item.section !== currentSection) {
       if (currentSection) {
         sectionRanges.push({ section: currentSection, startY: sectionStartY, endY: y, page: pageNum });
+        y += 4; // gap between sections
       }
       currentSection = item.section;
       sectionStartY = y;
+      sectionItemIdx = 0;
     }
 
     const textLines = wrapText(item.reportText, col0W - 4, 6.5);
@@ -970,19 +973,20 @@ export async function generarAmbienteEscolarReportPDF(
     }
 
     // Alternating row background
-    if (itemIdx % 2 === 0) {
+    const tableRowW = contentW - sectionLabelW;
+    if (sectionItemIdx % 2 === 0) {
       doc.setFillColor(250, 250, 250);
-      doc.rect(margin, y, contentW, rowH, "F");
+      doc.rect(tableLeft, y, tableRowW, rowH, "F");
     }
 
     // Item text
     doc.setFontSize(6.5);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
-    doc.text(textLines, margin + 2, y + 4);
+    doc.text(textLines, tableLeft + 2, y + 4);
 
     // S/A/N values per role
-    let cx = margin + col0W;
+    let cx = tableLeft + col0W;
     for (const role of ROLES) {
       const itemId = item[role as keyof typeof item] as string | undefined;
       if (itemId) {
@@ -1029,9 +1033,10 @@ export async function generarAmbienteEscolarReportPDF(
     // Row border
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.15);
-    doc.line(margin, y + rowH, margin + contentW, y + rowH);
+    doc.line(tableLeft, y + rowH, tableLeft + tableRowW, y + rowH);
 
     y += rowH;
+    sectionItemIdx++;
   }
 
   // Close last section range
@@ -1039,10 +1044,36 @@ export async function generarAmbienteEscolarReportPDF(
     sectionRanges.push({ section: currentSection, startY: sectionStartY, endY: y, page: pageNum });
   }
 
-  // Draw section labels vertically (on the left side) — we do this by going back to each page
-  // Since jsPDF doesn't easily support going back to pages, we'll draw them inline.
-  // The old PDF shows them as rotated text on the left. We'll skip this for simplicity
-  // as jsPDF setPage + rotated text is complex. The table structure is faithful to the old format.
+  // Draw vertical section labels by going back to each page
+  const totalPages = doc.getNumberOfPages();
+  const currentPage = pageNum;
+  for (const range of sectionRanges) {
+    doc.setPage(range.page);
+    const sectionH = range.endY - range.startY;
+    const midY = range.startY + sectionH / 2;
+
+    // Section background stripe
+    doc.setFillColor(240, 240, 240);
+    doc.rect(margin, range.startY, sectionLabelW, sectionH, "F");
+
+    // Border
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.15);
+    doc.rect(margin, range.startY, sectionLabelW, sectionH);
+
+    // Rotated text
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(80, 80, 80);
+
+    const sectionLabel = range.section.toUpperCase();
+    doc.text(sectionLabel, margin + sectionLabelW / 2 + 1, midY, {
+      align: "center",
+      angle: 90,
+    });
+  }
+  // Go back to current page
+  doc.setPage(currentPage);
 
   y += 8;
 
