@@ -563,9 +563,19 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
     if (section.type === "chart_analysis") {
       const num = getNumber(section.isSubsection);
 
-      // Find matching stats section
-      const chartData = sectionStats.find(s => s.title === section.chartSectionTitle);
-      const chartType = (section as any).chartType || "horizontal_bar";
+      // Find matching stats section: prefer selectedQuestionKeys, fallback to chartSectionTitle
+      let chartData: SectionStat | null = null;
+      if (section.selectedQuestionKeys && section.selectedQuestionKeys.length > 0) {
+        const matched = sectionStats.filter(s => s.questionKey && section.selectedQuestionKeys!.includes(s.questionKey));
+        if (matched.length > 0) {
+          const mergedData = matched.flatMap(s => s.data);
+          chartData = { title: section.chartSectionTitle || section.title, type: matched[0].type, data: mergedData };
+        }
+      }
+      if (!chartData) {
+        chartData = sectionStats.find(s => s.title === section.chartSectionTitle) || null;
+      }
+      const chartType = section.chartType || (section as any).chartType || "horizontal_bar";
 
       // Pre-calculate total height needed for section title + chart title + chart body
       // so we can do a single page-break check and keep everything together
