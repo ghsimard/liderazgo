@@ -24,6 +24,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, FileDown, Upload, X, Save, Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, BarChart3, FileText, List, Table as TableIcon, MessageSquare, Image as ImageIcon, GripVertical, Eye, Sparkles } from "lucide-react";
@@ -83,6 +85,8 @@ interface ReportSection {
   enabled: boolean;
   /** If true, numbered as sub-section (e.g. 1.1 instead of 2) */
   isSubsection?: boolean;
+  /** For comments_annex: indices of selected comments (undefined = all selected) */
+  selectedCommentIndices?: number[];
 }
 
 interface ExtraLogoEntry {
@@ -520,7 +524,15 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
         sectionStats: stats.sections,
         generalSatisfaction: stats.generalSatisfaction,
         overallSatisfaction: stats.overallSatisfaction,
-        comments: stats.comments,
+        comments: (() => {
+          const annexSection = reportContent.sections.find(s => s.type === "comments_annex" && s.enabled);
+          if (annexSection?.selectedCommentIndices && annexSection.selectedCommentIndices.length > 0) {
+            return annexSection.selectedCommentIndices
+              .filter(i => i >= 0 && i < stats.comments.length)
+              .map(i => stats.comments[i]);
+          }
+          return stats.comments;
+        })(),
         executiveSummary: reportContent.executiveSummaryEnabled ? reportContent.executiveSummary : undefined,
       });
       toast({ title: "PDF generado exitosamente" });
@@ -959,12 +971,78 @@ function SectionEditor({
                   </button>
                 )}
 
-                {isAuto && (
+                {section.type === "ficha_tecnica" && (
                   <p className="text-xs text-muted-foreground italic">
-                    {section.type === "ficha_tecnica" && "Se genera automáticamente con los datos de la encuesta"}
-                    {section.type === "satisfaction_summary" && "Se calcula automáticamente a partir de los bloques temáticos"}
-                    {section.type === "comments_annex" && "Se incluyen automáticamente las respuestas abiertas de los participantes"}
+                    Se genera automáticamente con los datos de la encuesta
                   </p>
+                )}
+                {section.type === "satisfaction_summary" && (
+                  <p className="text-xs text-muted-foreground italic">
+                    Se calcula automáticamente a partir de los bloques temáticos
+                  </p>
+                )}
+
+                {section.type === "comments_annex" && stats?.comments && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground italic">
+                        {(!section.selectedCommentIndices || section.selectedCommentIndices.length === 0)
+                          ? `${stats.comments.length} commentaires — tous inclus`
+                          : `${section.selectedCommentIndices.length}/${stats.comments.length} commentaires sélectionnés`
+                        }
+                      </p>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs"
+                          onClick={() => onUpdate({ selectedCommentIndices: stats.comments.map((_: string, i: number) => i) })}
+                        >
+                          Tout sélectionner
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs"
+                          onClick={() => onUpdate({ selectedCommentIndices: [] })}
+                        >
+                          Tout décocher
+                        </Button>
+                      </div>
+                    </div>
+                    <ScrollArea className="max-h-60 border rounded-md">
+                      <div className="p-2 space-y-1">
+                        {stats.comments.map((comment: string, idx: number) => {
+                          const isSelected = !section.selectedCommentIndices
+                            || section.selectedCommentIndices.length === 0
+                            || section.selectedCommentIndices.includes(idx);
+                          return (
+                            <label key={idx} className="flex items-start gap-2 p-1.5 rounded hover:bg-muted/50 cursor-pointer text-xs">
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => {
+                                  let current = section.selectedCommentIndices;
+                                  // If undefined or empty, initialize with all indices
+                                  if (!current || current.length === 0) {
+                                    current = stats.comments.map((_: string, i: number) => i);
+                                  }
+                                  if (checked) {
+                                    onUpdate({ selectedCommentIndices: [...new Set([...current, idx])] });
+                                  } else {
+                                    onUpdate({ selectedCommentIndices: current.filter((i: number) => i !== idx) });
+                                  }
+                                }}
+                                className="mt-0.5"
+                              />
+                              <span className={isSelected ? "text-foreground" : "text-muted-foreground line-through"}>
+                                {comment.length > 200 ? comment.substring(0, 200) + "…" : comment}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+                  </div>
                 )}
 
                 {section.type === "satisfaction_summary" && stats && (
