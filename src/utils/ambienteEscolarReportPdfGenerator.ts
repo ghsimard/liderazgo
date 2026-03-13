@@ -217,22 +217,20 @@ export async function generarAmbienteEscolarReportPDF(
   // Logos
   if (showRlt && rltB64) {
     const rltSize = await getImageNaturalSize(logoSources.logoRLT);
-    const rltW = rltSize.width * pxToMm;
-    const rltH = rltSize.height * pxToMm;
+    const rltDims = logoDims(rltSize.width, rltSize.height, COVER_LOGO_H);
     if (showClt) {
-      doc.addImage(rltB64, "PNG", margin, 20, rltW, rltH);
+      doc.addImage(rltB64, "PNG", margin, 20, rltDims.w, rltDims.h);
     } else {
-      doc.addImage(rltB64, "PNG", (pageW - rltW) / 2, 20, rltW, rltH);
+      doc.addImage(rltB64, "PNG", (pageW - rltDims.w) / 2, 20, rltDims.w, rltDims.h);
     }
   }
   if (showClt && cltB64) {
     const cltSize = await getImageNaturalSize(logoSources.logoCLT);
-    const cltW = cltSize.width * pxToMm;
-    const cltH = cltSize.height * pxToMm;
+    const cltDims = logoDims(cltSize.width, cltSize.height, COVER_LOGO_H);
     if (showRlt) {
-      doc.addImage(cltB64, "PNG", pageW - margin - cltW, 20, cltW, cltH);
+      doc.addImage(cltB64, "PNG", pageW - margin - cltDims.w, 20, cltDims.w, cltDims.h);
     } else {
-      doc.addImage(cltB64, "PNG", (pageW - cltW) / 2, 20, cltW, cltH);
+      doc.addImage(cltB64, "PNG", (pageW - cltDims.w) / 2, 20, cltDims.w, cltDims.h);
     }
   }
 
