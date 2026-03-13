@@ -791,17 +791,16 @@ function SectionEditor({
   const [showFichaPreview, setShowFichaPreview] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const isAuto = section.type === "ficha_tecnica" || section.type === "satisfaction_summary" || section.type === "comments_annex";
-  // Compute chart data: prefer selectedQuestionKeys, fallback to chartSectionTitle
+  // Compute chart data: only when selectedQuestionKeys has items (no fallback)
   const chartData = useMemo(() => {
     if (section.type !== "chart_analysis" || !stats) return null;
     if (section.selectedQuestionKeys && section.selectedQuestionKeys.length > 0) {
       const matched = stats.sections.filter((s: any) => section.selectedQuestionKeys!.includes(s.questionKey));
       if (matched.length === 0) return null;
-      // Merge all matched data into one virtual section
       const mergedData = matched.flatMap((s: any) => s.data);
       return { title: section.chartSectionTitle || section.title, type: matched[0].type, data: mergedData };
     }
-    return stats.sections.find((s: any) => s.title === section.chartSectionTitle) || null;
+    return null;
   }, [section.type, section.selectedQuestionKeys, section.chartSectionTitle, section.title, stats]);
 
   const handleGenerateAI = async (targetType?: string) => {
@@ -881,6 +880,16 @@ function SectionEditor({
           </div>
           <span className={`flex-1 text-sm truncate ${section.isSubsection ? "font-normal pl-3 text-muted-foreground" : "font-semibold"}`}>{section.title}</span>
 
+          {section.type === "chart_analysis" && (
+            <Badge
+              variant={section.selectedQuestionKeys && section.selectedQuestionKeys.length > 0 ? "default" : "destructive"}
+              className="text-[10px] shrink-0"
+            >
+              {section.selectedQuestionKeys && section.selectedQuestionKeys.length > 0
+                ? `${section.selectedQuestionKeys.length} preg.`
+                : "Sin preguntas"}
+            </Badge>
+          )}
           {section.isSubsection && <Badge variant="secondary" className="text-[10px] shrink-0">Sub</Badge>}
           <Badge variant="outline" className="text-xs shrink-0">{SECTION_TYPE_LABELS[section.type]}</Badge>
           <label className="flex items-center gap-1 text-xs shrink-0">
