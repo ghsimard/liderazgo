@@ -880,6 +880,16 @@ function SectionEditor({
           </div>
           <span className={`flex-1 text-sm truncate ${section.isSubsection ? "font-normal pl-3 text-muted-foreground" : "font-semibold"}`}>{section.title}</span>
 
+          {section.type === "chart_analysis" && (
+            <Badge
+              variant={section.selectedQuestionKeys && section.selectedQuestionKeys.length > 0 ? "default" : "destructive"}
+              className="text-[10px] shrink-0"
+            >
+              {section.selectedQuestionKeys && section.selectedQuestionKeys.length > 0
+                ? `${section.selectedQuestionKeys.length} preg.`
+                : "Sin preguntas"}
+            </Badge>
+          )}
           {section.isSubsection && <Badge variant="secondary" className="text-[10px] shrink-0">Sub</Badge>}
           <Badge variant="outline" className="text-xs shrink-0">{SECTION_TYPE_LABELS[section.type]}</Badge>
           <label className="flex items-center gap-1 text-xs shrink-0">
