@@ -11,6 +11,23 @@ import logoCLT from "@/assets/logo_clt_white.png";
 import logoCosmo from "@/assets/logo_cosmo.png";
 import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 
+/** Decode HTML entities only (including Spanish accented characters) */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ")
+    .replace(/&Aacute;/g, "Á").replace(/&aacute;/g, "á")
+    .replace(/&Eacute;/g, "É").replace(/&eacute;/g, "é")
+    .replace(/&Iacute;/g, "Í").replace(/&iacute;/g, "í")
+    .replace(/&Oacute;/g, "Ó").replace(/&oacute;/g, "ó")
+    .replace(/&Uacute;/g, "Ú").replace(/&uacute;/g, "ú")
+    .replace(/&Ntilde;/g, "Ñ").replace(/&ntilde;/g, "ñ")
+    .replace(/&iquest;/g, "¿").replace(/&iexcl;/g, "¡")
+    .replace(/&Uuml;/g, "Ü").replace(/&uuml;/g, "ü")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
+}
+
 /** Strip HTML tags and decode entities, preserving line breaks */
 function htmlToPlainText(html: string): string {
   if (!html) return "";
@@ -24,23 +41,6 @@ function htmlToPlainText(html: string): string {
   text = decodeEntities(text);
   text = text.replace(/\n{3,}/g, "\n\n");
   return text.trim();
-}
-
-/** Decode HTML entities only (including Spanish accented characters) */
-function decodeEntities(s: string): string {
-  return s
-    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ")
-    .replace(/&aacute;/gi, (m) => m[1] === 'A' ? 'Á' : 'á')
-    .replace(/&eacute;/gi, (m) => m[1] === 'E' ? 'É' : 'é')
-    .replace(/&iacute;/gi, (m) => m[1] === 'I' ? 'Í' : 'í')
-    .replace(/&oacute;/gi, (m) => m[1] === 'O' ? 'Ó' : 'ó')
-    .replace(/&uacute;/gi, (m) => m[1] === 'U' ? 'Ú' : 'ú')
-    .replace(/&ntilde;/gi, (m) => m[1] === 'N' ? 'Ñ' : 'ñ')
-    .replace(/&iquest;/g, "¿").replace(/&iexcl;/g, "¡")
-    .replace(/&uuml;/gi, (m) => m[1] === 'U' ? 'Ü' : 'ü')
-    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
 }
 
 /** Parse HTML into styled segments: { text, bold, italic } */
