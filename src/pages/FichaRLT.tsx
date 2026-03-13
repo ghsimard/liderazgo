@@ -978,16 +978,17 @@ export default function FichaRLTForm() {
                   de protección de datos de Colombia.{" "}
                   <span className="required-star">*</span>
                 </p>
-                <FormRadioGroup
-                  name="acepta_datos"
-                  options={[
-                    { value: "Sí", label: "Sí" },
-                    { value: "No", label: "No" },
-                  ]}
-                  value={watch("acepta_datos") as string}
-                  onChange={(v) => setValue("acepta_datos", v as any)}
-                  hasError={!!errors.acepta_datos}
-                />
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="acepta_datos"
+                    checked={watch("acepta_datos") === true}
+                    onCheckedChange={(checked) => setValue("acepta_datos", checked === true ? true : (false as any), { shouldValidate: true })}
+                    className={cn(errors.acepta_datos && "border-destructive")}
+                  />
+                  <label htmlFor="acepta_datos" className="text-sm cursor-pointer select-none leading-relaxed">
+                    Sí, acepto
+                  </label>
+                </div>
                 {errors.acepta_datos && (
                   <p className="field-error flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
