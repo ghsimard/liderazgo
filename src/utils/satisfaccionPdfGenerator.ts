@@ -31,10 +31,21 @@ function htmlToPlainText(html: string): string {
   return text.trim();
 }
 
-/** Decode HTML entities only */
+/** Decode HTML entities only (including Spanish accented characters) */
 function decodeEntities(s: string): string {
-  return s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ");
+  return s
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ")
+    .replace(/&aacute;/gi, (m) => m[1] === 'A' ? 'Á' : 'á')
+    .replace(/&eacute;/gi, (m) => m[1] === 'E' ? 'É' : 'é')
+    .replace(/&iacute;/gi, (m) => m[1] === 'I' ? 'Í' : 'í')
+    .replace(/&oacute;/gi, (m) => m[1] === 'O' ? 'Ó' : 'ó')
+    .replace(/&uacute;/gi, (m) => m[1] === 'U' ? 'Ú' : 'ú')
+    .replace(/&ntilde;/gi, (m) => m[1] === 'N' ? 'Ñ' : 'ñ')
+    .replace(/&iquest;/g, "¿").replace(/&iexcl;/g, "¡")
+    .replace(/&uuml;/gi, (m) => m[1] === 'U' ? 'Ü' : 'ü')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
 }
 
 /** Parse HTML into styled segments: { text, bold, italic } */
