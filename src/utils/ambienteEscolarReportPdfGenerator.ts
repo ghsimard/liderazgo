@@ -880,12 +880,11 @@ export async function generarAmbienteEscolarReportPDF(
   doc.text("A = A veces", margin, y); y += 4;
   doc.text("N = Nunca / Casi nunca", margin, y); y += 6;
 
-  // Table dimensions — reserve left column for vertical section label
-  const sectionLabelW = 14;
-  const col0W = (contentW - sectionLabelW) * 0.38;
-  const colGroupW = (contentW - sectionLabelW - col0W) / 3;
+  // Table dimensions — full width, no vertical label column
+  const col0W = contentW * 0.38;
+  const colGroupW = (contentW - col0W) / 3;
   const colSanW = colGroupW / 3;
-  const tableLeft = margin + sectionLabelW;
+  const tableLeft = margin;
 
   // Draw table header
   const drawUnifiedTableHeader = () => {
