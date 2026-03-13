@@ -32,19 +32,19 @@ export async function generarPDFFicha(
   let y = 0;
 
   // ── Header (white background, logos + centered text) ──
-  const drawHeader = () => {
-    const logoH = 18;
-    const logoW = 22;
-    const logoY = 10;
+  const rltNatSize = showRlt ? await getImageNaturalSize(logoSources.logoRLT) : { width: 1, height: 1 };
+  const cltNatSize = showClt ? await getImageNaturalSize(logoSources.logoCLTDark) : { width: 1, height: 1 };
 
-    // Place logos based on cargo: the "primary" logo goes left, the other right
-    // When both show, RLT left by default; when only CLT, CLT goes left
+  const drawHeader = () => {
+    const logoY = 10;
     const rltLeft = showRlt;
     if (showRlt && rltB64) {
-      doc.addImage(rltB64, "PNG", rltLeft ? margin : pageW - margin - logoW, logoY, logoW, logoH);
+      const d = logoDims(rltNatSize.width, rltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(rltB64, "PNG", rltLeft ? margin : pageW - margin - d.w, logoY, d.w, d.h);
     }
     if (showClt && cltB64) {
-      doc.addImage(cltB64, "PNG", rltLeft ? pageW - margin - logoW : margin, logoY, logoW, logoH);
+      const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(cltB64, "PNG", rltLeft ? pageW - margin - d.w : margin, logoY, d.w, d.h);
     }
 
     // Centered program titles
