@@ -770,9 +770,12 @@ export async function generateSatisfaccionReport(opts: SatisfaccionReportOptions
           const rowGap = 10;
           const maxVal = Math.max(...chartData.data.map((d: any) => d.value), 1);
 
+          // Pre-calculate total chart height to prevent page splits
+          const totalChartH = chartData.data.length * (rowGap + 3) + 4;
+          y = checkPageBreak(Math.min(totalChartH, pageH - 60));
+
           for (let idx = 0; idx < chartData.data.length; idx++) {
             const item = chartData.data[idx];
-            y = checkPageBreak(rowGap + 6);
 
             // Label line: label on the left, value% on the right
             doc.setFontSize(7.5);
