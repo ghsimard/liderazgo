@@ -70,9 +70,16 @@ export default function Index() {
         is_admin: false,
         is_directivo: false,
         is_evaluador: false,
+        is_operator: false,
         cargo_actual: null,
         nombre: null,
       };
+
+      // Case 0: Operator → redirect to operator panel
+      if (result.is_operator && !result.is_admin) {
+        navigate("/operador");
+        return;
+      }
 
       // Case 1: Admin AND Evaluador/Directivo → show role choice
       if (result.is_admin && (result.is_evaluador || result.is_directivo)) {

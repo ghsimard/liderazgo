@@ -65,6 +65,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/ficha" element={<Suspense fallback={<Loading />}><FichaRLTPage /></Suspense>} />
                 <Route path="/mi-panel" element={<MiPanel />} />
+                <Route path="/operador" element={<OperadorPanel />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin/ficha/:id" element={<AdminEditFicha />} />

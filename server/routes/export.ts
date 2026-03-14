@@ -54,6 +54,7 @@ const EXPORT_TABLES = [
   "encuestas_ambiente_escolar",
   "satisfaccion_config",
   "satisfaccion_responses",
+  "operator_permissions",
 ];
 
 router.get("/", requireAuth, requireSuperAdmin, async (_req: Request, res: Response) => {

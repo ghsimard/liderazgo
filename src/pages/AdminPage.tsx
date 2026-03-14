@@ -223,6 +223,7 @@ function getHubTitle(activeTab: string): string {
     certificaciones: "Certificaciones",
     mel: "MEL", "mel-rubricas": "MEL", "mel-config": "MEL",
     users: "Administradores",
+    operadores: "Operadores",
     "activity-log": "Registro de Actividad",
     reviews: "Apreciaciones",
     mensajes: "Mensajes",
