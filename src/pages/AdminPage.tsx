@@ -56,7 +56,7 @@ interface FormCategory {
 
 const categories: FormCategory[] = [
   {
-    title: "360° Inicial",
+    title: "360° Entrada",
     forms: [
       { name: "Formulario Acudiente", path: "/formulario-360-acudiente", icon: Users },
       { name: "Formulario Administrativo", path: "/formulario-360-administrativo", icon: ClipboardList },
