@@ -301,7 +301,7 @@ Todos los PDFs se generan en el cliente con **jsPDF**:
 - Satisfacción (informes con gráficos)
 - MEL global
 
-Cada PDF inclut les logos de la région (RLT et/ou CLT) selon la configuration de la table `regiones`.
+Cada PDF incluye los logos de la región (RLT y/o CLT) según la configuración de la tabla `regiones`.
 
 ### 7.3 Registro de Actividad
 
@@ -366,9 +366,9 @@ Los operadores tienen permisos granulares definidos en `operator_permissions`:
 
 ---
 
-## 8. Mindmaps Détaillés par Hub
+## 8. Mindmaps Detallados por Hub
 
-### 8.1 Vue Générale de l'Application
+### 8.1 Vista General de la Aplicación
 
 ```mermaid
 mindmap
