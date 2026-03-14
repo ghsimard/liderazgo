@@ -368,7 +368,7 @@ Los operadores tienen permisos granulares definidos en `operator_permissions`:
 
 ## 8. Mindmaps Detallados por Hub
 
-### 8.1 Vue Générale de l'Application
+### 8.1 Vista General de la Aplicación
 
 ```mermaid
 mindmap
