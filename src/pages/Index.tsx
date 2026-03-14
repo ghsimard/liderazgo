@@ -6,7 +6,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, ArrowRight, Loader2, Search, Shield, Users } from "lucide-react";
+import { AlertCircle, ArrowRight, Briefcase, Loader2, Search, Shield, Users } from "lucide-react";
 import AppFooter from "@/components/AppFooter";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -75,27 +75,32 @@ export default function Index() {
         nombre: null,
       };
 
-      // Case 0: Operator → redirect to operator panel
-      if (result.is_operator && !result.is_admin) {
-        navigate("/operador");
-        return;
-      }
+      // Count how many distinct role groups this user has
+      const hasEvalRole = result.is_evaluador || result.is_directivo;
+      const hasMultipleRoles =
+        [result.is_admin, hasEvalRole, result.is_operator].filter(Boolean).length > 1;
 
-      // Case 1: Admin AND Evaluador/Directivo → show role choice
-      if (result.is_admin && (result.is_evaluador || result.is_directivo)) {
+      // If multiple roles → show choice dialog
+      if (hasMultipleRoles) {
         setRoleChoiceResult(result);
         setShowRoleChoice(true);
         return;
       }
 
-      // Case 2: Admin only → redirect to login
+      // Single role: Operator only
+      if (result.is_operator) {
+        navigate("/operador");
+        return;
+      }
+
+      // Single role: Admin only
       if (result.is_admin) {
         navigate("/admin/login");
         return;
       }
 
-      // Case 3: Directivo and/or Evaluador → panel
-      if (result.is_directivo || result.is_evaluador) {
+      // Single role: Directivo/Evaluador
+      if (hasEvalRole) {
         navigate(`/mi-panel`);
         return;
       }
@@ -217,32 +222,49 @@ export default function Index() {
               {roleChoiceResult?.nombre && (
                 <span className="block mb-2 text-foreground font-medium">{roleChoiceResult.nombre}</span>
               )}
-              Su cédula tiene acceso como evaluador/a y como administrador/a. Seleccione el perfil con el que desea continuar.
+              Su cédula tiene acceso a múltiples perfiles. Seleccione con cuál desea continuar.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex flex-col gap-2 py-2">
-            <Button
-              variant="outline"
-              className="justify-start gap-3 h-12"
-              onClick={() => { setShowRoleChoice(false); navigate("/mi-panel"); }}
-            >
-              <Users className="w-5 h-5 text-primary" />
-              <div className="text-left">
-                <p className="text-sm font-medium">Panel de Evaluador</p>
-                <p className="text-xs text-muted-foreground">Rúbricas, informes de módulo, encuestas</p>
-              </div>
-            </Button>
-            <Button
-              variant="outline"
-              className="justify-start gap-3 h-12"
-              onClick={() => { setShowRoleChoice(false); navigate("/admin/login"); }}
-            >
-              <Shield className="w-5 h-5 text-primary" />
-              <div className="text-left">
-                <p className="text-sm font-medium">Panel de Administración</p>
-                <p className="text-xs text-muted-foreground">Gestión de datos, reportes, configuración</p>
-              </div>
-            </Button>
+            {(roleChoiceResult?.is_evaluador || roleChoiceResult?.is_directivo) && (
+              <Button
+                variant="outline"
+                className="justify-start gap-3 h-12"
+                onClick={() => { setShowRoleChoice(false); navigate("/mi-panel"); }}
+              >
+                <Users className="w-5 h-5 text-primary" />
+                <div className="text-left">
+                  <p className="text-sm font-medium">Panel de Evaluador</p>
+                  <p className="text-xs text-muted-foreground">Rúbricas, informes de módulo, encuestas</p>
+                </div>
+              </Button>
+            )}
+            {roleChoiceResult?.is_operator && (
+              <Button
+                variant="outline"
+                className="justify-start gap-3 h-12"
+                onClick={() => { setShowRoleChoice(false); navigate("/operador"); }}
+              >
+                <Briefcase className="w-5 h-5 text-primary" />
+                <div className="text-left">
+                  <p className="text-sm font-medium">Panel de Operador</p>
+                  <p className="text-xs text-muted-foreground">Secciones asignadas con acceso restringido</p>
+                </div>
+              </Button>
+            )}
+            {roleChoiceResult?.is_admin && (
+              <Button
+                variant="outline"
+                className="justify-start gap-3 h-12"
+                onClick={() => { setShowRoleChoice(false); navigate("/admin/login"); }}
+              >
+                <Shield className="w-5 h-5 text-primary" />
+                <div className="text-left">
+                  <p className="text-sm font-medium">Panel de Administración</p>
+                  <p className="text-xs text-muted-foreground">Gestión de datos, reportes, configuración</p>
+                </div>
+              </Button>
+            )}
           </div>
         </AlertDialogContent>
       </AlertDialog>
