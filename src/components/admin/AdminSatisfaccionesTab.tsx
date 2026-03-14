@@ -145,7 +145,7 @@ export default function AdminSatisfaccionesTab() {
   const [regions, setRegions] = useState<string[]>([]);
   const [configs, setConfigs] = useState<ConfigRow[]>([]);
   const [responseCounts, setResponseCounts] = useState<Record<string, number>>({});
-  const [activeSubTab, setActiveSubTab] = useState("config");
+  const [activeSubTab, setActiveSubTab] = useState("responses");
 
   // Detail view
   const [responses, setResponses] = useState<ResponseRow[]>([]);
