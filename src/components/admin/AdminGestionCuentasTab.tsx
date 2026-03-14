@@ -129,7 +129,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
 
       const adminUsers: AdminUser[] = USE_EXPRESS
         ? (adminUsersResult as any).data?.users ?? []
-        : (adminUsersResult as any).users ?? [];
+        : (adminUsersResult as any).data?.users ?? [];
       const evaluadores = evalsResult.data ?? [];
       const permissions = permsResult.data ?? [];
       setRegiones((regionesResult.data || []).map((r: any) => r.nombre));
