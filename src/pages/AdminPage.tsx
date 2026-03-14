@@ -404,6 +404,8 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
 
     case "users":
       return <AdminUsersTab isSuperAdmin={isSuperAdmin} />;
+    case "operadores":
+      return <AdminOperadoresTab />;
     case "mel":
     case "mel-rubricas":
     case "mel-config": {
