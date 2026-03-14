@@ -363,3 +363,391 @@ Los operadores tienen permisos granulares definidos en `operator_permissions`:
 | `contact_messages` | Mensajes de contacto |
 | `site_reviews` | Apreciaciones del sitio |
 | `app_settings` / `app_images` | Configuración general e imágenes |
+
+---
+
+## 8. Mindmaps Détaillés par Hub
+
+### 8.1 Vue Générale de l'Application
+
+```mermaid
+mindmap
+  root((Plataforma RLT / CLT))
+    Paginas Publicas
+      Inicio - Login por Cedula
+      Ficha RLT
+      Hub Encuesta 360
+        Docente
+        Estudiante
+        Directivo
+        Acudiente
+        Administrativo
+        Autoevaluacion
+      Rubrica de Evaluacion
+      Ambiente Escolar
+        Acudientes
+        Estudiantes
+        Docentes
+      Satisfaccion
+        Asistencia
+        Intensivo
+        Interludio
+      Mi Panel
+      Panel Operador
+      Contacto
+      FAQ
+    Panel de Administracion
+      Enlaces
+      Fichas RLT
+      Rubricas
+      Encuesta 360
+      Informe de Modulo
+      Ambiente Escolar
+      Satisfacciones
+      Certificaciones
+      MEL
+      Sistema
+    Roles de Usuario
+      Directivo - Cedula
+      Evaluador - Cedula
+      Operador - Cedula
+      Administrador - Email
+      Superadmin - Email
+```
+
+### 8.2 Hub: Enlaces
+
+```mermaid
+mindmap
+  root((Enlaces))
+    Encuestas 360 Entrada
+      Docente
+      Estudiante
+      Directivo
+      Acudiente
+      Administrativo
+      Autoevaluacion
+    Encuestas 360 Salida
+      Docente Final
+      Estudiante Final
+      Directivo Final
+      Acudiente Final
+      Administrativo Final
+      Autoevaluacion Final
+    Otros Formularios
+      Ficha RLT
+      Rubrica de Evaluacion
+    PDFs en Blanco
+      Ficha RLT PDF
+      Encuesta 360 por tipo
+      Rubrica PDF
+      Ambiente Escolar por tipo
+      Selector de region y logos
+    Acciones
+      Copiar enlace al portapapeles
+      Generar PDF en blanco
+```
+
+### 8.3 Hub: Fichas RLT
+
+```mermaid
+mindmap
+  root((Fichas RLT))
+    Lista
+      Tabla paginada
+      Busqueda por nombre o cedula
+      Filtros
+        Region
+        Entidad territorial
+        Municipio
+        Institucion
+      Acciones por ficha
+        Ver detalle
+        Editar
+        Exportar PDF individual
+        Eliminar - soft delete
+      Exportacion masiva Excel
+    Enlace y PDF
+      Link al formulario publico
+      PDF en blanco por region
+    Configuracion
+      Geografia
+        Regiones
+          Nombre
+          Logo RLT - activo o no
+          Logo CLT - activo o no
+          Grupo KPI asignado
+        Entidades territoriales
+          Crear y editar
+          Asignar a region
+        Municipios
+          Crear y editar
+          Asignar a entidad
+        Instituciones
+          Crear y editar
+          Asignar a municipio
+          Asignar a region
+```
+
+### 8.4 Hub: Rúbricas
+
+```mermaid
+mindmap
+  root((Rubricas))
+    Resultados
+      Tabla de evaluaciones
+      Filtros
+        Modulo
+        Region
+        Institucion
+      Columnas de evaluacion
+        Nivel directivo
+        Nivel equipo
+        Nivel acordado
+      Niveles
+        Sin evidencia
+        Basico
+        Intermedio
+        Avanzado
+    Informes por modulo
+      Seleccion de modulo
+      Resumen de niveles
+      Distribucion por item
+      Analisis con IA opcional
+      Generacion PDF
+    Informe regional
+      Consolidado por region
+      Comparativo entre modulos
+      Texto IA para analisis
+      Generacion PDF
+    Configuracion
+      Evaluadores
+        Nombre
+        Cedula
+        Email
+        Crear y editar
+      Asignaciones
+        Directivo asignado
+        Institucion
+        Evaluador responsable
+```
+
+### 8.5 Hub: Encuesta 360°
+
+```mermaid
+mindmap
+  root((Encuesta 360))
+    Formularios
+      6 tipos con enlace publico
+    Entrada
+      Monitoreo de respuestas fase inicial
+      Filtros
+        Tipo de formulario
+        Institucion
+        Directivo
+      Detalle por respuesta
+    Salida
+      Monitoreo fase final
+      Mismos filtros que Entrada
+    Invitaciones
+      Estado - enviada o respondida
+      Reenvio de recordatorios
+      Conteo de accesos
+    Informes Entrada
+      Reporte 360 individual PDF
+      Seleccion por directivo
+      Seleccion por institucion
+    Informes Salida
+      Igual que Entrada para fase final
+    Configuracion
+      Dominios
+        Orden y etiquetas
+        Claves unicas
+      Competencias
+        Asignacion a dominio
+        Orden y etiquetas
+        Claves unicas
+      Items
+        Pertenece a competencia
+        Numero de item
+        Tipo de respuesta
+        Textos por tipo de formulario
+      Ponderaciones
+        Peso por competencia
+        Diferenciado por rol observador
+        Suma total 1.000
+```
+
+### 8.6 Hub: Informe de Módulo
+
+```mermaid
+mindmap
+  root((Informe de Modulo))
+    Asistencia
+      Registro por directivo
+      Por modulo y dia
+      Sesiones AM y PM
+      Razones de inasistencia
+      Observaciones
+    Informe de Modulo
+      Fechas intensivo e interludio
+      Equipo de trabajo
+      Sesiones programadas vs realizadas
+      Novedades
+      Estrategias
+      Ajustes
+      Aprendizajes
+      Articulacion
+      Acompanamiento
+      Datos individuales por directivo
+    Evaluacion Individual
+      Avances dimension personal
+      Avances dimension pedagogica
+      Avances dimension administrativa
+      Retos por dimension
+      Reto estrategico
+    Reportes PDF
+      Generacion con IA
+        Resumen ejecutivo
+        Texto por seccion
+      Informe consolidado PDF
+```
+
+### 8.7 Hub: Ambiente Escolar
+
+```mermaid
+mindmap
+  root((Ambiente Escolar))
+    Monitoreo
+      Respuestas por tipo
+        Acudientes
+        Estudiantes
+        Docentes
+      Filtros por institucion
+      Badges de estado
+        Rojo - sin respuestas
+        Gris - parcial
+        Verde - completo
+    Estadisticas
+      Distribucion por pregunta
+      Promedios por institucion
+      Graficos resumen
+    Enlaces
+      3 formularios publicos
+      PDFs en blanco por tipo
+```
+
+### 8.8 Hub: Satisfacciones
+
+```mermaid
+mindmap
+  root((Satisfacciones))
+    Respuestas
+      Tabla de respuestas
+      Filtros
+        Tipo - asistencia, intensivo, interludio
+        Modulo
+        Region
+    Estadisticas
+      Promedios por pregunta
+      Distribucion de calificaciones
+      Comparacion entre modulos
+      Comparacion entre regiones
+    Informe PDF
+      Graficos por seccion
+      Contenido editorial editable
+      Logos extra por region
+      Generacion PDF
+    Formularios
+      Editor de definicion
+      Preguntas y secciones
+      Tipos de respuesta
+    Configuracion
+      Activacion por tipo
+      Activacion por modulo
+      Activacion por region
+      Fechas de disponibilidad
+```
+
+### 8.9 Hub: MEL
+
+```mermaid
+mindmap
+  root((MEL))
+    MEL 360
+      Comparacion entrada vs salida
+      Evolucion de competencias
+      Por directivo
+      Por institucion
+      Delta visual
+    MEL Rubricas
+      Evolucion de niveles por modulo
+      Comparacion inicial vs seguimiento
+      Progreso por item
+    Configuracion
+      KPIs
+        Clave y etiqueta
+        Descripcion
+        Formula de calculo
+        Nivel requerido
+        Meta porcentual
+        Modulo objetivo
+      Grupos de KPIs
+        Agrupaciones de indicadores
+        Asignacion a regiones
+        Metas sobrescritas opcionales
+      Informe Global
+        PDF consolidado
+        Resultados por region
+        Comparativos entre KPIs
+```
+
+### 8.10 Hub: Sistema
+
+```mermaid
+mindmap
+  root((Sistema))
+    Gestion de Cuentas
+      Administradores
+        Email y contrasena
+        Rol admin o superadmin
+      Evaluadores
+        Cedula, nombre, email
+        Asignaciones de directivos
+      Operadores
+        Cedula y nombre
+        Permisos segmentados
+          Seccion
+          Region
+          Entidad
+          Institucion
+          Modulo
+      Badges de color por rol
+    Registro de Actividad
+      Log de acciones
+      Filtros
+        Cedula
+        Tipo de accion
+        Fecha
+      Tipos de accion
+        Login y logout
+        Envio de formularios
+        Consultas
+        Navegacion
+    Papelera
+      Registros soft-delete
+      Restaurar registros
+      Filtros por tipo
+    Apreciaciones - Superadmin
+      Ratings y comentarios
+      Visualizacion
+    Mensajes - Superadmin
+      Bandeja de contacto
+      Marcar leido o no leido
+      Filtros por tipo y fecha
+    Changelog - Superadmin
+      Historial de versiones
+    Purgar datos - Superadmin
+      Eliminacion definitiva
+      Confirmaciones multiples
+```
