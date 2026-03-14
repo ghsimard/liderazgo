@@ -1,5 +1,12 @@
 import jsPDF from "jspdf";
-import { loadImageWithSize as loadImageWithSizeHelper } from "@/utils/pdfLogoHelper";
+import {
+  loadImageWithSize as loadImageWithSizeHelper,
+  logoDims,
+  HEADER_LOGO_H,
+  CONTENT_START_Y,
+  CONTENT_BOTTOM_MARGIN,
+  HEADER_LOGO_Y,
+} from "@/utils/pdfLogoHelper";
 
 interface LoadedImage {
   b64: string;
