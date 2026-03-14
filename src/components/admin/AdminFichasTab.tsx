@@ -468,12 +468,7 @@ export default function AdminFichasTab() {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>
-          {totalPages > 1 ? `Página ${page + 1} de ${totalPages} — ` : ""}
-          <strong className="text-foreground">{total}</strong> ficha{total !== 1 ? "s" : ""}
-          {hasFilters || search ? " (filtradas)" : ""}
-        </span>
+      <div className="flex items-center justify-end text-sm text-muted-foreground">
         {totalPages > 1 && (
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
