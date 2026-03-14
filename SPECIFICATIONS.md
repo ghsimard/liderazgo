@@ -366,7 +366,7 @@ Los operadores tienen permisos granulares definidos en `operator_permissions`:
 
 ---
 
-## 8. Mindmaps Détaillés par Hub
+## 8. Mindmaps Detallados por Hub
 
 ### 8.1 Vue Générale de l'Application
 
