@@ -114,7 +114,6 @@ export async function generarPDFInformeModulo(
   const margin = 18;
   const contentW = pageW - margin * 2;
   let y = 0;
-  let isFirstPage = true;
 
   const drawHeaderLogos = () => {
     const logoY = HEADER_LOGO_Y;
