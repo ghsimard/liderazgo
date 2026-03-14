@@ -1,63 +1,42 @@
 
 
-## Probleme actuel
+## Plan : Formulaire unifié de gestion de comptes
 
-Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
+### Probleme actuel
+Les 3 onglets gèrent des personnes identifiées par cédula, mais de manière isolée. Pour une même personne, il faut saisir nom/cédula/email 3 fois dans 3 formulaires différents.
 
-## Proposition : Sidebar avec sections groupees
+### Solution proposée
+Remplacer les 3 sous-onglets par une **vue unifiée par personne** :
 
-Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
+1. **Liste unique de personnes** : Agréger toutes les cédulas connues (depuis `users`/`admin_cedulas`, `rubrica_evaluadores`, `operator_permissions`) dans une seule table avec colonnes : Cédula, Nombre, Rôles (badges: Admin, Evaluador, Operador).
 
-### Structure proposee
+2. **Dialogue "Agregar/Editar persona"** : Un seul formulaire avec :
+   - Champs communs : Cédula, Nombre, Email
+   - Section **Administrador** (toggle) : email de connexion, mot de passe, rôle (admin/superadmin)
+   - Section **Evaluador** (toggle) : se crée dans `rubrica_evaluadores`, gestion des assignations accessible via un bouton secondaire
+   - Section **Operador** (toggle) : liste de permissions de sections avec filtres (région, entidad, etc.)
 
-```text
-┌──────────────────┬──────────────────────────────────┐
-│  SIDEBAR         │  CONTENU                         │
-│                  │                                  │
-│  ▼ Formularios   │                                  │
-│    Enlaces       │                                  │
-│                  │                                  │
-│  ▼ Fichas RLT    │                                  │
-│    Lista         │                                  │
-│    Regiones      │                                  │
-│                  │                                  │
-│  ▼ Encuesta 360° │                                  │
-│    Config        │                                  │
-│    Inicial       │                                  │
-│    Final         │                                  │
-│    Informes Ini. │                                  │
-│    Informes Fin. │                                  │
-│                  │                                  │
-│  ▼ Analisis      │                                  │
-│    MEL           │                                  │
-│    Rubricas      │                                  │
-│                  │                                  │
-│  ▼ Sistema       │                                  │
-│    Admins        │                                  │
-│    Apreciaciones*│                                  │
-│    Mensajes*     │                                  │
-│    Changelog*    │                                  │
-│                  │  (* = superadmin only)            │
-└──────────────────┴──────────────────────────────────┘
-```
+3. **Auto-remplissage** : Quand on saisit une cédula existante, le nom/email se pré-remplissent depuis les données existantes (fichas_rlt, rubrica_evaluadores, etc.)
 
-### Modifications
+### Fichiers impactés
 
-1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
+| Fichier | Action |
+|---------|--------|
+| `src/pages/AdminPage.tsx` | Remplacer les 3 sous-onglets par le composant unifié |
+| `src/components/admin/AdminGestionCuentasTab.tsx` | **Nouveau** — Vue unifiée : liste + dialogue multi-rôle |
+| `src/components/admin/AdminUsersTab.tsx` | Conservé tel quel (utilisé en interne par le nouveau composant ou gardé comme fallback) |
+| `src/components/admin/AdminEvaluadoresTab.tsx` | Conservé (les assignations de directivos restent complexes, accessibles via un lien depuis la vue unifiée) |
+| `src/components/admin/AdminOperadoresTab.tsx` | Conservé en interne pour la logique CRUD |
 
-2. **Modifier `src/pages/AdminPage.tsx`** :
-   - Envelopper le layout dans `SidebarProvider`
-   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
-   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
-   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
-   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
+### Approche technique
 
-3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
+Le nouveau `AdminGestionCuentasTab` :
+- Charge en parallèle : `admin_cedulas` + users (via API), `rubrica_evaluadores`, `operator_permissions`
+- Fusionne par cédula en une liste dédupliquée
+- Le dialogue de création/édition affiche 3 sections activables (accordéons ou toggles)
+- Chaque section appelle les mêmes APIs/endpoints existants (pas de changement backend)
+- Le bouton "Ver asignaciones" pour les évaluateurs ouvre le dialogue existant `AdminEvalDetailDialog` ou bascule vers l'onglet détaillé
 
-### Points techniques
-
-- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
-- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
-- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
-- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
+### Pas de migration DB nécessaire
+Tout repose sur les tables existantes. Seul le frontend change.
 
