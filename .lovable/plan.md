@@ -1,25 +1,63 @@
 
 
-## Plan: Fix Informe de Módulo PDF — Cover Page Separation & Header Logos
+## Probleme actuel
 
-### Problems Identified
+Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
 
-1. **Cover page not separate**: The `newPage()` function skips `addPage()` on its first call (`isFirstPage` flag), so Module content starts on the same page as the cover.
-2. **No header logos on pages 2+**: The generator never calls `drawPageHeaderLogos()` from `pdfLogoHelper.ts`, even though the helper exists.
+## Proposition : Sidebar avec sections groupees
 
-### Changes — `src/utils/informeModuloPdfGenerator.ts`
+Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
 
-1. **Build a `LoadedLogos` object** from the existing `imgMap` so we can use the standardized helper functions (`drawPageHeaderLogos`, `drawFooterCosmo`).
+### Structure proposee
 
-2. **Fix `newPage()`**: Always call `addPage()` after the cover (remove the `isFirstPage` skip logic). Draw header logos at the top of every new page.
+```text
+┌──────────────────┬──────────────────────────────────┐
+│  SIDEBAR         │  CONTENU                         │
+│                  │                                  │
+│  ▼ Formularios   │                                  │
+│    Enlaces       │                                  │
+│                  │                                  │
+│  ▼ Fichas RLT    │                                  │
+│    Lista         │                                  │
+│    Regiones      │                                  │
+│                  │                                  │
+│  ▼ Encuesta 360° │                                  │
+│    Config        │                                  │
+│    Inicial       │                                  │
+│    Final         │                                  │
+│    Informes Ini. │                                  │
+│    Informes Fin. │                                  │
+│                  │                                  │
+│  ▼ Analisis      │                                  │
+│    MEL           │                                  │
+│    Rubricas      │                                  │
+│                  │                                  │
+│  ▼ Sistema       │                                  │
+│    Admins        │                                  │
+│    Apreciaciones*│                                  │
+│    Mensajes*     │                                  │
+│    Changelog*    │                                  │
+│                  │  (* = superadmin only)            │
+└──────────────────┴──────────────────────────────────┘
+```
 
-3. **Fix `ensureSpace()`**: When a page break is triggered mid-content, also draw header logos on the new page and adjust `y` to start below them (`CONTENT_START_Y`).
+### Modifications
 
-4. **Cover page**: Keep as-is (logos centered, title, region, date), ensure `addFooter()` is called, then content pages naturally start on page 2 with header logos.
+1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
 
-### Files Modified
+2. **Modifier `src/pages/AdminPage.tsx`** :
+   - Envelopper le layout dans `SidebarProvider`
+   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
+   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
+   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
+   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
 
-| File | Change |
-|------|--------|
-| `src/utils/informeModuloPdfGenerator.ts` | Fix page break logic, add header logos on all interior pages |
+3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
+
+### Points techniques
+
+- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
+- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
+- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
+- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
 
