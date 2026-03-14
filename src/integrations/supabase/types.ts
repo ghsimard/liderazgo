@@ -1024,6 +1024,42 @@ export type Database = {
           },
         ]
       }
+      operator_permissions: {
+        Row: {
+          cedula: string
+          created_at: string
+          entidad: string | null
+          id: string
+          institucion: string | null
+          module_number: number | null
+          nombre: string
+          region: string | null
+          section: string
+        }
+        Insert: {
+          cedula: string
+          created_at?: string
+          entidad?: string | null
+          id?: string
+          institucion?: string | null
+          module_number?: number | null
+          nombre?: string
+          region?: string | null
+          section: string
+        }
+        Update: {
+          cedula?: string
+          created_at?: string
+          entidad?: string | null
+          id?: string
+          institucion?: string | null
+          module_number?: number | null
+          nombre?: string
+          region?: string | null
+          section?: string
+        }
+        Relationships: []
+      }
       region_entidades: {
         Row: {
           entidad_territorial_id: string

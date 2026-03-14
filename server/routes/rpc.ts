@@ -206,6 +206,9 @@ router.get("/check_cedula_role", async (req: Request, res: Response) => {
     const is_evaluador = await query(
       `SELECT EXISTS (SELECT 1 FROM rubrica_evaluadores WHERE cedula = $1) AS v`, [p_cedula]
     );
+    const is_operator = await query(
+      `SELECT EXISTS (SELECT 1 FROM operator_permissions WHERE cedula = $1) AS v`, [p_cedula]
+    ).catch(() => [{ v: false }]);
     const ficha_row = await query(
       `SELECT nombres_apellidos, genero FROM fichas_rlt WHERE numero_cedula = $1 LIMIT 1`, [p_cedula]
     );
@@ -220,6 +223,7 @@ router.get("/check_cedula_role", async (req: Request, res: Response) => {
       is_admin: is_admin_rows[0]?.v ?? false,
       is_directivo: directivo.length > 0,
       is_evaluador: is_evaluador[0]?.v ?? false,
+      is_operator: is_operator[0]?.v ?? false,
       cargo_actual: directivo[0]?.cargo_actual ?? null,
       nombre: ficha_row[0]?.nombres_apellidos ?? evaluador_row[0]?.nombre ?? null,
       genero: ficha_row[0]?.genero ?? null,

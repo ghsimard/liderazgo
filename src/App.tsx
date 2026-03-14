@@ -11,6 +11,7 @@ import AppFooter from "./components/AppFooter";
 
 const MiPanel = lazy(() => import("./pages/MiPanel"));
 const FichaRLTPage = lazy(() => import("./pages/FichaRLT"));
+const OperadorPanel = lazy(() => import("./pages/OperadorPanel"));
 
 // Lazy-loaded pages to reduce initial bundle
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
@@ -64,6 +65,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/ficha" element={<Suspense fallback={<Loading />}><FichaRLTPage /></Suspense>} />
                 <Route path="/mi-panel" element={<MiPanel />} />
+                <Route path="/operador" element={<OperadorPanel />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin/ficha/:id" element={<AdminEditFicha />} />

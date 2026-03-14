@@ -39,6 +39,7 @@ import AdminActivityLogTab from "@/components/admin/AdminActivityLogTab";
 import AdminInformeModuloTab from "@/components/admin/AdminInformeModuloTab";
 import AdminPurgeDataTab from "@/components/admin/AdminPurgeDataTab";
 import AdminSatisfaccionesTab from "@/components/admin/AdminSatisfaccionesTab";
+import AdminOperadoresTab from "@/components/admin/AdminOperadoresTab";
 import AdminAmbienteMonitorTab from "@/components/admin/AdminAmbienteMonitorTab";
 import AdminAmbienteStatsTab from "@/components/admin/AdminAmbienteStatsTab";
 
@@ -222,6 +223,7 @@ function getHubTitle(activeTab: string): string {
     certificaciones: "Certificaciones",
     mel: "MEL", "mel-rubricas": "MEL", "mel-config": "MEL",
     users: "Administradores",
+    operadores: "Operadores",
     "activity-log": "Registro de Actividad",
     reviews: "Apreciaciones",
     mensajes: "Mensajes",
@@ -403,6 +405,8 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
 
     case "users":
       return <AdminUsersTab isSuperAdmin={isSuperAdmin} />;
+    case "operadores":
+      return <AdminOperadoresTab />;
     case "mel":
     case "mel-rubricas":
     case "mel-config": {

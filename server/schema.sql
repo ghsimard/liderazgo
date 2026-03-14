@@ -696,6 +696,25 @@ AS $$
 $$;
 
 -- ============================================================
+-- TABLE: operator_permissions
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.operator_permissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cedula TEXT NOT NULL,
+  nombre TEXT NOT NULL DEFAULT '',
+  section TEXT NOT NULL,
+  region TEXT,
+  entidad TEXT,
+  institucion TEXT,
+  module_number INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_operator_permissions_cedula
+  ON public.operator_permissions(cedula);
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js
