@@ -408,6 +408,11 @@ export default function AdminFichasTab() {
         </Button>
       </div>
 
+      <div className="text-sm text-muted-foreground">
+        <strong className="text-foreground">{total}</strong> ficha{total !== 1 ? "s" : ""}
+        {hasFilters || search ? " (filtradas)" : ""}
+      </div>
+
       <div className="rounded-lg border bg-background overflow-auto">
         <Table>
           <TableHeader>
