@@ -11,6 +11,7 @@ import AppFooter from "./components/AppFooter";
 
 const MiPanel = lazy(() => import("./pages/MiPanel"));
 const FichaRLTPage = lazy(() => import("./pages/FichaRLT"));
+const OperadorPanel = lazy(() => import("./pages/OperadorPanel"));
 
 // Lazy-loaded pages to reduce initial bundle
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
