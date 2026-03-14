@@ -67,7 +67,7 @@ const categories: FormCategory[] = [
     ],
   },
   {
-    title: "360° Final",
+    title: "360° Salida",
     forms: [
       { name: "Formulario Acudiente (Final)", path: "/formulario-360-final-acudiente", icon: Users },
       { name: "Formulario Administrativo (Final)", path: "/formulario-360-final-administrativo", icon: ClipboardList },
