@@ -1,4 +1,4 @@
-# SPECIFICATIONS — Plataforma RLT / CLT
+# ESPECIFICACIONES — Plataforma RLT / CLT
 
 > Documentación oficial de la aplicación. Última actualización: marzo 2026.
 
