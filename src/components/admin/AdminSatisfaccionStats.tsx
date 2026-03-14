@@ -285,30 +285,7 @@ export default function AdminSatisfaccionStats({ regions }: { regions: string[] 
         </Card>
       ) : (
         <>
-          {/* Sections */}
-          {mergedSections.map((section, si) => (
-            <Card key={si}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  {section.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {section.type === "checkbox" ? (
-                  <HorizontalBarSection data={section.data} suffix="%" totalLabel={`${totalResponses} respuestas`} />
-                ) : section.type === "grid" ? (
-                  <HorizontalBarSection data={section.data} suffix="%" totalLabel="% respuestas positivas" />
-                ) : section.type === "likert" ? (
-                  <HorizontalBarSection data={section.data} suffix="%" totalLabel="% respuestas positivas" />
-                ) : (
-                  <HorizontalBarSection data={section.data} suffix="%" totalLabel="" />
-                )}
-              </CardContent>
-            </Card>
-          ))}
-
-          {/* General satisfaction */}
+          {/* General satisfaction — first */}
           {stats && stats.generalSatisfaction.length > 0 && (
             <Card className="border-primary/30">
               <CardHeader className="pb-3">
@@ -336,6 +313,29 @@ export default function AdminSatisfaccionStats({ regions }: { regions: string[] 
               </CardContent>
             </Card>
           )}
+
+          {/* Sections */}
+          {mergedSections.map((section, si) => (
+            <Card key={si}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  {section.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {section.type === "checkbox" ? (
+                  <HorizontalBarSection data={section.data} suffix="%" totalLabel={`${totalResponses} respuestas`} />
+                ) : section.type === "grid" ? (
+                  <HorizontalBarSection data={section.data} suffix="%" totalLabel="% respuestas positivas" />
+                ) : section.type === "likert" ? (
+                  <HorizontalBarSection data={section.data} suffix="%" totalLabel="% respuestas positivas" />
+                ) : (
+                  <HorizontalBarSection data={section.data} suffix="%" totalLabel="" />
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </>
       )}
     </div>
