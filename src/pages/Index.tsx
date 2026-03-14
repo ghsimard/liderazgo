@@ -6,7 +6,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, ArrowRight, Loader2, Search, Shield, Users } from "lucide-react";
+import { AlertCircle, ArrowRight, Briefcase, Loader2, Search, Shield, Users } from "lucide-react";
 import AppFooter from "@/components/AppFooter";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
