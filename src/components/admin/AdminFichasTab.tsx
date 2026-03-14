@@ -438,7 +438,7 @@ export default function AdminFichasTab() {
                 <TableRow key={f.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/admin/ficha/${f.id}`)}>
                   <TableCell className="font-medium whitespace-nowrap">{f.nombres_apellidos}</TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{f.region}</Badge></TableCell>
-                  <TableCell className="max-w-[200px] truncate" title={f.nombre_ie}>{f.nombre_ie}</TableCell>
+                  <TableCell className="max-w-[250px] line-clamp-2 text-sm">{f.nombre_ie}</TableCell>
                   <TableCell className="text-sm">{genderizeRole(f.cargo_actual, f.genero)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{f.numero_cedula || "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(f.created_at)}</TableCell>
