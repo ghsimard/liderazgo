@@ -1,63 +1,99 @@
 
 
-## Probleme actuel
+## Plan: Système d'opérateurs avec compatibilité Render
 
-Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
+### Résumé
 
-## Proposition : Sidebar avec sections groupees
+Créer une table `operator_permissions`, mettre à jour la détection de rôle par cédula, ajouter une page `/operador`, et un onglet admin pour gérer les opérateurs. Tout doit fonctionner sur les deux environnements (Lovable Cloud et Render/Express).
 
-Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
+### 1. Migration DB (Lovable Cloud)
 
-### Structure proposee
+Créer la table `operator_permissions` via l'outil de migration Supabase + mettre à jour la fonction `check_cedula_role` pour retourner `is_operator`.
 
-```text
-┌──────────────────┬──────────────────────────────────┐
-│  SIDEBAR         │  CONTENU                         │
-│                  │                                  │
-│  ▼ Formularios   │                                  │
-│    Enlaces       │                                  │
-│                  │                                  │
-│  ▼ Fichas RLT    │                                  │
-│    Lista         │                                  │
-│    Regiones      │                                  │
-│                  │                                  │
-│  ▼ Encuesta 360° │                                  │
-│    Config        │                                  │
-│    Inicial       │                                  │
-│    Final         │                                  │
-│    Informes Ini. │                                  │
-│    Informes Fin. │                                  │
-│                  │                                  │
-│  ▼ Analisis      │                                  │
-│    MEL           │                                  │
-│    Rubricas      │                                  │
-│                  │                                  │
-│  ▼ Sistema       │                                  │
-│    Admins        │                                  │
-│    Apreciaciones*│                                  │
-│    Mensajes*     │                                  │
-│    Changelog*    │                                  │
-│                  │  (* = superadmin only)            │
-└──────────────────┴──────────────────────────────────┘
+### 2. Migration Render — Instructions manuelles
+
+Après implémentation, exécuter ce SQL sur la base PostgreSQL Render :
+
+```sql
+-- 1. Table operator_permissions
+CREATE TABLE IF NOT EXISTS public.operator_permissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cedula TEXT NOT NULL,
+  nombre TEXT NOT NULL DEFAULT '',
+  section TEXT NOT NULL,
+  region TEXT,
+  entidad TEXT,
+  institucion TEXT,
+  module_number INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_operator_permissions_cedula
+  ON public.operator_permissions(cedula);
+
+-- 2. Mettre à jour check_cedula_role pour ajouter is_operator
+CREATE OR REPLACE FUNCTION public.check_cedula_role(p_cedula text)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT jsonb_build_object(
+    'exists_ficha', EXISTS (SELECT 1 FROM fichas_rlt WHERE numero_cedula = p_cedula),
+    'is_admin', EXISTS (SELECT 1 FROM admin_cedulas WHERE cedula = p_cedula),
+    'is_directivo', EXISTS (
+      SELECT 1 FROM fichas_rlt
+      WHERE numero_cedula = p_cedula
+        AND cargo_actual IN ('Rector/a', 'Coordinador/a')
+    ),
+    'is_evaluador', EXISTS (SELECT 1 FROM rubrica_evaluadores WHERE cedula = p_cedula),
+    'is_operator', EXISTS (SELECT 1 FROM operator_permissions WHERE cedula = p_cedula),
+    'cargo_actual', (SELECT cargo_actual FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
+    'nombre', COALESCE(
+      (SELECT nombres_apellidos FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
+      (SELECT nombre FROM rubrica_evaluadores WHERE cedula = p_cedula LIMIT 1)
+    ),
+    'genero', (SELECT genero FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1)
+  );
+$$;
 ```
 
-### Modifications
+Ajouter aussi dans `server/schema.sql` le même SQL pour les futures installations.
 
-1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
+### 3. Express RPC (Render)
 
-2. **Modifier `src/pages/AdminPage.tsx`** :
-   - Envelopper le layout dans `SidebarProvider`
-   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
-   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
-   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
-   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
+Mettre à jour `server/routes/rpc.ts` — l'endpoint `check_cedula_role` :
+- Ajouter une requête `is_operator` : `SELECT EXISTS (SELECT 1 FROM operator_permissions WHERE cedula = $1)`
+- Retourner `is_operator` dans la réponse JSON
 
-3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
+### 4. Fichiers à créer/modifier
 
-### Points techniques
+| Fichier | Action |
+|---------|--------|
+| Migration SQL (Supabase) | Table `operator_permissions` + RLS + fonction `check_cedula_role` mise à jour |
+| `server/schema.sql` | Ajouter table `operator_permissions` + fonction mise à jour |
+| `server/routes/rpc.ts` | Ajouter `is_operator` dans l'endpoint `check_cedula_role` |
+| `server/routes/export.ts` | Ajouter `operator_permissions` dans `TABLE_ORDER` |
+| `src/pages/Index.tsx` | Détecter `is_operator`, rediriger vers `/operador` |
+| `src/pages/OperadorPanel.tsx` | **Nouveau** — charge permissions par cédula, affiche sections autorisées |
+| `src/components/admin/AdminOperadoresTab.tsx` | **Nouveau** — CRUD opérateurs dans l'admin |
+| `src/components/admin/AdminSidebar.tsx` | Ajouter onglet "Opérateurs" dans section Système |
+| `src/pages/AdminPage.tsx` | Rendre `AdminOperadoresTab` |
+| `src/App.tsx` | Ajouter route `/operador` |
 
-- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
-- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
-- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
-- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
+### 5. RLS (Lovable Cloud uniquement)
+
+- `operator_permissions` : SELECT public (pour que l'opérateur puisse lire ses propres permissions), INSERT/UPDATE/DELETE réservés aux admins via `has_admin_access(auth.uid())`
+
+### 6. Compatibilité Render — Récapitulatif
+
+- La table `operator_permissions` sera accessible via le proxy DB Express existant (pas de jointures complexes)
+- L'endpoint RPC Express sera mis à jour manuellement
+- Le `dbClient` shim fonctionnera sans modification car il s'agit de requêtes simples (select/insert/update/delete sur une seule table)
+- `server/schema.sql` sera mis à jour pour les nouvelles installations Render
+
+### Étape recommandée
+
+Implémenter tout en une fois : DB + admin UI + page opérateur + routing. Commencer avec Asistencia comme première section testable.
 
