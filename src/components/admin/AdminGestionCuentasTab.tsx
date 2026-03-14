@@ -155,7 +155,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
       for (const ev of evaluadores as any[]) {
         const ced = ev.cedula;
         if (!ced) continue;
-        const existing = map.get(ced) || { cedula: ced, nombre: "", email: "", isAdmin: false, isEvaluador: false, isOperator: false };
+      const existing: UnifiedPerson = map.get(ced) || { cedula: ced, nombre: "", email: "", isAdmin: false, isEvaluador: false, isOperator: false };
         existing.isEvaluador = true;
         existing.evaluadorId = ev.id;
         existing.evaluadorEmail = ev.email || "";
