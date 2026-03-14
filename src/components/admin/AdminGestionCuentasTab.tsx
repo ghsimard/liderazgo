@@ -168,7 +168,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
       for (const p of permissions as any[]) {
         const ced = p.cedula;
         if (!ced) continue;
-        const existing = map.get(ced) || { cedula: ced, nombre: "", email: "", isAdmin: false, isEvaluador: false, isOperator: false };
+      const existing: UnifiedPerson = map.get(ced) || { cedula: ced, nombre: "", email: "", isAdmin: false, isEvaluador: false, isOperator: false };
         existing.isOperator = true;
         existing.nombre = existing.nombre || p.nombre;
         if (!existing.operatorPermissions) existing.operatorPermissions = [];
