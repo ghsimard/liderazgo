@@ -131,8 +131,7 @@ const sections: SidebarSection[] = [
     label: "Sistema",
     icon: Settings2,
     items: [
-      { tab: "users", label: "Administradores", icon: Users },
-      { tab: "operadores", label: "Operadores", icon: Users },
+      { tab: "gestion-cuentas", label: "Gestión de Cuentas", icon: Users },
       { tab: "activity-log", label: "Registro de Actividad", icon: Activity },
       { tab: "papelera", label: "Papelera", icon: Trash2 },
       { tab: "reviews", label: "Apreciaciones", icon: Star, superadminOnly: true },
