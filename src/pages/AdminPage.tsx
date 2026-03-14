@@ -287,11 +287,11 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
         <Tabs defaultValue={defaultSub} className="space-y-4">
           <TabsList className="hub-tabs flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md rounded-lg">
             <TabsTrigger value="formularios" className="gap-1.5"><Link2 className="w-4 h-4" /> Formularios</TabsTrigger>
-            <TabsTrigger value="inicial" className="gap-1.5"><PlayCircle className="w-4 h-4" /> Inicial</TabsTrigger>
-            <TabsTrigger value="final" className="gap-1.5"><FlagTriangleRight className="w-4 h-4" /> Final</TabsTrigger>
+            <TabsTrigger value="inicial" className="gap-1.5"><PlayCircle className="w-4 h-4" /> Entrada</TabsTrigger>
+            <TabsTrigger value="final" className="gap-1.5"><FlagTriangleRight className="w-4 h-4" /> Salida</TabsTrigger>
             <TabsTrigger value="invitaciones" className="gap-1.5"><Users className="w-4 h-4" /> Invitaciones</TabsTrigger>
-            <TabsTrigger value="informes-inicial" className="gap-1.5"><FileBarChart className="w-4 h-4" /> Informes Inicial</TabsTrigger>
-            <TabsTrigger value="informes-final" className="gap-1.5"><FileBarChart2 className="w-4 h-4" /> Informes Final</TabsTrigger>
+            <TabsTrigger value="informes-inicial" className="gap-1.5"><FileBarChart className="w-4 h-4" /> Informes Entrada</TabsTrigger>
+            <TabsTrigger value="informes-final" className="gap-1.5"><FileBarChart2 className="w-4 h-4" /> Informes Salida</TabsTrigger>
             
             <TabsTrigger value="configuracion" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
           </TabsList>
