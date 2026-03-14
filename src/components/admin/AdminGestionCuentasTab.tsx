@@ -557,7 +557,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
                         <Badge variant="outline" className="text-xs border-primary/30 text-primary">Evaluador</Badge>
                       )}
                       {p.isOperator && (
-                        <Badge variant="outline" className="text-xs border-accent-foreground/30 text-accent-foreground">
+                        <Badge variant="secondary" className="text-xs">
                           Operador ({p.operatorPermissions?.length || 0})
                         </Badge>
                       )}
