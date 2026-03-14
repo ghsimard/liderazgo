@@ -416,7 +416,7 @@ export default function AdminFichasTab() {
               <TableHead>Región</TableHead>
               <TableHead>Institución</TableHead>
               <TableHead>Cargo</TableHead>
-              <TableHead>Correo</TableHead>
+              <TableHead>Cédula</TableHead>
               <TableHead>Enviado (COT)</TableHead>
               <TableHead>Modificado (COT)</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
