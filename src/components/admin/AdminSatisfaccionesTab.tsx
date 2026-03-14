@@ -470,11 +470,13 @@ export default function AdminSatisfaccionesTab() {
               </select>
             </div>
             </div>
+            <div className="flex-1 flex justify-end">
             {filteredResponses.length > 0 && (
               <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setShowDeleteAll(true)}>
                 <Trash2 className="w-4 h-4" /> Eliminar {filteredResponses.length === responses.length ? "todas" : `${filteredResponses.length} filtradas`} ({filteredResponses.length})
               </Button>
             )}
+            </div>
 
           {loadingResponses ? (
             <div className="flex justify-center py-8"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>
