@@ -18,6 +18,7 @@ interface CedulaRoleResult {
   is_admin: boolean;
   is_directivo: boolean;
   is_evaluador: boolean;
+  is_operator: boolean;
   cargo_actual: string | null;
   nombre: string | null;
 }
