@@ -75,27 +75,32 @@ export default function Index() {
         nombre: null,
       };
 
-      // Case 0: Operator → redirect to operator panel
-      if (result.is_operator && !result.is_admin) {
-        navigate("/operador");
-        return;
-      }
+      // Count how many distinct role groups this user has
+      const hasEvalRole = result.is_evaluador || result.is_directivo;
+      const hasMultipleRoles =
+        [result.is_admin, hasEvalRole, result.is_operator].filter(Boolean).length > 1;
 
-      // Case 1: Admin AND Evaluador/Directivo → show role choice
-      if (result.is_admin && (result.is_evaluador || result.is_directivo)) {
+      // If multiple roles → show choice dialog
+      if (hasMultipleRoles) {
         setRoleChoiceResult(result);
         setShowRoleChoice(true);
         return;
       }
 
-      // Case 2: Admin only → redirect to login
+      // Single role: Operator only
+      if (result.is_operator) {
+        navigate("/operador");
+        return;
+      }
+
+      // Single role: Admin only
       if (result.is_admin) {
         navigate("/admin/login");
         return;
       }
 
-      // Case 3: Directivo and/or Evaluador → panel
-      if (result.is_directivo || result.is_evaluador) {
+      // Single role: Directivo/Evaluador
+      if (hasEvalRole) {
         navigate(`/mi-panel`);
         return;
       }
