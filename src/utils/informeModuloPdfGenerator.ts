@@ -116,6 +116,26 @@ export async function generarPDFInformeModulo(
   let y = 0;
   let isFirstPage = true;
 
+  const drawHeaderLogos = () => {
+    const logoY = HEADER_LOGO_Y;
+    const targetH = HEADER_LOGO_H;
+    const hasRlt = !!imgMap.rlt;
+    const hasClt = !!imgMap.clt;
+
+    if (hasRlt && hasClt) {
+      const rltDims = logoDims(imgMap.rlt.widthPx, imgMap.rlt.heightPx, targetH);
+      const cltDims = logoDims(imgMap.clt.widthPx, imgMap.clt.heightPx, targetH);
+      try { doc.addImage(imgMap.rlt.b64, "PNG", margin, logoY, rltDims.w, rltDims.h); } catch {}
+      try { doc.addImage(imgMap.clt.b64, "PNG", pageW - margin - cltDims.w, logoY, cltDims.w, cltDims.h); } catch {}
+    } else if (hasRlt) {
+      const dims = logoDims(imgMap.rlt.widthPx, imgMap.rlt.heightPx, targetH);
+      try { doc.addImage(imgMap.rlt.b64, "PNG", pageW - margin - dims.w, logoY, dims.w, dims.h); } catch {}
+    } else if (hasClt) {
+      const dims = logoDims(imgMap.clt.widthPx, imgMap.clt.heightPx, targetH);
+      try { doc.addImage(imgMap.clt.b64, "PNG", pageW - margin - dims.w, logoY, dims.w, dims.h); } catch {}
+    }
+  };
+
   const addFooter = () => {
     const footerY = pageH - 18;
     if (imgMap.cosmo) {
@@ -129,17 +149,19 @@ export async function generarPDFInformeModulo(
   };
 
   const ensureSpace = (needed: number) => {
-    if (y + needed > pageH - 28) {
+    if (y + needed > pageH - CONTENT_BOTTOM_MARGIN) {
       addFooter();
       doc.addPage();
-      y = 26;
+      drawHeaderLogos();
+      y = CONTENT_START_Y;
     }
   };
 
   const newPage = () => {
-    if (!isFirstPage) { addFooter(); doc.addPage(); }
-    isFirstPage = false;
-    y = 26;
+    addFooter();
+    doc.addPage();
+    drawHeaderLogos();
+    y = CONTENT_START_Y;
   };
 
   const drawSectionTitle = (title: string) => {
