@@ -405,10 +405,36 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       );
     }
 
+    case "gestion-cuentas":
     case "users":
-      return <AdminUsersTab isSuperAdmin={isSuperAdmin} />;
     case "operadores":
-      return <AdminOperadoresTab />;
+    case "evaluadores": {
+      const subCuentasMap: Record<string, string> = {
+        "gestion-cuentas": "users",
+        users: "users",
+        operadores: "operadores",
+        evaluadores: "evaluadores",
+      };
+      const defaultSubCuentas = subCuentasMap[activeTab] || "users";
+      return (
+        <Tabs defaultValue={defaultSubCuentas} className="space-y-4">
+          <TabsList className="hub-tabs flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md rounded-lg">
+            <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> Administradores</TabsTrigger>
+            <TabsTrigger value="operadores" className="gap-1.5"><Users className="w-4 h-4" /> Operadores</TabsTrigger>
+            <TabsTrigger value="evaluadores" className="gap-1.5"><Users className="w-4 h-4" /> Evaluadores</TabsTrigger>
+          </TabsList>
+          <TabsContent value="users">
+            <AdminUsersTab isSuperAdmin={isSuperAdmin} />
+          </TabsContent>
+          <TabsContent value="operadores">
+            <AdminOperadoresTab />
+          </TabsContent>
+          <TabsContent value="evaluadores">
+            <AdminEvaluadoresTab />
+          </TabsContent>
+        </Tabs>
+      );
+    }
     case "mel":
     case "mel-rubricas":
     case "mel-config": {
