@@ -139,15 +139,15 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
 
       // Admin users
       for (const u of adminUsers) {
-        const ced = u.cedula || "";
-        if (!ced) continue;
-        const existing: UnifiedPerson = map.get(ced) || { cedula: ced, nombre: "", email: "", isAdmin: false, isEvaluador: false, isOperator: false };
+        const ced = u.cedula || `__admin_${u.id}`;
+        const existing: UnifiedPerson = map.get(ced) || { cedula: u.cedula || "", nombre: "", email: "", isAdmin: false, isEvaluador: false, isOperator: false };
         existing.isAdmin = true;
         existing.adminUserId = u.id;
         existing.adminEmail = u.email;
         existing.adminRole = u.role || (u.roles?.includes("superadmin") ? "superadmin" : "admin");
         existing.adminLastSignIn = u.last_sign_in_at;
         existing.email = existing.email || u.email;
+        if (!existing.nombre) existing.nombre = u.email.split("@")[0];
         map.set(ced, existing);
       }
 
