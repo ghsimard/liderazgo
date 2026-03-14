@@ -416,7 +416,7 @@ export default function AdminFichasTab() {
               <TableHead>Región</TableHead>
               <TableHead>Institución</TableHead>
               <TableHead>Cargo</TableHead>
-              <TableHead>Correo</TableHead>
+              <TableHead>Cédula</TableHead>
               <TableHead>Enviado (COT)</TableHead>
               <TableHead>Modificado (COT)</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
@@ -440,7 +440,7 @@ export default function AdminFichasTab() {
                   <TableCell><Badge variant="outline" className="text-xs">{f.region}</Badge></TableCell>
                   <TableCell className="max-w-[200px] truncate" title={f.nombre_ie}>{f.nombre_ie}</TableCell>
                   <TableCell className="text-sm">{genderizeRole(f.cargo_actual, f.genero)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{f.correo_personal}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{f.numero_cedula || "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(f.created_at)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime((f as any).updated_at)}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
