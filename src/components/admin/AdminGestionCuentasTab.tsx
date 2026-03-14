@@ -134,13 +134,23 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
       const permissions = permsResult.data ?? [];
       setRegiones((regionesResult.data || []).map((r: any) => r.nombre));
 
-      // Build unified map by cedula
+      // Build unified map by normalized cedula
       const map = new Map<string, UnifiedPerson>();
+      const normalizeCedula = (value: unknown) => String(value ?? "").trim();
 
       // Admin users
       for (const u of adminUsers) {
-        const ced = u.cedula || `__admin_${u.id}`;
-        const existing: UnifiedPerson = map.get(ced) || { cedula: u.cedula || "", nombre: "", email: "", isAdmin: false, isEvaluador: false, isOperator: false };
+        const normalizedCedula = normalizeCedula(u.cedula);
+        const mapKey = normalizedCedula || `__admin_${u.id}`;
+        const existing: UnifiedPerson = map.get(mapKey) || {
+          cedula: normalizedCedula,
+          nombre: "",
+          email: "",
+          isAdmin: false,
+          isEvaluador: false,
+          isOperator: false,
+        };
+
         existing.isAdmin = true;
         existing.adminUserId = u.id;
         existing.adminEmail = u.email;
@@ -148,14 +158,22 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
         existing.adminLastSignIn = u.last_sign_in_at;
         existing.email = existing.email || u.email;
         if (!existing.nombre) existing.nombre = u.email.split("@")[0];
-        map.set(ced, existing);
+        map.set(mapKey, existing);
       }
 
       // Evaluadores
       for (const ev of evaluadores as any[]) {
-        const ced = ev.cedula;
+        const ced = normalizeCedula(ev.cedula);
         if (!ced) continue;
-      const existing: UnifiedPerson = map.get(ced) || { cedula: ced, nombre: "", email: "", isAdmin: false, isEvaluador: false, isOperator: false };
+        const existing: UnifiedPerson = map.get(ced) || {
+          cedula: ced,
+          nombre: "",
+          email: "",
+          isAdmin: false,
+          isEvaluador: false,
+          isOperator: false,
+        };
+
         existing.isEvaluador = true;
         existing.evaluadorId = ev.id;
         existing.evaluadorEmail = ev.email || "";
@@ -166,9 +184,17 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
 
       // Operators
       for (const p of permissions as any[]) {
-        const ced = p.cedula;
+        const ced = normalizeCedula(p.cedula);
         if (!ced) continue;
-      const existing: UnifiedPerson = map.get(ced) || { cedula: ced, nombre: "", email: "", isAdmin: false, isEvaluador: false, isOperator: false };
+        const existing: UnifiedPerson = map.get(ced) || {
+          cedula: ced,
+          nombre: "",
+          email: "",
+          isAdmin: false,
+          isEvaluador: false,
+          isOperator: false,
+        };
+
         existing.isOperator = true;
         existing.nombre = existing.nombre || p.nombre;
         if (!existing.operatorPermissions) existing.operatorPermissions = [];
