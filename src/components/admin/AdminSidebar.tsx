@@ -71,10 +71,10 @@ const topLevelItems: SidebarItem[] = [
 
 const sections: SidebarSection[] = [
   {
-    label: "Fichas RLT",
+    label: "Fichas de Información",
     icon: FolderOpen,
     items: [
-      { tab: "fichas-rlt", label: "Fichas RLT", icon: FolderOpen },
+      { tab: "fichas-rlt", label: "Fichas de Información", icon: FolderOpen },
     ],
   },
   {
