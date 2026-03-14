@@ -549,16 +549,16 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
                       {p.isAdmin && (
-                        <Badge className={`text-xs ${p.adminRole === "superadmin" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                        <Badge className={`text-xs font-medium ${p.adminRole === "superadmin" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"}`}>
                           {p.adminRole === "superadmin" ? "Superadmin" : "Admin"}
                         </Badge>
                       )}
                       {p.isEvaluador && (
-                        <Badge variant="outline" className="text-xs border-primary/30 text-primary">Evaluador</Badge>
+                        <Badge className="text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Evaluador</Badge>
                       )}
                       {p.isOperator && (
-                        <Badge variant="secondary" className="text-xs">
-                          Operador ({p.operatorPermissions?.length || 0})
+                        <Badge className="text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          Operador
                         </Badge>
                       )}
                     </div>
