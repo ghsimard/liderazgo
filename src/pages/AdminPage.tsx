@@ -371,7 +371,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       };
       const defaultSubFichas = subFichasMap[activeTab] || "lista";
       return (
-        <Tabs defaultValue={defaultSubFichas} className="space-y-4">
+        <Tabs key={activeTab} defaultValue={defaultSubFichas} className="space-y-4">
           <TabsList className="hub-tabs flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md rounded-lg">
             <TabsTrigger value="lista" className="gap-1.5"><FileText className="w-4 h-4" /> Lista</TabsTrigger>
             <TabsTrigger value="enlace" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlace y PDF</TabsTrigger>
