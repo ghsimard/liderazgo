@@ -94,16 +94,19 @@ flowchart TD
 | Página | Ruta | Descripción |
 |--------|------|-------------|
 | **Inicio** | `/` | Landing con identificación por cédula. Redirige al panel correspondiente según el rol. |
-| **Ficha RLT** | `/ficha-rlt` | Formulario extenso de información personal, profesional e institucional del directivo. |
+| **Ficha RLT** | `/ficha` | Formulario extenso de información personal, profesional e institucional del directivo. |
 | **Hub Encuesta 360°** | `/encuesta-360` | Página central con enlaces a los 6 formularios de encuesta 360° (entrada y salida). |
-| **Encuesta 360° (6 tipos)** | `/encuesta-360-*` | Formularios para docente, estudiante, directivo, acudiente, administrativo y autoevaluación. Fase inicial y final. |
+| **Encuesta 360° (6 tipos)** | `/formulario-360-*` | Formularios para docente, estudiante, directivo, acudiente, administrativo y autoevaluación. Fase inicial y final. |
 | **Rúbrica de Evaluación** | `/rubrica-evaluacion` | Evaluación por módulo con niveles (Sin evidencia, Básico, Intermedio, Avanzado). |
 | **Ambiente Escolar** | `/encuesta-ambiente-*` | 3 formularios: acudientes, estudiantes, docentes. |
 | **Satisfacción** | `/satisfaccion-*` | Formularios de satisfacción: asistencia, intensivo, interludio. |
 | **Mi Panel** | `/mi-panel` | Panel personal del directivo: ficha, encuestas respondidas, rúbricas. |
 | **Panel Operador** | `/operador` | Panel del operador con permisos segmentados por región/entidad. |
 | **Contacto** | `/contacto` | Formulario de contacto y sugerencias. |
+| **Sugerencias** | `/sugerencias` | Formulario de sugerencias y evaluación del sitio. |
 | **FAQ** | `/faq` | Preguntas frecuentes. |
+| **Derechos de contacto** | `/derechos-contacto` | Política de tratamiento de datos personales. |
+| **Especificaciones** | `/especificaciones` | Documentación técnica de la plataforma (acceso superadmin). |
 
 ---
 
@@ -130,6 +133,7 @@ SIDEBAR
 │   ├── Apreciaciones *
 │   ├── Mensajes *
 │   ├── Changelog *
+│   ├── Especificaciones *
 │   └── Purgar datos *
 │
 │   (* = solo superadmin)
@@ -277,21 +281,22 @@ Cada enlace tiene un botón de copiar al portapapeles y los PDFs en blanco permi
 | **Apreciaciones** | Superadmin | Gestión de las reseñas/apreciaciones dejadas por los usuarios sobre la plataforma. Visualización de ratings y comentarios. |
 | **Mensajes** | Superadmin | Bandeja de mensajes de contacto recibidos. Marcar como leído/no leído. Filtros por tipo y fecha. |
 | **Changelog** | Superadmin | Registro de cambios de la plataforma. Historial de versiones y modificaciones. |
+| **Especificaciones** | Superadmin | Acceso a la documentación técnica de la plataforma en formato web y PDF. |
 | **Purgar datos** | Superadmin | Eliminación definitiva de datos. Funcionalidad crítica con confirmaciones múltiples. |
 
 ---
 
-## 7. Notas Técnicas
+## 7. Notas Funcionales
 
 ### 7.1 Autenticación
 
-- **Directivos, Evaluadores, Operadores**: Identificación por número de cédula (sin contraseña). La cédula determina el rol y los permisos via la tabla `admin_cedulas` y `operator_permissions`.
-- **Administradores**: Login con email + contraseña via Supabase Auth. Los roles (`admin`, `superadmin`) se almacenan en la tabla `user_roles`.
-- **Seguridad**: Las funciones `has_role()` y `has_admin_access()` se ejecutan como `SECURITY DEFINER` para evitar recursión RLS.
+- **Directivos, Evaluadores, Operadores**: Identificación por número de cédula (sin contraseña). La cédula determina el rol y los permisos.
+- **Administradores**: Login con email + contraseña. Los roles (`admin`, `superadmin`) se almacenan de forma segura en la base de datos.
+- **Seguridad**: Funciones de verificación de roles con privilegios elevados para evitar recursión en las políticas de seguridad de la base de datos.
 
 ### 7.2 Generación de PDFs
 
-Todos los PDFs se generan en el cliente con **jsPDF**:
+Todos los PDFs se generan directamente en el navegador del usuario:
 - Fichas RLT individuales y en blanco
 - Encuestas 360° en blanco (por tipo de formulario)
 - Reportes 360° individuales (entrada y salida)
@@ -300,12 +305,13 @@ Todos los PDFs se generan en el cliente con **jsPDF**:
 - Ambiente escolar en blanco y reportes
 - Satisfacción (informes con gráficos)
 - MEL global
+- Especificaciones de la plataforma
 
-Cada PDF incluye los logos de la región (RLT y/o CLT) según la configuración de la tabla `regiones`.
+Cada PDF incluye los logos de la región (RLT y/o CLT) según la configuración de cada región.
 
 ### 7.3 Registro de Actividad
 
-El módulo `activityLogger.ts` registra acciones de forma fire-and-forget (sin bloquear la interfaz):
+El sistema registra automáticamente las acciones de los usuarios de forma transparente (sin bloquear la interfaz):
 - `login` — Identificación por cédula
 - `page_view` — Acceso a páginas
 - `ficha_submit` / `ficha_update` / `ficha_view` — Operaciones sobre fichas
@@ -316,53 +322,72 @@ El módulo `activityLogger.ts` registra acciones de forma fire-and-forget (sin b
 
 ### 7.4 Recuperación de Datos
 
-Los registros eliminados se guardan en la tabla `deleted_records` con:
-- Tipo de registro (`record_type`)
-- Etiqueta identificadora (`record_label`)
-- Datos completos en JSON (`deleted_data`)
+Los registros eliminados se conservan en una papelera de reciclaje con:
+- Tipo de registro
+- Etiqueta identificadora
+- Datos completos en formato estructurado
 - Fecha y usuario que eliminó
 
 La papelera permite restaurar registros reinsertándolos en su tabla original.
 
 ### 7.5 Permisos de Operador
 
-Los operadores tienen permisos granulares definidos en `operator_permissions`:
-- **section**: módulo al que tienen acceso (fichas, informes, encuestas, etc.)
-- **region**: región asignada
-- **entidad**: entidad territorial específica (opcional)
-- **institucion**: institución educativa específica (opcional)
-- **module_number**: número de módulo específico (opcional)
+Los operadores tienen permisos granulares:
+- **Sección**: módulo al que tienen acceso (fichas, informes, encuestas, etc.)
+- **Región**: región asignada
+- **Entidad**: entidad territorial específica (opcional)
+- **Institución**: institución educativa específica (opcional)
+- **Módulo**: número de módulo específico (opcional)
 
-### 7.6 Estructura de Base de Datos
+### 7.6 Estructura de Datos
 
-**Tablas principales:**
+**Grupos de datos principales:**
 
-| Tabla | Propósito |
-|-------|-----------|
-| `fichas_rlt` | Fichas de información de directivos |
-| `encuestas_360` | Respuestas de encuestas 360° |
-| `rubrica_modules` / `rubrica_items` | Estructura de las rúbricas |
-| `rubrica_evaluaciones` | Evaluaciones de rúbrica por directivo |
-| `rubrica_seguimientos` | Seguimiento de rúbricas por módulo |
-| `rubrica_evaluadores` / `rubrica_asignaciones` | Evaluadores y sus asignaciones |
-| `informe_modulo` / `informe_directivo` | Informes de módulo |
-| `informe_asistencia` | Asistencia por directivo y módulo |
-| `encuestas_ambiente_escolar` | Respuestas de ambiente escolar |
-| `satisfaccion_responses` | Respuestas de satisfacción |
-| `satisfaccion_config` | Configuración de formularios de satisfacción |
-| `satisfaccion_form_definitions` | Definición de formularios editables |
-| `domains_360` / `competencies_360` / `items_360` | Estructura de la encuesta 360° |
-| `competency_weights` | Ponderaciones por competencia y rol |
-| `mel_kpi_config` / `mel_kpi_groups` | Configuración de indicadores MEL |
-| `regiones` / `entidades_territoriales` / `municipios` / `instituciones` | Geografía |
-| `admin_cedulas` | Cédulas de administradores |
-| `operator_permissions` | Permisos de operadores |
-| `user_roles` | Roles de usuarios autenticados |
-| `user_activity_log` | Registro de actividad |
-| `deleted_records` | Papelera de reciclaje |
-| `contact_messages` | Mensajes de contacto |
-| `site_reviews` | Apreciaciones del sitio |
-| `app_settings` / `app_images` | Configuración general e imágenes |
+| Grupo | Descripción |
+|-------|-------------|
+| **Identidad** | Fichas de información de directivos, cédulas de administradores |
+| **Encuestas 360°** | Respuestas, invitaciones, dominios, competencias, ítems, textos, ponderaciones |
+| **Rúbricas** | Módulos, ítems, evaluaciones, seguimientos, evaluadores, asignaciones |
+| **Informes** | Informes de módulo, equipos de trabajo, informes individuales, asistencia |
+| **Ambiente Escolar** | Respuestas de encuestas de clima escolar |
+| **Satisfacción** | Respuestas, configuración de formularios, definiciones de formularios, contenido de informes |
+| **MEL** | Indicadores KPI, grupos de KPIs, asignaciones grupo-KPI |
+| **Geografía** | Regiones, entidades territoriales, municipios, instituciones, relaciones entre ellos |
+| **Sistema** | Roles de usuarios, registro de actividad, papelera, configuración, imágenes, mensajes de contacto, apreciaciones, permisos de operadores |
+
+### 7.7 Generación de Narrativas con IA
+
+El sistema integra inteligencia artificial para asistir en la generación de textos:
+- **Resumen ejecutivo** de informes de módulo
+- **Texto por sección** para informes detallados
+- **Análisis de resultados** de rúbricas por módulo y región
+
+Las narrativas IA son opcionales: todos los formularios e informes funcionan sin IA.
+
+### 7.8 Sistema de Invitaciones por Email
+
+Para las encuestas 360°, el sistema permite:
+1. Generar enlaces únicos con token
+2. Enviar invitaciones por correo electrónico
+3. Rastrear accesos y respuestas
+4. Enviar recordatorios automáticos
+5. Marcar invitaciones como respondidas automáticamente
+
+### 7.9 Geografía Configurable
+
+Sistema jerárquico completamente configurable:
+
+```
+Región
+├── Entidad Territorial (ETC)
+│   └── Municipio
+│       └── Institución Educativa
+```
+
+Cada región puede configurar:
+- Logos visibles (RLT y/o CLT)
+- Grupo de KPIs MEL asignado
+- Entidades, municipios e instituciones asociados
 
 ---
 
@@ -396,6 +421,9 @@ mindmap
       Panel Operador
       Contacto
       FAQ
+      Sugerencias
+      Derechos de Contacto
+      Especificaciones
     Panel de Administracion
       Enlaces
       Fichas RLT
@@ -747,6 +775,9 @@ mindmap
       Filtros por tipo y fecha
     Changelog - Superadmin
       Historial de versiones
+    Especificaciones - Superadmin
+      Documentacion web
+      Exportacion PDF
     Purgar datos - Superadmin
       Eliminacion definitiva
       Confirmaciones multiples
