@@ -45,11 +45,11 @@ const fields: FieldRow[] = [
   { section: "Formación Académica", campo: "Otros títulos ¿cuáles?", obligatorio: "No", reglas: "Texto libre, opcional" },
 
   // ── Información institucional ──
-  { section: "Información Institucional", campo: "Región", obligatorio: "Sí", reglas: "Selección obligatoria" },
-  { section: "Información Institucional", campo: "Entidad Territorial", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde región)" },
-  { section: "Información Institucional", campo: "Municipio", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde entidad)" },
+  { section: "Información Institucional", campo: "Región", obligatorio: "Sí", reglas: "Selección obligatoria (valores desde base de datos)" },
+  { section: "Información Institucional", campo: "Entidad Territorial", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde región, valores desde base de datos)" },
+  { section: "Información Institucional", campo: "Municipio", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde entidad, valores desde base de datos)" },
   { section: "Información Institucional", campo: "Comuna, barrio, corregimiento o localidad", obligatorio: "No", reglas: "Texto libre, opcional" },
-  { section: "Información Institucional", campo: "Nombre de la IE", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde municipio)" },
+  { section: "Información Institucional", campo: "Nombre de la IE", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde municipio, valores desde base de datos)" },
   { section: "Información Institucional", campo: "Código DANE (12 dígitos)", obligatorio: "Sí", reglas: "Obligatorio, exactamente 12 dígitos numéricos (/^\\d{12}$/)" },
   { section: "Información Institucional", campo: "Cargo actual", obligatorio: "Sí", reglas: "Selección obligatoria (Rector(a) / Coordinador(a))" },
   { section: "Información Institucional", campo: "Tipo de vinculación actual", obligatorio: "Sí", reglas: "Selección obligatoria (En propiedad / En encargo)" },
