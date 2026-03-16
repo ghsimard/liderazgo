@@ -1749,6 +1749,63 @@ export default function FichaRLTForm() {
           </div>
         </div>
       )}
+
+      {/* Modal para captura de nombres con instrucciones sobre certificados */}
+      <AlertDialog open={showNameModal}>
+        <AlertDialogContent className="max-w-md" onEscapeKeyDown={(e) => e.preventDefault()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-amber-700">
+              <AlertCircle className="w-5 h-5 text-amber-500" />
+              Importante — Nombres para el certificado
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>
+                  Escriba sus nombres y apellidos <strong>exactamente</strong> como desea que aparezcan en su certificado, respetando mayúsculas, minúsculas y tildes (acentos).
+                </p>
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-1 text-amber-900">
+                  <p className="flex items-center gap-2"><span className="text-green-600 font-bold">✅</span> María Carolina Rodríguez Pérez</p>
+                  <p className="flex items-center gap-2"><span className="text-destructive font-bold">❌</span> MARIA CAROLINA RODRIGUEZ PEREZ</p>
+                  <p className="flex items-center gap-2"><span className="text-destructive font-bold">❌</span> maria carolina rodriguez perez</p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 pt-2">
+            <div>
+              <label htmlFor="modal-nombres" className="text-sm font-medium mb-1 block">Nombre(s) <span className="text-destructive">*</span></label>
+              <input
+                id="modal-nombres"
+                type="text"
+                value={modalNombres}
+                onChange={(e) => setModalNombres(e.target.value)}
+                placeholder="Ej: María Carolina"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label htmlFor="modal-apellidos" className="text-sm font-medium mb-1 block">Apellido(s) <span className="text-destructive">*</span></label>
+              <input
+                id="modal-apellidos"
+                type="text"
+                value={modalApellidos}
+                onChange={(e) => setModalApellidos(e.target.value)}
+                placeholder="Ej: Rodríguez Pérez"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              disabled={!modalNombres.trim() || !modalApellidos.trim()}
+              onClick={handleConfirmNames}
+            >
+              Confirmar nombres
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </FormProvider>
   );
 }
