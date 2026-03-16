@@ -48,26 +48,56 @@ function luminance(r: number, g: number, b: number): number {
 /**
  * Post-render fix: ensures proper text contrast on all colored nodes.
  * Dark fills → white text, Light fills → dark text.
- * Threshold at 0.5 for clear separation.
+ * Searches broadly for text elements within the node structure.
  */
 function fixTextContrast(container: HTMLElement) {
   const svgEl = container.querySelector("svg");
   if (!svgEl) return;
 
+  // Process all colored shapes
   svgEl.querySelectorAll("circle, ellipse, rect, path, polygon").forEach((shape) => {
     const fill = shape.getAttribute("fill") || (shape as HTMLElement).style?.fill || "";
     if (!fill || fill === "none" || fill === "transparent") return;
+    
     const rgb = parseColorToRgb(fill);
     if (!rgb) return;
+    
     const lum = luminance(...rgb);
-    const parent = shape.closest("g");
-    if (!parent) return;
     const textColor = lum < 0.5 ? "#ffffff" : "#1e293b";
-    parent.querySelectorAll("text, tspan").forEach((t) => {
-      const textEl = t as SVGElement;
-      textEl.setAttribute("fill", textColor);
-      textEl.style.fill = textColor;
-    });
+    
+    // For mindmaps, look for text in the entire ancestor chain up to the node container
+    let current: Element | null = shape;
+    while (current && current !== svgEl) {
+      if (current.tagName.toLowerCase() === "g") {
+        // Found a group - look for text elements within it
+        current.querySelectorAll("text, tspan, foreignObject div").forEach((t) => {
+          const textEl = t as SVGElement | HTMLElement;
+          if (textEl.tagName.toLowerCase() === "div") {
+            (textEl as HTMLElement).style.color = textColor;
+          } else {
+            textEl.setAttribute("fill", textColor);
+            (textEl as SVGElement).style.fill = textColor;
+          }
+        });
+      }
+      current = current.parentElement;
+    }
+  });
+  
+  // Additional pass: force white text on dark primary color nodes
+  svgEl.querySelectorAll('[style*="fill:#1e40af"], [style*="fill: rgb(30, 64, 175)"], [fill="#1e40af"]').forEach((el) => {
+    const parent = el.closest("g");
+    if (parent) {
+      parent.querySelectorAll("text, tspan, foreignObject div").forEach((t) => {
+        const textEl = t as SVGElement | HTMLElement;
+        if (textEl.tagName.toLowerCase() === "div") {
+          (textEl as HTMLElement).style.color = "#ffffff";
+        } else {
+          textEl.setAttribute("fill", "#ffffff");
+          (textEl as SVGElement).style.fill = "#ffffff";
+        }
+      });
+    }
   });
 }
 
