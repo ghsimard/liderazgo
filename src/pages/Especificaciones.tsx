@@ -6,8 +6,6 @@ import { ArrowLeft, Download, Printer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { generarPDFSpecifications } from "@/utils/specificationsPdfGenerator";
 import MermaidDiagram from "@/components/MermaidDiagram";
-import logoRLT from "@/assets/logo_rlt.png";
-import logoCosmo from "@/assets/logo_cosmo.png";
 
 export default function Especificaciones() {
   const [md, setMd] = useState("");
@@ -27,7 +25,7 @@ export default function Especificaciones() {
   const handlePdf = async () => {
     setPdfLoading(true);
     try {
-      await generarPDFSpecifications(md, { logoRLT, logoCosmo }, articleRef.current);
+      await generarPDFSpecifications(md, articleRef.current);
     } finally {
       setPdfLoading(false);
     }
@@ -59,6 +57,19 @@ export default function Especificaciones() {
               <Download className="w-4 h-4 mr-2" /> {pdfLoading ? "Generando…" : "Descargar PDF"}
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* IP Notice */}
+      <div className="max-w-5xl mx-auto px-4 md:px-8 pt-6">
+        <div className="border border-border rounded-lg bg-muted/30 p-5 text-center">
+          <p className="text-sm font-semibold text-foreground mb-2">AVISO DE PROPIEDAD INTELECTUAL</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Este documento es propiedad intelectual exclusiva de Ghislain Simard (CE 6798900). 
+            Todos los derechos están reservados. Queda estrictamente prohibida la reproducción, distribución, 
+            modificación, transmisión o utilización total o parcial de este documento y de su contenido, 
+            en cualquier forma o por cualquier medio, sin el consentimiento previo, expreso y por escrito del autor.
+          </p>
         </div>
       </div>
 

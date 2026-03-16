@@ -6,8 +6,6 @@ import html2canvas from "html2canvas";
  */
 function addTitlePage(
   doc: jsPDF,
-  logoRLT: string,
-  logoCosmo: string,
 ) {
   const pdfW = 210;
   const pdfH = 297;
@@ -16,19 +14,6 @@ function addTitlePage(
   // Background
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, pdfW, pdfH, "F");
-
-  // Logos side by side
-  const logoW = 40;
-  const logoH = 20;
-  const logoGap = 10;
-  const logosStartX = centerX - (logoW * 2 + logoGap) / 2;
-
-  try {
-    doc.addImage(logoRLT, "PNG", logosStartX, 40, logoW, logoH);
-    doc.addImage(logoCosmo, "PNG", logosStartX + logoW + logoGap, 40, logoW, logoH);
-  } catch {
-    // logos optional
-  }
 
   // Title
   doc.setFont("helvetica", "bold");
@@ -109,7 +94,6 @@ function addTitlePage(
  */
 export async function generarPDFSpecifications(
   _markdownContent: string,
-  logoSources: { logoRLT: string; logoCosmo: string },
   articleElement?: HTMLElement | null,
 ): Promise<void> {
   if (!articleElement) {
@@ -153,7 +137,7 @@ export async function generarPDFSpecifications(
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   // --- Title page ---
-  addTitlePage(doc, logoSources.logoRLT, logoSources.logoCosmo);
+  addTitlePage(doc);
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
   doc.text(`1 / ${totalPages}`, pdfW - marginX, pdfH - 5, { align: "right" });
