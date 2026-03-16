@@ -563,6 +563,25 @@ export default function FichaRLTForm() {
     }
   }, [urlCedula, urlMode]);
 
+  // Show name modal when cedula is verified and names are empty (new ficha)
+  useEffect(() => {
+    if (cedulaVerificada && !viewMode) {
+      const nombres = getValues("nombres");
+      const apellidos = getValues("apellidos");
+      if (!nombres && !apellidos) {
+        setModalNombres("");
+        setModalApellidos("");
+        setShowNameModal(true);
+      }
+    }
+  }, [cedulaVerificada]);
+
+  const handleConfirmNames = () => {
+    setValue("nombres", modalNombres.trim(), { shouldValidate: true });
+    setValue("apellidos", modalApellidos.trim(), { shouldValidate: true });
+    setShowNameModal(false);
+  };
+
   const regionActual = watch("region");
   const lenguaMaterna = watch("lengua_materna");
   const enfermedadBase = watch("enfermedad_base");
