@@ -386,15 +386,9 @@ function fixSvgTextContrast(svg: Element) {
     // Only adjust text that is a direct child of the same group
     parent.querySelectorAll('text, tspan').forEach(t => {
       const textEl = t as SVGElement;
-      if (lum < 0.4) {
-        // Dark background → white text
-        textEl.setAttribute('fill', '#ffffff');
-        textEl.style.fill = '#ffffff';
-      } else if (lum > 0.85) {
-        // Very light background → dark text
-        textEl.setAttribute('fill', '#1e293b');
-        textEl.style.fill = '#1e293b';
-      }
+      const textColor = lum < 0.5 ? '#ffffff' : '#1e293b';
+      textEl.setAttribute('fill', textColor);
+      textEl.style.fill = textColor;
     });
   });
 }
