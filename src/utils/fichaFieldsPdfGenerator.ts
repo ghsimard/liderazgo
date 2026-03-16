@@ -69,8 +69,8 @@ const fields: FieldRow[] = [
   { section: "Información institucional", campo: "jornadas", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (checkbox)" },
   { section: "Información institucional", campo: "niveles_educativos", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (checkbox)" },
   { section: "Información institucional", campo: "tipo_bachillerato", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (checkbox)" },
-  { section: "Información institucional", campo: "sedes_urbana", obligatorio: "No", reglas: "Número entero ≥ 0 o vacío" },
-  { section: "Información institucional", campo: "sedes_rural", obligatorio: "No", reglas: "Número entero ≥ 0 o vacío" },
+  { section: "Información institucional", campo: "sedes_urbana", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
+  { section: "Información institucional", campo: "sedes_rural", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
 
   // ── Estadísticas de personal ──
   { section: "Estadísticas de personal", campo: "num_docentes", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
