@@ -126,7 +126,7 @@ export async function generarPDFEncuesta360EnBlanco(
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
   doc.text("DATOS DE IDENTIFICACIÓN", pageW / 2, y + 4, { align: "center" });
-  y += 7;
+  y += 10;
 
   drawBlankField("Institución Educativa");
   if (config.isAutoeval) {
