@@ -152,7 +152,7 @@ export async function generarPDFEncuesta360EnBlanco(
       y += 6;
     });
   }
-  y += 2;
+  y += 1;
 
   // ── Items section ──
   const freqOptions = config.isAutoeval ? FREQUENCY_OPTIONS_NO_NOSABE : FREQUENCY_OPTIONS_WITH_NOSABE;
