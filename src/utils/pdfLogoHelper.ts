@@ -14,6 +14,11 @@
 
 import jsPDF from "jspdf";
 
+// Static fallback imports for resilience (e.g. Render 404s)
+import staticLogoRltWhite from "@/assets/logo_rlt_white.png";
+import staticLogoCltWhite from "@/assets/logo_clt_white.png";
+import staticLogoCosmo from "@/assets/logo_cosmo.png";
+
 // ── Dimension constants (mm) ──────────────────────────────────────
 export const COVER_LOGO_H = 24;   // Cover page programme logos
 export const HEADER_LOGO_H = 14;  // Interior page header logos
