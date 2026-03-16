@@ -6,6 +6,7 @@ import {
   FREQUENCY_OPTIONS_NO_NOSABE,
   AGREEMENT_OPTIONS_WITH_NOSABE,
   AGREEMENT_OPTIONS_NO_NOSABE,
+  DIAS_CONTACTO_OPTIONS,
   FORM_CONFIGS,
 } from "@/data/encuesta360Data";
 import { loadImageAsBase64, getImageNaturalSize, logoDims, HEADER_LOGO_H, FOOTER_COSMO_H } from "@/utils/pdfLogoHelper";
@@ -133,7 +134,21 @@ export async function generarPDFEncuesta360EnBlanco(
     drawBlankField("Nombre completo");
   } else {
     drawBlankField("Nombre del directivo docente a evaluar");
-    drawBlankField("¿Cuántos días de la semana pasada habló con el directivo evaluado?");
+    // Días de contacto as radio options
+    checkNewPage(8);
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    const diasLabel = "¿Cuántos días de la semana pasada habló con el directivo evaluado?:";
+    doc.text(diasLabel, margin + 2, y);
+    y += 4;
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    DIAS_CONTACTO_OPTIONS.forEach((opt, i) => {
+      const x = margin + 4 + i * 35;
+      doc.circle(x, y - 0.5, 1.5);
+      doc.text(opt, x + 3, y);
+    });
+    y += 5;
   }
   if (config.extraFields) {
     config.extraFields.forEach((ef) => {
