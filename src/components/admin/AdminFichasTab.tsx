@@ -404,6 +404,9 @@ export default function AdminFichasTab() {
         <Button variant="outline" size="sm" onClick={handleBatchPdf} disabled={batchLoading || !hasFilters} className="gap-1.5">
           <Files className="w-4 h-4" /> {batchLoading ? "Generando…" : "PDFs filtrados"}
         </Button>
+        <Button variant="outline" size="sm" onClick={() => generateFichaFieldsPdf()} className="gap-1.5">
+          <BookOpen className="w-4 h-4" /> Campos y reglas
+        </Button>
         <Button size="sm" onClick={() => navigate("/admin/ficha/new")} className="gap-1.5">
           <Plus className="w-4 h-4" /> Crear ficha
         </Button>
