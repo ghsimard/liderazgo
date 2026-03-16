@@ -117,7 +117,7 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.setLineWidth(0.3);
     const end = lineW ? Math.min(margin + 2 + lw + lineW, margin + contentW) : margin + contentW;
     doc.line(margin + 2 + lw, y + 1, end, y + 1);
-    y += 6;
+    y += 5;
   };
 
   checkNewPage(40);
