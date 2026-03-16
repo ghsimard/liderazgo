@@ -42,9 +42,16 @@ function parseColorToRgb(color: string): [number, number, number] | null {
   return null;
 }
 
-function isBlueContainer(rgb: [number, number, number]): boolean {
+const LIGHT_BLUE_FILL = "#93c5fd";
+const LIGHT_BLUE_BORDER = "#60a5fa";
+
+function isBlueTone(rgb: [number, number, number]): boolean {
   const [r, g, b] = rgb;
-  return b >= 150 && b > r && b > g - 30;
+  return b >= 120 && b > r + 10 && b > g - 20;
+}
+
+function isBlueContainer(rgb: [number, number, number]): boolean {
+  return isBlueTone(rgb);
 }
 
 function applyTextColor(el: Element, color: "#000000" | "#ffffff") {
