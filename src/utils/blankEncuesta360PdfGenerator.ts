@@ -102,9 +102,9 @@ export async function generarPDFEncuesta360EnBlanco(
     const lines = doc.splitTextToSize(`• ${g}`, contentW - 4);
     checkNewPage(lines.length * 3);
     doc.text(lines, margin + 2, y);
-    y += lines.length * 3;
+    y += lines.length * 2.8;
   });
-  y += 2;
+  y += 1.5;
 
   // Header fields
   const drawBlankField = (label: string, lineW?: number) => {
