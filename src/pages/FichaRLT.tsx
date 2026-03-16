@@ -57,7 +57,7 @@ const schema = z.object({
   lugar_nacimiento: z.string().optional(),
   lengua_materna: z.string().min(1, "Seleccione una lengua materna"),
   lengua_otra: z.string().optional(),
-  celular_personal: z.string().min(7, "Ingrese un número celular válido"),
+  celular_personal: z.string().min(1, "Ingrese un número celular válido").transform(stripPhone).pipe(z.string().length(10, "Debe tener exactamente 10 dígitos")),
   codigo_pais_celular: z.string().default("+57"),
   correo_personal: z.string().email("Ingrese un correo electrónico válido"),
   correo_institucional: z.string().email("Ingrese un correo institucional válido").optional().or(z.literal("")),
