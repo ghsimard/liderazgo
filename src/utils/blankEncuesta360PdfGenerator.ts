@@ -213,13 +213,13 @@ export async function generarPDFEncuesta360EnBlanco(
         doc.circle(cx, y + rowH / 2 - 1.5, 1.8);
       });
 
-      y += rowH + 1;
+      y += rowH + 2;
 
       // Separator line
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.15);
       doc.line(margin, y, margin + contentW, y);
-      y += 1.5;
+      y += 2.5;
     });
   };
 
