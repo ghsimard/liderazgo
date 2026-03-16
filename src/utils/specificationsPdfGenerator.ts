@@ -15,19 +15,6 @@ function addTitlePage(
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, pdfW, pdfH, "F");
 
-  // Logos side by side
-  const logoW = 40;
-  const logoH = 20;
-  const logoGap = 10;
-  const logosStartX = centerX - (logoW * 2 + logoGap) / 2;
-
-  try {
-    doc.addImage(logoRLT, "PNG", logosStartX, 40, logoW, logoH);
-    doc.addImage(logoCosmo, "PNG", logosStartX + logoW + logoGap, 40, logoW, logoH);
-  } catch {
-    // logos optional
-  }
-
   // Title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(28);
