@@ -63,17 +63,16 @@ export async function generarPDFFichaEnBlanco(
   };
 
   const drawPageHeader = () => {
-    const logoH = 18;
-    const logoW = 22;
     const logoY = 10;
-    const rltLeft2 = showRlt;
     if (showRlt && rltB64) {
-      doc.addImage(rltB64, "PNG", rltLeft2 ? margin : pageW - margin - logoW, logoY, logoW, logoH);
+      const d = logoDims(rltNatSize.width, rltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(rltB64, "PNG", margin, logoY, d.w, d.h);
     }
     if (showClt && cltB64) {
-      doc.addImage(cltB64, "PNG", rltLeft2 ? pageW - margin - logoW : margin, logoY, logoW, logoH);
+      const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(cltB64, "PNG", pageW - margin - d.w, logoY, d.w, d.h);
     }
-    const textStartY = logoY + logoH + 4;
+    const textStartY = logoY + HEADER_LOGO_H + 4;
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
