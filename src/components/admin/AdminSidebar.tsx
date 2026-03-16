@@ -185,19 +185,9 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
 
   const handleBlankAction = async (action: string) => {
     if (action === "specs-pdf") {
-      setGeneratingPdf(true);
-      try {
-        const res = await fetch("/SPECIFICATIONS.md");
-        const md = await res.text();
-        await generarPDFSpecifications(md, {
-          logoRLT: images.logo_rlt_white,
-          logoCosmo: images.logo_cosmo,
-        });
-        toast({ title: "PDF generado", description: "Especificaciones descargadas." });
-      } catch {
-        toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
-      } finally {
-        setGeneratingPdf(false);
+      // Navigate to the Especificaciones page where the PDF can be generated from rendered content
+      window.open("/especificaciones", "_blank");
+      return;
       }
       return;
     }
