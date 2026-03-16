@@ -35,6 +35,9 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 
+// ── Helpers ──────────────────────────────────────────────────
+const stripPhone = (v: string) => v.replace(/\D/g, "");
+
 // ── Schema de validación ─────────────────────────────────────
 const schema = z.object({
   acepta_datos: z.literal(true, { errorMap: () => ({ message: "Debe aceptar el tratamiento de datos personales" }) }),
