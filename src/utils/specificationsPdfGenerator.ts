@@ -145,7 +145,11 @@ export async function generarPDFSpecifications(
     throw new Error("Article element is required for PDF generation");
   }
 
-  const DARK_FILLS = ["#1e40af", "#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6"];
+  const DARK_FILLS = ["#1e40af", "#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6", "#000000", "#000", "#111111", "#1a1a1a"];
+
+  // Generate version datetime string for footer
+  const versionDate = new Date();
+  const versionStr = `Especificaciones RLT/CLT — ${versionDate.toLocaleDateString("es-CO", { year: "numeric", month: "2-digit", day: "2-digit" })} ${versionDate.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}`;
 
   // Capture the rendered article as a high-res canvas
   const canvas = await html2canvas(articleElement, {
