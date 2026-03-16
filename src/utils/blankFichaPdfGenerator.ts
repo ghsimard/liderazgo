@@ -63,17 +63,16 @@ export async function generarPDFFichaEnBlanco(
   };
 
   const drawPageHeader = () => {
-    const logoH = 18;
-    const logoW = 22;
     const logoY = 10;
-    const rltLeft2 = showRlt;
     if (showRlt && rltB64) {
-      doc.addImage(rltB64, "PNG", rltLeft2 ? margin : pageW - margin - logoW, logoY, logoW, logoH);
+      const d = logoDims(rltNatSize.width, rltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(rltB64, "PNG", margin, logoY, d.w, d.h);
     }
     if (showClt && cltB64) {
-      doc.addImage(cltB64, "PNG", rltLeft2 ? pageW - margin - logoW : margin, logoY, logoW, logoH);
+      const d = logoDims(cltNatSize.width, cltNatSize.height, HEADER_LOGO_H);
+      doc.addImage(cltB64, "PNG", pageW - margin - d.w, logoY, d.w, d.h);
     }
-    const textStartY = logoY + logoH + 4;
+    const textStartY = logoY + HEADER_LOGO_H + 4;
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
@@ -109,7 +108,7 @@ export async function generarPDFFichaEnBlanco(
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
     doc.text(title, pageW / 2, y + 5, { align: "center" });
-    y += 11;
+    y += 10;
     doc.setFont("helvetica", "normal");
   };
 
@@ -128,7 +127,7 @@ export async function generarPDFFichaEnBlanco(
     doc.setDrawColor(180, 180, 180);
     doc.setLineWidth(0.3);
     doc.line(lineStart, y + 1, lineEnd, y + 1);
-    y += 7;
+    y += 6;
   };
 
   // Two blank fields side by side
@@ -154,7 +153,7 @@ export async function generarPDFFichaEnBlanco(
     const lw2 = doc.getTextWidth(lt2) + 3;
     doc.line(margin + halfW + lw2, y + 1, margin + contentW, y + 1);
 
-    y += 7;
+    y += 6;
   };
 
   // Multi-line blank area (for long answers)
@@ -169,9 +168,9 @@ export async function generarPDFFichaEnBlanco(
     doc.setLineWidth(0.3);
     for (let i = 0; i < lines; i++) {
       doc.line(margin + 4, y + 1, margin + contentW, y + 1);
-      y += 5;
+      y += 4;
     }
-    y += 2;
+    y += 1;
   };
 
   // ── INFORMACIÓN PERSONAL ──
