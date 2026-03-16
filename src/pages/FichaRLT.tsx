@@ -565,18 +565,25 @@ export default function FichaRLTForm() {
     }
   }, [urlCedula, urlMode]);
 
-  // Show name modal when cedula is verified and names are empty (new ficha)
+  // Show datos authorization modal when cedula is verified and names are empty (new ficha)
   useEffect(() => {
     if (cedulaVerificada && !viewMode) {
       const nombres = getValues("nombres");
       const apellidos = getValues("apellidos");
       if (!nombres && !apellidos) {
-        setModalNombres("");
-        setModalApellidos("");
-        setShowNameModal(true);
+        setShowDatosModal(true);
       }
     }
   }, [cedulaVerificada]);
+
+  const handleAcceptDatos = () => {
+    setValue("acepta_datos", true, { shouldValidate: true });
+    setShowDatosModal(false);
+    // Now show name modal
+    setModalNombres("");
+    setModalApellidos("");
+    setShowNameModal(true);
+  };
 
   const handleConfirmNames = () => {
     setValue("nombres", modalNombres.trim(), { shouldValidate: true });
