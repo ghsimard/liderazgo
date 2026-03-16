@@ -30,7 +30,7 @@ const TYPE_LABELS: Record<string, string> = {
   competency: "Competencia",
   item: "Ítem",
   encuesta_360: "Encuesta 360",
-  ficha_rlt: "Ficha RLT",
+  ficha_rlt: "Ficha de Información",
   region: "Región",
   entidad_territorial: "Entidad Territorial",
   municipio: "Municipio",
