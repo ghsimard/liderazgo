@@ -91,35 +91,34 @@ function findKeepTogetherZones(
       let sibling = heading.nextElementSibling;
       let steps = 0;
 
-      // Walk forward through siblings to find the first substantial content block
-      while (sibling && steps < 4) {
+      // Walk forward through siblings — increased limit to catch headings
+      // followed by paragraphs then a diagram/table further down
+      while (sibling && steps < 8) {
         const tag = sibling.tagName.toLowerCase();
         const sRect = sibling.getBoundingClientRect();
         bottomRect = sRect;
 
-        // Stop after hitting a content block (table, diagram, code, paragraph)
+        // Stop after hitting a substantial content block (table, diagram, code, list)
         if (tag === "table" || tag === "pre" || tag === "div" || tag === "ul" || tag === "ol") {
           break;
         }
         // Also stop at a same-or-higher-level heading (don't group unrelated sections)
         if ((tag === "h2" || tag === "h3" || tag === "h4") && steps > 0) {
-          // But include this heading in the zone if it's a sub-heading (e.g., h2 then h3)
           const hLevel = parseInt(heading.tagName[1]);
           const sLevel = parseInt(tag[1]);
           if (sLevel <= hLevel) {
-            // Same or higher level heading → don't include, use previous sibling
             bottomRect = (sibling.previousElementSibling || heading).getBoundingClientRect();
             break;
           }
-          // Sub-heading → continue to include it + its content
         }
+        // Continue past paragraphs (p) — don't stop, keep walking to find the content block
         sibling = sibling.nextElementSibling;
         steps++;
       }
 
       const groupH = bottomRect.bottom - hRect.top;
-      // Only create zone if it's not taller than ~70% of a page (in pixels)
-      if (groupH > 0 && groupH < 900) {
+      // Allow larger zones (~1200px) to accommodate heading + paragraphs + diagram
+      if (groupH > 0 && groupH < 1200) {
         zones.push({
           canvasTop: (hRect.top - artTop) * canvasScale,
           canvasBottom: (bottomRect.bottom - artTop) * canvasScale,
@@ -146,7 +145,11 @@ export async function generarPDFSpecifications(
     throw new Error("Article element is required for PDF generation");
   }
 
-  const DARK_FILLS = ["#1e40af", "#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6"];
+  const DARK_FILLS = ["#1e40af", "#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6", "#000000", "#000", "#111111", "#1a1a1a"];
+
+  // Generate version datetime string for footer
+  const versionDate = new Date();
+  const versionStr = `Especificaciones RLT/CLT — ${versionDate.toLocaleDateString("es-CO", { year: "numeric", month: "2-digit", day: "2-digit" })} ${versionDate.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}`;
 
   // Capture the rendered article as a high-res canvas
   const canvas = await html2canvas(articleElement, {
@@ -277,9 +280,10 @@ export async function generarPDFSpecifications(
 
   // --- Title page ---
   addTitlePage(doc);
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.text(`1 / ${totalPages}`, pdfW - marginX, pdfH - 5, { align: "right" });
+  doc.setFontSize(7);
+  doc.setTextColor(130, 130, 130);
+  doc.text(versionStr, marginX, pdfH - 5);
+  doc.text(`Pag. 1 / ${totalPages}`, pdfW - marginX, pdfH - 5, { align: "right" });
 
   // --- Content pages ---
   const pageStarts = [0, ...pageBreaks];
@@ -305,9 +309,10 @@ export async function generarPDFSpecifications(
     const sliceScaledH = srcH * ratio;
     doc.addImage(sliceData, "JPEG", marginX, marginY, usableW, sliceScaledH);
 
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`${i + 2} / ${totalPages}`, pdfW - marginX, pdfH - 5, { align: "right" });
+    doc.setFontSize(7);
+    doc.setTextColor(130, 130, 130);
+    doc.text(versionStr, marginX, pdfH - 5);
+    doc.text(`Pag. ${i + 2} / ${totalPages}`, pdfW - marginX, pdfH - 5, { align: "right" });
   }
 
   doc.save("Especificaciones_Plataforma_RLT_CLT.pdf");
