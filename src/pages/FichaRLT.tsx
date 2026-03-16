@@ -1014,7 +1014,7 @@ export default function FichaRLTForm() {
           <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate className={isReadOnly ? "ficha-readonly" : ""}>
 
             {/* Consentimiento — hide in view mode */}
-            {!viewMode && (
+            {!viewMode && !watch("acepta_datos") && (
             <div className="form-section border-l-4" style={{ borderLeftColor: "hsl(var(--primary))" }}>
               <div className="space-y-3">
                 <p className="text-sm leading-relaxed">
