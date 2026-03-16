@@ -715,7 +715,7 @@ export default function FichaRLTForm() {
       comuna_barrio: data.comuna_barrio ?? null,
       direccion_sede_principal: data.direccion_sede_principal ?? null,
       sitio_web: data.sitio_web ?? null,
-      telefono_ie: data.telefono_ie ?? null,
+      telefono_ie: data.telefono_ie ? stripPhone(data.telefono_ie) : null,
       codigo_pais_telefono_ie: data.codigo_pais_telefono_ie ?? "+57",
       zona_sede: data.zona_sede ?? null,
       sedes_rural: toInt(data.sedes_rural),
