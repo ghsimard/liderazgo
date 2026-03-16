@@ -47,55 +47,86 @@ function luminance(r: number, g: number, b: number): number {
 
 /**
  * Post-render fix: ensures proper text contrast on all colored nodes.
- * Dark fills → white text, Light fills → dark text.
- * Searches broadly for text elements within the node structure.
+ * Strategy: collect each node group's dominant fill, then apply text color.
+ * Processes deepest shapes first so the most specific shape wins.
  */
 function fixTextContrast(container: HTMLElement) {
   const svgEl = container.querySelector("svg");
   if (!svgEl) return;
 
-  // Process all colored shapes
-  svgEl.querySelectorAll("circle, ellipse, rect, path, polygon").forEach((shape) => {
+  // Map each <g> to the fill color of its deepest colored shape
+  const groupColors = new Map<Element, string>();
+
+  // Get all shapes, sorted deepest-first by counting ancestors
+  const shapes = Array.from(svgEl.querySelectorAll("circle, ellipse, rect, path, polygon"));
+  
+  for (const shape of shapes) {
     const fill = shape.getAttribute("fill") || (shape as HTMLElement).style?.fill || "";
-    if (!fill || fill === "none" || fill === "transparent") return;
-    
+    if (!fill || fill === "none" || fill === "transparent") continue;
     const rgb = parseColorToRgb(fill);
-    if (!rgb) return;
-    
+    if (!rgb) continue;
+
     const lum = luminance(...rgb);
     const textColor = lum < 0.5 ? "#ffffff" : "#1e293b";
-    
-    // For mindmaps, look for text in the entire ancestor chain up to the node container
-    let current: Element | null = shape;
-    while (current && current !== svgEl) {
-      if (current.tagName.toLowerCase() === "g") {
-        // Found a group - look for text elements within it
-        current.querySelectorAll("text, tspan, foreignObject div").forEach((t) => {
-          const textEl = t as SVGElement | HTMLElement;
-          if (textEl.tagName.toLowerCase() === "div") {
-            (textEl as HTMLElement).style.color = textColor;
-          } else {
-            textEl.setAttribute("fill", textColor);
-            (textEl as SVGElement).style.fill = textColor;
-          }
+
+    // Find the immediate parent <g> that contains this shape
+    const parentG = shape.closest("g");
+    if (!parentG) continue;
+
+    // Only set if this group hasn't been set yet by a deeper shape
+    if (!groupColors.has(parentG)) {
+      groupColors.set(parentG, textColor);
+    }
+  }
+
+  // Apply text colors
+  groupColors.forEach((textColor, group) => {
+    // Set on direct text children only (not text in nested sub-groups)
+    for (const child of Array.from(group.children)) {
+      if (child.tagName.toLowerCase() === "text" || child.tagName.toLowerCase() === "tspan") {
+        (child as SVGElement).setAttribute("fill", textColor);
+        (child as SVGElement).style.fill = textColor;
+        // Also fix nested tspans
+        child.querySelectorAll("tspan").forEach(ts => {
+          (ts as SVGElement).setAttribute("fill", textColor);
+          (ts as SVGElement).style.fill = textColor;
         });
       }
-      current = current.parentElement;
+      if (child.tagName.toLowerCase() === "foreignobject") {
+        child.querySelectorAll("div, span, p").forEach(el => {
+          (el as HTMLElement).style.color = textColor;
+        });
+      }
     }
   });
-  
-  // Additional pass: force white text on dark primary color nodes
-  svgEl.querySelectorAll('[style*="fill:#1e40af"], [style*="fill: rgb(30, 64, 175)"], [fill="#1e40af"]').forEach((el) => {
-    const parent = el.closest("g");
-    if (parent) {
-      parent.querySelectorAll("text, tspan, foreignObject div").forEach((t) => {
-        const textEl = t as SVGElement | HTMLElement;
-        if (textEl.tagName.toLowerCase() === "div") {
-          (textEl as HTMLElement).style.color = "#ffffff";
-        } else {
-          textEl.setAttribute("fill", "#ffffff");
-          (textEl as SVGElement).style.fill = "#ffffff";
-        }
+
+  // Final pass: any foreignObject inside a group with a dark shape
+  // (mindmap nodes often have shape + foreignObject as siblings within same g)
+  svgEl.querySelectorAll("g").forEach(g => {
+    const shapes = g.querySelectorAll(":scope > circle, :scope > ellipse, :scope > rect, :scope > path, :scope > polygon");
+    let darkestLum = 1;
+    let hasDarkShape = false;
+    
+    shapes.forEach(shape => {
+      const fill = shape.getAttribute("fill") || (shape as HTMLElement).style?.fill || "";
+      if (!fill || fill === "none" || fill === "transparent") return;
+      const rgb = parseColorToRgb(fill);
+      if (!rgb) return;
+      const lum = luminance(...rgb);
+      if (lum < darkestLum) {
+        darkestLum = lum;
+        hasDarkShape = true;
+      }
+    });
+
+    if (hasDarkShape) {
+      const textColor = darkestLum < 0.5 ? "#ffffff" : "#1e293b";
+      g.querySelectorAll(":scope > foreignObject div, :scope > foreignObject span, :scope > foreignObject p").forEach(el => {
+        (el as HTMLElement).style.color = textColor;
+      });
+      g.querySelectorAll(":scope > text, :scope > text tspan").forEach(el => {
+        (el as SVGElement).setAttribute("fill", textColor);
+        (el as SVGElement).style.fill = textColor;
       });
     }
   });
