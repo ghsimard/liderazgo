@@ -101,12 +101,28 @@ function applyFinalLabelColors(container: HTMLElement) {
       if (!bbox || bbox.width <= 0 || bbox.height <= 0) return null;
 
       return {
+        shape,
         bbox,
         area: bbox.width * bbox.height,
         rgb,
       };
     })
-    .filter((s): s is { bbox: DOMRect; area: number; rgb: [number, number, number] } => Boolean(s));
+    .filter((s): s is { shape: Element; bbox: DOMRect; area: number; rgb: [number, number, number] } => Boolean(s));
+
+  // Force blue nodes/circles to a lighter blue in the live UI.
+  for (const shapeInfo of shapeInfos) {
+    if (!isBlueTone(shapeInfo.rgb)) continue;
+    (shapeInfo.shape as SVGElement).setAttribute("fill", LIGHT_BLUE_FILL);
+    (shapeInfo.shape as SVGElement).style.setProperty("fill", LIGHT_BLUE_FILL, "important");
+
+    const stroke = (shapeInfo.shape as SVGElement).getAttribute("stroke");
+    if (stroke && stroke !== "none") {
+      (shapeInfo.shape as SVGElement).setAttribute("stroke", LIGHT_BLUE_BORDER);
+      (shapeInfo.shape as SVGElement).style.setProperty("stroke", LIGHT_BLUE_BORDER, "important");
+    }
+
+    shapeInfo.rgb = [147, 197, 253];
+  }
 
   const labels = Array.from(svgEl.querySelectorAll("text, foreignObject"));
 
