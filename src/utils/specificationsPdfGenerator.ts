@@ -280,9 +280,10 @@ export async function generarPDFSpecifications(
 
   // --- Title page ---
   addTitlePage(doc);
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.text(`1 / ${totalPages}`, pdfW - marginX, pdfH - 5, { align: "right" });
+  doc.setFontSize(7);
+  doc.setTextColor(130, 130, 130);
+  doc.text(versionStr, marginX, pdfH - 5);
+  doc.text(`Pag. 1 / ${totalPages}`, pdfW - marginX, pdfH - 5, { align: "right" });
 
   // --- Content pages ---
   const pageStarts = [0, ...pageBreaks];
