@@ -6,8 +6,6 @@ import html2canvas from "html2canvas";
  */
 function addTitlePage(
   doc: jsPDF,
-  logoRLT: string,
-  logoCosmo: string,
 ) {
   const pdfW = 210;
   const pdfH = 297;
