@@ -278,8 +278,39 @@ function renderBlockquote(doc: jsPDF, block: PdfBlock, y: number): number {
   return y + boxH + 4;
 }
 
+// Replace Unicode box-drawing characters with ASCII equivalents supported by jsPDF fonts
+function sanitizeBoxDrawing(text: string): string {
+  return text
+    .replace(/│/g, '|')
+    .replace(/├/g, '|--')
+    .replace(/└/g, '`--')
+    .replace(/─/g, '-')
+    .replace(/┌/g, ',--')
+    .replace(/┐/g, '--.')
+    .replace(/┘/g, "--'")
+    .replace(/┤/g, '--|')
+    .replace(/┬/g, '-+-')
+    .replace(/┴/g, '-+-')
+    .replace(/┼/g, '-+-')
+    .replace(/║/g, '||')
+    .replace(/═/g, '=')
+    .replace(/╔/g, ',==')
+    .replace(/╗/g, '==.')
+    .replace(/╚/g, '`==')
+    .replace(/╝/g, "=='")
+    .replace(/╠/g, '|==')
+    .replace(/╣/g, '==|')
+    .replace(/╦/g, '=+=')
+    .replace(/╩/g, '=+=')
+    .replace(/╬/g, '=+=')
+    .replace(/•/g, '*')
+    .replace(/→/g, '->')
+    .replace(/←/g, '<-')
+    .replace(/↔/g, '<->');
+}
+
 function renderCodeBlock(doc: jsPDF, block: PdfBlock, y: number): number {
-  const text = block.codeText || '';
+  const text = sanitizeBoxDrawing(block.codeText || '');
   const lines = text.split('\n');
   const lh = 3.5;
   const boxH = lines.length * lh + 6;
