@@ -63,13 +63,9 @@ function fixTextContrast(container: HTMLElement) {
     if (!parent) return;
     parent.querySelectorAll("text, tspan").forEach((t) => {
       const textEl = t as SVGElement;
-      if (lum < 0.4) {
-        textEl.setAttribute("fill", "#ffffff");
-        textEl.style.fill = "#ffffff";
-      } else if (lum > 0.85) {
-        textEl.setAttribute("fill", "#1e293b");
-        textEl.style.fill = "#1e293b";
-      }
+      const textColor = lum < 0.5 ? "#ffffff" : "#1e293b";
+      textEl.setAttribute("fill", textColor);
+      textEl.style.fill = textColor;
     });
   });
 }
