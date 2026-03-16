@@ -166,10 +166,6 @@ export default function MiPanel() {
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
 
   useEffect(() => {
-    document.title = "Mi Panel";
-  }, []);
-
-  useEffect(() => {
     if (!cedula) {
       navigate("/");
       return;
