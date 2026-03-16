@@ -17,7 +17,7 @@ const fields: FieldRow[] = [
   { section: "Datos personales", campo: "numero_cedula", obligatorio: "Sí", reglas: "Texto obligatorio" },
   { section: "Datos personales", campo: "fecha_nacimiento", obligatorio: "Sí", reglas: "Fecha válida; edad entre 18 y 70 años" },
   { section: "Datos personales", campo: "lugar_nacimiento", obligatorio: "No", reglas: "Texto libre, opcional" },
-  { section: "Datos personales", campo: "grupos_etnicos", obligatorio: "No", reglas: "Selección opcional" },
+  { section: "Datos personales", campo: "grupos_etnicos", obligatorio: "No", reglas: "Selección múltiple opcional (checkbox)" },
   { section: "Datos personales", campo: "lengua_materna", obligatorio: "Sí", reglas: "Selección obligatoria" },
   { section: "Datos personales", campo: "lengua_otra", obligatorio: "No", reglas: "Texto libre, opcional" },
   { section: "Datos personales", campo: "discapacidad", obligatorio: "Sí", reglas: "Selección obligatoria (Sí / No)" },
