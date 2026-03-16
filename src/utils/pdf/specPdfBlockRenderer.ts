@@ -344,7 +344,60 @@ function renderHr(doc: jsPDF, y: number): number {
 }
 
 // ── Diagram pre-capture ────────────────────────────────────────────
-const DARK_FILLS = ['#1e40af', '#1e3a8a', '#1d4ed8', '#2563eb', '#3b82f6', '#000000', '#000', '#111111', '#1a1a1a'];
+/**
+ * Parse a CSS color string to RGB [0-255]. Handles #hex, rgb(), and named colors.
+ */
+function parseColorToRgb(color: string): [number, number, number] | null {
+  const c = color.trim().toLowerCase();
+  // Hex
+  const hex3 = c.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/);
+  if (hex3) return [parseInt(hex3[1]+hex3[1],16), parseInt(hex3[2]+hex3[2],16), parseInt(hex3[3]+hex3[3],16)];
+  const hex6 = c.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/);
+  if (hex6) return [parseInt(hex6[1],16), parseInt(hex6[2],16), parseInt(hex6[3],16)];
+  // rgb(r, g, b)
+  const rgbMatch = c.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (rgbMatch) return [+rgbMatch[1], +rgbMatch[2], +rgbMatch[3]];
+  return null;
+}
+
+/**
+ * Relative luminance (0 = black, 1 = white) per WCAG.
+ */
+function luminance(r: number, g: number, b: number): number {
+  const [rs, gs, bs] = [r/255, g/255, b/255].map(v =>
+    v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+  );
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+/**
+ * Fix text contrast on SVG shapes based on fill luminance.
+ * Dark fills → white text, Light fills → dark text.
+ */
+function fixSvgTextContrast(svg: Element) {
+  svg.querySelectorAll('circle, ellipse, rect, path, polygon').forEach(shape => {
+    const fill = shape.getAttribute('fill') || shape.getAttribute('style')?.match(/fill:\s*([^;]+)/)?.[1] || '';
+    if (!fill || fill === 'none' || fill === 'transparent') return;
+    const rgb = parseColorToRgb(fill);
+    if (!rgb) return;
+    const lum = luminance(...rgb);
+    const parent = shape.closest('g');
+    if (!parent) return;
+    // Only adjust text that is a direct child of the same group
+    parent.querySelectorAll('text, tspan').forEach(t => {
+      const textEl = t as SVGElement;
+      if (lum < 0.4) {
+        // Dark background → white text
+        textEl.setAttribute('fill', '#ffffff');
+        textEl.style.fill = '#ffffff';
+      } else if (lum > 0.85) {
+        // Very light background → dark text
+        textEl.setAttribute('fill', '#1e293b');
+        textEl.style.fill = '#1e293b';
+      }
+    });
+  });
+}
 
 export async function captureDiagrams(blocks: PdfBlock[]): Promise<void> {
   for (const block of blocks) {
@@ -356,21 +409,7 @@ export async function captureDiagrams(blocks: PdfBlock[]): Promise<void> {
         logging: false,
         useCORS: true,
         onclone: (_doc, clonedEl) => {
-          // Force white text on dark nodes for print contrast
-          const svgs = clonedEl.querySelectorAll('svg');
-          svgs.forEach(svg => {
-            svg.querySelectorAll('circle, ellipse, rect, path').forEach(shape => {
-              const fill = (shape.getAttribute('fill') || '').toLowerCase();
-              if (DARK_FILLS.includes(fill)) {
-                const parent = shape.closest('g');
-                if (parent) {
-                  parent.querySelectorAll('text, tspan').forEach(t => {
-                    (t as SVGElement).setAttribute('fill', '#ffffff');
-                  });
-                }
-              }
-            });
-          });
+          clonedEl.querySelectorAll('svg').forEach(svg => fixSvgTextContrast(svg));
         },
       });
       block.imageData = canvas.toDataURL('image/png');

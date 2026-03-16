@@ -24,26 +24,53 @@ function initMermaid() {
   mermaidInitialized = true;
 }
 
-const DARK_FILLS = ["#1e40af", "#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6", "#000000", "#000", "#111111", "#1a1a1a"];
+/**
+ * Parse a CSS color string to RGB. Handles #hex and rgb().
+ */
+function parseColorToRgb(color: string): [number, number, number] | null {
+  const c = color.trim().toLowerCase();
+  const hex3 = c.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/);
+  if (hex3) return [parseInt(hex3[1]+hex3[1],16), parseInt(hex3[2]+hex3[2],16), parseInt(hex3[3]+hex3[3],16)];
+  const hex6 = c.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/);
+  if (hex6) return [parseInt(hex6[1],16), parseInt(hex6[2],16), parseInt(hex6[3],16)];
+  const rgbMatch = c.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (rgbMatch) return [+rgbMatch[1], +rgbMatch[2], +rgbMatch[3]];
+  return null;
+}
+
+function luminance(r: number, g: number, b: number): number {
+  const [rs, gs, bs] = [r/255, g/255, b/255].map(v =>
+    v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+  );
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
 
 /**
- * Post-render fix: ensures white text on dark-blue nodes.
+ * Post-render fix: ensures proper text contrast on all colored nodes.
+ * Dark fills → white text, Light fills → dark text.
  */
-function fixWhiteTextOnDarkNodes(container: HTMLElement) {
+function fixTextContrast(container: HTMLElement) {
   const svgEl = container.querySelector("svg");
   if (!svgEl) return;
 
-  svgEl.querySelectorAll("circle, ellipse, rect, path").forEach((shape) => {
-    const fill = (shape.getAttribute("fill") || "").toLowerCase();
-    if (DARK_FILLS.includes(fill)) {
-      const parent = shape.closest("g");
-      if (parent) {
-        parent.querySelectorAll("text, tspan").forEach((t) => {
-          (t as SVGElement).setAttribute("fill", "#ffffff");
-          (t as SVGElement).style.fill = "#ffffff";
-        });
+  svgEl.querySelectorAll("circle, ellipse, rect, path, polygon").forEach((shape) => {
+    const fill = shape.getAttribute("fill") || (shape as HTMLElement).style?.fill || "";
+    if (!fill || fill === "none" || fill === "transparent") return;
+    const rgb = parseColorToRgb(fill);
+    if (!rgb) return;
+    const lum = luminance(...rgb);
+    const parent = shape.closest("g");
+    if (!parent) return;
+    parent.querySelectorAll("text, tspan").forEach((t) => {
+      const textEl = t as SVGElement;
+      if (lum < 0.4) {
+        textEl.setAttribute("fill", "#ffffff");
+        textEl.style.fill = "#ffffff";
+      } else if (lum > 0.85) {
+        textEl.setAttribute("fill", "#1e293b");
+        textEl.style.fill = "#1e293b";
       }
-    }
+    });
   });
 }
 
