@@ -87,7 +87,7 @@ export default function RegionPdfPicker({ open, onOpenChange, onConfirm, loading
               </div>
             )}
 
-            <Button onClick={handleConfirm} disabled={!selected || loading} className="w-full">
+            <Button ref={downloadBtnRef} autoFocus onClick={handleConfirm} disabled={!selected || loading} className="w-full">
               {loading ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin mr-2" /> Generando…
