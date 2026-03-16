@@ -47,6 +47,41 @@ router.get("/", async (_req: Request, res: Response) => {
   }
 });
 
+/** GET /api/images/check-orphans — find DB entries whose files are missing from disk (admin only) */
+router.get("/check-orphans", requireAuth, requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const rows = await query<{ image_key: string; storage_path: string }>(
+      "SELECT image_key, storage_path FROM app_images"
+    );
+    const orphans = rows.filter((r) => {
+      const abs = path.resolve(UPLOAD_DIR, path.basename(r.storage_path));
+      return !fs.existsSync(abs);
+    });
+    res.json({ orphans, count: orphans.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** POST /api/images/purge-orphans — delete DB entries whose files are missing from disk (admin only) */
+router.post("/purge-orphans", requireAuth, requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const rows = await query<{ image_key: string; storage_path: string }>(
+      "SELECT image_key, storage_path FROM app_images"
+    );
+    const orphans = rows.filter((r) => {
+      const abs = path.resolve(UPLOAD_DIR, path.basename(r.storage_path));
+      return !fs.existsSync(abs);
+    });
+    for (const o of orphans) {
+      await query("DELETE FROM app_images WHERE image_key = $1", [o.image_key]);
+    }
+    res.json({ purged: orphans.length, keys: orphans.map((o) => o.image_key) });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /** POST /api/images/:imageKey — upload/replace an image (admin only) */
 router.post(
   "/:imageKey",
