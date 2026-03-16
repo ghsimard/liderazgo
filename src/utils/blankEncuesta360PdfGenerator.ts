@@ -89,7 +89,7 @@ export async function generarPDFEncuesta360EnBlanco(
   const introLines = doc.splitTextToSize(config.intro, contentW);
   checkNewPage(introLines.length * 3 + 4);
   doc.text(introLines, margin, y);
-  y += introLines.length * 3 + 3;
+  y += introLines.length * 2.8 + 2;
 
   // Glossary
   checkNewPage(GLOSSARY.length * 4 + 6);
