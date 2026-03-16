@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,6 +23,7 @@ export default function RegionPdfPicker({ open, onOpenChange, onConfirm, loading
   const [regions, setRegions] = useState<Region[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [fetching, setFetching] = useState(false);
+  const downloadBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -86,7 +87,7 @@ export default function RegionPdfPicker({ open, onOpenChange, onConfirm, loading
               </div>
             )}
 
-            <Button onClick={handleConfirm} disabled={!selected || loading} className="w-full">
+            <Button ref={downloadBtnRef} autoFocus onClick={handleConfirm} disabled={!selected || loading} className="w-full">
               {loading ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin mr-2" /> Generando…
