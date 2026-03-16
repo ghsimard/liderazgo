@@ -216,10 +216,20 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
 
   // Fix text contrast on colored nodes after SVG is injected into DOM
   useEffect(() => {
-    if (svg && containerRef.current) {
-      fixTextContrast(containerRef.current);
-    }
-  }, [svg]);
+    if (!svg || !containerRef.current) return;
+
+    const container = containerRef.current;
+    const apply = () => fixTextContrast(container);
+
+    apply();
+    const rafId = requestAnimationFrame(apply);
+    const timeoutId = window.setTimeout(apply, 180);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [svg, chart]);
 
   if (error) {
     return (
