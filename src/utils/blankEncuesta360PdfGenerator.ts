@@ -219,7 +219,7 @@ export async function generarPDFEncuesta360EnBlanco(
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.15);
       doc.line(margin, y, margin + contentW, y);
-      y += 2;
+      y += 4;
     });
   };
 
