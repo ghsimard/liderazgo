@@ -33,6 +33,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
 import { generarPDFAmbienteEscolarEnBlanco } from "@/utils/blankAmbienteEscolarPdfGenerator";
+import { generarPDFSpecifications } from "@/utils/specificationsPdfGenerator";
 
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 import {
@@ -137,6 +138,7 @@ const sections: SidebarSection[] = [
       { tab: "reviews", label: "Apreciaciones", icon: Star, superadminOnly: true },
       { tab: "mensajes", label: "Mensajes", icon: MessageSquare, superadminOnly: true },
       { tab: "changelog", label: "Changelog", icon: GitCommit, superadminOnly: true },
+      { tab: "specs-pdf", label: "Especificaciones PDF", icon: FileText, superadminOnly: true, action: "specs-pdf" as any },
       { tab: "purge-data", label: "Purgar datos", icon: Trash2, superadminOnly: true },
     ],
   },
@@ -180,7 +182,24 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
     setPickerOpen(true);
   };
 
-  const handleBlankAction = (action: string) => {
+  const handleBlankAction = async (action: string) => {
+    if (action === "specs-pdf") {
+      setGeneratingPdf(true);
+      try {
+        const res = await fetch("/SPECIFICATIONS.md");
+        const md = await res.text();
+        await generarPDFSpecifications(md, {
+          logoRLT: images.logo_rlt_white,
+          logoCosmo: images.logo_cosmo,
+        });
+        toast({ title: "PDF generado", description: "Especificaciones descargadas." });
+      } catch {
+        toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+      } finally {
+        setGeneratingPdf(false);
+      }
+      return;
+    }
     setPendingAction(action);
     setPickerOpen(true);
   };
