@@ -133,7 +133,7 @@ function applyFinalLabelColors(container: HTMLElement) {
     const cx = b.x + b.width / 2;
     const cy = b.y + b.height / 2;
 
-    let bestMatch: { bbox: DOMRect; area: number; rgb: [number, number, number] } | null = null;
+    let bestMatch: { shape: Element; bbox: DOMRect; area: number; rgb: [number, number, number] } | null = null;
 
     for (const shapeInfo of shapeInfos) {
       const { bbox } = shapeInfo;
