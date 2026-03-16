@@ -254,7 +254,7 @@ Este módulo permitirá crear y gestionar los certificados de participación par
 - **Diseño oficial**: Plantillas con diseño institucional validado por el programa.
 - **Exportación masiva**: Descarga individual o por lotes según filtros (región, institución, módulo).
 
-> **Estado**: En construcción. Este módulo está planificado pero no implementado aún.
+
 
 ---
 
