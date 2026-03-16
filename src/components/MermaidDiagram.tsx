@@ -45,11 +45,71 @@ function luminance(r: number, g: number, b: number): number {
   return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
 }
 
+const FORCE_WHITE_LABELS = [
+  "plataforma rlt / clt",
+  "enlaces",
+  "fichas rlt",
+  "rubricas",
+  "encuesta 360",
+  "informe de modulo",
+  "ambiente escolar",
+  "satisfacciones",
+  "mel",
+  "sistema",
+];
+
+function normalizeLabel(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function shouldForceWhiteLabel(value: string): boolean {
+  const normalized = normalizeLabel(value);
+  return FORCE_WHITE_LABELS.some((target) => normalized.includes(target));
+}
+
+function applyWhiteTextStyles(el: Element) {
+  const existingStyle = el.getAttribute("style") || "";
+  el.setAttribute("style", `${existingStyle}; fill:#ffffff !important; color:#ffffff !important;`);
+  if (["text", "tspan", "path"].includes(el.tagName.toLowerCase())) {
+    el.setAttribute("fill", "#ffffff");
+  }
+}
+
+function forceSpecificLabelsWhite(svgMarkup: string): string {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgMarkup, "image/svg+xml");
+    const root = doc.documentElement;
+
+    root.querySelectorAll("text, tspan, foreignObject, div, span, p").forEach((el) => {
+      const rawText = (el.textContent || "").trim();
+      if (!rawText || !shouldForceWhiteLabel(rawText)) return;
+
+      applyWhiteTextStyles(el);
+      el.querySelectorAll("text, tspan, foreignObject, div, span, p").forEach(applyWhiteTextStyles);
+
+      const group = el.closest("g");
+      if (group) {
+        applyWhiteTextStyles(group);
+        group.querySelectorAll("text, tspan, foreignObject, div, span, p").forEach(applyWhiteTextStyles);
+      }
+    });
+
+    return new XMLSerializer().serializeToString(root);
+  } catch {
+    return svgMarkup;
+  }
+}
+
 /**
  * Post-render fix: ensure readable text on Mermaid nodes.
  * Strategy: match each label to the shape that contains its center point.
  */
-function fixTextContrast(container: HTMLElement) {
   const svgEl = container.querySelector("svg");
   if (!svgEl) return;
 
