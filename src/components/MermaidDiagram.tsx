@@ -46,7 +46,7 @@ function parseColorToRgb(color: string): [number, number, number] | null {
 
 function isBlueContainer(rgb: [number, number, number]): boolean {
   const [r, g, b] = rgb;
-  return b >= r + 20 && b >= g + 15 && r <= 90 && g <= 140;
+  return b >= 150 && b > r && b > g - 30;
 }
 
 function applyTextColor(el: Element, color: "#000000" | "#ffffff") {
