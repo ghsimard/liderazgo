@@ -63,14 +63,7 @@ function fixTextContrast(container: HTMLElement) {
       const rgb = parseColorToRgb(fill);
       if (!rgb) return null;
 
-      let bbox: DOMRect | null = null;
-      try {
-        const b = (shape as unknown as SVGGraphicsElement).getBBox();
-        bbox = new DOMRect(b.x, b.y, b.width, b.height);
-      } catch {
-        return null;
-      }
-
+      const bbox = (shape as Element).getBoundingClientRect();
       if (!bbox || bbox.width <= 0 || bbox.height <= 0) return null;
 
       const lum = luminance(...rgb);
