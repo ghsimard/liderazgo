@@ -24,7 +24,7 @@ function initMermaid() {
   mermaidInitialized = true;
 }
 
-const DARK_FILLS = ["#1e40af", "#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6"];
+const DARK_FILLS = ["#1e40af", "#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6", "#000000", "#000", "#111111", "#1a1a1a"];
 
 /**
  * Post-render fix: ensures white text on dark-blue nodes.

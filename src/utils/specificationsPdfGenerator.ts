@@ -309,9 +309,10 @@ export async function generarPDFSpecifications(
     const sliceScaledH = srcH * ratio;
     doc.addImage(sliceData, "JPEG", marginX, marginY, usableW, sliceScaledH);
 
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`${i + 2} / ${totalPages}`, pdfW - marginX, pdfH - 5, { align: "right" });
+    doc.setFontSize(7);
+    doc.setTextColor(130, 130, 130);
+    doc.text(versionStr, marginX, pdfH - 5);
+    doc.text(`Pag. ${i + 2} / ${totalPages}`, pdfW - marginX, pdfH - 5, { align: "right" });
   }
 
   doc.save("Especificaciones_Plataforma_RLT_CLT.pdf");
