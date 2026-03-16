@@ -33,7 +33,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
 import { generarPDFAmbienteEscolarEnBlanco } from "@/utils/blankAmbienteEscolarPdfGenerator";
-import { generarPDFSpecifications } from "@/utils/specificationsPdfGenerator";
+
 
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 import {
@@ -185,20 +185,7 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
 
   const handleBlankAction = async (action: string) => {
     if (action === "specs-pdf") {
-      setGeneratingPdf(true);
-      try {
-        const res = await fetch("/SPECIFICATIONS.md");
-        const md = await res.text();
-        await generarPDFSpecifications(md, {
-          logoRLT: images.logo_rlt_white,
-          logoCosmo: images.logo_cosmo,
-        });
-        toast({ title: "PDF generado", description: "Especificaciones descargadas." });
-      } catch {
-        toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
-      } finally {
-        setGeneratingPdf(false);
-      }
+      window.open("/especificaciones", "_blank");
       return;
     }
     setPendingAction(action);
