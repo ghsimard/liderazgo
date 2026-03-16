@@ -33,14 +33,6 @@ export const CONTENT_BOTTOM_MARGIN = 28;  // Content must stop at pageH - this v
 
 // ── Image loading utilities ───────────────────────────────────────
 
-function getStaticLogoFallback(src: string): string | undefined {
-  const normalized = src.toLowerCase();
-  if (normalized.includes("logo_clt_white")) return staticLogoCltWhite;
-  if (normalized.includes("logo_rlt_white")) return staticLogoRltWhite;
-  if (normalized.includes("logo_cosmo")) return staticLogoCosmo;
-  return undefined;
-}
-
 /** Convert an image URL / imported asset to a base64 data URL */
 export function loadImageAsBase64(src: string, fallbackSrc?: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -56,10 +48,9 @@ export function loadImageAsBase64(src: string, fallbackSrc?: string): Promise<st
       resolve(canvas.toDataURL("image/png"));
     };
     img.onerror = () => {
-      const candidate = fallbackSrc ?? getStaticLogoFallback(src);
-      if (candidate && candidate !== src) {
-        console.warn(`Failed to load image: ${src}, trying fallback: ${candidate}`);
-        loadImageAsBase64(candidate).then(resolve, reject);
+      if (fallbackSrc && fallbackSrc !== src) {
+        console.warn(`Failed to load image: ${src}, trying fallback: ${fallbackSrc}`);
+        loadImageAsBase64(fallbackSrc).then(resolve, reject);
       } else {
         reject(new Error(`Failed to load image: ${src}`));
       }
@@ -74,15 +65,7 @@ export function getImageNaturalSize(src: string): Promise<{ width: number; heigh
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => {
-      const fallback = getStaticLogoFallback(src);
-      if (fallback && fallback !== src) {
-        console.warn(`Failed to read image size: ${src}, trying fallback: ${fallback}`);
-        getImageNaturalSize(fallback).then(resolve, reject);
-      } else {
-        reject(new Error(`Failed to load image: ${src}`));
-      }
-    };
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
     img.src = src;
   });
 }
