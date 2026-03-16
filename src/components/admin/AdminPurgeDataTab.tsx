@@ -262,6 +262,37 @@ export default function AdminPurgeDataTab() {
           </AlertDialog>
         </CardContent>
       </Card>
+
+      {/* ── Orphan image cleanup ── */}
+      <Card className="border-muted">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <ImageOff className="h-4 w-4 text-muted-foreground" /> Nettoyage des images orphelines
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Supprime les entrées de la table <code>app_images</code> dont le fichier physique n'existe plus sur le disque, évitant les erreurs 404 dans la console.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={handlePurgeOrphans}
+            disabled={orphanLoading}
+          >
+            {orphanLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageOff className="h-4 w-4" />}
+            {orphanLoading ? "Analyse en cours…" : "Détecter et purger les orphelines"}
+          </Button>
+          {orphanResult && (
+            <p className="text-xs text-muted-foreground">
+              {orphanResult.purged === 0
+                ? "✅ Aucune image orpheline détectée."
+                : `🗑️ ${orphanResult.purged} entrée(s) purgée(s) : ${orphanResult.keys.join(", ")}`}
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
