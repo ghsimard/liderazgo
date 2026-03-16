@@ -419,6 +419,9 @@ export default function FichaRLTForm() {
   const [cedulaVerificada, setCedulaVerificada] = useState(false);
   const [verificandoCedula, setVerificandoCedula] = useState(false);
   const [cedulaError, setCedulaError] = useState<string | null>(null);
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [modalNombres, setModalNombres] = useState("");
+  const [modalApellidos, setModalApellidos] = useState("");
 
   // View mode state
   const [viewMode, setViewMode] = useState(urlMode === "view");
