@@ -43,6 +43,7 @@ const EncuestaAmbienteDocentes = lazy(() => import("./pages/EncuestaAmbienteDoce
 const SatisfaccionAsistencia = lazy(() => import("./pages/SatisfaccionAsistencia"));
 const SatisfaccionInterludio = lazy(() => import("./pages/SatisfaccionInterludio"));
 const SatisfaccionIntensivo = lazy(() => import("./pages/SatisfaccionIntensivo"));
+const Especificaciones = lazy(() => import("./pages/Especificaciones"));
 
 const queryClient = new QueryClient();
 
