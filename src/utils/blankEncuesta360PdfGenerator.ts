@@ -196,24 +196,27 @@ export async function generarPDFEncuesta360EnBlanco(
     items.forEach((item) => {
       const textW = contentW * 0.53;
       const textLines = doc.splitTextToSize(`${item.num}. ${item.text}`, textW);
-      const rowH = Math.max(textLines.length * 3.2, 5);
+      const textH = textLines.length * 3.2;
+      const pad = 1.5;
+      const rowH = Math.max(textH + pad * 2, 6);
+      const textOffset = (rowH - textH) / 2;
 
       checkNewPage(rowH + 2);
 
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(30, 30, 30);
-      doc.text(textLines, margin + 2, y);
+      doc.text(textLines, margin + 2, y + textOffset);
 
       // Draw circles for each option
       options.forEach((_, i) => {
         const cx = scaleX + i * optW + optW / 2;
         doc.setDrawColor(150, 150, 150);
         doc.setLineWidth(0.3);
-        doc.circle(cx, y + rowH / 2 - 1.5, 1.8);
+        doc.circle(cx, y + rowH / 2, 1.8);
       });
 
-      y += rowH - 0.5;
+      y += rowH;
 
       // Separator line
       doc.setDrawColor(220, 220, 220);
