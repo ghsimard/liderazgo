@@ -185,10 +185,7 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
 
   const handleBlankAction = async (action: string) => {
     if (action === "specs-pdf") {
-      // Navigate to the Especificaciones page where the PDF can be generated from rendered content
       window.open("/especificaciones", "_blank");
-      return;
-      }
       return;
     }
     setPendingAction(action);
