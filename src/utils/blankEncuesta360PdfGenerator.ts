@@ -229,7 +229,9 @@ export async function generarPDFEncuesta360EnBlanco(
     freqOptions
   );
 
-  y += 3;
+  // Force Section II to start on a new page
+  doc.addPage();
+  drawPageHeader();
 
   drawItemsSection(
     "SECCIÓN II — GRADO DE ACUERDO",
