@@ -683,7 +683,7 @@ export default function FichaRLTForm() {
       lugar_nacimiento: data.lugar_nacimiento ?? null,
       lengua_materna: data.lengua_materna,
       lengua_otra: data.lengua_otra ?? null,
-      celular_personal: data.celular_personal,
+      celular_personal: stripPhone(data.celular_personal),
       codigo_pais_celular: data.codigo_pais_celular ?? "+57",
       correo_personal: data.correo_personal,
       correo_institucional: data.correo_institucional || null,
