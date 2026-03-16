@@ -30,16 +30,16 @@ function initMermaid() {
 function parseColorToRgb(color: string): [number, number, number] | null {
   const c = color.trim().toLowerCase();
   const hex3 = c.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/);
-  if (hex3) return [parseInt(hex3[1]+hex3[1],16), parseInt(hex3[2]+hex3[2],16), parseInt(hex3[3]+hex3[3],16)];
+  if (hex3) return [parseInt(hex3[1] + hex3[1], 16), parseInt(hex3[2] + hex3[2], 16), parseInt(hex3[3] + hex3[3], 16)];
   const hex6 = c.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/);
-  if (hex6) return [parseInt(hex6[1],16), parseInt(hex6[2],16), parseInt(hex6[3],16)];
+  if (hex6) return [parseInt(hex6[1], 16), parseInt(hex6[2], 16), parseInt(hex6[3], 16)];
   const rgbMatch = c.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
   if (rgbMatch) return [+rgbMatch[1], +rgbMatch[2], +rgbMatch[3]];
   return null;
 }
 
 function luminance(r: number, g: number, b: number): number {
-  const [rs, gs, bs] = [r/255, g/255, b/255].map(v =>
+  const [rs, gs, bs] = [r / 255, g / 255, b / 255].map((v) =>
     v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
   );
   return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
@@ -75,28 +75,33 @@ function shouldForceWhiteLabel(value: string): boolean {
 function applyWhiteTextStyles(el: Element) {
   const existingStyle = el.getAttribute("style") || "";
   el.setAttribute("style", `${existingStyle}; fill:#ffffff !important; color:#ffffff !important;`);
+
   if (["text", "tspan", "path"].includes(el.tagName.toLowerCase())) {
     el.setAttribute("fill", "#ffffff");
   }
 }
 
+/**
+ * Pre-injection hard override for specific section 8 labels.
+ * Works directly on the generated SVG string.
+ */
 function forceSpecificLabelsWhite(svgMarkup: string): string {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgMarkup, "image/svg+xml");
     const root = doc.documentElement;
 
-    root.querySelectorAll("text, tspan, foreignObject, div, span, p").forEach((el) => {
+    root.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach((el) => {
       const rawText = (el.textContent || "").trim();
       if (!rawText || !shouldForceWhiteLabel(rawText)) return;
 
       applyWhiteTextStyles(el);
-      el.querySelectorAll("text, tspan, foreignObject, div, span, p").forEach(applyWhiteTextStyles);
+      el.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach(applyWhiteTextStyles);
 
       const group = el.closest("g");
       if (group) {
         applyWhiteTextStyles(group);
-        group.querySelectorAll("text, tspan, foreignObject, div, span, p").forEach(applyWhiteTextStyles);
+        group.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach(applyWhiteTextStyles);
       }
     });
 
@@ -107,15 +112,13 @@ function forceSpecificLabelsWhite(svgMarkup: string): string {
 }
 
 /**
- * Post-render fix: ensure readable text on Mermaid nodes.
- * Strategy: match each label to the shape that contains its center point.
+ * Post-render contrast fix for generic nodes.
  */
+function fixTextContrast(container: HTMLElement) {
   const svgEl = container.querySelector("svg");
   if (!svgEl) return;
 
-  const shapes = Array.from(svgEl.querySelectorAll("circle, ellipse, rect, path, polygon"));
-
-  const shapeInfos = shapes
+  const shapeInfos = Array.from(svgEl.querySelectorAll("circle, ellipse, rect, path, polygon"))
     .map((shape) => {
       const fill = shape.getAttribute("fill") || (shape as HTMLElement).style?.fill || "";
       if (!fill || fill === "none" || fill === "transparent") return null;
@@ -126,18 +129,13 @@ function forceSpecificLabelsWhite(svgMarkup: string): string {
       const bbox = (shape as Element).getBoundingClientRect();
       if (!bbox || bbox.width <= 0 || bbox.height <= 0) return null;
 
-      const lum = luminance(...rgb);
-      const textColor = lum < 0.5 ? "#ffffff" : "#1e293b";
-
       return {
         bbox,
         area: bbox.width * bbox.height,
-        textColor,
+        textColor: luminance(...rgb) < 0.5 ? "#ffffff" : "#1e293b",
       };
     })
     .filter((s): s is { bbox: DOMRect; area: number; textColor: string } => Boolean(s));
-
-  if (!shapeInfos.length) return;
 
   const labels = Array.from(svgEl.querySelectorAll("text, foreignObject"));
 
@@ -154,10 +152,7 @@ function forceSpecificLabelsWhite(svgMarkup: string): string {
       const { bbox } = shapeInfo;
       const inside = cx >= bbox.x && cx <= bbox.x + bbox.width && cy >= bbox.y && cy <= bbox.y + bbox.height;
       if (!inside) continue;
-
-      if (!bestMatch || shapeInfo.area < bestMatch.area) {
-        bestMatch = shapeInfo;
-      }
+      if (!bestMatch || shapeInfo.area < bestMatch.area) bestMatch = shapeInfo;
     }
 
     if (!bestMatch) continue;
@@ -179,66 +174,16 @@ function forceSpecificLabelsWhite(svgMarkup: string): string {
     }
   }
 
-  // Explicit override for section 8 labels requested by user
-  const forceWhiteLabels = [
-    "plataforma rlt / clt",
-    "enlaces",
-    "fichas rlt",
-    "rubricas",
-    "encuesta 360",
-    "informe de modulo",
-    "ambiente escolar",
-    "satisfacciones",
-    "mel",
-    "sistema",
-  ];
-
-  const normalizeLabel = (value: string) =>
-    value
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .trim();
-
-  const isForcedLabel = (value: string) => {
-    const normalized = normalizeLabel(value);
-    return forceWhiteLabels.some((target) => normalized.includes(target));
-  };
-
-  const paintSvgTextWhite = (el: Element) => {
-    if (!(el instanceof SVGElement)) return;
-    el.setAttribute("fill", "#ffffff");
-    el.style.setProperty("fill", "#ffffff", "important");
-    el.style.setProperty("color", "#ffffff", "important");
-  };
-
-  const paintHtmlTextWhite = (el: Element) => {
-    if (!(el instanceof HTMLElement)) return;
-    el.style.setProperty("color", "#ffffff", "important");
-  };
-
-  const paintNodeWhite = (root: Element) => {
-    paintSvgTextWhite(root);
-    paintHtmlTextWhite(root);
-
-    root.querySelectorAll("text, tspan").forEach(paintSvgTextWhite);
-    root.querySelectorAll("foreignObject, foreignObject *").forEach((el) => {
-      paintHtmlTextWhite(el);
-      paintSvgTextWhite(el);
-    });
-    root.querySelectorAll("div, span, p").forEach(paintHtmlTextWhite);
-  };
-
-  svgEl.querySelectorAll("g, text, tspan, foreignObject, div, span, p").forEach((el) => {
+  // Defensive second pass for the requested section 8 labels on live DOM
+  svgEl.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach((el) => {
     const rawText = (el.textContent || "").trim();
-    if (!rawText || !isForcedLabel(rawText)) return;
+    if (!rawText || !shouldForceWhiteLabel(rawText)) return;
 
-    paintNodeWhite(el);
-
+    applyWhiteTextStyles(el);
     const group = el.closest("g");
     if (group) {
-      paintNodeWhite(group);
+      applyWhiteTextStyles(group);
+      group.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach(applyWhiteTextStyles);
     }
   });
 }
@@ -262,7 +207,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
         const uniqueId = `mermaid-${id}-${Date.now()}`;
         const { svg: renderedSvg } = await mermaid.render(uniqueId, chart);
         if (!cancelled) {
-          setSvg(renderedSvg);
+          setSvg(forceSpecificLabelsWhite(renderedSvg));
           setError(false);
         }
       } catch {
@@ -271,10 +216,11 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
     };
 
     render();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [chart, id]);
 
-  // Fix text contrast on colored nodes after SVG is injected into DOM
   useEffect(() => {
     if (!svg || !containerRef.current) return;
 
@@ -294,9 +240,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
   if (error) {
     return (
       <div className="my-4 rounded-lg border border-border bg-muted/50 p-4 overflow-x-auto">
-        <pre className="text-sm font-mono text-foreground whitespace-pre leading-relaxed">
-          {chart}
-        </pre>
+        <pre className="text-sm font-mono text-foreground whitespace-pre leading-relaxed">{chart}</pre>
       </div>
     );
   }
