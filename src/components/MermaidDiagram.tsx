@@ -11,12 +11,14 @@ function initMermaid() {
     securityLevel: "loose",
     flowchart: { useMaxWidth: true, htmlLabels: true, curve: "basis" },
     themeVariables: {
-      primaryColor: "#e0e7ff",
-      primaryTextColor: "#1e40af",
-      primaryBorderColor: "#6366f1",
-      lineColor: "#6366f1",
-      secondaryColor: "#f1f5f9",
-      tertiaryColor: "#f8fafc",
+      primaryColor: "#1e40af",
+      primaryTextColor: "#ffffff",
+      primaryBorderColor: "#1e3a8a",
+      lineColor: "#374151",
+      secondaryColor: "#e0e7ff",
+      secondaryTextColor: "#1e293b",
+      tertiaryColor: "#f1f5f9",
+      tertiaryTextColor: "#1e293b",
     },
   });
   mermaidInitialized = true;
