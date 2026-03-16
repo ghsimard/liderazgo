@@ -398,11 +398,6 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
       );
     }
 
-    case "gestion-cuentas":
-    case "users":
-    case "operadores":
-    case "evaluadores":
-      return <AdminGestionCuentasTab isSuperAdmin={isSuperAdmin} />;
     case "mel":
     case "mel-rubricas":
     case "mel-config": {
