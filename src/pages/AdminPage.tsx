@@ -216,8 +216,8 @@ function getHubTitle(activeTab: string): string {
     encuestas360: "Encuesta 360°", encuestas360final: "Encuesta 360°",
     reportes360: "Encuesta 360°", reportes360final: "Encuesta 360°",
     invitaciones: "Encuesta 360°", "blancos-360": "Encuesta 360°",
-    "fichas-rlt": "Fichas RLT", fichas: "Fichas RLT", geography: "Fichas RLT",
-    "enlace-ficha": "Fichas RLT", "blank-pdf": "Fichas RLT",
+    "fichas-rlt": "Fichas de Información", fichas: "Fichas de Información", geography: "Fichas de Información",
+    "enlace-ficha": "Fichas de Información", "blank-pdf": "Fichas de Información",
     rubricas: "Rúbricas",
     "informe-modulo": "Informe de Módulo",
     "ambiente-escolar": "Ambiente Escolar", "ambiente-monitoreo": "Ambiente Escolar", "ambiente-estadisticas": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar",
@@ -391,7 +391,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
           <TabsContent value="enlace">
             <div className="space-y-6">
               <div className="space-y-4">
-                <h3 className="text-base font-semibold border-b pb-2">Enlace de la Ficha RLT</h3>
+                <h3 className="text-base font-semibold border-b pb-2">Enlace de la Ficha de Información</h3>
                 <p className="text-sm text-muted-foreground">Comparte el enlace de la ficha de información con los directivos.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <FormCard form={{ name: "Ficha de Información", path: "/", icon: FileText }} />

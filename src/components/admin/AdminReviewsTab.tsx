@@ -22,7 +22,7 @@ interface SiteReview {
 }
 
 const FORM_LABELS: Record<string, string> = {
-  ficha_rlt: "Ficha RLT",
+  ficha_rlt: "Ficha de Información",
   autoevaluacion: "360° Autoevaluación",
   docente: "360° Docente",
   estudiante: "360° Estudiante",

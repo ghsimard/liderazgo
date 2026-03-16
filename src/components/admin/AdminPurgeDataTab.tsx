@@ -24,7 +24,7 @@ const TABLES_TO_PURGE = [
   { table: "rubrica_evaluadores", label: "Evaluadores de rúbricas" },
   { table: "encuesta_invitaciones", label: "Invitaciones de encuestas" },
   { table: "encuestas_360", label: "Respuestas 360°" },
-  { table: "fichas_rlt", label: "Fichas RLT" },
+  { table: "fichas_rlt", label: "Fichas de Información" },
   { table: "contact_messages", label: "Mensajes de contacto" },
   { table: "site_reviews", label: "Reseñas del sitio" },
   { table: "user_activity_log", label: "Registro de actividad" },
