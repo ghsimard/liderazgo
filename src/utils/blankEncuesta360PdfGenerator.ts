@@ -6,6 +6,7 @@ import {
   FREQUENCY_OPTIONS_NO_NOSABE,
   AGREEMENT_OPTIONS_WITH_NOSABE,
   AGREEMENT_OPTIONS_NO_NOSABE,
+  DIAS_CONTACTO_OPTIONS,
   FORM_CONFIGS,
 } from "@/data/encuesta360Data";
 import { loadImageAsBase64, getImageNaturalSize, logoDims, HEADER_LOGO_H, FOOTER_COSMO_H } from "@/utils/pdfLogoHelper";
