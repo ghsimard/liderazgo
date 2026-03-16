@@ -89,22 +89,22 @@ export async function generarPDFEncuesta360EnBlanco(
   const introLines = doc.splitTextToSize(config.intro, contentW);
   checkNewPage(introLines.length * 3 + 4);
   doc.text(introLines, margin, y);
-  y += introLines.length * 3 + 3;
+  y += introLines.length * 2.8 + 2;
 
   // Glossary
   checkNewPage(GLOSSARY.length * 4 + 6);
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.text("Glosario:", margin, y);
-  y += 3.5;
+  y += 3;
   doc.setFont("helvetica", "normal");
   GLOSSARY.forEach((g) => {
     const lines = doc.splitTextToSize(`• ${g}`, contentW - 4);
     checkNewPage(lines.length * 3);
     doc.text(lines, margin + 2, y);
-    y += lines.length * 3;
+    y += lines.length * 2.8;
   });
-  y += 2;
+  y += 1.5;
 
   // Header fields
   const drawBlankField = (label: string, lineW?: number) => {
@@ -117,7 +117,7 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.setLineWidth(0.3);
     const end = lineW ? Math.min(margin + 2 + lw + lineW, margin + contentW) : margin + contentW;
     doc.line(margin + 2 + lw, y + 1, end, y + 1);
-    y += 6;
+    y += 5;
   };
 
   checkNewPage(40);
@@ -126,7 +126,7 @@ export async function generarPDFEncuesta360EnBlanco(
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
   doc.text("DATOS DE IDENTIFICACIÓN", pageW / 2, y + 4, { align: "center" });
-  y += 8;
+  y += 7;
 
   drawBlankField("Institución Educativa");
   if (config.isAutoeval) {
@@ -149,7 +149,7 @@ export async function generarPDFEncuesta360EnBlanco(
         doc.circle(x, y - 0.5, 1.5);
         doc.text(opt, x + 3, y);
       });
-      y += 6;
+      y += 5;
     });
   }
   y += 1;
@@ -166,7 +166,7 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(title, pageW / 2, y + 4, { align: "center" });
-    y += 8;
+    y += 7;
 
     // Scale header
     const scaleX = margin + contentW * 0.55;
@@ -196,7 +196,7 @@ export async function generarPDFEncuesta360EnBlanco(
     items.forEach((item) => {
       const textW = contentW * 0.53;
       const textLines = doc.splitTextToSize(`${item.num}. ${item.text}`, textW);
-      const rowH = Math.max(textLines.length * 3.2, 5);
+      const rowH = Math.max(textLines.length * 3, 4.5);
 
       checkNewPage(rowH + 2);
 
@@ -213,13 +213,13 @@ export async function generarPDFEncuesta360EnBlanco(
         doc.circle(cx, y + rowH / 2 - 1.5, 1.8);
       });
 
-      y += rowH - 0.5;
+      y += rowH - 1;
 
       // Separator line
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.15);
       doc.line(margin, y, margin + contentW, y);
-      y += 3;
+      y += 2.5;
     });
   };
 
