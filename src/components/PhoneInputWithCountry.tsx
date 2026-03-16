@@ -308,7 +308,19 @@ export function PhoneInputWithCountry({
         id={id}
         type="tel"
         value={phoneValue}
-        onChange={(e) => onPhoneChange(e.target.value)}
+        onChange={(e) => {
+          // Allow only digits, spaces, and hyphens
+          const raw = e.target.value.replace(/[^\d\s\-]/g, "");
+          // Auto-format: strip to digits, then insert spaces as 3-3-4
+          const digits = raw.replace(/\D/g, "").slice(0, 10);
+          let formatted = digits;
+          if (digits.length > 6) {
+            formatted = `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+          } else if (digits.length > 3) {
+            formatted = `${digits.slice(0, 3)} ${digits.slice(3)}`;
+          }
+          onPhoneChange(formatted);
+        }}
         placeholder={placeholder}
         disabled={disabled}
         className={cn(
