@@ -1,63 +1,36 @@
 
 
-## Probleme actuel
+## Plan: Fix PDF orphan titles, black circle text, and footer
 
-Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
+### Problems identified
 
-## Proposition : Sidebar avec sections groupees
+1. **Orphan titles**: The keep-together algorithm is too conservative — the `steps < 4` sibling walk and `groupH < 900px` height cap cause many heading+content groups to be missed, especially when there are intermediate paragraphs between the heading and its diagram/table.
 
-Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
+2. **Black circles need white text**: `DARK_FILLS` array only includes blue shades. Mindmap nodes rendered as black (`#000000`, `#000`, `rgb(0,0,0)`) are not handled — text inside remains black and invisible.
 
-### Structure proposee
+3. **Footer shows page number only**: Need to replace with document title + version datetime instead of URL (no URL is currently shown, but the request is to add title+datetime).
 
-```text
-┌──────────────────┬──────────────────────────────────┐
-│  SIDEBAR         │  CONTENU                         │
-│                  │                                  │
-│  ▼ Formularios   │                                  │
-│    Enlaces       │                                  │
-│                  │                                  │
-│  ▼ Fichas RLT    │                                  │
-│    Lista         │                                  │
-│    Regiones      │                                  │
-│                  │                                  │
-│  ▼ Encuesta 360° │                                  │
-│    Config        │                                  │
-│    Inicial       │                                  │
-│    Final         │                                  │
-│    Informes Ini. │                                  │
-│    Informes Fin. │                                  │
-│                  │                                  │
-│  ▼ Analisis      │                                  │
-│    MEL           │                                  │
-│    Rubricas      │                                  │
-│                  │                                  │
-│  ▼ Sistema       │                                  │
-│    Admins        │                                  │
-│    Apreciaciones*│                                  │
-│    Mensajes*     │                                  │
-│    Changelog*    │                                  │
-│                  │  (* = superadmin only)            │
-└──────────────────┴──────────────────────────────────┘
-```
+### Changes
 
-### Modifications
+#### 1. `src/utils/specificationsPdfGenerator.ts`
 
-1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
+**findKeepTogetherZones improvements:**
+- Increase sibling walk limit from 4 to 8 steps to catch headings followed by paragraphs then a diagram/table
+- Increase max zone height from 900px to ~1200px (to accommodate larger diagrams with their heading)
+- Also include `p` tags in the walk (don't stop at first paragraph, continue to find the diagram/table after it)
 
-2. **Modifier `src/pages/AdminPage.tsx`** :
-   - Envelopper le layout dans `SidebarProvider`
-   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
-   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
-   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
-   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
+**Black fills in onclone SVG processing:**
+- Add `#000000`, `#000`, and other dark/black fills to the `DARK_FILLS` array so white text is forced on black circles too
 
-3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
+**Footer on each page:**
+- Replace the `"X / Y"` page number text with `"Especificaciones RLT/CLT — {fecha y hora} — Pág. X / Y"`
+- Generate the datetime string once at the top of the function
 
-### Points techniques
+#### 2. `src/components/MermaidDiagram.tsx`
 
-- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
-- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
-- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
-- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
+- Add black fills (`#000000`, `#000`) to the `DARK_FILLS` array in `fixWhiteTextOnDarkNodes` so web rendering also shows white text on black circles
+
+### Files to modify
+- `src/utils/specificationsPdfGenerator.ts` — keep-together logic, dark fills, footer format
+- `src/components/MermaidDiagram.tsx` — add black to DARK_FILLS
 
