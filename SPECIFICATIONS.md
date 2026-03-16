@@ -243,7 +243,14 @@ Cada enlace tiene un botón de copiar al portapapeles y los PDFs en blanco permi
 
 ### 6.8 Certificaciones
 
-> **En construcción.** Este módulo está planificado pero no implementado aún.
+Este módulo permitirá crear y gestionar los certificados de participación para los directivos. **Funcionalidades previstas:**
+
+- **Generación por región**: Creación de certificados personalizados según la región del participante.
+- **Logos y firmas de socios**: Inclusión automática de los logos y firmas digitales de los socios institucionales vinculados a cada región.
+- **Diseño oficial**: Plantillas con diseño institucional validado por el programa.
+- **Exportación masiva**: Descarga individual o por lotes según filtros (región, institución, módulo).
+
+> **Estado**: En construcción. Este módulo está planificado pero no implementado aún.
 
 ---
 
