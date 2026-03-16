@@ -48,6 +48,7 @@ function luminance(r: number, g: number, b: number): number {
 /**
  * Post-render fix: ensures proper text contrast on all colored nodes.
  * Dark fills → white text, Light fills → dark text.
+ * Threshold at 0.5 for clear separation.
  */
 function fixTextContrast(container: HTMLElement) {
   const svgEl = container.querySelector("svg");
@@ -61,9 +62,9 @@ function fixTextContrast(container: HTMLElement) {
     const lum = luminance(...rgb);
     const parent = shape.closest("g");
     if (!parent) return;
+    const textColor = lum < 0.5 ? "#ffffff" : "#1e293b";
     parent.querySelectorAll("text, tspan").forEach((t) => {
       const textEl = t as SVGElement;
-      const textColor = lum < 0.5 ? "#ffffff" : "#1e293b";
       textEl.setAttribute("fill", textColor);
       textEl.style.fill = textColor;
     });
