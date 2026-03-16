@@ -55,7 +55,7 @@ const fields: FieldRow[] = [
 
   // ── Información institucional ──
   { section: "Información institucional", campo: "region", obligatorio: "Sí", reglas: "Selección obligatoria" },
-  { section: "Información institucional", campo: "entidad_territorial", obligatorio: "No", reglas: "Selección opcional (cascada desde región)" },
+  { section: "Información institucional", campo: "entidad_territorial", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde región)" },
   { section: "Información institucional", campo: "nombre_ie", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde municipio)" },
   { section: "Información institucional", campo: "codigo_dane", obligatorio: "No", reglas: "Exactamente 12 dígitos numéricos (/^\\d{12}$/)" },
   { section: "Información institucional", campo: "zona_sede", obligatorio: "No", reglas: "Selección opcional (Urbana / Rural)" },
