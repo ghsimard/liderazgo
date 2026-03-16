@@ -222,7 +222,7 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
 
   return (
     <Sidebar collapsible="icon" className="border-r">
-      <SidebarContent className="pt-2 overflow-y-auto">
+      <SidebarContent className="pt-2 overflow-y-auto max-h-[calc(100svh-1rem)]">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
