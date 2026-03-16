@@ -196,7 +196,7 @@ export async function generarPDFEncuesta360EnBlanco(
     items.forEach((item) => {
       const textW = contentW * 0.53;
       const textLines = doc.splitTextToSize(`${item.num}. ${item.text}`, textW);
-      const rowH = Math.max(textLines.length * 3.2, 5);
+      const rowH = Math.max(textLines.length * 3, 4.5);
 
       checkNewPage(rowH + 2);
 
