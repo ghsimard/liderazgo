@@ -190,7 +190,7 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.setDrawColor(180, 180, 180);
     doc.setLineWidth(0.2);
     doc.line(margin, y, margin + contentW, y);
-    y += 4;
+    y += 3;
 
     // Items
     items.forEach((item) => {
