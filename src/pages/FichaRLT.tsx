@@ -65,7 +65,7 @@ const schema = z.object({
   enfermedad_base: z.string().min(1, "Seleccione una opción"),
   enfermedad_detalle: z.string().optional(),
   contacto_emergencia: z.string().optional(),
-  telefono_emergencia: z.string().optional(),
+  telefono_emergencia: z.string().optional().transform((v) => v ? stripPhone(v) : v).refine((v) => !v || v.length === 0 || v.length === 10, { message: "Debe tener exactamente 10 dígitos" }),
   codigo_pais_telefono_emergencia: z.string().default("+57"),
   discapacidad: z.string().min(1, "Seleccione una opción"),
   discapacidad_detalle: z.string().optional(),
