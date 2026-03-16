@@ -154,7 +154,7 @@ export async function generarPDFFichaEnBlanco(
     const lw2 = doc.getTextWidth(lt2) + 3;
     doc.line(margin + halfW + lw2, y + 1, margin + contentW, y + 1);
 
-    y += 7;
+    y += 6;
   };
 
   // Multi-line blank area (for long answers)
