@@ -10,7 +10,7 @@ La plataforma RLT (Rectores Líderes Transformadores) / CLT (Coordinadores Líde
 
 **Público objetivo**: Directivos docentes colombianos (rectores y coordinadores), evaluadores del programa, operadores regionales y administradores.
 
-**Stack tecnológico**: React + TypeScript, Vite, Tailwind CSS, shadcn/ui, Supabase (Lovable Cloud), jsPDF para generación de PDFs.
+**Stack tecnológico**: React + TypeScript, Vite, Tailwind CSS, shadcn/ui, Supabase, jsPDF para generación de PDFs.
 
 ---
 
