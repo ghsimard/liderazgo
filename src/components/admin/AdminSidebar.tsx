@@ -132,15 +132,7 @@ const sections: SidebarSection[] = [
     label: "Sistema",
     icon: Settings2,
     items: [
-      { tab: "gestion-cuentas", label: "Gestión de Cuentas", icon: Users },
-      { tab: "activity-log", label: "Registro de Actividad", icon: Activity },
-      { tab: "papelera", label: "Papelera", icon: Trash2 },
-      { tab: "reviews", label: "Apreciaciones", icon: Star, superadminOnly: true },
-      { tab: "mensajes", label: "Mensajes", icon: MessageSquare, superadminOnly: true },
-      { tab: "changelog", label: "Changelog", icon: GitCommit, superadminOnly: true },
-      { tab: "specs-page", label: "Especificaciones", icon: FileText, superadminOnly: true, linkUrl: "/especificaciones" },
-      { tab: "specs-pdf", label: "Especificaciones PDF", icon: Printer, superadminOnly: true, action: "specs-pdf" as any },
-      { tab: "purge-data", label: "Purgar datos", icon: Trash2, superadminOnly: true },
+      { tab: "sistema", label: "Sistema", icon: Settings2 },
     ],
   },
 ];
@@ -222,7 +214,7 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
 
   return (
     <Sidebar collapsible="icon" className="border-r">
-      <SidebarContent className="pt-2 overflow-y-auto max-h-[calc(100svh-1rem)]">
+      <SidebarContent className="pt-2">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
