@@ -89,7 +89,7 @@ export async function generarPDFEncuesta360EnBlanco(
   const introLines = doc.splitTextToSize(config.intro, contentW);
   checkNewPage(introLines.length * 3 + 4);
   doc.text(introLines, margin, y);
-  y += introLines.length * 3 + 4;
+  y += introLines.length * 3 + 3;
 
   // Glossary
   checkNewPage(GLOSSARY.length * 4 + 6);
@@ -104,7 +104,7 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.text(lines, margin + 2, y);
     y += lines.length * 3;
   });
-  y += 3;
+  y += 2;
 
   // Header fields
   const drawBlankField = (label: string, lineW?: number) => {
@@ -126,7 +126,7 @@ export async function generarPDFEncuesta360EnBlanco(
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
   doc.text("DATOS DE IDENTIFICACIÓN", pageW / 2, y + 4, { align: "center" });
-  y += 10;
+  y += 8;
 
   drawBlankField("Institución Educativa");
   if (config.isAutoeval) {
@@ -152,7 +152,7 @@ export async function generarPDFEncuesta360EnBlanco(
       y += 6;
     });
   }
-  y += 2;
+  y += 1;
 
   // ── Items section ──
   const freqOptions = config.isAutoeval ? FREQUENCY_OPTIONS_NO_NOSABE : FREQUENCY_OPTIONS_WITH_NOSABE;
@@ -166,7 +166,7 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(title, pageW / 2, y + 4, { align: "center" });
-    y += 10;
+    y += 8;
 
     // Scale header
     const scaleX = margin + contentW * 0.55;
@@ -190,7 +190,7 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.setDrawColor(180, 180, 180);
     doc.setLineWidth(0.2);
     doc.line(margin, y, margin + contentW, y);
-    y += 4;
+    y += 3;
 
     // Items
     items.forEach((item) => {
@@ -219,7 +219,7 @@ export async function generarPDFEncuesta360EnBlanco(
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.15);
       doc.line(margin, y, margin + contentW, y);
-      y += 4;
+      y += 3;
     });
   };
 
