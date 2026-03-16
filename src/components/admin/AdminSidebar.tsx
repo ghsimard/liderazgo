@@ -33,7 +33,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
 import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
 import { generarPDFAmbienteEscolarEnBlanco } from "@/utils/blankAmbienteEscolarPdfGenerator";
-import { generarPDFSpecifications } from "@/utils/specificationsPdfGenerator";
+
 
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 import {
