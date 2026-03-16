@@ -25,7 +25,7 @@ export default function Especificaciones() {
   const handlePdf = async () => {
     setPdfLoading(true);
     try {
-      await generarPDFSpecifications(md, { logoRLT, logoCosmo }, articleRef.current);
+      await generarPDFSpecifications(md, articleRef.current);
     } finally {
       setPdfLoading(false);
     }
