@@ -49,32 +49,49 @@ interface AppImagesState {
 let cachedImages: Record<string, string> | null = null;
 let cachePromise: Promise<Record<string, string>> | null = null;
 
+async function imageExists(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, { method: "HEAD" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function fetchImages(): Promise<Record<string, string>> {
   const result = { ...FALLBACK_MAP };
 
+  let rows: { image_key: string; storage_path: string }[] = [];
+
   if (USE_EXPRESS) {
-    // Express mode — fetch from API, prefix relative paths
     const apiBase = import.meta.env.VITE_API_URL || "";
     const { data } = await apiFetch<{ images: { image_key: string; storage_path: string }[] }>("/api/images");
     if (data?.images) {
-      for (const row of data.images) {
-        const src = row.storage_path.startsWith("/uploads/") && apiBase
+      rows = data.images.map((row) => ({
+        image_key: row.image_key,
+        storage_path: row.storage_path.startsWith("/uploads/") && apiBase
           ? `${apiBase}${row.storage_path}`
-          : row.storage_path;
-        result[row.image_key] = src;
-      }
+          : row.storage_path,
+      }));
     }
   } else {
-    // Cloud / Supabase mode — query DB directly
     const { data } = await cloudClient
       .from("app_images")
       .select("image_key, storage_path");
     if (data) {
-      for (const row of data) {
-        result[row.image_key] = row.storage_path;
-      }
+      rows = data;
     }
   }
+
+  // Verify each uploaded image exists; keep fallback if 404
+  const checks = rows.map(async (row) => {
+    const exists = await imageExists(row.storage_path);
+    if (exists) {
+      result[row.image_key] = row.storage_path;
+    }
+    // else: FALLBACK_MAP value already in result
+  });
+  await Promise.all(checks);
 
   return result;
 }
