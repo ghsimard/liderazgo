@@ -60,6 +60,19 @@ export default function Especificaciones() {
         </div>
       </div>
 
+      {/* IP Notice */}
+      <div className="max-w-5xl mx-auto px-4 md:px-8 pt-6">
+        <div className="border border-border rounded-lg bg-muted/30 p-5 text-center">
+          <p className="text-sm font-semibold text-foreground mb-2">AVISO DE PROPIEDAD INTELECTUAL</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Este documento es propiedad intelectual exclusiva de Ghislain Simard (CE 6798900). 
+            Todos los derechos están reservados. Queda estrictamente prohibida la reproducción, distribución, 
+            modificación, transmisión o utilización total o parcial de este documento y de su contenido, 
+            en cualquier forma o por cualquier medio, sin el consentimiento previo, expreso y por escrito del autor.
+          </p>
+        </div>
+      </div>
+
       <article
         ref={articleRef}
         data-pdf-target
