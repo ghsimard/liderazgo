@@ -128,7 +128,7 @@ export async function generarPDFFichaEnBlanco(
     doc.setDrawColor(180, 180, 180);
     doc.setLineWidth(0.3);
     doc.line(lineStart, y + 1, lineEnd, y + 1);
-    y += 7;
+    y += 6;
   };
 
   // Two blank fields side by side
