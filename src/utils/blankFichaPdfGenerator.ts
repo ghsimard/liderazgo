@@ -109,7 +109,7 @@ export async function generarPDFFichaEnBlanco(
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
     doc.text(title, pageW / 2, y + 5, { align: "center" });
-    y += 11;
+    y += 10;
     doc.setFont("helvetica", "normal");
   };
 
