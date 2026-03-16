@@ -120,7 +120,7 @@ function fixTextContrast(container: HTMLElement) {
   }
 
   // Explicit override for section 8 labels requested by user
-  const forceWhiteLabels = new Set([
+  const forceWhiteLabels = [
     "plataforma rlt / clt",
     "enlaces",
     "fichas rlt",
@@ -131,7 +131,7 @@ function fixTextContrast(container: HTMLElement) {
     "satisfacciones",
     "mel",
     "sistema",
-  ]);
+  ];
 
   const normalizeLabel = (value: string) =>
     value
@@ -141,24 +141,44 @@ function fixTextContrast(container: HTMLElement) {
       .replace(/\s+/g, " ")
       .trim();
 
-  svgEl.querySelectorAll("text, foreignObject").forEach((label) => {
-    const rawText = (label.textContent || "").trim();
-    if (!rawText) return;
+  const isForcedLabel = (value: string) => {
+    const normalized = normalizeLabel(value);
+    return forceWhiteLabels.some((target) => normalized.includes(target));
+  };
 
-    if (!forceWhiteLabels.has(normalizeLabel(rawText))) return;
+  const paintSvgTextWhite = (el: Element) => {
+    if (!(el instanceof SVGElement)) return;
+    el.setAttribute("fill", "#ffffff");
+    el.style.setProperty("fill", "#ffffff", "important");
+    el.style.setProperty("color", "#ffffff", "important");
+  };
 
-    if (label.tagName.toLowerCase() === "text") {
-      const svgText = label as SVGElement;
-      svgText.setAttribute("fill", "#ffffff");
-      svgText.style.setProperty("fill", "#ffffff", "important");
-      svgText.querySelectorAll("tspan").forEach((tspan) => {
-        (tspan as SVGElement).setAttribute("fill", "#ffffff");
-        (tspan as SVGElement).style.setProperty("fill", "#ffffff", "important");
-      });
-    } else {
-      (label as Element).querySelectorAll("div, span, p").forEach((el) => {
-        (el as HTMLElement).style.setProperty("color", "#ffffff", "important");
-      });
+  const paintHtmlTextWhite = (el: Element) => {
+    if (!(el instanceof HTMLElement)) return;
+    el.style.setProperty("color", "#ffffff", "important");
+  };
+
+  const paintNodeWhite = (root: Element) => {
+    paintSvgTextWhite(root);
+    paintHtmlTextWhite(root);
+
+    root.querySelectorAll("text, tspan").forEach(paintSvgTextWhite);
+    root.querySelectorAll("foreignObject, foreignObject *").forEach((el) => {
+      paintHtmlTextWhite(el);
+      paintSvgTextWhite(el);
+    });
+    root.querySelectorAll("div, span, p").forEach(paintHtmlTextWhite);
+  };
+
+  svgEl.querySelectorAll("g, text, tspan, foreignObject, div, span, p").forEach((el) => {
+    const rawText = (el.textContent || "").trim();
+    if (!rawText || !isForcedLabel(rawText)) return;
+
+    paintNodeWhite(el);
+
+    const group = el.closest("g");
+    if (group) {
+      paintNodeWhite(group);
     }
   });
 }
@@ -196,10 +216,20 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
 
   // Fix text contrast on colored nodes after SVG is injected into DOM
   useEffect(() => {
-    if (svg && containerRef.current) {
-      fixTextContrast(containerRef.current);
-    }
-  }, [svg]);
+    if (!svg || !containerRef.current) return;
+
+    const container = containerRef.current;
+    const apply = () => fixTextContrast(container);
+
+    apply();
+    const rafId = requestAnimationFrame(apply);
+    const timeoutId = window.setTimeout(apply, 180);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [svg, chart]);
 
   if (error) {
     return (
