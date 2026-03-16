@@ -84,6 +84,66 @@ export default function AdminPurgeDataTab() {
     }
   };
 
+  // ── Orphan image cleanup ──
+  const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
+  const [orphanLoading, setOrphanLoading] = useState(false);
+  const [orphanResult, setOrphanResult] = useState<{ purged: number; keys: string[] } | null>(null);
+
+  const handlePurgeOrphans = async () => {
+    setOrphanLoading(true);
+    setOrphanResult(null);
+    try {
+      if (USE_EXPRESS) {
+        // Check then purge via Express endpoints
+        const { data } = await apiFetch<{ purged: number; keys: string[] }>("/api/images/purge-orphans", { method: "POST" });
+        if (data) {
+          setOrphanResult(data);
+          invalidateAppImagesCache();
+          toast({
+            title: data.purged > 0 ? "Imágenes orphelines purgées" : "Aucune image orpheline",
+            description: data.purged > 0
+              ? `${data.purged} entrée(s) supprimée(s) : ${data.keys.join(", ")}`
+              : "Toutes les images de la base correspondent à des fichiers existants.",
+          });
+        }
+      } else {
+        // On Cloud/Supabase: check HEAD for each app_images entry
+        const { data: rows } = await supabase.from("app_images").select("image_key, storage_path");
+        if (!rows || rows.length === 0) {
+          toast({ title: "Aucune image en base" });
+          setOrphanLoading(false);
+          return;
+        }
+        const orphanKeys: string[] = [];
+        for (const row of rows) {
+          try {
+            const res = await fetch(row.storage_path, { method: "HEAD" });
+            if (!res.ok) orphanKeys.push(row.image_key);
+          } catch {
+            orphanKeys.push(row.image_key);
+          }
+        }
+        if (orphanKeys.length > 0) {
+          for (const key of orphanKeys) {
+            await supabase.from("app_images").delete().eq("image_key", key);
+          }
+          invalidateAppImagesCache();
+        }
+        setOrphanResult({ purged: orphanKeys.length, keys: orphanKeys });
+        toast({
+          title: orphanKeys.length > 0 ? "Images orphelines purgées" : "Aucune image orpheline",
+          description: orphanKeys.length > 0
+            ? `${orphanKeys.length} entrée(s) supprimée(s) : ${orphanKeys.join(", ")}`
+            : "Tout est en ordre.",
+        });
+      }
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    } finally {
+      setOrphanLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center gap-3">
