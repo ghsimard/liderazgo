@@ -126,7 +126,7 @@ export async function generarPDFEncuesta360EnBlanco(
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
   doc.text("DATOS DE IDENTIFICACIÓN", pageW / 2, y + 4, { align: "center" });
-  y += 7;
+  y += 10;
 
   drawBlankField("Institución Educativa");
   if (config.isAutoeval) {
@@ -166,7 +166,7 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(title, pageW / 2, y + 4, { align: "center" });
-    y += 7;
+    y += 10;
 
     // Scale header
     const scaleX = margin + contentW * 0.55;
@@ -229,7 +229,9 @@ export async function generarPDFEncuesta360EnBlanco(
     freqOptions
   );
 
-  y += 3;
+  // Force Section II to start on a new page
+  doc.addPage();
+  drawPageHeader();
 
   drawItemsSection(
     "SECCIÓN II — GRADO DE ACUERDO",
