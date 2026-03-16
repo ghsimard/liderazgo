@@ -47,7 +47,7 @@ const fields: FieldRow[] = [
   { section: "Información laboral", campo: "cargo_actual", obligatorio: "Sí", reglas: "Selección obligatoria (Rector(a) / Coordinador(a))" },
   { section: "Información laboral", campo: "estatuto", obligatorio: "No", reglas: "Selección opcional" },
   { section: "Información laboral", campo: "grado_escalafon", obligatorio: "No", reglas: "Selección opcional" },
-  { section: "Información laboral", campo: "tipo_vinculacion", obligatorio: "No", reglas: "Selección opcional" },
+  { section: "Información laboral", campo: "tipo_vinculacion", obligatorio: "Sí", reglas: "Selección obligatoria" },
   { section: "Información laboral", campo: "fecha_vinculacion_servicio", obligatorio: "No", reglas: "Fecha válida o vacío" },
   { section: "Información laboral", campo: "fecha_nombramiento_cargo", obligatorio: "No", reglas: "Fecha válida o vacío" },
   { section: "Información laboral", campo: "fecha_nombramiento_ie", obligatorio: "No", reglas: "Fecha válida o vacío" },
