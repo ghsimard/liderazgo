@@ -61,19 +61,11 @@ function fixTextContrast(container: HTMLElement) {
     const lum = luminance(...rgb);
     const parent = shape.closest("g");
     if (!parent) return;
-    const textColor = lum < 0.5 ? "#ffffff" : "#1e293b";
-    // SVG <text> elements
     parent.querySelectorAll("text, tspan").forEach((t) => {
       const textEl = t as SVGElement;
+      const textColor = lum < 0.5 ? "#ffffff" : "#1e293b";
       textEl.setAttribute("fill", textColor);
       textEl.style.fill = textColor;
-    });
-    // foreignObject HTML content (used by mindmaps)
-    parent.querySelectorAll("foreignObject *").forEach((el) => {
-      const htmlEl = el as HTMLElement;
-      if (htmlEl.style) {
-        htmlEl.style.color = textColor;
-      }
     });
   });
 }
