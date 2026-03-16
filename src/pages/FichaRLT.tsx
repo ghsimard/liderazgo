@@ -691,7 +691,7 @@ export default function FichaRLTForm() {
       enfermedad_base: data.enfermedad_base,
       enfermedad_detalle: data.enfermedad_detalle ?? null,
       contacto_emergencia: data.contacto_emergencia ?? null,
-      telefono_emergencia: data.telefono_emergencia ?? null,
+      telefono_emergencia: data.telefono_emergencia ? stripPhone(data.telefono_emergencia) : null,
       codigo_pais_telefono_emergencia: data.codigo_pais_telefono_emergencia ?? "+57",
       discapacidad: data.discapacidad,
       discapacidad_detalle: data.discapacidad_detalle ?? null,
