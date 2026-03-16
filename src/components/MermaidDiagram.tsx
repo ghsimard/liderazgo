@@ -11,9 +11,9 @@ function initMermaid() {
     securityLevel: "loose",
     flowchart: { useMaxWidth: true, htmlLabels: true, curve: "basis" },
     themeVariables: {
-      primaryColor: "#1e40af",
-      primaryTextColor: "#ffffff",
-      primaryBorderColor: "#1e3a8a",
+      primaryColor: "#60a5fa",
+      primaryTextColor: "#000000",
+      primaryBorderColor: "#3b82f6",
       lineColor: "#374151",
       secondaryColor: "#e0e7ff",
       secondaryTextColor: "#1e293b",
@@ -46,7 +46,7 @@ function parseColorToRgb(color: string): [number, number, number] | null {
 
 function isBlueContainer(rgb: [number, number, number]): boolean {
   const [r, g, b] = rgb;
-  return b >= r + 20 && b >= g + 15 && r <= 90 && g <= 140;
+  return b >= 150 && b > r && b > g - 30;
 }
 
 function applyTextColor(el: Element, color: "#000000" | "#ffffff") {
