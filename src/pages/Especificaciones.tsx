@@ -6,8 +6,6 @@ import { ArrowLeft, Download, Printer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { generarPDFSpecifications } from "@/utils/specificationsPdfGenerator";
 import MermaidDiagram from "@/components/MermaidDiagram";
-import logoRLT from "@/assets/logo_rlt.png";
-import logoCosmo from "@/assets/logo_cosmo.png";
 
 export default function Especificaciones() {
   const [md, setMd] = useState("");
