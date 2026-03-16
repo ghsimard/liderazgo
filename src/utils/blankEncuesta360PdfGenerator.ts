@@ -166,7 +166,7 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(title, pageW / 2, y + 4, { align: "center" });
-    y += 8;
+    y += 7;
 
     // Scale header
     const scaleX = margin + contentW * 0.55;
