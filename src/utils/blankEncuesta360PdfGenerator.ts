@@ -166,7 +166,7 @@ export async function generarPDFEncuesta360EnBlanco(
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(title, pageW / 2, y + 4, { align: "center" });
-    y += 9;
+    y += 7;
 
     // Scale header
     const scaleX = margin + contentW * 0.55;
@@ -213,13 +213,13 @@ export async function generarPDFEncuesta360EnBlanco(
         doc.circle(cx, y + rowH / 2 - 1.5, 1.8);
       });
 
-      y += rowH;
+      y += rowH - 0.5;
 
       // Separator line
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.15);
       doc.line(margin, y, margin + contentW, y);
-      y += 2.5;
+      y += 2;
     });
   };
 
