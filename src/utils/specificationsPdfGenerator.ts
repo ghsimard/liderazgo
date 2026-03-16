@@ -9,21 +9,23 @@ import {
 
 // ── Colors ────────────────────────────────────────────────────────
 const C = {
-  title: [17, 24, 39] as const,       // near-black
-  h2: [30, 64, 175] as const,         // blue
-  h3: [79, 70, 229] as const,         // indigo
-  h4: [124, 58, 237] as const,        // purple
-  body: [55, 65, 81] as const,        // gray-700
-  muted: [107, 114, 128] as const,    // gray-500
-  tableHead: [243, 244, 246] as const, // gray-100
+  title: [17, 24, 39] as const,
+  h2: [30, 64, 175] as const,
+  h3: [79, 70, 229] as const,
+  h4: [124, 58, 237] as const,
+  body: [55, 65, 81] as const,
+  muted: [107, 114, 128] as const,
+  tableHead: [241, 245, 249] as const,
   tableHeadText: [17, 24, 39] as const,
-  tableBorder: [209, 213, 219] as const,
-  codeBg: [243, 244, 246] as const,
+  tableBorder: [226, 232, 240] as const,
+  tableStripe: [248, 250, 252] as const,
+  codeBg: [241, 245, 249] as const,
   codeText: [55, 65, 81] as const,
-  accent: [59, 130, 246] as const,    // blue-500
+  accent: [59, 130, 246] as const,
   blockquoteBg: [239, 246, 255] as const,
   blockquoteBar: [59, 130, 246] as const,
   bullet: [79, 70, 229] as const,
+  boldText: [17, 24, 39] as const,
 };
 
 interface LogoSources {
@@ -31,6 +33,96 @@ interface LogoSources {
   logoCosmo: string;
 }
 
+// ── Inline formatting: draw text segments with bold/code styling ──
+function drawRichText(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  yy: number,
+  maxW: number,
+  fontSize: number,
+  baseColor: readonly [number, number, number],
+): number {
+  // Parse inline segments: **bold**, `code`, *italic*, plain
+  const segments: { text: string; bold?: boolean; code?: boolean; italic?: boolean }[] = [];
+  const regex = /(\*\*(.+?)\*\*)|(`(.+?)`)|(\*(.+?)\*)|([^*`]+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    if (m[2]) segments.push({ text: m[2], bold: true });
+    else if (m[4]) segments.push({ text: m[4], code: true });
+    else if (m[6]) segments.push({ text: m[6], italic: true });
+    else if (m[7]) segments.push({ text: m[7] });
+  }
+  if (segments.length === 0) segments.push({ text });
+
+  // Flatten all segments into plain text for line wrapping
+  const plainText = segments.map((s) => s.text).join("");
+  doc.setFontSize(fontSize);
+  doc.setFont("helvetica", "normal");
+  const wrappedLines = doc.splitTextToSize(plainText, maxW);
+
+  let linesDrawn = 0;
+  let segIdx = 0;
+  let charInSeg = 0;
+
+  for (const line of wrappedLines) {
+    let cx = x;
+    let remaining = line.length;
+    let linePos = 0;
+
+    while (remaining > 0 && segIdx < segments.length) {
+      const seg = segments[segIdx];
+      const availChars = seg.text.length - charInSeg;
+      const charsToUse = Math.min(availChars, remaining);
+      const chunk = seg.text.substring(charInSeg, charInSeg + charsToUse);
+
+      if (seg.bold) {
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(C.boldText[0], C.boldText[1], C.boldText[2]);
+      } else if (seg.code) {
+        doc.setFont("courier", "normal");
+        doc.setTextColor(C.codeText[0], C.codeText[1], C.codeText[2]);
+      } else if (seg.italic) {
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(baseColor[0], baseColor[1], baseColor[2]);
+      } else {
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(baseColor[0], baseColor[1], baseColor[2]);
+      }
+      doc.setFontSize(seg.code ? fontSize - 0.5 : fontSize);
+
+      doc.text(chunk, cx, yy);
+      cx += doc.getTextWidth(chunk);
+
+      charInSeg += charsToUse;
+      remaining -= charsToUse;
+      linePos += charsToUse;
+
+      if (charInSeg >= seg.text.length) {
+        segIdx++;
+        charInSeg = 0;
+      }
+    }
+
+    yy += fontSize * 0.45;
+    linesDrawn++;
+  }
+
+  // Reset
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(baseColor[0], baseColor[1], baseColor[2]);
+  doc.setFontSize(fontSize);
+
+  return linesDrawn;
+}
+
+// ── Strip inline formatting (for headers, TOC) ──
+const strip = (s: string) =>
+  s.replace(/\*\*(.*?)\*\*/g, "$1").replace(/`(.*?)`/g, "$1").replace(/\*(.*?)\*/g, "$1");
+
+// ══════════════════════════════════════════════════════════════════
+// ── MAIN EXPORT ─────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
 export async function generarPDFSpecifications(
   markdownContent: string,
   logoSources: LogoSources,
@@ -47,26 +139,26 @@ export async function generarPDFSpecifications(
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 18;
   const contentW = pageW - margin * 2;
-  const bottomLimit = pageH - 24;
+  const bottomLimit = pageH - 22;
   let y = 0;
-  let pageCount = 0;
 
   // ── Helpers ──────────────────────────────────────────────────────
-  const addFooter = (pageNum?: number) => {
-    const footerY = pageH - 16;
+  const addFooter = () => {
+    const footerY = pageH - 14;
     const cosmoDims = logoDims(cosmoSize.width, cosmoSize.height, FOOTER_COSMO_H);
-    try { doc.addImage(cosmoB64, "PNG", margin, footerY - 2, cosmoDims.w, cosmoDims.h); } catch {}
+    try {
+      doc.addImage(cosmoB64, "PNG", margin, footerY - 2, cosmoDims.w, cosmoDims.h);
+    } catch {}
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(...C.muted);
-    doc.text(`${pageNum ?? doc.getNumberOfPages()}`, pageW - margin, footerY, { align: "right" });
+    doc.setTextColor(C.muted[0], C.muted[1], C.muted[2]);
+    doc.text(`${doc.getNumberOfPages()}`, pageW - margin, footerY, { align: "right" });
   };
 
   const newPage = () => {
     addFooter();
     doc.addPage();
-    pageCount++;
-    y = 22;
+    y = 20;
   };
 
   const checkBreak = (needed: number) => {
@@ -74,25 +166,6 @@ export async function generarPDFSpecifications(
   };
 
   const setColor = (c: readonly [number, number, number]) => doc.setTextColor(c[0], c[1], c[2]);
-
-  const drawText = (text: string, x: number, yy: number, opts?: { maxWidth?: number; align?: string }) => {
-    doc.text(text, x, yy, opts as any);
-  };
-
-  const wrapAndDraw = (text: string, fontSize: number, font: string, style: string, color: readonly [number, number, number], indent = 0, maxW?: number): number => {
-    doc.setFontSize(fontSize);
-    doc.setFont(font, style);
-    setColor(color);
-    const w = maxW ?? (contentW - indent);
-    const lines = doc.splitTextToSize(text, w);
-    const lineH = fontSize * 0.45;
-    for (const line of lines) {
-      checkBreak(lineH + 1);
-      drawText(line, margin + indent, y);
-      y += lineH;
-    }
-    return lines.length;
-  };
 
   // ── Parse markdown into blocks ──────────────────────────────────
   const rawLines = markdownContent.split("\n");
@@ -116,7 +189,6 @@ export async function generarPDFSpecifications(
   while (i < rawLines.length) {
     const line = rawLines[i];
 
-    // Code block
     if (line.trimStart().startsWith("```")) {
       const lang = line.trim().replace(/^```/, "").trim();
       const codeLines: string[] = [];
@@ -125,15 +197,14 @@ export async function generarPDFSpecifications(
         codeLines.push(rawLines[i]);
         i++;
       }
-      i++; // skip closing ```
+      i++;
       blocks.push({ type: "code", lang, lines: codeLines });
       continue;
     }
 
-    // Table
     if (line.includes("|") && i + 1 < rawLines.length && rawLines[i + 1].match(/^\s*\|[\s\-:|]+\|\s*$/)) {
       const headers = line.split("|").filter(Boolean).map((s) => s.trim());
-      i += 2; // skip header + separator
+      i += 2;
       const rows: string[][] = [];
       while (i < rawLines.length && rawLines[i].includes("|") && rawLines[i].trim() !== "") {
         rows.push(rawLines[i].split("|").filter(Boolean).map((s) => s.trim()));
@@ -143,19 +214,13 @@ export async function generarPDFSpecifications(
       continue;
     }
 
-    // Headers
     if (line.startsWith("# ")) { blocks.push({ type: "h1", text: line.replace(/^# /, "") }); i++; continue; }
     if (line.startsWith("## ")) { blocks.push({ type: "h2", text: line.replace(/^## /, "") }); i++; continue; }
     if (line.startsWith("### ")) { blocks.push({ type: "h3", text: line.replace(/^### /, "") }); i++; continue; }
     if (line.startsWith("#### ")) { blocks.push({ type: "h4", text: line.replace(/^#### /, "") }); i++; continue; }
-
-    // HR
     if (line.match(/^---+\s*$/)) { blocks.push({ type: "hr" }); i++; continue; }
-
-    // Blockquote
     if (line.startsWith("> ")) { blocks.push({ type: "blockquote", text: line.replace(/^>\s*/, "") }); i++; continue; }
 
-    // List items (collect consecutive)
     if (line.match(/^\s*[-*]\s+/)) {
       const items: string[] = [];
       while (i < rawLines.length && rawLines[i].match(/^\s*[-*]\s+/)) {
@@ -166,12 +231,19 @@ export async function generarPDFSpecifications(
       continue;
     }
 
-    // Empty line
     if (line.trim() === "") { blocks.push({ type: "empty" }); i++; continue; }
 
-    // Paragraph — collect consecutive non-empty non-special lines
     const paraLines: string[] = [];
-    while (i < rawLines.length && rawLines[i].trim() !== "" && !rawLines[i].startsWith("#") && !rawLines[i].startsWith("```") && !rawLines[i].startsWith(">") && !rawLines[i].match(/^---+/) && !rawLines[i].match(/^\s*[-*]\s+/) && !(rawLines[i].includes("|") && i + 1 < rawLines.length && rawLines[i + 1]?.match(/^\s*\|[\s\-:|]+\|\s*$/))) {
+    while (
+      i < rawLines.length &&
+      rawLines[i].trim() !== "" &&
+      !rawLines[i].startsWith("#") &&
+      !rawLines[i].startsWith("```") &&
+      !rawLines[i].startsWith(">") &&
+      !rawLines[i].match(/^---+/) &&
+      !rawLines[i].match(/^\s*[-*]\s+/) &&
+      !(rawLines[i].includes("|") && i + 1 < rawLines.length && rawLines[i + 1]?.match(/^\s*\|[\s\-:|]+\|\s*$/))
+    ) {
       paraLines.push(rawLines[i].trim());
       i++;
     }
@@ -180,28 +252,26 @@ export async function generarPDFSpecifications(
     }
   }
 
-  // ── Strip inline markdown formatting ────────────────────────────
-  const strip = (s: string) => s.replace(/\*\*(.*?)\*\*/g, "$1").replace(/`(.*?)`/g, "$1").replace(/\*(.*?)\*/g, "$1");
-
   // ══════════════════════════════════════════════════════════════════
   // ── COVER PAGE ────────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════
   const rltTargetH = COVER_LOGO_H + 4;
   const rltW = logoDims(rltSize.width, rltSize.height, rltTargetH).w;
 
-  // Decorative top bar
   doc.setFillColor(30, 64, 175);
-  doc.rect(0, 0, pageW, 6, "F");
+  doc.rect(0, 0, pageW, 5, "F");
 
   y = pageH * 0.25;
-  try { doc.addImage(rltB64, "PNG", (pageW - rltW) / 2, y, rltW, rltTargetH); } catch {}
+  try {
+    doc.addImage(rltB64, "PNG", (pageW - rltW) / 2, y, rltW, rltTargetH);
+  } catch {}
   y += rltTargetH + 16;
 
-  doc.setFontSize(26);
+  doc.setFontSize(28);
   doc.setFont("helvetica", "bold");
   setColor(C.title);
   doc.text("ESPECIFICACIONES", pageW / 2, y, { align: "center" });
-  y += 10;
+  y += 12;
 
   doc.setFontSize(16);
   doc.setFont("helvetica", "normal");
@@ -213,57 +283,51 @@ export async function generarPDFSpecifications(
   setColor(C.muted);
   doc.text("Documentación oficial de la aplicación", pageW / 2, y, { align: "center" });
   y += 6;
-  doc.text(`Última actualización: marzo 2026`, pageW / 2, y, { align: "center" });
+  doc.text("Última actualización: marzo 2026", pageW / 2, y, { align: "center" });
   y += 20;
 
-  // Decorative line
   doc.setDrawColor(...C.accent);
   doc.setLineWidth(0.5);
   doc.line(pageW * 0.3, y, pageW * 0.7, y);
 
-  // Bottom decorative bar
   doc.setFillColor(30, 64, 175);
-  doc.rect(0, pageH - 6, pageW, 6, "F");
+  doc.rect(0, pageH - 5, pageW, 5, "F");
 
   addFooter();
-  pageCount = 1;
 
   // ══════════════════════════════════════════════════════════════════
   // ── TABLE OF CONTENTS ─────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════
   doc.addPage();
-  pageCount++;
-  y = 28;
+  y = 26;
 
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
   setColor(C.h2);
   doc.text("TABLA DE CONTENIDO", margin, y);
-  y += 12;
-
+  y += 3;
   doc.setDrawColor(...C.accent);
-  doc.setLineWidth(0.3);
-  doc.line(margin, y - 3, margin + 60, y - 3);
-  y += 4;
+  doc.setLineWidth(0.4);
+  doc.line(margin, y, margin + 55, y);
+  y += 8;
 
   let tocNum = 0;
   for (const block of blocks) {
     if (block.type === "h2") {
       tocNum++;
+      checkBreak(7);
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       setColor(C.title);
       doc.text(`${tocNum}.  ${strip(block.text.replace(/^\d+\.\s*/, ""))}`, margin + 2, y);
-      y += 6;
+      y += 6.5;
     } else if (block.type === "h3") {
+      checkBreak(5.5);
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       setColor(C.body);
-      doc.text(`      ${strip(block.text)}`, margin + 6, y);
+      doc.text(`${strip(block.text)}`, margin + 10, y);
       y += 5;
-    }
-    if (y > bottomLimit - 10) {
-      newPage();
     }
   }
 
@@ -273,26 +337,25 @@ export async function generarPDFSpecifications(
   // ── CONTENT PAGES ─────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════
   doc.addPage();
-  pageCount++;
-  y = 22;
+  y = 20;
 
   for (let bi = 0; bi < blocks.length; bi++) {
     const block = blocks[bi];
 
     switch (block.type) {
       case "h1":
-        // Skip – already on cover
         break;
 
       case "h2": {
-        checkBreak(20);
-        y += 6;
+        checkBreak(18);
+        y += 5;
+        // Blue header bar
         doc.setFillColor(...C.h2);
-        doc.rect(margin, y - 4.5, contentW, 8, "F");
-        doc.setFontSize(12);
+        doc.roundedRect(margin, y - 5, contentW, 9, 1, 1, "F");
+        doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(255, 255, 255);
-        doc.text(strip(block.text).toUpperCase(), margin + 3, y + 1);
+        doc.text(strip(block.text).toUpperCase(), margin + 4, y + 0.5);
         y += 10;
         break;
       }
@@ -300,15 +363,16 @@ export async function generarPDFSpecifications(
       case "h3": {
         checkBreak(14);
         y += 4;
-        doc.setFontSize(11);
+        doc.setFontSize(10.5);
         doc.setFont("helvetica", "bold");
         setColor(C.h3);
         const h3Text = strip(block.text);
         doc.text(h3Text, margin, y);
         y += 1.5;
         doc.setDrawColor(...C.h3);
-        doc.setLineWidth(0.3);
-        doc.line(margin, y, margin + Math.min(doc.getTextWidth(h3Text), contentW), y);
+        doc.setLineWidth(0.25);
+        const textW = Math.min(doc.getTextWidth(h3Text), contentW);
+        doc.line(margin, y, margin + textW, y);
         y += 5;
         break;
       }
@@ -316,7 +380,7 @@ export async function generarPDFSpecifications(
       case "h4": {
         checkBreak(10);
         y += 2;
-        doc.setFontSize(10);
+        doc.setFontSize(9.5);
         doc.setFont("helvetica", "bold");
         setColor(C.h4);
         doc.text(strip(block.text), margin, y);
@@ -325,60 +389,58 @@ export async function generarPDFSpecifications(
       }
 
       case "blockquote": {
-        checkBreak(14);
+        checkBreak(12);
         const bqText = strip(block.text);
-        doc.setFontSize(9);
+        doc.setFontSize(8.5);
         doc.setFont("helvetica", "italic");
         setColor(C.body);
-        const bqLines = doc.splitTextToSize(bqText, contentW - 10);
-        const bqH = bqLines.length * 4.2 + 4;
+        const bqLines = doc.splitTextToSize(bqText, contentW - 12);
+        const bqH = bqLines.length * 4 + 5;
         doc.setFillColor(...C.blockquoteBg);
         doc.roundedRect(margin, y - 2, contentW, bqH, 1.5, 1.5, "F");
         doc.setFillColor(...C.blockquoteBar);
         doc.rect(margin, y - 2, 1.5, bqH, "F");
+        let bqY = y + 2;
         for (const l of bqLines) {
-          doc.text(l, margin + 6, y + 2);
-          y += 4.2;
+          doc.text(l, margin + 7, bqY);
+          bqY += 4;
         }
-        y += 4;
+        y += bqH + 2;
         break;
       }
 
       case "hr": {
-        y += 2;
+        y += 3;
         doc.setDrawColor(...C.tableBorder);
-        doc.setLineWidth(0.2);
+        doc.setLineWidth(0.15);
         doc.line(margin, y, pageW - margin, y);
         y += 4;
         break;
       }
 
       case "paragraph": {
-        const pText = strip(block.text);
-        if (pText.trim() === "") break;
-        wrapAndDraw(pText, 9, "helvetica", "normal", C.body);
-        y += 3;
+        if (strip(block.text).trim() === "") break;
+        checkBreak(6);
+        const linesCount = drawRichText(doc, block.text, margin, y, contentW, 9, C.body);
+        y += linesCount * (9 * 0.45);
+        y += 2.5;
         break;
       }
 
       case "list": {
         for (const item of block.items) {
           checkBreak(6);
-          doc.setFontSize(9);
+          // Bullet
+          doc.setFontSize(5);
           doc.setFont("helvetica", "normal");
           setColor(C.bullet);
-          doc.text("●", margin + 2, y);
-          
-          // Handle bold prefix in list items
-          const stripped = strip(item);
-          setColor(C.body);
-          const listLines = doc.splitTextToSize(stripped, contentW - 10);
-          for (let li = 0; li < listLines.length; li++) {
-            if (li > 0) checkBreak(4);
-            doc.text(listLines[li], margin + 7, y);
-            y += 4;
-          }
-          y += 1;
+          doc.text("●", margin + 3, y - 0.3);
+
+          // Rich text for the item
+          doc.setFontSize(9);
+          const linesCount = drawRichText(doc, item, margin + 8, y, contentW - 10, 9, C.body);
+          y += linesCount * (9 * 0.45);
+          y += 1.5;
         }
         y += 2;
         break;
@@ -387,115 +449,165 @@ export async function generarPDFSpecifications(
       case "table": {
         const { headers, rows } = block;
         const numCols = headers.length;
-        
-        // Calculate column widths proportionally
-        const totalContentLen = headers.reduce((sum, h, ci) => {
-          const maxLen = Math.max(h.length, ...rows.map((r) => (r[ci] || "").length));
-          return sum + maxLen;
-        }, 0);
-        
+
+        // Calculate column widths based on actual text width
+        doc.setFontSize(7.5);
+        doc.setFont("helvetica", "normal");
         const colWidths = headers.map((h, ci) => {
-          const maxLen = Math.max(h.length, ...rows.map((r) => (r[ci] || "").length));
-          return Math.max(20, (maxLen / totalContentLen) * contentW);
+          const headerW = doc.getTextWidth(strip(h)) + 6;
+          const maxCellW = Math.max(...rows.map((r) => doc.getTextWidth(strip(r[ci] || "")) + 6));
+          return Math.max(headerW, maxCellW);
         });
 
         // Normalize to fit contentW
         const totalW = colWidths.reduce((a, b) => a + b, 0);
         const scale = contentW / totalW;
-        const cols = colWidths.map((w) => w * scale);
+        const cols = colWidths.map((w) => Math.max(15, w * scale));
+        // Re-normalize after min constraint
+        const totalAfterMin = cols.reduce((a, b) => a + b, 0);
+        const finalScale = contentW / totalAfterMin;
+        const finalCols = cols.map((w) => w * finalScale);
 
-        const rowH = 7;
-        const headerH = 8;
-        const totalTableH = headerH + rows.length * rowH;
-        checkBreak(Math.min(totalTableH, 50));
+        // Calculate row heights based on content wrapping
+        const cellPad = 3;
+        const cellLineH = 3.5;
 
-        // Header row
+        const calcCellHeight = (text: string, colW: number): number => {
+          doc.setFontSize(7.5);
+          doc.setFont("helvetica", "normal");
+          const lines = doc.splitTextToSize(strip(text), colW - cellPad * 2);
+          return Math.max(1, lines.length) * cellLineH + 3;
+        };
+
+        const headerH = 7;
+        const rowHeights = rows.map((row) => {
+          let maxH = 6;
+          for (let ci = 0; ci < numCols; ci++) {
+            maxH = Math.max(maxH, calcCellHeight(row[ci] || "", finalCols[ci]));
+          }
+          return maxH;
+        });
+
+        const totalTableH = headerH + rowHeights.reduce((a, b) => a + b, 0);
+        checkBreak(Math.min(totalTableH, 40));
+
+        // Draw header
         let cx = margin;
         doc.setFillColor(...C.tableHead);
-        doc.rect(margin, y - 3, contentW, headerH, "F");
+        doc.roundedRect(margin, y - 1, contentW, headerH, 0.5, 0.5, "F");
         doc.setFontSize(7.5);
         doc.setFont("helvetica", "bold");
         setColor(C.tableHeadText);
         for (let ci = 0; ci < numCols; ci++) {
           const cellText = strip(headers[ci]);
-          const truncated = doc.splitTextToSize(cellText, cols[ci] - 3)[0];
-          doc.text(truncated, cx + 2, y + 1);
-          cx += cols[ci];
+          doc.text(cellText, cx + cellPad, y + 3.5, { maxWidth: finalCols[ci] - cellPad * 2 });
+          cx += finalCols[ci];
         }
         y += headerH;
 
-        // Data rows
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(7.5);
+        // Draw rows
         for (let ri = 0; ri < rows.length; ri++) {
-          checkBreak(rowH + 2);
+          const rh = rowHeights[ri];
+          checkBreak(rh + 1);
           const row = rows[ri];
-          cx = margin;
 
-          if (ri % 2 === 1) {
-            doc.setFillColor(249, 250, 251);
-            doc.rect(margin, y - 3.5, contentW, rowH, "F");
+          // Stripe
+          if (ri % 2 === 0) {
+            doc.setFillColor(...C.tableStripe);
+            doc.rect(margin, y - 1, contentW, rh, "F");
           }
 
-          // Draw borders
+          // Top border
           doc.setDrawColor(...C.tableBorder);
-          doc.setLineWidth(0.15);
-          doc.line(margin, y - 3.5, margin + contentW, y - 3.5);
+          doc.setLineWidth(0.1);
+          doc.line(margin, y - 1, margin + contentW, y - 1);
 
+          cx = margin;
+          doc.setFontSize(7.5);
           setColor(C.body);
+
           for (let ci = 0; ci < numCols; ci++) {
             const cellText = strip(row[ci] || "");
-            const wrappedLines = doc.splitTextToSize(cellText, cols[ci] - 4);
-            doc.text(wrappedLines[0] || "", cx + 2, y);
-            if (wrappedLines.length > 1) {
-              doc.setFontSize(6.5);
-              doc.text(wrappedLines[1], cx + 2, y + 3.2);
-              doc.setFontSize(7.5);
+            const cellW = finalCols[ci] - cellPad * 2;
+
+            // Check for bold prefix like **Texto**: description
+            const boldMatch = (row[ci] || "").match(/^\*\*(.*?)\*\*(.*)$/);
+            if (boldMatch) {
+              doc.setFont("helvetica", "bold");
+              setColor(C.boldText);
+              const boldPart = boldMatch[1];
+              const restPart = strip(boldMatch[2]);
+              const fullText = boldPart + restPart;
+              const lines = doc.splitTextToSize(fullText, cellW);
+
+              let cy = y + 2.5;
+              // Simple approach: bold the first word-length chars
+              for (let li = 0; li < lines.length; li++) {
+                if (li === 0) {
+                  // First line: draw bold part then rest
+                  const bw = doc.getTextWidth(boldPart);
+                  doc.setFont("helvetica", "bold");
+                  setColor(C.boldText);
+                  doc.text(boldPart, cx + cellPad, cy);
+                  if (restPart) {
+                    doc.setFont("helvetica", "normal");
+                    setColor(C.body);
+                    doc.text(restPart.substring(0, lines[0].length - boldPart.length), cx + cellPad + bw, cy);
+                  }
+                } else {
+                  doc.setFont("helvetica", "normal");
+                  setColor(C.body);
+                  doc.text(lines[li], cx + cellPad, cy);
+                }
+                cy += cellLineH;
+              }
+            } else {
+              doc.setFont("helvetica", "normal");
+              setColor(C.body);
+              const lines = doc.splitTextToSize(cellText, cellW);
+              let cy = y + 2.5;
+              for (const l of lines) {
+                doc.text(l, cx + cellPad, cy);
+                cy += cellLineH;
+              }
             }
-            cx += cols[ci];
+
+            cx += finalCols[ci];
           }
-          y += rowH;
+          y += rh;
         }
 
         // Bottom border
         doc.setDrawColor(...C.tableBorder);
-        doc.line(margin, y - 3.5, margin + contentW, y - 3.5);
+        doc.setLineWidth(0.1);
+        doc.line(margin, y - 1, margin + contentW, y - 1);
         y += 4;
         break;
       }
 
       case "code": {
         const { lang, lines: codeLines } = block;
-        
-        // For mermaid diagrams, render as styled diagram blocks
         const isMermaid = lang === "mermaid";
         const isStructure = lang === "" && codeLines.some((l) => l.includes("├") || l.includes("│"));
 
         if (isMermaid) {
-          // Determine diagram type
           const firstLine = codeLines[0]?.trim() || "";
           const isMindmap = firstLine === "mindmap";
           const isFlowchart = firstLine.startsWith("flowchart");
 
-          // Filter and clean lines
           const displayLines = codeLines.filter((l) => {
             const t = l.trim();
             return t !== "mindmap" && !t.startsWith("flowchart") && t !== "";
           });
 
           if (isMindmap) {
-            // Render mindmap as a styled hierarchical block
-            checkBreak(20);
-            const boxPadding = 3;
+            checkBreak(16);
             const lineH = 4.5;
-            const totalH = displayLines.length * lineH + boxPadding * 2 + 2;
-            checkBreak(Math.min(totalH, 80));
 
-            // Background
-            doc.setFillColor(248, 250, 252);
-            doc.setDrawColor(...C.h3);
-            doc.setLineWidth(0.3);
-            const boxY = y - 2;
+            // Draw a subtle background box
+            const estimatedH = displayLines.length * lineH + 8;
+            checkBreak(Math.min(estimatedH, 80));
+            const boxStartY = y - 2;
 
             for (const dline of displayLines) {
               checkBreak(lineH + 1);
@@ -503,107 +615,109 @@ export async function generarPDFSpecifications(
               const indent = dline.length - dline.trimStart().length;
               const level = Math.floor(indent / 2);
 
-              // Root node (inside double parens)
               const rootMatch = stripped.match(/^root\(\((.*?)\)\)$/);
               if (rootMatch) {
-                doc.setFontSize(9);
+                // Draw root with background pill
+                const rootText = rootMatch[1];
+                doc.setFontSize(9.5);
                 doc.setFont("helvetica", "bold");
-                setColor(C.h2);
-                doc.text(`◉ ${rootMatch[1]}`, margin + 4, y);
-                y += lineH + 1;
+                const rw = doc.getTextWidth(rootText) + 10;
+                doc.setFillColor(...C.h2);
+                doc.roundedRect(margin + 2, y - 4, rw, 7, 2, 2, "F");
+                doc.setTextColor(255, 255, 255);
+                doc.text(rootText, margin + 7, y);
+                y += lineH + 2;
                 continue;
               }
 
               const nodeText = stripped.replace(/^root\(\(/, "").replace(/\)\)$/, "");
-              const xOffset = margin + 4 + level * 5;
+              const xOffset = margin + 6 + level * 6;
 
               if (level <= 1) {
-                doc.setFontSize(8);
+                doc.setFontSize(8.5);
                 doc.setFont("helvetica", "bold");
                 setColor(C.h3);
                 doc.text(`▸ ${nodeText}`, xOffset, y);
+              } else if (level === 2) {
+                doc.setFontSize(8);
+                doc.setFont("helvetica", "normal");
+                setColor(C.body);
+                doc.text(`▪ ${nodeText}`, xOffset, y);
               } else {
                 doc.setFontSize(7.5);
                 doc.setFont("helvetica", "normal");
-                setColor(C.body);
-                const bullet = level <= 2 ? "▪" : "·";
-                doc.text(`${bullet} ${nodeText}`, xOffset, y);
+                setColor(C.muted);
+                doc.text(`· ${nodeText}`, xOffset, y);
               }
               y += lineH;
             }
-            y += 4;
+
+            // Draw subtle left border for the whole mindmap
+            const boxEndY = y;
+            doc.setDrawColor(...C.h3);
+            doc.setLineWidth(0.3);
+            doc.line(margin + 2, boxStartY, margin + 2, boxEndY);
+            y += 3;
+
           } else if (isFlowchart) {
-            // Render flowchart as simplified step diagram
-            checkBreak(20);
+            checkBreak(16);
             const flowLines = displayLines.filter((l) => l.trim() !== "");
 
-            doc.setFillColor(248, 250, 252);
-            const fBoxH = flowLines.length * 5 + 8;
-            checkBreak(Math.min(fBoxH, 60));
-
+            // Parse flowchart nodes and edges
             for (const fline of flowLines) {
               checkBreak(6);
-              const cleaned = fline.trim()
+              const trimmed = fline.trim();
+
+              // Parse node definitions and connections
+              const cleaned = trimmed
                 .replace(/-->/g, " → ")
-                .replace(/\|/g, "")
+                .replace(/-->\|([^|]*)\|/g, " →[$1] ")
                 .replace(/\{(.*?)\}/g, "◇ $1")
-                .replace(/\[(.*?)\]/g, "▢ $1");
+                .replace(/\[(.*?)\]/g, "$1");
 
               doc.setFontSize(8);
-              doc.setFont("helvetica", "normal");
-              setColor(C.body);
 
-              // Style based on content
               if (cleaned.includes("→")) {
                 doc.setFont("helvetica", "normal");
                 setColor(C.muted);
               } else if (cleaned.includes("◇")) {
                 doc.setFont("helvetica", "bold");
                 setColor(C.h3);
-              } else if (cleaned.includes("▢")) {
+              } else {
+                doc.setFont("helvetica", "normal");
                 setColor(C.body);
               }
 
-              const fLines = doc.splitTextToSize(cleaned, contentW - 10);
-              for (const fl of fLines) {
-                doc.text(fl, margin + 6, y);
-                y += 4.5;
+              const wrappedLines = doc.splitTextToSize(cleaned, contentW - 12);
+              for (const wl of wrappedLines) {
+                doc.text(wl, margin + 8, y);
+                y += 4.2;
               }
             }
             y += 3;
           }
         } else {
           // Regular code block or structure
-          const lineH = 3.8;
-          const boxH = codeLines.length * lineH + 6;
-          checkBreak(Math.min(boxH, 60));
+          const lineH = 3.6;
+          const totalH = codeLines.length * lineH + 6;
+          checkBreak(Math.min(totalH, 50));
 
-          doc.setFillColor(...C.codeBg);
-          doc.setDrawColor(...C.tableBorder);
-          doc.setLineWidth(0.2);
+          // Draw background
+          const bgStartY = y - 2;
 
-          if (isStructure) {
-            // Sidebar structure rendering
-            for (const cl of codeLines) {
-              checkBreak(lineH + 1);
-              doc.setFontSize(7.5);
-              doc.setFont("courier", "normal");
-              setColor(C.codeText);
-              doc.text(cl, margin + 3, y);
-              y += lineH;
-            }
-          } else {
-            for (const cl of codeLines) {
-              checkBreak(lineH + 1);
-              doc.setFontSize(7);
-              doc.setFont("courier", "normal");
-              setColor(C.codeText);
-              const truncated = cl.substring(0, 120);
-              doc.text(truncated, margin + 3, y);
-              y += lineH;
-            }
+          for (const cl of codeLines) {
+            checkBreak(lineH + 1);
+            // Draw line bg
+            doc.setFillColor(...C.codeBg);
+            doc.rect(margin, y - 2.5, contentW, lineH, "F");
+
+            doc.setFontSize(isStructure ? 7.5 : 7);
+            doc.setFont("courier", "normal");
+            setColor(C.codeText);
+            doc.text(cl.substring(0, 120), margin + 3, y);
+            y += lineH;
           }
-          y += 4;
+          y += 3;
         }
         break;
       }
@@ -614,8 +728,6 @@ export async function generarPDFSpecifications(
     }
   }
 
-  // Final footer
   addFooter();
-
   doc.save("Especificaciones_Plataforma_RLT_CLT.pdf");
 }

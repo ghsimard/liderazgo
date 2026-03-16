@@ -43,6 +43,7 @@ const EncuestaAmbienteDocentes = lazy(() => import("./pages/EncuestaAmbienteDoce
 const SatisfaccionAsistencia = lazy(() => import("./pages/SatisfaccionAsistencia"));
 const SatisfaccionInterludio = lazy(() => import("./pages/SatisfaccionInterludio"));
 const SatisfaccionIntensivo = lazy(() => import("./pages/SatisfaccionIntensivo"));
+const Especificaciones = lazy(() => import("./pages/Especificaciones"));
 
 const queryClient = new QueryClient();
 
@@ -107,6 +108,7 @@ const App = () => (
                 <Route path="/sugerencias" element={<Sugerencias />} />
                 <Route path="/evaluacion" element={<Evaluacion />} />
                 <Route path="/faq" element={<FaqPage />} />
+                <Route path="/especificaciones" element={<Especificaciones />} />
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
