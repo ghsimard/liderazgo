@@ -209,16 +209,31 @@ export async function generarPDFEncuesta360EnBlanco(
 
     // Items
     items.forEach((item) => {
+      const numPrefix = `${item.num}. `;
       const textW = contentW * 0.53;
-      const textLines = doc.splitTextToSize(`${item.num}. ${item.text}`, textW);
-      const rowH = Math.max(textLines.length * 3, 4.5);
+      doc.setFontSize(6.5);
+      doc.setFont("helvetica", "normal");
+      const numW = doc.getTextWidth(numPrefix);
+      // First line includes number, subsequent lines are indented past it
+      const firstLine = doc.splitTextToSize(`${numPrefix}${item.text}`, textW);
+      const hangLines: string[] = [firstLine[0]];
+      if (firstLine.length > 1) {
+        // Re-split remaining text with reduced width for hanging indent
+        const remaining = firstLine.slice(1).join(" ");
+        const rewrapped = doc.splitTextToSize(remaining, textW - numW);
+        hangLines.push(...rewrapped);
+      }
+      const rowH = Math.max(hangLines.length * 3, 4.5);
 
       checkNewPage(rowH + 2);
 
-      doc.setFontSize(6.5);
-      doc.setFont("helvetica", "normal");
       doc.setTextColor(30, 30, 30);
-      doc.text(textLines, margin + 2, y);
+      // Draw first line at normal position
+      doc.text(hangLines[0], margin + 2, y);
+      // Draw subsequent lines indented past the number
+      for (let li = 1; li < hangLines.length; li++) {
+        doc.text(hangLines[li], margin + 2 + numW, y + li * 3);
+      }
 
       // Draw circles for each option
       options.forEach((_, i) => {
