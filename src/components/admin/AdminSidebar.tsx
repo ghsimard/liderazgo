@@ -182,7 +182,24 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
     setPickerOpen(true);
   };
 
-  const handleBlankAction = (action: string) => {
+  const handleBlankAction = async (action: string) => {
+    if (action === "specs-pdf") {
+      setGeneratingPdf(true);
+      try {
+        const res = await fetch("/SPECIFICATIONS.md");
+        const md = await res.text();
+        await generarPDFSpecifications(md, {
+          logoRLT: images.logo_rlt_white,
+          logoCosmo: images.logo_cosmo,
+        });
+        toast({ title: "PDF generado", description: "Especificaciones descargadas." });
+      } catch {
+        toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+      } finally {
+        setGeneratingPdf(false);
+      }
+      return;
+    }
     setPendingAction(action);
     setPickerOpen(true);
   };
