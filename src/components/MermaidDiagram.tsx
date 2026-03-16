@@ -46,90 +46,92 @@ function luminance(r: number, g: number, b: number): number {
 }
 
 /**
- * Post-render fix: ensures proper text contrast on all colored nodes.
- * Strategy: collect each node group's dominant fill, then apply text color.
- * Processes deepest shapes first so the most specific shape wins.
+ * Post-render fix: ensure readable text on Mermaid nodes.
+ * Strategy: match each label to the shape that contains its center point.
  */
 function fixTextContrast(container: HTMLElement) {
   const svgEl = container.querySelector("svg");
   if (!svgEl) return;
 
-  // Map each <g> to the fill color of its deepest colored shape
-  const groupColors = new Map<Element, string>();
-
-  // Get all shapes, sorted deepest-first by counting ancestors
   const shapes = Array.from(svgEl.querySelectorAll("circle, ellipse, rect, path, polygon"));
-  
-  for (const shape of shapes) {
-    const fill = shape.getAttribute("fill") || (shape as HTMLElement).style?.fill || "";
-    if (!fill || fill === "none" || fill === "transparent") continue;
-    const rgb = parseColorToRgb(fill);
-    if (!rgb) continue;
 
-    const lum = luminance(...rgb);
-    const textColor = lum < 0.5 ? "#ffffff" : "#1e293b";
+  const shapeInfos = shapes
+    .map((shape) => {
+      const fill = shape.getAttribute("fill") || (shape as HTMLElement).style?.fill || "";
+      if (!fill || fill === "none" || fill === "transparent") return null;
 
-    // Find the immediate parent <g> that contains this shape
-    const parentG = shape.closest("g");
-    if (!parentG) continue;
+      const rgb = parseColorToRgb(fill);
+      if (!rgb) return null;
 
-    // Only set if this group hasn't been set yet by a deeper shape
-    if (!groupColors.has(parentG)) {
-      groupColors.set(parentG, textColor);
+      let bbox: DOMRect | null = null;
+      try {
+        const b = (shape as unknown as SVGGraphicsElement).getBBox();
+        bbox = new DOMRect(b.x, b.y, b.width, b.height);
+      } catch {
+        return null;
+      }
+
+      if (!bbox || bbox.width <= 0 || bbox.height <= 0) return null;
+
+      const lum = luminance(...rgb);
+      const textColor = lum < 0.5 ? "#ffffff" : "#1e293b";
+
+      return {
+        bbox,
+        area: bbox.width * bbox.height,
+        textColor,
+      };
+    })
+    .filter((s): s is { bbox: DOMRect; area: number; textColor: string } => Boolean(s));
+
+  if (!shapeInfos.length) return;
+
+  const labels = Array.from(svgEl.querySelectorAll("text, foreignObject"));
+
+  for (const label of labels) {
+    let b: DOMRect | null = null;
+    try {
+      const raw = (label as unknown as SVGGraphicsElement).getBBox();
+      b = new DOMRect(raw.x, raw.y, raw.width, raw.height);
+    } catch {
+      continue;
+    }
+
+    if (!b || b.width <= 0 || b.height <= 0) continue;
+
+    const cx = b.x + b.width / 2;
+    const cy = b.y + b.height / 2;
+
+    let bestMatch: { bbox: DOMRect; area: number; textColor: string } | null = null;
+
+    for (const shapeInfo of shapeInfos) {
+      const { bbox } = shapeInfo;
+      const inside = cx >= bbox.x && cx <= bbox.x + bbox.width && cy >= bbox.y && cy <= bbox.y + bbox.height;
+      if (!inside) continue;
+
+      if (!bestMatch || shapeInfo.area < bestMatch.area) {
+        bestMatch = shapeInfo;
+      }
+    }
+
+    if (!bestMatch) continue;
+
+    const textColor = bestMatch.textColor;
+
+    if (label.tagName.toLowerCase() === "text") {
+      const svgText = label as SVGElement;
+      svgText.setAttribute("fill", textColor);
+      svgText.style.setProperty("fill", textColor, "important");
+      svgText.querySelectorAll("tspan").forEach((tspan) => {
+        (tspan as SVGElement).setAttribute("fill", textColor);
+        (tspan as SVGElement).style.setProperty("fill", textColor, "important");
+      });
+    } else {
+      (label as Element).querySelectorAll("div, span, p").forEach((el) => {
+        (el as HTMLElement).style.setProperty("color", textColor, "important");
+      });
     }
   }
-
-  // Apply text colors
-  groupColors.forEach((textColor, group) => {
-    // Set on direct text children only (not text in nested sub-groups)
-    for (const child of Array.from(group.children)) {
-      if (child.tagName.toLowerCase() === "text" || child.tagName.toLowerCase() === "tspan") {
-        (child as SVGElement).setAttribute("fill", textColor);
-        (child as SVGElement).style.fill = textColor;
-        // Also fix nested tspans
-        child.querySelectorAll("tspan").forEach(ts => {
-          (ts as SVGElement).setAttribute("fill", textColor);
-          (ts as SVGElement).style.fill = textColor;
-        });
-      }
-      if (child.tagName.toLowerCase() === "foreignobject") {
-        child.querySelectorAll("div, span, p").forEach(el => {
-          (el as HTMLElement).style.color = textColor;
-        });
-      }
-    }
-  });
-
-  // Final pass: any foreignObject inside a group with a dark shape
-  // (mindmap nodes often have shape + foreignObject as siblings within same g)
-  svgEl.querySelectorAll("g").forEach(g => {
-    const shapes = g.querySelectorAll(":scope > circle, :scope > ellipse, :scope > rect, :scope > path, :scope > polygon");
-    let darkestLum = 1;
-    let hasDarkShape = false;
-    
-    shapes.forEach(shape => {
-      const fill = shape.getAttribute("fill") || (shape as HTMLElement).style?.fill || "";
-      if (!fill || fill === "none" || fill === "transparent") return;
-      const rgb = parseColorToRgb(fill);
-      if (!rgb) return;
-      const lum = luminance(...rgb);
-      if (lum < darkestLum) {
-        darkestLum = lum;
-        hasDarkShape = true;
-      }
-    });
-
-    if (hasDarkShape) {
-      const textColor = darkestLum < 0.5 ? "#ffffff" : "#1e293b";
-      g.querySelectorAll(":scope > foreignObject div, :scope > foreignObject span, :scope > foreignObject p").forEach(el => {
-        (el as HTMLElement).style.color = textColor;
-      });
-      g.querySelectorAll(":scope > text, :scope > text tspan").forEach(el => {
-        (el as SVGElement).setAttribute("fill", textColor);
-        (el as SVGElement).style.fill = textColor;
-      });
-    }
-  });
 }
 
 interface MermaidDiagramProps {
