@@ -92,7 +92,7 @@ const schema = z.object({
   comuna_barrio: z.string().optional(),
   direccion_sede_principal: z.string().optional(),
   sitio_web: z.string().optional(),
-  telefono_ie: z.string().optional(),
+  telefono_ie: z.string().optional().transform((v) => v ? stripPhone(v) : v).refine((v) => !v || v.length === 0 || v.length === 10, { message: "Debe tener exactamente 10 dígitos" }),
   codigo_pais_telefono_ie: z.string().default("+57"),
   zona_sede: z.string().min(1, "Seleccione la zona de sede"),
   sedes_rural: z.string().min(1, "Ingrese el número de sedes rurales"),
