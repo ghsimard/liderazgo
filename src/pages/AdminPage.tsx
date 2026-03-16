@@ -224,16 +224,7 @@ function getHubTitle(activeTab: string): string {
     satisfacciones: "Encuestas de Satisfacción",
     certificaciones: "Certificaciones",
     mel: "MEL", "mel-rubricas": "MEL", "mel-config": "MEL",
-    "gestion-cuentas": "Gestión de Cuentas",
-    users: "Gestión de Cuentas",
-    operadores: "Gestión de Cuentas",
-    evaluadores: "Gestión de Cuentas",
-    "activity-log": "Registro de Actividad",
-    reviews: "Apreciaciones",
-    mensajes: "Mensajes",
-    changelog: "Changelog",
-    "purge-data": "Purgar datos",
-    papelera: "Papelera",
+    sistema: "Sistema",
   };
   return titleMap[activeTab] || "Panel";
 }
