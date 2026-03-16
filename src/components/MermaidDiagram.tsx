@@ -82,14 +82,7 @@ function fixTextContrast(container: HTMLElement) {
   const labels = Array.from(svgEl.querySelectorAll("text, foreignObject"));
 
   for (const label of labels) {
-    let b: DOMRect | null = null;
-    try {
-      const raw = (label as unknown as SVGGraphicsElement).getBBox();
-      b = new DOMRect(raw.x, raw.y, raw.width, raw.height);
-    } catch {
-      continue;
-    }
-
+    const b = (label as Element).getBoundingClientRect();
     if (!b || b.width <= 0 || b.height <= 0) continue;
 
     const cx = b.x + b.width / 2;
