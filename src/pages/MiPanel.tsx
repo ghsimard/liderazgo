@@ -316,6 +316,7 @@ export default function MiPanel() {
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <Card className="w-full max-w-md shadow-lg border-0">
           <CardHeader className="text-center space-y-3 pb-2">
+            <CardTitle className="text-xl font-bold text-foreground">Mi Panel</CardTitle>
             <div className="flex justify-center items-center gap-4">
               {logoRLT && <img src={logoRLT} alt="Logo RLT" className="h-14 object-contain" />}
               {logoCLT && <img src={logoCLT} alt="Logo CLT" className="h-14 object-contain" />}
