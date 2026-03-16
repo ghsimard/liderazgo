@@ -29,7 +29,7 @@ export const CONTENT_BOTTOM_MARGIN = 28;  // Content must stop at pageH - this v
 // ── Image loading utilities ───────────────────────────────────────
 
 /** Convert an image URL / imported asset to a base64 data URL */
-export function loadImageAsBase64(src: string): Promise<string> {
+export function loadImageAsBase64(src: string, fallbackSrc?: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -42,7 +42,14 @@ export function loadImageAsBase64(src: string): Promise<string> {
       ctx.drawImage(img, 0, 0);
       resolve(canvas.toDataURL("image/png"));
     };
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    img.onerror = () => {
+      if (fallbackSrc && fallbackSrc !== src) {
+        console.warn(`Failed to load image: ${src}, trying fallback: ${fallbackSrc}`);
+        loadImageAsBase64(fallbackSrc).then(resolve, reject);
+      } else {
+        reject(new Error(`Failed to load image: ${src}`));
+      }
+    };
     img.src = src;
   });
 }
