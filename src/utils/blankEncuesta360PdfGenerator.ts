@@ -184,7 +184,7 @@ export async function generarPDFEncuesta360EnBlanco(
         doc.text(line, cx, y + li * 2.5, { align: "center" });
       });
     });
-    y += 8;
+    y += 5;
 
     // Draw separator
     doc.setDrawColor(180, 180, 180);
