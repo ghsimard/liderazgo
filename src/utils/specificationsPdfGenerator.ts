@@ -137,7 +137,7 @@ export async function generarPDFSpecifications(
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   // --- Title page ---
-  addTitlePage(doc, logoSources.logoRLT, logoSources.logoCosmo);
+  addTitlePage(doc);
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
   doc.text(`1 / ${totalPages}`, pdfW - marginX, pdfH - 5, { align: "right" });
