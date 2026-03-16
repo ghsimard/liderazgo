@@ -91,35 +91,34 @@ function findKeepTogetherZones(
       let sibling = heading.nextElementSibling;
       let steps = 0;
 
-      // Walk forward through siblings to find the first substantial content block
-      while (sibling && steps < 4) {
+      // Walk forward through siblings — increased limit to catch headings
+      // followed by paragraphs then a diagram/table further down
+      while (sibling && steps < 8) {
         const tag = sibling.tagName.toLowerCase();
         const sRect = sibling.getBoundingClientRect();
         bottomRect = sRect;
 
-        // Stop after hitting a content block (table, diagram, code, paragraph)
+        // Stop after hitting a substantial content block (table, diagram, code, list)
         if (tag === "table" || tag === "pre" || tag === "div" || tag === "ul" || tag === "ol") {
           break;
         }
         // Also stop at a same-or-higher-level heading (don't group unrelated sections)
         if ((tag === "h2" || tag === "h3" || tag === "h4") && steps > 0) {
-          // But include this heading in the zone if it's a sub-heading (e.g., h2 then h3)
           const hLevel = parseInt(heading.tagName[1]);
           const sLevel = parseInt(tag[1]);
           if (sLevel <= hLevel) {
-            // Same or higher level heading → don't include, use previous sibling
             bottomRect = (sibling.previousElementSibling || heading).getBoundingClientRect();
             break;
           }
-          // Sub-heading → continue to include it + its content
         }
+        // Continue past paragraphs (p) — don't stop, keep walking to find the content block
         sibling = sibling.nextElementSibling;
         steps++;
       }
 
       const groupH = bottomRect.bottom - hRect.top;
-      // Only create zone if it's not taller than ~70% of a page (in pixels)
-      if (groupH > 0 && groupH < 900) {
+      // Allow larger zones (~1200px) to accommodate heading + paragraphs + diagram
+      if (groupH > 0 && groupH < 1200) {
         zones.push({
           canvasTop: (hRect.top - artTop) * canvasScale,
           canvasBottom: (bottomRect.bottom - artTop) * canvasScale,
