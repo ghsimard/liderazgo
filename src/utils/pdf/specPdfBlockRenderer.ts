@@ -373,23 +373,42 @@ function luminance(r: number, g: number, b: number): number {
 /**
  * Fix text contrast on SVG shapes based on fill luminance.
  * Dark fills → white text, Light fills → dark text.
+ * Searches broadly for text elements within node structure.
  */
 function fixSvgTextContrast(svg: Element) {
+  // Process all colored shapes
   svg.querySelectorAll('circle, ellipse, rect, path, polygon').forEach(shape => {
     const fill = shape.getAttribute('fill') || shape.getAttribute('style')?.match(/fill:\s*([^;]+)/)?.[1] || '';
     if (!fill || fill === 'none' || fill === 'transparent') return;
     const rgb = parseColorToRgb(fill);
     if (!rgb) return;
     const lum = luminance(...rgb);
-    const parent = shape.closest('g');
-    if (!parent) return;
-    // Only adjust text that is a direct child of the same group
-    parent.querySelectorAll('text, tspan').forEach(t => {
-      const textEl = t as SVGElement;
-      const textColor = lum < 0.5 ? '#ffffff' : '#1e293b';
-      textEl.setAttribute('fill', textColor);
-      textEl.style.fill = textColor;
-    });
+    const textColor = lum < 0.5 ? '#ffffff' : '#1e293b';
+    
+    // For mindmaps, look for text in the entire ancestor chain
+    let current: Element | null = shape;
+    while (current && current.tagName.toLowerCase() !== 'svg') {
+      if (current.tagName.toLowerCase() === 'g') {
+        current.querySelectorAll('text, tspan').forEach(t => {
+          const textEl = t as SVGElement;
+          textEl.setAttribute('fill', textColor);
+          textEl.style.fill = textColor;
+        });
+      }
+      current = current.parentElement;
+    }
+  });
+  
+  // Additional pass: force white text on dark primary color nodes
+  svg.querySelectorAll('[style*="fill:#1e40af"], [style*="fill: rgb(30, 64, 175)"], [fill="#1e40af"]').forEach(el => {
+    const parent = el.closest('g');
+    if (parent) {
+      parent.querySelectorAll('text, tspan').forEach(t => {
+        const textEl = t as SVGElement;
+        textEl.setAttribute('fill', '#ffffff');
+        textEl.style.fill = '#ffffff';
+      });
+    }
   });
 }
 
