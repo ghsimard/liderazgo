@@ -96,7 +96,7 @@ export async function generarPDFEncuesta360EnBlanco(
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.text("Glosario:", margin, y);
-  y += 3.5;
+  y += 3;
   doc.setFont("helvetica", "normal");
   GLOSSARY.forEach((g) => {
     const lines = doc.splitTextToSize(`• ${g}`, contentW - 4);
