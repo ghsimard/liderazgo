@@ -14,6 +14,11 @@
 
 import jsPDF from "jspdf";
 
+// Static fallback imports for resilience (e.g. Render 404s)
+import staticLogoRltWhite from "@/assets/logo_rlt_white.png";
+import staticLogoCltWhite from "@/assets/logo_clt_white.png";
+import staticLogoCosmo from "@/assets/logo_cosmo.png";
+
 // ── Dimension constants (mm) ──────────────────────────────────────
 export const COVER_LOGO_H = 24;   // Cover page programme logos
 export const HEADER_LOGO_H = 14;  // Interior page header logos
@@ -29,7 +34,7 @@ export const CONTENT_BOTTOM_MARGIN = 28;  // Content must stop at pageH - this v
 // ── Image loading utilities ───────────────────────────────────────
 
 /** Convert an image URL / imported asset to a base64 data URL */
-export function loadImageAsBase64(src: string): Promise<string> {
+export function loadImageAsBase64(src: string, fallbackSrc?: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -42,7 +47,14 @@ export function loadImageAsBase64(src: string): Promise<string> {
       ctx.drawImage(img, 0, 0);
       resolve(canvas.toDataURL("image/png"));
     };
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    img.onerror = () => {
+      if (fallbackSrc && fallbackSrc !== src) {
+        console.warn(`Failed to load image: ${src}, trying fallback: ${fallbackSrc}`);
+        loadImageAsBase64(fallbackSrc).then(resolve, reject);
+      } else {
+        reject(new Error(`Failed to load image: ${src}`));
+      }
+    };
     img.src = src;
   });
 }
@@ -111,11 +123,11 @@ export async function loadPdfLogos(
 ): Promise<LoadedLogos> {
   const UNIT = { width: 1, height: 1 };
   const [rltB64, cltB64, cosmoB64, rltSize, cltSize, cosmoSize] = await Promise.all([
-    showRlt ? loadImageAsBase64(sources.logoRLT) : Promise.resolve(""),
-    showClt ? loadImageAsBase64(sources.logoCLT) : Promise.resolve(""),
-    loadImageAsBase64(sources.logoCosmo),
-    showRlt ? getImageNaturalSize(sources.logoRLT) : Promise.resolve(UNIT),
-    showClt ? getImageNaturalSize(sources.logoCLT) : Promise.resolve(UNIT),
+    showRlt ? loadImageAsBase64(sources.logoRLT, staticLogoRltWhite) : Promise.resolve(""),
+    showClt ? loadImageAsBase64(sources.logoCLT, staticLogoCltWhite) : Promise.resolve(""),
+    loadImageAsBase64(sources.logoCosmo, staticLogoCosmo),
+    showRlt ? getImageNaturalSize(sources.logoRLT).catch(() => getImageNaturalSize(staticLogoRltWhite)) : Promise.resolve(UNIT),
+    showClt ? getImageNaturalSize(sources.logoCLT).catch(() => getImageNaturalSize(staticLogoCltWhite)) : Promise.resolve(UNIT),
     getImageNaturalSize(sources.logoCosmo),
   ]);
   return { rltB64, cltB64, cosmoB64, rltSize, cltSize, cosmoSize, showRlt, showClt };
