@@ -582,6 +582,13 @@ export default function FichaRLTForm() {
     setShowNameModal(false);
   };
 
+  const handleNameFieldFocus = () => {
+    if (viewMode) return;
+    setModalNombres(getValues("nombres") || "");
+    setModalApellidos(getValues("apellidos") || "");
+    setShowNameModal(true);
+  };
+
   const regionActual = watch("region");
   const lenguaMaterna = watch("lengua_materna");
   const enfermedadBase = watch("enfermedad_base");
@@ -1106,6 +1113,7 @@ export default function FichaRLTForm() {
                   {...register("nombres")}
                   placeholder="Ej: María Carolina"
                   hasError={!!err("nombres")}
+                  onFocus={handleNameFieldFocus}
                 />
               </FormFieldWrapper>
 
@@ -1115,6 +1123,7 @@ export default function FichaRLTForm() {
                   {...register("apellidos")}
                   placeholder="Ej: Rodríguez Pérez"
                   hasError={!!err("apellidos")}
+                  onFocus={handleNameFieldFocus}
                 />
               </FormFieldWrapper>
 
