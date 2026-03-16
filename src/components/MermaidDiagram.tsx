@@ -24,6 +24,29 @@ function initMermaid() {
   mermaidInitialized = true;
 }
 
+const DARK_FILLS = ["#1e40af", "#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6"];
+
+/**
+ * Post-render fix: ensures white text on dark-blue nodes.
+ */
+function fixWhiteTextOnDarkNodes(container: HTMLElement) {
+  const svgEl = container.querySelector("svg");
+  if (!svgEl) return;
+
+  svgEl.querySelectorAll("circle, ellipse, rect, path").forEach((shape) => {
+    const fill = (shape.getAttribute("fill") || "").toLowerCase();
+    if (DARK_FILLS.includes(fill)) {
+      const parent = shape.closest("g");
+      if (parent) {
+        parent.querySelectorAll("text, tspan").forEach((t) => {
+          (t as SVGElement).setAttribute("fill", "#ffffff");
+          (t as SVGElement).style.fill = "#ffffff";
+        });
+      }
+    }
+  });
+}
+
 interface MermaidDiagramProps {
   chart: string;
   id: string;
@@ -54,6 +77,13 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
     render();
     return () => { cancelled = true; };
   }, [chart, id]);
+
+  // Fix white text on dark nodes after SVG is injected into DOM
+  useEffect(() => {
+    if (svg && containerRef.current) {
+      fixWhiteTextOnDarkNodes(containerRef.current);
+    }
+  }, [svg]);
 
   if (error) {
     return (
