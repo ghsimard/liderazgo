@@ -1,39 +1,63 @@
 
 
-## Plan : Générer un PDF « Champs et règles de validation – Ficha de Información »
+## Probleme actuel
 
-### Approche
-Créer une fonction utilitaire qui génère un PDF côté client (jsPDF + autoTable) listant tous les champs du formulaire Ficha de Información avec leurs règles de validation, puis ajouter un bouton pour le déclencher depuis la page MiPanel ou AdminDashboard.
+Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
 
-### Fichier à créer
+## Proposition : Sidebar avec sections groupees
 
-**`src/utils/fichaFieldsPdfGenerator.ts`**
+Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
 
-Fonction `generateFichaFieldsPdf()` qui :
-1. Crée un document jsPDF A4
-2. Ajoute un titre « Ficha de Información – Champs et règles de validation »
-3. Ajoute la date de génération
-4. Utilise `autoTable` pour rendre un tableau avec 4 colonnes :
-   - **#** (numéro)
-   - **Campo** (nom du champ)
-   - **Obligatorio** (Sí / No)
-   - **Reglas de validación** (description des règles)
-5. Les 53 champs du schéma Zod seront listés avec leurs règles extraites statiquement (min length, format, regex, etc.)
-6. Déclenche le téléchargement `ficha-campos-validacion.pdf`
+### Structure proposee
 
-### Données du tableau (extraites du schéma Zod lignes 42-117)
+```text
+┌──────────────────┬──────────────────────────────────┐
+│  SIDEBAR         │  CONTENU                         │
+│                  │                                  │
+│  ▼ Formularios   │                                  │
+│    Enlaces       │                                  │
+│                  │                                  │
+│  ▼ Fichas RLT    │                                  │
+│    Lista         │                                  │
+│    Regiones      │                                  │
+│                  │                                  │
+│  ▼ Encuesta 360° │                                  │
+│    Config        │                                  │
+│    Inicial       │                                  │
+│    Final         │                                  │
+│    Informes Ini. │                                  │
+│    Informes Fin. │                                  │
+│                  │                                  │
+│  ▼ Analisis      │                                  │
+│    MEL           │                                  │
+│    Rubricas      │                                  │
+│                  │                                  │
+│  ▼ Sistema       │                                  │
+│    Admins        │                                  │
+│    Apreciaciones*│                                  │
+│    Mensajes*     │                                  │
+│    Changelog*    │                                  │
+│                  │  (* = superadmin only)            │
+└──────────────────┴──────────────────────────────────┘
+```
 
-Les champs seront groupés par section :
-- **Datos personales** : acepta_datos (obligatoire, doit être true), nombres/apellidos (min 2 car.), genero, numero_cedula, fecha_nacimiento (18-70 ans), etc.
-- **Contacto** : celular_personal (10 dígitos), correo_personal (email valide), etc.
-- **Formación** : tipo_formacion, titulo_pregrado (obligatoire), titres optionnels
-- **Información institucional** : codigo_dane (12 dígitos numériques), jornadas/niveles_educativos/tipo_bachillerato (min 1 sélection), statistiques du personnel (obligatoires)
-- **Estadísticas estudiantiles** : champs optionnels
+### Modifications
 
-### Déclenchement
+1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
 
-Ajouter un bouton « Descargar campos y reglas (PDF) » dans la page d'admin ou directement appeler la fonction depuis la console. Option la plus simple : ajouter un petit bouton dans `AdminFichasTab.tsx` à côté des actions existantes.
+2. **Modifier `src/pages/AdminPage.tsx`** :
+   - Envelopper le layout dans `SidebarProvider`
+   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
+   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
+   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
+   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
 
-### Fichier modifié
-- `src/components/admin/AdminFichasTab.tsx` — ajout d'un bouton pour déclencher le PDF
+3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
+
+### Points techniques
+
+- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
+- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
+- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
+- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
 
