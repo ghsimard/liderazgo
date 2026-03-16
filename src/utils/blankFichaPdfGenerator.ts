@@ -169,9 +169,9 @@ export async function generarPDFFichaEnBlanco(
     doc.setLineWidth(0.3);
     for (let i = 0; i < lines; i++) {
       doc.line(margin + 4, y + 1, margin + contentW, y + 1);
-      y += 5;
+      y += 4;
     }
-    y += 2;
+    y += 1;
   };
 
   // ── INFORMACIÓN PERSONAL ──
