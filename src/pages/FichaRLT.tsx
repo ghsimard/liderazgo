@@ -35,6 +35,9 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 
+// ── Helpers ──────────────────────────────────────────────────
+const stripPhone = (v: string) => v.replace(/\D/g, "");
+
 // ── Schema de validación ─────────────────────────────────────
 const schema = z.object({
   acepta_datos: z.literal(true, { errorMap: () => ({ message: "Debe aceptar el tratamiento de datos personales" }) }),
@@ -54,7 +57,7 @@ const schema = z.object({
   lugar_nacimiento: z.string().optional(),
   lengua_materna: z.string().min(1, "Seleccione una lengua materna"),
   lengua_otra: z.string().optional(),
-  celular_personal: z.string().min(7, "Ingrese un número celular válido"),
+  celular_personal: z.string().min(1, "Ingrese un número celular válido").transform(stripPhone).pipe(z.string().length(10, "Debe tener exactamente 10 dígitos")),
   codigo_pais_celular: z.string().default("+57"),
   correo_personal: z.string().email("Ingrese un correo electrónico válido"),
   correo_institucional: z.string().email("Ingrese un correo institucional válido").optional().or(z.literal("")),
@@ -62,7 +65,7 @@ const schema = z.object({
   enfermedad_base: z.string().min(1, "Seleccione una opción"),
   enfermedad_detalle: z.string().optional(),
   contacto_emergencia: z.string().optional(),
-  telefono_emergencia: z.string().optional(),
+  telefono_emergencia: z.string().optional().transform((v) => v ? stripPhone(v) : v).refine((v) => !v || v.length === 0 || v.length === 10, { message: "Debe tener exactamente 10 dígitos" }),
   codigo_pais_telefono_emergencia: z.string().default("+57"),
   discapacidad: z.string().min(1, "Seleccione una opción"),
   discapacidad_detalle: z.string().optional(),
@@ -89,7 +92,7 @@ const schema = z.object({
   comuna_barrio: z.string().optional(),
   direccion_sede_principal: z.string().optional(),
   sitio_web: z.string().optional(),
-  telefono_ie: z.string().optional(),
+  telefono_ie: z.string().optional().transform((v) => v ? stripPhone(v) : v).refine((v) => !v || v.length === 0 || v.length === 10, { message: "Debe tener exactamente 10 dígitos" }),
   codigo_pais_telefono_ie: z.string().default("+57"),
   zona_sede: z.string().min(1, "Seleccione la zona de sede"),
   sedes_rural: z.string().min(1, "Ingrese el número de sedes rurales"),
@@ -680,7 +683,7 @@ export default function FichaRLTForm() {
       lugar_nacimiento: data.lugar_nacimiento ?? null,
       lengua_materna: data.lengua_materna,
       lengua_otra: data.lengua_otra ?? null,
-      celular_personal: data.celular_personal,
+      celular_personal: stripPhone(data.celular_personal),
       codigo_pais_celular: data.codigo_pais_celular ?? "+57",
       correo_personal: data.correo_personal,
       correo_institucional: data.correo_institucional || null,
@@ -688,7 +691,7 @@ export default function FichaRLTForm() {
       enfermedad_base: data.enfermedad_base,
       enfermedad_detalle: data.enfermedad_detalle ?? null,
       contacto_emergencia: data.contacto_emergencia ?? null,
-      telefono_emergencia: data.telefono_emergencia ?? null,
+      telefono_emergencia: data.telefono_emergencia ? stripPhone(data.telefono_emergencia) : null,
       codigo_pais_telefono_emergencia: data.codigo_pais_telefono_emergencia ?? "+57",
       discapacidad: data.discapacidad,
       discapacidad_detalle: data.discapacidad_detalle ?? null,
@@ -712,7 +715,7 @@ export default function FichaRLTForm() {
       comuna_barrio: data.comuna_barrio ?? null,
       direccion_sede_principal: data.direccion_sede_principal ?? null,
       sitio_web: data.sitio_web ?? null,
-      telefono_ie: data.telefono_ie ?? null,
+      telefono_ie: data.telefono_ie ? stripPhone(data.telefono_ie) : null,
       codigo_pais_telefono_ie: data.codigo_pais_telefono_ie ?? "+57",
       zona_sede: data.zona_sede ?? null,
       sedes_rural: toInt(data.sedes_rural),
