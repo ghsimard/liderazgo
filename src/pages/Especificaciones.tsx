@@ -15,6 +15,7 @@ export default function Especificaciones() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const navigate = useNavigate();
   const mermaidCounter = useRef(0);
+  const articleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/SPECIFICATIONS.md")
@@ -26,7 +27,7 @@ export default function Especificaciones() {
   const handlePdf = async () => {
     setPdfLoading(true);
     try {
-      await generarPDFSpecifications(md, { logoRLT, logoCosmo });
+      await generarPDFSpecifications(md, { logoRLT, logoCosmo }, articleRef.current);
     } finally {
       setPdfLoading(false);
     }
@@ -39,6 +40,9 @@ export default function Especificaciones() {
       </div>
     );
   }
+
+  // Reset mermaid counter on each render
+  mermaidCounter.current = 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,7 +62,11 @@ export default function Especificaciones() {
         </div>
       </div>
 
-      <article className="max-w-5xl mx-auto px-4 py-8 md:px-8 print:px-0 print:max-w-none">
+      <article
+        ref={articleRef}
+        data-pdf-target
+        className="max-w-5xl mx-auto px-4 py-8 md:px-8 print:px-0 print:max-w-none"
+      >
         <div className="prose prose-slate dark:prose-invert max-w-none
           prose-headings:scroll-mt-20
           prose-h1:text-3xl prose-h1:font-bold prose-h1:text-foreground prose-h1:border-b prose-h1:border-border prose-h1:pb-3 prose-h1:mb-6
