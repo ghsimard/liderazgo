@@ -36,7 +36,7 @@ const fields: FieldRow[] = [
   { section: "Contacto", campo: "telefono_emergencia", obligatorio: "No", reglas: "10 dígitos numéricos o vacío" },
 
   // ── Formación ──
-  { section: "Formación", campo: "tipo_formacion", obligatorio: "No", reglas: "Selección opcional" },
+  { section: "Formación", campo: "tipo_formacion", obligatorio: "Sí", reglas: "Selección obligatoria" },
   { section: "Formación", campo: "titulo_pregrado", obligatorio: "Sí", reglas: "Texto obligatorio" },
   { section: "Formación", campo: "titulo_especializacion", obligatorio: "No", reglas: "Texto libre, opcional" },
   { section: "Formación", campo: "titulo_maestria", obligatorio: "No", reglas: "Texto libre, opcional" },
