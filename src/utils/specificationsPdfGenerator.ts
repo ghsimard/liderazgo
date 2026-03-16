@@ -94,7 +94,6 @@ function addTitlePage(
  */
 export async function generarPDFSpecifications(
   _markdownContent: string,
-  logoSources: { logoRLT: string; logoCosmo: string },
   articleElement?: HTMLElement | null,
 ): Promise<void> {
   if (!articleElement) {
