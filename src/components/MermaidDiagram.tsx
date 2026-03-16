@@ -118,6 +118,49 @@ function fixTextContrast(container: HTMLElement) {
       });
     }
   }
+
+  // Explicit override for section 8 labels requested by user
+  const forceWhiteLabels = new Set([
+    "plataforma rlt / clt",
+    "enlaces",
+    "fichas rlt",
+    "rubricas",
+    "encuesta 360",
+    "informe de modulo",
+    "ambiente escolar",
+    "satisfacciones",
+    "mel",
+    "sistema",
+  ]);
+
+  const normalizeLabel = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+
+  svgEl.querySelectorAll("text, foreignObject").forEach((label) => {
+    const rawText = (label.textContent || "").trim();
+    if (!rawText) return;
+
+    if (!forceWhiteLabels.has(normalizeLabel(rawText))) return;
+
+    if (label.tagName.toLowerCase() === "text") {
+      const svgText = label as SVGElement;
+      svgText.setAttribute("fill", "#ffffff");
+      svgText.style.setProperty("fill", "#ffffff", "important");
+      svgText.querySelectorAll("tspan").forEach((tspan) => {
+        (tspan as SVGElement).setAttribute("fill", "#ffffff");
+        (tspan as SVGElement).style.setProperty("fill", "#ffffff", "important");
+      });
+    } else {
+      (label as Element).querySelectorAll("div, span, p").forEach((el) => {
+        (el as HTMLElement).style.setProperty("color", "#ffffff", "important");
+      });
+    }
+  });
 }
 
 interface MermaidDiagramProps {
