@@ -23,6 +23,7 @@ export default function RegionPdfPicker({ open, onOpenChange, onConfirm, loading
   const [regions, setRegions] = useState<Region[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [fetching, setFetching] = useState(false);
+  const downloadBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
