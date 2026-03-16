@@ -91,7 +91,8 @@ function applyFinalLabelColors(container: HTMLElement) {
 
   const shapeInfos = Array.from(svgEl.querySelectorAll("circle, ellipse, rect, path, polygon"))
     .map((shape) => {
-      const fill = shape.getAttribute("fill") || (shape as HTMLElement).style?.fill || "";
+      const computed = window.getComputedStyle(shape as Element);
+      const fill = shape.getAttribute("fill") || (shape as HTMLElement).style?.fill || computed.fill || "";
       if (!fill || fill === "none" || fill === "transparent") return null;
 
       const rgb = parseColorToRgb(fill);
@@ -105,9 +106,13 @@ function applyFinalLabelColors(container: HTMLElement) {
         bbox,
         area: bbox.width * bbox.height,
         rgb,
+        computedStroke: computed.stroke,
       };
     })
-    .filter((s): s is { shape: Element; bbox: DOMRect; area: number; rgb: [number, number, number] } => Boolean(s));
+    .filter(
+      (s): s is { shape: Element; bbox: DOMRect; area: number; rgb: [number, number, number]; computedStroke: string } =>
+        Boolean(s)
+    );
 
   // Force blue nodes/circles to a lighter blue in the live UI.
   for (const shapeInfo of shapeInfos) {
@@ -115,8 +120,9 @@ function applyFinalLabelColors(container: HTMLElement) {
     (shapeInfo.shape as SVGElement).setAttribute("fill", LIGHT_BLUE_FILL);
     (shapeInfo.shape as SVGElement).style.setProperty("fill", LIGHT_BLUE_FILL, "important");
 
-    const stroke = (shapeInfo.shape as SVGElement).getAttribute("stroke");
-    if (stroke && stroke !== "none") {
+    const strokeAttr = ((shapeInfo.shape as SVGElement).getAttribute("stroke") || "").toLowerCase();
+    const computedStroke = (shapeInfo.computedStroke || "").toLowerCase();
+    if (strokeAttr !== "none" || (computedStroke && computedStroke !== "none" && computedStroke !== "rgba(0, 0, 0, 0)")) {
       (shapeInfo.shape as SVGElement).setAttribute("stroke", LIGHT_BLUE_BORDER);
       (shapeInfo.shape as SVGElement).style.setProperty("stroke", LIGHT_BLUE_BORDER, "important");
     }
