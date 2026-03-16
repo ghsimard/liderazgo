@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import mermaid from "mermaid";
 
 let mermaidInitialized = false;
@@ -30,7 +30,12 @@ function initMermaid() {
 function parseColorToRgb(color: string): [number, number, number] | null {
   const c = color.trim().toLowerCase();
   const hex3 = c.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/);
-  if (hex3) return [parseInt(hex3[1] + hex3[1], 16), parseInt(hex3[2] + hex3[2], 16), parseInt(hex3[3] + hex3[3], 16)];
+  if (hex3)
+    return [
+      parseInt(hex3[1] + hex3[1], 16),
+      parseInt(hex3[2] + hex3[2], 16),
+      parseInt(hex3[3] + hex3[3], 16),
+    ];
   const hex6 = c.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/);
   if (hex6) return [parseInt(hex6[1], 16), parseInt(hex6[2], 16), parseInt(hex6[3], 16)];
   const rgbMatch = c.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
@@ -45,17 +50,38 @@ function luminance(r: number, g: number, b: number): number {
   return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
 }
 
-const FORCE_WHITE_LABELS = [
-  "plataforma rlt / clt",
-  "enlaces",
-  "fichas rlt",
-  "rubricas",
-  "encuesta 360",
-  "informe de modulo",
-  "ambiente escolar",
-  "satisfacciones",
-  "mel",
-  "sistema",
+const SECTION_DARK_LABEL_RULES: Array<{ chartMarker: string; labels: string[] }> = [
+  {
+    chartMarker: "root((Plataforma RLT / CLT))",
+    labels: [
+      "Hub Encuesta 360",
+      "Ambiente Escolar",
+      "Satisfacciones",
+      "MEL",
+      "Fichas RLT",
+      "Encuesta 360",
+      "Enlaces",
+      "Rubricas",
+      "Sistema",
+      "Informe de Modulo",
+    ],
+  },
+  {
+    chartMarker: "root((Enlaces))",
+    labels: ["Encuesta 360 por tipo", "Ambiente Escolar por tipo"],
+  },
+  {
+    chartMarker: "root((Informe de Modulo))",
+    labels: ["Informe de Modulo"],
+  },
+  {
+    chartMarker: "root((Ambiente Escolar))",
+    labels: ["Enlaces"],
+  },
+  {
+    chartMarker: "root((MEL))",
+    labels: ["MEL 360", "MEL Rubricas"],
+  },
 ];
 
 function normalizeLabel(value: string): string {
@@ -67,25 +93,44 @@ function normalizeLabel(value: string): string {
     .trim();
 }
 
-function shouldForceWhiteLabel(value: string): boolean {
-  const normalized = normalizeLabel(value);
-  return FORCE_WHITE_LABELS.some((target) => normalized.includes(target));
+function getForcedDarkLabels(chartSource: string): Set<string> {
+  const normalizedChart = normalizeLabel(chartSource);
+  const labels = new Set<string>();
+
+  for (const rule of SECTION_DARK_LABEL_RULES) {
+    if (!normalizedChart.includes(normalizeLabel(rule.chartMarker))) continue;
+    rule.labels.forEach((label) => labels.add(normalizeLabel(label)));
+  }
+
+  return labels;
 }
 
-function applyWhiteTextStyles(el: Element) {
+function shouldForceDarkLabel(value: string, forcedDarkLabels: Set<string>): boolean {
+  if (forcedDarkLabels.size === 0) return false;
+
+  const normalized = normalizeLabel(value);
+  for (const target of forcedDarkLabels) {
+    if (normalized === target || normalized.includes(target)) return true;
+  }
+
+  return false;
+}
+
+function applyDarkTextStyles(el: Element) {
   const existingStyle = el.getAttribute("style") || "";
-  el.setAttribute("style", `${existingStyle}; fill:#ffffff !important; color:#ffffff !important;`);
+  el.setAttribute("style", `${existingStyle}; fill:#000000 !important; color:#000000 !important;`);
 
   if (["text", "tspan", "path"].includes(el.tagName.toLowerCase())) {
-    el.setAttribute("fill", "#ffffff");
+    el.setAttribute("fill", "#000000");
   }
 }
 
 /**
- * Pre-injection hard override for specific section 8 labels.
- * Works directly on the generated SVG string.
+ * Pre-injection targeted dark override for specific section labels.
  */
-function forceSpecificLabelsWhite(svgMarkup: string): string {
+function forceSpecificLabelsDark(svgMarkup: string, forcedDarkLabels: Set<string>): string {
+  if (forcedDarkLabels.size === 0) return svgMarkup;
+
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgMarkup, "image/svg+xml");
@@ -93,15 +138,19 @@ function forceSpecificLabelsWhite(svgMarkup: string): string {
 
     root.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach((el) => {
       const rawText = (el.textContent || "").trim();
-      if (!rawText || !shouldForceWhiteLabel(rawText)) return;
+      if (!rawText || !shouldForceDarkLabel(rawText, forcedDarkLabels)) return;
 
-      applyWhiteTextStyles(el);
-      el.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach(applyWhiteTextStyles);
+      applyDarkTextStyles(el);
+      el
+        .querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p")
+        .forEach(applyDarkTextStyles);
 
       const group = el.closest("g");
       if (group) {
-        applyWhiteTextStyles(group);
-        group.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach(applyWhiteTextStyles);
+        applyDarkTextStyles(group);
+        group
+          .querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p")
+          .forEach(applyDarkTextStyles);
       }
     });
 
@@ -114,7 +163,7 @@ function forceSpecificLabelsWhite(svgMarkup: string): string {
 /**
  * Post-render contrast fix for generic nodes.
  */
-function fixTextContrast(container: HTMLElement) {
+function fixTextContrast(container: HTMLElement, forcedDarkLabels: Set<string>) {
   const svgEl = container.querySelector("svg");
   if (!svgEl) return;
 
@@ -174,16 +223,16 @@ function fixTextContrast(container: HTMLElement) {
     }
   }
 
-  // Defensive second pass for the requested section 8 labels on live DOM
+  // Second pass: specific labels must stay dark for section consistency
   svgEl.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach((el) => {
     const rawText = (el.textContent || "").trim();
-    if (!rawText || !shouldForceWhiteLabel(rawText)) return;
+    if (!rawText || !shouldForceDarkLabel(rawText, forcedDarkLabels)) return;
 
-    applyWhiteTextStyles(el);
+    applyDarkTextStyles(el);
     const group = el.closest("g");
     if (group) {
-      applyWhiteTextStyles(group);
-      group.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach(applyWhiteTextStyles);
+      applyDarkTextStyles(group);
+      group.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach(applyDarkTextStyles);
     }
   });
 }
@@ -197,6 +246,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>("");
   const [error, setError] = useState(false);
+  const forcedDarkLabels = useMemo(() => getForcedDarkLabels(chart), [chart]);
 
   useEffect(() => {
     let cancelled = false;
@@ -207,7 +257,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
         const uniqueId = `mermaid-${id}-${Date.now()}`;
         const { svg: renderedSvg } = await mermaid.render(uniqueId, chart);
         if (!cancelled) {
-          setSvg(forceSpecificLabelsWhite(renderedSvg));
+          setSvg(forceSpecificLabelsDark(renderedSvg, forcedDarkLabels));
           setError(false);
         }
       } catch {
@@ -219,13 +269,13 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
     return () => {
       cancelled = true;
     };
-  }, [chart, id]);
+  }, [chart, id, forcedDarkLabels]);
 
   useEffect(() => {
     if (!svg || !containerRef.current) return;
 
     const container = containerRef.current;
-    const apply = () => fixTextContrast(container);
+    const apply = () => fixTextContrast(container, forcedDarkLabels);
 
     apply();
     const rafId = requestAnimationFrame(apply);
@@ -235,7 +285,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
       cancelAnimationFrame(rafId);
       window.clearTimeout(timeoutId);
     };
-  }, [svg, chart]);
+  }, [svg, forcedDarkLabels]);
 
   if (error) {
     return (
