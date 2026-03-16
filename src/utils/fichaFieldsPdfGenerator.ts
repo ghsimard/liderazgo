@@ -65,8 +65,8 @@ const fields: FieldRow[] = [
   { section: "Datos de la IE", campo: "Teléfono de la IE", obligatorio: "No", reglas: "10 dígitos numéricos o vacío" },
   { section: "Datos de la IE", campo: "Sitio web de la IE", obligatorio: "No", reglas: "Texto libre, opcional" },
   { section: "Datos de la IE", campo: "Zona de la sede principal de la IE", obligatorio: "Sí", reglas: "Selección obligatoria (Urbana / Rural)" },
-  { section: "Datos de la IE", campo: "Número de sedes en zona rural", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
-  { section: "Datos de la IE", campo: "Número de sedes en zona urbana", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
+  { section: "Datos de la IE", campo: "Número de sedes en zona rural", obligatorio: "Sí", reglas: "Número entero >= 0, obligatorio" },
+  { section: "Datos de la IE", campo: "Número de sedes en zona urbana", obligatorio: "Sí", reglas: "Número entero >= 0, obligatorio" },
   { section: "Datos de la IE", campo: "Jornadas de la IE", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (checkbox)" },
   { section: "Datos de la IE", campo: "Grupos étnicos en la IE", obligatorio: "No", reglas: "Selección múltiple opcional (checkbox)" },
   { section: "Datos de la IE", campo: "Proyectos transversales de la IE", obligatorio: "No", reglas: "Texto libre, opcional" },
@@ -76,17 +76,17 @@ const fields: FieldRow[] = [
   { section: "Datos de la IE", campo: "Niveles educativos", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (auto-calculado)" },
 
   // ── Personal de la IE ──
-  { section: "Personal de la IE", campo: "Número de docentes", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
-  { section: "Personal de la IE", campo: "Número de coordinadores/as", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
-  { section: "Personal de la IE", campo: "Número de administrativos", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
-  { section: "Personal de la IE", campo: "Número de orientadores/as", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
+  { section: "Personal de la IE", campo: "Número de docentes", obligatorio: "Sí", reglas: "Número entero >= 0, obligatorio" },
+  { section: "Personal de la IE", campo: "Número de coordinadores/as", obligatorio: "Sí", reglas: "Número entero >= 0, obligatorio" },
+  { section: "Personal de la IE", campo: "Número de administrativos", obligatorio: "Sí", reglas: "Número entero >= 0, obligatorio" },
+  { section: "Personal de la IE", campo: "Número de orientadores/as", obligatorio: "Sí", reglas: "Número entero >= 0, obligatorio" },
 
   // ── Estudiantes por nivel educativo ──
-  { section: "Estudiantes por nivel educativo", campo: "Preescolar (Prejardín, Jardín, Transición)", obligatorio: "No", reglas: "Número entero ≥ 0 o vacío" },
-  { section: "Estudiantes por nivel educativo", campo: "Básica primaria", obligatorio: "No", reglas: "Número entero ≥ 0 o vacío" },
-  { section: "Estudiantes por nivel educativo", campo: "Básica secundaria", obligatorio: "No", reglas: "Número entero ≥ 0 o vacío" },
-  { section: "Estudiantes por nivel educativo", campo: "Media", obligatorio: "No", reglas: "Número entero ≥ 0 o vacío" },
-  { section: "Estudiantes por nivel educativo", campo: "Ciclo complementario", obligatorio: "No", reglas: "Número entero ≥ 0 o vacío" },
+  { section: "Estudiantes por nivel educativo", campo: "Preescolar (Prejardín, Jardín, Transición)", obligatorio: "No", reglas: "Número entero >= 0 o vacío" },
+  { section: "Estudiantes por nivel educativo", campo: "Básica primaria", obligatorio: "No", reglas: "Número entero >= 0 o vacío" },
+  { section: "Estudiantes por nivel educativo", campo: "Básica secundaria", obligatorio: "No", reglas: "Número entero >= 0 o vacío" },
+  { section: "Estudiantes por nivel educativo", campo: "Media", obligatorio: "No", reglas: "Número entero >= 0 o vacío" },
+  { section: "Estudiantes por nivel educativo", campo: "Ciclo complementario", obligatorio: "No", reglas: "Número entero >= 0 o vacío" },
 ];
 
 export function generateFichaFieldsPdf() {
