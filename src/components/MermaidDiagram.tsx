@@ -105,10 +105,10 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
     return () => { cancelled = true; };
   }, [chart, id]);
 
-  // Fix white text on dark nodes after SVG is injected into DOM
+  // Fix text contrast on colored nodes after SVG is injected into DOM
   useEffect(() => {
     if (svg && containerRef.current) {
-      fixWhiteTextOnDarkNodes(containerRef.current);
+      fixTextContrast(containerRef.current);
     }
   }, [svg]);
 
