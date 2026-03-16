@@ -17,7 +17,7 @@ const fields: FieldRow[] = [
   { section: "Datos personales", campo: "Número de cédula", obligatorio: "Sí", reglas: "Texto obligatorio" },
   { section: "Datos personales", campo: "Fecha de nacimiento", obligatorio: "Sí", reglas: "Fecha válida; edad entre 18 y 70 años" },
   { section: "Datos personales", campo: "Lugar de nacimiento", obligatorio: "No", reglas: "Texto libre, opcional" },
-  { section: "Datos personales", campo: "Lengua materna", obligatorio: "Sí", reglas: "Selección obligatoria" },
+  { section: "Datos personales", campo: "Lengua materna", obligatorio: "Sí", reglas: "Selección obligatoria (Español / Otra)" },
   { section: "Datos personales", campo: "Otra lengua materna", obligatorio: "No", reglas: "Texto libre; requerido si lengua materna = Otra" },
 
   // ── Contacto ──
@@ -45,18 +45,18 @@ const fields: FieldRow[] = [
   { section: "Formación Académica", campo: "Otros títulos ¿cuáles?", obligatorio: "No", reglas: "Texto libre, opcional" },
 
   // ── Información institucional ──
-  { section: "Información Institucional", campo: "Región", obligatorio: "Sí", reglas: "Selección obligatoria" },
-  { section: "Información Institucional", campo: "Entidad Territorial", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde región)" },
-  { section: "Información Institucional", campo: "Municipio", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde entidad)" },
+  { section: "Información Institucional", campo: "Región", obligatorio: "Sí", reglas: "Selección obligatoria (valores desde base de datos)" },
+  { section: "Información Institucional", campo: "Entidad Territorial", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde región, valores desde base de datos)" },
+  { section: "Información Institucional", campo: "Municipio", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde entidad, valores desde base de datos)" },
   { section: "Información Institucional", campo: "Comuna, barrio, corregimiento o localidad", obligatorio: "No", reglas: "Texto libre, opcional" },
-  { section: "Información Institucional", campo: "Nombre de la IE", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde municipio)" },
+  { section: "Información Institucional", campo: "Nombre de la IE", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde municipio, valores desde base de datos)" },
   { section: "Información Institucional", campo: "Código DANE (12 dígitos)", obligatorio: "Sí", reglas: "Obligatorio, exactamente 12 dígitos numéricos (/^\\d{12}$/)" },
   { section: "Información Institucional", campo: "Cargo actual", obligatorio: "Sí", reglas: "Selección obligatoria (Rector(a) / Coordinador(a))" },
   { section: "Información Institucional", campo: "Tipo de vinculación actual", obligatorio: "Sí", reglas: "Selección obligatoria (En propiedad / En encargo)" },
   { section: "Información Institucional", campo: "Fecha de vinculación al servicio educativo estatal", obligatorio: "No", reglas: "Fecha válida o vacío" },
   { section: "Información Institucional", campo: "Fecha de nombramiento estatal en el cargo actual", obligatorio: "No", reglas: "Fecha válida o vacío" },
   { section: "Información Institucional", campo: "Fecha de nombramiento del cargo actual en la IE", obligatorio: "No", reglas: "Fecha válida o vacío" },
-  { section: "Información Institucional", campo: "Estatuto al que pertenece", obligatorio: "No", reglas: "Selección opcional (2277 / 1278)" },
+  { section: "Información Institucional", campo: "Estatuto al que pertenece", obligatorio: "No", reglas: "Selección opcional (Decreto 2277 de 1979 / Decreto 1278 de 2002)" },
   { section: "Información Institucional", campo: "Grado en el escalafón", obligatorio: "No", reglas: "Texto libre, opcional" },
 
   // ── Datos de la IE ──
@@ -67,13 +67,13 @@ const fields: FieldRow[] = [
   { section: "Datos de la IE", campo: "Zona de la sede principal de la IE", obligatorio: "Sí", reglas: "Selección obligatoria (Urbana / Rural)" },
   { section: "Datos de la IE", campo: "Número de sedes en zona rural", obligatorio: "Sí", reglas: "Número entero >= 0, obligatorio" },
   { section: "Datos de la IE", campo: "Número de sedes en zona urbana", obligatorio: "Sí", reglas: "Número entero >= 0, obligatorio" },
-  { section: "Datos de la IE", campo: "Jornadas de la IE", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (checkbox)" },
-  { section: "Datos de la IE", campo: "Grupos étnicos en la IE", obligatorio: "No", reglas: "Selección múltiple opcional (checkbox)" },
+  { section: "Datos de la IE", campo: "Jornadas de la IE", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (Mañana / Tarde / Nocturna / Unica)" },
+  { section: "Datos de la IE", campo: "Grupos étnicos en la IE", obligatorio: "No", reglas: "Selección múltiple opcional (Afrocolombianos-NARP / Indígenas / Rrom-Pueblo Gitano)" },
   { section: "Datos de la IE", campo: "Proyectos transversales de la IE", obligatorio: "No", reglas: "Texto libre, opcional" },
   { section: "Datos de la IE", campo: "¿Hay estudiantes o familias en condición de desplazamiento?", obligatorio: "No", reglas: "Selección opcional (Sí / No)" },
-  { section: "Datos de la IE", campo: "Tipo de bachillerato que ofrece la IE", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (checkbox)" },
+  { section: "Datos de la IE", campo: "Tipo de bachillerato que ofrece la IE", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (Académico / Técnico)" },
   { section: "Datos de la IE", campo: "Modelo o enfoque pedagógico", obligatorio: "No", reglas: "Texto libre, opcional" },
-  { section: "Datos de la IE", campo: "Niveles educativos", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (auto-calculado)" },
+  { section: "Datos de la IE", campo: "Niveles educativos", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (Preescolar / Básica primaria / Básica secundaria / Media / Ciclo complementario) - auto-calculado" },
 
   // ── Personal de la IE ──
   { section: "Personal de la IE", campo: "Número de docentes", obligatorio: "Sí", reglas: "Número entero >= 0, obligatorio" },
