@@ -660,40 +660,159 @@ export async function generarPDFSpecifications(
             y += 3;
 
           } else if (isFlowchart) {
-            checkBreak(16);
-            const flowLines = displayLines.filter((l) => l.trim() !== "");
+            // ── Graphical flowchart rendering ──
+            // Parse nodes and edges from mermaid syntax
+            type FNode = { id: string; label: string; shape: "rect" | "diamond" };
+            type FEdge = { from: string; to: string; label?: string };
+            const nodes = new Map<string, FNode>();
+            const edges: FEdge[] = [];
 
-            // Parse flowchart nodes and edges
-            for (const fline of flowLines) {
-              checkBreak(6);
+            for (const fline of displayLines) {
               const trimmed = fline.trim();
+              if (!trimmed) continue;
 
-              // Parse node definitions and connections
-              const cleaned = trimmed
-                .replace(/-->/g, " → ")
-                .replace(/-->\|([^|]*)\|/g, " →[$1] ")
-                .replace(/\{(.*?)\}/g, "◇ $1")
-                .replace(/\[(.*?)\]/g, "$1");
-
-              doc.setFontSize(8);
-
-              if (cleaned.includes("→")) {
-                doc.setFont("helvetica", "normal");
-                setColor(C.muted);
-              } else if (cleaned.includes("◇")) {
-                doc.setFont("helvetica", "bold");
-                setColor(C.h3);
-              } else {
-                doc.setFont("helvetica", "normal");
-                setColor(C.body);
+              // Edge: A --> B or A -->|label| B
+              const edgeMatch = trimmed.match(/^(\w+)\s*-->\s*(?:\|([^|]*)\|\s*)?(\w+)$/);
+              if (edgeMatch) {
+                edges.push({ from: edgeMatch[1], to: edgeMatch[3], label: edgeMatch[2] });
+                // Auto-create nodes if not yet defined
+                if (!nodes.has(edgeMatch[1])) nodes.set(edgeMatch[1], { id: edgeMatch[1], label: edgeMatch[1], shape: "rect" });
+                if (!nodes.has(edgeMatch[3])) nodes.set(edgeMatch[3], { id: edgeMatch[3], label: edgeMatch[3], shape: "rect" });
+                continue;
               }
 
-              const wrappedLines = doc.splitTextToSize(cleaned, contentW - 12);
-              for (const wl of wrappedLines) {
-                doc.text(wl, margin + 8, y);
-                y += 4.2;
+              // Node definition: A[Label] or B{Label}
+              const nodeDef = trimmed.match(/^(\w+)\s*(\[([^\]]*)\]|\{([^}]*)\})/);
+              if (nodeDef) {
+                const id = nodeDef[1];
+                const label = nodeDef[3] || nodeDef[4] || id;
+                const shape: "rect" | "diamond" = nodeDef[4] ? "diamond" : "rect";
+                nodes.set(id, { id, label, shape });
+                continue;
+              }
+
+              // Combined: A[Label] --> B[Label] or A{Label} -->|text| B[Label]
+              const combinedMatch = trimmed.match(/^(\w+)\s*(?:\[([^\]]*)\]|\{([^}]*)\})\s*-->\s*(?:\|([^|]*)\|\s*)?(\w+)(?:\s*(?:\[([^\]]*)\]|\{([^}]*)\}))?/);
+              if (combinedMatch) {
+                const id1 = combinedMatch[1];
+                const label1 = combinedMatch[2] || combinedMatch[3] || id1;
+                const shape1: "rect" | "diamond" = combinedMatch[3] ? "diamond" : "rect";
+                nodes.set(id1, { id: id1, label: label1, shape: shape1 });
+
+                const id2 = combinedMatch[5];
+                const label2 = combinedMatch[6] || combinedMatch[7] || id2;
+                const shape2: "rect" | "diamond" = combinedMatch[7] ? "diamond" : "rect";
+                if (!nodes.has(id2)) nodes.set(id2, { id: id2, label: label2, shape: shape2 });
+
+                edges.push({ from: id1, to: id2, label: combinedMatch[4] });
               }
             }
+
+            // Layout: topological order, vertical
+            const nodeList = Array.from(nodes.values());
+            if (nodeList.length === 0) { y += 3; break; }
+
+            const boxW = 50;
+            const boxH = 8;
+            const gapY = 14;
+            const diamondSize = 10;
+            const totalDiagramH = nodeList.length * (boxH + gapY);
+            checkBreak(Math.min(totalDiagramH, 100));
+
+            const centerX = margin + contentW / 2;
+            const nodePositions = new Map<string, { x: number; y: number }>();
+
+            // Assign positions top-down
+            let drawY = y;
+            for (const node of nodeList) {
+              nodePositions.set(node.id, { x: centerX, y: drawY + boxH / 2 });
+
+              doc.setFontSize(7.5);
+              doc.setFont("helvetica", "normal");
+              const tw = Math.max(boxW, doc.getTextWidth(node.label) + 10);
+
+              if (node.shape === "diamond") {
+                // Diamond shape
+                const cx = centerX;
+                const cy = drawY + diamondSize / 2;
+                doc.setFillColor(254, 243, 199); // amber-100
+                doc.setDrawColor(...C.h3);
+                doc.setLineWidth(0.3);
+                // Draw diamond as 4 lines
+                doc.lines(
+                  [[diamondSize / 2, -diamondSize / 2], [diamondSize / 2, diamondSize / 2], [-diamondSize / 2, diamondSize / 2], [-diamondSize / 2, -diamondSize / 2]],
+                  cx - diamondSize / 2, cy,
+                  [1, 1], "FD", true
+                );
+                setColor(C.title);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(6.5);
+                doc.text(node.label, cx, cy + 1, { align: "center", maxWidth: diamondSize - 2 });
+                nodePositions.set(node.id, { x: cx, y: cy });
+              } else {
+                // Rounded rectangle
+                const rx = centerX - tw / 2;
+                doc.setFillColor(224, 231, 255); // indigo-100
+                doc.setDrawColor(...C.h3);
+                doc.setLineWidth(0.3);
+                doc.roundedRect(rx, drawY, tw, boxH, 2, 2, "FD");
+                setColor(C.title);
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(7.5);
+                doc.text(node.label, centerX, drawY + boxH / 2 + 1, { align: "center", maxWidth: tw - 4 });
+                nodePositions.set(node.id, { x: centerX, y: drawY + boxH / 2 });
+              }
+
+              drawY += boxH + gapY;
+            }
+
+            // Draw arrows between connected nodes
+            doc.setDrawColor(...C.h3);
+            doc.setLineWidth(0.3);
+            for (const edge of edges) {
+              const fromPos = nodePositions.get(edge.from);
+              const toPos = nodePositions.get(edge.to);
+              if (!fromPos || !toPos) continue;
+
+              const fromNode = nodes.get(edge.from)!;
+              const toNode = nodes.get(edge.to)!;
+
+              // Calculate start/end Y based on shape
+              const startY = fromNode.shape === "diamond"
+                ? fromPos.y + diamondSize / 2
+                : fromPos.y + boxH / 2;
+              const endY = toNode.shape === "diamond"
+                ? toPos.y - diamondSize / 2
+                : toPos.y - boxH / 2;
+
+              const arrowX = fromPos.x;
+
+              // Line
+              doc.line(arrowX, startY, arrowX, endY - 1.5);
+
+              // Arrowhead
+              doc.setFillColor(...C.h3);
+              doc.triangle(
+                arrowX, endY,
+                arrowX - 1.2, endY - 2,
+                arrowX + 1.2, endY - 2,
+                "F"
+              );
+
+              // Edge label
+              if (edge.label) {
+                const midY = (startY + endY) / 2;
+                doc.setFontSize(6);
+                doc.setFont("helvetica", "italic");
+                setColor(C.muted);
+                const labelW = doc.getTextWidth(edge.label) + 4;
+                doc.setFillColor(255, 255, 255);
+                doc.rect(arrowX + 2, midY - 2.5, labelW, 4, "F");
+                doc.text(edge.label, arrowX + 4, midY + 0.5);
+              }
+            }
+
+            y = drawY;
             y += 3;
           }
         } else {
