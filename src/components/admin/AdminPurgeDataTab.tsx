@@ -4,9 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, AlertTriangle, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Trash2, AlertTriangle, ShieldAlert, CheckCircle2, ImageOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/utils/dbClient";
+import { apiFetch } from "@/utils/apiFetch";
+import { invalidateAppImagesCache } from "@/hooks/useAppImages";
 
 const TABLES_TO_PURGE = [
   // Children first (FK order)
