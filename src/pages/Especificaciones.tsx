@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Printer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { generarPDFSpecifications } from "@/utils/specificationsPdfGenerator";
+import MermaidDiagram from "@/components/MermaidDiagram";
 import logoRLT from "@/assets/logo_rlt.png";
 import logoCosmo from "@/assets/logo_cosmo.png";
 
@@ -13,6 +14,7 @@ export default function Especificaciones() {
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
   const navigate = useNavigate();
+  const mermaidCounter = useRef(0);
 
   useEffect(() => {
     fetch("/SPECIFICATIONS.md")
@@ -40,7 +42,6 @@ export default function Especificaciones() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Sticky header */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
@@ -57,7 +58,6 @@ export default function Especificaciones() {
         </div>
       </div>
 
-      {/* Markdown content */}
       <article className="max-w-5xl mx-auto px-4 py-8 md:px-8 print:px-0 print:max-w-none">
         <div className="prose prose-slate dark:prose-invert max-w-none
           prose-headings:scroll-mt-20
@@ -80,37 +80,27 @@ export default function Especificaciones() {
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              // Render mermaid code blocks as styled pre blocks
               code({ className, children, ...props }) {
                 const lang = className?.replace("language-", "") || "";
                 const text = String(children).replace(/\n$/, "");
 
                 if (lang === "mermaid") {
+                  mermaidCounter.current += 1;
                   return (
-                    <div className="my-4 rounded-lg border border-border bg-muted/50 p-4 overflow-x-auto">
-                      <div className="text-xs font-mono text-muted-foreground mb-2 uppercase tracking-wider">
-                        Diagrama {text.startsWith("mindmap") ? "— Mindmap" : text.startsWith("flowchart") ? "— Flujo" : ""}
-                      </div>
-                      <pre className="text-sm font-mono text-foreground whitespace-pre leading-relaxed !bg-transparent !border-0 !p-0 !m-0">
-                        {text}
-                      </pre>
-                    </div>
+                    <MermaidDiagram chart={text} id={`spec-${mermaidCounter.current}`} />
                   );
                 }
 
-                // Inline code
                 if (!className) {
                   return <code {...props}>{children}</code>;
                 }
 
-                // Block code
                 return (
                   <pre className="rounded-lg border border-border bg-muted p-4 overflow-x-auto !my-4">
                     <code className="text-sm font-mono text-foreground">{text}</code>
                   </pre>
                 );
               },
-              // Better table styling with even/odd rows
               tr({ children, ...props }) {
                 return <tr className="even:bg-muted/30" {...props}>{children}</tr>;
               },
@@ -121,7 +111,6 @@ export default function Especificaciones() {
         </div>
       </article>
 
-      {/* Print styles */}
       <style>{`
         @media print {
           .sticky { display: none !important; }
