@@ -138,6 +138,7 @@ const sections: SidebarSection[] = [
       { tab: "reviews", label: "Apreciaciones", icon: Star, superadminOnly: true },
       { tab: "mensajes", label: "Mensajes", icon: MessageSquare, superadminOnly: true },
       { tab: "changelog", label: "Changelog", icon: GitCommit, superadminOnly: true },
+      { tab: "specs-pdf", label: "Especificaciones PDF", icon: FileText, superadminOnly: true, action: "specs-pdf" as any },
       { tab: "purge-data", label: "Purgar datos", icon: Trash2, superadminOnly: true },
     ],
   },
