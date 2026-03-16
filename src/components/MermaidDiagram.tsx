@@ -42,9 +42,16 @@ function parseColorToRgb(color: string): [number, number, number] | null {
   return null;
 }
 
-function isBlueContainer(rgb: [number, number, number]): boolean {
+const LIGHT_BLUE_FILL = "#93c5fd";
+const LIGHT_BLUE_BORDER = "#60a5fa";
+
+function isBlueTone(rgb: [number, number, number]): boolean {
   const [r, g, b] = rgb;
-  return b >= 150 && b > r && b > g - 30;
+  return b >= 120 && b > r + 10 && b > g - 20;
+}
+
+function isBlueContainer(rgb: [number, number, number]): boolean {
+  return isBlueTone(rgb);
 }
 
 function applyTextColor(el: Element, color: "#000000" | "#ffffff") {
@@ -94,12 +101,28 @@ function applyFinalLabelColors(container: HTMLElement) {
       if (!bbox || bbox.width <= 0 || bbox.height <= 0) return null;
 
       return {
+        shape,
         bbox,
         area: bbox.width * bbox.height,
         rgb,
       };
     })
-    .filter((s): s is { bbox: DOMRect; area: number; rgb: [number, number, number] } => Boolean(s));
+    .filter((s): s is { shape: Element; bbox: DOMRect; area: number; rgb: [number, number, number] } => Boolean(s));
+
+  // Force blue nodes/circles to a lighter blue in the live UI.
+  for (const shapeInfo of shapeInfos) {
+    if (!isBlueTone(shapeInfo.rgb)) continue;
+    (shapeInfo.shape as SVGElement).setAttribute("fill", LIGHT_BLUE_FILL);
+    (shapeInfo.shape as SVGElement).style.setProperty("fill", LIGHT_BLUE_FILL, "important");
+
+    const stroke = (shapeInfo.shape as SVGElement).getAttribute("stroke");
+    if (stroke && stroke !== "none") {
+      (shapeInfo.shape as SVGElement).setAttribute("stroke", LIGHT_BLUE_BORDER);
+      (shapeInfo.shape as SVGElement).style.setProperty("stroke", LIGHT_BLUE_BORDER, "important");
+    }
+
+    shapeInfo.rgb = [147, 197, 253];
+  }
 
   const labels = Array.from(svgEl.querySelectorAll("text, foreignObject"));
 
@@ -110,7 +133,7 @@ function applyFinalLabelColors(container: HTMLElement) {
     const cx = b.x + b.width / 2;
     const cy = b.y + b.height / 2;
 
-    let bestMatch: { bbox: DOMRect; area: number; rgb: [number, number, number] } | null = null;
+    let bestMatch: { shape: Element; bbox: DOMRect; area: number; rgb: [number, number, number] } | null = null;
 
     for (const shapeInfo of shapeInfos) {
       const { bbox } = shapeInfo;
