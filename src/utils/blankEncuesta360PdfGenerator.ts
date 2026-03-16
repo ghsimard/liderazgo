@@ -149,7 +149,7 @@ export async function generarPDFEncuesta360EnBlanco(
         doc.circle(x, y - 0.5, 1.5);
         doc.text(opt, x + 3, y);
       });
-      y += 6;
+      y += 5;
     });
   }
   y += 1;
