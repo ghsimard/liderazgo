@@ -1768,6 +1768,49 @@ export default function FichaRLTForm() {
         </div>
       )}
 
+      {/* Modal de autorización de datos personales */}
+      <AlertDialog open={showDatosModal}>
+        <AlertDialogContent className="max-w-md" onEscapeKeyDown={(e) => e.preventDefault()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-primary" />
+              Autorización de datos personales
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p className="leading-relaxed">
+                  Entiendo la información y acepto el tratamiento de mis datos personales conforme a la{" "}
+                  <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:opacity-80">
+                    Ley 1581 de 2012
+                  </a>{" "}
+                  de protección de datos de Colombia.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="pt-2">
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="modal-acepta-datos"
+                checked={datosModalAccepted}
+                onCheckedChange={(checked) => setDatosModalAccepted(checked === true)}
+              />
+              <label htmlFor="modal-acepta-datos" className="text-sm cursor-pointer select-none leading-relaxed">
+                Sí, acepto el tratamiento de mis datos personales
+              </label>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              disabled={!datosModalAccepted}
+              onClick={handleAcceptDatos}
+            >
+              Continuar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Modal para captura de nombres con instrucciones sobre certificados */}
       <AlertDialog open={showNameModal}>
         <AlertDialogContent className="max-w-md" onEscapeKeyDown={(e) => e.preventDefault()}>
