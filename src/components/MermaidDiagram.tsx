@@ -1,27 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import mermaid from "mermaid";
 
-let mermaidInitialized = false;
+const MERMAID_THEME = {
+  primaryColor: "#60a5fa",
+  primaryTextColor: "#000000",
+  primaryBorderColor: "#3b82f6",
+  lineColor: "#374151",
+  secondaryColor: "#e0e7ff",
+  secondaryTextColor: "#1e293b",
+  tertiaryColor: "#f1f5f9",
+  tertiaryTextColor: "#1e293b",
+};
 
 function initMermaid() {
-  if (mermaidInitialized) return;
   mermaid.initialize({
     startOnLoad: false,
     theme: "default",
     securityLevel: "loose",
     flowchart: { useMaxWidth: true, htmlLabels: true, curve: "basis" },
-    themeVariables: {
-      primaryColor: "#60a5fa",
-      primaryTextColor: "#000000",
-      primaryBorderColor: "#3b82f6",
-      lineColor: "#374151",
-      secondaryColor: "#e0e7ff",
-      secondaryTextColor: "#1e293b",
-      tertiaryColor: "#f1f5f9",
-      tertiaryTextColor: "#1e293b",
-    },
+    themeVariables: MERMAID_THEME,
   });
-  mermaidInitialized = true;
 }
 
 function parseColorToRgb(color: string): [number, number, number] | null {
