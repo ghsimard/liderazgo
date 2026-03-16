@@ -13,11 +13,11 @@ const fields: FieldRow[] = [
   { section: "Datos personales", campo: "acepta_datos", obligatorio: "Sí", reglas: "Debe ser true (checkbox de consentimiento)" },
   { section: "Datos personales", campo: "nombres", obligatorio: "Sí", reglas: "Mín. 2 caracteres" },
   { section: "Datos personales", campo: "apellidos", obligatorio: "Sí", reglas: "Mín. 2 caracteres" },
-  { section: "Datos personales", campo: "genero", obligatorio: "No", reglas: "Selección opcional (Masculino / Femenino / Otro)" },
-  { section: "Datos personales", campo: "numero_cedula", obligatorio: "No", reglas: "Texto libre, opcional" },
+  { section: "Datos personales", campo: "genero", obligatorio: "Sí", reglas: "Selección obligatoria (Masculino / Femenino / Otro)" },
+  { section: "Datos personales", campo: "numero_cedula", obligatorio: "Sí", reglas: "Texto obligatorio" },
   { section: "Datos personales", campo: "fecha_nacimiento", obligatorio: "Sí", reglas: "Fecha válida; edad entre 18 y 70 años" },
   { section: "Datos personales", campo: "lugar_nacimiento", obligatorio: "No", reglas: "Texto libre, opcional" },
-  { section: "Datos personales", campo: "grupos_etnicos", obligatorio: "No", reglas: "Selección opcional" },
+  { section: "Datos personales", campo: "grupos_etnicos", obligatorio: "No", reglas: "Selección múltiple opcional (checkbox)" },
   { section: "Datos personales", campo: "lengua_materna", obligatorio: "Sí", reglas: "Selección obligatoria" },
   { section: "Datos personales", campo: "lengua_otra", obligatorio: "No", reglas: "Texto libre, opcional" },
   { section: "Datos personales", campo: "discapacidad", obligatorio: "Sí", reglas: "Selección obligatoria (Sí / No)" },
@@ -36,7 +36,7 @@ const fields: FieldRow[] = [
   { section: "Contacto", campo: "telefono_emergencia", obligatorio: "No", reglas: "10 dígitos numéricos o vacío" },
 
   // ── Formación ──
-  { section: "Formación", campo: "tipo_formacion", obligatorio: "No", reglas: "Selección opcional" },
+  { section: "Formación", campo: "tipo_formacion", obligatorio: "Sí", reglas: "Selección obligatoria" },
   { section: "Formación", campo: "titulo_pregrado", obligatorio: "Sí", reglas: "Texto obligatorio" },
   { section: "Formación", campo: "titulo_especializacion", obligatorio: "No", reglas: "Texto libre, opcional" },
   { section: "Formación", campo: "titulo_maestria", obligatorio: "No", reglas: "Texto libre, opcional" },
@@ -47,7 +47,7 @@ const fields: FieldRow[] = [
   { section: "Información laboral", campo: "cargo_actual", obligatorio: "Sí", reglas: "Selección obligatoria (Rector(a) / Coordinador(a))" },
   { section: "Información laboral", campo: "estatuto", obligatorio: "No", reglas: "Selección opcional" },
   { section: "Información laboral", campo: "grado_escalafon", obligatorio: "No", reglas: "Selección opcional" },
-  { section: "Información laboral", campo: "tipo_vinculacion", obligatorio: "No", reglas: "Selección opcional" },
+  { section: "Información laboral", campo: "tipo_vinculacion", obligatorio: "Sí", reglas: "Selección obligatoria" },
   { section: "Información laboral", campo: "fecha_vinculacion_servicio", obligatorio: "No", reglas: "Fecha válida o vacío" },
   { section: "Información laboral", campo: "fecha_nombramiento_cargo", obligatorio: "No", reglas: "Fecha válida o vacío" },
   { section: "Información laboral", campo: "fecha_nombramiento_ie", obligatorio: "No", reglas: "Fecha válida o vacío" },
@@ -55,10 +55,10 @@ const fields: FieldRow[] = [
 
   // ── Información institucional ──
   { section: "Información institucional", campo: "region", obligatorio: "Sí", reglas: "Selección obligatoria" },
-  { section: "Información institucional", campo: "entidad_territorial", obligatorio: "No", reglas: "Selección opcional (cascada desde región)" },
+  { section: "Información institucional", campo: "entidad_territorial", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde región)" },
   { section: "Información institucional", campo: "nombre_ie", obligatorio: "Sí", reglas: "Selección obligatoria (cascada desde municipio)" },
-  { section: "Información institucional", campo: "codigo_dane", obligatorio: "No", reglas: "Exactamente 12 dígitos numéricos (/^\\d{12}$/)" },
-  { section: "Información institucional", campo: "zona_sede", obligatorio: "No", reglas: "Selección opcional (Urbana / Rural)" },
+  { section: "Información institucional", campo: "codigo_dane", obligatorio: "Sí", reglas: "Obligatorio, exactamente 12 dígitos numéricos (/^\\d{12}$/)" },
+  { section: "Información institucional", campo: "zona_sede", obligatorio: "Sí", reglas: "Selección obligatoria (Urbana / Rural)" },
   { section: "Información institucional", campo: "comuna_barrio", obligatorio: "No", reglas: "Texto libre, opcional" },
   { section: "Información institucional", campo: "direccion_sede_principal", obligatorio: "No", reglas: "Texto libre, opcional" },
   { section: "Información institucional", campo: "codigo_pais_telefono_ie", obligatorio: "No", reglas: "Código de país, opcional" },
@@ -69,8 +69,8 @@ const fields: FieldRow[] = [
   { section: "Información institucional", campo: "jornadas", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (checkbox)" },
   { section: "Información institucional", campo: "niveles_educativos", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (checkbox)" },
   { section: "Información institucional", campo: "tipo_bachillerato", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (checkbox)" },
-  { section: "Información institucional", campo: "sedes_urbana", obligatorio: "No", reglas: "Número entero ≥ 0 o vacío" },
-  { section: "Información institucional", campo: "sedes_rural", obligatorio: "No", reglas: "Número entero ≥ 0 o vacío" },
+  { section: "Información institucional", campo: "sedes_urbana", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
+  { section: "Información institucional", campo: "sedes_rural", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
 
   // ── Estadísticas de personal ──
   { section: "Estadísticas de personal", campo: "num_docentes", obligatorio: "Sí", reglas: "Número entero ≥ 0, obligatorio" },
