@@ -487,18 +487,52 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
           <p className="text-sm text-muted-foreground">Esta sección está en construcción.</p>
         </div>
       );
-    case "reviews":
-      return isSuperAdmin ? <AdminReviewsTab /> : null;
-    case "mensajes":
-      return isSuperAdmin ? <AdminMensajesTab /> : null;
-    case "activity-log":
-      return <AdminActivityLogTab isSuperAdmin={isSuperAdmin} />;
-    case "changelog":
-      return isSuperAdmin ? <AdminChangelogTab /> : null;
-    case "purge-data":
-      return isSuperAdmin ? <AdminPurgeDataTab /> : null;
-    case "papelera":
-      return <AdminTrashManager />;
+    case "sistema":
+      return (
+        <Tabs defaultValue="gestion-cuentas" className="space-y-4">
+          <TabsList className="hub-tabs flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md rounded-lg">
+            <TabsTrigger value="gestion-cuentas" className="gap-1.5"><Users className="w-4 h-4" /> Cuentas</TabsTrigger>
+            <TabsTrigger value="activity-log" className="gap-1.5"><Activity className="w-4 h-4" /> Actividad</TabsTrigger>
+            <TabsTrigger value="papelera" className="gap-1.5"><Trash2 className="w-4 h-4" /> Papelera</TabsTrigger>
+            {isSuperAdmin && <TabsTrigger value="reviews" className="gap-1.5"><Star className="w-4 h-4" /> Apreciaciones</TabsTrigger>}
+            {isSuperAdmin && <TabsTrigger value="mensajes" className="gap-1.5"><MessageSquare className="w-4 h-4" /> Mensajes</TabsTrigger>}
+            {isSuperAdmin && <TabsTrigger value="changelog" className="gap-1.5"><GitCommit className="w-4 h-4" /> Changelog</TabsTrigger>}
+            {isSuperAdmin && <TabsTrigger value="specs" className="gap-1.5"><FileText className="w-4 h-4" /> Especificaciones</TabsTrigger>}
+            {isSuperAdmin && <TabsTrigger value="purge-data" className="gap-1.5"><Trash2 className="w-4 h-4" /> Purgar datos</TabsTrigger>}
+          </TabsList>
+
+          <TabsContent value="gestion-cuentas">
+            <AdminGestionCuentasTab isSuperAdmin={isSuperAdmin} />
+          </TabsContent>
+          <TabsContent value="activity-log">
+            <AdminActivityLogTab isSuperAdmin={isSuperAdmin} />
+          </TabsContent>
+          <TabsContent value="papelera">
+            <AdminTrashManager />
+          </TabsContent>
+          {isSuperAdmin && (
+            <>
+              <TabsContent value="reviews"><AdminReviewsTab /></TabsContent>
+              <TabsContent value="mensajes"><AdminMensajesTab /></TabsContent>
+              <TabsContent value="changelog"><AdminChangelogTab /></TabsContent>
+              <TabsContent value="specs">
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <a href="/especificaciones" target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" size="sm" className="gap-1.5"><FileText className="w-4 h-4" /> Ver Especificaciones</Button>
+                    </a>
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open("/especificaciones", "_blank")}>
+                      <Printer className="w-4 h-4" /> Generar PDF (desde la página)
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Abra la página de especificaciones y utilice el botón de descarga PDF disponible allí.</p>
+                </div>
+              </TabsContent>
+              <TabsContent value="purge-data"><AdminPurgeDataTab /></TabsContent>
+            </>
+          )}
+        </Tabs>
+      );
     default:
       return null;
   }
