@@ -56,7 +56,7 @@ const fields: FieldRow[] = [
   { section: "Información Institucional", campo: "Fecha de vinculación al servicio educativo estatal", obligatorio: "No", reglas: "Fecha válida o vacío" },
   { section: "Información Institucional", campo: "Fecha de nombramiento estatal en el cargo actual", obligatorio: "No", reglas: "Fecha válida o vacío" },
   { section: "Información Institucional", campo: "Fecha de nombramiento del cargo actual en la IE", obligatorio: "No", reglas: "Fecha válida o vacío" },
-  { section: "Información Institucional", campo: "Estatuto al que pertenece", obligatorio: "No", reglas: "Selección opcional (2277 / 1278)" },
+  { section: "Información Institucional", campo: "Estatuto al que pertenece", obligatorio: "No", reglas: "Selección opcional (Decreto 2277 de 1979 / Decreto 1278 de 2002)" },
   { section: "Información Institucional", campo: "Grado en el escalafón", obligatorio: "No", reglas: "Texto libre, opcional" },
 
   // ── Datos de la IE ──
