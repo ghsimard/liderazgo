@@ -582,6 +582,13 @@ export default function FichaRLTForm() {
     setShowNameModal(false);
   };
 
+  const handleNameFieldFocus = () => {
+    if (viewMode) return;
+    setModalNombres(getValues("nombres") || "");
+    setModalApellidos(getValues("apellidos") || "");
+    setShowNameModal(true);
+  };
+
   const regionActual = watch("region");
   const lenguaMaterna = watch("lengua_materna");
   const enfermedadBase = watch("enfermedad_base");
