@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import mermaid from "mermaid";
 
 let mermaidInitialized = false;
@@ -24,134 +24,51 @@ function initMermaid() {
   mermaidInitialized = true;
 }
 
-/**
- * Parse a CSS color string to RGB. Handles #hex and rgb().
- */
 function parseColorToRgb(color: string): [number, number, number] | null {
   const c = color.trim().toLowerCase();
   const hex3 = c.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/);
-  if (hex3)
+  if (hex3) {
     return [
       parseInt(hex3[1] + hex3[1], 16),
       parseInt(hex3[2] + hex3[2], 16),
       parseInt(hex3[3] + hex3[3], 16),
     ];
+  }
+
   const hex6 = c.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/);
   if (hex6) return [parseInt(hex6[1], 16), parseInt(hex6[2], 16), parseInt(hex6[3], 16)];
+
   const rgbMatch = c.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
   if (rgbMatch) return [+rgbMatch[1], +rgbMatch[2], +rgbMatch[3]];
+
   return null;
 }
 
-function luminance(r: number, g: number, b: number): number {
-  const [rs, gs, bs] = [r / 255, g / 255, b / 255].map((v) =>
-    v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
-  );
-  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+function isBlueContainer(rgb: [number, number, number]): boolean {
+  const [r, g, b] = rgb;
+  return b >= r + 20 && b >= g + 15 && r <= 90 && g <= 140;
 }
 
-const SECTION_DARK_LABEL_RULES: Array<{ chartMarker: string; labels: string[] }> = [
-  {
-    chartMarker: "root((Plataforma RLT / CLT))",
-    labels: [
-      "Hub Encuesta 360",
-      "Ambiente Escolar",
-      "Satisfacciones",
-      "MEL",
-      "Fichas RLT",
-      "Encuesta 360",
-      "Enlaces",
-      "Rubricas",
-      "Sistema",
-      "Informe de Modulo",
-    ],
-  },
-  {
-    chartMarker: "root((Enlaces))",
-    labels: ["Encuesta 360 por tipo", "Ambiente Escolar por tipo"],
-  },
-  {
-    chartMarker: "root((Informe de Modulo))",
-    labels: ["Informe de Modulo"],
-  },
-  {
-    chartMarker: "root((Ambiente Escolar))",
-    labels: ["Enlaces"],
-  },
-  {
-    chartMarker: "root((MEL))",
-    labels: ["MEL 360", "MEL Rubricas"],
-  },
-];
-
-function normalizeLabel(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function getForcedDarkLabels(chartSource: string): Set<string> {
-  const normalizedChart = normalizeLabel(chartSource);
-  const labels = new Set<string>();
-
-  for (const rule of SECTION_DARK_LABEL_RULES) {
-    if (!normalizedChart.includes(normalizeLabel(rule.chartMarker))) continue;
-    rule.labels.forEach((label) => labels.add(normalizeLabel(label)));
-  }
-
-  return labels;
-}
-
-function shouldForceDarkLabel(value: string, forcedDarkLabels: Set<string>): boolean {
-  if (forcedDarkLabels.size === 0) return false;
-
-  const normalized = normalizeLabel(value);
-  for (const target of forcedDarkLabels) {
-    if (normalized === target || normalized.includes(target)) return true;
-  }
-
-  return false;
-}
-
-function applyDarkTextStyles(el: Element) {
+function applyTextColor(el: Element, color: "#000000" | "#ffffff") {
   const existingStyle = el.getAttribute("style") || "";
-  el.setAttribute("style", `${existingStyle}; fill:#000000 !important; color:#000000 !important;`);
+  el.setAttribute("style", `${existingStyle}; fill:${color} !important; color:${color} !important;`);
 
   if (["text", "tspan", "path"].includes(el.tagName.toLowerCase())) {
-    el.setAttribute("fill", "#000000");
+    el.setAttribute("fill", color);
   }
 }
 
 /**
- * Pre-injection targeted dark override for specific section labels.
+ * Baseline: all labels black.
  */
-function forceSpecificLabelsDark(svgMarkup: string, forcedDarkLabels: Set<string>): string {
-  if (forcedDarkLabels.size === 0) return svgMarkup;
-
+function forceAllLabelsBlack(svgMarkup: string): string {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgMarkup, "image/svg+xml");
     const root = doc.documentElement;
 
     root.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach((el) => {
-      const rawText = (el.textContent || "").trim();
-      if (!rawText || !shouldForceDarkLabel(rawText, forcedDarkLabels)) return;
-
-      applyDarkTextStyles(el);
-      el
-        .querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p")
-        .forEach(applyDarkTextStyles);
-
-      const group = el.closest("g");
-      if (group) {
-        applyDarkTextStyles(group);
-        group
-          .querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p")
-          .forEach(applyDarkTextStyles);
-      }
+      applyTextColor(el, "#000000");
     });
 
     return new XMLSerializer().serializeToString(root);
@@ -161,9 +78,9 @@ function forceSpecificLabelsDark(svgMarkup: string, forcedDarkLabels: Set<string
 }
 
 /**
- * Post-render contrast fix for generic nodes.
+ * UI rule: every label is black, except labels inside blue nodes/circles -> white.
  */
-function fixTextContrast(container: HTMLElement, forcedDarkLabels: Set<string>) {
+function applyFinalLabelColors(container: HTMLElement) {
   const svgEl = container.querySelector("svg");
   if (!svgEl) return;
 
@@ -175,27 +92,27 @@ function fixTextContrast(container: HTMLElement, forcedDarkLabels: Set<string>) 
       const rgb = parseColorToRgb(fill);
       if (!rgb) return null;
 
-      const bbox = (shape as Element).getBoundingClientRect();
+      const bbox = shape.getBoundingClientRect();
       if (!bbox || bbox.width <= 0 || bbox.height <= 0) return null;
 
       return {
         bbox,
         area: bbox.width * bbox.height,
-        textColor: luminance(...rgb) < 0.5 ? "#ffffff" : "#1e293b",
+        rgb,
       };
     })
-    .filter((s): s is { bbox: DOMRect; area: number; textColor: string } => Boolean(s));
+    .filter((s): s is { bbox: DOMRect; area: number; rgb: [number, number, number] } => Boolean(s));
 
   const labels = Array.from(svgEl.querySelectorAll("text, foreignObject"));
 
   for (const label of labels) {
-    const b = (label as Element).getBoundingClientRect();
+    const b = label.getBoundingClientRect();
     if (!b || b.width <= 0 || b.height <= 0) continue;
 
     const cx = b.x + b.width / 2;
     const cy = b.y + b.height / 2;
 
-    let bestMatch: { bbox: DOMRect; area: number; textColor: string } | null = null;
+    let bestMatch: { bbox: DOMRect; area: number; rgb: [number, number, number] } | null = null;
 
     for (const shapeInfo of shapeInfos) {
       const { bbox } = shapeInfo;
@@ -204,9 +121,7 @@ function fixTextContrast(container: HTMLElement, forcedDarkLabels: Set<string>) 
       if (!bestMatch || shapeInfo.area < bestMatch.area) bestMatch = shapeInfo;
     }
 
-    if (!bestMatch) continue;
-
-    const textColor = bestMatch.textColor;
+    const textColor: "#000000" | "#ffffff" = bestMatch && isBlueContainer(bestMatch.rgb) ? "#ffffff" : "#000000";
 
     if (label.tagName.toLowerCase() === "text") {
       const svgText = label as SVGElement;
@@ -219,20 +134,28 @@ function fixTextContrast(container: HTMLElement, forcedDarkLabels: Set<string>) 
     } else {
       (label as Element).querySelectorAll("div, span, p").forEach((el) => {
         (el as HTMLElement).style.setProperty("color", textColor, "important");
+        (el as HTMLElement).style.setProperty("fill", textColor, "important");
       });
     }
   }
 
-  // Second pass: specific labels must stay dark for section consistency
+  // Defensive pass to remove remaining gray text everywhere.
   svgEl.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach((el) => {
-    const rawText = (el.textContent || "").trim();
-    if (!rawText || !shouldForceDarkLabel(rawText, forcedDarkLabels)) return;
+    const tag = el.tagName.toLowerCase();
 
-    applyDarkTextStyles(el);
-    const group = el.closest("g");
-    if (group) {
-      applyDarkTextStyles(group);
-      group.querySelectorAll("text, tspan, foreignObject, foreignObject *, div, span, p").forEach(applyDarkTextStyles);
+    if (tag === "text" || tag === "tspan") {
+      const current = ((el as SVGElement).getAttribute("fill") || "").toLowerCase();
+      if (current !== "#ffffff") {
+        applyTextColor(el, "#000000");
+      }
+      return;
+    }
+
+    const html = el as HTMLElement;
+    const currentColor = (html.style.color || "").toLowerCase();
+    if (currentColor !== "rgb(255, 255, 255)" && currentColor !== "#ffffff") {
+      html.style.setProperty("color", "#000000", "important");
+      html.style.setProperty("fill", "#000000", "important");
     }
   });
 }
@@ -246,7 +169,6 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>("");
   const [error, setError] = useState(false);
-  const forcedDarkLabels = useMemo(() => getForcedDarkLabels(chart), [chart]);
 
   useEffect(() => {
     let cancelled = false;
@@ -256,8 +178,9 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
         initMermaid();
         const uniqueId = `mermaid-${id}-${Date.now()}`;
         const { svg: renderedSvg } = await mermaid.render(uniqueId, chart);
+
         if (!cancelled) {
-          setSvg(forceSpecificLabelsDark(renderedSvg, forcedDarkLabels));
+          setSvg(forceAllLabelsBlack(renderedSvg));
           setError(false);
         }
       } catch {
@@ -269,13 +192,13 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
     return () => {
       cancelled = true;
     };
-  }, [chart, id, forcedDarkLabels]);
+  }, [chart, id]);
 
   useEffect(() => {
     if (!svg || !containerRef.current) return;
 
     const container = containerRef.current;
-    const apply = () => fixTextContrast(container, forcedDarkLabels);
+    const apply = () => applyFinalLabelColors(container);
 
     apply();
     const rafId = requestAnimationFrame(apply);
@@ -285,7 +208,7 @@ export default function MermaidDiagram({ chart, id }: MermaidDiagramProps) {
       cancelAnimationFrame(rafId);
       window.clearTimeout(timeoutId);
     };
-  }, [svg, forcedDarkLabels]);
+  }, [svg]);
 
   if (error) {
     return (
