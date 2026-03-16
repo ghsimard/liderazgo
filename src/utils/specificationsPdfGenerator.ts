@@ -169,8 +169,8 @@ export async function generarPDFSpecifications(
         if (index <= 1) {
           const svgs = container.querySelectorAll("svg");
           svgs.forEach((svg) => {
-            (svg as HTMLElement).style.maxWidth = "500px";
-            (svg as HTMLElement).style.maxHeight = "320px";
+            (svg as unknown as HTMLElement).style.maxWidth = "500px";
+            (svg as unknown as HTMLElement).style.maxHeight = "320px";
           });
         }
       });
