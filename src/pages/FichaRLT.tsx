@@ -25,6 +25,15 @@ import { cn } from "@/lib/utils";
 import { PhoneInputWithCountry } from "@/components/PhoneInputWithCountry";
 import { CheckCircle, Download, RefreshCw, Send, AlertCircle, ArrowLeft, Edit, Save } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 // ── Schema de validación ─────────────────────────────────────
 const schema = z.object({
