@@ -1,42 +1,42 @@
 
 
-## Système RBAC — Rôles personnalisés avec permissions CRUD granulaires
+## Plan : Endpoint Express `/api/user-permissions/:userId`
 
-### Statut : Phase 1 terminée ✅
+### Contexte
 
-### Ce qui a été implémenté
+Le hook `usePermissions` appelle déjà `apiFetch("/api/user-permissions/${userId}")` en mode Express. Il faut créer cet endpoint côté serveur qui reproduit la logique de la fonction SQL `get_user_permissions`.
 
-1. **Tables de base de données** :
-   - `custom_roles` : rôles personnalisés (nom, description, is_system)
-   - `role_permissions` : permissions CRUD par section (clé hiérarchique avec notation pointée)
-   - `user_custom_roles` : assignation utilisateur ↔ rôle
-   - Fonction `get_user_permissions()` (SECURITY DEFINER) pour charger les permissions sans récursion RLS
+### Modifications
 
-2. **Seed des rôles système** :
-   - Superadmin : CRUD complet sur les 10 sections
-   - Admin : CRUD complet sur les 10 sections
-   - Monitoreo : lecture seule sur 8 sections (pas Sistema ni MEL)
+#### 1. Ajouter la route dans `server/index.ts`
 
-3. **Hook `usePermissions`** (`src/hooks/usePermissions.ts`) :
-   - Charge les permissions via `get_user_permissions` RPC ou API Express
-   - Résolution hiérarchique : `sistema.gestion-cuentas` → fallback `sistema`
-   - API : `can(section, action)`, `readableSections`, `permissions`, `loading`, `reload`
+Ajouter un endpoint protégé par `requireAuth` + `requireAdminOrViewer` :
 
-4. **Catalogue des sections** (`src/data/rbacSections.ts`) :
-   - 10 sections de premier niveau + sous-sections
-   - Export `RBAC_SECTIONS` et `ALL_SECTION_KEYS`
+```typescript
+GET /api/user-permissions/:userId
+```
 
-5. **Interface de gestion** (`AdminRolesTab`) :
-   - Liste des rôles (cartes) avec création/édition/suppression
-   - Matrice sections × CRUD avec checkboxes
-   - Sous-sections dépliables (Collapsible)
-   - Les rôles système ne sont modifiables que par superadmin
-   - Intégré dans Sistema > "Roles y Permisos"
+La requête SQL est identique à la fonction Supabase `get_user_permissions` :
 
-### Phase 2 — Migration progressive (à faire)
+```sql
+SELECT DISTINCT rp.section,
+  bool_or(rp.can_create) as can_create,
+  bool_or(rp.can_read) as can_read,
+  bool_or(rp.can_update) as can_update,
+  bool_or(rp.can_delete) as can_delete
+FROM user_custom_roles ucr
+JOIN role_permissions rp ON rp.role_id = ucr.role_id
+WHERE ucr.user_id = $1
+GROUP BY rp.section
+```
 
-- Migrer `AdminSidebar` pour filtrer les sections visibles via `usePermissions.readableSections`
-- Remplacer les checks `isViewer` / `isSuperAdmin` dans les composants admin par `permissions.can()`
-- Intégrer l'assignation de rôles custom dans `AdminGestionCuentasTab`
-- Synchroniser `user_custom_roles` avec `user_roles` (app_role enum) pour maintenir la compatibilité RLS
-- Ajouter endpoint Express `/api/user-permissions/:userId` pour le mode Render
+L'endpoint sera ajouté directement dans `server/index.ts` (comme les autres endpoints publics/simples déjà présents), protégé par les middlewares `requireAuth` et `requireAdminOrViewer` importés depuis `server/middleware/auth.ts`.
+
+### Fichier modifié
+
+- **`server/index.ts`** — ajout d'un `app.get("/api/user-permissions/:userId", requireAuth, requireAdminOrViewer, handler)`
+
+### Validation UUID
+
+Le paramètre `:userId` sera validé par regex avant l'exécution de la requête SQL pour éviter toute injection.
+
