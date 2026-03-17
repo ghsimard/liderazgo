@@ -19,7 +19,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminFichasTab from "@/components/admin/AdminFichasTab";
-import AdminUsersTab from "@/components/admin/AdminUsersTab";
+
 import AdminGeographyTab from "@/components/admin/AdminGeographyTab";
 import AdminWeightsTab from "@/components/admin/AdminWeightsTab";
 import AdminDomainsManager from "@/components/admin/AdminDomainsManager";

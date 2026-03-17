@@ -269,7 +269,7 @@ Tous les imports `@/integrations/supabase/client` ont été remplacés par `@/ut
 | `src/components/admin/AdminWeightsTab.tsx` | ✅ Migré → `dbClient` |
 | `src/components/admin/AdminDomainsManager.tsx` | ✅ Migré → `dbClient` |
 | `src/components/admin/AdminTrashManager.tsx` | ✅ Migré → `dbClient` |
-| `src/components/admin/AdminUsersTab.tsx` | ✅ Migré → `dbClient` |
+| `src/components/admin/AdminUsersTab.tsx` | ❌ Supprimé (legacy migré vers AdminGestionCuentasTab) |
 | `src/components/admin/AdminImagesTab.tsx` | ✅ Migré → `dbClient` |
 | `src/components/admin/AdminReporte360Tab.tsx` | ✅ Migré → `dbClient` |
 | `src/components/admin/AdminEncuestaMonitor.tsx` | ✅ Migré → `dbClient` |
@@ -568,7 +568,7 @@ src/components/admin/AdminItemsManager.tsx        ← MIGRÉ
 src/components/admin/AdminWeightsTab.tsx          ← MIGRÉ
 src/components/admin/AdminDomainsManager.tsx      ← MIGRÉ
 src/components/admin/AdminTrashManager.tsx        ← MIGRÉ
-src/components/admin/AdminUsersTab.tsx            ← MIGRÉ
+src/components/admin/AdminUsersTab.tsx            ← SUPPRIMÉ (remplacé par AdminGestionCuentasTab)
 src/components/admin/AdminImagesTab.tsx           ← MIGRÉ
 src/components/admin/AdminReporte360Tab.tsx        ← MIGRÉ
 src/components/admin/AdminSatisfaccionesTab.tsx   ← MIGRÉ
