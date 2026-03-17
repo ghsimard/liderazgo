@@ -473,7 +473,7 @@ export default function AdminSatisfaccionesTab({ isViewer = false }: { isViewer?
             </div>
             </div>
             <div className="flex-1 flex justify-end">
-            {filteredResponses.length > 0 && (
+            {filteredResponses.length > 0 && !isViewer && (
               <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setShowDeleteAll(true)}>
                 <Trash2 className="w-4 h-4" /> Eliminar {filteredResponses.length === responses.length ? "todas" : `${filteredResponses.length} filtradas`} ({filteredResponses.length})
               </Button>
