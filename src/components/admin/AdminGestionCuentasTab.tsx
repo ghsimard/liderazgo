@@ -31,6 +31,13 @@ const AVAILABLE_SECTIONS = [
   { value: "certificaciones", label: "Certificaciones" },
 ];
 
+interface CustomRole {
+  id: string;
+  name: string;
+  description: string | null;
+  is_system: boolean | null;
+}
+
 interface UnifiedPerson {
   cedula: string;
   nombre: string;
@@ -39,8 +46,10 @@ interface UnifiedPerson {
   isAdmin: boolean;
   adminUserId?: string;
   adminEmail?: string;
-  adminRole?: string; // admin | superadmin
+  adminRole?: string; // admin | superadmin | monitoreo
   adminLastSignIn?: string | null;
+  customRoleId?: string;
+  customRoleName?: string;
   // Evaluador role
   isEvaluador: boolean;
   evaluadorId?: string;
@@ -82,7 +91,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [regiones, setRegiones] = useState<string[]>([]);
-
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState<UnifiedPerson | null>(null);
@@ -96,7 +105,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
   const [enableAdmin, setEnableAdmin] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
-  const [adminRole, setAdminRole] = useState("admin"); // admin | superadmin | monitoreo
+  const [adminRole, setAdminRole] = useState(""); // custom_role id
   const [showPassword, setShowPassword] = useState(false);
   // Evaluador section
   const [enableEvaluador, setEnableEvaluador] = useState(false);
@@ -119,13 +128,15 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [adminUsersResult, evalsResult, permsResult, regionesResult] = await Promise.all([
+      const [adminUsersResult, evalsResult, permsResult, regionesResult, rolesResult, userRolesResult] = await Promise.all([
         USE_EXPRESS
           ? apiFetch<{ users: AdminUser[] }>("/api/users")
           : invokeManageUsers("list").then((d: any) => ({ data: d, error: null })),
         supabase.from("rubrica_evaluadores").select("*"),
         supabase.from("operator_permissions").select("*").order("cedula").order("section"),
         supabase.from("regiones").select("nombre").order("nombre"),
+        supabase.from("custom_roles").select("*").order("name"),
+        supabase.from("user_custom_roles").select("user_id, role_id"),
       ]);
 
       const adminUsers: AdminUser[] = USE_EXPRESS
@@ -134,6 +145,15 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
       const evaluadores = evalsResult.data ?? [];
       const permissions = permsResult.data ?? [];
       setRegiones((regionesResult.data || []).map((r: any) => r.nombre));
+      const roles: CustomRole[] = (rolesResult.data ?? []) as any;
+      setCustomRoles(roles);
+      const userCustomRoles: { user_id: string; role_id: string }[] = (userRolesResult.data ?? []) as any;
+      // Build lookup: user_id → custom role
+      const userRoleMap = new Map<string, CustomRole>();
+      for (const ucr of userCustomRoles) {
+        const role = roles.find(r => r.id === ucr.role_id);
+        if (role) userRoleMap.set(ucr.user_id, role);
+      }
 
       // Build unified map by normalized cedula
       const map = new Map<string, UnifiedPerson>();
@@ -159,6 +179,12 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
         existing.adminLastSignIn = u.last_sign_in_at;
         existing.email = existing.email || u.email;
         if (!existing.nombre) existing.nombre = u.email.split("@")[0];
+        // Enrich with custom role
+        const customRole = userRoleMap.get(u.id);
+        if (customRole) {
+          existing.customRoleId = customRole.id;
+          existing.customRoleName = customRole.name;
+        }
         map.set(mapKey, existing);
       }
 
@@ -247,7 +273,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
     setEnableAdmin(false);
     setAdminEmail("");
     setAdminPassword("");
-    setAdminRole("admin");
+    setAdminRole("");
     setShowPassword(false);
     setEnableEvaluador(false);
     setEvalEmail("");
@@ -268,7 +294,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
     setFormEmail(p.email);
     setEnableAdmin(p.isAdmin);
     setAdminEmail(p.adminEmail || "");
-    setAdminRole(p.adminRole || "admin");
+    setAdminRole(p.customRoleId || "");
     setAdminPassword("");
     setEnableEvaluador(p.isEvaluador);
     setEvalEmail(p.evaluadorEmail || "");
@@ -300,6 +326,11 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
       const ced = formCedula.trim();
 
       // --- ADMIN ---
+      // Derive legacy role from custom role name
+      const selectedCustomRole = customRoles.find(r => r.id === adminRole);
+      const legacyRole = selectedCustomRole?.name === "Superadmin" ? "superadmin"
+        : selectedCustomRole?.name === "Monitoreo" ? "monitoreo" : "admin";
+
       if (enableAdmin) {
         const email = adminEmail.trim() || formEmail.trim();
         if (!email) {
@@ -312,15 +343,20 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
           if (USE_EXPRESS) {
             await apiFetch(`/api/users/${editingPerson.adminUserId}`, {
               method: "PUT",
-              body: { email, role: adminRole, cedula: ced },
+              body: { email, role: legacyRole, cedula: ced },
             });
           } else {
             await invokeManageUsers("update_user", {
               user_id: editingPerson.adminUserId,
               email,
-              role: adminRole,
+              role: legacyRole,
               cedula: ced,
             });
+          }
+          // Sync custom role
+          if (adminRole) {
+            await supabase.from("user_custom_roles").delete().eq("user_id", editingPerson.adminUserId);
+            await supabase.from("user_custom_roles").insert({ user_id: editingPerson.adminUserId, role_id: adminRole });
           }
         } else if (!isEdit || !editingPerson?.isAdmin) {
           // Create new admin
@@ -333,17 +369,16 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             if (USE_EXPRESS) {
               await apiFetch("/api/users", {
                 method: "POST",
-                body: { email, password: adminPassword, role: adminRole },
+                body: { email, password: adminPassword, role: legacyRole },
               });
             } else {
               const { data: { session } } = await supabase.auth.getSession();
               await supabase.functions.invoke("create-user", {
-                body: { email, password: adminPassword, makeAdmin: adminRole !== "monitoreo", makeSuperAdmin: adminRole === "superadmin", makeMonitoreo: adminRole === "monitoreo" },
+                body: { email, password: adminPassword, makeAdmin: legacyRole !== "monitoreo", makeSuperAdmin: legacyRole === "superadmin", makeMonitoreo: legacyRole === "monitoreo" },
                 headers: { Authorization: `Bearer ${session?.access_token}` },
               });
             }
-            // Link cedula
-            // Find the newly created user by listing again
+            // Link cedula + custom role
             const freshData = USE_EXPRESS
               ? await apiFetch<{ users: AdminUser[] }>("/api/users")
               : await invokeManageUsers("list");
@@ -351,11 +386,15 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             const newUser = freshUsers.find(u => u.email === email);
             if (newUser) {
               await supabase.from("admin_cedulas").upsert({ user_id: newUser.id, cedula: ced }, { onConflict: "user_id" });
+              if (adminRole) {
+                await supabase.from("user_custom_roles").insert({ user_id: newUser.id, role_id: adminRole });
+              }
             }
           }
         }
       } else if (isEdit && editingPerson?.isAdmin && editingPerson.adminUserId) {
-        // Admin was disabled — delete admin account
+        // Admin was disabled — delete admin account + custom role
+        await supabase.from("user_custom_roles").delete().eq("user_id", editingPerson.adminUserId);
         if (USE_EXPRESS) {
           await apiFetch(`/api/users/${editingPerson.adminUserId}`, { method: "DELETE" });
         } else {
@@ -557,7 +596,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                           p.adminRole === "monitoreo" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
                           "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
                         }`}>
-                          {p.adminRole === "superadmin" ? "Superadmin" : p.adminRole === "monitoreo" ? "Monitoreo" : "Admin"}
+                          {p.customRoleName || (p.adminRole === "superadmin" ? "Superadmin" : p.adminRole === "monitoreo" ? "Monitoreo" : "Admin")}
                         </Badge>
                       )}
                       {p.isEvaluador && (
@@ -641,7 +680,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               <AccordionItem value="admin">
                 <AccordionTrigger className="py-3">
                   <div className="flex items-center gap-3">
-                    <Switch checked={enableAdmin} onCheckedChange={setEnableAdmin} onClick={e => e.stopPropagation()} />
+                    <Switch checked={enableAdmin} onCheckedChange={c => { setEnableAdmin(c); if (c && !adminRole && customRoles.length) { const defaultRole = customRoles.find(r => r.name === "Admin"); if (defaultRole) setAdminRole(defaultRole.id); } }} onClick={e => e.stopPropagation()} />
                     <Shield className="w-4 h-4" />
                     <span className="text-sm font-medium">Administrador</span>
                     {enableAdmin && <Badge variant="secondary" className="text-xs">Activo</Badge>}
@@ -676,13 +715,17 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                         <div className="space-y-1">
                           <Label className="text-xs">Rol</Label>
                           <Select value={adminRole} onValueChange={setAdminRole}>
-                            <SelectTrigger className="w-40">
-                              <SelectValue />
+                            <SelectTrigger className="w-48">
+                              <SelectValue placeholder="Seleccione un rol" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              {isSuperAdmin && <SelectItem value="superadmin">Superadmin</SelectItem>}
-                              <SelectItem value="monitoreo">Monitoreo (solo lectura)</SelectItem>
+                              {customRoles
+                                .filter(r => isSuperAdmin || r.name !== "Superadmin")
+                                .map(r => (
+                                  <SelectItem key={r.id} value={r.id}>
+                                    {r.name}{r.description ? ` — ${r.description}` : ""}
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                         </div>
