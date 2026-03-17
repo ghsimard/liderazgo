@@ -533,7 +533,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10">
+                <TableCell colSpan={isViewer ? 4 : 5} className="text-center py-10">
                   <RefreshCw className="animate-spin w-5 h-5 mx-auto text-muted-foreground" />
                 </TableCell>
               </TableRow>
