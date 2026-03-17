@@ -42,7 +42,7 @@ export function useAdminAuth() {
             return;
           }
           setIsSuperAdmin(roles.includes("superadmin"));
-          setIsViewer(!roles.includes("admin") && !roles.includes("superadmin") && roles.includes("auditor"));
+          setIsViewer(!roles.includes("admin") && !roles.includes("superadmin") && roles.includes("monitoreo"));
         } else {
           const { data: hasAdmin } = await supabase.rpc("has_role", {
             _user_id: uid,
