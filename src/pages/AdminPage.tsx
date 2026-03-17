@@ -373,6 +373,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
             <TabsTrigger value="lista" className="gap-1.5"><FileText className="w-4 h-4" /> Lista</TabsTrigger>
             <TabsTrigger value="enlace" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlace y PDF</TabsTrigger>
             <TabsTrigger value="regiones" className="gap-1.5"><MapPin className="w-4 h-4" /> Configuración</TabsTrigger>
+            {isSuperAdmin && <TabsTrigger value="campos" className="gap-1.5"><BookOpen className="w-4 h-4" /> Campos y reglas</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="lista">
