@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
         const { data: roles } = await adminClient
           .from("user_roles")
           .select("user_id, role, created_at")
-          .in("role", ["admin", "superadmin", "auditor"]);
+          .in("role", ["admin", "superadmin", "monitoreo"]);
 
         if (!roles?.length) {
           return new Response(JSON.stringify({ users: [] }), {
