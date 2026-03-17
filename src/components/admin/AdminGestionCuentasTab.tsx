@@ -715,13 +715,17 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                         <div className="space-y-1">
                           <Label className="text-xs">Rol</Label>
                           <Select value={adminRole} onValueChange={setAdminRole}>
-                            <SelectTrigger className="w-40">
-                              <SelectValue />
+                            <SelectTrigger className="w-48">
+                              <SelectValue placeholder="Seleccione un rol" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              {isSuperAdmin && <SelectItem value="superadmin">Superadmin</SelectItem>}
-                              <SelectItem value="monitoreo">Monitoreo (solo lectura)</SelectItem>
+                              {customRoles
+                                .filter(r => isSuperAdmin || r.name !== "Superadmin")
+                                .map(r => (
+                                  <SelectItem key={r.id} value={r.id}>
+                                    {r.name}{r.description ? ` — ${r.description}` : ""}
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                         </div>
