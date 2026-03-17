@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
+import type { CrudAction } from "@/hooks/usePermissions";
 import {
   ClipboardList,
   FileText,
