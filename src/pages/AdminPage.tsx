@@ -489,7 +489,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
       );
     }
     case "satisfacciones":
-      return <AdminSatisfaccionesTab />;
+      return <AdminSatisfaccionesTab isViewer={isViewer} />;
     case "certificaciones":
       return (
         <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">

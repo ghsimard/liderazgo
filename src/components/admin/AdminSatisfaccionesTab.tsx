@@ -139,7 +139,7 @@ function RenderAnswer({ question, value }: { question?: SatisfaccionQuestion; va
   return <span className="text-foreground">{JSON.stringify(value)}</span>;
 }
 
-export default function AdminSatisfaccionesTab() {
+export default function AdminSatisfaccionesTab({ isViewer = false }: { isViewer?: boolean }) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [regions, setRegions] = useState<string[]>([]);
