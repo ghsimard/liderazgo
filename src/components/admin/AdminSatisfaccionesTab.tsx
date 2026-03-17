@@ -371,6 +371,7 @@ export default function AdminSatisfaccionesTab({ isViewer = false }: { isViewer?
         </TabsList>
 
         <TabsContent value="config" className="space-y-6 mt-4">
+          <fieldset disabled={isViewer} className="contents">
           {/* Global bulk actions */}
           <div className="flex gap-2 justify-end">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => bulkSetActive(null, true)}>
@@ -432,6 +433,7 @@ export default function AdminSatisfaccionesTab({ isViewer = false }: { isViewer?
               </CardContent>
             </Card>
           ))}
+          </fieldset>
         </TabsContent>
 
         <TabsContent value="responses" className="space-y-4 mt-4">
