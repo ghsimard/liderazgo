@@ -148,7 +148,7 @@ interface AdminSidebarProps {
   isViewer?: boolean;
 }
 
-export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: AdminSidebarProps) {
+export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin, isViewer }: AdminSidebarProps) {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
