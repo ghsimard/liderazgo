@@ -914,6 +914,13 @@ export default function FichaRLTForm() {
               <RefreshCw className="w-4 h-4" />
               Rellenar otra ficha
             </button>
+            <button
+              onClick={() => navigate("/mi-panel")}
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium border border-border transition-colors hover:bg-muted"
+            >
+              <ArrowRight className="w-4 h-4" />
+              Ir a Mi Panel
+            </button>
           </div>
         </div>
         <PostSubmitReviewModal
