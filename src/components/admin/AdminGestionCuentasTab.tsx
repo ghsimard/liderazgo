@@ -668,7 +668,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                           </div>
                         </div>
                       )}
-                      {isSuperAdmin && (
+                      {!isViewer && (
                         <div className="space-y-1">
                           <Label className="text-xs">Rol</Label>
                           <Select value={adminRole} onValueChange={setAdminRole}>
@@ -677,7 +677,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="superadmin">Superadmin</SelectItem>
+                              {isSuperAdmin && <SelectItem value="superadmin">Superadmin</SelectItem>}
                               <SelectItem value="auditor">Auditor (solo lectura)</SelectItem>
                             </SelectContent>
                           </Select>

@@ -497,7 +497,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
           </TabsList>
 
           <TabsContent value="gestion-cuentas">
-            <AdminGestionCuentasTab isSuperAdmin={isSuperAdmin} />
+            <AdminGestionCuentasTab isSuperAdmin={isSuperAdmin} isViewer={isViewer} />
           </TabsContent>
           <TabsContent value="activity-log">
             <AdminActivityLogTab isSuperAdmin={isSuperAdmin} />
