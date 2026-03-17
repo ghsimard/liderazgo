@@ -457,12 +457,16 @@ export default function AdminFichasTab({ isViewer = false }: { isViewer?: boolea
                       <Button variant="ghost" size="icon" onClick={() => handleDownloadPdf(f)} title="Descargar PDF">
                         <FileDown className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/ficha/${f.id}`)} title="Editar">
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(f.id)} title="Eliminar" className="text-destructive hover:text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {!isViewer && (
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/ficha/${f.id}`)} title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteId(f.id)} title="Eliminar" className="text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
