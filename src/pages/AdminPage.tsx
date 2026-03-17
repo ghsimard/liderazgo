@@ -319,7 +319,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
           <TabsContent value="configuracion">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-muted-foreground">Gestión completa de competencias 360°</h3>
-              {!isViewer && (
+              {can("encuesta360", "create") && (
                 <Button size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
                   <Plus className="w-4 h-4" /> Asistente de creación
                 </Button>
