@@ -91,7 +91,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [regiones, setRegiones] = useState<string[]>([]);
-
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState<UnifiedPerson | null>(null);
