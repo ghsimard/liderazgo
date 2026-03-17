@@ -179,13 +179,6 @@ router.put("/:id", async (req: Request, res: Response) => {
 
     // Update role (dual-write)
     if (role) {
-      // Legacy
-      await query("DELETE FROM user_roles WHERE user_id = $1", [id]);
-      await queryOne(
-        "INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-        [id, role]
-      );
-
       // New RBAC
       await query("DELETE FROM user_custom_roles WHERE user_id = $1", [id]);
       const customRoleName = legacyToCustomRoleName(role);
