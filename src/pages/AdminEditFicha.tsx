@@ -693,6 +693,7 @@ export default function AdminEditFicha() {
         {/* Formulario */}
         <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <fieldset disabled={isViewer} className="contents">
             {/* Hidden fields — region is managed internally, not shown like in FichaRLT */}
             <input type="hidden" {...register("region")} />
 
