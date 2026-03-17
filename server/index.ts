@@ -88,6 +88,34 @@ app.get("/api/geography/instituciones", async (_req, res) => {
   }
 });
 
+// ─── User permissions (RBAC) ──────────────────────────
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+app.get("/api/user-permissions/:userId", requireAuth, requireAdminOrViewer, async (req, res) => {
+  const { userId } = req.params;
+  if (!UUID_RE.test(userId)) {
+    res.status(400).json({ error: "Invalid userId format" });
+    return;
+  }
+  try {
+    const rows = await dbQuery(
+      `SELECT rp.section,
+              bool_or(rp.can_create) as can_create,
+              bool_or(rp.can_read)   as can_read,
+              bool_or(rp.can_update) as can_update,
+              bool_or(rp.can_delete) as can_delete
+       FROM user_custom_roles ucr
+       JOIN role_permissions rp ON rp.role_id = ucr.role_id
+       WHERE ucr.user_id = $1
+       GROUP BY rp.section`,
+      [userId]
+    );
+    res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Health check
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
