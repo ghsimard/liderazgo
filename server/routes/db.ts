@@ -88,7 +88,7 @@ const ALLOWED_TABLES = new Set([
   "fichas_rlt",
   "encuestas_360",
   "deleted_records",
-  "user_roles",
+  "user_custom_roles",
   "region_entidades",
   "region_municipios",
   "region_instituciones",
