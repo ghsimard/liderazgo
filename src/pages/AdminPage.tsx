@@ -395,6 +395,17 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
           <TabsContent value="regiones">
             <AdminGeographyTab isViewer={isViewer} />
           </TabsContent>
+
+          {isSuperAdmin && (
+            <TabsContent value="campos">
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Genera un PDF con todos los campos del formulario de Ficha de Información, sus reglas de validación y opciones.</p>
+                <Button onClick={() => generateFichaFieldsPdf()} className="gap-1.5">
+                  <BookOpen className="w-4 h-4" /> Descargar PDF — Campos y reglas
+                </Button>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       );
     }
