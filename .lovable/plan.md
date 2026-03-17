@@ -1,34 +1,63 @@
 
 
-## Probleme
+## Probleme actuel
 
-La route Express `GET /api/users` (server/routes/users.ts, lignes 13-27) ne fait **pas de JOIN** avec la table `admin_cedulas`. Elle retourne uniquement `id, email, created_at, last_sign_in_at, roles` — sans `cedula`. Le frontend reçoit donc `cedula: undefined` pour tous les admins/superadmins.
+Le panneau d'administration affiche **12+ onglets** dans une seule barre `TabsList` horizontale avec `flex-wrap`. C'est une masse de boutons qui deborde sur plusieurs lignes, sans hierarchie logique. L'utilisateur doit scanner tous les onglets pour trouver ce qu'il cherche.
 
-## Solution
+## Proposition : Sidebar avec sections groupees
 
-Modifier la requête SQL dans `GET /api/users` pour joindre `admin_cedulas` :
+Remplacer la barre d'onglets horizontale par une **sidebar collapsible** (utilisant le composant `Sidebar` de shadcn deja present dans le projet) avec des sections logiques groupees.
 
-**Fichier : `server/routes/users.ts`** (lignes 15-22)
+### Structure proposee
 
-Changer la requête de :
-```sql
-SELECT u.id, u.email, u.created_at, u.last_sign_in_at,
-       COALESCE(json_agg(ur.role) FILTER (WHERE ur.role IS NOT NULL), '[]') AS roles
-FROM users u
-LEFT JOIN user_roles ur ON ur.user_id = u.id
-GROUP BY u.id
+```text
+┌──────────────────┬──────────────────────────────────┐
+│  SIDEBAR         │  CONTENU                         │
+│                  │                                  │
+│  ▼ Formularios   │                                  │
+│    Enlaces       │                                  │
+│                  │                                  │
+│  ▼ Fichas RLT    │                                  │
+│    Lista         │                                  │
+│    Regiones      │                                  │
+│                  │                                  │
+│  ▼ Encuesta 360° │                                  │
+│    Config        │                                  │
+│    Inicial       │                                  │
+│    Final         │                                  │
+│    Informes Ini. │                                  │
+│    Informes Fin. │                                  │
+│                  │                                  │
+│  ▼ Analisis      │                                  │
+│    MEL           │                                  │
+│    Rubricas      │                                  │
+│                  │                                  │
+│  ▼ Sistema       │                                  │
+│    Admins        │                                  │
+│    Apreciaciones*│                                  │
+│    Mensajes*     │                                  │
+│    Changelog*    │                                  │
+│                  │  (* = superadmin only)            │
+└──────────────────┴──────────────────────────────────┘
 ```
 
-En :
-```sql
-SELECT u.id, u.email, u.created_at, u.last_sign_in_at,
-       COALESCE(json_agg(ur.role) FILTER (WHERE ur.role IS NOT NULL), '[]') AS roles,
-       ac.cedula
-FROM users u
-LEFT JOIN user_roles ur ON ur.user_id = u.id
-LEFT JOIN admin_cedulas ac ON ac.user_id = u.id
-GROUP BY u.id, ac.cedula
-```
+### Modifications
 
-C'est un changement d'une seule requête SQL — aucune modification frontend nécessaire car le composant `AdminGestionCuentasTab` lit déjà `u.cedula`.
+1. **Creer `src/components/admin/AdminSidebar.tsx`** : composant Sidebar avec les 5 groupes ci-dessus, utilisant `SidebarGroup`, `SidebarMenuItem`, et `SidebarMenuButton`. La navigation se fait via le parametre URL `?tab=` (meme mecanisme actuel). Le groupe contenant l'onglet actif reste ouvert via `defaultOpen`. Les items superadmin sont masques conditionnellement.
+
+2. **Modifier `src/pages/AdminPage.tsx`** :
+   - Envelopper le layout dans `SidebarProvider`
+   - Remplacer le `TabsList` par le nouveau `AdminSidebar`
+   - Conserver tous les `TabsContent` existants mais les afficher conditionnellement selon `activeTab` (sans Radix Tabs, juste un `if/switch`)
+   - Ajouter un `SidebarTrigger` dans le header pour le mode mobile
+   - La sidebar est collapsible en mode "icon" (icones visibles quand fermee)
+
+3. **Supprimer le panneau flottant "Mensajes"** : l'integrer comme un onglet normal dans la section "Sistema" de la sidebar au lieu du toggle dans le header.
+
+### Points techniques
+
+- Reutilise les composants `Sidebar` de `src/components/ui/sidebar.tsx` deja installes
+- Le parametre URL `?tab=` est conserve pour les liens directs et le rafraichissement
+- Les sous-onglets internes (fichas: lista/geography, config 360: dominios/competencias/etc.) restent en tabs horizontaux dans leur contenu respectif
+- Aucune modification aux composants enfants (AdminFichasTab, AdminMelTab, etc.)
 

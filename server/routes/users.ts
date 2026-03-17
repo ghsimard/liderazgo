@@ -14,10 +14,12 @@ router.get("/", async (_req: Request, res: Response) => {
   try {
     const users = await query(`
       SELECT u.id, u.email, u.created_at, u.last_sign_in_at,
-             COALESCE(json_agg(ur.role) FILTER (WHERE ur.role IS NOT NULL), '[]') AS roles
+             COALESCE(json_agg(ur.role) FILTER (WHERE ur.role IS NOT NULL), '[]') AS roles,
+             ac.cedula
       FROM users u
       LEFT JOIN user_roles ur ON ur.user_id = u.id
-      GROUP BY u.id
+      LEFT JOIN admin_cedulas ac ON ac.user_id = u.id
+      GROUP BY u.id, ac.cedula
       ORDER BY u.created_at DESC
     `);
     res.json({ users });
