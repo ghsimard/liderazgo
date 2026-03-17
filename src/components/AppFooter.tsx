@@ -32,12 +32,12 @@ export default function AppFooter() {
         } else {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
-          const { data: roles } = await supabase
-            .from("user_roles")
-            .select("role")
+          const { data: ucrs } = await supabase
+            .from("user_custom_roles")
+            .select("role_id")
             .eq("user_id", user.id)
             .limit(1);
-          if (roles && roles.length > 0) setIsAdmin(true);
+          if (ucrs && ucrs.length > 0) setIsAdmin(true);
         }
       } catch {}
     };

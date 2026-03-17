@@ -61,13 +61,20 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    // Fetch all roles for this user
-    const roles = await query<{ role: string }>(
-      "SELECT role FROM user_roles WHERE user_id = $1",
+    // Fetch all roles for this user via new RBAC tables
+    const roles = await query<{ name: string }>(
+      `SELECT cr.name FROM user_custom_roles ucr
+       JOIN custom_roles cr ON cr.id = ucr.role_id
+       WHERE ucr.user_id = $1`,
       [user.id]
     );
 
-    res.json({ user: { ...user, roles: roles.map((r) => r.role) } });
+    // Map custom role names to legacy keys for API compatibility
+    const legacyRoles = roles.map((r) =>
+      r.name === "Superadmin" ? "superadmin" : r.name === "Monitoreo" ? "monitoreo" : "admin"
+    );
+
+    res.json({ user: { ...user, roles: legacyRoles } });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

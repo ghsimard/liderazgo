@@ -57,13 +57,14 @@ export function useAutoFillUserInfo() {
             const { supabase: sbClient } = await import("@/integrations/supabase/client");
             const { data: { user } } = await sbClient.auth.getUser();
             if (user) {
-              const { data: roles } = await supabase
-                .from("user_roles" as any)
-                .select("role")
+              const { data: ucrs } = await supabase
+                .from("user_custom_roles" as any)
+                .select("role_id, custom_roles(name)")
                 .eq("user_id", user.id)
                 .limit(1);
-              if (roles && (roles as any[]).length > 0) {
-                const actualRole = (roles as any[])[0].role || "admin";
+              if (ucrs && (ucrs as any[]).length > 0) {
+                const roleName = (ucrs as any[])[0]?.custom_roles?.name || "Admin";
+                const actualRole = roleName === "Superadmin" ? "superadmin" : roleName === "Monitoreo" ? "monitoreo" : "admin";
                 const metaName = (user.user_metadata as any)?.full_name
                   || (user.user_metadata as any)?.name
                   || "";

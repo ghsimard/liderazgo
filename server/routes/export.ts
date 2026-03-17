@@ -68,9 +68,9 @@ router.get("/", requireAuth, requireSuperAdmin, async (_req: Request, res: Respo
       sql += `INSERT INTO users (id, email, password_hash, created_at) VALUES ('${u.id}', '${esc(u.email)}', '${esc(u.password_hash)}', '${u.created_at}') ON CONFLICT (id) DO NOTHING;\n`;
     }
 
-    const roles = await query("SELECT user_id, role, created_at FROM user_roles");
-    for (const r of roles) {
-      sql += `INSERT INTO user_roles (user_id, role, created_at) VALUES ('${r.user_id}', '${r.role}', '${r.created_at}') ON CONFLICT (user_id, role) DO NOTHING;\n`;
+    const ucrs = await query("SELECT user_id, role_id, created_at FROM user_custom_roles");
+    for (const r of ucrs) {
+      sql += `INSERT INTO user_custom_roles (user_id, role_id, created_at) VALUES ('${r.user_id}', '${r.role_id}', '${r.created_at}') ON CONFLICT (user_id, role_id) DO NOTHING;\n`;
     }
 
     sql += `\n`;
