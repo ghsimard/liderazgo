@@ -527,7 +527,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               <TableHead>Nombre</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Roles</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
+              {!isViewer && <TableHead className="text-right">Acciones</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
