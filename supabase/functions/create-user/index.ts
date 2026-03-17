@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
 
     // Assign role
     if (newUser.user) {
-      const assignedRole = makeSuperAdmin ? "superadmin" : (makeViewer || makeAuditor) ? "auditor" : "admin";
+      const assignedRole = makeSuperAdmin ? "superadmin" : (makeViewer || makeAuditor || makeMonitoreo) ? "monitoreo" : "admin";
       await adminClient.from("user_roles").insert({
         user_id: newUser.user.id,
         role: assignedRole,
