@@ -85,7 +85,7 @@ function getSortValue(inv: Invitation, key: SortKey): string | number {
   }
 }
 
-export default function AdminInvitacionesTab() {
+export default function AdminInvitacionesTab({ isViewer = false }: { isViewer?: boolean }) {
   const { toast } = useToast();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
