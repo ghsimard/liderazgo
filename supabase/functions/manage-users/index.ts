@@ -177,9 +177,8 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Dual-delete from both tables
+        // Delete from new RBAC table
         await adminClient.from("user_custom_roles").delete().eq("user_id", user_id);
-        await adminClient.from("user_roles").delete().eq("user_id", user_id);
         const { error } = await adminClient.auth.admin.deleteUser(user_id);
         if (error) {
           return new Response(JSON.stringify({ error: error.message }), {
