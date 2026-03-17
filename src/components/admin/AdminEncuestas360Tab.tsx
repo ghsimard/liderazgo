@@ -54,9 +54,10 @@ const FORM_TYPE_LABELS: Record<string, string> = {
 
 interface AdminEncuestas360TabProps {
   fase?: "inicial" | "final";
+  isViewer?: boolean;
 }
 
-export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuestas360TabProps) {
+export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = false }: AdminEncuestas360TabProps) {
   const { toast } = useToast();
   const [groups, setGroups] = useState<InstitutionGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -279,7 +280,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuesta
                             <tr className="bg-muted/30 text-left">
                               <th className="px-3 py-1.5 font-medium">Tipo</th>
                               <th className="px-3 py-1.5 font-medium">Fecha</th>
-                              <th className="px-3 py-1.5 font-medium w-10"></th>
+                              {!isViewer && <th className="px-3 py-1.5 font-medium w-10"></th>}
                             </tr>
                           </thead>
                           <tbody>
@@ -297,6 +298,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuesta
                                 <td className="px-3 py-2 text-muted-foreground">
                                   {new Date(e.created_at).toLocaleDateString("es-CO")}
                                 </td>
+                                {!isViewer && (
                                 <td className="px-3 py-2 text-right">
                                   <Button
                                     variant="ghost"
@@ -307,6 +309,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuesta
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </Button>
                                 </td>
+                                )}
                               </tr>
                             ))}
                           </tbody>

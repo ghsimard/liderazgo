@@ -85,7 +85,7 @@ function getSortValue(inv: Invitation, key: SortKey): string | number {
   }
 }
 
-export default function AdminInvitacionesTab() {
+export default function AdminInvitacionesTab({ isViewer = false }: { isViewer?: boolean }) {
   const { toast } = useToast();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -336,7 +336,7 @@ export default function AdminInvitacionesTab() {
         </Popover>
 
         <div className="flex items-center gap-2 ml-auto">
-          {filtered.length > 0 && (
+          {!isViewer && filtered.length > 0 && (
             <Button variant="destructive" size="sm" onClick={() => setShowBulkDelete(true)} className="gap-1.5">
               <Trash2 className="w-3.5 h-3.5" /> Borrar todo ({filtered.length})
             </Button>
@@ -400,7 +400,7 @@ export default function AdminInvitacionesTab() {
                           {show("accesos") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap text-center" onClick={() => handleSort("accesos")}>Accesos <SortIcon col="accesos" /></th>}
                           {show("enviada") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort("enviada")}>Enviada <SortIcon col="enviada" /></th>}
                           {show("estado") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort("estado")}>Estado <SortIcon col="estado" /></th>}
-                          <th className="px-3 py-1.5 font-medium w-10"></th>
+                          {!isViewer && <th className="px-3 py-1.5 font-medium w-10"></th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -477,6 +477,7 @@ export default function AdminInvitacionesTab() {
                                   )}
                                 </td>
                               )}
+                              {!isViewer && (
                               <td className="px-3 py-2 text-right">
                                 <Button
                                   variant="ghost"
@@ -487,6 +488,7 @@ export default function AdminInvitacionesTab() {
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                               </td>
+                              )}
                             </tr>
                           );
                         })}
