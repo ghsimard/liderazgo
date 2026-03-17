@@ -280,7 +280,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                             <tr className="bg-muted/30 text-left">
                               <th className="px-3 py-1.5 font-medium">Tipo</th>
                               <th className="px-3 py-1.5 font-medium">Fecha</th>
-                              <th className="px-3 py-1.5 font-medium w-10"></th>
+                              {!isViewer && <th className="px-3 py-1.5 font-medium w-10"></th>}
                             </tr>
                           </thead>
                           <tbody>
