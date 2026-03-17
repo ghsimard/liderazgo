@@ -336,7 +336,7 @@ export default function AdminInvitacionesTab({ isViewer = false }: { isViewer?: 
         </Popover>
 
         <div className="flex items-center gap-2 ml-auto">
-          {filtered.length > 0 && (
+          {!isViewer && filtered.length > 0 && (
             <Button variant="destructive" size="sm" onClick={() => setShowBulkDelete(true)} className="gap-1.5">
               <Trash2 className="w-3.5 h-3.5" /> Borrar todo ({filtered.length})
             </Button>

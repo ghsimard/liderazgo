@@ -341,13 +341,13 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
           </TabsContent>
 
           <TabsContent value="inicial">
-            <AdminEncuestas360Tab fase="inicial" />
+            <AdminEncuestas360Tab fase="inicial" isViewer={isViewer} />
           </TabsContent>
           <TabsContent value="final">
-            <AdminEncuestas360Tab fase="final" />
+            <AdminEncuestas360Tab fase="final" isViewer={isViewer} />
           </TabsContent>
           <TabsContent value="invitaciones">
-            <AdminInvitacionesTab />
+            <AdminInvitacionesTab isViewer={isViewer} />
           </TabsContent>
           <TabsContent value="informes-inicial">
             <AdminReporte360Tab fase="inicial" />
