@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
         }
 
         // Update role if provided and caller is superadmin
-        if (typeof role === "string" && ["admin", "superadmin", "auditor"].includes(role)) {
+        if (typeof role === "string" && ["admin", "superadmin", "monitoreo"].includes(role)) {
           const { data: callerRole } = await adminClient
             .from("user_roles").select("role").eq("user_id", caller.id).eq("role", "superadmin").maybeSingle();
           if (!callerRole && role === "superadmin") {

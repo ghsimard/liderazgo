@@ -27,7 +27,7 @@ EXCEPTION WHEN duplicate_object THEN
   EXCEPTION WHEN OTHERS THEN NULL;
   END;
   BEGIN
-    ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'auditor';
+    ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'monitoreo';
   EXCEPTION WHEN OTHERS THEN NULL;
   END;
 END $$;
