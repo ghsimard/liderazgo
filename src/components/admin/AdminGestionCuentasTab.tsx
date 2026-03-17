@@ -549,8 +549,12 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
                       {p.isAdmin && (
-                        <Badge className={`text-xs font-medium ${p.adminRole === "superadmin" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"}`}>
-                          {p.adminRole === "superadmin" ? "Superadmin" : "Admin"}
+                        <Badge className={`text-xs font-medium ${
+                          p.adminRole === "superadmin" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : 
+                          p.adminRole === "viewer" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
+                          "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                        }`}>
+                          {p.adminRole === "superadmin" ? "Superadmin" : p.adminRole === "viewer" ? "Viewer" : "Admin"}
                         </Badge>
                       )}
                       {p.isEvaluador && (
