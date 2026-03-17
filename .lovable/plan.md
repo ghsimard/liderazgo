@@ -33,10 +33,15 @@
    - Les rôles système ne sont modifiables que par superadmin
    - Intégré dans Sistema > "Roles y Permisos"
 
-### Phase 2 — Migration progressive (à faire)
+### Phase 2 — Migration progressive ✅
 
-- Migrer `AdminSidebar` pour filtrer les sections visibles via `usePermissions.readableSections`
-- Remplacer les checks `isViewer` / `isSuperAdmin` dans les composants admin par `permissions.can()`
-- Intégrer l'assignation de rôles custom dans `AdminGestionCuentasTab`
-- Synchroniser `user_custom_roles` avec `user_roles` (app_role enum) pour maintenir la compatibilité RLS
-- Ajouter endpoint Express `/api/user-permissions/:userId` pour le mode Render
+- ✅ Migrer `AdminSidebar` pour filtrer les sections visibles via `usePermissions.readableSections`
+- ✅ Remplacer les checks `isViewer` / `isSuperAdmin` dans AdminPage et AdminContent par `permissions.can()`
+- ✅ AdminEditFicha migré vers `usePermissions`
+- ✅ Intégrer l'assignation de rôles custom dans `AdminGestionCuentasTab`
+- ✅ Synchroniser `user_custom_roles` avec `user_roles` (app_role enum) pour maintenir la compatibilité RLS
+- ✅ Ajouter endpoint Express `/api/user-permissions/:userId` pour le mode Render
+
+### Notes d'architecture
+
+Les composants enfants (`AdminFichasTab`, `AdminEncuestas360Tab`, etc.) conservent leurs props `isViewer` pour compatibilité, mais les valeurs sont désormais calculées depuis `usePermissions.can()` dans `AdminPage`/`AdminContent`. Le filtrage de la sidebar est piloté par `readableSections`.
