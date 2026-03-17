@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, makeAdmin, makeSuperAdmin } = body as Record<string, unknown>;
+    const { email, password, makeAdmin, makeSuperAdmin, makeViewer } = body as Record<string, unknown>;
 
     if (typeof email !== "string" || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       return new Response(JSON.stringify({ error: "Email invalide" }), {
