@@ -36,13 +36,13 @@ export function useAdminAuth() {
 
         if (USE_EXPRESS) {
           const roles: string[] = (data.user as any).roles ?? [];
-          if (!roles.includes("admin") && !roles.includes("superadmin") && !roles.includes("viewer")) {
+          if (!roles.includes("admin") && !roles.includes("superadmin") && !roles.includes("auditor")) {
             await apiLogout();
             navigate(buildLoginRoute("role_missing"));
             return;
           }
           setIsSuperAdmin(roles.includes("superadmin"));
-          setIsViewer(!roles.includes("admin") && !roles.includes("superadmin") && roles.includes("viewer"));
+          setIsViewer(!roles.includes("admin") && !roles.includes("superadmin") && roles.includes("auditor"));
         } else {
           const { data: hasAdmin } = await supabase.rpc("has_role", {
             _user_id: uid,
@@ -54,7 +54,7 @@ export function useAdminAuth() {
           });
           const { data: hasViewer } = await supabase.rpc("has_role", {
             _user_id: uid,
-            _role: "viewer",
+            _role: "auditor",
           });
           if (!hasAdmin && !hasSuperAdmin && !hasViewer) {
             await apiLogout();
