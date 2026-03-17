@@ -294,7 +294,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
     setFormEmail(p.email);
     setEnableAdmin(p.isAdmin);
     setAdminEmail(p.adminEmail || "");
-    setAdminRole(p.adminRole || "admin");
+    setAdminRole(p.customRoleId || "");
     setAdminPassword("");
     setEnableEvaluador(p.isEvaluador);
     setEvalEmail(p.evaluadorEmail || "");
