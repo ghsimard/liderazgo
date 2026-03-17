@@ -337,7 +337,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
             } else {
               const { data: { session } } = await supabase.auth.getSession();
               await supabase.functions.invoke("create-user", {
-                body: { email, password: adminPassword, makeAdmin: true, makeSuperAdmin: adminRole === "superadmin" },
+                body: { email, password: adminPassword, makeAdmin: adminRole !== "viewer", makeSuperAdmin: adminRole === "superadmin", makeViewer: adminRole === "viewer" },
                 headers: { Authorization: `Bearer ${session?.access_token}` },
               });
             }
