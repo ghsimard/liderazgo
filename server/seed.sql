@@ -637,6 +637,110 @@ INSERT INTO app_settings (key, value) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================
+-- RBAC: CUSTOM ROLES (system defaults)
+-- ============================================================
+INSERT INTO custom_roles (id, name, description, is_system) VALUES
+  ('r0000001-0000-0000-0000-000000000001', 'Superadmin', 'Acceso total al sistema, gestion de roles et utilisateurs', true),
+  ('r0000001-0000-0000-0000-000000000002', 'Admin', 'Administración completa excepto gestion de rôles système', true),
+  ('r0000001-0000-0000-0000-000000000003', 'Monitoreo', 'Acceso de solo lectura a datos y reportes', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- RBAC: ROLE PERMISSIONS
+-- Superadmin & Admin: full CRUD on all sections
+-- Monitoreo: read-only on data sections, no system access
+-- ============================================================
+
+-- Superadmin: full CRUD on every section
+INSERT INTO role_permissions (role_id, section, can_create, can_read, can_update, can_delete) VALUES
+  ('r0000001-0000-0000-0000-000000000001', 'formularios', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'fichas-rlt', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'fichas-rlt.fichas', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'fichas-rlt.geography', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'fichas-rlt.campos', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'rubricas', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'encuesta360', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'encuesta360.formularios', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'encuesta360.inicial', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'encuesta360.final', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'encuesta360.invitaciones', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'encuesta360.informes-inicial', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'encuesta360.informes-final', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'encuesta360.configuracion', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'informe-modulo', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'ambiente-escolar', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'ambiente-escolar.monitoreo', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'ambiente-escolar.estadisticas', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'ambiente-escolar.enlaces', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'satisfacciones', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'certificaciones', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'mel', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'mel.mel-360', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'mel.mel-rubricas', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'mel.mel-config', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'sistema', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'sistema.gestion-cuentas', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'sistema.roles-permisos', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'sistema.activity-log', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'sistema.papelera', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'sistema.reviews', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'sistema.mensajes', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'sistema.changelog', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'sistema.specs', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000001', 'sistema.purge-data', true, true, true, true)
+ON CONFLICT DO NOTHING;
+
+-- Admin: full CRUD on all sections except sistema.roles-permisos (read-only)
+INSERT INTO role_permissions (role_id, section, can_create, can_read, can_update, can_delete) VALUES
+  ('r0000001-0000-0000-0000-000000000002', 'formularios', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'fichas-rlt', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'fichas-rlt.fichas', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'fichas-rlt.geography', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'fichas-rlt.campos', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'rubricas', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'encuesta360', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'encuesta360.formularios', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'encuesta360.inicial', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'encuesta360.final', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'encuesta360.invitaciones', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'encuesta360.informes-inicial', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'encuesta360.informes-final', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'encuesta360.configuracion', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'informe-modulo', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'ambiente-escolar', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'ambiente-escolar.monitoreo', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'ambiente-escolar.estadisticas', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'ambiente-escolar.enlaces', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'satisfacciones', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'certificaciones', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'mel', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'mel.mel-360', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'mel.mel-rubricas', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'mel.mel-config', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'sistema', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'sistema.gestion-cuentas', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'sistema.roles-permisos', false, true, false, false),
+  ('r0000001-0000-0000-0000-000000000002', 'sistema.activity-log', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'sistema.papelera', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'sistema.reviews', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'sistema.mensajes', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'sistema.changelog', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'sistema.specs', true, true, true, true),
+  ('r0000001-0000-0000-0000-000000000002', 'sistema.purge-data', true, true, true, true)
+ON CONFLICT DO NOTHING;
+
+-- Monitoreo: read-only on data sections, no MEL, no sistema
+INSERT INTO role_permissions (role_id, section, can_create, can_read, can_update, can_delete) VALUES
+  ('r0000001-0000-0000-0000-000000000003', 'fichas-rlt', false, true, false, false),
+  ('r0000001-0000-0000-0000-000000000003', 'fichas-rlt.fichas', false, true, false, false),
+  ('r0000001-0000-0000-0000-000000000003', 'encuesta360', false, true, false, false),
+  ('r0000001-0000-0000-0000-000000000003', 'encuesta360.inicial', false, true, false, false),
+  ('r0000001-0000-0000-0000-000000000003', 'encuesta360.final', false, true, false, false),
+  ('r0000001-0000-0000-0000-000000000003', 'informe-modulo', false, true, false, false),
+  ('r0000001-0000-0000-0000-000000000003', 'satisfacciones', false, true, false, false)
+ON CONFLICT DO NOTHING;
+
+-- ============================================================
 -- POST-SEED INSTRUCTIONS
 -- ============================================================
 -- 1. Change admin password immediately:
