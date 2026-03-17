@@ -104,13 +104,10 @@ Deno.serve(async (req) => {
     if (newUser.user) {
       const uid = newUser.user.id;
 
-      // Determine legacy role for dual-write
+      // Determine legacy role for mapping
       const legacyRole = makeSuperAdmin ? "superadmin" : (makeViewer || makeAuditor || makeMonitoreo) ? "monitoreo" : "admin";
 
-      // Dual-write: legacy user_roles
-      await adminClient.from("user_roles").insert({ user_id: uid, role: legacyRole });
-
-      // Dual-write: new user_custom_roles
+      // Write to new user_custom_roles
       if (typeof customRoleId === "string" && customRoleId) {
         // Use the explicitly provided custom role ID
         await adminClient.from("user_custom_roles").upsert(

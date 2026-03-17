@@ -32,7 +32,7 @@ const TABLES_TO_PURGE = [
 ];
 
 const TABLES_PRESERVED = [
-  { table: "users / user_roles / admin_cedulas", label: "Cuentas de administración" },
+  { table: "users / user_custom_roles / custom_roles / admin_cedulas", label: "Cuentas de administración" },
   { table: "regiones / region_entidades / region_municipios / region_instituciones", label: "Configuración geográfica" },
   { table: "entidades_territoriales / municipios / instituciones", label: "Entidades y municipios" },
   { table: "mel_kpi_config / mel_kpi_groups / mel_kpi_group_items", label: "Configuración KPI/MEL" },

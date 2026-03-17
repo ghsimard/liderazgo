@@ -177,9 +177,8 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Dual-delete from both tables
+        // Delete from new RBAC table
         await adminClient.from("user_custom_roles").delete().eq("user_id", user_id);
-        await adminClient.from("user_roles").delete().eq("user_id", user_id);
         const { error } = await adminClient.auth.admin.deleteUser(user_id);
         if (error) {
           return new Response(JSON.stringify({ error: error.message }), {
@@ -232,10 +231,7 @@ Deno.serve(async (req) => {
               status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
-          // Legacy dual-write
-          await adminClient.from("user_roles").update({ role }).eq("user_id", user_id);
-
-          // New RBAC dual-write
+          // New RBAC write
           const roleName = role === "superadmin" ? "Superadmin" : role === "monitoreo" ? "Monitoreo" : "Admin";
           const { data: cr } = await adminClient.from("custom_roles").select("id").eq("name", roleName).maybeSingle();
           if (cr) {

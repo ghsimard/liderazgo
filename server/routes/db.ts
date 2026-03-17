@@ -88,7 +88,7 @@ const ALLOWED_TABLES = new Set([
   "fichas_rlt",
   "encuestas_360",
   "deleted_records",
-  "user_roles",
+  "user_custom_roles",
   "region_entidades",
   "region_municipios",
   "region_instituciones",
@@ -367,7 +367,9 @@ router.post("/:table", async (req: Request, res: Response) => {
         // Check admin role
         const { queryOne } = await import("../db");
         const role = await queryOne(
-          "SELECT role FROM user_roles WHERE user_id = $1 AND role IN ('admin', 'superadmin')",
+          `SELECT cr.name FROM user_custom_roles ucr
+           JOIN custom_roles cr ON cr.id = ucr.role_id
+           WHERE ucr.user_id = $1 AND cr.name IN ('Admin', 'Superadmin')`,
           [decoded.userId]
         );
         if (!role) {

@@ -41,13 +41,14 @@ Deno.serve(async (req) => {
 
     const userId = user.id;
 
-    // Check admin role
+    // Check admin role via new RBAC tables
     const { data: roleData } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .in("role", ["admin", "superadmin"])
-      .maybeSingle();
+      .from("user_custom_roles")
+      .select("role_id, custom_roles(name)")
+      .eq("user_id", userId);
+
+    const roleNames = (roleData ?? []).map((r: any) => r.custom_roles?.name).filter(Boolean);
+    if (!roleNames.includes("Admin") && !roleNames.includes("Superadmin")) {
 
     if (!roleData) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
@@ -73,7 +74,7 @@ Deno.serve(async (req) => {
       "fichas_rlt",
       "encuestas_360",
       "deleted_records",
-      "user_roles",
+      "user_custom_roles",
       "app_images",
       "app_settings",
       "rubrica_modules",

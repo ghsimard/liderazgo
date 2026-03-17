@@ -115,13 +115,7 @@ router.post("/", async (req: Request, res: Response) => {
 
     const assignedRole = role || "admin";
 
-    // Dual-write: legacy user_roles
-    await queryOne(
-      "INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-      [id, assignedRole]
-    );
-
-    // Dual-write: new user_custom_roles
+    // Write to new user_custom_roles
     const customRoleName = legacyToCustomRoleName(assignedRole);
     const roleId = await getRoleIdByName(customRoleName);
     if (roleId) {
@@ -185,13 +179,6 @@ router.put("/:id", async (req: Request, res: Response) => {
 
     // Update role (dual-write)
     if (role) {
-      // Legacy
-      await query("DELETE FROM user_roles WHERE user_id = $1", [id]);
-      await queryOne(
-        "INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-        [id, role]
-      );
-
       // New RBAC
       await query("DELETE FROM user_custom_roles WHERE user_id = $1", [id]);
       const customRoleName = legacyToCustomRoleName(role);
@@ -270,9 +257,8 @@ router.delete("/:id", async (req: Request, res: Response) => {
       }
     }
 
-    // Dual-delete
+    // Delete from RBAC table
     await query("DELETE FROM user_custom_roles WHERE user_id = $1", [id]);
-    await query("DELETE FROM user_roles WHERE user_id = $1", [id]);
     const user = await queryOne("DELETE FROM users WHERE id = $1 RETURNING id", [id]);
 
     if (!user) {
