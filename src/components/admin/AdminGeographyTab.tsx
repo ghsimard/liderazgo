@@ -599,12 +599,14 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
                     <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate" title={muniNames.join(", ")}>
                       {muniNames.length > 0 ? muniNames.join(", ") : "—"}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openRegionDialog(r)} title="Editar"><Pencil className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteItem({ type: "region", id: r.id, nombre: r.nombre })} className="text-destructive hover:text-destructive" title="Eliminar"><Trash2 className="w-4 h-4" /></Button>
-                      </div>
-                    </TableCell>
+                    {!isViewer && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openRegionDialog(r)} title="Editar"><Pencil className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteItem({ type: "region", id: r.id, nombre: r.nombre })} className="text-destructive hover:text-destructive" title="Eliminar"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
