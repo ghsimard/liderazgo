@@ -145,6 +145,7 @@ interface AdminSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   isSuperAdmin: boolean;
+  isViewer?: boolean;
 }
 
 export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: AdminSidebarProps) {
