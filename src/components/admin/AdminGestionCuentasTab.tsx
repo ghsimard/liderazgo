@@ -31,6 +31,13 @@ const AVAILABLE_SECTIONS = [
   { value: "certificaciones", label: "Certificaciones" },
 ];
 
+interface CustomRole {
+  id: string;
+  name: string;
+  description: string | null;
+  is_system: boolean | null;
+}
+
 interface UnifiedPerson {
   cedula: string;
   nombre: string;
@@ -39,8 +46,10 @@ interface UnifiedPerson {
   isAdmin: boolean;
   adminUserId?: string;
   adminEmail?: string;
-  adminRole?: string; // admin | superadmin
+  adminRole?: string; // admin | superadmin | monitoreo
   adminLastSignIn?: string | null;
+  customRoleId?: string;
+  customRoleName?: string;
   // Evaluador role
   isEvaluador: boolean;
   evaluadorId?: string;
