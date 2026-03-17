@@ -17,39 +17,63 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_sign_in_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users (email);
 
--- 2. Roles enum (keep existing if already created by export)
-DO $$ BEGIN
-  CREATE TYPE public.app_role AS ENUM ('admin', 'superadmin', 'monitoreo');
-EXCEPTION WHEN duplicate_object THEN
-  -- Add values if enum exists but doesn't have them
-  BEGIN
-    ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'superadmin';
-  EXCEPTION WHEN OTHERS THEN NULL;
-  END;
-  BEGIN
-    ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'monitoreo';
-  EXCEPTION WHEN OTHERS THEN NULL;
-  END;
-END $$;
-
--- 3. User roles table (same structure as current)
-CREATE TABLE IF NOT EXISTS public.user_roles (
+-- 2. Custom roles (RBAC)
+CREATE TABLE IF NOT EXISTS public.custom_roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  role app_role NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (user_id, role)
+  name TEXT NOT NULL UNIQUE,
+  description TEXT DEFAULT '',
+  is_system BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 4. has_role function (simplified — no more RLS context)
-CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
+-- 3. Role permissions (CRUD per section)
+CREATE TABLE IF NOT EXISTS public.role_permissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  role_id UUID NOT NULL REFERENCES public.custom_roles(id) ON DELETE CASCADE,
+  section TEXT NOT NULL,
+  can_create BOOLEAN DEFAULT false,
+  can_read BOOLEAN DEFAULT false,
+  can_update BOOLEAN DEFAULT false,
+  can_delete BOOLEAN DEFAULT false,
+  UNIQUE (role_id, section)
+);
+
+-- 4. User ↔ Role assignment
+CREATE TABLE IF NOT EXISTS public.user_custom_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  role_id UUID NOT NULL REFERENCES public.custom_roles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (user_id, role_id)
+);
+
+-- 5. get_user_permissions function
+CREATE OR REPLACE FUNCTION public.get_user_permissions(_user_id UUID)
+RETURNS TABLE(section TEXT, can_create BOOLEAN, can_read BOOLEAN, can_update BOOLEAN, can_delete BOOLEAN)
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT DISTINCT rp.section,
+    bool_or(rp.can_create) as can_create,
+    bool_or(rp.can_read) as can_read,
+    bool_or(rp.can_update) as can_update,
+    bool_or(rp.can_delete) as can_delete
+  FROM user_custom_roles ucr
+  JOIN role_permissions rp ON rp.role_id = ucr.role_id
+  WHERE ucr.user_id = _user_id
+  GROUP BY rp.section;
+$$;
+
+-- 6. has_read_access function
+CREATE OR REPLACE FUNCTION public.has_read_access(_user_id UUID)
 RETURNS BOOLEAN
 LANGUAGE sql
 STABLE
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = _role
+    SELECT 1 FROM public.user_custom_roles ucr
+    JOIN public.custom_roles cr ON cr.id = ucr.role_id
+    WHERE ucr.user_id = _user_id
   )
 $$;
 
