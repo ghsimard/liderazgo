@@ -608,7 +608,7 @@ export default function AdminPage() {
                 <h1 className="font-semibold text-base leading-tight hidden sm:block">Panel de Administración</h1>
               </div>
               <div className="flex items-center gap-2">
-                {isSuperAdmin && (
+                {isSuperAdmin && !isViewer && (
                   <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5 bg-primary-foreground/10 border-primary-foreground !text-primary-foreground hover:bg-primary-foreground/20">
                     <DatabaseBackup className="w-4 h-4" /> {exporting ? "Exportando…" : "Export SQL"}
                   </Button>
