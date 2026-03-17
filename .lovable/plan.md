@@ -2,14 +2,14 @@
 
 ## Système RBAC — Rôles personnalisés avec permissions CRUD granulaires
 
-### Statut : Phase 1 terminée ✅
+### Statut : Phases 1–3 terminées ✅
 
 ### Ce qui a été implémenté
 
 1. **Tables de base de données** :
    - `custom_roles` : rôles personnalisés (nom, description, is_system)
    - `role_permissions` : permissions CRUD par section (clé hiérarchique avec notation pointée)
-   - `user_custom_roles` : assignation utilisateur ↔ rôle
+   - `user_custom_roles` : assignation utilisateur ↔ rôle (contrainte UNIQUE ajoutée)
    - Fonction `get_user_permissions()` (SECURITY DEFINER) pour charger les permissions sans récursion RLS
 
 2. **Seed des rôles système** :
@@ -33,14 +33,28 @@
    - Les rôles système ne sont modifiables que par superadmin
    - Intégré dans Sistema > "Roles y Permisos"
 
-### Phase 2 — Migration progressive ✅
+### Migration legacy `user_roles` → `user_custom_roles` ✅
 
-- ✅ Migrer `AdminSidebar` pour filtrer les sections visibles via `usePermissions.readableSections`
-- ✅ Remplacer les checks `isViewer` / `isSuperAdmin` dans AdminPage et AdminContent par `permissions.can()`
-- ✅ AdminEditFicha migré vers `usePermissions`
-- ✅ Intégrer l'assignation de rôles custom dans `AdminGestionCuentasTab`
-- ✅ Synchroniser `user_custom_roles` avec `user_roles` (app_role enum) pour maintenir la compatibilité RLS
-- ✅ Ajouter endpoint Express `/api/user-permissions/:userId` pour le mode Render
+#### Phase 1 — Backfill + dual-write ✅
+- Migration SQL : backfill `user_custom_roles` depuis `user_roles` (Admin/Superadmin/Monitoreo)
+- Edge functions `create-user` et `manage-users` : écrivent dans les deux tables
+- Express `server/routes/users.ts` : dual-write sur création, modification, suppression
+
+#### Phase 2 — Fonctions SQL de sécurité réécrites ✅
+- `has_admin_access()` → query `user_custom_roles JOIN custom_roles` (Admin/Superadmin)
+- `has_read_access()` → query `user_custom_roles JOIN custom_roles` (tout rôle)
+- `has_role(_user_id, _role)` → mapping legacy enum → custom_roles name
+- **Toutes les RLS policies existantes (~20+) continuent de fonctionner sans modification**
+
+#### Phase 3 — Express middleware + frontend ✅
+- `server/middleware/auth.ts` : requireAdmin/requireAdminOrViewer/requireSuperAdmin utilisent `user_custom_roles JOIN custom_roles`
+- `src/hooks/useAdminAuth.ts` : mode Supabase utilise `user_custom_roles` au lieu de `has_role` RPC
+- `server/routes/users.ts` : listing, création, modification, suppression via nouvelles tables
+
+#### Phase 4 — Nettoyage (à venir)
+- Retirer le dual-write (ne plus écrire dans `user_roles`)
+- Supprimer la table `user_roles` et l'enum `app_role`
+- Fusionner `AdminUsersTab` dans `AdminGestionCuentasTab`
 
 ### Notes d'architecture
 
