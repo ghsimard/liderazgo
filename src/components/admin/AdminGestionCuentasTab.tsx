@@ -326,6 +326,11 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
       const ced = formCedula.trim();
 
       // --- ADMIN ---
+      // Derive legacy role from custom role name
+      const selectedCustomRole = customRoles.find(r => r.id === adminRole);
+      const legacyRole = selectedCustomRole?.name === "Superadmin" ? "superadmin"
+        : selectedCustomRole?.name === "Monitoreo" ? "monitoreo" : "admin";
+
       if (enableAdmin) {
         const email = adminEmail.trim() || formEmail.trim();
         if (!email) {
@@ -338,15 +343,20 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
           if (USE_EXPRESS) {
             await apiFetch(`/api/users/${editingPerson.adminUserId}`, {
               method: "PUT",
-              body: { email, role: adminRole, cedula: ced },
+              body: { email, role: legacyRole, cedula: ced },
             });
           } else {
             await invokeManageUsers("update_user", {
               user_id: editingPerson.adminUserId,
               email,
-              role: adminRole,
+              role: legacyRole,
               cedula: ced,
             });
+          }
+          // Sync custom role
+          if (adminRole) {
+            await supabase.from("user_custom_roles").delete().eq("user_id", editingPerson.adminUserId);
+            await supabase.from("user_custom_roles").insert({ user_id: editingPerson.adminUserId, role_id: adminRole });
           }
         } else if (!isEdit || !editingPerson?.isAdmin) {
           // Create new admin
@@ -359,17 +369,16 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             if (USE_EXPRESS) {
               await apiFetch("/api/users", {
                 method: "POST",
-                body: { email, password: adminPassword, role: adminRole },
+                body: { email, password: adminPassword, role: legacyRole },
               });
             } else {
               const { data: { session } } = await supabase.auth.getSession();
               await supabase.functions.invoke("create-user", {
-                body: { email, password: adminPassword, makeAdmin: adminRole !== "monitoreo", makeSuperAdmin: adminRole === "superadmin", makeMonitoreo: adminRole === "monitoreo" },
+                body: { email, password: adminPassword, makeAdmin: legacyRole !== "monitoreo", makeSuperAdmin: legacyRole === "superadmin", makeMonitoreo: legacyRole === "monitoreo" },
                 headers: { Authorization: `Bearer ${session?.access_token}` },
               });
             }
-            // Link cedula
-            // Find the newly created user by listing again
+            // Link cedula + custom role
             const freshData = USE_EXPRESS
               ? await apiFetch<{ users: AdminUser[] }>("/api/users")
               : await invokeManageUsers("list");
@@ -377,11 +386,15 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             const newUser = freshUsers.find(u => u.email === email);
             if (newUser) {
               await supabase.from("admin_cedulas").upsert({ user_id: newUser.id, cedula: ced }, { onConflict: "user_id" });
+              if (adminRole) {
+                await supabase.from("user_custom_roles").insert({ user_id: newUser.id, role_id: adminRole });
+              }
             }
           }
         }
       } else if (isEdit && editingPerson?.isAdmin && editingPerson.adminUserId) {
-        // Admin was disabled — delete admin account
+        // Admin was disabled — delete admin account + custom role
+        await supabase.from("user_custom_roles").delete().eq("user_id", editingPerson.adminUserId);
         if (USE_EXPRESS) {
           await apiFetch(`/api/users/${editingPerson.adminUserId}`, { method: "DELETE" });
         } else {
