@@ -452,7 +452,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
     case "rubricas":
       return <AdminRubricasTab />;
     case "informe-modulo":
-      return <AdminInformeModuloTab isViewer={isViewer} />;
+      return <AdminInformeModuloTab isViewer={!can("informe-modulo", "update")} />;
     case "blancos-ambiente":
     case "ambiente-escolar":
     case "ambiente-monitoreo":
