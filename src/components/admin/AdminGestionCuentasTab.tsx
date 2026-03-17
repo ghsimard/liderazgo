@@ -95,7 +95,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
   const [enableAdmin, setEnableAdmin] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
-  const [adminRole, setAdminRole] = useState("admin");
+  const [adminRole, setAdminRole] = useState("admin"); // admin | superadmin | viewer
   const [showPassword, setShowPassword] = useState(false);
   // Evaluador section
   const [enableEvaluador, setEnableEvaluador] = useState(false);
