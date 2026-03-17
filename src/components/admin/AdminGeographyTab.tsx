@@ -579,7 +579,7 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
                 <TableHead>Entidad Territorial</TableHead>
                 <TableHead>Logos</TableHead>
                 <TableHead>Municipios</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                {!isViewer && <TableHead className="text-right">Acciones</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
