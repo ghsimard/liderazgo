@@ -57,7 +57,7 @@ interface AdminEncuestas360TabProps {
   isViewer?: boolean;
 }
 
-export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuestas360TabProps) {
+export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = false }: AdminEncuestas360TabProps) {
   const { toast } = useToast();
   const [groups, setGroups] = useState<InstitutionGroup[]>([]);
   const [loading, setLoading] = useState(true);
