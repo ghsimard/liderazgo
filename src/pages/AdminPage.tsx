@@ -622,7 +622,7 @@ export default function AdminPage() {
 
           <main className="flex-1 p-4 md:p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">{getHubTitle(activeTab)}</h2>
-            <AdminContent activeTab={activeTab} isSuperAdmin={isSuperAdmin} />
+            <AdminContent activeTab={activeTab} isSuperAdmin={isSuperAdmin} isViewer={isViewer} />
           </main>
         </div>
       </div>
