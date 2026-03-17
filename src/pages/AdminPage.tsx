@@ -495,7 +495,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
       );
     }
     case "satisfacciones":
-      return <AdminSatisfaccionesTab isViewer={isViewer} />;
+      return <AdminSatisfaccionesTab isViewer={!can("satisfacciones", "update")} />;
     case "certificaciones":
       return (
         <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
