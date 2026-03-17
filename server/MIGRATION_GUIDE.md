@@ -568,7 +568,7 @@ src/components/admin/AdminItemsManager.tsx        ← MIGRÉ
 src/components/admin/AdminWeightsTab.tsx          ← MIGRÉ
 src/components/admin/AdminDomainsManager.tsx      ← MIGRÉ
 src/components/admin/AdminTrashManager.tsx        ← MIGRÉ
-src/components/admin/AdminUsersTab.tsx            ← MIGRÉ
+src/components/admin/AdminUsersTab.tsx            ← SUPPRIMÉ (remplacé par AdminGestionCuentasTab)
 src/components/admin/AdminImagesTab.tsx           ← MIGRÉ
 src/components/admin/AdminReporte360Tab.tsx        ← MIGRÉ
 src/components/admin/AdminSatisfaccionesTab.tsx   ← MIGRÉ
