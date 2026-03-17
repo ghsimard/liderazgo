@@ -709,7 +709,7 @@ AS $$
 $$;
 
 -- ============================================================
--- RPC: has_admin_access
+-- RPC: has_admin_access (uses new RBAC tables)
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION public.has_admin_access(_user_id uuid)
@@ -718,8 +718,9 @@ LANGUAGE sql
 STABLE
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role IN ('admin', 'superadmin')
+    SELECT 1 FROM public.user_custom_roles ucr
+    JOIN public.custom_roles cr ON cr.id = ucr.role_id
+    WHERE ucr.user_id = _user_id AND cr.name IN ('Admin', 'Superadmin')
   )
 $$;
 
