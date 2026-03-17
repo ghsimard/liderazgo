@@ -43,6 +43,7 @@ import AdminSatisfaccionesTab from "@/components/admin/AdminSatisfaccionesTab";
 import AdminOperadoresTab from "@/components/admin/AdminOperadoresTab";
 import AdminEvaluadoresTab from "@/components/admin/AdminEvaluadoresTab";
 import AdminGestionCuentasTab from "@/components/admin/AdminGestionCuentasTab";
+import AdminRolesTab from "@/components/admin/AdminRolesTab";
 import AdminAmbienteMonitorTab from "@/components/admin/AdminAmbienteMonitorTab";
 import AdminAmbienteStatsTab from "@/components/admin/AdminAmbienteStatsTab";
 
