@@ -554,7 +554,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
                           p.adminRole === "viewer" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
                           "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
                         }`}>
-                          {p.adminRole === "superadmin" ? "Superadmin" : p.adminRole === "viewer" ? "Viewer" : "Admin"}
+                          {p.adminRole === "superadmin" ? "Superadmin" : p.adminRole === "viewer" ? "Auditor" : "Admin"}
                         </Badge>
                       )}
                       {p.isEvaluador && (
