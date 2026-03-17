@@ -596,7 +596,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                           p.adminRole === "monitoreo" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
                           "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
                         }`}>
-                          {p.adminRole === "superadmin" ? "Superadmin" : p.adminRole === "monitoreo" ? "Monitoreo" : "Admin"}
+                          {p.customRoleName || (p.adminRole === "superadmin" ? "Superadmin" : p.adminRole === "monitoreo" ? "Monitoreo" : "Admin")}
                         </Badge>
                       )}
                       {p.isEvaluador && (
