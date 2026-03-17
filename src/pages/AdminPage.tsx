@@ -386,7 +386,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
           </TabsList>
 
           <TabsContent value="lista">
-            <AdminFichasTab isViewer={isViewer} />
+            <AdminFichasTab isViewer={!can("fichas-rlt", "update")} />
           </TabsContent>
 
           <TabsContent value="enlace">
