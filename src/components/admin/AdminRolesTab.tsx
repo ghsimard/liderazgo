@@ -183,7 +183,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
     if (existing) {
       const updates = { [key]: newVal };
       if (USE_EXPRESS) {
-        await apiFetch(`/api/db/role_permissions?id=eq.${existing.id}`, { method: "PATCH", body: JSON.stringify(updates) });
+        await apiFetch(`/api/db/role_permissions?id=eq.${existing.id}`, { method: "PATCH", body: updates });
       } else {
         await supabase.from("role_permissions").update(updates).eq("id", existing.id);
       }
