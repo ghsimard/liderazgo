@@ -337,21 +337,21 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
                 <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
                 <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
               </TabsList>
-              <TabsContent value="dominios"><fieldset disabled={isViewer} className="contents"><AdminDomainsManager key={wizardRefreshKey} /></fieldset></TabsContent>
-              <TabsContent value="competencias"><fieldset disabled={isViewer} className="contents"><AdminCompetenciesManager key={wizardRefreshKey} /></fieldset></TabsContent>
-              <TabsContent value="items"><fieldset disabled={isViewer} className="contents"><AdminItemsManager key={wizardRefreshKey} /></fieldset></TabsContent>
-              <TabsContent value="pesos"><fieldset disabled={isViewer} className="contents"><AdminWeightsTab key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="dominios"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminDomainsManager key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="competencias"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminCompetenciesManager key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="items"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminItemsManager key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="pesos"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminWeightsTab key={wizardRefreshKey} /></fieldset></TabsContent>
             </Tabs>
           </TabsContent>
 
           <TabsContent value="inicial">
-            <AdminEncuestas360Tab fase="inicial" isViewer={isViewer} />
+            <AdminEncuestas360Tab fase="inicial" isViewer={!can("encuesta360", "delete")} />
           </TabsContent>
           <TabsContent value="final">
-            <AdminEncuestas360Tab fase="final" isViewer={isViewer} />
+            <AdminEncuestas360Tab fase="final" isViewer={!can("encuesta360", "delete")} />
           </TabsContent>
           <TabsContent value="invitaciones">
-            <AdminInvitacionesTab isViewer={isViewer} />
+            <AdminInvitacionesTab isViewer={!can("encuesta360", "delete")} />
           </TabsContent>
           <TabsContent value="informes-inicial">
             <AdminReporte360Tab fase="inicial" />
