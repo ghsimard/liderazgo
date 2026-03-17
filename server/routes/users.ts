@@ -115,13 +115,7 @@ router.post("/", async (req: Request, res: Response) => {
 
     const assignedRole = role || "admin";
 
-    // Dual-write: legacy user_roles
-    await queryOne(
-      "INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-      [id, assignedRole]
-    );
-
-    // Dual-write: new user_custom_roles
+    // Write to new user_custom_roles
     const customRoleName = legacyToCustomRoleName(assignedRole);
     const roleId = await getRoleIdByName(customRoleName);
     if (roleId) {
