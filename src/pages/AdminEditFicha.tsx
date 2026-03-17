@@ -1298,20 +1298,22 @@ export default function AdminEditFicha() {
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base border border-border transition-colors hover:bg-muted"
               >
                 <ArrowLeft className="w-5 h-5" />
-                Cancelar
+                {isViewer ? "Volver" : "Cancelar"}
               </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="inline-flex items-center gap-3 px-10 py-4 rounded-xl text-white font-semibold text-lg transition-all hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ background: "var(--gradient-header)", boxShadow: "var(--shadow-header)" }}
-              >
-                {saving ? (
-                  <><RefreshCw className="w-5 h-5 animate-spin" />Guardando...</>
-                ) : (
-                  <><Save className="w-5 h-5" />Guardar cambios</>
-                )}
-              </button>
+              {!isViewer && (
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex items-center gap-3 px-10 py-4 rounded-xl text-white font-semibold text-lg transition-all hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{ background: "var(--gradient-header)", boxShadow: "var(--shadow-header)" }}
+                >
+                  {saving ? (
+                    <><RefreshCw className="w-5 h-5 animate-spin" />Guardando...</>
+                  ) : (
+                    <><Save className="w-5 h-5" />Guardar cambios</>
+                  )}
+                </button>
+              )}
             </div>
           </form>
         </main>
