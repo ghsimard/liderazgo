@@ -240,8 +240,8 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin, isV
         </SidebarGroup>
         <Separator className="mx-2 my-1" />
         {sections.map((section, idx) => {
-          // Hide Sistema section for viewers
-          if (isViewer && section.label === "Sistema") return null;
+          // Hide Sistema and MEL sections for viewers
+          if (isViewer && (section.label === "Sistema" || section.label === "MEL")) return null;
           const visibleItems = section.items.filter(
             (i) => !i.superadminOnly || isSuperAdmin
           );
