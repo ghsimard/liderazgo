@@ -232,7 +232,11 @@ function getHubTitle(activeTab: string): string {
   return titleMap[activeTab] || "Panel";
 }
 
-function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string; isSuperAdmin: boolean; isViewer: boolean }) {
+function AdminContent({ activeTab, permissions }: { activeTab: string; permissions: ReturnType<typeof usePermissions> }) {
+  const { can } = permissions;
+  // Derive legacy flags from RBAC permissions for backward compatibility
+  const isSuperAdmin = can("sistema", "delete") && can("mel", "delete");
+  const isViewer = !can("fichas-rlt", "update");
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
 
