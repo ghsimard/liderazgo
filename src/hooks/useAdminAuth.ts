@@ -36,7 +36,7 @@ export function useAdminAuth() {
 
         if (USE_EXPRESS) {
           const roles: string[] = (data.user as any).roles ?? [];
-          if (!roles.includes("admin") && !roles.includes("superadmin") && !roles.includes("auditor")) {
+          if (!roles.includes("admin") && !roles.includes("superadmin") && !roles.includes("monitoreo")) {
             await apiLogout();
             navigate(buildLoginRoute("role_missing"));
             return;
