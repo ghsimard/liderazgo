@@ -628,17 +628,19 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-3">
-                <div className="flex gap-2 mb-3">
-                  <Button size="sm" variant="outline" onClick={() => { setNewName(""); setAddMunicipioOpen(ent.id); }} className="gap-1 text-xs">
-                    <Plus className="w-3 h-3" /> Municipio
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => { setEditItem({ type: "entidad", id: ent.id, nombre: ent.nombre }); setEditName(ent.nombre); }} className="gap-1 text-xs">
-                    <Pencil className="w-3 h-3" /> Editar
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setDeleteItem({ type: "entidad", id: ent.id, nombre: ent.nombre })} className="gap-1 text-xs text-destructive hover:text-destructive">
-                    <Trash2 className="w-3 h-3" /> Eliminar
-                  </Button>
-                </div>
+                {!isViewer && (
+                  <div className="flex gap-2 mb-3">
+                    <Button size="sm" variant="outline" onClick={() => { setNewName(""); setAddMunicipioOpen(ent.id); }} className="gap-1 text-xs">
+                      <Plus className="w-3 h-3" /> Municipio
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => { setEditItem({ type: "entidad", id: ent.id, nombre: ent.nombre }); setEditName(ent.nombre); }} className="gap-1 text-xs">
+                      <Pencil className="w-3 h-3" /> Editar
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setDeleteItem({ type: "entidad", id: ent.id, nombre: ent.nombre })} className="gap-1 text-xs text-destructive hover:text-destructive">
+                      <Trash2 className="w-3 h-3" /> Eliminar
+                    </Button>
+                  </div>
+                )}
                 {municipiosByEntidad(ent.id).length === 0 ? (
                   <p className="text-sm text-muted-foreground ml-4">Sin municipios</p>
                 ) : (
