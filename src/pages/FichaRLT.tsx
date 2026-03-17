@@ -907,7 +907,7 @@ export default function FichaRLTForm() {
               Descargar PDF
             </button>
             <button
-              onClick={handleNuevaFicha}
+              onClick={() => navigate("/")}
               className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-primary-foreground font-medium transition-opacity hover:opacity-90 bg-primary"
             >
               <RefreshCw className="w-4 h-4" />
