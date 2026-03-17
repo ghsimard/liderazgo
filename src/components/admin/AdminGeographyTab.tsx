@@ -678,14 +678,16 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
                                     <School className="w-3 h-3 text-muted-foreground" />
                                     <span>{inst.nombre}</span>
                                   </div>
-                                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditItem({ type: "institucion", id: inst.id, nombre: inst.nombre }); setEditName(inst.nombre); }}>
-                                      <Pencil className="w-3 h-3" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => setDeleteItem({ type: "institucion", id: inst.id, nombre: inst.nombre })}>
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </div>
+                                  {!isViewer && (
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditItem({ type: "institucion", id: inst.id, nombre: inst.nombre }); setEditName(inst.nombre); }}>
+                                        <Pencil className="w-3 h-3" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => setDeleteItem({ type: "institucion", id: inst.id, nombre: inst.nombre })}>
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  )}
                                 </li>
                               ))}
                             </ul>
