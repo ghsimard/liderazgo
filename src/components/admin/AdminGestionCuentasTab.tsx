@@ -511,9 +511,11 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             className="max-w-sm"
           />
         </div>
-        <Button size="sm" onClick={openCreate} className="gap-1.5">
-          <UserPlus className="w-4 h-4" /> Agregar persona
-        </Button>
+        {!isViewer && (
+          <Button size="sm" onClick={openCreate} className="gap-1.5">
+            <UserPlus className="w-4 h-4" /> Agregar persona
+          </Button>
+        )}
       </div>
 
       {/* Table */}
