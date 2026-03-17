@@ -511,9 +511,11 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             className="max-w-sm"
           />
         </div>
-        <Button size="sm" onClick={openCreate} className="gap-1.5">
-          <UserPlus className="w-4 h-4" /> Agregar persona
-        </Button>
+        {!isViewer && (
+          <Button size="sm" onClick={openCreate} className="gap-1.5">
+            <UserPlus className="w-4 h-4" /> Agregar persona
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -525,19 +527,19 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               <TableHead>Nombre</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Roles</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
+              {!isViewer && <TableHead className="text-right">Acciones</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10">
+                <TableCell colSpan={isViewer ? 4 : 5} className="text-center py-10">
                   <RefreshCw className="animate-spin w-5 h-5 mx-auto text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={isViewer ? 4 : 5} className="text-center py-10 text-muted-foreground">
                   {search ? "Sin resultados." : "No hay personas registradas."}
                 </TableCell>
               </TableRow>
@@ -568,23 +570,25 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(p)} title="Editar">
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      {p.isAdmin && (
-                        <Button variant="ghost" size="icon" onClick={() => { setPwTarget(p); setNewPw(""); }} title="Cambiar contraseña">
-                          <KeyRound className="w-4 h-4" />
+                  {!isViewer && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(p)} title="Editar">
+                          <Pencil className="w-4 h-4" />
                         </Button>
-                      )}
-                      {(isSuperAdmin || p.adminRole !== "superadmin") && (
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(p)} title="Eliminar" className="text-destructive hover:text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
+                        {p.isAdmin && (
+                          <Button variant="ghost" size="icon" onClick={() => { setPwTarget(p); setNewPw(""); }} title="Cambiar contraseña">
+                            <KeyRound className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {(isSuperAdmin || p.adminRole !== "superadmin") && (
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(p)} title="Eliminar" className="text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
