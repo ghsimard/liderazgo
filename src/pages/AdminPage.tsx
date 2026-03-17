@@ -525,7 +525,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
             <AdminRolesTab isSuperAdmin={can("sistema.roles-permisos", "delete")} />
           </TabsContent>
           <TabsContent value="activity-log">
-            <AdminActivityLogTab isSuperAdmin={isSuperAdmin} />
+            <AdminActivityLogTab isSuperAdmin={can("sistema.activity-log", "delete")} />
           </TabsContent>
           <TabsContent value="papelera">
             <AdminTrashManager />
