@@ -554,17 +554,19 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
   return (
     <div className="flex flex-col gap-6">
       {/* Actions bar */}
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => { setNewName(""); setAddEntidadOpen(true); }} className="gap-1.5">
-          <Plus className="w-4 h-4" /> Crear Entidad Territorial
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => openRegionDialog()} className="gap-1.5">
-          <MapPin className="w-4 h-4" /> Crear Región
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
-          <Upload className="w-4 h-4" /> Importar CSV
-        </Button>
-      </div>
+      {!isViewer && (
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={() => { setNewName(""); setAddEntidadOpen(true); }} className="gap-1.5">
+            <Plus className="w-4 h-4" /> Crear Entidad Territorial
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => openRegionDialog()} className="gap-1.5">
+            <MapPin className="w-4 h-4" /> Crear Región
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
+            <Upload className="w-4 h-4" /> Importar CSV
+          </Button>
+        </div>
+      )}
 
       {/* Regiones section */}
       <div>
