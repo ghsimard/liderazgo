@@ -396,7 +396,9 @@ export default function AdminEditFicha() {
   const { id } = useParams<{ id: string }>();
   const isCreateMode = !id || id === "new";
   const navigate = useNavigate();
-  const { isAdmin, isViewer } = useAdminAuth();
+  const { isAdmin, userId } = useAdminAuth();
+  const permissions = usePermissions(userId);
+  const isViewer = !permissions.can("fichas-rlt", "update");
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
