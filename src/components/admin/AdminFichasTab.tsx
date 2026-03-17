@@ -38,7 +38,7 @@ interface FichaFilterData {
   institucion: string;
 }
 
-export default function AdminFichasTab() {
+export default function AdminFichasTab({ isViewer = false }: { isViewer?: boolean }) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { images } = useAppImages();
