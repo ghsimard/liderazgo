@@ -901,22 +901,21 @@ export default function FichaRLTForm() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={handleDescargarPDF}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-white font-medium transition-opacity hover:opacity-90"
-              style={{ background: "hsl(var(--primary))" }}
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-primary-foreground font-medium transition-opacity hover:opacity-90 bg-primary"
             >
               <Download className="w-4 h-4" />
               Descargar PDF
             </button>
             <button
               onClick={handleNuevaFicha}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium border border-border transition-colors hover:bg-muted"
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-primary-foreground font-medium transition-opacity hover:opacity-90 bg-primary"
             >
               <RefreshCw className="w-4 h-4" />
               Rellenar otra ficha
             </button>
             <button
               onClick={() => navigate("/mi-panel")}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium border border-border transition-colors hover:bg-muted"
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-primary-foreground font-medium transition-opacity hover:opacity-90 bg-primary"
             >
               <ArrowRight className="w-4 h-4" />
               Ir a Mi Panel
