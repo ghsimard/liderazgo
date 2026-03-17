@@ -680,7 +680,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               <AccordionItem value="admin">
                 <AccordionTrigger className="py-3">
                   <div className="flex items-center gap-3">
-                    <Switch checked={enableAdmin} onCheckedChange={setEnableAdmin} onClick={e => e.stopPropagation()} />
+                    <Switch checked={enableAdmin} onCheckedChange={c => { setEnableAdmin(c); if (c && !adminRole && customRoles.length) { const defaultRole = customRoles.find(r => r.name === "Admin"); if (defaultRole) setAdminRole(defaultRole.id); } }} onClick={e => e.stopPropagation()} />
                     <Shield className="w-4 h-4" />
                     <span className="text-sm font-medium">Administrador</span>
                     {enableAdmin && <Badge variant="secondary" className="text-xs">Activo</Badge>}
