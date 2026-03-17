@@ -311,7 +311,6 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
           </TabsContent>
 
           <TabsContent value="configuracion">
-            <fieldset disabled={isViewer} className="contents">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-muted-foreground">Gestión completa de competencias 360°</h3>
               {!isViewer && (
@@ -332,12 +331,11 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
                 <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
                 <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
               </TabsList>
-              <TabsContent value="dominios"><AdminDomainsManager key={wizardRefreshKey} /></TabsContent>
-              <TabsContent value="competencias"><AdminCompetenciesManager key={wizardRefreshKey} /></TabsContent>
-              <TabsContent value="items"><AdminItemsManager key={wizardRefreshKey} /></TabsContent>
-              <TabsContent value="pesos"><AdminWeightsTab key={wizardRefreshKey} /></TabsContent>
+              <TabsContent value="dominios"><fieldset disabled={isViewer} className="contents"><AdminDomainsManager key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="competencias"><fieldset disabled={isViewer} className="contents"><AdminCompetenciesManager key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="items"><fieldset disabled={isViewer} className="contents"><AdminItemsManager key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="pesos"><fieldset disabled={isViewer} className="contents"><AdminWeightsTab key={wizardRefreshKey} /></fieldset></TabsContent>
             </Tabs>
-            </fieldset>
           </TabsContent>
 
           <TabsContent value="inicial">
