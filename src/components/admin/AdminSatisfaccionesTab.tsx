@@ -139,7 +139,7 @@ function RenderAnswer({ question, value }: { question?: SatisfaccionQuestion; va
   return <span className="text-foreground">{JSON.stringify(value)}</span>;
 }
 
-export default function AdminSatisfaccionesTab() {
+export default function AdminSatisfaccionesTab({ isViewer = false }: { isViewer?: boolean }) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [regions, setRegions] = useState<string[]>([]);
@@ -365,12 +365,13 @@ export default function AdminSatisfaccionesTab() {
         <TabsList className="hub-tabs flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md rounded-lg">
           <TabsTrigger value="responses">Respuestas</TabsTrigger>
           <TabsTrigger value="stats">Estadísticas</TabsTrigger>
-          <TabsTrigger value="report">Informe PDF</TabsTrigger>
+          {!isViewer && <TabsTrigger value="report">Informe PDF</TabsTrigger>}
           <TabsTrigger value="forms">Formularios</TabsTrigger>
           <TabsTrigger value="config">Configuración</TabsTrigger>
         </TabsList>
 
         <TabsContent value="config" className="space-y-6 mt-4">
+          <fieldset disabled={isViewer} className="contents">
           {/* Global bulk actions */}
           <div className="flex gap-2 justify-end">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => bulkSetActive(null, true)}>
@@ -432,6 +433,7 @@ export default function AdminSatisfaccionesTab() {
               </CardContent>
             </Card>
           ))}
+          </fieldset>
         </TabsContent>
 
         <TabsContent value="responses" className="space-y-4 mt-4">
@@ -471,7 +473,7 @@ export default function AdminSatisfaccionesTab() {
             </div>
             </div>
             <div className="flex-1 flex justify-end">
-            {filteredResponses.length > 0 && (
+            {filteredResponses.length > 0 && !isViewer && (
               <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setShowDeleteAll(true)}>
                 <Trash2 className="w-4 h-4" /> Eliminar {filteredResponses.length === responses.length ? "todas" : `${filteredResponses.length} filtradas`} ({filteredResponses.length})
               </Button>
@@ -513,14 +515,16 @@ export default function AdminSatisfaccionesTab() {
                       <Badge variant="outline" className="text-xs">{FORM_TYPE_LABELS[r.form_type] || r.form_type}</Badge>
                       <Badge variant="secondary" className="text-xs">Mód. {r.module_number}</Badge>
                       <Eye className="w-4 h-4 text-muted-foreground" />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={(e) => { e.stopPropagation(); setDeleteOneId(r.id); }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {!isViewer && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => { e.stopPropagation(); setDeleteOneId(r.id); }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -538,7 +542,9 @@ export default function AdminSatisfaccionesTab() {
         </TabsContent>
 
         <TabsContent value="forms" className="mt-4">
-          <AdminSatisfaccionFormsTab />
+          <fieldset disabled={isViewer} className="contents">
+            <AdminSatisfaccionFormsTab />
+          </fieldset>
         </TabsContent>
       </Tabs>
 
