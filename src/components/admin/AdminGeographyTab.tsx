@@ -48,7 +48,7 @@ interface RegionEntidad {
   entidad_territorial_id: string;
 }
 
-export default function AdminGeographyTab() {
+export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boolean }) {
   const { toast } = useToast();
 
   const [entidades, setEntidades] = useState<Entidad[]>([]);
