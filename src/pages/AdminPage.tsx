@@ -503,6 +503,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
         <Tabs defaultValue="gestion-cuentas" className="space-y-4">
           <TabsList className="hub-tabs flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md rounded-lg">
             <TabsTrigger value="gestion-cuentas" className="gap-1.5"><Users className="w-4 h-4" /> Cuentas</TabsTrigger>
+            <TabsTrigger value="roles-permisos" className="gap-1.5"><Shield className="w-4 h-4" /> Roles y Permisos</TabsTrigger>
             <TabsTrigger value="activity-log" className="gap-1.5"><Activity className="w-4 h-4" /> Actividad</TabsTrigger>
             <TabsTrigger value="papelera" className="gap-1.5"><Trash2 className="w-4 h-4" /> Papelera</TabsTrigger>
             {isSuperAdmin && <TabsTrigger value="reviews" className="gap-1.5"><Star className="w-4 h-4" /> Apreciaciones</TabsTrigger>}
@@ -514,6 +515,9 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
 
           <TabsContent value="gestion-cuentas">
             <AdminGestionCuentasTab isSuperAdmin={isSuperAdmin} isViewer={isViewer} />
+          </TabsContent>
+          <TabsContent value="roles-permisos">
+            <AdminRolesTab isSuperAdmin={isSuperAdmin} />
           </TabsContent>
           <TabsContent value="activity-log">
             <AdminActivityLogTab isSuperAdmin={isSuperAdmin} />
