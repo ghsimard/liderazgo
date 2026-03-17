@@ -229,7 +229,7 @@ function getHubTitle(activeTab: string): string {
   return titleMap[activeTab] || "Panel";
 }
 
-function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperAdmin: boolean }) {
+function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string; isSuperAdmin: boolean; isViewer: boolean }) {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
 
