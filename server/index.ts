@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+import { requireAuth, requireAdminOrViewer } from "./middleware/auth";
 import authRoutes from "./routes/auth";
 import usersRoutes from "./routes/users";
 import imagesRoutes from "./routes/images";
