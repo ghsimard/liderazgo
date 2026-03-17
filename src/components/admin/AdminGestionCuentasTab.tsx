@@ -273,7 +273,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
     setEnableAdmin(false);
     setAdminEmail("");
     setAdminPassword("");
-    setAdminRole("admin");
+    setAdminRole("");
     setShowPassword(false);
     setEnableEvaluador(false);
     setEvalEmail("");
