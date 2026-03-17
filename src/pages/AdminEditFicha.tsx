@@ -1316,6 +1316,7 @@ export default function AdminEditFicha() {
                 </button>
               )}
             </div>
+          </fieldset>
           </form>
         </main>
 
