@@ -154,7 +154,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
         existing.isAdmin = true;
         existing.adminUserId = u.id;
         existing.adminEmail = u.email;
-        existing.adminRole = u.role || (u.roles?.includes("superadmin") ? "superadmin" : "admin");
+        existing.adminRole = u.role || (u.roles?.includes("superadmin") ? "superadmin" : u.roles?.includes("viewer") ? "viewer" : "admin");
         existing.adminLastSignIn = u.last_sign_in_at;
         existing.email = existing.email || u.email;
         if (!existing.nombre) existing.nombre = u.email.split("@")[0];
