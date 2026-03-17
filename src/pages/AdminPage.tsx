@@ -530,7 +530,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
           <TabsContent value="papelera">
             <AdminTrashManager />
           </TabsContent>
-          {isSuperAdmin && (
+          {can("sistema.reviews", "read") && (
             <>
               <TabsContent value="reviews"><AdminReviewsTab /></TabsContent>
               <TabsContent value="mensajes"><AdminMensajesTab /></TabsContent>
