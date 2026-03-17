@@ -284,18 +284,28 @@ export default function AdminRubricaModuleReport() {
             {filteredAsignaciones.length === 0 ? (
               <p className="text-xs text-muted-foreground">No hay directivos con asignaciones.</p>
             ) : (
-              filteredAsignaciones.map(a => (
-                <button
-                  key={a.directivo_cedula}
-                  onClick={() => handleSelectDirectivo(a.directivo_cedula)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-xs transition-colors ${
-                    selectedCedula === a.directivo_cedula ? "bg-primary/10 text-primary" : "hover:bg-muted"
-                  }`}
-                >
-                  <div className="font-medium">{a.directivo_nombre}</div>
-                  <div className="text-muted-foreground">CC: {a.directivo_cedula} — {a.institucion}</div>
-                </button>
-              ))
+              filteredAsignaciones.map(a => {
+                const completed = submissionDates[a.directivo_cedula]?.size || 0;
+                const total = modules.length;
+                const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+                return (
+                  <button
+                    key={a.directivo_cedula}
+                    onClick={() => handleSelectDirectivo(a.directivo_cedula)}
+                    className={`w-full text-left px-3 py-2 rounded-md text-xs transition-colors ${
+                      selectedCedula === a.directivo_cedula ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-medium truncate mr-2">{a.directivo_nombre}</span>
+                      <Badge variant={pct === 100 ? "default" : "outline"} className={pct === 100 ? "bg-emerald-100 text-emerald-800 text-[10px] shrink-0" : "text-[10px] shrink-0"}>
+                        {pct}%
+                      </Badge>
+                    </div>
+                    <div className="text-muted-foreground">CC: {a.directivo_cedula} — {a.institucion}</div>
+                  </button>
+                );
+              })
             )}
           </CardContent>
         </Card>
