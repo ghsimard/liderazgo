@@ -19,7 +19,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON public.users (email);
 
 -- 2. Roles enum (keep existing if already created by export)
 DO $$ BEGIN
-  CREATE TYPE public.app_role AS ENUM ('admin', 'superadmin', 'auditor');
+  CREATE TYPE public.app_role AS ENUM ('admin', 'superadmin', 'monitoreo');
 EXCEPTION WHEN duplicate_object THEN
   -- Add values if enum exists but doesn't have them
   BEGIN
@@ -27,7 +27,7 @@ EXCEPTION WHEN duplicate_object THEN
   EXCEPTION WHEN OTHERS THEN NULL;
   END;
   BEGIN
-    ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'auditor';
+    ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'monitoreo';
   EXCEPTION WHEN OTHERS THEN NULL;
   END;
 END $$;

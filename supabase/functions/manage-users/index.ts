@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
         const { data: roles } = await adminClient
           .from("user_roles")
           .select("user_id, role, created_at")
-          .in("role", ["admin", "superadmin", "auditor"]);
+          .in("role", ["admin", "superadmin", "monitoreo"]);
 
         if (!roles?.length) {
           return new Response(JSON.stringify({ users: [] }), {
@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
         }
 
         // Update role if provided and caller is superadmin
-        if (typeof role === "string" && ["admin", "superadmin", "auditor"].includes(role)) {
+        if (typeof role === "string" && ["admin", "superadmin", "monitoreo"].includes(role)) {
           const { data: callerRole } = await adminClient
             .from("user_roles").select("role").eq("user_id", caller.id).eq("role", "superadmin").maybeSingle();
           if (!callerRole && role === "superadmin") {

@@ -61,7 +61,7 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
   next();
 }
 
-/** Middleware: require admin or auditor role (must be used AFTER requireAuth) */
+/** Middleware: require admin or monitoreo role (must be used AFTER requireAuth) */
 export async function requireAdminOrViewer(req: Request, res: Response, next: NextFunction): Promise<void> {
   if (!req.user) {
     res.status(401).json({ error: "Non authentifié" });
@@ -69,12 +69,12 @@ export async function requireAdminOrViewer(req: Request, res: Response, next: Ne
   }
 
   const role = await queryOne<{ role: string }>(
-    `SELECT role FROM user_roles WHERE user_id = $1 AND role IN ('admin', 'superadmin', 'auditor')`,
+    `SELECT role FROM user_roles WHERE user_id = $1 AND role IN ('admin', 'superadmin', 'monitoreo')`,
     [req.user.userId]
   );
 
   if (!role) {
-    res.status(403).json({ error: "Accès interdit — rôle admin ou auditor requis" });
+    res.status(403).json({ error: "Accès interdit — rôle admin ou monitoreo requis" });
     return;
   }
 

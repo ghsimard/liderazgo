@@ -96,7 +96,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
   const [enableAdmin, setEnableAdmin] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
-  const [adminRole, setAdminRole] = useState("admin"); // admin | superadmin | auditor
+  const [adminRole, setAdminRole] = useState("admin"); // admin | superadmin | monitoreo
   const [showPassword, setShowPassword] = useState(false);
   // Evaluador section
   const [enableEvaluador, setEnableEvaluador] = useState(false);
@@ -155,7 +155,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
         existing.isAdmin = true;
         existing.adminUserId = u.id;
         existing.adminEmail = u.email;
-        existing.adminRole = u.role || (u.roles?.includes("superadmin") ? "superadmin" : u.roles?.includes("auditor") ? "auditor" : "admin");
+        existing.adminRole = u.role || (u.roles?.includes("superadmin") ? "superadmin" : u.roles?.includes("monitoreo") ? "monitoreo" : "admin");
         existing.adminLastSignIn = u.last_sign_in_at;
         existing.email = existing.email || u.email;
         if (!existing.nombre) existing.nombre = u.email.split("@")[0];
@@ -338,7 +338,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             } else {
               const { data: { session } } = await supabase.auth.getSession();
               await supabase.functions.invoke("create-user", {
-                body: { email, password: adminPassword, makeAdmin: adminRole !== "auditor", makeSuperAdmin: adminRole === "superadmin", makeAuditor: adminRole === "auditor" },
+                body: { email, password: adminPassword, makeAdmin: adminRole !== "monitoreo", makeSuperAdmin: adminRole === "superadmin", makeMonitoreo: adminRole === "monitoreo" },
                 headers: { Authorization: `Bearer ${session?.access_token}` },
               });
             }
@@ -554,10 +554,10 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                       {p.isAdmin && (
                         <Badge className={`text-xs font-medium ${
                           p.adminRole === "superadmin" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : 
-                          p.adminRole === "auditor" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
+                          p.adminRole === "monitoreo" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
                           "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
                         }`}>
-                          {p.adminRole === "superadmin" ? "Superadmin" : p.adminRole === "auditor" ? "Auditor" : "Admin"}
+                          {p.adminRole === "superadmin" ? "Superadmin" : p.adminRole === "monitoreo" ? "Monitoreo" : "Admin"}
                         </Badge>
                       )}
                       {p.isEvaluador && (
@@ -682,7 +682,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                             <SelectContent>
                               <SelectItem value="admin">Admin</SelectItem>
                               {isSuperAdmin && <SelectItem value="superadmin">Superadmin</SelectItem>}
-                              <SelectItem value="auditor">Auditor (solo lectura)</SelectItem>
+                              <SelectItem value="monitoreo">Monitoreo (solo lectura)</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>

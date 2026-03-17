@@ -281,7 +281,7 @@ export default function AdminUsersTab({ isSuperAdmin = false }: AdminUsersTabPro
                   <TableCell className="text-sm text-muted-foreground">{u.cedula || "—"}</TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${displayRole === "superadmin" ? "bg-primary/10 text-primary" : displayRole === "viewer" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" : "bg-muted text-muted-foreground"}`}>
-                      {displayRole === "superadmin" ? "Superadmin" : displayRole === "viewer" ? "Auditor" : "Admin"}
+                      {displayRole === "superadmin" ? "Superadmin" : displayRole === "viewer" ? "Monitoreo" : "Admin"}
                     </span>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(u.created_at)}</TableCell>

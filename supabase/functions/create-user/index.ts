@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, makeAdmin, makeSuperAdmin, makeViewer, makeAuditor } = body as Record<string, unknown>;
+    const { email, password, makeAdmin, makeSuperAdmin, makeViewer, makeAuditor, makeMonitoreo } = body as Record<string, unknown>;
 
     if (typeof email !== "string" || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       return new Response(JSON.stringify({ error: "Email invalide" }), {
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
 
     // Assign role
     if (newUser.user) {
-      const assignedRole = makeSuperAdmin ? "superadmin" : (makeViewer || makeAuditor) ? "auditor" : "admin";
+      const assignedRole = makeSuperAdmin ? "superadmin" : (makeViewer || makeAuditor || makeMonitoreo) ? "monitoreo" : "admin";
       await adminClient.from("user_roles").insert({
         user_id: newUser.user.id,
         role: assignedRole,
