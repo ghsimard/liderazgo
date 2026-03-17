@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/utils/dbClient";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { useGeographicData } from "@/hooks/useGeographicData";
 import {
@@ -395,7 +396,9 @@ export default function AdminEditFicha() {
   const { id } = useParams<{ id: string }>();
   const isCreateMode = !id || id === "new";
   const navigate = useNavigate();
-  const { isAdmin, isViewer } = useAdminAuth();
+  const { isAdmin, userId } = useAdminAuth();
+  const permissions = usePermissions(userId);
+  const isViewer = !permissions.can("fichas-rlt", "update");
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;

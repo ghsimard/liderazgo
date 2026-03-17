@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -231,7 +232,8 @@ function getHubTitle(activeTab: string): string {
   return titleMap[activeTab] || "Panel";
 }
 
-function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string; isSuperAdmin: boolean; isViewer: boolean }) {
+function AdminContent({ activeTab, permissions }: { activeTab: string; permissions: ReturnType<typeof usePermissions> }) {
+  const { can } = permissions;
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
 
@@ -314,7 +316,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
           <TabsContent value="configuracion">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-muted-foreground">Gestión completa de competencias 360°</h3>
-              {!isViewer && (
+              {can("encuesta360", "create") && (
                 <Button size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
                   <Plus className="w-4 h-4" /> Asistente de creación
                 </Button>
@@ -332,21 +334,21 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
                 <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
                 <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
               </TabsList>
-              <TabsContent value="dominios"><fieldset disabled={isViewer} className="contents"><AdminDomainsManager key={wizardRefreshKey} /></fieldset></TabsContent>
-              <TabsContent value="competencias"><fieldset disabled={isViewer} className="contents"><AdminCompetenciesManager key={wizardRefreshKey} /></fieldset></TabsContent>
-              <TabsContent value="items"><fieldset disabled={isViewer} className="contents"><AdminItemsManager key={wizardRefreshKey} /></fieldset></TabsContent>
-              <TabsContent value="pesos"><fieldset disabled={isViewer} className="contents"><AdminWeightsTab key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="dominios"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminDomainsManager key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="competencias"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminCompetenciesManager key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="items"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminItemsManager key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="pesos"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminWeightsTab key={wizardRefreshKey} /></fieldset></TabsContent>
             </Tabs>
           </TabsContent>
 
           <TabsContent value="inicial">
-            <AdminEncuestas360Tab fase="inicial" isViewer={isViewer} />
+            <AdminEncuestas360Tab fase="inicial" isViewer={!can("encuesta360", "delete")} />
           </TabsContent>
           <TabsContent value="final">
-            <AdminEncuestas360Tab fase="final" isViewer={isViewer} />
+            <AdminEncuestas360Tab fase="final" isViewer={!can("encuesta360", "delete")} />
           </TabsContent>
           <TabsContent value="invitaciones">
-            <AdminInvitacionesTab isViewer={isViewer} />
+            <AdminInvitacionesTab isViewer={!can("encuesta360", "delete")} />
           </TabsContent>
           <TabsContent value="informes-inicial">
             <AdminReporte360Tab fase="inicial" />
@@ -377,11 +379,11 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
             <TabsTrigger value="lista" className="gap-1.5"><FileText className="w-4 h-4" /> Lista</TabsTrigger>
             <TabsTrigger value="enlace" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlace y PDF</TabsTrigger>
             <TabsTrigger value="regiones" className="gap-1.5"><MapPin className="w-4 h-4" /> Configuración</TabsTrigger>
-            {isSuperAdmin && <TabsTrigger value="campos" className="gap-1.5"><BookOpen className="w-4 h-4" /> Campos y reglas</TabsTrigger>}
+            {can("fichas-rlt.campos", "read") && <TabsTrigger value="campos" className="gap-1.5"><BookOpen className="w-4 h-4" /> Campos y reglas</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="lista">
-            <AdminFichasTab isViewer={isViewer} />
+            <AdminFichasTab isViewer={!can("fichas-rlt", "update")} />
           </TabsContent>
 
           <TabsContent value="enlace">
@@ -397,10 +399,10 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
           </TabsContent>
 
           <TabsContent value="regiones">
-            <AdminGeographyTab isViewer={isViewer} />
+            <AdminGeographyTab isViewer={!can("fichas-rlt", "update")} />
           </TabsContent>
 
-          {isSuperAdmin && (
+          {can("fichas-rlt.campos", "read") && (
             <TabsContent value="campos">
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Genera un PDF con todos los campos del formulario de Ficha de Información, sus reglas de validación y opciones.</p>
@@ -447,7 +449,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
     case "rubricas":
       return <AdminRubricasTab />;
     case "informe-modulo":
-      return <AdminInformeModuloTab isViewer={isViewer} />;
+      return <AdminInformeModuloTab isViewer={!can("informe-modulo", "update")} />;
     case "blancos-ambiente":
     case "ambiente-escolar":
     case "ambiente-monitoreo":
@@ -490,7 +492,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
       );
     }
     case "satisfacciones":
-      return <AdminSatisfaccionesTab isViewer={isViewer} />;
+      return <AdminSatisfaccionesTab isViewer={!can("satisfacciones", "update")} />;
     case "certificaciones":
       return (
         <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
@@ -506,26 +508,26 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
             <TabsTrigger value="roles-permisos" className="gap-1.5"><Shield className="w-4 h-4" /> Roles y Permisos</TabsTrigger>
             <TabsTrigger value="activity-log" className="gap-1.5"><Activity className="w-4 h-4" /> Actividad</TabsTrigger>
             <TabsTrigger value="papelera" className="gap-1.5"><Trash2 className="w-4 h-4" /> Papelera</TabsTrigger>
-            {isSuperAdmin && <TabsTrigger value="reviews" className="gap-1.5"><Star className="w-4 h-4" /> Apreciaciones</TabsTrigger>}
-            {isSuperAdmin && <TabsTrigger value="mensajes" className="gap-1.5"><MessageSquare className="w-4 h-4" /> Mensajes</TabsTrigger>}
-            {isSuperAdmin && <TabsTrigger value="changelog" className="gap-1.5"><GitCommit className="w-4 h-4" /> Changelog</TabsTrigger>}
-            {isSuperAdmin && <TabsTrigger value="specs" className="gap-1.5"><FileText className="w-4 h-4" /> Especificaciones</TabsTrigger>}
-            {isSuperAdmin && <TabsTrigger value="purge-data" className="gap-1.5"><Trash2 className="w-4 h-4" /> Purgar datos</TabsTrigger>}
+            {can("sistema.reviews", "read") && <TabsTrigger value="reviews" className="gap-1.5"><Star className="w-4 h-4" /> Apreciaciones</TabsTrigger>}
+            {can("sistema.mensajes", "read") && <TabsTrigger value="mensajes" className="gap-1.5"><MessageSquare className="w-4 h-4" /> Mensajes</TabsTrigger>}
+            {can("sistema.changelog", "read") && <TabsTrigger value="changelog" className="gap-1.5"><GitCommit className="w-4 h-4" /> Changelog</TabsTrigger>}
+            {can("sistema.specs", "read") && <TabsTrigger value="specs" className="gap-1.5"><FileText className="w-4 h-4" /> Especificaciones</TabsTrigger>}
+            {can("sistema.purge-data", "read") && <TabsTrigger value="purge-data" className="gap-1.5"><Trash2 className="w-4 h-4" /> Purgar datos</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="gestion-cuentas">
-            <AdminGestionCuentasTab isSuperAdmin={isSuperAdmin} isViewer={isViewer} />
+            <AdminGestionCuentasTab isSuperAdmin={can("sistema.gestion-cuentas", "delete")} isViewer={!can("sistema.gestion-cuentas", "update")} />
           </TabsContent>
           <TabsContent value="roles-permisos">
-            <AdminRolesTab isSuperAdmin={isSuperAdmin} />
+            <AdminRolesTab isSuperAdmin={can("sistema.roles-permisos", "delete")} />
           </TabsContent>
           <TabsContent value="activity-log">
-            <AdminActivityLogTab isSuperAdmin={isSuperAdmin} />
+            <AdminActivityLogTab isSuperAdmin={can("sistema.activity-log", "delete")} />
           </TabsContent>
           <TabsContent value="papelera">
             <AdminTrashManager />
           </TabsContent>
-          {isSuperAdmin && (
+          {can("sistema.reviews", "read") && (
             <>
               <TabsContent value="reviews"><AdminReviewsTab /></TabsContent>
               <TabsContent value="mensajes"><AdminMensajesTab /></TabsContent>
@@ -555,7 +557,11 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
 
 export default function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isAdmin, isSuperAdmin, isViewer, signOut } = useAdminAuth();
+  const { isAdmin, userId, signOut } = useAdminAuth();
+  const permissions = usePermissions(userId);
+  const { can, readableSections } = permissions;
+  // Derive legacy flags for header UI
+  const isSuperAdmin = can("sistema", "delete") && can("mel", "delete");
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
@@ -616,7 +622,7 @@ export default function AdminPage() {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-muted/20">
-        <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} isSuperAdmin={isSuperAdmin} isViewer={isViewer} />
+        <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} readableSections={readableSections} can={can} />
 
         <div className="flex-1 flex flex-col min-w-0">
           <header className="bg-primary text-primary-foreground sticky top-0 z-20">
@@ -628,7 +634,7 @@ export default function AdminPage() {
                 <h1 className="font-semibold text-base leading-tight hidden sm:block">Panel de Administración</h1>
               </div>
               <div className="flex items-center gap-2">
-                {isSuperAdmin && !isViewer && (
+                {isSuperAdmin && (
                   <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5 bg-primary-foreground/10 border-primary-foreground !text-primary-foreground hover:bg-primary-foreground/20">
                     <DatabaseBackup className="w-4 h-4" /> {exporting ? "Exportando…" : "Export SQL"}
                   </Button>
@@ -642,7 +648,7 @@ export default function AdminPage() {
 
           <main className="flex-1 p-4 md:p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">{getHubTitle(activeTab)}</h2>
-            <AdminContent activeTab={activeTab} isSuperAdmin={isSuperAdmin} isViewer={isViewer} />
+            <AdminContent activeTab={activeTab} permissions={permissions} />
           </main>
         </div>
       </div>

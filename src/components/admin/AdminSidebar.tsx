@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
+import type { CrudAction } from "@/hooks/usePermissions";
 import {
   ClipboardList,
   FileText,
@@ -144,11 +145,11 @@ function sectionContainsTab(section: SidebarSection, tab: string) {
 interface AdminSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
-  isSuperAdmin: boolean;
-  isViewer?: boolean;
+  readableSections: string[];
+  can: (section: string, action: CrudAction) => boolean;
 }
 
-export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin, isViewer }: AdminSidebarProps) {
+export default function AdminSidebar({ activeTab, onTabChange, readableSections, can }: AdminSidebarProps) {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
@@ -240,10 +241,13 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin, isV
         </SidebarGroup>
         <Separator className="mx-2 my-1" />
         {sections.map((section, idx) => {
-          // Hide Sistema and MEL sections for viewers
-          if (isViewer && (section.label === "Sistema" || section.label === "MEL")) return null;
+          // Filter sections based on RBAC readableSections
+          const sectionKey = section.items[0]?.tab || "";
+          // Map tab keys to RBAC section keys
+          const rbacKey = sectionKey === "sistema" ? "sistema" : sectionKey === "mel" ? "mel" : sectionKey;
+          if (rbacKey && !readableSections.includes(rbacKey)) return null;
           const visibleItems = section.items.filter(
-            (i) => !i.superadminOnly || isSuperAdmin
+            (i) => !i.superadminOnly || can("sistema", "delete")
           );
           if (visibleItems.length === 0) return null;
 
