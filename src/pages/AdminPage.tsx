@@ -405,7 +405,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
             <AdminGeographyTab isViewer={!can("fichas-rlt", "update")} />
           </TabsContent>
 
-          {isSuperAdmin && (
+          {can("fichas-rlt.campos", "read") && (
             <TabsContent value="campos">
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Genera un PDF con todos los campos del formulario de Ficha de Información, sus reglas de validación y opciones.</p>
