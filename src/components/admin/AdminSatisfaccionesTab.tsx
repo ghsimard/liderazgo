@@ -542,7 +542,9 @@ export default function AdminSatisfaccionesTab({ isViewer = false }: { isViewer?
         </TabsContent>
 
         <TabsContent value="forms" className="mt-4">
-          <AdminSatisfaccionFormsTab />
+          <fieldset disabled={isViewer} className="contents">
+            <AdminSatisfaccionFormsTab />
+          </fieldset>
         </TabsContent>
       </Tabs>
 
