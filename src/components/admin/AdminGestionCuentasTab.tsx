@@ -73,9 +73,10 @@ async function invokeManageUsers(action: string, params: Record<string, unknown>
 
 interface Props {
   isSuperAdmin: boolean;
+  isViewer?: boolean;
 }
 
-export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
+export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props) {
   const { toast } = useToast();
   const [people, setPeople] = useState<UnifiedPerson[]>([]);
   const [loading, setLoading] = useState(true);
