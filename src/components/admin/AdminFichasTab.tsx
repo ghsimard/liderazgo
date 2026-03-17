@@ -21,7 +21,7 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import JSZip from "jszip";
 import { useAppImages } from "@/hooks/useAppImages";
 import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
-import { generateFichaFieldsPdf } from "@/utils/fichaFieldsPdfGenerator";
+
 
 type Ficha = Tables<"fichas_rlt">;
 const PAGE_SIZE = 20;
