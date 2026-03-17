@@ -128,13 +128,15 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [adminUsersResult, evalsResult, permsResult, regionesResult] = await Promise.all([
+      const [adminUsersResult, evalsResult, permsResult, regionesResult, rolesResult, userRolesResult] = await Promise.all([
         USE_EXPRESS
           ? apiFetch<{ users: AdminUser[] }>("/api/users")
           : invokeManageUsers("list").then((d: any) => ({ data: d, error: null })),
         supabase.from("rubrica_evaluadores").select("*"),
         supabase.from("operator_permissions").select("*").order("cedula").order("section"),
         supabase.from("regiones").select("nombre").order("nombre"),
+        supabase.from("custom_roles").select("*").order("name"),
+        supabase.from("user_custom_roles").select("user_id, role_id"),
       ]);
 
       const adminUsers: AdminUser[] = USE_EXPRESS
@@ -143,6 +145,15 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
       const evaluadores = evalsResult.data ?? [];
       const permissions = permsResult.data ?? [];
       setRegiones((regionesResult.data || []).map((r: any) => r.nombre));
+      const roles: CustomRole[] = (rolesResult.data ?? []) as any;
+      setCustomRoles(roles);
+      const userCustomRoles: { user_id: string; role_id: string }[] = (userRolesResult.data ?? []) as any;
+      // Build lookup: user_id → custom role
+      const userRoleMap = new Map<string, CustomRole>();
+      for (const ucr of userCustomRoles) {
+        const role = roles.find(r => r.id === ucr.role_id);
+        if (role) userRoleMap.set(ucr.user_id, role);
+      }
 
       // Build unified map by normalized cedula
       const map = new Map<string, UnifiedPerson>();
