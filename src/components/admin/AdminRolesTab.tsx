@@ -232,7 +232,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
     try {
       const updates = { name: formName.trim(), description: formDesc.trim() };
       if (USE_EXPRESS) {
-        await apiFetch(`/api/db/custom_roles?id=eq.${selectedRole.id}`, { method: "PATCH", body: JSON.stringify(updates) });
+        await apiFetch(`/api/db/custom_roles?id=eq.${selectedRole.id}`, { method: "PATCH", body: updates });
       } else {
         await supabase.from("custom_roles").update(updates).eq("id", selectedRole.id);
       }
