@@ -179,6 +179,12 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
         existing.adminLastSignIn = u.last_sign_in_at;
         existing.email = existing.email || u.email;
         if (!existing.nombre) existing.nombre = u.email.split("@")[0];
+        // Enrich with custom role
+        const customRole = userRoleMap.get(u.id);
+        if (customRole) {
+          existing.customRoleId = customRole.id;
+          existing.customRoleName = customRole.name;
+        }
         map.set(mapKey, existing);
       }
 
