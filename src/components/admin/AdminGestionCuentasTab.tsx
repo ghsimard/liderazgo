@@ -682,7 +682,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                             <SelectContent>
                               <SelectItem value="admin">Admin</SelectItem>
                               {isSuperAdmin && <SelectItem value="superadmin">Superadmin</SelectItem>}
-                              <SelectItem value="auditor">Auditor (solo lectura)</SelectItem>
+                              <SelectItem value="monitoreo">Monitoreo (solo lectura)</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
