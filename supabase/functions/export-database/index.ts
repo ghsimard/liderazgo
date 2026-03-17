@@ -309,7 +309,6 @@ Deno.serve(async (req) => {
     } catch (authErr: any) {
       sql += `-- Error exporting auth users: ${authErr.message}\n\n`;
     }
-
     // ════════════════════════════════════════════════════════
     // STORAGE / IMAGES NOTE
     // ════════════════════════════════════════════════════════
