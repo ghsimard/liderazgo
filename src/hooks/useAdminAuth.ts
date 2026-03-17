@@ -54,7 +54,7 @@ export function useAdminAuth() {
           });
           const { data: hasViewer } = await supabase.rpc("has_role", {
             _user_id: uid,
-            _role: "viewer",
+            _role: "auditor",
           });
           if (!hasAdmin && !hasSuperAdmin && !hasViewer) {
             await apiLogout();
