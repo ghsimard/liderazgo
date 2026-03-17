@@ -145,9 +145,10 @@ interface AdminSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   isSuperAdmin: boolean;
+  isViewer?: boolean;
 }
 
-export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: AdminSidebarProps) {
+export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin, isViewer }: AdminSidebarProps) {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
@@ -239,6 +240,8 @@ export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin }: A
         </SidebarGroup>
         <Separator className="mx-2 my-1" />
         {sections.map((section, idx) => {
+          // Hide Sistema section for viewers
+          if (isViewer && section.label === "Sistema") return null;
           const visibleItems = section.items.filter(
             (i) => !i.superadminOnly || isSuperAdmin
           );

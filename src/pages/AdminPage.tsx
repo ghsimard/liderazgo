@@ -229,7 +229,7 @@ function getHubTitle(activeTab: string): string {
   return titleMap[activeTab] || "Panel";
 }
 
-function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperAdmin: boolean }) {
+function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string; isSuperAdmin: boolean; isViewer: boolean }) {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
 
@@ -535,7 +535,7 @@ function AdminContent({ activeTab, isSuperAdmin }: { activeTab: string; isSuperA
 
 export default function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isAdmin, isSuperAdmin, signOut } = useAdminAuth();
+  const { isAdmin, isSuperAdmin, isViewer, signOut } = useAdminAuth();
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
@@ -596,7 +596,7 @@ export default function AdminPage() {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-muted/20">
-        <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} isSuperAdmin={isSuperAdmin} />
+        <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} isSuperAdmin={isSuperAdmin} isViewer={isViewer} />
 
         <div className="flex-1 flex flex-col min-w-0">
           <header className="bg-primary text-primary-foreground sticky top-0 z-20">
@@ -608,7 +608,7 @@ export default function AdminPage() {
                 <h1 className="font-semibold text-base leading-tight hidden sm:block">Panel de Administración</h1>
               </div>
               <div className="flex items-center gap-2">
-                {isSuperAdmin && (
+                {isSuperAdmin && !isViewer && (
                   <Button variant="outline" size="sm" onClick={handleExportDB} disabled={exporting} className="gap-1.5 bg-primary-foreground/10 border-primary-foreground !text-primary-foreground hover:bg-primary-foreground/20">
                     <DatabaseBackup className="w-4 h-4" /> {exporting ? "Exportando…" : "Export SQL"}
                   </Button>
@@ -622,7 +622,7 @@ export default function AdminPage() {
 
           <main className="flex-1 p-4 md:p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">{getHubTitle(activeTab)}</h2>
-            <AdminContent activeTab={activeTab} isSuperAdmin={isSuperAdmin} />
+            <AdminContent activeTab={activeTab} isSuperAdmin={isSuperAdmin} isViewer={isViewer} />
           </main>
         </div>
       </div>

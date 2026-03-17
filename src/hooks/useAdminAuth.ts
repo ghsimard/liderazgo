@@ -10,6 +10,7 @@ export function useAdminAuth() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isViewer, setIsViewer] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,16 +35,15 @@ export function useAdminAuth() {
         const uid = data.user.id;
 
         if (USE_EXPRESS) {
-          // On Render, roles come from the /api/auth/me response
           const roles: string[] = (data.user as any).roles ?? [];
-          if (!roles.includes("admin") && !roles.includes("superadmin")) {
+          if (!roles.includes("admin") && !roles.includes("superadmin") && !roles.includes("viewer")) {
             await apiLogout();
             navigate(buildLoginRoute("role_missing"));
             return;
           }
           setIsSuperAdmin(roles.includes("superadmin"));
+          setIsViewer(!roles.includes("admin") && !roles.includes("superadmin") && roles.includes("viewer"));
         } else {
-          // On Lovable/Supabase, check via RPC
           const { data: hasAdmin } = await supabase.rpc("has_role", {
             _user_id: uid,
             _role: "admin",
@@ -52,12 +52,17 @@ export function useAdminAuth() {
             _user_id: uid,
             _role: "superadmin",
           });
-          if (!hasAdmin && !hasSuperAdmin) {
+          const { data: hasViewer } = await supabase.rpc("has_role", {
+            _user_id: uid,
+            _role: "viewer",
+          });
+          if (!hasAdmin && !hasSuperAdmin && !hasViewer) {
             await apiLogout();
             navigate(buildLoginRoute("role_missing"));
             return;
           }
           setIsSuperAdmin(!!hasSuperAdmin);
+          setIsViewer(!hasAdmin && !hasSuperAdmin && !!hasViewer);
         }
 
         setIsAdmin(true);
@@ -72,7 +77,6 @@ export function useAdminAuth() {
   }, [navigate]);
 
   const signOut = async () => {
-    // Log admin logout before clearing session
     if (userId) {
       const email = sessionStorage.getItem("admin_email") || userId;
       logActivity(email, "logout", "Admin logout");
@@ -82,5 +86,5 @@ export function useAdminAuth() {
     navigate("/admin/login");
   };
 
-  return { isAdmin, isSuperAdmin, userId, signOut };
+  return { isAdmin, isSuperAdmin, isViewer, userId, signOut };
 }
