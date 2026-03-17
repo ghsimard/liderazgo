@@ -655,17 +655,19 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="pl-6 pb-2">
-                          <div className="flex gap-2 mb-2">
-                            <Button size="sm" variant="outline" onClick={() => { setNewName(""); setAddInstitucionOpen(mun.id); }} className="gap-1 text-xs">
-                              <Plus className="w-3 h-3" /> Institución
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => { setEditItem({ type: "municipio", id: mun.id, nombre: mun.nombre }); setEditName(mun.nombre); }} className="gap-1 text-xs">
-                              <Pencil className="w-3 h-3" /> Editar
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setDeleteItem({ type: "municipio", id: mun.id, nombre: mun.nombre })} className="gap-1 text-xs text-destructive hover:text-destructive">
-                              <Trash2 className="w-3 h-3" /> Eliminar
-                            </Button>
-                          </div>
+                          {!isViewer && (
+                            <div className="flex gap-2 mb-2">
+                              <Button size="sm" variant="outline" onClick={() => { setNewName(""); setAddInstitucionOpen(mun.id); }} className="gap-1 text-xs">
+                                <Plus className="w-3 h-3" /> Institución
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => { setEditItem({ type: "municipio", id: mun.id, nombre: mun.nombre }); setEditName(mun.nombre); }} className="gap-1 text-xs">
+                                <Pencil className="w-3 h-3" /> Editar
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => setDeleteItem({ type: "municipio", id: mun.id, nombre: mun.nombre })} className="gap-1 text-xs text-destructive hover:text-destructive">
+                                <Trash2 className="w-3 h-3" /> Eliminar
+                              </Button>
+                            </div>
+                          )}
                           {institucionesByMunicipio(mun.id).length === 0 ? (
                             <p className="text-xs text-muted-foreground">Sin instituciones</p>
                           ) : (
