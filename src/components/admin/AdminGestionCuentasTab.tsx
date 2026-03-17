@@ -73,9 +73,10 @@ async function invokeManageUsers(action: string, params: Record<string, unknown>
 
 interface Props {
   isSuperAdmin: boolean;
+  isViewer?: boolean;
 }
 
-export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
+export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props) {
   const { toast } = useToast();
   const [people, setPeople] = useState<UnifiedPerson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -667,7 +668,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
                           </div>
                         </div>
                       )}
-                      {isSuperAdmin && (
+                      {!isViewer && (
                         <div className="space-y-1">
                           <Label className="text-xs">Rol</Label>
                           <Select value={adminRole} onValueChange={setAdminRole}>
@@ -676,7 +677,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin }: Props) {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="superadmin">Superadmin</SelectItem>
+                              {isSuperAdmin && <SelectItem value="superadmin">Superadmin</SelectItem>}
                               <SelectItem value="auditor">Auditor (solo lectura)</SelectItem>
                             </SelectContent>
                           </Select>
