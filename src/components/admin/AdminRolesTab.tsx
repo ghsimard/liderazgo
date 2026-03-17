@@ -209,7 +209,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
     try {
       const row = { name: formName.trim(), description: formDesc.trim() };
       if (USE_EXPRESS) {
-        await apiFetch("/api/db/custom_roles", { method: "POST", body: JSON.stringify(row) });
+        await apiFetch("/api/db/custom_roles", { method: "POST", body: row });
       } else {
         await supabase.from("custom_roles").insert(row);
       }
