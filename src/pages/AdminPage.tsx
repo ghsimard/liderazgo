@@ -535,7 +535,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
 
 export default function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isAdmin, isSuperAdmin, signOut } = useAdminAuth();
+  const { isAdmin, isSuperAdmin, isViewer, signOut } = useAdminAuth();
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
