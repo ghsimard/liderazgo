@@ -145,11 +145,11 @@ function sectionContainsTab(section: SidebarSection, tab: string) {
 interface AdminSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
-  isSuperAdmin: boolean;
-  isViewer?: boolean;
+  readableSections: string[];
+  can: (section: string, action: CrudAction) => boolean;
 }
 
-export default function AdminSidebar({ activeTab, onTabChange, isSuperAdmin, isViewer }: AdminSidebarProps) {
+export default function AdminSidebar({ activeTab, onTabChange, readableSections, can }: AdminSidebarProps) {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
