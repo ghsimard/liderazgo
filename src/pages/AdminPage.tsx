@@ -625,7 +625,7 @@ export default function AdminPage() {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-muted/20">
-        <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} isSuperAdmin={isSuperAdmin} isViewer={isViewer} />
+        <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} readableSections={readableSections} can={can} />
 
         <div className="flex-1 flex flex-col min-w-0">
           <header className="bg-primary text-primary-foreground sticky top-0 z-20">
