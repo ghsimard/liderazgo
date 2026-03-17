@@ -54,6 +54,7 @@ const FORM_TYPE_LABELS: Record<string, string> = {
 
 interface AdminEncuestas360TabProps {
   fase?: "inicial" | "final";
+  isViewer?: boolean;
 }
 
 export default function AdminEncuestas360Tab({ fase = "inicial" }: AdminEncuestas360TabProps) {
