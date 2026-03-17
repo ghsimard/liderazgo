@@ -12,7 +12,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify the caller is an authenticated admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -25,7 +24,7 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify caller is admin
+    // Verify caller is admin via new RBAC tables
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -37,21 +36,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: roleData } = await callerClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id)
-      .in("role", ["admin", "superadmin"])
-      .maybeSingle();
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    if (!roleData) {
+    // Check caller role via custom_roles
+    const { data: callerRoleData } = await adminClient
+      .from("user_custom_roles")
+      .select("role_id, custom_roles(name)")
+      .eq("user_id", caller.id);
+
+    const callerRoleNames = (callerRoleData ?? []).map((r: any) => r.custom_roles?.name).filter(Boolean);
+    if (!callerRoleNames.includes("Admin") && !callerRoleNames.includes("Superadmin")) {
       return new Response(JSON.stringify({ error: "Forbidden: admin only" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Parse and validate request body
+    // Parse request body
     let body: unknown;
     try {
       body = await req.json();
@@ -62,7 +63,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, makeAdmin, makeSuperAdmin, makeViewer, makeAuditor, makeMonitoreo } = body as Record<string, unknown>;
+    const { email, password, makeAdmin, makeSuperAdmin, makeViewer, makeAuditor, makeMonitoreo, customRoleId } = body as Record<string, unknown>;
 
     if (typeof email !== "string" || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       return new Response(JSON.stringify({ error: "Email invalide" }), {
@@ -79,7 +80,7 @@ Deno.serve(async (req) => {
     }
 
     // Only superadmins can create superadmins
-    if (makeSuperAdmin && roleData.role !== "superadmin") {
+    if (makeSuperAdmin && !callerRoleNames.includes("Superadmin")) {
       return new Response(JSON.stringify({ error: "Seul un superadmin peut créer un autre superadmin" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -87,7 +88,6 @@ Deno.serve(async (req) => {
     }
 
     // Create user with service role
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
       password,
@@ -101,13 +101,37 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Assign role
     if (newUser.user) {
-      const assignedRole = makeSuperAdmin ? "superadmin" : (makeViewer || makeAuditor || makeMonitoreo) ? "monitoreo" : "admin";
-      await adminClient.from("user_roles").insert({
-        user_id: newUser.user.id,
-        role: assignedRole,
-      });
+      const uid = newUser.user.id;
+
+      // Determine legacy role for dual-write
+      const legacyRole = makeSuperAdmin ? "superadmin" : (makeViewer || makeAuditor || makeMonitoreo) ? "monitoreo" : "admin";
+
+      // Dual-write: legacy user_roles
+      await adminClient.from("user_roles").insert({ user_id: uid, role: legacyRole });
+
+      // Dual-write: new user_custom_roles
+      if (typeof customRoleId === "string" && customRoleId) {
+        // Use the explicitly provided custom role ID
+        await adminClient.from("user_custom_roles").upsert(
+          { user_id: uid, role_id: customRoleId },
+          { onConflict: "user_id,role_id" }
+        );
+      } else {
+        // Map legacy role to custom_roles by name
+        const roleName = makeSuperAdmin ? "Superadmin" : (makeViewer || makeAuditor || makeMonitoreo) ? "Monitoreo" : "Admin";
+        const { data: cr } = await adminClient
+          .from("custom_roles")
+          .select("id")
+          .eq("name", roleName)
+          .maybeSingle();
+        if (cr) {
+          await adminClient.from("user_custom_roles").upsert(
+            { user_id: uid, role_id: cr.id },
+            { onConflict: "user_id,role_id" }
+          );
+        }
+      }
     }
 
     return new Response(JSON.stringify({ user: { id: newUser.user?.id, email: newUser.user?.email } }), {

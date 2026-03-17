@@ -9,20 +9,60 @@ const router = Router();
 // All routes require admin
 router.use(requireAuth, requireAdmin);
 
+/** Helper: get custom role names for a user */
+async function getUserRoleNames(userId: string): Promise<string[]> {
+  const rows = await query<{ name: string }>(
+    `SELECT cr.name FROM user_custom_roles ucr
+     JOIN custom_roles cr ON cr.id = ucr.role_id
+     WHERE ucr.user_id = $1`,
+    [userId]
+  );
+  return rows.map((r) => r.name);
+}
+
+/** Helper: get custom_role id by name */
+async function getRoleIdByName(name: string): Promise<string | null> {
+  const row = await queryOne<{ id: string }>(
+    "SELECT id FROM custom_roles WHERE name = $1",
+    [name]
+  );
+  return row?.id ?? null;
+}
+
+/** Helper: map legacy role string to custom_role name */
+function legacyToCustomRoleName(role: string): string {
+  if (role === "superadmin") return "Superadmin";
+  if (role === "monitoreo") return "Monitoreo";
+  return "Admin";
+}
+
+/** Helper: map custom_role name to legacy role string */
+function customToLegacyRole(name: string): string {
+  if (name === "Superadmin") return "superadmin";
+  if (name === "Monitoreo") return "monitoreo";
+  return "admin";
+}
+
 /** GET /api/users — list all users with roles */
 router.get("/", async (_req: Request, res: Response) => {
   try {
     const users = await query(`
       SELECT u.id, u.email, u.created_at, u.last_sign_in_at,
-             COALESCE(json_agg(ur.role) FILTER (WHERE ur.role IS NOT NULL), '[]') AS roles,
+             COALESCE(json_agg(cr.name) FILTER (WHERE cr.name IS NOT NULL), '[]') AS roles,
              ac.cedula
       FROM users u
-      LEFT JOIN user_roles ur ON ur.user_id = u.id
+      LEFT JOIN user_custom_roles ucr ON ucr.user_id = u.id
+      LEFT JOIN custom_roles cr ON cr.id = ucr.role_id
       LEFT JOIN admin_cedulas ac ON ac.user_id = u.id
       GROUP BY u.id, ac.cedula
       ORDER BY u.created_at DESC
     `);
-    res.json({ users });
+    // Map custom role names to legacy role keys for API compatibility
+    const mapped = users.map((u: any) => ({
+      ...u,
+      roles: (u.roles || []).map((n: string) => customToLegacyRole(n)),
+    }));
+    res.json({ users: mapped });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -51,12 +91,8 @@ router.post("/", async (req: Request, res: Response) => {
 
     // Only superadmins can create superadmins
     if (role === "superadmin") {
-      const callerRoles = await query<{ role: string }>(
-        "SELECT role FROM user_roles WHERE user_id = $1",
-        [req.user!.userId]
-      );
-      const isSuperAdmin = callerRoles.some((r) => r.role === "superadmin");
-      if (!isSuperAdmin) {
+      const callerRoles = await getUserRoleNames(req.user!.userId);
+      if (!callerRoles.includes("Superadmin")) {
         res.status(403).json({ error: "Seul un superadmin peut créer un autre superadmin" });
         return;
       }
@@ -77,12 +113,23 @@ router.post("/", async (req: Request, res: Response) => {
       [id, email.toLowerCase().trim(), hash]
     );
 
-    // Assign role if specified
     const assignedRole = role || "admin";
+
+    // Dual-write: legacy user_roles
     await queryOne(
       "INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING",
       [id, assignedRole]
     );
+
+    // Dual-write: new user_custom_roles
+    const customRoleName = legacyToCustomRoleName(assignedRole);
+    const roleId = await getRoleIdByName(customRoleName);
+    if (roleId) {
+      await queryOne(
+        "INSERT INTO user_custom_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        [id, roleId]
+      );
+    }
 
     res.status(201).json({ id, email: email.toLowerCase().trim() });
   } catch (err: any) {
@@ -110,27 +157,17 @@ router.put("/:id", async (req: Request, res: Response) => {
     const id = req.params.id as string;
     const { email, role, cedula } = req.body;
 
-    // Check caller roles
-    const callerRoles = await query<{ role: string }>(
-      "SELECT role FROM user_roles WHERE user_id = $1",
-      [req.user!.userId]
-    );
-    const callerIsSuperAdmin = callerRoles.some((r) => r.role === "superadmin");
+    const callerRoles = await getUserRoleNames(req.user!.userId);
+    const callerIsSuperAdmin = callerRoles.includes("Superadmin");
 
-    // Check target roles
-    const targetRoles = await query<{ role: string }>(
-      "SELECT role FROM user_roles WHERE user_id = $1",
-      [id]
-    );
-    const targetIsSuperAdmin = targetRoles.some((r) => r.role === "superadmin");
+    const targetRoles = await getUserRoleNames(id);
+    const targetIsSuperAdmin = targetRoles.includes("Superadmin");
 
-    // Only superadmins can edit superadmins
     if (targetIsSuperAdmin && !callerIsSuperAdmin) {
       res.status(403).json({ error: "Seul un superadmin peut modifier un autre superadmin" });
       return;
     }
 
-    // Only superadmins can promote to superadmin
     if (role === "superadmin" && !callerIsSuperAdmin) {
       res.status(403).json({ error: "Seul un superadmin peut attribuer le rôle superadmin" });
       return;
@@ -146,13 +183,25 @@ router.put("/:id", async (req: Request, res: Response) => {
       await queryOne("UPDATE users SET email = $1 WHERE id = $2", [email.toLowerCase().trim(), id]);
     }
 
-    // Update role
+    // Update role (dual-write)
     if (role) {
+      // Legacy
       await query("DELETE FROM user_roles WHERE user_id = $1", [id]);
       await queryOne(
         "INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING",
         [id, role]
       );
+
+      // New RBAC
+      await query("DELETE FROM user_custom_roles WHERE user_id = $1", [id]);
+      const customRoleName = legacyToCustomRoleName(role);
+      const roleId = await getRoleIdByName(customRoleName);
+      if (roleId) {
+        await queryOne(
+          "INSERT INTO user_custom_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+          [id, roleId]
+        );
+      }
     }
 
     // Update cedula
@@ -207,28 +256,22 @@ router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
 
-    // Prevent self-deletion
     if (id === req.user!.userId) {
       res.status(400).json({ error: "Vous ne pouvez pas supprimer votre propre compte" });
       return;
     }
 
-    // Check if target is superadmin — only superadmins can delete superadmins
-    const targetRoles = await query<{ role: string }>(
-      "SELECT role FROM user_roles WHERE user_id = $1",
-      [id]
-    );
-    if (targetRoles.some((r) => r.role === "superadmin")) {
-      const callerRoles = await query<{ role: string }>(
-        "SELECT role FROM user_roles WHERE user_id = $1",
-        [req.user!.userId]
-      );
-      if (!callerRoles.some((r) => r.role === "superadmin")) {
+    const targetRoles = await getUserRoleNames(id);
+    if (targetRoles.includes("Superadmin")) {
+      const callerRoles = await getUserRoleNames(req.user!.userId);
+      if (!callerRoles.includes("Superadmin")) {
         res.status(403).json({ error: "Seul un superadmin peut supprimer un autre superadmin" });
         return;
       }
     }
 
+    // Dual-delete
+    await query("DELETE FROM user_custom_roles WHERE user_id = $1", [id]);
     await query("DELETE FROM user_roles WHERE user_id = $1", [id]);
     const user = await queryOne("DELETE FROM users WHERE id = $1 RETURNING id", [id]);
 

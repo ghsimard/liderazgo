@@ -48,8 +48,10 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
     return;
   }
 
-  const role = await queryOne<{ role: string }>(
-    `SELECT role FROM user_roles WHERE user_id = $1 AND role IN ('admin', 'superadmin')`,
+  const role = await queryOne<{ name: string }>(
+    `SELECT cr.name FROM user_custom_roles ucr
+     JOIN custom_roles cr ON cr.id = ucr.role_id
+     WHERE ucr.user_id = $1 AND cr.name IN ('Admin', 'Superadmin')`,
     [req.user.userId]
   );
 
@@ -68,8 +70,10 @@ export async function requireAdminOrViewer(req: Request, res: Response, next: Ne
     return;
   }
 
-  const role = await queryOne<{ role: string }>(
-    `SELECT role FROM user_roles WHERE user_id = $1 AND role IN ('admin', 'superadmin', 'monitoreo')`,
+  const role = await queryOne<{ name: string }>(
+    `SELECT cr.name FROM user_custom_roles ucr
+     JOIN custom_roles cr ON cr.id = ucr.role_id
+     WHERE ucr.user_id = $1 AND cr.name IN ('Admin', 'Superadmin', 'Monitoreo')`,
     [req.user.userId]
   );
 
@@ -88,8 +92,10 @@ export async function requireSuperAdmin(req: Request, res: Response, next: NextF
     return;
   }
 
-  const role = await queryOne<{ role: string }>(
-    `SELECT role FROM user_roles WHERE user_id = $1 AND role = 'superadmin'`,
+  const role = await queryOne<{ name: string }>(
+    `SELECT cr.name FROM user_custom_roles ucr
+     JOIN custom_roles cr ON cr.id = ucr.role_id
+     WHERE ucr.user_id = $1 AND cr.name = 'Superadmin'`,
     [req.user.userId]
   );
 

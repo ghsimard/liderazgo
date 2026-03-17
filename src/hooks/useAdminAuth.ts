@@ -44,25 +44,24 @@ export function useAdminAuth() {
           setIsSuperAdmin(roles.includes("superadmin"));
           setIsViewer(!roles.includes("admin") && !roles.includes("superadmin") && roles.includes("monitoreo"));
         } else {
-          const { data: hasAdmin } = await supabase.rpc("has_role", {
-            _user_id: uid,
-            _role: "admin",
-          });
-          const { data: hasSuperAdmin } = await supabase.rpc("has_role", {
-            _user_id: uid,
-            _role: "superadmin",
-          });
-          const { data: hasViewer } = await supabase.rpc("has_role", {
-            _user_id: uid,
-            _role: "monitoreo",
-          });
-          if (!hasAdmin && !hasSuperAdmin && !hasViewer) {
+          // Use new RBAC: query user_custom_roles + custom_roles
+          const { data: ucrs } = await supabase
+            .from("user_custom_roles")
+            .select("custom_roles(name)")
+            .eq("user_id", uid);
+
+          const roleNames = (ucrs ?? []).map((r: any) => r.custom_roles?.name).filter(Boolean) as string[];
+
+          if (roleNames.length === 0) {
             await apiLogout();
             navigate(buildLoginRoute("role_missing"));
             return;
           }
-          setIsSuperAdmin(!!hasSuperAdmin);
-          setIsViewer(!hasAdmin && !hasSuperAdmin && !!hasViewer);
+
+          setIsSuperAdmin(roleNames.includes("Superadmin"));
+          setIsViewer(
+            !roleNames.includes("Admin") && !roleNames.includes("Superadmin") && roleNames.includes("Monitoreo")
+          );
         }
 
         setIsAdmin(true);
