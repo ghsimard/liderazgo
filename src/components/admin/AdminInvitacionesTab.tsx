@@ -400,7 +400,7 @@ export default function AdminInvitacionesTab({ isViewer = false }: { isViewer?: 
                           {show("accesos") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap text-center" onClick={() => handleSort("accesos")}>Accesos <SortIcon col="accesos" /></th>}
                           {show("enviada") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort("enviada")}>Enviada <SortIcon col="enviada" /></th>}
                           {show("estado") && <th className="px-3 py-1.5 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort("estado")}>Estado <SortIcon col="estado" /></th>}
-                          <th className="px-3 py-1.5 font-medium w-10"></th>
+                          {!isViewer && <th className="px-3 py-1.5 font-medium w-10"></th>}
                         </tr>
                       </thead>
                       <tbody>
