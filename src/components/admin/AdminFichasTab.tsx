@@ -38,7 +38,7 @@ interface FichaFilterData {
   institucion: string;
 }
 
-export default function AdminFichasTab() {
+export default function AdminFichasTab({ isViewer = false }: { isViewer?: boolean }) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { images } = useAppImages();
@@ -407,9 +407,11 @@ export default function AdminFichasTab() {
         <Button variant="outline" size="sm" onClick={() => generateFichaFieldsPdf()} className="gap-1.5">
           <BookOpen className="w-4 h-4" /> Campos y reglas
         </Button>
-        <Button size="sm" onClick={() => navigate("/admin/ficha/new")} className="gap-1.5">
-          <Plus className="w-4 h-4" /> Crear ficha
-        </Button>
+        {!isViewer && (
+          <Button size="sm" onClick={() => navigate("/admin/ficha/new")} className="gap-1.5">
+            <Plus className="w-4 h-4" /> Crear ficha
+          </Button>
+        )}
       </div>
 
       <div className="text-sm text-muted-foreground">
@@ -457,12 +459,16 @@ export default function AdminFichasTab() {
                       <Button variant="ghost" size="icon" onClick={() => handleDownloadPdf(f)} title="Descargar PDF">
                         <FileDown className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/ficha/${f.id}`)} title="Editar">
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(f.id)} title="Eliminar" className="text-destructive hover:text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {!isViewer && (
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/ficha/${f.id}`)} title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteId(f.id)} title="Eliminar" className="text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

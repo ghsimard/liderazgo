@@ -376,7 +376,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
           </TabsList>
 
           <TabsContent value="lista">
-            <AdminFichasTab />
+            <AdminFichasTab isViewer={isViewer} />
           </TabsContent>
 
           <TabsContent value="enlace">

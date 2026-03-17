@@ -395,7 +395,7 @@ export default function AdminEditFicha() {
   const { id } = useParams<{ id: string }>();
   const isCreateMode = !id || id === "new";
   const navigate = useNavigate();
-  const { isAdmin } = useAdminAuth();
+  const { isAdmin, isViewer } = useAdminAuth();
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
@@ -693,6 +693,7 @@ export default function AdminEditFicha() {
         {/* Formulario */}
         <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <fieldset disabled={isViewer} className="contents">
             {/* Hidden fields — region is managed internally, not shown like in FichaRLT */}
             <input type="hidden" {...register("region")} />
 
@@ -1298,21 +1299,24 @@ export default function AdminEditFicha() {
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base border border-border transition-colors hover:bg-muted"
               >
                 <ArrowLeft className="w-5 h-5" />
-                Cancelar
+                {isViewer ? "Volver" : "Cancelar"}
               </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="inline-flex items-center gap-3 px-10 py-4 rounded-xl text-white font-semibold text-lg transition-all hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ background: "var(--gradient-header)", boxShadow: "var(--shadow-header)" }}
-              >
-                {saving ? (
-                  <><RefreshCw className="w-5 h-5 animate-spin" />Guardando...</>
-                ) : (
-                  <><Save className="w-5 h-5" />Guardar cambios</>
-                )}
-              </button>
+              {!isViewer && (
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex items-center gap-3 px-10 py-4 rounded-xl text-white font-semibold text-lg transition-all hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{ background: "var(--gradient-header)", boxShadow: "var(--shadow-header)" }}
+                >
+                  {saving ? (
+                    <><RefreshCw className="w-5 h-5 animate-spin" />Guardando...</>
+                  ) : (
+                    <><Save className="w-5 h-5" />Guardar cambios</>
+                  )}
+                </button>
+              )}
             </div>
+          </fieldset>
           </form>
         </main>
 
