@@ -395,7 +395,7 @@ export default function AdminEditFicha() {
   const { id } = useParams<{ id: string }>();
   const isCreateMode = !id || id === "new";
   const navigate = useNavigate();
-  const { isAdmin } = useAdminAuth();
+  const { isAdmin, isViewer } = useAdminAuth();
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
