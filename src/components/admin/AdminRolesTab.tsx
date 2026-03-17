@@ -141,7 +141,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
       }
       const row = { role_id: selectedRole.id, section, ...base, [key]: newVal };
       if (USE_EXPRESS) {
-        const { data } = await apiFetch<RolePermission[]>("/api/db/role_permissions", { method: "POST", body: JSON.stringify(row) });
+        const { data } = await apiFetch<RolePermission[]>("/api/db/role_permissions", { method: "POST", body: row });
         if (data?.[0]) setPermissions((prev) => [...prev, data[0]]);
       } else {
         const { data } = await supabase.from("role_permissions").insert(row).select().single();
