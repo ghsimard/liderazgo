@@ -446,7 +446,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
     case "rubricas":
       return <AdminRubricasTab />;
     case "informe-modulo":
-      return <AdminInformeModuloTab />;
+      return <AdminInformeModuloTab isViewer={isViewer} />;
     case "blancos-ambiente":
     case "ambiente-escolar":
     case "ambiente-monitoreo":
