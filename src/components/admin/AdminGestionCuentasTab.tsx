@@ -570,23 +570,25 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(p)} title="Editar">
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      {p.isAdmin && (
-                        <Button variant="ghost" size="icon" onClick={() => { setPwTarget(p); setNewPw(""); }} title="Cambiar contraseña">
-                          <KeyRound className="w-4 h-4" />
+                  {!isViewer && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(p)} title="Editar">
+                          <Pencil className="w-4 h-4" />
                         </Button>
-                      )}
-                      {(isSuperAdmin || p.adminRole !== "superadmin") && (
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(p)} title="Eliminar" className="text-destructive hover:text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
+                        {p.isAdmin && (
+                          <Button variant="ghost" size="icon" onClick={() => { setPwTarget(p); setNewPw(""); }} title="Cambiar contraseña">
+                            <KeyRound className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {(isSuperAdmin || p.adminRole !== "superadmin") && (
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(p)} title="Eliminar" className="text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
