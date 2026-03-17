@@ -392,7 +392,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
           </TabsContent>
 
           <TabsContent value="regiones">
-            <AdminGeographyTab />
+            <AdminGeographyTab isViewer={isViewer} />
           </TabsContent>
         </Tabs>
       );

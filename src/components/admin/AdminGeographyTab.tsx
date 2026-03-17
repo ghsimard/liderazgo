@@ -48,7 +48,7 @@ interface RegionEntidad {
   entidad_territorial_id: string;
 }
 
-export default function AdminGeographyTab() {
+export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boolean }) {
   const { toast } = useToast();
 
   const [entidades, setEntidades] = useState<Entidad[]>([]);
@@ -554,17 +554,19 @@ export default function AdminGeographyTab() {
   return (
     <div className="flex flex-col gap-6">
       {/* Actions bar */}
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => { setNewName(""); setAddEntidadOpen(true); }} className="gap-1.5">
-          <Plus className="w-4 h-4" /> Crear Entidad Territorial
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => openRegionDialog()} className="gap-1.5">
-          <MapPin className="w-4 h-4" /> Crear Región
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
-          <Upload className="w-4 h-4" /> Importar CSV
-        </Button>
-      </div>
+      {!isViewer && (
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={() => { setNewName(""); setAddEntidadOpen(true); }} className="gap-1.5">
+            <Plus className="w-4 h-4" /> Crear Entidad Territorial
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => openRegionDialog()} className="gap-1.5">
+            <MapPin className="w-4 h-4" /> Crear Región
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
+            <Upload className="w-4 h-4" /> Importar CSV
+          </Button>
+        </div>
+      )}
 
       {/* Regiones section */}
       <div>
@@ -577,7 +579,7 @@ export default function AdminGeographyTab() {
                 <TableHead>Entidad Territorial</TableHead>
                 <TableHead>Logos</TableHead>
                 <TableHead>Municipios</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                {!isViewer && <TableHead className="text-right">Acciones</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -597,12 +599,14 @@ export default function AdminGeographyTab() {
                     <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate" title={muniNames.join(", ")}>
                       {muniNames.length > 0 ? muniNames.join(", ") : "—"}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openRegionDialog(r)} title="Editar"><Pencil className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteItem({ type: "region", id: r.id, nombre: r.nombre })} className="text-destructive hover:text-destructive" title="Eliminar"><Trash2 className="w-4 h-4" /></Button>
-                      </div>
-                    </TableCell>
+                    {!isViewer && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openRegionDialog(r)} title="Editar"><Pencil className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteItem({ type: "region", id: r.id, nombre: r.nombre })} className="text-destructive hover:text-destructive" title="Eliminar"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
@@ -624,17 +628,19 @@ export default function AdminGeographyTab() {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-3">
-                <div className="flex gap-2 mb-3">
-                  <Button size="sm" variant="outline" onClick={() => { setNewName(""); setAddMunicipioOpen(ent.id); }} className="gap-1 text-xs">
-                    <Plus className="w-3 h-3" /> Municipio
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => { setEditItem({ type: "entidad", id: ent.id, nombre: ent.nombre }); setEditName(ent.nombre); }} className="gap-1 text-xs">
-                    <Pencil className="w-3 h-3" /> Editar
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setDeleteItem({ type: "entidad", id: ent.id, nombre: ent.nombre })} className="gap-1 text-xs text-destructive hover:text-destructive">
-                    <Trash2 className="w-3 h-3" /> Eliminar
-                  </Button>
-                </div>
+                {!isViewer && (
+                  <div className="flex gap-2 mb-3">
+                    <Button size="sm" variant="outline" onClick={() => { setNewName(""); setAddMunicipioOpen(ent.id); }} className="gap-1 text-xs">
+                      <Plus className="w-3 h-3" /> Municipio
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => { setEditItem({ type: "entidad", id: ent.id, nombre: ent.nombre }); setEditName(ent.nombre); }} className="gap-1 text-xs">
+                      <Pencil className="w-3 h-3" /> Editar
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setDeleteItem({ type: "entidad", id: ent.id, nombre: ent.nombre })} className="gap-1 text-xs text-destructive hover:text-destructive">
+                      <Trash2 className="w-3 h-3" /> Eliminar
+                    </Button>
+                  </div>
+                )}
                 {municipiosByEntidad(ent.id).length === 0 ? (
                   <p className="text-sm text-muted-foreground ml-4">Sin municipios</p>
                 ) : (
@@ -649,17 +655,19 @@ export default function AdminGeographyTab() {
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="pl-6 pb-2">
-                          <div className="flex gap-2 mb-2">
-                            <Button size="sm" variant="outline" onClick={() => { setNewName(""); setAddInstitucionOpen(mun.id); }} className="gap-1 text-xs">
-                              <Plus className="w-3 h-3" /> Institución
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => { setEditItem({ type: "municipio", id: mun.id, nombre: mun.nombre }); setEditName(mun.nombre); }} className="gap-1 text-xs">
-                              <Pencil className="w-3 h-3" /> Editar
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setDeleteItem({ type: "municipio", id: mun.id, nombre: mun.nombre })} className="gap-1 text-xs text-destructive hover:text-destructive">
-                              <Trash2 className="w-3 h-3" /> Eliminar
-                            </Button>
-                          </div>
+                          {!isViewer && (
+                            <div className="flex gap-2 mb-2">
+                              <Button size="sm" variant="outline" onClick={() => { setNewName(""); setAddInstitucionOpen(mun.id); }} className="gap-1 text-xs">
+                                <Plus className="w-3 h-3" /> Institución
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => { setEditItem({ type: "municipio", id: mun.id, nombre: mun.nombre }); setEditName(mun.nombre); }} className="gap-1 text-xs">
+                                <Pencil className="w-3 h-3" /> Editar
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => setDeleteItem({ type: "municipio", id: mun.id, nombre: mun.nombre })} className="gap-1 text-xs text-destructive hover:text-destructive">
+                                <Trash2 className="w-3 h-3" /> Eliminar
+                              </Button>
+                            </div>
+                          )}
                           {institucionesByMunicipio(mun.id).length === 0 ? (
                             <p className="text-xs text-muted-foreground">Sin instituciones</p>
                           ) : (
@@ -670,14 +678,16 @@ export default function AdminGeographyTab() {
                                     <School className="w-3 h-3 text-muted-foreground" />
                                     <span>{inst.nombre}</span>
                                   </div>
-                                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditItem({ type: "institucion", id: inst.id, nombre: inst.nombre }); setEditName(inst.nombre); }}>
-                                      <Pencil className="w-3 h-3" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => setDeleteItem({ type: "institucion", id: inst.id, nombre: inst.nombre })}>
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </div>
+                                  {!isViewer && (
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditItem({ type: "institucion", id: inst.id, nombre: inst.nombre }); setEditName(inst.nombre); }}>
+                                        <Pencil className="w-3 h-3" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => setDeleteItem({ type: "institucion", id: inst.id, nombre: inst.nombre })}>
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  )}
                                 </li>
                               ))}
                             </ul>
