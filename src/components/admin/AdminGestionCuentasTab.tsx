@@ -539,7 +539,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={isViewer ? 4 : 5} className="text-center py-10 text-muted-foreground">
                   {search ? "Sin resultados." : "No hay personas registradas."}
                 </TableCell>
               </TableRow>
