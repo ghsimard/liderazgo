@@ -14,14 +14,14 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Download, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight, Plus, FileDown, Files, Filter, BookOpen } from "lucide-react";
+import { Search, Download, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight, Plus, FileDown, Files, Filter } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { generarPDFFicha } from "@/utils/pdfGenerator";
 import { MultiSelect } from "@/components/ui/multi-select";
 import JSZip from "jszip";
 import { useAppImages } from "@/hooks/useAppImages";
 import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
-import { generateFichaFieldsPdf } from "@/utils/fichaFieldsPdfGenerator";
+
 
 type Ficha = Tables<"fichas_rlt">;
 const PAGE_SIZE = 20;
@@ -403,9 +403,6 @@ export default function AdminFichasTab({ isViewer = false }: { isViewer?: boolea
         </Button>
         <Button variant="outline" size="sm" onClick={handleBatchPdf} disabled={batchLoading || !hasFilters} className="gap-1.5">
           <Files className="w-4 h-4" /> {batchLoading ? "Generando…" : "PDFs filtrados"}
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => generateFichaFieldsPdf()} className="gap-1.5">
-          <BookOpen className="w-4 h-4" /> Campos y reglas
         </Button>
         {!isViewer && (
           <Button size="sm" onClick={() => navigate("/admin/ficha/new")} className="gap-1.5">

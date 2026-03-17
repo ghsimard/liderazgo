@@ -12,6 +12,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { generarPDFEncuesta360EnBlanco } from "@/utils/blankEncuesta360PdfGenerator";
 
 import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
+import { generateFichaFieldsPdf } from "@/utils/fichaFieldsPdfGenerator";
 import { generarPDFAmbienteEscolarEnBlanco } from "@/utils/blankAmbienteEscolarPdfGenerator";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
@@ -373,6 +374,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
             <TabsTrigger value="lista" className="gap-1.5"><FileText className="w-4 h-4" /> Lista</TabsTrigger>
             <TabsTrigger value="enlace" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlace y PDF</TabsTrigger>
             <TabsTrigger value="regiones" className="gap-1.5"><MapPin className="w-4 h-4" /> Configuración</TabsTrigger>
+            {isSuperAdmin && <TabsTrigger value="campos" className="gap-1.5"><BookOpen className="w-4 h-4" /> Campos y reglas</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="lista">
@@ -394,6 +396,17 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
           <TabsContent value="regiones">
             <AdminGeographyTab isViewer={isViewer} />
           </TabsContent>
+
+          {isSuperAdmin && (
+            <TabsContent value="campos">
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Genera un PDF con todos los campos del formulario de Ficha de Información, sus reglas de validación y opciones.</p>
+                <Button onClick={() => generateFichaFieldsPdf()} className="gap-1.5">
+                  <BookOpen className="w-4 h-4" /> Descargar PDF — Campos y reglas
+                </Button>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       );
     }
