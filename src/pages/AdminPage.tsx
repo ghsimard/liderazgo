@@ -311,11 +311,14 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
           </TabsContent>
 
           <TabsContent value="configuracion">
+            <fieldset disabled={isViewer} className="contents">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-muted-foreground">Gestión completa de competencias 360°</h3>
-              <Button size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
-                <Plus className="w-4 h-4" /> Asistente de creación
-              </Button>
+              {!isViewer && (
+                <Button size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
+                  <Plus className="w-4 h-4" /> Asistente de creación
+                </Button>
+              )}
             </div>
             <AdminCompetencyWizard
               open={wizardOpen}
@@ -334,6 +337,7 @@ function AdminContent({ activeTab, isSuperAdmin, isViewer }: { activeTab: string
               <TabsContent value="items"><AdminItemsManager key={wizardRefreshKey} /></TabsContent>
               <TabsContent value="pesos"><AdminWeightsTab key={wizardRefreshKey} /></TabsContent>
             </Tabs>
+            </fieldset>
           </TabsContent>
 
           <TabsContent value="inicial">
