@@ -241,10 +241,13 @@ export default function AdminSidebar({ activeTab, onTabChange, readableSections,
         </SidebarGroup>
         <Separator className="mx-2 my-1" />
         {sections.map((section, idx) => {
-          // Hide Sistema and MEL sections for viewers
-          if (isViewer && (section.label === "Sistema" || section.label === "MEL")) return null;
+          // Filter sections based on RBAC readableSections
+          const sectionKey = section.items[0]?.tab || "";
+          // Map tab keys to RBAC section keys
+          const rbacKey = sectionKey === "sistema" ? "sistema" : sectionKey === "mel" ? "mel" : sectionKey;
+          if (rbacKey && !readableSections.includes(rbacKey)) return null;
           const visibleItems = section.items.filter(
-            (i) => !i.superadminOnly || isSuperAdmin
+            (i) => !i.superadminOnly || can("sistema", "delete")
           );
           if (visibleItems.length === 0) return null;
 
