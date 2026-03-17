@@ -402,7 +402,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
           </TabsContent>
 
           <TabsContent value="regiones">
-            <AdminGeographyTab isViewer={isViewer} />
+            <AdminGeographyTab isViewer={!can("fichas-rlt", "update")} />
           </TabsContent>
 
           {isSuperAdmin && (
