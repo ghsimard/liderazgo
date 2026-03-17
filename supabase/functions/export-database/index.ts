@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       "fichas_rlt",
       "encuestas_360",
       "deleted_records",
-      "user_roles",
+      "user_custom_roles",
       "app_images",
       "app_settings",
       "rubrica_modules",

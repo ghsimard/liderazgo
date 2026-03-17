@@ -231,10 +231,7 @@ Deno.serve(async (req) => {
               status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
-          // Legacy dual-write
-          await adminClient.from("user_roles").update({ role }).eq("user_id", user_id);
-
-          // New RBAC dual-write
+          // New RBAC write
           const roleName = role === "superadmin" ? "Superadmin" : role === "monitoreo" ? "Monitoreo" : "Admin";
           const { data: cr } = await adminClient.from("custom_roles").select("id").eq("name", roleName).maybeSingle();
           if (cr) {

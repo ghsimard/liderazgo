@@ -257,9 +257,8 @@ router.delete("/:id", async (req: Request, res: Response) => {
       }
     }
 
-    // Dual-delete
+    // Delete from RBAC table
     await query("DELETE FROM user_custom_roles WHERE user_id = $1", [id]);
-    await query("DELETE FROM user_roles WHERE user_id = $1", [id]);
     const user = await queryOne("DELETE FROM users WHERE id = $1 RETURNING id", [id]);
 
     if (!user) {
