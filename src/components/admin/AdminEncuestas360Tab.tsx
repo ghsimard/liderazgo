@@ -298,6 +298,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                                 <td className="px-3 py-2 text-muted-foreground">
                                   {new Date(e.created_at).toLocaleDateString("es-CO")}
                                 </td>
+                                {!isViewer && (
                                 <td className="px-3 py-2 text-right">
                                   <Button
                                     variant="ghost"
@@ -308,6 +309,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </Button>
                                 </td>
+                                )}
                               </tr>
                             ))}
                           </tbody>

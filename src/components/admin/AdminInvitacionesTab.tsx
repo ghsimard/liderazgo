@@ -477,6 +477,7 @@ export default function AdminInvitacionesTab() {
                                   )}
                                 </td>
                               )}
+                              {!isViewer && (
                               <td className="px-3 py-2 text-right">
                                 <Button
                                   variant="ghost"
@@ -487,6 +488,7 @@ export default function AdminInvitacionesTab() {
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                               </td>
+                              )}
                             </tr>
                           );
                         })}
