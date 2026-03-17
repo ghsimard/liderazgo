@@ -511,11 +511,11 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
             <TabsTrigger value="roles-permisos" className="gap-1.5"><Shield className="w-4 h-4" /> Roles y Permisos</TabsTrigger>
             <TabsTrigger value="activity-log" className="gap-1.5"><Activity className="w-4 h-4" /> Actividad</TabsTrigger>
             <TabsTrigger value="papelera" className="gap-1.5"><Trash2 className="w-4 h-4" /> Papelera</TabsTrigger>
-            {isSuperAdmin && <TabsTrigger value="reviews" className="gap-1.5"><Star className="w-4 h-4" /> Apreciaciones</TabsTrigger>}
-            {isSuperAdmin && <TabsTrigger value="mensajes" className="gap-1.5"><MessageSquare className="w-4 h-4" /> Mensajes</TabsTrigger>}
-            {isSuperAdmin && <TabsTrigger value="changelog" className="gap-1.5"><GitCommit className="w-4 h-4" /> Changelog</TabsTrigger>}
-            {isSuperAdmin && <TabsTrigger value="specs" className="gap-1.5"><FileText className="w-4 h-4" /> Especificaciones</TabsTrigger>}
-            {isSuperAdmin && <TabsTrigger value="purge-data" className="gap-1.5"><Trash2 className="w-4 h-4" /> Purgar datos</TabsTrigger>}
+            {can("sistema.reviews", "read") && <TabsTrigger value="reviews" className="gap-1.5"><Star className="w-4 h-4" /> Apreciaciones</TabsTrigger>}
+            {can("sistema.mensajes", "read") && <TabsTrigger value="mensajes" className="gap-1.5"><MessageSquare className="w-4 h-4" /> Mensajes</TabsTrigger>}
+            {can("sistema.changelog", "read") && <TabsTrigger value="changelog" className="gap-1.5"><GitCommit className="w-4 h-4" /> Changelog</TabsTrigger>}
+            {can("sistema.specs", "read") && <TabsTrigger value="specs" className="gap-1.5"><FileText className="w-4 h-4" /> Especificaciones</TabsTrigger>}
+            {can("sistema.purge-data", "read") && <TabsTrigger value="purge-data" className="gap-1.5"><Trash2 className="w-4 h-4" /> Purgar datos</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="gestion-cuentas">
