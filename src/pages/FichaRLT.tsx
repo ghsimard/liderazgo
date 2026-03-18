@@ -22,6 +22,9 @@ import {
   FormSection,
 } from "@/components/FormComponents";
 import { cn } from "@/lib/utils";
+
+const toTitleCase = (s: string) =>
+  s.toLowerCase().replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
 import { PhoneInputWithCountry } from "@/components/PhoneInputWithCountry";
 import { CheckCircle, Download, RefreshCw, Send, AlertCircle, ArrowLeft, ArrowRight, Edit, Save } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
