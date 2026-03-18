@@ -94,7 +94,7 @@ export default function AdminPurgeDataTab() {
 
     setResults(newResults);
     setConfirmText("");
-    setPurging(false);
+    setIncludeRegions(false);
 
     const failures = newResults.filter((r) => !r.ok);
     if (failures.length === 0) {
