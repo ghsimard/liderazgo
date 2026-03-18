@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, School, ChevronDown, ChevronRight, Trash2, MapPin, EyeOff } from "lucide-react";
+import { RefreshCw, School, ChevronDown, ChevronRight, Trash2, MapPin, EyeOff, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -204,24 +204,25 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
     return { visible: false, source: "Sin configuración (oculto por defecto)" };
   };
 
-  const toggleInstVisibility = async (institucion: string, e: React.MouseEvent) => {
+  const toggleInstVisibility = async (institucion: string, currentlyVisible: boolean, e: React.MouseEvent) => {
     e.stopPropagation();
+    const newActive = !currentlyVisible;
     const { data, error } = await supabase.from("encuesta_360_visibility").upsert({
       fase,
       scope_type: "institucion",
       scope_value: institucion,
-      is_active: true,
+      is_active: newActive,
       updated_at: new Date().toISOString(),
     }, { onConflict: "fase,scope_type,scope_value" }).select();
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Visibilidad activada", description: institucion });
+      toast({ title: newActive ? "Visibilidad activada" : "Visibilidad desactivada", description: institucion });
       const existing = visibility.find(r => r.scope_type === "institucion" && r.scope_value === institucion);
       if (existing) {
-        setVisibility(prev => prev.map(r => r === existing ? { ...r, is_active: true } : r));
+        setVisibility(prev => prev.map(r => r === existing ? { ...r, is_active: newActive } : r));
       } else if (data?.[0]) {
-        setVisibility(prev => [...prev, { fase, scope_type: "institucion", scope_value: institucion, is_active: true }]);
+        setVisibility(prev => [...prev, { fase, scope_type: "institucion", scope_value: institucion, is_active: newActive }]);
       }
     }
   };
@@ -288,20 +289,19 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <CardTitle className="text-sm font-medium truncate">{g.institucion}</CardTitle>
-                      {!vis.visible && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge
-                              variant="destructive"
-                              className="text-xs gap-1 shrink-0 cursor-pointer hover:opacity-80"
-                              onClick={(e) => toggleInstVisibility(g.institucion, e)}
-                            >
-                              <EyeOff className="w-3 h-3" /> No visible
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent><p className="text-xs">{vis.source} — Clic para activar</p></TooltipContent>
-                        </Tooltip>
-                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant={vis.visible ? "secondary" : "destructive"}
+                            className="text-xs gap-1 shrink-0 cursor-pointer hover:opacity-80"
+                            onClick={(e) => toggleInstVisibility(g.institucion, vis.visible, e)}
+                          >
+                            {vis.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            {vis.visible ? "Visible" : "No visible"}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent><p className="text-xs">{vis.source} — Clic para cambiar</p></TooltipContent>
+                      </Tooltip>
                     </div>
                     <div className="flex gap-1.5 mt-1 flex-wrap">
                       {Object.entries(typeCounts).map(([type, count]) => (
