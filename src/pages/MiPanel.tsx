@@ -161,6 +161,7 @@ export default function MiPanel() {
   const [roleInfo, setRoleInfo] = useState<CedulaRoleResult | null>(null);
   const [rubricaProgress, setRubricaProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 4 });
   const [inicialDone, setInicialDone] = useState(false);
+  const [rubricaEnabled, setRubricaEnabled] = useState(false);
   
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
