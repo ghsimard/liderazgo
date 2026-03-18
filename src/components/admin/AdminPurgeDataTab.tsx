@@ -62,8 +62,12 @@ const CONFIRM_PHRASE = "ELIMINAR TODOS LOS DATOS";
 export default function AdminPurgeDataTab() {
   const [confirmText, setConfirmText] = useState("");
   const [purging, setPurging] = useState(false);
+  const [includeRegions, setIncludeRegions] = useState(false);
   const [results, setResults] = useState<{ table: string; ok: boolean; error?: string }[]>([]);
   const { toast } = useToast();
+
+  const tablesToPurge = includeRegions ? [...TABLES_TO_PURGE, ...REGION_TABLES] : TABLES_TO_PURGE;
+  const tablesPreserved = includeRegions ? TABLES_PRESERVED_BASE : [...TABLES_PRESERVED_BASE, REGION_PRESERVED];
 
   const handlePurge = async () => {
     setPurging(true);
