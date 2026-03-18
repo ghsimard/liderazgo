@@ -5,7 +5,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, AlertTriangle, CheckCircle2, Search } from "lucide-react";
+import { RefreshCw, AlertTriangle, CheckCircle2, Search, Eye, EyeOff } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 /** Required counts per tipo_formulario */
 const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> = {
