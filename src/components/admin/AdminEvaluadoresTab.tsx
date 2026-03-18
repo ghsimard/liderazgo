@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, UserPlus, Search, Users, Link, Eye, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, UserPlus, Search, Users, Link, Eye, ArrowRightLeft, AlertTriangle, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AdminEvalDetailDialog from "./AdminEvalDetailDialog";
 import TransferDirectivosDialog from "./TransferDirectivosDialog";
 
@@ -274,112 +275,118 @@ export default function AdminEvaluadoresTab() {
           {filtered.map(ev => {
             const evAsignaciones = asignaciones.filter(a => a.evaluador_id === ev.id);
             return (
-              <Card key={ev.id}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      {ev.nombre}
-                      <Badge variant="outline" className="text-xs ml-1">CC: {ev.cedula}</Badge>
-                      {ev.email && <span className="text-xs text-muted-foreground ml-1">📧 {ev.email}</span>}
-                    </CardTitle>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => { setAssignEvaluadorId(ev.id); setShowAssign(true); }}
-                        className="gap-1 text-xs"
-                      >
-                        <Link className="w-3.5 h-3.5" /> Asignar
-                      </Button>
-                      {asignaciones.filter(a => a.evaluador_id === ev.id).length > 0 && (
+              <Collapsible key={ev.id} asChild>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CollapsibleTrigger className="flex items-center gap-2 text-sm font-semibold cursor-pointer select-none group">
+                        <ChevronDown className="w-4 h-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                        <Users className="w-4 h-4" />
+                        {ev.nombre}
+                        <Badge variant="outline" className="text-xs ml-1">CC: {ev.cedula}</Badge>
+                        <Badge variant="secondary" className="text-xs">{evAsignaciones.length} directivo(s)</Badge>
+                        {ev.email && <span className="text-xs text-muted-foreground ml-1">📧 {ev.email}</span>}
+                      </CollapsibleTrigger>
+                      <div className="flex items-center gap-1">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setTransferEvaluador(ev)}
+                          onClick={() => { setAssignEvaluadorId(ev.id); setShowAssign(true); }}
                           className="gap-1 text-xs"
                         >
-                          <ArrowRightLeft className="w-3.5 h-3.5" /> Transferir
+                          <Link className="w-3.5 h-3.5" /> Asignar
                         </Button>
-                      )}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => handleDeleteEvaluador(ev.id, ev.nombre)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {evAsignaciones.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">Sin asignaciones. Use "Asignar directivo" para vincular un rector/a.</p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs">Directivo</TableHead>
-                          <TableHead className="text-xs">Cédula</TableHead>
-                          <TableHead className="text-xs">Institución</TableHead>
-                          <TableHead className="text-xs w-10"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {evAsignaciones.map(a => (
-                          <TableRow
-                            key={a.id}
-                            className={cedulasConEval.has(a.directivo_cedula) ? "cursor-pointer hover:bg-muted/50" : ""}
-                            onClick={() => cedulasConEval.has(a.directivo_cedula) && setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre })}
+                        {evAsignaciones.length > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setTransferEvaluador(ev)}
+                            className="gap-1 text-xs"
                           >
-                            <TableCell className="text-xs">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                {a.directivo_nombre}
-                                {(() => {
-                                  const m = modulosCompletados[a.directivo_cedula];
-                                  if (!m) return null;
-                                  return (
-                                    <>
-                                      {m.auto > 0 && <Badge className="text-[10px] bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">Auto {m.auto}/4</Badge>}
-                                      {m.equipo > 0 && <Badge className="text-[10px] bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Equipo {m.equipo}/4</Badge>}
-                                      {m.acordado > 0 && <Badge className="text-[10px] bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Acordado {m.acordado}/4</Badge>}
-                                    </>
-                                  );
-                                })()}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-xs">{a.directivo_cedula}</TableCell>
-                            <TableCell className="text-xs">{a.institucion}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                {cedulasConEval.has(a.directivo_cedula) && (
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 text-primary"
-                                    onClick={(e) => { e.stopPropagation(); setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre }); }}
-                                  >
-                                    <Eye className="w-3.5 h-3.5" />
-                                  </Button>
-                                )}
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 text-destructive"
-                                  onClick={(e) => { e.stopPropagation(); handleDeleteAsignacion(a.id); }}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
+                            <ArrowRightLeft className="w-3.5 h-3.5" /> Transferir
+                          </Button>
+                        )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => handleDeleteEvaluador(ev.id, ev.nombre)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CollapsibleContent>
+                    <CardContent>
+                      {evAsignaciones.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">Sin asignaciones. Use "Asignar directivo" para vincular un rector/a.</p>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-xs">Directivo</TableHead>
+                              <TableHead className="text-xs">Cédula</TableHead>
+                              <TableHead className="text-xs">Institución</TableHead>
+                              <TableHead className="text-xs w-10"></TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {evAsignaciones.map(a => (
+                              <TableRow
+                                key={a.id}
+                                className={cedulasConEval.has(a.directivo_cedula) ? "cursor-pointer hover:bg-muted/50" : ""}
+                                onClick={() => cedulasConEval.has(a.directivo_cedula) && setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre })}
+                              >
+                                <TableCell className="text-xs">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    {a.directivo_nombre}
+                                    {(() => {
+                                      const m = modulosCompletados[a.directivo_cedula];
+                                      if (!m) return null;
+                                      return (
+                                        <>
+                                          {m.auto > 0 && <Badge className="text-[10px] bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">Auto {m.auto}/4</Badge>}
+                                          {m.equipo > 0 && <Badge className="text-[10px] bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Equipo {m.equipo}/4</Badge>}
+                                          {m.acordado > 0 && <Badge className="text-[10px] bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Acordado {m.acordado}/4</Badge>}
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-xs">{a.directivo_cedula}</TableCell>
+                                <TableCell className="text-xs">{a.institucion}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1">
+                                    {cedulasConEval.has(a.directivo_cedula) && (
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7 text-primary"
+                                        onClick={(e) => { e.stopPropagation(); setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre }); }}
+                                      >
+                                        <Eye className="w-3.5 h-3.5" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7 text-destructive"
+                                      onClick={(e) => { e.stopPropagation(); handleDeleteAsignacion(a.id); }}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             );
           })}
         </div>
