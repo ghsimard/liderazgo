@@ -29,6 +29,13 @@ const TABLES_TO_PURGE = [
   { table: "site_reviews", label: "Reseñas del sitio" },
   { table: "user_activity_log", label: "Registro de actividad" },
   { table: "deleted_records", label: "Papelera (registros eliminados)" },
+  { table: "satisfaccion_responses", label: "Respuestas de satisfacción" },
+  { table: "satisfaccion_report_content", label: "Contenido de reportes de satisfacción" },
+  { table: "satisfaccion_form_definitions", label: "Definiciones de formularios de satisfacción" },
+  { table: "satisfaccion_config", label: "Configuración de satisfacción" },
+  { table: "encuestas_ambiente_escolar", label: "Encuestas de ambiente escolar" },
+  { table: "encuesta_360_visibility", label: "Visibilidad de encuestas 360°" },
+  { table: "operator_permissions", label: "Permisos de operadores" },
 ];
 
 const TABLES_PRESERVED = [
