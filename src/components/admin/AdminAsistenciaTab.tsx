@@ -117,7 +117,7 @@ export default function AdminAsistenciaTab() {
 
   const getKey = (cedula: string, dia: number) => `${cedula}-${dia}`;
 
-  const toggleAttendance = (cedula: string, dia: number, field: "session_am" | "session_pm") => {
+  const toggleDay = (cedula: string, dia: number) => {
     const key = getKey(cedula, dia);
     const existing = asistencia.get(key) || {
       directivo_cedula: cedula,
@@ -128,7 +128,8 @@ export default function AdminAsistenciaTab() {
       razon_inasistencia: "",
       observaciones: "",
     };
-    const updated = { ...existing, [field]: !existing[field] };
+    const isPresent = !existing.session_am;
+    const updated = { ...existing, session_am: isPresent, session_pm: isPresent };
     const newMap = new Map(asistencia);
     newMap.set(key, updated);
     setAsistencia(newMap);
