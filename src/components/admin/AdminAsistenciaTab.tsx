@@ -241,11 +241,12 @@ export default function AdminAsistenciaTab() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-muted-foreground" />
-              <Select value={String(selectedModule)} onValueChange={v => setSelectedModule(Number(v))}>
-                <SelectTrigger className="w-[140px]">
+              <Select value={String(selectedModule)} onValueChange={v => setSelectedModule(v === "all" ? "all" : Number(v))}>
+                <SelectTrigger className="w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">Todos los módulos</SelectItem>
                   {MODULES.map(m => (
                     <SelectItem key={m} value={String(m)}>Módulo {m}</SelectItem>
                   ))}
