@@ -36,6 +36,10 @@ const TABLES_TO_PURGE = [
   { table: "encuestas_ambiente_escolar", label: "Encuestas de ambiente escolar" },
   { table: "encuesta_360_visibility", label: "Visibilidad de encuestas 360°" },
   { table: "operator_permissions", label: "Permisos de operadores" },
+  { table: "region_instituciones", label: "Instituciones asignadas a regiones" },
+  { table: "region_municipios", label: "Municipios asignados a regiones" },
+  { table: "region_entidades", label: "Entidades asignadas a regiones" },
+  { table: "regiones", label: "Regiones" },
 ];
 
 const TABLES_PRESERVED = [
