@@ -625,10 +625,23 @@ export default function AdminEditFicha() {
         navigate("/admin");
       }
     } else {
+      const oldName = ficha!.nombres_apellidos;
+      const newName = payload.nombres_apellidos;
+      const oldCedula = ficha!.numero_cedula;
       const { error } = await supabase.from("fichas_rlt").update(payload as any).eq("id", ficha!.id);
       if (error) {
         toast({ title: "Error al guardar", description: error.message, variant: "destructive" });
       } else {
+        // Propagate name change to denormalized tables
+        if (oldName && newName && oldName !== newName && oldCedula) {
+          const institucion = payload.nombre_ie;
+          await Promise.all([
+            supabase.from("encuestas_360").update({ nombre_directivo: newName } as any).eq("cedula_directivo", oldCedula),
+            supabase.from("encuestas_360").update({ nombre_completo: newName } as any).eq("cedula", oldCedula).eq("tipo_formulario", "autoevaluacion"),
+            supabase.from("rubrica_asignaciones").update({ directivo_nombre: newName } as any).eq("directivo_cedula", oldCedula),
+            supabase.from("encuesta_invitaciones").update({ directivo_nombre: newName } as any).eq("directivo_cedula", oldCedula),
+          ]);
+        }
         toast({ title: "Ficha actualizada correctamente" });
         navigate("/admin");
       }
