@@ -215,6 +215,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   }
 
   return (
+    <TooltipProvider>
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-muted-foreground">
