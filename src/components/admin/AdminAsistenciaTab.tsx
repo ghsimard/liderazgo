@@ -161,6 +161,17 @@ export default function AdminAsistenciaTab() {
   };
 
   const calculateRate = (cedula: string): number => {
+    if (selectedModule === "all") {
+      let attended = 0;
+      const total = MODULES.length * DAYS.length;
+      MODULES.forEach(mod => {
+        DAYS.forEach(dia => {
+          const row = asistencia.get(`${cedula}-${mod}-${dia}`);
+          if (row?.session_am) attended++;
+        });
+      });
+      return total > 0 ? Math.round((attended / total) * 100) : 0;
+    }
     let attended = 0;
     DAYS.forEach(dia => {
       const row = asistencia.get(getKey(cedula, dia));
