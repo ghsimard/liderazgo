@@ -4,9 +4,10 @@ import { supabase } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Eye, EyeOff, Loader2, Building2 } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ArrowLeft, Eye, EyeOff, Loader2, Building2, User } from "lucide-react";
 
 interface InstitutionVisibility {
   institucion: string;
