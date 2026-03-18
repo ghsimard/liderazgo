@@ -58,6 +58,7 @@ export default function AdminEvaluadoresTab() {
   const [assignEvaluadorId, setAssignEvaluadorId] = useState<string | null>(null);
   const [selectedCedulas, setSelectedCedulas] = useState<string[]>([]);
   const [assignSearch, setAssignSearch] = useState("");
+  const [assignRegion, setAssignRegion] = useState("all");
 
   // Transfer dialog
   const [transferEvaluador, setTransferEvaluador] = useState<Evaluador | null>(null);
