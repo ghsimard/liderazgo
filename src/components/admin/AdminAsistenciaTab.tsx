@@ -304,7 +304,7 @@ export default function AdminAsistenciaTab() {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <CalendarCheck className="w-4 h-4" />
-            Asistencia — Módulo {selectedModule}
+            Asistencia {selectedModule === "all" ? "— Todos los módulos" : `— Módulo ${selectedModule}`}
           </CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
