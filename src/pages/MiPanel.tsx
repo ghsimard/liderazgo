@@ -200,7 +200,8 @@ export default function MiPanel() {
         const { count: asigCount } = await supabase
           .from("rubrica_asignaciones")
           .select("id", { count: "exact", head: true })
-          .eq("directivo_cedula", cedula);
+          .eq("directivo_cedula", cedula)
+          .eq("rubrica_visible", true);
         const hasAsig = (asigCount ?? 0) > 0;
         setRubricaEnabled(hasAsig);
 

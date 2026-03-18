@@ -1264,6 +1264,7 @@ export type Database = {
           evaluador_id: string
           id: string
           institucion: string
+          rubrica_visible: boolean
         }
         Insert: {
           created_at?: string
@@ -1272,6 +1273,7 @@ export type Database = {
           evaluador_id: string
           id?: string
           institucion: string
+          rubrica_visible?: boolean
         }
         Update: {
           created_at?: string
@@ -1280,6 +1282,7 @@ export type Database = {
           evaluador_id?: string
           id?: string
           institucion?: string
+          rubrica_visible?: boolean
         }
         Relationships: [
           {
