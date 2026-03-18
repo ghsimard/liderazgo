@@ -15,6 +15,7 @@ const router = Router();
 
 // Tables that allow public reads (no auth required for GET)
 const PUBLIC_READ_TABLES = new Set([
+  "fichas_rlt",
   "domains_360",
   "competencies_360",
   "competency_weights",
