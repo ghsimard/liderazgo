@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import AdminSatisfaccionStats from "./AdminSatisfaccionStats";
 import AdminSatisfaccionReportTab from "./AdminSatisfaccionReportTab";
 import AdminSatisfaccionFormsTab from "./AdminSatisfaccionFormsTab";
+import AdminSatisfaccionCommentsTab from "./AdminSatisfaccionCommentsTab";
 
 const FORM_TYPES = ["asistencia", "interludio", "intensivo"] as const;
 const MODULES = [1, 2, 3, 4];
@@ -364,11 +365,16 @@ export default function AdminSatisfaccionesTab({ isViewer = false }: { isViewer?
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
         <TabsList className="hub-tabs flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md rounded-lg">
           <TabsTrigger value="responses">Respuestas</TabsTrigger>
+          <TabsTrigger value="comments">Comentarios</TabsTrigger>
           <TabsTrigger value="stats">Estadísticas</TabsTrigger>
           {!isViewer && <TabsTrigger value="report">Informe PDF</TabsTrigger>}
           <TabsTrigger value="forms">Formularios</TabsTrigger>
           <TabsTrigger value="config">Configuración</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="comments">
+          <AdminSatisfaccionCommentsTab />
+        </TabsContent>
 
         <TabsContent value="config" className="space-y-6 mt-4">
           <fieldset disabled={isViewer} className="contents">
