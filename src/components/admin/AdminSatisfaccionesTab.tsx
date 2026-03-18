@@ -372,6 +372,10 @@ export default function AdminSatisfaccionesTab({ isViewer = false }: { isViewer?
           <TabsTrigger value="config">Configuración</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="comments">
+          <AdminSatisfaccionCommentsTab />
+        </TabsContent>
+
         <TabsContent value="config" className="space-y-6 mt-4">
           <fieldset disabled={isViewer} className="contents">
           {/* Global bulk actions */}
