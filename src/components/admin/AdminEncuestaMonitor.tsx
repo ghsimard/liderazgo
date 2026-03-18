@@ -5,7 +5,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, AlertTriangle, CheckCircle2, Search } from "lucide-react";
+import { RefreshCw, AlertTriangle, CheckCircle2, Search, Eye, EyeOff } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 /** Required counts per tipo_formulario */
 const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> = {
@@ -21,10 +22,18 @@ const ROLE_KEYS = Object.keys(ROLE_LIMITS);
 
 interface DirectivoRow {
   nombre: string;
+  cedula: string;
   institucion: string;
   region: string;
   counts: Record<string, number>;
   incomplete: boolean;
+}
+
+interface VisibilityRow {
+  fase: string;
+  scope_type: string;
+  scope_value: string;
+  is_active: boolean;
 }
 
 interface AdminEncuestaMonitorProps {
@@ -37,6 +46,8 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   const [search, setSearch] = useState("");
   const [filterMode, setFilterMode] = useState<"all" | "incomplete" | "complete">("all");
 
+  const [visibility, setVisibility] = useState<VisibilityRow[]>([]);
+
   useEffect(() => {
     loadData();
   }, [fase]);
@@ -47,7 +58,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
     // Get all directivos from fichas
     const { data: fichas } = await supabase
       .from("fichas_rlt")
-      .select("nombres_apellidos, nombre_ie, region")
+      .select("nombres_apellidos, nombre_ie, region, numero_cedula")
       .in("cargo_actual", ["Rector/a", "Coordinador/a"])
       .order("nombres_apellidos");
 
@@ -57,8 +68,16 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
       .select("tipo_formulario, institucion_educativa, nombre_directivo, nombre_completo")
       .eq("fase", fase);
 
+    // Get visibility config
+    const { data: visData } = await supabase
+      .from("encuesta_360_visibility")
+      .select("fase, scope_type, scope_value, is_active")
+      .eq("fase", fase);
+    setVisibility((visData as VisibilityRow[]) || []);
+
     const directivoList = (fichas ?? []).map((f) => ({
       nombre: f.nombres_apellidos,
+      cedula: f.numero_cedula || "",
       institucion: f.nombre_ie,
       region: f.region,
     }));
@@ -88,6 +107,28 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
     setLoading(false);
   };
 
+  /** Resolve visibility for a directivo with priority: directivo > institucion > region */
+  const resolveVisibility = (cedula: string, institucion: string, region: string): boolean => {
+    const directivoRow = visibility.find(r => r.scope_type === "directivo" && r.scope_value === cedula);
+    if (directivoRow) return directivoRow.is_active;
+    const instRow = visibility.find(r => r.scope_type === "institucion" && r.scope_value === institucion);
+    if (instRow) return instRow.is_active;
+    const regionRow = visibility.find(r => r.scope_type === "region" && r.scope_value === region);
+    if (regionRow) return regionRow.is_active;
+    return false;
+  };
+
+  /** Get the source of the visibility setting */
+  const getVisibilitySource = (cedula: string, institucion: string, region: string): string => {
+    const directivoRow = visibility.find(r => r.scope_type === "directivo" && r.scope_value === cedula);
+    if (directivoRow) return `Override directivo: ${directivoRow.is_active ? "Visible" : "Oculto"}`;
+    const instRow = visibility.find(r => r.scope_type === "institucion" && r.scope_value === institucion);
+    if (instRow) return `Override institución: ${instRow.is_active ? "Visible" : "Oculto"}`;
+    const regionRow = visibility.find(r => r.scope_type === "region" && r.scope_value === region);
+    if (regionRow) return `Región: ${regionRow.is_active ? "Visible" : "Oculto"}`;
+    return "Sin configuración (oculto por defecto)";
+  };
+
   const filtered = useMemo(() => {
     let list = rows;
     if (filterMode === "incomplete") list = list.filter((r) => r.incomplete);
@@ -112,6 +153,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   }
 
   return (
+    <TooltipProvider>
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -176,10 +218,55 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((r) => (
-                  <TableRow key={r.nombre + r.institucion}>
-                    <TableCell className="font-medium text-sm">{r.nombre}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{r.institucion}</TableCell>
+                filtered.map((r) => {
+                  const isVisible = resolveVisibility(r.cedula, r.institucion, r.region);
+                  const visSource = getVisibilitySource(r.cedula, r.institucion, r.region);
+                  return (
+                  <TableRow key={r.nombre + r.institucion} className={!isVisible ? "opacity-60" : ""}>
+                    <TableCell className="font-medium text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="shrink-0">
+                              {isVisible
+                                ? <Eye className="w-3.5 h-3.5 text-emerald-500" />
+                                : <EyeOff className="w-3.5 h-3.5 text-destructive" />
+                              }
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="text-xs max-w-[200px]">
+                            {visSource}
+                          </TooltipContent>
+                        </Tooltip>
+                        {r.nombre}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        {(() => {
+                          const instOverride = visibility.find(v => v.scope_type === "institucion" && v.scope_value === r.institucion);
+                          if (instOverride) {
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="shrink-0">
+                                    {instOverride.is_active
+                                      ? <Eye className="w-3.5 h-3.5 text-emerald-500" />
+                                      : <EyeOff className="w-3.5 h-3.5 text-destructive" />
+                                    }
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="text-xs">
+                                  Override institución: {instOverride.is_active ? "Visible" : "Oculto"}
+                                </TooltipContent>
+                              </Tooltip>
+                            );
+                          }
+                          return null;
+                        })()}
+                        {r.institucion}
+                      </div>
+                    </TableCell>
                     {ROLE_KEYS.map((k) => {
                       const count = r.counts[k] || 0;
                       const min = ROLE_LIMITS[k].min;
@@ -208,7 +295,8 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                       )}
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -218,5 +306,6 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
         </p>
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
 }
