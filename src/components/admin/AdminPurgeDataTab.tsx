@@ -37,13 +37,16 @@ const TABLES_TO_PURGE = [
   { table: "encuestas_ambiente_escolar", label: "Encuestas de ambiente escolar" },
   { table: "encuesta_360_visibility", label: "Visibilidad de encuestas 360°" },
   { table: "operator_permissions", label: "Permisos de operadores" },
+];
+
+const REGION_TABLES = [
   { table: "region_instituciones", label: "Instituciones asignadas a regiones" },
   { table: "region_municipios", label: "Municipios asignados a regiones" },
   { table: "region_entidades", label: "Entidades asignadas a regiones" },
   { table: "regiones", label: "Regiones" },
 ];
 
-const TABLES_PRESERVED = [
+const TABLES_PRESERVED_BASE = [
   { table: "users / user_custom_roles / custom_roles / admin_cedulas", label: "Cuentas de administración" },
   { table: "entidades_territoriales / municipios / instituciones", label: "Entidades territoriales, municipios e instituciones" },
   { table: "mel_kpi_config / mel_kpi_groups / mel_kpi_group_items", label: "Configuración KPI/MEL" },
@@ -51,6 +54,8 @@ const TABLES_PRESERVED = [
   { table: "rubrica_modules / rubrica_items", label: "Estructura de rúbricas" },
   { table: "domains_360 / competencies_360 / items_360 / item_texts_360 / competency_weights", label: "Estructura 360°" },
 ];
+
+const REGION_PRESERVED = { table: "regiones / region_entidades / region_municipios / region_instituciones", label: "Regiones y sus asignaciones" };
 
 const CONFIRM_PHRASE = "ELIMINAR TODOS LOS DATOS";
 
