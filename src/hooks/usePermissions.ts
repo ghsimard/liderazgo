@@ -44,10 +44,10 @@ export function usePermissions(userId: string | null): PermissionsAPI {
 
       if (USE_EXPRESS) {
         const { data } = await apiFetch<PermissionEntry[]>(`/api/user-permissions/${userId}`);
-        rows = data ?? [];
+        rows = Array.isArray(data) ? data : [];
       } else {
         const { data, error } = await supabase.rpc("get_user_permissions", { _user_id: userId });
-        if (!error && data) rows = data as PermissionEntry[];
+        if (!error && data) rows = Array.isArray(data) ? data : [];
       }
 
       setPermissions(rows);
