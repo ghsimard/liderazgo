@@ -397,30 +397,39 @@ export default function AdminAsistenciaTab() {
                           {rate}%
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Select
-                          value={firstDayRow?.razon_inasistencia || "none"}
-                          onValueChange={v => updateField(d.numero_cedula, 1, "razon_inasistencia", v === "none" ? "" : v)}
-                        >
-                          <SelectTrigger className="h-7 text-xs min-w-[180px]">
-                            <SelectValue placeholder="—" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">—</SelectItem>
-                            {RAZONES_INASISTENCIA.map(r => (
-                              <SelectItem key={r} value={r}>{r}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={firstDayRow?.observaciones || ""}
-                          onChange={e => updateField(d.numero_cedula, 1, "observaciones", e.target.value)}
-                          className="h-7 text-xs"
-                          placeholder="—"
-                        />
-                      </TableCell>
+                      {selectedModule === "all" ? (
+                        <>
+                          <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell>
+                            <Select
+                              value={firstDayRow?.razon_inasistencia || "none"}
+                              onValueChange={v => updateField(d.numero_cedula, 1, "razon_inasistencia", v === "none" ? "" : v)}
+                            >
+                              <SelectTrigger className="h-7 text-xs min-w-[180px]">
+                                <SelectValue placeholder="—" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">—</SelectItem>
+                                {RAZONES_INASISTENCIA.map(r => (
+                                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={firstDayRow?.observaciones || ""}
+                              onChange={e => updateField(d.numero_cedula, 1, "observaciones", e.target.value)}
+                              className="h-7 text-xs"
+                              placeholder="—"
+                            />
+                          </TableCell>
+                        </>
+                      )}
                     </TableRow>
                   );
                 })
