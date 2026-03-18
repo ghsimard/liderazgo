@@ -346,7 +346,7 @@ export default function AdminEvaluadoresTab() {
                                   className="gap-1 text-xs h-7"
                                   title={`${allOn ? "Desactivar" : "Activar"} Rúbrica para todos`}
                                 >
-                                  {allOn ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                  {allOn ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                   Rúbrica
                                 </Button>
                               );
