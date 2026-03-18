@@ -309,6 +309,20 @@ export default function RubricaEvaluacion() {
 
         if (assigns && assigns.length > 0) {
           setAsignaciones(assigns);
+          // Batch-fetch all submission dates for assigned directivos
+          const cedulas = assigns.map((a: Asignacion) => a.directivo_cedula);
+          const { data: allDates } = await supabase
+            .from("rubrica_submission_dates")
+            .select("*")
+            .in("directivo_cedula", cedulas);
+          if (allDates) {
+            const grouped: Record<string, Record<string, string>> = {};
+            for (const d of allDates) {
+              if (!grouped[d.directivo_cedula]) grouped[d.directivo_cedula] = {};
+              grouped[d.directivo_cedula][`${d.module_number}:${d.submission_type}`] = d.submitted_at;
+            }
+            setAllSubmissionDates(grouped);
+          }
         } else {
           toast({ title: "Sin asignaciones", description: "No tiene directivos asignados para evaluar.", variant: "destructive" });
         }
