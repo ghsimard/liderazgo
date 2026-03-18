@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { calcularMelAnalysis, type MelAnalysisData } from "@/utils/reporte360MelCalculator";
 import type { AggregatedMel, DomainIncrementPct } from "@/utils/melGlobalTypes";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/utils/dbClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
