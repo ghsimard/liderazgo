@@ -29,6 +29,7 @@ interface Asignacion {
   directivo_cedula: string;
   directivo_nombre: string;
   institucion: string;
+  rubrica_visible: boolean;
   created_at: string;
 }
 
