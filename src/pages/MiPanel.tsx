@@ -168,6 +168,8 @@ export default function MiPanel() {
   // Evaluador: visibility flags from rubrica_asignaciones (admin-controlled)
   const [evalEncuestaEntradaVisible, setEvalEncuestaEntradaVisible] = useState(false);
   const [evalEncuestaSalidaVisible, setEvalEncuestaSalidaVisible] = useState(false);
+  const [evalHasAssignments, setEvalHasAssignments] = useState(false);
+  const [evalHasInformes, setEvalHasInformes] = useState(false);
   
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
@@ -287,11 +289,19 @@ export default function MiPanel() {
         if (evalId) {
           const { data: evalAsigs } = await supabase
             .from("rubrica_asignaciones")
-            .select("encuesta_entrada_visible, encuesta_salida_visible")
+            .select("encuesta_entrada_visible, encuesta_salida_visible, directivo_cedula")
             .eq("evaluador_id", evalId);
-          if (evalAsigs && evalAsigs.length > 0) {
+          const hasAsigs = !!(evalAsigs && evalAsigs.length > 0);
+          setEvalHasAssignments(hasAsigs);
+          if (hasAsigs) {
             setEvalEncuestaEntradaVisible(evalAsigs.some((a: any) => a.encuesta_entrada_visible));
             setEvalEncuestaSalidaVisible(evalAsigs.some((a: any) => a.encuesta_salida_visible));
+
+            // Check if any informe_modulo records exist
+            const { count: informeCount } = await supabase
+              .from("informe_modulo")
+              .select("id", { count: "exact", head: true });
+            setEvalHasInformes((informeCount ?? 0) > 0);
           }
         }
       }
@@ -484,31 +494,35 @@ export default function MiPanel() {
             {/* Evaluador buttons */}
             {selectedRole === "evaluador" && (
               <>
-                <Button
-                  className="w-full h-14 justify-start gap-3 text-base"
-                  onClick={() =>
-                    navigate(`/rubrica-evaluacion?role=evaluador`)
-                  }
-                >
-                  <ClipboardList className="h-5 w-5" />
-                  <div className="text-left">
-                    <div className="font-semibold">Mi Rúbrica de Evaluación</div>
-                    <div className="text-xs opacity-80">
-                      Evaluar directivos asignados
+                {evalHasAssignments && (
+                  <Button
+                    className="w-full h-14 justify-start gap-3 text-base"
+                    onClick={() =>
+                      navigate(`/rubrica-evaluacion?role=evaluador`)
+                    }
+                  >
+                    <ClipboardList className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">Mi Rúbrica de Evaluación</div>
+                      <div className="text-xs opacity-80">
+                        Evaluar directivos asignados
+                      </div>
                     </div>
-                  </div>
-                </Button>
-                <Button
-                  className="w-full h-14 justify-start gap-3 text-base"
-                  variant="outline"
-                  onClick={() => navigate("/informe-modulo")}
-                >
-                  <FileBarChart className="h-5 w-5" />
-                  <div className="text-left">
-                    <div className="font-semibold">Informe de Módulo</div>
-                    <div className="text-xs opacity-80">Registrar informe por módulo y ET</div>
-                  </div>
-                </Button>
+                  </Button>
+                )}
+                {evalHasInformes && (
+                  <Button
+                    className="w-full h-14 justify-start gap-3 text-base"
+                    variant="outline"
+                    onClick={() => navigate("/informe-modulo")}
+                  >
+                    <FileBarChart className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">Informe de Módulo</div>
+                      <div className="text-xs opacity-80">Registrar informe por módulo y ET</div>
+                    </div>
+                  </Button>
+                )}
 
                 {evalEncuestaEntradaVisible && (
                   <Button
