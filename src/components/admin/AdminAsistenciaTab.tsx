@@ -448,8 +448,8 @@ export default function AdminAsistenciaTab() {
                     <TableCell colSpan={4} className="text-xs">
                       Asistentes por día
                     </TableCell>
-                    {attendanceByDay.map(({ dia, count }) => (
-                      <TableCell key={`sum-${dia}`} className="text-center text-xs">{count}</TableCell>
+                    {attendanceByCol.map((col, i) => (
+                      <TableCell key={`sum-${i}`} className="text-center text-xs">{col.count}</TableCell>
                     ))}
                     <TableCell />
                     <TableCell />
@@ -459,10 +459,10 @@ export default function AdminAsistenciaTab() {
                     <TableCell colSpan={4} className="text-xs font-medium">
                       Tasa de asistencia del grupo
                     </TableCell>
-                    {attendanceByDay.map(({ dia, count }) => {
-                      const rate = totalFiltered > 0 ? Math.round((count / totalFiltered) * 100) : 0;
+                    {attendanceByCol.map((col, i) => {
+                      const rate = totalFiltered > 0 ? Math.round((col.count / totalFiltered) * 100) : 0;
                       return (
-                        <TableCell key={`rate-${dia}`} className="text-center text-xs">{rate}%</TableCell>
+                        <TableCell key={`rate-${i}`} className="text-center text-xs">{rate}%</TableCell>
                       );
                     })}
                     <TableCell />
