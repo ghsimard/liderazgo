@@ -216,9 +216,11 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
     }
   };
 
+  const isSuperAdminRole = selectedRole?.name === "Superadmin";
+  const isPermReadOnly = isSuperAdminRole || (selectedRole?.is_system && !isSuperAdmin);
+
   const renderSectionRow = (sec: RbacSection, isChild = false) => {
     const indent = isChild ? "pl-6" : "";
-    const isSystem = selectedRole?.is_system;
 
     return (
       <TableRow key={sec.key} className={indent}>
@@ -235,7 +237,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
               onCheckedChange={() =>
                 isChild ? togglePerm(sec.key, key) : toggleParentAll(sec.key, key)
               }
-              disabled={isSystem && !isSuperAdmin}
+              disabled={!!isPermReadOnly}
             />
           </TableCell>
         ))}
