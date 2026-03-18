@@ -1097,35 +1097,30 @@ export default function RubricaEvaluacion() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">{`Seleccione ${genderizeRole("el directivo", null).toLowerCase()} a evaluar`}</CardTitle>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={async () => {
-                        const { error } = await supabase
-                          .from("rubrica_asignaciones")
-                          .update({ rubrica_visible: true } as any)
-                          .eq("evaluador_id", evaluadorId);
-                        if (!error) setAsignaciones(prev => prev.map(a => ({ ...a, rubrica_visible: true })));
-                      }}
-                    >
-                      <Eye className="w-3 h-3 mr-1" /> Activar todos
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={async () => {
-                        const { error } = await supabase
-                          .from("rubrica_asignaciones")
-                          .update({ rubrica_visible: false } as any)
-                          .eq("evaluador_id", evaluadorId);
-                        if (!error) setAsignaciones(prev => prev.map(a => ({ ...a, rubrica_visible: false })));
-                      }}
-                    >
-                      <EyeOff className="w-3 h-3 mr-1" /> Desactivar todos
-                    </Button>
+                   <div className="flex flex-wrap gap-1">
+                    {(["rubrica_visible", "encuesta_entrada_visible", "encuesta_salida_visible"] as const).map(field => {
+                      const labels: Record<string, string> = { rubrica_visible: "Rúbrica", encuesta_entrada_visible: "Entrada 360", encuesta_salida_visible: "Salida 360" };
+                      const allOn = asignaciones.every(a => a[field]);
+                      return (
+                        <Button
+                          key={field}
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7"
+                          onClick={async () => {
+                            const newVal = !allOn;
+                            const { error } = await supabase
+                              .from("rubrica_asignaciones")
+                              .update({ [field]: newVal } as any)
+                              .eq("evaluador_id", evaluadorId);
+                            if (!error) setAsignaciones(prev => prev.map(a => ({ ...a, [field]: newVal })));
+                          }}
+                        >
+                          {allOn ? <EyeOff className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />}
+                          {labels[field]}
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
               </CardHeader>
