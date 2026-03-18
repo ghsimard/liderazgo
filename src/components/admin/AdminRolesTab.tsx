@@ -37,29 +37,15 @@ interface RolePermission {
 
 type CrudKey = "can_create" | "can_read" | "can_update" | "can_delete";
 const CRUD_KEYS: CrudKey[] = ["can_create", "can_read", "can_update", "can_delete"];
-const CRUD_LABELS: Record<CrudKey, string> = {
-  can_create: "C",
-  can_read: "R",
-  can_update: "U",
-  can_delete: "D",
-};
 
 async function fetchRoles(): Promise<CustomRole[]> {
-  if (USE_EXPRESS) {
-    const { data } = await apiFetch<CustomRole[]>("/api/db/custom_roles?order=created_at");
-    return data ?? [];
-  }
   const { data } = await supabase.from("custom_roles").select("*").order("created_at");
-  return (data as CustomRole[]) ?? [];
+  return Array.isArray(data) ? data : [];
 }
 
 async function fetchPermissions(roleId: string): Promise<RolePermission[]> {
-  if (USE_EXPRESS) {
-    const { data } = await apiFetch<RolePermission[]>(`/api/db/role_permissions?role_id=eq.${roleId}`);
-    return data ?? [];
-  }
   const { data } = await supabase.from("role_permissions").select("*").eq("role_id", roleId);
-  return (data as RolePermission[]) ?? [];
+  return Array.isArray(data) ? data : [];
 }
 
 export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
@@ -116,13 +102,8 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
 
     const existing = permissions.find((p) => p.section === section);
     if (existing) {
-      // Update existing
       const updates = { [key]: newVal };
-      if (USE_EXPRESS) {
-        await apiFetch(`/api/db/role_permissions?id=eq.${existing.id}`, { method: "PATCH", body: updates });
-      } else {
-        await supabase.from("role_permissions").update(updates).eq("id", existing.id);
-      }
+      await supabase.from("role_permissions").update(updates).eq("id", existing.id);
       setPermissions((prev) =>
         prev.map((p) => (p.id === existing.id ? { ...p, [key]: newVal } : p))
       );
@@ -137,13 +118,8 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
         }
       }
       const row = { role_id: selectedRole.id, section, ...base, [key]: newVal };
-      if (USE_EXPRESS) {
-        const { data } = await apiFetch<RolePermission[]>("/api/db/role_permissions", { method: "POST", body: row });
-        if (data?.[0]) setPermissions((prev) => [...prev, data[0]]);
-      } else {
-        const { data } = await supabase.from("role_permissions").insert(row).select().single();
-        if (data) setPermissions((prev) => [...prev, data as RolePermission]);
-      }
+      const { data } = await supabase.from("role_permissions").insert(row).select().single();
+      if (data) setPermissions((prev) => [...prev, data as RolePermission]);
     }
   };
 
@@ -161,11 +137,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
       for (const child of sec.children) {
         const childPerm = permissions.find((p) => p.section === child.key);
         if (childPerm) {
-          if (USE_EXPRESS) {
-            await apiFetch(`/api/db/role_permissions?id=eq.${childPerm.id}`, { method: "DELETE" });
-          } else {
-            await supabase.from("role_permissions").delete().eq("id", childPerm.id);
-          }
+          await supabase.from("role_permissions").delete().eq("id", childPerm.id);
         }
       }
       // Reload permissions
@@ -179,23 +151,14 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
     const existing = permissions.find((p) => p.section === section);
     if (existing) {
       const updates = { [key]: newVal };
-      if (USE_EXPRESS) {
-        await apiFetch(`/api/db/role_permissions?id=eq.${existing.id}`, { method: "PATCH", body: updates });
-      } else {
-        await supabase.from("role_permissions").update(updates).eq("id", existing.id);
-      }
+      await supabase.from("role_permissions").update(updates).eq("id", existing.id);
       setPermissions((prev) =>
         prev.map((p) => (p.id === existing.id ? { ...p, [key]: newVal } : p))
       );
     } else {
       const row = { role_id: selectedRole.id, section, can_create: false, can_read: false, can_update: false, can_delete: false, [key]: newVal };
-      if (USE_EXPRESS) {
-        const { data } = await apiFetch<RolePermission[]>("/api/db/role_permissions", { method: "POST", body: row });
-        if (data?.[0]) setPermissions((prev) => [...prev, data[0]]);
-      } else {
-        const { data } = await supabase.from("role_permissions").insert(row).select().single();
-        if (data) setPermissions((prev) => [...prev, data as RolePermission]);
-      }
+      const { data } = await supabase.from("role_permissions").insert(row).select().single();
+      if (data) setPermissions((prev) => [...prev, data as RolePermission]);
     }
   };
 
@@ -205,11 +168,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
     setSaving(true);
     try {
       const row = { name: formName.trim(), description: formDesc.trim() };
-      if (USE_EXPRESS) {
-        await apiFetch("/api/db/custom_roles", { method: "POST", body: row });
-      } else {
-        await supabase.from("custom_roles").insert(row);
-      }
+      await supabase.from("custom_roles").insert(row);
       toast({ title: "Rol creado", description: formName });
       setCreateOpen(false);
       setFormName("");
@@ -228,11 +187,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
     setSaving(true);
     try {
       const updates = { name: formName.trim(), description: formDesc.trim() };
-      if (USE_EXPRESS) {
-        await apiFetch(`/api/db/custom_roles?id=eq.${selectedRole.id}`, { method: "PATCH", body: updates });
-      } else {
-        await supabase.from("custom_roles").update(updates).eq("id", selectedRole.id);
-      }
+      await supabase.from("custom_roles").update(updates).eq("id", selectedRole.id);
       toast({ title: "Rol actualizado" });
       setEditOpen(false);
       loadRoles();
@@ -248,11 +203,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
-      if (USE_EXPRESS) {
-        await apiFetch(`/api/db/custom_roles?id=eq.${deleteTarget.id}`, { method: "DELETE" });
-      } else {
-        await supabase.from("custom_roles").delete().eq("id", deleteTarget.id);
-      }
+      await supabase.from("custom_roles").delete().eq("id", deleteTarget.id);
       toast({ title: "Rol eliminado" });
       if (selectedRole?.id === deleteTarget.id) {
         setSelectedRole(null);
