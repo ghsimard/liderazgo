@@ -162,6 +162,8 @@ export default function MiPanel() {
   const [rubricaProgress, setRubricaProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 4 });
   const [inicialDone, setInicialDone] = useState(false);
   const [rubricaEnabled, setRubricaEnabled] = useState(false);
+  const [encuestaEntradaVisible, setEncuestaEntradaVisible] = useState(true);
+  const [encuestaSalidaVisible, setEncuestaSalidaVisible] = useState(true);
   
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
