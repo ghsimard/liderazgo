@@ -40,6 +40,7 @@ import AdminInvitacionesTab from "@/components/admin/AdminInvitacionesTab";
 import AdminActivityLogTab from "@/components/admin/AdminActivityLogTab";
 import AdminInformeModuloTab from "@/components/admin/AdminInformeModuloTab";
 import AdminPurgeDataTab from "@/components/admin/AdminPurgeDataTab";
+import AdminImagesTab from "@/components/admin/AdminImagesTab";
 import AdminSatisfaccionesTab from "@/components/admin/AdminSatisfaccionesTab";
 import AdminOperadoresTab from "@/components/admin/AdminOperadoresTab";
 import AdminEvaluadoresTab from "@/components/admin/AdminEvaluadoresTab";
