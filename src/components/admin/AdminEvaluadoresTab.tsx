@@ -448,7 +448,7 @@ export default function AdminEvaluadoresTab() {
                                      <Button
                                        size="icon"
                                        variant="ghost"
-                                       className={`h-7 w-7 ${a.rubrica_visible ? "text-primary" : "text-muted-foreground"}`}
+                                       className={`h-7 w-7 ${a.rubrica_visible ? "text-green-600" : "text-red-500"}`}
                                        onClick={(e) => { e.stopPropagation(); handleToggleVisibility(a); }}
                                        title={`Rúbrica: ${a.rubrica_visible ? "visible — clic para ocultar" : "oculta — clic para mostrar"}`}
                                      >

@@ -187,9 +187,9 @@ export default function EvaluadorEncuestasView() {
                     {toggling === inst.institucion ? (
                       <Loader2 className="h-3 w-3 animate-spin mr-1" />
                     ) : inst.isVisible ? (
-                      <Eye className="h-3 w-3 mr-1" />
+                      <Eye className="h-3 w-3 mr-1 text-green-600" />
                     ) : (
-                      <EyeOff className="h-3 w-3 mr-1" />
+                      <EyeOff className="h-3 w-3 mr-1 text-red-500" />
                     )}
                     {inst.isVisible ? "Visible" : "No visible"}
                   </Badge>

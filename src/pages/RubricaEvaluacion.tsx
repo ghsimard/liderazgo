@@ -1187,9 +1187,9 @@ export default function RubricaEvaluacion() {
                               >
                                 <span className="text-[10px] font-bold relative">
                                   R
-                                  {a.rubrica_visible
-                                    ? <Eye className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1 text-emerald-600" />
-                                    : <EyeOff className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1 text-muted-foreground" />}
+                                   {a.rubrica_visible
+                                    ? <Eye className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1 text-green-600" />
+                                    : <EyeOff className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1 text-red-500" />}
                                 </span>
                               </Button>
                             </TooltipTrigger>
