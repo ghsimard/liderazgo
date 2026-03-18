@@ -195,6 +195,15 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
     ? regionFiltered.filter((g) => g.institucion.toLowerCase().includes(search.toLowerCase()))
     : regionFiltered;
 
+  const resolveInstVisibility = (institucion: string): { visible: boolean; source: string } => {
+    const region = instRegionMap[institucion] || "";
+    const instRow = visibility.find(r => r.scope_type === "institucion" && r.scope_value === institucion);
+    if (instRow) return { visible: instRow.is_active, source: `Override institución: ${instRow.is_active ? "Visible" : "Oculto"}` };
+    const regionRow = visibility.find(r => r.scope_type === "region" && r.scope_value === region);
+    if (regionRow) return { visible: regionRow.is_active, source: `Región ${region}: ${regionRow.is_active ? "Visible" : "Oculto"}` };
+    return { visible: false, source: "Sin configuración (oculto por defecto)" };
+  };
+
   const totalEncuestas = filtered.reduce((sum, g) => sum + g.encuestas.length, 0);
 
   if (loading) {
