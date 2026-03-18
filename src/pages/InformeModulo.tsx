@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Save, Loader2, Plus, Trash2, FileText, Search, ArrowLeft, Users } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Label } from "@/components/ui/label";
 import { useAppImages } from "@/hooks/useAppImages";
 
