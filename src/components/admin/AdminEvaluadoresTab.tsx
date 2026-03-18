@@ -346,7 +346,7 @@ export default function AdminEvaluadoresTab() {
                                   className="gap-1 text-xs h-7"
                                   title={`${allOn ? "Desactivar" : "Activar"} Rúbrica para todos`}
                                 >
-                                  {allOn ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                {allOn ? <Eye className="w-3.5 h-3.5 text-green-600" /> : <EyeOff className="w-3.5 h-3.5 text-red-500" />}
                                   Rúbrica
                                 </Button>
                               );
@@ -361,8 +361,8 @@ export default function AdminEvaluadoresTab() {
                                   className="gap-1 text-xs h-7"
                                   title={`${allEntrada ? "Desactivar" : "Activar"} Encuesta Entrada para todos`}
                                 >
-                                  {allEntrada ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                  Entrada
+                                  {allEntrada ? <Eye className="w-3.5 h-3.5 text-green-600" /> : <EyeOff className="w-3.5 h-3.5 text-red-500" />}
+                                   Entrada
                                 </Button>
                               );
                             })()}
@@ -376,8 +376,8 @@ export default function AdminEvaluadoresTab() {
                                   className="gap-1 text-xs h-7"
                                   title={`${allSalida ? "Desactivar" : "Activar"} Encuesta Salida para todos`}
                                 >
-                                  {allSalida ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                  Salida
+                                  {allSalida ? <Eye className="w-3.5 h-3.5 text-green-600" /> : <EyeOff className="w-3.5 h-3.5 text-red-500" />}
+                                   Salida
                                 </Button>
                               );
                             })()}
@@ -448,7 +448,7 @@ export default function AdminEvaluadoresTab() {
                                      <Button
                                        size="icon"
                                        variant="ghost"
-                                       className={`h-7 w-7 ${a.rubrica_visible ? "text-primary" : "text-muted-foreground"}`}
+                                       className={`h-7 w-7 ${a.rubrica_visible ? "text-green-600" : "text-red-500"}`}
                                        onClick={(e) => { e.stopPropagation(); handleToggleVisibility(a); }}
                                        title={`Rúbrica: ${a.rubrica_visible ? "visible — clic para ocultar" : "oculta — clic para mostrar"}`}
                                      >

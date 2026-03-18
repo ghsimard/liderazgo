@@ -179,17 +179,17 @@ export default function EvaluadorEncuestasView() {
                   <Badge
                     className={`cursor-pointer select-none shrink-0 ${
                       inst.isVisible
-                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        ? "bg-green-100 text-green-700 hover:bg-green-200 border-green-200"
+                        : "bg-red-100 text-red-700 hover:bg-red-200 border-red-200"
                     }`}
                     onClick={(e) => { e.stopPropagation(); if (!toggling) handleToggle(inst); }}
                   >
                     {toggling === inst.institucion ? (
                       <Loader2 className="h-3 w-3 animate-spin mr-1" />
                     ) : inst.isVisible ? (
-                      <Eye className="h-3 w-3 mr-1" />
+                      <Eye className="h-3 w-3 mr-1 text-green-600" />
                     ) : (
-                      <EyeOff className="h-3 w-3 mr-1" />
+                      <EyeOff className="h-3 w-3 mr-1 text-red-500" />
                     )}
                     {inst.isVisible ? "Visible" : "No visible"}
                   </Badge>

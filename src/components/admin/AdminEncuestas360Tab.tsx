@@ -424,7 +424,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                           </TableCell>
                           <TableCell className="text-xs">{row.scope_value}</TableCell>
                           <TableCell className="text-center">
-                            <Badge variant={row.is_active ? "secondary" : "destructive"} className="text-xs">
+                            <Badge variant="outline" className={`text-xs ${row.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-red-100 text-red-700 border-red-200"}`}>
                               {row.is_active ? "Activo" : "Inactivo"}
                             </Badge>
                           </TableCell>
@@ -495,11 +495,15 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Badge
-                            variant={vis.visible ? "secondary" : "destructive"}
-                            className="text-xs gap-1 shrink-0 cursor-pointer hover:opacity-80"
+                            variant="outline"
+                            className={`text-xs gap-1 shrink-0 cursor-pointer hover:opacity-80 ${
+                              vis.visible
+                                ? "bg-green-100 text-green-700 border-green-200"
+                                : "bg-red-100 text-red-700 border-red-200"
+                            }`}
                             onClick={(e) => toggleInstVisibility(g.institucion, vis.visible, e)}
                           >
-                            {vis.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            {vis.visible ? <Eye className="w-3 h-3 text-green-600" /> : <EyeOff className="w-3 h-3 text-red-500" />}
                             {vis.visible ? "Visible" : "No visible"}
                           </Badge>
                         </TooltipTrigger>
