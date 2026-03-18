@@ -86,6 +86,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   const [instRegionMap, setInstRegionMap] = useState<Record<string, string>>({});
   const [visibility, setVisibility] = useState<VisibilityRow[]>([]);
   const [instituciones, setInstituciones] = useState<string[]>([]);
+  const [regionInstMap, setRegionInstMap] = useState<Record<string, string[]>>({});
   const [visOpen, setVisOpen] = useState(false);
 
   // Override form state
