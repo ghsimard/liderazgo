@@ -1,64 +1,45 @@
 
 
-## Système RBAC — Rôles personnalisés avec permissions CRUD granulaires
+## Plan: Onglet "Comentarios" dans Satisfacciones
 
-### Statut : Migration complète ✅ (Phases 1–4 terminées)
+### Objectif
+Ajouter un sous-onglet **"Comentarios"** dans l'onglet Satisfacciones admin, affichant uniquement les commentaires textuels des recteurs, filtrable par région.
 
-### Ce qui a été implémenté
+### Composant à créer
 
-1. **Tables de base de données** :
-   - `custom_roles` : rôles personnalisés (nom, description, is_system)
-   - `role_permissions` : permissions CRUD par section (clé hiérarchique avec notation pointée)
-   - `user_custom_roles` : assignation utilisateur ↔ rôle (contrainte UNIQUE)
-   - Fonction `get_user_permissions()` (SECURITY DEFINER) pour charger les permissions sans récursion RLS
+**`src/components/admin/AdminSatisfaccionCommentsTab.tsx`**
 
-2. **Seed des rôles système** :
-   - Superadmin : CRUD complet sur les 10 sections
-   - Admin : CRUD complet sur les 10 sections
-   - Monitoreo : lecture seule sur 8 sections (pas Sistema ni MEL)
+Un composant autonome qui :
+1. Charge les réponses `satisfaccion_responses` et les enrichit avec les données de `fichas_rlt` (nom, institution, cargo)
+2. Filtre pour ne garder que les **recteurs** (`cargo_actual = 'Rector/a'`)
+3. Extrait les champs commentaires de chaque réponse : `comentarios` (asistencia), `oportunidades_mejora` (interludio), `comentarios_generales` (intensivo)
+4. Affiche une liste de cartes avec : nom du recteur, institution, région, type de formulaire, module, date, et le texte du commentaire
+5. Filtre par **région** (Select dropdown) + type de formulaire + module
 
-3. **Hook `usePermissions`** (`src/hooks/usePermissions.ts`) :
-   - Charge les permissions via `get_user_permissions` RPC ou API Express
-   - Résolution hiérarchique : `sistema.gestion-cuentas` → fallback `sistema`
-   - API : `can(section, action)`, `readableSections`, `permissions`, `loading`, `reload`
+### Modification existante
 
-4. **Catalogue des sections** (`src/data/rbacSections.ts`) :
-   - 10 sections de premier niveau + sous-sections
-   - Export `RBAC_SECTIONS` et `ALL_SECTION_KEYS`
+**`src/components/admin/AdminSatisfaccionesTab.tsx`** (lignes 364-371)
+- Ajouter un `TabsTrigger` "Comentarios" et le `TabsContent` correspondant qui rend `<AdminSatisfaccionCommentsTab />`
+- Positionner l'onglet après "Respuestas" : Respuestas, **Comentarios**, Estadísticas, Informe PDF, Formularios, Configuración
 
-5. **Interface de gestion** (`AdminRolesTab`) :
-   - Liste des rôles (cartes) avec création/édition/suppression
-   - Matrice sections × CRUD avec checkboxes
-   - Sous-sections dépliables (Collapsible)
-   - Les rôles système ne sont modifiables que par superadmin
-   - Intégré dans Sistema > "Roles y Permisos"
+### Logique de filtrage
 
-### Migration legacy complète ✅
+```text
+1. Fetch satisfaccion_responses (toutes)
+2. Fetch fichas_rlt pour les cédulas → obtenir cargo_actual, nom, IE, région de la ficha
+3. Filtrer : cargo_actual === 'Rector/a'
+4. Extraire le commentaire du champ textarea selon le form_type
+5. Exclure les réponses sans commentaire (vide/null)
+6. Appliquer filtre région via Select
+```
 
-#### Phase 1 — Backfill ✅
-- Migration SQL : backfill `user_custom_roles` depuis `user_roles` (Admin/Superadmin/Monitoreo)
+### UI
+- Select pour la région (avec option "Todas las regiones")
+- Select pour le type de formulaire
+- Select pour le module
+- Compteur de commentaires affichés
+- Liste de cartes avec badge région, badge type formulaire, nom/IE du recteur, date, et texte du commentaire en italique
 
-#### Phase 2 — Fonctions SQL de sécurité réécrites ✅
-- `has_admin_access()` → query `user_custom_roles JOIN custom_roles` (Admin/Superadmin)
-- `has_read_access()` → query `user_custom_roles JOIN custom_roles` (tout rôle)
-- **Toutes les RLS policies existantes (~20+) continuent de fonctionner sans modification**
+### Aucune migration nécessaire
+Les données existent déjà dans `satisfaccion_responses.respuestas` (champ JSONB).
 
-#### Phase 3 — Express middleware + frontend ✅
-- `server/middleware/auth.ts` : requireAdmin/requireAdminOrViewer/requireSuperAdmin utilisent `user_custom_roles JOIN custom_roles`
-- `src/hooks/useAdminAuth.ts` : mode Supabase utilise `user_custom_roles` au lieu de `has_role` RPC
-- `server/routes/auth.ts` : /api/auth/me retourne les rôles depuis `user_custom_roles`
-- `server/routes/users.ts` : listing, création, modification, suppression via nouvelles tables
-- `server/routes/db.ts` : whitelist et vérification admin via nouvelles tables
-- `server/routes/export.ts` : export SQL via `user_custom_roles`
-
-#### Phase 4 — Nettoyage ✅
-- Dual-write retiré de toutes les edge functions et routes Express
-- 14 RLS policies réécrites pour utiliser `has_admin_access()` au lieu de `has_role(_, app_role)`
-- Fonction `has_role(uuid, app_role)` supprimée
-- Table `user_roles` supprimée
-- Type enum `app_role` supprimé
-- Edge function `export-database` et frontend (`AppFooter`, `useAutoFillUserInfo`) migrés
-
-### Notes d'architecture
-
-Les composants enfants (`AdminFichasTab`, `AdminEncuestas360Tab`, etc.) conservent leurs props `isViewer` pour compatibilité, mais les valeurs sont désormais calculées depuis `usePermissions.can()` dans `AdminPage`/`AdminContent`. Le filtrage de la sidebar est piloté par `readableSections`.
