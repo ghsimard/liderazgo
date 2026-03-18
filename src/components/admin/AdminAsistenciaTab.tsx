@@ -290,10 +290,12 @@ export default function AdminAsistenciaTab() {
 
             <div className="flex items-center gap-2 ml-auto">
               <Badge variant="secondary">{totalFiltered} directivos</Badge>
-              <Button onClick={handleSave} disabled={saving || !dirty} size="sm" className="gap-1.5">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Guardar
-              </Button>
+              {selectedModule !== "all" && (
+                <Button onClick={handleSave} disabled={saving || !dirty} size="sm" className="gap-1.5">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Guardar
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
