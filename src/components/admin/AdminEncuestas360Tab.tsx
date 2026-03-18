@@ -87,9 +87,10 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   }, [fase]);
 
   const loadRegiones = async () => {
-    const [{ data: regionesData }, { data: fichasData }] = await Promise.all([
+    const [{ data: regionesData }, { data: fichasData }, { data: visData }] = await Promise.all([
       supabase.from("regiones").select("id, nombre").order("nombre"),
       supabase.from("fichas_rlt").select("nombre_ie, region"),
+      supabase.from("encuesta_360_visibility").select("fase, scope_type, scope_value, is_active").eq("fase", fase),
     ]);
     if (regionesData) setRegiones(regionesData);
     if (fichasData) {
@@ -97,6 +98,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
       fichasData.forEach((f: any) => { map[f.nombre_ie] = f.region; });
       setInstRegionMap(map);
     }
+    setVisibility((visData as VisibilityRow[]) || []);
   };
 
   const loadEncuestas = async () => {
