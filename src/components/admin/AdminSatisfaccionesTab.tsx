@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import AdminSatisfaccionStats from "./AdminSatisfaccionStats";
 import AdminSatisfaccionReportTab from "./AdminSatisfaccionReportTab";
 import AdminSatisfaccionFormsTab from "./AdminSatisfaccionFormsTab";
+import AdminSatisfaccionCommentsTab from "./AdminSatisfaccionCommentsTab";
 
 const FORM_TYPES = ["asistencia", "interludio", "intensivo"] as const;
 const MODULES = [1, 2, 3, 4];
