@@ -677,9 +677,9 @@ export default function FichaRLTForm() {
 
     const payload = {
       acepta_datos: data.acepta_datos,
-      nombres: data.nombres,
-      apellidos: data.apellidos,
-      nombres_apellidos: `${data.nombres} ${data.apellidos}`,
+      nombres: toTitleCase(data.nombres.trim()),
+      apellidos: toTitleCase(data.apellidos.trim()),
+      nombres_apellidos: `${toTitleCase(data.nombres.trim())} ${toTitleCase(data.apellidos.trim())}`,
       genero: data.genero ?? null,
       numero_cedula: data.numero_cedula ?? null,
       fecha_nacimiento: data.fecha_nacimiento || null,
