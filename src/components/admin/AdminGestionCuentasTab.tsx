@@ -289,6 +289,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
     setEnableOperator(false);
     setOperatorPerms([]);
     setEditingPerson(null);
+    setOpenAccordions([]);
   };
 
   const openCreate = () => {
