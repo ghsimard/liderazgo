@@ -315,11 +315,21 @@ export default function AdminAsistenciaTab() {
                 <TableHead className="text-xs sticky left-[50px] bg-background z-10 min-w-[200px]">Directivo</TableHead>
                 <TableHead className="text-xs min-w-[150px]">IE</TableHead>
                 <TableHead className="text-xs min-w-[100px]">DANE</TableHead>
-                {DAYS.map(dia => (
-                  <TableHead key={dia} className="text-xs text-center min-w-[50px]">
-                    Día {dia}
-                  </TableHead>
-                ))}
+                {selectedModule === "all" ? (
+                  MODULES.map(mod => (
+                    DAYS.map(dia => (
+                      <TableHead key={`${mod}-${dia}`} className="text-xs text-center min-w-[50px]">
+                        M{mod}D{dia}
+                      </TableHead>
+                    ))
+                  ))
+                ) : (
+                  DAYS.map(dia => (
+                    <TableHead key={dia} className="text-xs text-center min-w-[50px]">
+                      Día {dia}
+                    </TableHead>
+                  ))
+                )}
                 <TableHead className="text-xs text-center min-w-[60px]">Tasa</TableHead>
                 <TableHead className="text-xs min-w-[150px]">Razón inasistencia</TableHead>
                 <TableHead className="text-xs min-w-[150px]">Observaciones</TableHead>
