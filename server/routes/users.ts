@@ -49,6 +49,7 @@ router.get("/", async (_req: Request, res: Response) => {
     const users = await query(`
       SELECT u.id, u.email, u.created_at, u.last_sign_in_at,
              COALESCE(json_agg(cr.name) FILTER (WHERE cr.name IS NOT NULL), '[]') AS roles,
+             COALESCE(json_agg(cr.id) FILTER (WHERE cr.id IS NOT NULL), '[]') AS role_ids,
              ac.cedula
       FROM users u
       LEFT JOIN user_custom_roles ucr ON ucr.user_id = u.id
@@ -60,6 +61,8 @@ router.get("/", async (_req: Request, res: Response) => {
     // Map custom role names to legacy role keys for API compatibility
     const mapped = users.map((u: any) => ({
       ...u,
+      custom_role_names: u.roles || [],
+      custom_role_ids: u.role_ids || [],
       roles: (u.roles || []).map((n: string) => customToLegacyRole(n)),
     }));
     res.json({ users: mapped });
