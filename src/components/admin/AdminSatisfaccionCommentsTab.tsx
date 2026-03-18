@@ -35,6 +35,14 @@ export default function AdminSatisfaccionCommentsTab() {
   const [filterModule, setFilterModule] = useState("all");
   const [aiAnalysis, setAiAnalysis] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyAnalysis = () => {
+    const text = aiAnalysis.split("|||").map(s => s.replace(/<[^>]*>/g, "").trim()).filter(Boolean).join("\n\n");
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     setAiAnalysis("");
