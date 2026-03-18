@@ -62,6 +62,8 @@ interface Asignacion {
   directivo_nombre: string;
   institucion: string;
   rubrica_visible: boolean;
+  encuesta_entrada_visible: boolean;
+  encuesta_salida_visible: boolean;
 }
 
 const NIVELES = [
