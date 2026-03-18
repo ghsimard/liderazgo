@@ -361,9 +361,6 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
           <TabsContent value="informes-final">
             <AdminReporte360Tab fase="final" />
           </TabsContent>
-          <TabsContent value="visibilidad">
-            <AdminEncuesta360VisibilityTab />
-          </TabsContent>
         </Tabs>
       );
     }
