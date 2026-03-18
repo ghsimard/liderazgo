@@ -291,11 +291,15 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                       {!vis.visible && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Badge variant="destructive" className="text-xs gap-1 shrink-0">
+                            <Badge
+                              variant="destructive"
+                              className="text-xs gap-1 shrink-0 cursor-pointer hover:opacity-80"
+                              onClick={(e) => toggleInstVisibility(g.institucion, e)}
+                            >
                               <EyeOff className="w-3 h-3" /> No visible
                             </Badge>
                           </TooltipTrigger>
-                          <TooltipContent><p className="text-xs">{vis.source}</p></TooltipContent>
+                          <TooltipContent><p className="text-xs">{vis.source} — Clic para activar</p></TooltipContent>
                         </Tooltip>
                       )}
                     </div>
