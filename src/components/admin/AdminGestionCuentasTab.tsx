@@ -343,7 +343,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
           if (USE_EXPRESS) {
             await apiFetch(`/api/users/${editingPerson.adminUserId}`, {
               method: "PUT",
-              body: { email, role: legacyRole, cedula: ced },
+              body: { email, role: legacyRole, cedula: ced, custom_role_id: adminRole || undefined },
             });
           } else {
             await invokeManageUsers("update_user", {
@@ -352,11 +352,11 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               role: legacyRole,
               cedula: ced,
             });
-          }
-          // Sync custom role
-          if (adminRole) {
-            await supabase.from("user_custom_roles").delete().eq("user_id", editingPerson.adminUserId);
-            await supabase.from("user_custom_roles").insert({ user_id: editingPerson.adminUserId, role_id: adminRole });
+            // Sync custom role (Supabase mode only)
+            if (adminRole) {
+              await supabase.from("user_custom_roles").delete().eq("user_id", editingPerson.adminUserId);
+              await supabase.from("user_custom_roles").insert({ user_id: editingPerson.adminUserId, role_id: adminRole });
+            }
           }
         } else if (!isEdit || !editingPerson?.isAdmin) {
           // Create new admin
