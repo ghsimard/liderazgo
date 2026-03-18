@@ -336,11 +336,13 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
                 <TabsTrigger value="competencias" className="gap-1.5"><ListTree className="w-4 h-4" /> Competencias</TabsTrigger>
                 <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
                 <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
+                <TabsTrigger value="visibilidad" className="gap-1.5"><Eye className="w-4 h-4" /> Visibilidad</TabsTrigger>
               </TabsList>
               <TabsContent value="dominios"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminDomainsManager key={wizardRefreshKey} /></fieldset></TabsContent>
               <TabsContent value="competencias"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminCompetenciesManager key={wizardRefreshKey} /></fieldset></TabsContent>
               <TabsContent value="items"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminItemsManager key={wizardRefreshKey} /></fieldset></TabsContent>
               <TabsContent value="pesos"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminWeightsTab key={wizardRefreshKey} /></fieldset></TabsContent>
+              <TabsContent value="visibilidad"><AdminEncuesta360VisibilityTab /></TabsContent>
             </Tabs>
           </TabsContent>
 
