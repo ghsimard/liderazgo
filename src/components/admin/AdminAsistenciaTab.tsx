@@ -355,17 +355,30 @@ export default function AdminAsistenciaTab() {
                       </TableCell>
                       <TableCell className="text-xs truncate max-w-[200px]">{d.nombre_ie}</TableCell>
                       <TableCell className="text-xs">{d.codigo_dane || "—"}</TableCell>
-                      {DAYS.map(dia => {
-                        const row = asistencia.get(getKey(d.numero_cedula, dia));
-                        return (
+                      {selectedModule === "all" ? (
+                        MODULES.map(mod =>
+                          DAYS.map(dia => {
+                            const row = asistencia.get(`${d.numero_cedula}-${mod}-${dia}`);
+                            return (
+                              <TableCell key={`${mod}-${dia}`} className="text-center px-1">
+                                <Checkbox checked={row?.session_am || false} disabled />
+                              </TableCell>
+                            );
+                          })
+                        )
+                      ) : (
+                        DAYS.map(dia => {
+                          const row = asistencia.get(getKey(d.numero_cedula, dia));
+                          return (
                             <TableCell key={`${dia}`} className="text-center px-1">
                               <Checkbox
                                 checked={row?.session_am || false}
                                 onCheckedChange={() => toggleDay(d.numero_cedula, dia)}
                               />
                             </TableCell>
-                        );
-                      })}
+                          );
+                        })
+                      )}
                       <TableCell className="text-center">
                         <Badge
                           variant="outline"
