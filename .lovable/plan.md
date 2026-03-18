@@ -1,71 +1,64 @@
 
 
-## Plan : 4 améliorations du module Rúbricas
+## Système RBAC — Rôles personnalisés avec permissions CRUD granulaires
 
----
+### Statut : Migration complète ✅ (Phases 1–4 terminées)
 
-### 1. Filtre par région dans Rúbricas/Resultados
+### Ce qui a été implémenté
 
-**Fichier** : `src/components/admin/AdminRubricasTab.tsx`
+1. **Tables de base de données** :
+   - `custom_roles` : rôles personnalisés (nom, description, is_system)
+   - `role_permissions` : permissions CRUD par section (clé hiérarchique avec notation pointée)
+   - `user_custom_roles` : assignation utilisateur ↔ rôle (contrainte UNIQUE)
+   - Fonction `get_user_permissions()` (SECURITY DEFINER) pour charger les permissions sans récursion RLS
 
-- Charger `regiones` et `fichas_rlt` (avec `numero_cedula, region`) dans `loadData`.
-- Construire un mapping `cedulaToRegion: Record<string, string>`.
-- Ajouter un `<Select>` "Todas las regiones" / liste des régions au-dessus de la liste des directivos.
-- Filtrer `filteredCedulas` par la région sélectionnée en plus du `searchTerm`.
+2. **Seed des rôles système** :
+   - Superadmin : CRUD complet sur les 10 sections
+   - Admin : CRUD complet sur les 10 sections
+   - Monitoreo : lecture seule sur 8 sections (pas Sistema ni MEL)
 
----
+3. **Hook `usePermissions`** (`src/hooks/usePermissions.ts`) :
+   - Charge les permissions via `get_user_permissions` RPC ou API Express
+   - Résolution hiérarchique : `sistema.gestion-cuentas` → fallback `sistema`
+   - API : `can(section, action)`, `readableSections`, `permissions`, `loading`, `reload`
 
-### 2. Suppression d'autoevaluations (Admin + Évaluateur)
+4. **Catalogue des sections** (`src/data/rbacSections.ts`) :
+   - 10 sections de premier niveau + sous-sections
+   - Export `RBAC_SECTIONS` et `ALL_SECTION_KEYS`
 
-**Fichier** : `src/components/admin/AdminRubricasTab.tsx` (onglet Resultados)
-- Quand un directivo est sélectionné, ajouter un bouton "Borrar autoevaluación" (par module) visible pour l'admin.
-- L'action supprime les lignes de `rubrica_evaluaciones` (colonnes `directivo_nivel` mises à null ou lignes supprimées), la `rubrica_submission_dates` correspondante (type `autoevaluacion`), et les évaluations équipe/acordado associées le cas échéant pour ce module.
+5. **Interface de gestion** (`AdminRolesTab`) :
+   - Liste des rôles (cartes) avec création/édition/suppression
+   - Matrice sections × CRUD avec checkboxes
+   - Sous-sections dépliables (Collapsible)
+   - Les rôles système ne sont modifiables que par superadmin
+   - Intégré dans Sistema > "Roles y Permisos"
 
-**Fichier** : `src/pages/RubricaEvaluacion.tsx`
-- Pour le rôle évaluateur, ajouter un bouton similaire "Borrar autoevaluación del directivo" quand la soumission `autoevaluacion` existe pour le module actif.
-- La suppression efface `rubrica_evaluaciones` (directivo_nivel, directivo_comentario → null ou suppression des lignes) et la `rubrica_submission_dates` (type `autoevaluacion`) pour le module, permettant au directivo de recommencer.
+### Migration legacy complète ✅
 
----
+#### Phase 1 — Backfill ✅
+- Migration SQL : backfill `user_custom_roles` depuis `user_roles` (Admin/Superadmin/Monitoreo)
 
-### 3. Bouton "Mi Rúbrica" conditionnel dans Mi Panel
+#### Phase 2 — Fonctions SQL de sécurité réécrites ✅
+- `has_admin_access()` → query `user_custom_roles JOIN custom_roles` (Admin/Superadmin)
+- `has_read_access()` → query `user_custom_roles JOIN custom_roles` (tout rôle)
+- **Toutes les RLS policies existantes (~20+) continuent de fonctionner sans modification**
 
-**Fichier** : `src/pages/MiPanel.tsx`
+#### Phase 3 — Express middleware + frontend ✅
+- `server/middleware/auth.ts` : requireAdmin/requireAdminOrViewer/requireSuperAdmin utilisent `user_custom_roles JOIN custom_roles`
+- `src/hooks/useAdminAuth.ts` : mode Supabase utilise `user_custom_roles` au lieu de `has_role` RPC
+- `server/routes/auth.ts` : /api/auth/me retourne les rôles depuis `user_custom_roles`
+- `server/routes/users.ts` : listing, création, modification, suppression via nouvelles tables
+- `server/routes/db.ts` : whitelist et vérification admin via nouvelles tables
+- `server/routes/export.ts` : export SQL via `user_custom_roles`
 
-Actuellement le bouton "Mi Rúbrica de Evaluación" s'affiche dès que `roleInfo.is_directivo && roleInfo.exists_ficha`. Il faut ajouter une condition : le directivo doit avoir une entrée dans `rubrica_asignaciones`.
+#### Phase 4 — Nettoyage ✅
+- Dual-write retiré de toutes les edge functions et routes Express
+- 14 RLS policies réécrites pour utiliser `has_admin_access()` au lieu de `has_role(_, app_role)`
+- Fonction `has_role(uuid, app_role)` supprimée
+- Table `user_roles` supprimée
+- Type enum `app_role` supprimé
+- Edge function `export-database` et frontend (`AppFooter`, `useAutoFillUserInfo`) migrés
 
-- Dans le `useEffect` de `fetchRole`, ajouter une requête :
-  ```typescript
-  const { count: asigCount } = await supabase
-    .from("rubrica_asignaciones")
-    .select("id", { count: "exact", head: true })
-    .eq("directivo_cedula", cedula);
-  ```
-- Stocker dans un state `rubricaEnabled` (true si `asigCount > 0`).
-- Conditionner l'affichage du bouton sur `rubricaEnabled` au lieu de `exists_ficha` seul.
+### Notes d'architecture
 
-Cela signifie que l'admin active la rúbrica en assignant le directivo à un évaluateur dans Rúbricas/Configuración, ce qui crée l'entrée dans `rubrica_asignaciones`.
-
----
-
-### 4. Noms des directivos depuis `fichas_rlt` (source de vérité)
-
-**Fichier** : `src/components/admin/AdminRubricasTab.tsx`
-
-Actuellement (lignes 83-86), les noms de `fichas_rlt` sont chargés d'abord, puis **écrasés** par ceux de `rubrica_asignaciones`. Il faut inverser la priorité :
-
-```typescript
-// Charger asignaciones d'abord (fallback), puis fichas_rlt (source de vérité)
-asignaciones?.forEach((a: any) => { if (a.directivo_nombre?.trim()) map[a.directivo_cedula] = a.directivo_nombre; });
-fichas?.forEach((f: any) => { if (f.nombres_apellidos?.trim()) map[f.numero_cedula] = f.nombres_apellidos; });
-```
-
-Simplement inverser les deux lignes : `fichas_rlt` aura la priorité sur `rubrica_asignaciones`.
-
----
-
-### Déploiement
-
-- **🖥️ Site statique** : Oui (3 fichiers modifiés)
-- **⚙️ Web Service** : Non
-- **🗄️ Base de données** : Non
-
+Les composants enfants (`AdminFichasTab`, `AdminEncuestas360Tab`, etc.) conservent leurs props `isViewer` pour compatibilité, mais les valeurs sont désormais calculées depuis `usePermissions.can()` dans `AdminPage`/`AdminContent`. Le filtrage de la sidebar est piloté par `readableSections`.

@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
-import { Search, CheckCircle, BookOpen, Target, FileText, Users, Lock, ArrowLeft, ArrowUp, History, Clock, FileDown, Loader2, Eye, EyeOff } from "lucide-react";
+import { Search, CheckCircle, BookOpen, Target, FileText, Users, Lock, ArrowLeft, ArrowUp, History, Clock, FileDown, Loader2, Eye, EyeOff, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { generarPDFRubricaModulo, type RubricaModuleReportData } from "@/utils/rubricaModulePdfGenerator";
 import PostSubmitReviewModal from "@/components/PostSubmitReviewModal";
@@ -125,7 +125,8 @@ export default function RubricaEvaluacion() {
   const [pendingSeguimientos, setPendingSeguimientos] = useState<Record<string, { nivel: string; comentario: string }>>({});
   const [savingSeguimiento, setSavingSeguimiento] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [showInlineReport, setShowInlineReport] = useState<string | null>(null); // module id
+  const [showInlineReport, setShowInlineReport] = useState<string | null>(null);
+  const [deletingAutoeval, setDeletingAutoeval] = useState(false);
 
   // The active role for saving (directivo or equipo)
   const role: "directivo" | "equipo" = detectedRole === "directivo" ? "directivo" : "equipo";
@@ -769,6 +770,50 @@ export default function RubricaEvaluacion() {
     }
   };
 
+  const handleDeleteAutoeval = async (moduleId: string, moduleNumber: number) => {
+    if (!directivoInfo) return;
+    if (!confirm(`¿Eliminar la autoevaluación del Módulo ${moduleNumber} para ${directivoInfo.nombre}? Esta acción no se puede deshacer.`)) return;
+    
+    setDeletingAutoeval(true);
+    try {
+      const modItems = items.filter(i => i.module_id === moduleId);
+      const itemIds = modItems.map(i => i.id);
+
+      // Delete evaluaciones for these items
+      await supabase
+        .from("rubrica_evaluaciones")
+        .delete()
+        .eq("directivo_cedula", directivoInfo.cedula)
+        .in("item_id", itemIds);
+
+      // Delete submission dates for this module  
+      await supabase
+        .from("rubrica_submission_dates")
+        .delete()
+        .eq("directivo_cedula", directivoInfo.cedula)
+        .eq("module_number", moduleNumber);
+
+      // Delete seguimientos
+      await supabase
+        .from("rubrica_seguimientos")
+        .delete()
+        .eq("directivo_cedula", directivoInfo.cedula)
+        .in("item_id", itemIds);
+
+      toast({ title: "Eliminado", description: `Autoevaluación del Módulo ${moduleNumber} eliminada.` });
+
+      // Reload data
+      await loadEvaluaciones(directivoInfo.cedula);
+      const newDates = await loadSubmissionDates(directivoInfo.cedula);
+      await loadSeguimientos(directivoInfo.cedula);
+      setSubmissionDates(newDates);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeletingAutoeval(false);
+    }
+  };
+
   const getDescForNivel = (item: RubricaItem, nivel: string) => {
     switch (nivel) {
       case "avanzado": return item.desc_avanzado;
@@ -1222,6 +1267,21 @@ export default function RubricaEvaluacion() {
                             {hasSubmission(m.module_number, "nivel_acordado") && (
                               <Badge variant="secondary" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Nivel acordado</Badge>
                             )}
+                          </div>
+                        )}
+                        {/* Delete autoevaluación button for evaluador */}
+                        {role === "equipo" && hasSubmission(m.module_number, "autoevaluacion") && (
+                          <div className="mt-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 text-xs h-7"
+                              onClick={() => handleDeleteAutoeval(m.id, m.module_number)}
+                              disabled={deletingAutoeval}
+                            >
+                              {deletingAutoeval ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                              Borrar autoevaluación
+                            </Button>
                           </div>
                         )}
                         {/* PDF download button when module is completed */}

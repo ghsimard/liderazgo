@@ -161,6 +161,7 @@ export default function MiPanel() {
   const [roleInfo, setRoleInfo] = useState<CedulaRoleResult | null>(null);
   const [rubricaProgress, setRubricaProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 4 });
   const [inicialDone, setInicialDone] = useState(false);
+  const [rubricaEnabled, setRubricaEnabled] = useState(false);
   
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
@@ -194,19 +195,29 @@ export default function MiPanel() {
         setSelectedRole("directivo"); // show ficha access
       }
 
-      // Fetch rubrica progress for directivos
+      // Check if directivo has rubrica assignment (enabled by admin/evaluador)
       if (result.is_directivo && result.exists_ficha) {
-        const { data: submissions } = await supabase
-          .from("rubrica_submission_dates")
-          .select("module_number")
-          .eq("directivo_cedula", cedula)
-          .eq("submission_type", "acordado");
-        const { count } = await supabase
-          .from("rubrica_modules")
-          .select("id", { count: "exact", head: true });
-        const total = count ?? 4;
-        const completedModules = new Set((submissions || []).map(s => s.module_number)).size;
-        setRubricaProgress({ completed: completedModules, total });
+        const { count: asigCount } = await supabase
+          .from("rubrica_asignaciones")
+          .select("id", { count: "exact", head: true })
+          .eq("directivo_cedula", cedula);
+        const hasAsig = (asigCount ?? 0) > 0;
+        setRubricaEnabled(hasAsig);
+
+        // Fetch rubrica progress for directivos
+        if (hasAsig) {
+          const { data: submissions } = await supabase
+            .from("rubrica_submission_dates")
+            .select("module_number")
+            .eq("directivo_cedula", cedula)
+            .eq("submission_type", "acordado");
+          const { count } = await supabase
+            .from("rubrica_modules")
+            .select("id", { count: "exact", head: true });
+          const total = count ?? 4;
+          const completedModules = new Set((submissions || []).map(s => s.module_number)).size;
+          setRubricaProgress({ completed: completedModules, total });
+        }
       }
 
       // Check if directivo has started module 4 in rubrica (unlock Salida)
@@ -345,7 +356,7 @@ export default function MiPanel() {
                   </div>
                 </Button>
 
-                {roleInfo.is_directivo && roleInfo.exists_ficha && (() => {
+                {roleInfo.is_directivo && rubricaEnabled && (() => {
                   const allDone = rubricaProgress.completed === rubricaProgress.total;
                   return (
                   <Button
