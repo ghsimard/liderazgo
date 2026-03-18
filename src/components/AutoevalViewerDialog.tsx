@@ -60,7 +60,7 @@ export default function AutoevalViewerDialog({ open, onOpenChange, cedula, fase 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Eye className="h-4 w-4 text-primary" />
-            Mi Autoevaluación — Fase {fase === "inicial" ? "Inicial" : "Final"}
+            Mi Autoevaluación — {fase === "inicial" ? "Entrada" : "Salida"}
           </DialogTitle>
           {submittedAt && (
             <p className="text-xs text-muted-foreground">

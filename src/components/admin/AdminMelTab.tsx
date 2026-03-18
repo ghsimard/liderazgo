@@ -489,7 +489,7 @@ export default function AdminMelTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="bg-accent/50 border border-accent rounded-lg p-4 text-sm text-muted-foreground flex-1">
-          <p><strong>Análisis MEL</strong> — Monitoring, Evaluation & Learning. Compara los puntajes 360° entre la fase inicial y final para medir la progresión.</p>
+          <p><strong>Análisis MEL</strong> — Monitoring, Evaluation & Learning. Compara los puntajes 360° entre Entrada y Salida para medir la progresión.</p>
         </div>
       </div>
 

@@ -269,7 +269,7 @@ export default function Encuesta360Hub() {
                   {logoCLT && <img src={logoCLT} alt="Logo CLT" className="h-14 object-contain" />}
                 </div>
                 <CardTitle className="text-lg font-bold text-foreground">
-                  Encuesta 360° — Fase {isFinal ? "Final" : "Inicial"}
+                  Encuesta 360° — {isFinal ? "Salida" : "Entrada"}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
                   {directivoInfo
