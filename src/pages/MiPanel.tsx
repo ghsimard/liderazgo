@@ -509,6 +509,33 @@ export default function MiPanel() {
                     <div className="text-xs opacity-80">Registrar informe por módulo y ET</div>
                   </div>
                 </Button>
+
+                {evalEncuestaEntradaVisible && (
+                  <Button
+                    className="w-full h-14 justify-start gap-3 text-base"
+                    onClick={() => navigate("/evaluador-encuestas?fase=inicial")}
+                  >
+                    <FileBarChart className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">Encuestas 360° — Entrada</div>
+                      <div className="text-xs opacity-80">Gestionar visibilidad por institución</div>
+                    </div>
+                  </Button>
+                )}
+
+                {evalEncuestaSalidaVisible && (
+                  <Button
+                    className="w-full h-14 justify-start gap-3 text-base"
+                    onClick={() => navigate("/evaluador-encuestas?fase=final")}
+                  >
+                    <FileBarChart className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">Encuestas 360° — Salida</div>
+                      <div className="text-xs opacity-80">Gestionar visibilidad por institución</div>
+                    </div>
+                  </Button>
+                )}
+
                 <BlankFichaPdfButton />
               </>
             )}
