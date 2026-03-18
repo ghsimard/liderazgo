@@ -164,6 +164,10 @@ export default function MiPanel() {
   const [rubricaEnabled, setRubricaEnabled] = useState(false);
   const [encuestaEntradaVisible, setEncuestaEntradaVisible] = useState(true);
   const [encuestaSalidaVisible, setEncuestaSalidaVisible] = useState(true);
+
+  // Evaluador: visibility flags from rubrica_asignaciones (admin-controlled)
+  const [evalEncuestaEntradaVisible, setEvalEncuestaEntradaVisible] = useState(false);
+  const [evalEncuestaSalidaVisible, setEvalEncuestaSalidaVisible] = useState(false);
   
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
