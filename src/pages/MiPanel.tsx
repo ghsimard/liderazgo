@@ -289,11 +289,19 @@ export default function MiPanel() {
         if (evalId) {
           const { data: evalAsigs } = await supabase
             .from("rubrica_asignaciones")
-            .select("encuesta_entrada_visible, encuesta_salida_visible")
+            .select("encuesta_entrada_visible, encuesta_salida_visible, directivo_cedula")
             .eq("evaluador_id", evalId);
-          if (evalAsigs && evalAsigs.length > 0) {
+          const hasAsigs = !!(evalAsigs && evalAsigs.length > 0);
+          setEvalHasAssignments(hasAsigs);
+          if (hasAsigs) {
             setEvalEncuestaEntradaVisible(evalAsigs.some((a: any) => a.encuesta_entrada_visible));
             setEvalEncuestaSalidaVisible(evalAsigs.some((a: any) => a.encuesta_salida_visible));
+
+            // Check if any informe_modulo records exist
+            const { count: informeCount } = await supabase
+              .from("informe_modulo")
+              .select("id", { count: "exact", head: true });
+            setEvalHasInformes((informeCount ?? 0) > 0);
           }
         }
       }
