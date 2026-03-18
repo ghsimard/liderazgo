@@ -1,0 +1,1 @@
+ALTER TABLE informe_asistencia ADD CONSTRAINT informe_asistencia_cedula_module_dia_unique UNIQUE (directivo_cedula, module_number, dia);
