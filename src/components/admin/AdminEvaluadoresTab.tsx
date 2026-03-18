@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, UserPlus, Search, Users, Link, Eye, ArrowRightLeft, AlertTriangle, ChevronDown } from "lucide-react";
+import { Plus, Trash2, UserPlus, Search, Users, Link, Eye, EyeOff, ArrowRightLeft, AlertTriangle, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AdminEvalDetailDialog from "./AdminEvalDetailDialog";
 import TransferDirectivosDialog from "./TransferDirectivosDialog";
@@ -29,6 +29,7 @@ interface Asignacion {
   directivo_cedula: string;
   directivo_nombre: string;
   institucion: string;
+  rubrica_visible: boolean;
   created_at: string;
 }
 
@@ -203,6 +204,28 @@ export default function AdminEvaluadoresTab() {
     }
   };
 
+  const handleToggleVisibility = async (asig: Asignacion) => {
+    const newVal = !asig.rubrica_visible;
+    const { error } = await supabase.from("rubrica_asignaciones").update({ rubrica_visible: newVal }).eq("id", asig.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setAsignaciones(prev => prev.map(a => a.id === asig.id ? { ...a, rubrica_visible: newVal } : a));
+    }
+  };
+
+  const handleBulkVisibility = async (evaluadorId: string, visible: boolean) => {
+    const ids = asignaciones.filter(a => a.evaluador_id === evaluadorId).map(a => a.id);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("rubrica_asignaciones").update({ rubrica_visible: visible }).in("id", ids);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setAsignaciones(prev => prev.map(a => a.evaluador_id === evaluadorId ? { ...a, rubrica_visible: visible } : a));
+      toast({ title: visible ? "Todas activadas" : "Todas desactivadas" });
+    }
+  };
+
   const searchLower = search.toLowerCase();
   const filtered = search
     ? evaluadores.filter(e => {
@@ -297,6 +320,28 @@ export default function AdminEvaluadoresTab() {
                           <Link className="w-3.5 h-3.5" /> Asignar
                         </Button>
                         {evAsignaciones.length > 0 && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleBulkVisibility(ev.id, true)}
+                              className="gap-1 text-xs h-7"
+                              title="Activar visibilidad para todos"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> Activar todos
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleBulkVisibility(ev.id, false)}
+                              className="gap-1 text-xs h-7"
+                              title="Desactivar visibilidad para todos"
+                            >
+                              <EyeOff className="w-3.5 h-3.5" /> Desactivar todos
+                            </Button>
+                          </>
+                        )}
+                        {evAsignaciones.length > 0 && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -328,7 +373,7 @@ export default function AdminEvaluadoresTab() {
                               <TableHead className="text-xs">Directivo</TableHead>
                               <TableHead className="text-xs">Cédula</TableHead>
                               <TableHead className="text-xs">Institución</TableHead>
-                              <TableHead className="text-xs w-10"></TableHead>
+                              <TableHead className="text-xs w-24"></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -358,6 +403,15 @@ export default function AdminEvaluadoresTab() {
                                 <TableCell className="text-xs">{a.institucion}</TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-1">
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className={`h-7 w-7 ${a.rubrica_visible ? "text-primary" : "text-muted-foreground"}`}
+                                      onClick={(e) => { e.stopPropagation(); handleToggleVisibility(a); }}
+                                      title={a.rubrica_visible ? "Rúbrica visible — clic para ocultar" : "Rúbrica oculta — clic para mostrar"}
+                                    >
+                                      {a.rubrica_visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                    </Button>
                                     {cedulasConEval.has(a.directivo_cedula) && (
                                       <Button
                                         size="icon"
@@ -365,7 +419,7 @@ export default function AdminEvaluadoresTab() {
                                         className="h-7 w-7 text-primary"
                                         onClick={(e) => { e.stopPropagation(); setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre }); }}
                                       >
-                                        <Eye className="w-3.5 h-3.5" />
+                                        <Search className="w-3.5 h-3.5" />
                                       </Button>
                                     )}
                                     <Button
