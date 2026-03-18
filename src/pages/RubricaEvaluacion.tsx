@@ -326,20 +326,79 @@ export default function RubricaEvaluacion() {
 
         if (assigns && assigns.length > 0) {
           setAsignaciones(assigns);
-          // Batch-fetch all submission dates for assigned directivos
+          // Batch-fetch all submission dates and evaluaciones for assigned directivos
           const cedulas = assigns.map((a: Asignacion) => a.directivo_cedula);
-          const { data: allDates } = await supabase
-            .from("rubrica_submission_dates")
-            .select("*")
-            .in("directivo_cedula", cedulas);
+          const [{ data: allDates }, { data: allEvals }] = await Promise.all([
+            supabase.from("rubrica_submission_dates").select("*").in("directivo_cedula", cedulas),
+            supabase.from("rubrica_evaluaciones").select("directivo_cedula, item_id, directivo_nivel, equipo_nivel, acordado_nivel").in("directivo_cedula", cedulas),
+          ]);
+          const grouped: Record<string, Record<string, string>> = {};
           if (allDates) {
-            const grouped: Record<string, Record<string, string>> = {};
             for (const d of allDates) {
               if (!grouped[d.directivo_cedula]) grouped[d.directivo_cedula] = {};
               grouped[d.directivo_cedula][`${d.module_number}:${d.submission_type}`] = d.submitted_at;
             }
-            setAllSubmissionDates(grouped);
           }
+          // Auto-detect missing submission dates from existing evaluaciones
+          if (allEvals && Array.isArray(allEvals) && allEvals.length > 0) {
+            // We need modules and items to map item_id → module_number
+            // They're loaded in useEffect but may not be ready yet; use a fresh fetch if needed
+            let mods = modules;
+            let its = items;
+            if (mods.length === 0 || its.length === 0) {
+              const [{ data: m2 }, { data: i2 }] = await Promise.all([
+                supabase.from("rubrica_modules").select("*").order("sort_order", { ascending: true }),
+                supabase.from("rubrica_items").select("id, module_id").order("sort_order", { ascending: true }),
+              ]);
+              if (m2) mods = m2;
+              if (i2) its = i2 as any;
+            }
+            // Build item_id → module_number map
+            const itemModuleMap: Record<string, number> = {};
+            for (const it of its) {
+              const mod = mods.find(m => m.id === it.module_id);
+              if (mod) itemModuleMap[it.id] = mod.module_number;
+            }
+            // Check each directivo for missing submission dates
+            for (const ced of cedulas) {
+              const cedEvals = allEvals.filter((e: any) => e.directivo_cedula === ced);
+              if (!cedEvals.length) continue;
+              if (!grouped[ced]) grouped[ced] = {};
+              // Group by module_number
+              const byModule: Record<number, { hasDirectivo: boolean; hasEquipo: boolean; hasAcordado: boolean }> = {};
+              for (const ev of cedEvals) {
+                const modNum = itemModuleMap[ev.item_id];
+                if (!modNum) continue;
+                if (!byModule[modNum]) byModule[modNum] = { hasDirectivo: false, hasEquipo: false, hasAcordado: false };
+                if (ev.directivo_nivel) byModule[modNum].hasDirectivo = true;
+                if (ev.equipo_nivel) byModule[modNum].hasEquipo = true;
+                if (ev.acordado_nivel) byModule[modNum].hasAcordado = true;
+              }
+              for (const [modNumStr, info] of Object.entries(byModule)) {
+                const n = parseInt(modNumStr, 10);
+                if (info.hasDirectivo && !grouped[ced][`${n}:autoevaluacion`]) {
+                  grouped[ced][`${n}:autoevaluacion`] = new Date().toISOString();
+                  // Fire-and-forget backfill insert
+                  supabase.from("rubrica_submission_dates").upsert({
+                    directivo_cedula: ced, module_number: n, submission_type: "autoevaluacion", submitted_at: new Date().toISOString(),
+                  }, { onConflict: "directivo_cedula,module_number,submission_type" }).then(() => {});
+                }
+                if (info.hasEquipo && !grouped[ced][`${n}:evaluacion`]) {
+                  grouped[ced][`${n}:evaluacion`] = new Date().toISOString();
+                  supabase.from("rubrica_submission_dates").upsert({
+                    directivo_cedula: ced, module_number: n, submission_type: "evaluacion", submitted_at: new Date().toISOString(),
+                  }, { onConflict: "directivo_cedula,module_number,submission_type" }).then(() => {});
+                }
+                if (info.hasAcordado && !grouped[ced][`${n}:nivel_acordado`]) {
+                  grouped[ced][`${n}:nivel_acordado`] = new Date().toISOString();
+                  supabase.from("rubrica_submission_dates").upsert({
+                    directivo_cedula: ced, module_number: n, submission_type: "nivel_acordado", submitted_at: new Date().toISOString(),
+                  }, { onConflict: "directivo_cedula,module_number,submission_type" }).then(() => {});
+                }
+              }
+            }
+          }
+          setAllSubmissionDates(grouped);
         } else {
           toast({ title: "Sin asignaciones", description: "No tiene directivos asignados para evaluar.", variant: "destructive" });
         }
