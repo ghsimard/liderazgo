@@ -100,11 +100,13 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   }, [fase]);
 
   const loadRegiones = async () => {
-    const [{ data: regionesData }, { data: fichasData }, { data: visData }, { data: instRows }] = await Promise.all([
+    const [{ data: regionesData }, { data: fichasData }, { data: visData }, { data: instRows }, { data: riData }, { data: instData }] = await Promise.all([
       supabase.from("regiones").select("id, nombre").order("nombre"),
       supabase.from("fichas_rlt").select("nombre_ie, region"),
       supabase.from("encuesta_360_visibility").select("id, fase, scope_type, scope_value, is_active").eq("fase", fase),
       supabase.rpc("get_instituciones_con_ficha"),
+      supabase.from("region_instituciones").select("region_id, institucion_id"),
+      supabase.from("instituciones").select("id, nombre"),
     ]);
     if (regionesData) setRegiones(regionesData);
     if (fichasData) {
@@ -114,6 +116,24 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
     }
     setVisibility((visData as VisibilityRow[]) || []);
     if (instRows) setInstituciones((instRows as any[]).map((r: any) => r.nombre_ie));
+
+    // Build region name → institution names mapping
+    if (regionesData && riData && instData) {
+      const instById: Record<string, string> = {};
+      (instData as any[]).forEach((i: any) => { instById[i.id] = i.nombre; });
+      const regById: Record<string, string> = {};
+      (regionesData as any[]).forEach((r: any) => { regById[r.id] = r.nombre; });
+      const rMap: Record<string, string[]> = {};
+      (riData as any[]).forEach((ri: any) => {
+        const regName = regById[ri.region_id];
+        const instName = instById[ri.institucion_id];
+        if (regName && instName) {
+          if (!rMap[regName]) rMap[regName] = [];
+          rMap[regName].push(instName);
+        }
+      });
+      setRegionInstMap(rMap);
+    }
   };
 
   const loadEncuestas = async () => {
