@@ -1269,6 +1269,20 @@ export default function RubricaEvaluacion() {
                             )}
                           </div>
                         )}
+                        {/* Delete autoevaluación button for evaluador */}
+                        {role === "equipo" && hasSubmission(m.module_number, "autoevaluacion") && (
+                          <div className="mt-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 text-xs h-7"
+                              onClick={() => handleDeleteAutoeval(m.id, m.module_number)}
+                              disabled={deletingAutoeval}
+                            >
+                              {deletingAutoeval ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                              Borrar autoevaluación
+                            </Button>
+                          </div>
                         {/* PDF download button when module is completed */}
                         {hasSubmission(m.module_number, "nivel_acordado") && (
                           <div className="mt-3 flex flex-wrap gap-2">
