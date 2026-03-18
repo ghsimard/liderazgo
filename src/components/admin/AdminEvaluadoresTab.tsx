@@ -228,6 +228,19 @@ export default function AdminEvaluadoresTab() {
     }
   };
 
+  const handleBulkEncuestaVisibility = async (evaluadorId: string, field: "encuesta_entrada_visible" | "encuesta_salida_visible", visible: boolean) => {
+    const ids = asignaciones.filter(a => a.evaluador_id === evaluadorId).map(a => a.id);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("rubrica_asignaciones").update({ [field]: visible }).in("id", ids);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setAsignaciones(prev => prev.map(a => a.evaluador_id === evaluadorId ? { ...a, [field]: visible } : a));
+      const label = field === "encuesta_entrada_visible" ? "Entrada" : "Salida";
+      toast({ title: `Encuesta ${label}: ${visible ? "Activada" : "Desactivada"}` });
+    }
+  };
+
   const searchLower = search.toLowerCase();
   const filtered = search
     ? evaluadores.filter(e => {
