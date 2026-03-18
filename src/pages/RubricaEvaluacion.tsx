@@ -370,9 +370,78 @@ export default function RubricaEvaluacion() {
     const { data: fichaRaw } = await supabase.rpc("get_ficha_by_cedula", { p_cedula: asig.directivo_cedula });
     const fichaRow = fichaRaw as Record<string, any> | null;
     setDirectivoInfo({ nombre: asig.directivo_nombre, cedula: asig.directivo_cedula, institucion: asig.institucion, genero: fichaRow?.genero ?? null });
-    await loadEvaluaciones(asig.directivo_cedula);
+    const evMap = await loadEvaluaciones(asig.directivo_cedula);
     const dates = await loadSubmissionDates(asig.directivo_cedula);
     await loadSeguimientos(asig.directivo_cedula);
+
+    // Auto-backfill missing submission dates from existing evaluaciones
+    // (handles cases where autoevaluacion was submitted before the upsert fix)
+    if (evMap && Object.keys(evMap).length > 0) {
+      const backfillDates = { ...dates };
+      let changed = false;
+      for (const mod of modules) {
+        const n = mod.module_number;
+        const moduleItems = items.filter(i => i.module_id === mod.id);
+        // Check if directivo_nivel exists for any item in this module
+        const hasDirectivoNivel = moduleItems.some(i => evMap[i.id]?.directivo_nivel);
+        if (hasDirectivoNivel && !dates[`${n}:autoevaluacion`]) {
+          // Backfill: insert missing submission date
+          try {
+            await supabase.from("rubrica_submission_dates").upsert({
+              directivo_cedula: asig.directivo_cedula,
+              module_number: n,
+              submission_type: "autoevaluacion",
+              submitted_at: new Date().toISOString(),
+            }, { onConflict: "directivo_cedula,module_number,submission_type" });
+            backfillDates[`${n}:autoevaluacion`] = new Date().toISOString();
+            changed = true;
+          } catch (e) {
+            console.error("Backfill submission date failed:", e);
+          }
+        }
+        // Also check equipo_nivel
+        const hasEquipoNivel = moduleItems.some(i => evMap[i.id]?.equipo_nivel);
+        if (hasEquipoNivel && !dates[`${n}:evaluacion`]) {
+          try {
+            await supabase.from("rubrica_submission_dates").upsert({
+              directivo_cedula: asig.directivo_cedula,
+              module_number: n,
+              submission_type: "evaluacion",
+              submitted_at: new Date().toISOString(),
+            }, { onConflict: "directivo_cedula,module_number,submission_type" });
+            backfillDates[`${n}:evaluacion`] = new Date().toISOString();
+            changed = true;
+          } catch (e) {
+            console.error("Backfill submission date failed:", e);
+          }
+        }
+        // Also check acordado_nivel
+        const hasAcordadoNivel = moduleItems.some(i => evMap[i.id]?.acordado_nivel);
+        if (hasAcordadoNivel && !dates[`${n}:nivel_acordado`]) {
+          try {
+            await supabase.from("rubrica_submission_dates").upsert({
+              directivo_cedula: asig.directivo_cedula,
+              module_number: n,
+              submission_type: "nivel_acordado",
+              submitted_at: new Date().toISOString(),
+            }, { onConflict: "directivo_cedula,module_number,submission_type" });
+            backfillDates[`${n}:nivel_acordado`] = new Date().toISOString();
+            changed = true;
+          } catch (e) {
+            console.error("Backfill submission date failed:", e);
+          }
+        }
+      }
+      if (changed) {
+        setSubmissionDates(backfillDates);
+        // Also refresh allSubmissionDates for badge indicators
+        const updatedAll = { ...allSubmissionDates };
+        if (!updatedAll[asig.directivo_cedula]) updatedAll[asig.directivo_cedula] = {};
+        Object.assign(updatedAll[asig.directivo_cedula], backfillDates);
+        setAllSubmissionDates(updatedAll);
+      }
+    }
+
     navigateToLastEnabledModule(modules, dates, "equipo");
   };
 
