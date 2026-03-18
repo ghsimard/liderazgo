@@ -74,7 +74,7 @@ export default function AdminPurgeDataTab() {
     setResults([]);
     const newResults: typeof results = [];
 
-    for (const { table } of TABLES_TO_PURGE) {
+    for (const { table } of tablesToPurge) {
       try {
         // Delete all rows using neq on id to bypass empty filter protection
         const { error } = await supabase
