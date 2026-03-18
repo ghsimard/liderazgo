@@ -325,7 +325,7 @@ export default function RubricaEvaluacion() {
 
         const { data: assigns } = await supabase
           .from("rubrica_asignaciones")
-          .select("directivo_cedula, directivo_nombre, institucion, rubrica_visible")
+          .select("directivo_cedula, directivo_nombre, institucion, rubrica_visible, encuesta_entrada_visible, encuesta_salida_visible")
           .eq("evaluador_id", ev.id);
 
         if (assigns && assigns.length > 0) {
