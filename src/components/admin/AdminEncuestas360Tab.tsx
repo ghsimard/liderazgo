@@ -252,6 +252,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
           g.encuestas.forEach((e) => {
             typeCounts[e.tipo_formulario] = (typeCounts[e.tipo_formulario] || 0) + 1;
           });
+          const vis = resolveInstVisibility(g.institucion);
 
           return (
             <Card key={g.institucion}>
@@ -263,7 +264,19 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                   {isOpen ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
                   <School className="w-5 h-5 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm font-medium truncate">{g.institucion}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm font-medium truncate">{g.institucion}</CardTitle>
+                      {!vis.visible && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="destructive" className="text-xs gap-1 shrink-0">
+                              <EyeOff className="w-3 h-3" /> No visible
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent><p className="text-xs">{vis.source}</p></TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                     <div className="flex gap-1.5 mt-1 flex-wrap">
                       {Object.entries(typeCounts).map(([type, count]) => (
                         <Badge key={type} variant="secondary" className={`text-xs ${FORM_TYPE_COLORS[type] ?? ""}`}>
