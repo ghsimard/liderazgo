@@ -5,8 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, BookOpen, Users, ClipboardList, UserCheck, FileText, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, BookOpen, Users, ClipboardList, UserCheck, FileText, BarChart3, Trash2, Loader2 } from "lucide-react";
 import AdminEvaluadoresTab from "./AdminEvaluadoresTab";
 import AdminRubricaModuleReport from "./AdminRubricaModuleReport";
 import AdminRubricaRegionalReport from "./AdminRubricaRegionalReport";
@@ -61,6 +63,10 @@ export default function AdminRubricasTab() {
   const [loading, setLoading] = useState(true);
   const [selectedCedula, setSelectedCedula] = useState<string | null>(null);
   const [cedulaToName, setCedulaToName] = useState<Record<string, string>>({});
+  const [regiones, setRegiones] = useState<{ id: string; nombre: string }[]>([]);
+  const [cedulaToRegion, setCedulaToRegion] = useState<Record<string, string>>({});
+  const [selectedRegion, setSelectedRegion] = useState<string>("all");
+  const [deletingAutoeval, setDeletingAutoeval] = useState<string | null>(null); // module_id being deleted
 
   useEffect(() => {
     loadData();
@@ -68,33 +74,82 @@ export default function AdminRubricasTab() {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: mods }, { data: its }, { data: evals }, { data: asignaciones }, { data: segs }, { data: fichas }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: evals }, { data: asignaciones }, { data: segs }, { data: fichas }, { data: regs }] = await Promise.all([
       supabase.from("rubrica_modules").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("*").order("created_at", { ascending: false }),
       supabase.from("rubrica_asignaciones").select("directivo_cedula, directivo_nombre"),
       supabase.from("rubrica_seguimientos").select("id, item_id, directivo_cedula, nivel, created_at").order("created_at", { ascending: false }),
-      supabase.from("fichas_rlt").select("numero_cedula, nombres_apellidos"),
+      supabase.from("fichas_rlt").select("numero_cedula, nombres_apellidos, region"),
+      supabase.from("regiones").select("id, nombre").order("nombre"),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
     if (evals) setEvaluaciones(evals);
     if (segs) setSeguimientos(segs);
+    if (regs) setRegiones(regs);
+
+    // Build name map: asignaciones first (fallback), then fichas_rlt (source of truth)
     const map: Record<string, string> = {};
-    fichas?.forEach((f: any) => { if (f.nombres_apellidos?.trim()) map[f.numero_cedula] = f.nombres_apellidos; });
     asignaciones?.forEach((a: any) => { if (a.directivo_nombre?.trim()) map[a.directivo_cedula] = a.directivo_nombre; });
+    fichas?.forEach((f: any) => { if (f.nombres_apellidos?.trim()) map[f.numero_cedula] = f.nombres_apellidos; });
     setCedulaToName(map);
+
+    // Build cedula → region map
+    const regionMap: Record<string, string> = {};
+    fichas?.forEach((f: any) => { if (f.region) regionMap[f.numero_cedula] = f.region; });
+    setCedulaToRegion(regionMap);
+
     setLoading(false);
   };
 
+  const handleDeleteAutoeval = async (moduleId: string, moduleNumber: number) => {
+    if (!selectedCedula) return;
+    if (!confirm(`¿Eliminar la autoevaluación del Módulo ${moduleNumber} para este directivo? Esta acción no se puede deshacer.`)) return;
+    
+    setDeletingAutoeval(moduleId);
+    try {
+      const modItems = items.filter(i => i.module_id === moduleId);
+      const itemIds = modItems.map(i => i.id);
+
+      // Delete evaluaciones for these items
+      await supabase
+        .from("rubrica_evaluaciones")
+        .delete()
+        .eq("directivo_cedula", selectedCedula)
+        .in("item_id", itemIds);
+
+      // Delete submission dates for this module
+      await supabase
+        .from("rubrica_submission_dates")
+        .delete()
+        .eq("directivo_cedula", selectedCedula)
+        .eq("module_number", moduleNumber);
+
+      // Delete seguimientos for this module's items
+      await supabase
+        .from("rubrica_seguimientos")
+        .delete()
+        .eq("directivo_cedula", selectedCedula)
+        .in("item_id", itemIds);
+
+      toast({ title: "Eliminado", description: `Autoevaluación del Módulo ${moduleNumber} eliminada.` });
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeletingAutoeval(null);
+    }
+  };
+
   const uniqueCedulas = [...new Set(evaluaciones.map(e => e.directivo_cedula))];
-  const filteredCedulas = searchTerm
-    ? uniqueCedulas.filter(c => {
-        const term = searchTerm.toLowerCase();
-        const name = (cedulaToName[c] || "").toLowerCase();
-        return c.includes(term) || name.includes(term);
-      })
-    : uniqueCedulas;
+  const filteredCedulas = uniqueCedulas.filter(c => {
+    const term = searchTerm.toLowerCase();
+    const name = (cedulaToName[c] || "").toLowerCase();
+    const matchesSearch = !searchTerm || c.includes(term) || name.includes(term);
+    const matchesRegion = selectedRegion === "all" || cedulaToRegion[c] === selectedRegion;
+    return matchesSearch && matchesRegion;
+  });
 
   const selectedEvals = selectedCedula
     ? evaluaciones.filter(e => e.directivo_cedula === selectedCedula)
@@ -136,8 +191,8 @@ export default function AdminRubricasTab() {
 
       <TabsContent value="resultados">
         <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 flex items-center gap-2">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex-1 flex items-center gap-2 min-w-[200px]">
               <Search className="w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por cédula o nombre…"
@@ -146,7 +201,18 @@ export default function AdminRubricasTab() {
                 className="max-w-xs"
               />
             </div>
-            <Badge variant="secondary">{uniqueCedulas.length} directivos evaluados</Badge>
+            <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Todas las regiones" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las regiones</SelectItem>
+                {regiones.map(r => (
+                  <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Badge variant="secondary">{filteredCedulas.length} directivos evaluados</Badge>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -201,10 +267,22 @@ export default function AdminRubricasTab() {
 
                       return (
                         <div key={m.id}>
-                          <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                            <BookOpen className="w-3.5 h-3.5" />
-                            Módulo {m.module_number}: {m.title}
-                          </h4>
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-medium flex items-center gap-2">
+                              <BookOpen className="w-3.5 h-3.5" />
+                              Módulo {m.module_number}: {m.title}
+                            </h4>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 text-xs h-7"
+                              onClick={() => handleDeleteAutoeval(m.id, m.module_number)}
+                              disabled={!!deletingAutoeval}
+                            >
+                              {deletingAutoeval === m.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                              Borrar evaluaciones
+                            </Button>
+                          </div>
                           <Table>
                             <TableHeader>
                               <TableRow>

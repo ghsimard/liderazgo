@@ -356,7 +356,7 @@ export default function MiPanel() {
                   </div>
                 </Button>
 
-                {roleInfo.is_directivo && roleInfo.exists_ficha && (() => {
+                {roleInfo.is_directivo && rubricaEnabled && (() => {
                   const allDone = rubricaProgress.completed === rubricaProgress.total;
                   return (
                   <Button
