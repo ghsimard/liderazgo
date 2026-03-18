@@ -229,8 +229,8 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                           <TooltipTrigger asChild>
                             <span className="shrink-0">
                               {isVisible
-                                ? <Eye className="w-3.5 h-3.5 text-emerald-500" />
-                                : <EyeOff className="w-3.5 h-3.5 text-destructive" />
+                                ? <Eye className="w-3.5 h-3.5 text-green-600" />
+                                : <EyeOff className="w-3.5 h-3.5 text-red-500" />
                               }
                             </span>
                           </TooltipTrigger>
