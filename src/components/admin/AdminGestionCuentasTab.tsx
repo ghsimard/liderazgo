@@ -113,6 +113,8 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
   // Operator section
   const [enableOperator, setEnableOperator] = useState(false);
   const [operatorPerms, setOperatorPerms] = useState<{ section: string; region: string; entidad: string; institucion: string; module: string }[]>([]);
+  // Accordion open state
+  const [openAccordions, setOpenAccordions] = useState<string[]>([]);
 
   // Delete / password dialogs
   const [deleteTarget, setDeleteTarget] = useState<UnifiedPerson | null>(null);
