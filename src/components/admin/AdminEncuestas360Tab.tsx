@@ -424,7 +424,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                           </TableCell>
                           <TableCell className="text-xs">{row.scope_value}</TableCell>
                           <TableCell className="text-center">
-                            <Badge variant={row.is_active ? "secondary" : "destructive"} className="text-xs">
+                            <Badge variant="outline" className={`text-xs ${row.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-red-100 text-red-700 border-red-200"}`}>
                               {row.is_active ? "Activo" : "Inactivo"}
                             </Badge>
                           </TableCell>
