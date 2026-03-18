@@ -48,6 +48,7 @@ app.use("/api/storage", storageRoutes);
 app.use("/api/rubrica-analysis", rubricaAnalysisRoutes);
 app.use("/api/github", githubRoutes);
 app.use("/api/email", emailRoutes);
+app.use("/api/generate-section-text", generateSectionTextRoutes);
 
 // ─── Public form submission (no auth required) ───────
 import { query as dbQuery } from "./db";
