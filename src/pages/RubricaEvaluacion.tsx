@@ -61,6 +61,7 @@ interface Asignacion {
   directivo_cedula: string;
   directivo_nombre: string;
   institucion: string;
+  rubrica_visible: boolean;
 }
 
 const NIVELES = [
