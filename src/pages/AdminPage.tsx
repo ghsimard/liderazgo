@@ -565,11 +565,9 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
 
 export default function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isAdmin, userId, signOut } = useAdminAuth();
+  const { isAdmin, isSuperAdmin, userId, signOut } = useAdminAuth();
   const permissions = usePermissions(userId);
   const { can, readableSections } = permissions;
-  // Derive legacy flags for header UI
-  const isSuperAdmin = can("sistema", "delete") && can("mel", "delete");
   const { toast } = useToast();
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
