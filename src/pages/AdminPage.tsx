@@ -48,7 +48,7 @@ import AdminGestionCuentasTab from "@/components/admin/AdminGestionCuentasTab";
 import AdminRolesTab from "@/components/admin/AdminRolesTab";
 import AdminAmbienteMonitorTab from "@/components/admin/AdminAmbienteMonitorTab";
 import AdminAmbienteStatsTab from "@/components/admin/AdminAmbienteStatsTab";
-import AdminEncuesta360VisibilityTab from "@/components/admin/AdminEncuesta360VisibilityTab";
+
 
 interface FormItem {
   name: string;
