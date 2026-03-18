@@ -1834,7 +1834,7 @@ export default function FichaRLTForm() {
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm">
                 <p>
-                  Escriba sus nombres y apellidos <strong>exactamente</strong> como desea que aparezcan en su certificado, respetando mayúsculas, minúsculas y tildes (acentos).
+                  Escriba sus nombres y apellidos <strong>exactamente</strong> como desea que aparezcan en su certificado, respetando mayúsculas, minúsculas y tildes (acentos). <strong>No escriba todo en MAYÚSCULAS.</strong>
                 </p>
                 <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-1 text-amber-900">
                   <p className="flex items-center gap-2"><span className="text-green-600 font-bold">✅</span> María Carolina Rodríguez Pérez</p>
