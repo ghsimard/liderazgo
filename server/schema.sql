@@ -589,6 +589,30 @@ CREATE TABLE IF NOT EXISTS public.satisfaccion_responses (
 CREATE INDEX IF NOT EXISTS idx_satisfaccion_responses_cedula ON public.satisfaccion_responses(cedula);
 CREATE INDEX IF NOT EXISTS idx_satisfaccion_config_region ON public.satisfaccion_config(region);
 
+CREATE TABLE IF NOT EXISTS public.satisfaccion_form_definitions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  form_type TEXT NOT NULL,
+  definition JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by UUID,
+  CONSTRAINT satisfaccion_form_definitions_form_type_key UNIQUE (form_type)
+);
+
+CREATE TABLE IF NOT EXISTS public.satisfaccion_report_content (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  form_type TEXT NOT NULL,
+  module_number INTEGER NOT NULL,
+  region TEXT NOT NULL,
+  content JSONB NOT NULL DEFAULT '{}'::jsonb,
+  extra_logos TEXT[] DEFAULT '{}'::text[],
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by UUID,
+  CONSTRAINT satisfaccion_report_content_unique UNIQUE (form_type, module_number, region)
+);
+
+CREATE INDEX IF NOT EXISTS idx_satisfaccion_report_content_lookup
+  ON public.satisfaccion_report_content(form_type, module_number, region);
+
 -- ============================================================
 -- RPC functions for Informe de Módulo
 -- ============================================================

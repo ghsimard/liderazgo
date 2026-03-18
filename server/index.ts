@@ -169,15 +169,45 @@ async function ensureGeographySchema() {
   `);
 }
 
+// ─── Ensure satisfaccion report tables exist (Render self-healing) ───
+async function ensureSatisfaccionSchema() {
+  await dbQuery(`
+    CREATE TABLE IF NOT EXISTS public.satisfaccion_form_definitions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      form_type TEXT NOT NULL,
+      definition JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_by UUID,
+      CONSTRAINT satisfaccion_form_definitions_form_type_key UNIQUE (form_type)
+    );
+
+    CREATE TABLE IF NOT EXISTS public.satisfaccion_report_content (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      form_type TEXT NOT NULL,
+      module_number INTEGER NOT NULL,
+      region TEXT NOT NULL,
+      content JSONB NOT NULL DEFAULT '{}'::jsonb,
+      extra_logos TEXT[] DEFAULT '{}'::text[],
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_by UUID,
+      CONSTRAINT satisfaccion_report_content_unique UNIQUE (form_type, module_number, region)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_satisfaccion_report_content_lookup
+      ON public.satisfaccion_report_content(form_type, module_number, region);
+  `);
+}
+
 // ─── Start ────────────────────────────────────────────
 (async () => {
   try {
     await ensureGeographySchema();
+    await ensureSatisfaccionSchema();
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
   } catch (err) {
-    console.error("❌ Failed to initialize geography schema:", err);
+    console.error("❌ Failed to initialize server schema:", err);
     process.exit(1);
   }
 })();
