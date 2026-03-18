@@ -156,13 +156,11 @@ export default function AdminAsistenciaTab() {
 
   const calculateRate = (cedula: string): number => {
     let attended = 0;
-    let total = DAYS.length * 2;
     DAYS.forEach(dia => {
       const row = asistencia.get(getKey(cedula, dia));
       if (row?.session_am) attended++;
-      if (row?.session_pm) attended++;
     });
-    return total > 0 ? Math.round((attended / total) * 100) : 0;
+    return DAYS.length > 0 ? Math.round((attended / DAYS.length) * 100) : 0;
   };
 
   const handleSave = async () => {
