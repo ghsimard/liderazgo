@@ -204,28 +204,25 @@ export default function AdminEvaluadoresTab() {
     }
   };
 
-  const handleToggleField = async (asig: Asignacion, field: "rubrica_visible" | "encuesta_entrada_visible" | "encuesta_salida_visible") => {
-    const newVal = !asig[field];
-    const { error } = await supabase.from("rubrica_asignaciones").update({ [field]: newVal }).eq("id", asig.id);
+  const handleToggleVisibility = async (asig: Asignacion) => {
+    const newVal = !asig.rubrica_visible;
+    const { error } = await supabase.from("rubrica_asignaciones").update({ rubrica_visible: newVal }).eq("id", asig.id);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      setAsignaciones(prev => prev.map(a => a.id === asig.id ? { ...a, [field]: newVal } : a));
+      setAsignaciones(prev => prev.map(a => a.id === asig.id ? { ...a, rubrica_visible: newVal } : a));
     }
   };
 
-  const handleToggleVisibility = async (asig: Asignacion) => handleToggleField(asig, "rubrica_visible");
-
-  const handleBulkVisibility = async (evaluadorId: string, visible: boolean, field: "rubrica_visible" | "encuesta_entrada_visible" | "encuesta_salida_visible" = "rubrica_visible") => {
+  const handleBulkVisibility = async (evaluadorId: string, visible: boolean) => {
     const ids = asignaciones.filter(a => a.evaluador_id === evaluadorId).map(a => a.id);
     if (ids.length === 0) return;
-    const { error } = await supabase.from("rubrica_asignaciones").update({ [field]: visible }).in("id", ids);
+    const { error } = await supabase.from("rubrica_asignaciones").update({ rubrica_visible: visible }).in("id", ids);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      setAsignaciones(prev => prev.map(a => a.evaluador_id === evaluadorId ? { ...a, [field]: visible } : a));
-      const labels: Record<string, string> = { rubrica_visible: "Rúbrica", encuesta_entrada_visible: "Entrada", encuesta_salida_visible: "Salida" };
-      toast({ title: `${labels[field]}: ${visible ? "Todas activadas" : "Todas desactivadas"}` });
+      setAsignaciones(prev => prev.map(a => a.evaluador_id === evaluadorId ? { ...a, rubrica_visible: visible } : a));
+      toast({ title: `Rúbrica: ${visible ? "Todas activadas" : "Todas desactivadas"}` });
     }
   };
 
