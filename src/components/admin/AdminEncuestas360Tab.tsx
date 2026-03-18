@@ -432,5 +432,6 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }
