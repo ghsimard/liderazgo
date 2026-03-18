@@ -130,6 +130,23 @@ export default function RubricaEvaluacion() {
   // The active role for saving (directivo or equipo)
   const role: "directivo" | "equipo" = detectedRole === "directivo" ? "directivo" : "equipo";
 
+  // Helper: compute directivo status for badge indicator
+  const getDirectivoStatus = (cedula: string): { label: string; module: number; variant: "waiting" | "evaluar" | "acordar" | "done" } => {
+    const dates = allSubmissionDates[cedula] || {};
+    const totalModules = modules.length || 4;
+    for (let n = 1; n <= totalModules; n++) {
+      const hasAuto = !!dates[`${n}:autoevaluacion`];
+      const hasEval = !!dates[`${n}:evaluacion`];
+      const hasAcordado = !!dates[`${n}:nivel_acordado`];
+      if (!hasAcordado) {
+        if (!hasAuto) return { label: "Esperando autoevaluación", module: n, variant: "waiting" };
+        if (!hasEval) return { label: "Su turno — Evaluar", module: n, variant: "evaluar" };
+        return { label: "Su turno — Acordar nivel", module: n, variant: "acordar" };
+      }
+    }
+    return { label: "Completado", module: totalModules, variant: "done" };
+  };
+
   // Helper: find the last enabled module and set it as active
   const navigateToLastEnabledModule = (mods: RubricaModule[], dates: Record<string, string>, userRole: "directivo" | "equipo") => {
     if (!mods.length) return;
