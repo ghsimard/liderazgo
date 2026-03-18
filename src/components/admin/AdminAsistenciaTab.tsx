@@ -298,28 +298,13 @@ export default function AdminAsistenciaTab() {
                 <TableHead className="text-xs min-w-[150px]">IE</TableHead>
                 <TableHead className="text-xs min-w-[100px]">DANE</TableHead>
                 {DAYS.map(dia => (
-                  <TableHead key={dia} className="text-xs text-center" colSpan={2}>
+                  <TableHead key={dia} className="text-xs text-center min-w-[50px]">
                     Día {dia}
                   </TableHead>
                 ))}
                 <TableHead className="text-xs text-center min-w-[60px]">Tasa</TableHead>
                 <TableHead className="text-xs min-w-[150px]">Razón inasistencia</TableHead>
                 <TableHead className="text-xs min-w-[150px]">Observaciones</TableHead>
-              </TableRow>
-              <TableRow>
-                <TableHead />
-                <TableHead />
-                <TableHead />
-                <TableHead />
-                {DAYS.map(dia => (
-                  <>
-                    <TableHead key={`${dia}-am`} className="text-[10px] text-center px-1">a.m.</TableHead>
-                    <TableHead key={`${dia}-pm`} className="text-[10px] text-center px-1">p.m.</TableHead>
-                  </>
-                ))}
-                <TableHead />
-                <TableHead />
-                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
