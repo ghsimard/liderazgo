@@ -116,6 +116,9 @@ export default function RubricaEvaluacion() {
   // Submission dates tracking: key = "module_number:submission_type" → submitted_at
   const [submissionDates, setSubmissionDates] = useState<Record<string, string>>({});
 
+  // All submission dates for all assigned directivos (for badge indicators)
+  const [allSubmissionDates, setAllSubmissionDates] = useState<Record<string, Record<string, string>>>({});
+
   // Seguimiento state
   const [seguimientos, setSeguimientos] = useState<Seguimiento[]>([]);
   // Pending seguimiento edits: key = item_id → { nivel, comentario }
