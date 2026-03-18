@@ -405,17 +405,27 @@ export default function AdminEvaluadoresTab() {
                                 </TableCell>
                                 <TableCell className="text-xs">{a.directivo_cedula}</TableCell>
                                 <TableCell className="text-xs">{a.institucion}</TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-1">
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className={`h-7 w-7 ${a.rubrica_visible ? "text-primary" : "text-muted-foreground"}`}
-                                      onClick={(e) => { e.stopPropagation(); handleToggleVisibility(a); }}
-                                      title={a.rubrica_visible ? "Rúbrica visible — clic para ocultar" : "Rúbrica oculta — clic para mostrar"}
-                                    >
-                                      {a.rubrica_visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                    </Button>
+                                 <TableCell>
+                                   <div className="flex items-center gap-1">
+                                     {(["rubrica_visible", "encuesta_entrada_visible", "encuesta_salida_visible"] as const).map(field => {
+                                       const shortLabels: Record<string, string> = { rubrica_visible: "R", encuesta_entrada_visible: "E", encuesta_salida_visible: "S" };
+                                       const fullLabels: Record<string, string> = { rubrica_visible: "Rúbrica", encuesta_entrada_visible: "Encuesta Entrada", encuesta_salida_visible: "Encuesta Salida" };
+                                       return (
+                                         <Button
+                                           key={field}
+                                           size="icon"
+                                           variant="ghost"
+                                           className={`h-7 w-7 ${a[field] ? "text-primary" : "text-muted-foreground"}`}
+                                           onClick={(e) => { e.stopPropagation(); handleToggleField(a, field); }}
+                                           title={`${fullLabels[field]}: ${a[field] ? "visible — clic para ocultar" : "oculta — clic para mostrar"}`}
+                                         >
+                                           <span className="text-[10px] font-bold relative">
+                                             {shortLabels[field]}
+                                             {a[field] ? <Eye className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1" /> : <EyeOff className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1" />}
+                                           </span>
+                                         </Button>
+                                       );
+                                     })}
                                     {cedulasConEval.has(a.directivo_cedula) && (
                                       <Button
                                         size="icon"

@@ -400,7 +400,7 @@ export default function MiPanel() {
                   );
                 })()}
 
-                {roleInfo.is_directivo && (
+                {roleInfo.is_directivo && encuestaEntradaVisible && (
                   <Button
                     className="w-full h-14 justify-start gap-3 text-base"
                     onClick={() => navigate("/encuesta-360")}
@@ -413,7 +413,7 @@ export default function MiPanel() {
                   </Button>
                 )}
 
-                {roleInfo.is_directivo && (
+                {roleInfo.is_directivo && encuestaSalidaVisible && (
                   <Button
                     className="w-full h-14 justify-start gap-3 text-base"
                     onClick={() => navigate("/encuesta-360?fase=final")}
