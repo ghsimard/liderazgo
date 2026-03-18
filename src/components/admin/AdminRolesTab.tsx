@@ -18,8 +18,6 @@ import { RBAC_SECTIONS, type RbacSection } from "@/data/rbacSections";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
-
 interface CustomRole {
   id: string;
   name: string;
