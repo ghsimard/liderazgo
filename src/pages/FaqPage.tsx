@@ -196,10 +196,6 @@ const faqSections: FaqSection[] = [
         q: "¿Cuál es la diferencia entre admin y superadmin?",
         a: "El superadmin tiene acceso completo, incluyendo la gestión de otros administradores, la exportación de la base de datos, la lectura de mensajes de contacto y la creación de otros superadmins. El admin tiene acceso a la gestión de datos pero no a estas funciones críticas.",
       },
-      {
-        q: "¿Puedo exportar la base de datos?",
-        a: "Sí, los superadmins pueden exportar un archivo SQL completo desde el botón 'Export SQL' en el encabezado del panel de administración.",
-      },
     ],
   },
 ];
