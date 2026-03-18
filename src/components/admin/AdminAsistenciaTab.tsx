@@ -200,13 +200,12 @@ export default function AdminAsistenciaTab() {
   // Stats
   const totalFiltered = filteredDirectivos.length;
   const attendanceByDay = DAYS.map(dia => {
-    let amCount = 0, pmCount = 0;
+    let count = 0;
     filteredDirectivos.forEach(d => {
       const row = asistencia.get(getKey(d.numero_cedula, dia));
-      if (row?.session_am) amCount++;
-      if (row?.session_pm) pmCount++;
+      if (row?.session_am) count++;
     });
-    return { dia, amCount, pmCount };
+    return { dia, count };
   });
 
   if (loading) {
