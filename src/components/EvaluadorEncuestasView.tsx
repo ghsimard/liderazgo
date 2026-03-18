@@ -179,8 +179,8 @@ export default function EvaluadorEncuestasView() {
                   <Badge
                     className={`cursor-pointer select-none shrink-0 ${
                       inst.isVisible
-                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        ? "bg-green-100 text-green-700 hover:bg-green-200 border-green-200"
+                        : "bg-red-100 text-red-700 hover:bg-red-200 border-red-200"
                     }`}
                     onClick={(e) => { e.stopPropagation(); if (!toggling) handleToggle(inst); }}
                   >
