@@ -92,7 +92,7 @@ app.get("/api/geography/instituciones", async (_req, res) => {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 app.get("/api/user-permissions/:userId", requireAuth, requireAdminOrViewer, async (req, res) => {
-  const { userId } = req.params;
+  const userId = req.params.userId as string;
   if (!UUID_RE.test(userId)) {
     res.status(400).json({ error: "Invalid userId format" });
     return;
