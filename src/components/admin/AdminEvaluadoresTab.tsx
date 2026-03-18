@@ -35,6 +35,7 @@ interface Directivo {
   nombres_apellidos: string;
   numero_cedula: string;
   nombre_ie: string;
+  region: string;
 }
 
 export default function AdminEvaluadoresTab() {
