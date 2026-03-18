@@ -271,7 +271,8 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
     case "reportes360":
     case "reportes360final":
     case "invitaciones":
-    case "blancos-360": {
+    case "blancos-360":
+    case "visibilidad360": {
       const sub360Map: Record<string, string> = {
         encuesta360: "formularios",
         enlaces360: "formularios",
@@ -282,6 +283,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
         reportes360final: "informes-final",
         invitaciones: "invitaciones",
         "blancos-360": "blancos",
+        visibilidad360: "visibilidad",
       };
       const defaultSub = sub360Map[activeTab] || "formularios";
       return (
