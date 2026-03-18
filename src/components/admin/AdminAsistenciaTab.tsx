@@ -47,7 +47,7 @@ export default function AdminAsistenciaTab() {
   const [regiones, setRegiones] = useState<string[]>([]);
   const [entidades, setEntidades] = useState<string[]>([]);
   const [asistencia, setAsistencia] = useState<Map<string, AsistenciaRow>>(new Map());
-  const [selectedModule, setSelectedModule] = useState<number>(1);
+  const [selectedModule, setSelectedModule] = useState<number | "all">(1);
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [selectedET, setSelectedET] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
