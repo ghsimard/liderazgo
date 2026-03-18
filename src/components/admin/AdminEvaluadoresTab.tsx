@@ -376,7 +376,7 @@ export default function AdminEvaluadoresTab() {
                                   className="gap-1 text-xs h-7"
                                   title={`${allSalida ? "Desactivar" : "Activar"} Encuesta Salida para todos`}
                                 >
-                                  {allSalida ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                  {allSalida ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                   Salida
                                 </Button>
                               );
