@@ -22,10 +22,18 @@ const ROLE_KEYS = Object.keys(ROLE_LIMITS);
 
 interface DirectivoRow {
   nombre: string;
+  cedula: string;
   institucion: string;
   region: string;
   counts: Record<string, number>;
   incomplete: boolean;
+}
+
+interface VisibilityRow {
+  fase: string;
+  scope_type: string;
+  scope_value: string;
+  is_active: boolean;
 }
 
 interface AdminEncuestaMonitorProps {
