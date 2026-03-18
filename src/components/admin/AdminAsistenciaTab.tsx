@@ -117,7 +117,7 @@ export default function AdminAsistenciaTab() {
 
   const getKey = (cedula: string, dia: number) => `${cedula}-${dia}`;
 
-  const toggleAttendance = (cedula: string, dia: number, field: "session_am" | "session_pm") => {
+  const toggleDay = (cedula: string, dia: number) => {
     const key = getKey(cedula, dia);
     const existing = asistencia.get(key) || {
       directivo_cedula: cedula,
@@ -128,7 +128,8 @@ export default function AdminAsistenciaTab() {
       razon_inasistencia: "",
       observaciones: "",
     };
-    const updated = { ...existing, [field]: !existing[field] };
+    const isPresent = !existing.session_am;
+    const updated = { ...existing, session_am: isPresent, session_pm: isPresent };
     const newMap = new Map(asistencia);
     newMap.set(key, updated);
     setAsistencia(newMap);
@@ -155,13 +156,11 @@ export default function AdminAsistenciaTab() {
 
   const calculateRate = (cedula: string): number => {
     let attended = 0;
-    let total = DAYS.length * 2;
     DAYS.forEach(dia => {
       const row = asistencia.get(getKey(cedula, dia));
       if (row?.session_am) attended++;
-      if (row?.session_pm) attended++;
     });
-    return total > 0 ? Math.round((attended / total) * 100) : 0;
+    return DAYS.length > 0 ? Math.round((attended / DAYS.length) * 100) : 0;
   };
 
   const handleSave = async () => {
@@ -201,13 +200,12 @@ export default function AdminAsistenciaTab() {
   // Stats
   const totalFiltered = filteredDirectivos.length;
   const attendanceByDay = DAYS.map(dia => {
-    let amCount = 0, pmCount = 0;
+    let count = 0;
     filteredDirectivos.forEach(d => {
       const row = asistencia.get(getKey(d.numero_cedula, dia));
-      if (row?.session_am) amCount++;
-      if (row?.session_pm) pmCount++;
+      if (row?.session_am) count++;
     });
-    return { dia, amCount, pmCount };
+    return { dia, count };
   });
 
   if (loading) {
@@ -300,7 +298,7 @@ export default function AdminAsistenciaTab() {
                 <TableHead className="text-xs min-w-[150px]">IE</TableHead>
                 <TableHead className="text-xs min-w-[100px]">DANE</TableHead>
                 {DAYS.map(dia => (
-                  <TableHead key={dia} className="text-xs text-center" colSpan={2}>
+                  <TableHead key={dia} className="text-xs text-center min-w-[50px]">
                     Día {dia}
                   </TableHead>
                 ))}
@@ -308,26 +306,11 @@ export default function AdminAsistenciaTab() {
                 <TableHead className="text-xs min-w-[150px]">Razón inasistencia</TableHead>
                 <TableHead className="text-xs min-w-[150px]">Observaciones</TableHead>
               </TableRow>
-              <TableRow>
-                <TableHead />
-                <TableHead />
-                <TableHead />
-                <TableHead />
-                {DAYS.map(dia => (
-                  <>
-                    <TableHead key={`${dia}-am`} className="text-[10px] text-center px-1">a.m.</TableHead>
-                    <TableHead key={`${dia}-pm`} className="text-[10px] text-center px-1">p.m.</TableHead>
-                  </>
-                ))}
-                <TableHead />
-                <TableHead />
-                <TableHead />
-              </TableRow>
             </TableHeader>
             <TableBody>
               {filteredDirectivos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5 + DAYS.length * 2 + 3} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={5 + DAYS.length + 3} className="text-center text-sm text-muted-foreground py-8">
                     No hay directivos que coincidan con los filtros.
                   </TableCell>
                 </TableRow>
@@ -347,20 +330,12 @@ export default function AdminAsistenciaTab() {
                       {DAYS.map(dia => {
                         const row = asistencia.get(getKey(d.numero_cedula, dia));
                         return (
-                          <>
-                            <TableCell key={`${dia}-am`} className="text-center px-1">
+                            <TableCell key={`${dia}`} className="text-center px-1">
                               <Checkbox
                                 checked={row?.session_am || false}
-                                onCheckedChange={() => toggleAttendance(d.numero_cedula, dia, "session_am")}
+                                onCheckedChange={() => toggleDay(d.numero_cedula, dia)}
                               />
                             </TableCell>
-                            <TableCell key={`${dia}-pm`} className="text-center px-1">
-                              <Checkbox
-                                checked={row?.session_pm || false}
-                                onCheckedChange={() => toggleAttendance(d.numero_cedula, dia, "session_pm")}
-                              />
-                            </TableCell>
-                          </>
                         );
                       })}
                       <TableCell className="text-center">
@@ -412,13 +387,10 @@ export default function AdminAsistenciaTab() {
                 <>
                   <TableRow className="bg-muted/50 font-medium">
                     <TableCell colSpan={4} className="text-xs">
-                      Asistentes por jornada
+                      Asistentes por día
                     </TableCell>
-                    {attendanceByDay.map(({ dia, amCount, pmCount }) => (
-                      <>
-                        <TableCell key={`sum-${dia}-am`} className="text-center text-xs">{amCount}</TableCell>
-                        <TableCell key={`sum-${dia}-pm`} className="text-center text-xs">{pmCount}</TableCell>
-                      </>
+                    {attendanceByDay.map(({ dia, count }) => (
+                      <TableCell key={`sum-${dia}`} className="text-center text-xs">{count}</TableCell>
                     ))}
                     <TableCell />
                     <TableCell />
@@ -428,14 +400,10 @@ export default function AdminAsistenciaTab() {
                     <TableCell colSpan={4} className="text-xs font-medium">
                       Tasa de asistencia del grupo
                     </TableCell>
-                    {attendanceByDay.map(({ dia, amCount, pmCount }) => {
-                      const amRate = totalFiltered > 0 ? Math.round((amCount / totalFiltered) * 100) : 0;
-                      const pmRate = totalFiltered > 0 ? Math.round((pmCount / totalFiltered) * 100) : 0;
+                    {attendanceByDay.map(({ dia, count }) => {
+                      const rate = totalFiltered > 0 ? Math.round((count / totalFiltered) * 100) : 0;
                       return (
-                        <>
-                          <TableCell key={`rate-${dia}-am`} className="text-center text-xs">{amRate}%</TableCell>
-                          <TableCell key={`rate-${dia}-pm`} className="text-center text-xs">{pmRate}%</TableCell>
-                        </>
+                        <TableCell key={`rate-${dia}`} className="text-center text-xs">{rate}%</TableCell>
                       );
                     })}
                     <TableCell />
