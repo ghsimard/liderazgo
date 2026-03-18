@@ -1283,6 +1283,7 @@ export default function RubricaEvaluacion() {
                               Borrar autoevaluación
                             </Button>
                           </div>
+                        )}
                         {/* PDF download button when module is completed */}
                         {hasSubmission(m.module_number, "nivel_acordado") && (
                           <div className="mt-3 flex flex-wrap gap-2">
