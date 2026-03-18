@@ -168,6 +168,8 @@ export default function MiPanel() {
   // Evaluador: visibility flags from rubrica_asignaciones (admin-controlled)
   const [evalEncuestaEntradaVisible, setEvalEncuestaEntradaVisible] = useState(false);
   const [evalEncuestaSalidaVisible, setEvalEncuestaSalidaVisible] = useState(false);
+  const [evalHasAssignments, setEvalHasAssignments] = useState(false);
+  const [evalHasInformes, setEvalHasInformes] = useState(false);
   
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
