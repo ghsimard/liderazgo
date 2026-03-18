@@ -1093,7 +1093,39 @@ export default function RubricaEvaluacion() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">{`Seleccione ${genderizeRole("el directivo", null).toLowerCase()} a evaluar`}</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">{`Seleccione ${genderizeRole("el directivo", null).toLowerCase()} a evaluar`}</CardTitle>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={async () => {
+                        const { error } = await supabase
+                          .from("rubrica_asignaciones")
+                          .update({ rubrica_visible: true } as any)
+                          .eq("evaluador_id", evaluadorId);
+                        if (!error) setAsignaciones(prev => prev.map(a => ({ ...a, rubrica_visible: true })));
+                      }}
+                    >
+                      <Eye className="w-3 h-3 mr-1" /> Activar todos
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={async () => {
+                        const { error } = await supabase
+                          .from("rubrica_asignaciones")
+                          .update({ rubrica_visible: false } as any)
+                          .eq("evaluador_id", evaluadorId);
+                        if (!error) setAsignaciones(prev => prev.map(a => ({ ...a, rubrica_visible: false })));
+                      }}
+                    >
+                      <EyeOff className="w-3 h-3 mr-1" /> Desactivar todos
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-2">
                 {asignaciones.length === 0 && (
@@ -1102,15 +1134,17 @@ export default function RubricaEvaluacion() {
                 {asignaciones.map(a => {
                   const status = getDirectivoStatus(a.directivo_cedula);
                   return (
-                    <button
+                    <div
                       key={a.directivo_cedula}
-                      onClick={() => handleSelectDirectivo(a)}
                       className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors flex items-center justify-between gap-2"
                     >
-                      <div className="min-w-0 flex-1">
+                      <button
+                        onClick={() => handleSelectDirectivo(a)}
+                        className="min-w-0 flex-1 text-left"
+                      >
                         <p className="font-medium text-sm">{a.directivo_nombre}</p>
                         <p className="text-xs text-muted-foreground">CC: {a.directivo_cedula} — {a.institucion}</p>
-                      </div>
+                      </button>
                       <div className="flex items-center gap-2 shrink-0">
                         {status.variant === "waiting" && (
                           <Badge variant="secondary" className="text-xs whitespace-nowrap">
@@ -1136,8 +1170,40 @@ export default function RubricaEvaluacion() {
                             {status.label}
                           </Badge>
                         )}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  const newVal = !a.rubrica_visible;
+                                  const { error } = await supabase
+                                    .from("rubrica_asignaciones")
+                                    .update({ rubrica_visible: newVal } as any)
+                                    .eq("directivo_cedula", a.directivo_cedula)
+                                    .eq("evaluador_id", evaluadorId);
+                                  if (!error) {
+                                    setAsignaciones(prev => prev.map(x =>
+                                      x.directivo_cedula === a.directivo_cedula ? { ...x, rubrica_visible: newVal } : x
+                                    ));
+                                  }
+                                }}
+                              >
+                                {a.rubrica_visible
+                                  ? <Eye className="w-4 h-4 text-emerald-600" />
+                                  : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {a.rubrica_visible ? "Rúbrica visible para el directivo" : "Rúbrica oculta para el directivo"}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </CardContent>
