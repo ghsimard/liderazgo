@@ -781,7 +781,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               <AccordionItem value="operador">
                 <AccordionTrigger className="py-3">
                   <div className="flex items-center gap-3">
-                    <Switch checked={enableOperator} onCheckedChange={c => { setEnableOperator(c); if (c && operatorPerms.length === 0) addOperatorPerm(); }} onClick={e => e.stopPropagation()} />
+                    <Switch checked={enableOperator} onCheckedChange={c => { setEnableOperator(c); if (c) { if (operatorPerms.length === 0) addOperatorPerm(); setOpenAccordions(prev => prev.includes("operador") ? prev : [...prev, "operador"]); } }} onClick={e => e.stopPropagation()} />
                     <UserCog className="w-4 h-4" />
                     <span className="text-sm font-medium">Operador</span>
                     {enableOperator && <Badge variant="secondary" className="text-xs">Activo</Badge>}
