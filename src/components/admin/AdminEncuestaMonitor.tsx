@@ -46,6 +46,8 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   const [search, setSearch] = useState("");
   const [filterMode, setFilterMode] = useState<"all" | "incomplete" | "complete">("all");
 
+  const [visibility, setVisibility] = useState<VisibilityRow[]>([]);
+
   useEffect(() => {
     loadData();
   }, [fase]);
