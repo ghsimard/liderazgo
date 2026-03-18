@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, AlertTriangle, ShieldAlert, CheckCircle2, ImageOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/utils/dbClient";
@@ -36,13 +37,16 @@ const TABLES_TO_PURGE = [
   { table: "encuestas_ambiente_escolar", label: "Encuestas de ambiente escolar" },
   { table: "encuesta_360_visibility", label: "Visibilidad de encuestas 360°" },
   { table: "operator_permissions", label: "Permisos de operadores" },
+];
+
+const REGION_TABLES = [
   { table: "region_instituciones", label: "Instituciones asignadas a regiones" },
   { table: "region_municipios", label: "Municipios asignados a regiones" },
   { table: "region_entidades", label: "Entidades asignadas a regiones" },
   { table: "regiones", label: "Regiones" },
 ];
 
-const TABLES_PRESERVED = [
+const TABLES_PRESERVED_BASE = [
   { table: "users / user_custom_roles / custom_roles / admin_cedulas", label: "Cuentas de administración" },
   { table: "entidades_territoriales / municipios / instituciones", label: "Entidades territoriales, municipios e instituciones" },
   { table: "mel_kpi_config / mel_kpi_groups / mel_kpi_group_items", label: "Configuración KPI/MEL" },
@@ -51,20 +55,26 @@ const TABLES_PRESERVED = [
   { table: "domains_360 / competencies_360 / items_360 / item_texts_360 / competency_weights", label: "Estructura 360°" },
 ];
 
+const REGION_PRESERVED = { table: "regiones / region_entidades / region_municipios / region_instituciones", label: "Regiones y sus asignaciones" };
+
 const CONFIRM_PHRASE = "ELIMINAR TODOS LOS DATOS";
 
 export default function AdminPurgeDataTab() {
   const [confirmText, setConfirmText] = useState("");
   const [purging, setPurging] = useState(false);
+  const [includeRegions, setIncludeRegions] = useState(false);
   const [results, setResults] = useState<{ table: string; ok: boolean; error?: string }[]>([]);
   const { toast } = useToast();
+
+  const tablesToPurge = includeRegions ? [...TABLES_TO_PURGE, ...REGION_TABLES] : TABLES_TO_PURGE;
+  const tablesPreserved = includeRegions ? TABLES_PRESERVED_BASE : [...TABLES_PRESERVED_BASE, REGION_PRESERVED];
 
   const handlePurge = async () => {
     setPurging(true);
     setResults([]);
     const newResults: typeof results = [];
 
-    for (const { table } of TABLES_TO_PURGE) {
+    for (const { table } of tablesToPurge) {
       try {
         // Delete all rows using neq on id to bypass empty filter protection
         const { error } = await supabase
@@ -84,11 +94,12 @@ export default function AdminPurgeDataTab() {
 
     setResults(newResults);
     setConfirmText("");
+    setIncludeRegions(false);
     setPurging(false);
 
     const failures = newResults.filter((r) => !r.ok);
     if (failures.length === 0) {
-      toast({ title: "Purga completada", description: `${TABLES_TO_PURGE.length} tablas vaciadas correctamente.` });
+      toast({ title: "Purga completada", description: `${tablesToPurge.length} tablas vaciadas correctamente.` });
     } else {
       toast({ title: "Purga parcial", description: `${failures.length} tabla(s) con errores.`, variant: "destructive" });
     }
@@ -170,7 +181,7 @@ export default function AdminPurgeDataTab() {
         <Card className="border-destructive/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2 text-destructive">
-              <Trash2 className="h-4 w-4" /> Tablas a vaciar ({TABLES_TO_PURGE.length})
+              <Trash2 className="h-4 w-4" /> Tablas a vaciar ({tablesToPurge.length})
             </CardTitle>
             <CardDescription className="text-xs">Todos los registros serán eliminados</CardDescription>
           </CardHeader>
@@ -193,6 +204,25 @@ export default function AdminPurgeDataTab() {
                 </div>
               );
             })}
+            {/* Region tables - conditional styling */}
+            {REGION_TABLES.map((t) => {
+              const result = results.find((r) => r.table === t.table);
+              return (
+                <div key={t.table} className={`flex items-center gap-2 text-xs ${includeRegions ? "" : "opacity-30"}`}>
+                  {result ? (
+                    result.ok ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    ) : (
+                      <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                    )
+                  ) : (
+                    <span className={`h-3.5 w-3.5 rounded-full border shrink-0 ${includeRegions ? "border-destructive/40" : "border-muted"}`} />
+                  )}
+                  <span className="text-muted-foreground font-mono">{t.table}</span>
+                  <span className="text-muted-foreground/60 ml-auto text-right">{t.label}</span>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
 
@@ -204,7 +234,7 @@ export default function AdminPurgeDataTab() {
             <CardDescription className="text-xs">Estos datos NO se tocan</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1.5">
-            {TABLES_PRESERVED.map((t) => (
+            {tablesPreserved.map((t) => (
               <div key={t.table} className="flex items-start gap-2 text-xs">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
@@ -242,24 +272,39 @@ export default function AdminPurgeDataTab() {
                   <ShieldAlert className="h-5 w-5 text-destructive" />
                   Confirmar purga total
                 </AlertDialogTitle>
-                <AlertDialogDescription className="space-y-3">
-                  <p>
-                    Se eliminarán permanentemente <strong>{TABLES_TO_PURGE.length} tablas</strong> de datos operativos.
-                    Esta acción es <strong>irreversible</strong>.
-                  </p>
-                  <p className="text-xs">
-                    Escriba <Badge variant="outline" className="font-mono text-xs">{CONFIRM_PHRASE}</Badge> para confirmar:
-                  </p>
-                  <Input
-                    value={confirmText}
-                    onChange={(e) => setConfirmText(e.target.value)}
-                    placeholder={CONFIRM_PHRASE}
-                    className="font-mono text-sm"
-                  />
+                <AlertDialogDescription asChild>
+                  <div className="space-y-3 text-sm text-muted-foreground">
+                    <p>
+                      Se eliminarán permanentemente <strong>{TABLES_TO_PURGE.length} tablas</strong> de datos operativos.
+                      Esta acción es <strong>irreversible</strong>.
+                    </p>
+                    <div className="flex items-start gap-2 rounded-md border p-3">
+                      <Checkbox
+                        id="include-regions"
+                        checked={includeRegions}
+                        onCheckedChange={(v) => setIncludeRegions(v === true)}
+                      />
+                      <label htmlFor="include-regions" className="text-sm leading-tight cursor-pointer">
+                        <span className="font-medium">¿También eliminar las regiones?</span>
+                        <span className="block text-xs text-muted-foreground/70 mt-0.5">
+                          Solo se eliminan los agrupamientos regionales. Las entidades territoriales, municipios e instituciones se conservan intactos.
+                        </span>
+                      </label>
+                    </div>
+                    <p className="text-xs">
+                      Escriba <Badge variant="outline" className="font-mono text-xs">{CONFIRM_PHRASE}</Badge> para confirmar:
+                    </p>
+                    <Input
+                      value={confirmText}
+                      onChange={(e) => setConfirmText(e.target.value)}
+                      placeholder={CONFIRM_PHRASE}
+                      className="font-mono text-sm"
+                    />
+                  </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setConfirmText("")}>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => { setConfirmText(""); setIncludeRegions(false); }}>Cancelar</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handlePurge}
                   disabled={confirmText !== CONFIRM_PHRASE}
