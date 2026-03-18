@@ -223,8 +223,16 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
 
   const regionFiltered = useMemo(() => {
     if (selectedRegion === "todas") return groups;
-    return groups.filter((g) => instRegionMap[g.institucion] === selectedRegion);
-  }, [groups, selectedRegion, instRegionMap]);
+    const existing = groups.filter((g) => instRegionMap[g.institucion] === selectedRegion);
+    // Add institutions from the region that have no submissions yet
+    const existingNames = new Set(existing.map(g => g.institucion));
+    const regionInsts = regionInstMap[selectedRegion] ?? [];
+    const missing = regionInsts
+      .filter(name => !existingNames.has(name))
+      .sort()
+      .map(name => ({ institucion: name, encuestas: [] as Encuesta[] }));
+    return [...existing, ...missing].sort((a, b) => a.institucion.localeCompare(b.institucion));
+  }, [groups, selectedRegion, instRegionMap, regionInstMap]);
 
   const filtered = search.trim()
     ? regionFiltered.filter((g) => g.institucion.toLowerCase().includes(search.toLowerCase()))
