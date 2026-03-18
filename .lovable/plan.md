@@ -1,27 +1,64 @@
 
 
-## Plan: Afficher toutes les institutions d'une région dans l'onglet Entrada/Salida
+## Système RBAC — Rôles personnalisés avec permissions CRUD granulaires
 
-### Problème
-La liste principale n'affiche que les institutions ayant **déjà soumis** des encuestas 360. Si l'admin active la visibilité d'une région mais qu'aucune encuesta n'a été soumise, la liste reste vide. L'admin s'attend à voir toutes les institutions de la région sélectionnée.
+### Statut : Migration complète ✅ (Phases 1–4 terminées)
 
-### Solution
-Quand une région est sélectionnée, fusionner les institutions ayant des encuestas avec les institutions de la région (issues de la hiérarchie géographique) pour afficher aussi celles sans soumission.
+### Ce qui a été implémenté
 
-### Changement unique : `src/components/admin/AdminEncuestas360Tab.tsx`
+1. **Tables de base de données** :
+   - `custom_roles` : rôles personnalisés (nom, description, is_system)
+   - `role_permissions` : permissions CRUD par section (clé hiérarchique avec notation pointée)
+   - `user_custom_roles` : assignation utilisateur ↔ rôle (contrainte UNIQUE)
+   - Fonction `get_user_permissions()` (SECURITY DEFINER) pour charger les permissions sans récursion RLS
 
-1. **Charger les institutions par région** : Dans `loadRegiones`, récupérer aussi les tables `region_instituciones` et `instituciones` pour construire un mapping `région → liste d'institutions`.
+2. **Seed des rôles système** :
+   - Superadmin : CRUD complet sur les 10 sections
+   - Admin : CRUD complet sur les 10 sections
+   - Monitoreo : lecture seule sur 8 sections (pas Sistema ni MEL)
 
-2. **Fusionner dans la liste affichée** : Dans le `useMemo` de `regionFiltered` (ligne ~203), quand une région spécifique est sélectionnée, ajouter les institutions de cette région qui n'ont pas encore de soumissions comme des `InstitutionGroup` avec un tableau `encuestas` vide.
+3. **Hook `usePermissions`** (`src/hooks/usePermissions.ts`) :
+   - Charge les permissions via `get_user_permissions` RPC ou API Express
+   - Résolution hiérarchique : `sistema.gestion-cuentas` → fallback `sistema`
+   - API : `can(section, action)`, `readableSections`, `permissions`, `loading`, `reload`
 
-3. **Affichage des institutions sans encuestas** : Ces institutions apparaîtront dans la liste avec un compteur à 0 et leur badge de visibilité (Visible/No visible), permettant à l'admin de voir et gérer la visibilité de toutes les institutions de la région.
+4. **Catalogue des sections** (`src/data/rbacSections.ts`) :
+   - 10 sections de premier niveau + sous-sections
+   - Export `RBAC_SECTIONS` et `ALL_SECTION_KEYS`
 
-### Résultat
-- Sélectionner une région affiche **toutes** ses institutions, y compris celles sans soumissions
-- Le badge de visibilité reste interactif sur chaque institution
-- "Todas las regiones" continue à n'afficher que les institutions avec des encuestas (comportement actuel)
+5. **Interface de gestion** (`AdminRolesTab`) :
+   - Liste des rôles (cartes) avec création/édition/suppression
+   - Matrice sections × CRUD avec checkboxes
+   - Sous-sections dépliables (Collapsible)
+   - Les rôles système ne sont modifiables que par superadmin
+   - Intégré dans Sistema > "Roles y Permisos"
 
-### Actions RENDER
-- **Frontend** : Redéployer le build (`dist`)
-- **Backend / DB** : Aucune action requise
+### Migration legacy complète ✅
 
+#### Phase 1 — Backfill ✅
+- Migration SQL : backfill `user_custom_roles` depuis `user_roles` (Admin/Superadmin/Monitoreo)
+
+#### Phase 2 — Fonctions SQL de sécurité réécrites ✅
+- `has_admin_access()` → query `user_custom_roles JOIN custom_roles` (Admin/Superadmin)
+- `has_read_access()` → query `user_custom_roles JOIN custom_roles` (tout rôle)
+- **Toutes les RLS policies existantes (~20+) continuent de fonctionner sans modification**
+
+#### Phase 3 — Express middleware + frontend ✅
+- `server/middleware/auth.ts` : requireAdmin/requireAdminOrViewer/requireSuperAdmin utilisent `user_custom_roles JOIN custom_roles`
+- `src/hooks/useAdminAuth.ts` : mode Supabase utilise `user_custom_roles` au lieu de `has_role` RPC
+- `server/routes/auth.ts` : /api/auth/me retourne les rôles depuis `user_custom_roles`
+- `server/routes/users.ts` : listing, création, modification, suppression via nouvelles tables
+- `server/routes/db.ts` : whitelist et vérification admin via nouvelles tables
+- `server/routes/export.ts` : export SQL via `user_custom_roles`
+
+#### Phase 4 — Nettoyage ✅
+- Dual-write retiré de toutes les edge functions et routes Express
+- 14 RLS policies réécrites pour utiliser `has_admin_access()` au lieu de `has_role(_, app_role)`
+- Fonction `has_role(uuid, app_role)` supprimée
+- Table `user_roles` supprimée
+- Type enum `app_role` supprimé
+- Edge function `export-database` et frontend (`AppFooter`, `useAutoFillUserInfo`) migrés
+
+### Notes d'architecture
+
+Les composants enfants (`AdminFichasTab`, `AdminEncuestas360Tab`, etc.) conservent leurs props `isViewer` pour compatibilité, mais les valeurs sont désormais calculées depuis `usePermissions.can()` dans `AdminPage`/`AdminContent`. Le filtrage de la sidebar est piloté par `readableSections`.
