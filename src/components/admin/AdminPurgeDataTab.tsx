@@ -303,7 +303,7 @@ export default function AdminPurgeDataTab() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setConfirmText("")}>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => { setConfirmText(""); setIncludeRegions(false); }}>Cancelar</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handlePurge}
                   disabled={confirmText !== CONFIRM_PHRASE}
