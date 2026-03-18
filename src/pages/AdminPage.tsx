@@ -5,7 +5,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit, FileDown, Link2, PlayCircle, FlagTriangleRight, FileBarChart, FileBarChart2, Printer, TrendingUp, Activity, Shield, Eye, ImageIcon } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit, FileDown, Link2, PlayCircle, FlagTriangleRight, FileBarChart, FileBarChart2, Printer, TrendingUp, Activity, Shield, Eye, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, getToken } from "@/utils/apiFetch";
 import { supabase as cloudClient } from "@/utils/dbClient";
