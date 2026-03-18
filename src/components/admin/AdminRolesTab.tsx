@@ -259,46 +259,50 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
 
       {/* Role list */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {roles.map((role) => (
-          <Card
-            key={role.id}
-            className={`cursor-pointer transition-all hover:shadow-md ${selectedRole?.id === role.id ? "ring-2 ring-primary" : ""}`}
-            onClick={() => selectRole(role)}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                {role.is_system ? <Lock className="w-3.5 h-3.5 text-muted-foreground" /> : <Shield className="w-3.5 h-3.5" />}
-                {role.name}
-                {role.is_system && <Badge variant="secondary" className="text-[10px]">Sistema</Badge>}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-xs text-muted-foreground">{role.description || "Sin descripción"}</p>
-              {!role.is_system && (
-                <div className="flex gap-1 mt-2">
-                  <Button
-                    variant="ghost" size="icon" className="h-7 w-7"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFormName(role.name);
-                      setFormDesc(role.description);
-                      setSelectedRole(role);
-                      setEditOpen(true);
-                    }}
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                    onClick={(e) => { e.stopPropagation(); setDeleteTarget(role); }}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+        {roles.map((role) => {
+          // Hide Superadmin role card entirely for non-superadmins
+          if (role.name === "Superadmin" && !isSuperAdmin) return null;
+          return (
+            <Card
+              key={role.id}
+              className={`cursor-pointer transition-all hover:shadow-md ${selectedRole?.id === role.id ? "ring-2 ring-primary" : ""}`}
+              onClick={() => selectRole(role)}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  {role.is_system ? <Lock className="w-3.5 h-3.5 text-muted-foreground" /> : <Shield className="w-3.5 h-3.5" />}
+                  {role.name}
+                  {role.is_system && <Badge variant="secondary" className="text-[10px]">Sistema</Badge>}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-xs text-muted-foreground">{role.description || "Sin descripción"}</p>
+                {!role.is_system && (
+                  <div className="flex gap-1 mt-2">
+                    <Button
+                      variant="ghost" size="icon" className="h-7 w-7"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormName(role.name);
+                        setFormDesc(role.description);
+                        setSelectedRole(role);
+                        setEditOpen(true);
+                      }}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(role); }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Permission matrix */}
