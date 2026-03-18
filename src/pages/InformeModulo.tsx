@@ -751,70 +751,75 @@ export default function InformeModulo() {
                 <p className="text-xs text-muted-foreground">Describa los avances y retos del directivo en cada gestión durante el módulo en relación con los objetivos propuestos y el desarrollo de sus competencias. Tenga en cuenta lo registrado en el informe de intensivo e interludio y los diferentes resultados de las herramientas de evaluación aplicadas durante el módulo.</p>
                 <p className="text-xs text-muted-foreground">Relacione la información obtenida por medio de las diferentes herramientas para asegurar una evaluación integral del proceso.</p>
               </CardContent>
-              <CardContent className="space-y-6">
-                {directivoEvals.map((ev, i) => {
-                  const dirInfo = selectedGroup.directivos.find(d => d.cedula === ev.directivo_cedula);
-                  return (
-                    <div key={ev.directivo_cedula} className="border rounded-lg p-4 space-y-4 bg-muted/10">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px]">CC: {ev.directivo_cedula}</Badge>
-                        <span className="text-sm font-medium">{dirInfo?.nombre || ev.directivo_cedula}</span>
-                        {dirInfo?.ie && <span className="text-xs text-muted-foreground">— {dirInfo.ie}</span>}
-                      </div>
+              <CardContent className="space-y-2">
+                <Accordion type="multiple" className="space-y-2">
+                  {directivoEvals.map((ev, i) => {
+                    const dirInfo = selectedGroup.directivos.find(d => d.cedula === ev.directivo_cedula);
+                    return (
+                      <AccordionItem key={ev.directivo_cedula} value={ev.directivo_cedula} className="border rounded-lg bg-muted/10 px-4">
+                        <AccordionTrigger className="hover:no-underline">
+                          <div className="flex items-center gap-2 text-left">
+                            <Badge variant="outline" className="text-[10px] shrink-0">CC: {ev.directivo_cedula}</Badge>
+                            <span className="text-sm font-medium">{dirInfo?.nombre || ev.directivo_cedula}</span>
+                            {dirInfo?.ie && <span className="text-xs text-muted-foreground">— {dirInfo.ie}</span>}
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-4 pt-2">
+                          <div>
+                            <Label className="text-xs font-medium">Reto estratégico de transformación institucional</Label>
+                            <Textarea value={ev.reto_estrategico} onChange={e => updateDirectivoEval(i, "reto_estrategico", e.target.value)} rows={3} className="mt-1" />
+                          </div>
 
-                      <div>
-                        <Label className="text-xs font-medium">Reto estratégico de transformación institucional</Label>
-                        <Textarea value={ev.reto_estrategico} onChange={e => updateDirectivoEval(i, "reto_estrategico", e.target.value)} rows={3} className="mt-1" />
-                      </div>
+                          <div>
+                            <Label className="text-xs font-medium">Si no hay reto, explique las razones por las que el directivo docente no lo ha definido</Label>
+                            <Textarea value={ev.razon_sin_reto} onChange={e => updateDirectivoEval(i, "razon_sin_reto", e.target.value)} rows={2} className="mt-1" />
+                          </div>
 
-                      <div>
-                        <Label className="text-xs font-medium">Si no hay reto, explique las razones por las que el directivo docente no lo ha definido</Label>
-                        <Textarea value={ev.razon_sin_reto} onChange={e => updateDirectivoEval(i, "razon_sin_reto", e.target.value)} rows={2} className="mt-1" />
-                      </div>
+                          <div>
+                            <Label className="text-xs font-semibold">2. Evaluación del directivo</Label>
+                            <p className="text-[10px] text-muted-foreground mb-2">Describa el desarrollo que el directivo ha tenido en las competencias de cada gestión, no solo frente al objetivo del módulo, y que presentan mayores avances y retos para el proceso de formación del directivo.</p>
+                          </div>
 
-                      <div>
-                        <Label className="text-xs font-semibold">2. Evaluación del directivo</Label>
-                        <p className="text-[10px] text-muted-foreground mb-2">Describa el desarrollo que el directivo ha tenido en las competencias de cada gestión, no solo frente al objetivo del módulo, y que presentan mayores avances y retos para el proceso de formación del directivo.</p>
-                      </div>
-
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-xs w-[220px] text-center">Gestión y competencias</TableHead>
-                            <TableHead className="text-xs text-center">Avances</TableHead>
-                            <TableHead className="text-xs text-center">Retos</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell className="align-top text-xs font-medium">
-                              <span className="font-semibold text-primary">Personal</span>
-                              <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Autoconciencia · Manejo de las emociones · Comunicación asertiva · Trabajo colaborativo</p>
-                            </TableCell>
-                            <TableCell className="align-top"><Textarea value={ev.avances_personal} onChange={e => updateDirectivoEval(i, "avances_personal", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
-                            <TableCell className="align-top"><Textarea value={ev.retos_personal} onChange={e => updateDirectivoEval(i, "retos_personal", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="align-top text-xs font-medium">
-                              <span className="font-semibold text-primary">Pedagógica</span>
-                              <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Dirección del PEI · Orientación pedagógica · Convivencia · Fomento de la cultura de la evaluación</p>
-                            </TableCell>
-                            <TableCell className="align-top"><Textarea value={ev.avances_pedagogica} onChange={e => updateDirectivoEval(i, "avances_pedagogica", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
-                            <TableCell className="align-top"><Textarea value={ev.retos_pedagogica} onChange={e => updateDirectivoEval(i, "retos_pedagogica", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="align-top text-xs font-medium">
-                              <span className="font-semibold text-primary">Administrativa y Comunitaria</span>
-                              <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Fomento de la visión compartida · Planeación institucional · Construcción de redes · Generación de alianzas · Rendición de cuentas</p>
-                            </TableCell>
-                            <TableCell className="align-top"><Textarea value={ev.avances_administrativa} onChange={e => updateDirectivoEval(i, "avances_administrativa", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
-                            <TableCell className="align-top"><Textarea value={ev.retos_administrativa} onChange={e => updateDirectivoEval(i, "retos_administrativa", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </div>
-                  );
-                })}
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-xs w-[220px] text-center">Gestión y competencias</TableHead>
+                                <TableHead className="text-xs text-center">Avances</TableHead>
+                                <TableHead className="text-xs text-center">Retos</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              <TableRow>
+                                <TableCell className="align-top text-xs font-medium">
+                                  <span className="font-semibold text-primary">Personal</span>
+                                  <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Autoconciencia · Manejo de las emociones · Comunicación asertiva · Trabajo colaborativo</p>
+                                </TableCell>
+                                <TableCell className="align-top"><Textarea value={ev.avances_personal} onChange={e => updateDirectivoEval(i, "avances_personal", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                                <TableCell className="align-top"><Textarea value={ev.retos_personal} onChange={e => updateDirectivoEval(i, "retos_personal", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                              </TableRow>
+                              <TableRow>
+                                <TableCell className="align-top text-xs font-medium">
+                                  <span className="font-semibold text-primary">Pedagógica</span>
+                                  <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Dirección del PEI · Orientación pedagógica · Convivencia · Fomento de la cultura de la evaluación</p>
+                                </TableCell>
+                                <TableCell className="align-top"><Textarea value={ev.avances_pedagogica} onChange={e => updateDirectivoEval(i, "avances_pedagogica", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                                <TableCell className="align-top"><Textarea value={ev.retos_pedagogica} onChange={e => updateDirectivoEval(i, "retos_pedagogica", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                              </TableRow>
+                              <TableRow>
+                                <TableCell className="align-top text-xs font-medium">
+                                  <span className="font-semibold text-primary">Administrativa y Comunitaria</span>
+                                  <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Fomento de la visión compartida · Planeación institucional · Construcción de redes · Generación de alianzas · Rendición de cuentas</p>
+                                </TableCell>
+                                <TableCell className="align-top"><Textarea value={ev.avances_administrativa} onChange={e => updateDirectivoEval(i, "avances_administrativa", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                                <TableCell className="align-top"><Textarea value={ev.retos_administrativa} onChange={e => updateDirectivoEval(i, "retos_administrativa", e.target.value)} rows={3} className="text-xs min-h-[70px]" /></TableCell>
+                              </TableRow>
+                            </TableBody>
+                          </Table>
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
                 {directivoEvals.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">No hay directivos asignados para esta región.</p>
                 )}
