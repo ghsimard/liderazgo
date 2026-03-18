@@ -48,7 +48,7 @@ import AdminGestionCuentasTab from "@/components/admin/AdminGestionCuentasTab";
 import AdminRolesTab from "@/components/admin/AdminRolesTab";
 import AdminAmbienteMonitorTab from "@/components/admin/AdminAmbienteMonitorTab";
 import AdminAmbienteStatsTab from "@/components/admin/AdminAmbienteStatsTab";
-import AdminEncuesta360VisibilityTab from "@/components/admin/AdminEncuesta360VisibilityTab";
+
 
 interface FormItem {
   name: string;
@@ -220,7 +220,7 @@ function getHubTitle(activeTab: string): string {
     encuesta360: "Encuesta 360°", enlaces360: "Encuesta 360°", ponderaciones: "Encuesta 360°",
     encuestas360: "Encuesta 360°", encuestas360final: "Encuesta 360°",
     reportes360: "Encuesta 360°", reportes360final: "Encuesta 360°",
-    invitaciones: "Encuesta 360°", "blancos-360": "Encuesta 360°", visibilidad360: "Encuesta 360°",
+    invitaciones: "Encuesta 360°", "blancos-360": "Encuesta 360°",
     "fichas-rlt": "Fichas de Información", fichas: "Fichas de Información", geography: "Fichas de Información",
     "enlace-ficha": "Fichas de Información", "blank-pdf": "Fichas de Información",
     rubricas: "Rúbricas",
@@ -273,8 +273,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
     case "reportes360":
     case "reportes360final":
     case "invitaciones":
-    case "blancos-360":
-    case "visibilidad360": {
+    case "blancos-360": {
       const sub360Map: Record<string, string> = {
         encuesta360: "formularios",
         enlaces360: "formularios",
@@ -285,7 +284,6 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
         reportes360final: "informes-final",
         invitaciones: "invitaciones",
         "blancos-360": "blancos",
-        visibilidad360: "visibilidad",
       };
       const defaultSub = sub360Map[activeTab] || "formularios";
       return (
@@ -337,13 +335,11 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
                 <TabsTrigger value="competencias" className="gap-1.5"><ListTree className="w-4 h-4" /> Competencias</TabsTrigger>
                 <TabsTrigger value="items" className="gap-1.5"><ListChecks className="w-4 h-4" /> Ítems</TabsTrigger>
                 <TabsTrigger value="pesos" className="gap-1.5"><Scale className="w-4 h-4" /> Ponderaciones</TabsTrigger>
-                <TabsTrigger value="visibilidad" className="gap-1.5"><Eye className="w-4 h-4" /> Visibilidad</TabsTrigger>
               </TabsList>
               <TabsContent value="dominios"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminDomainsManager key={wizardRefreshKey} /></fieldset></TabsContent>
               <TabsContent value="competencias"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminCompetenciesManager key={wizardRefreshKey} /></fieldset></TabsContent>
               <TabsContent value="items"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminItemsManager key={wizardRefreshKey} /></fieldset></TabsContent>
               <TabsContent value="pesos"><fieldset disabled={!can("encuesta360", "update")} className="contents"><AdminWeightsTab key={wizardRefreshKey} /></fieldset></TabsContent>
-              <TabsContent value="visibilidad"><AdminEncuesta360VisibilityTab /></TabsContent>
             </Tabs>
           </TabsContent>
 

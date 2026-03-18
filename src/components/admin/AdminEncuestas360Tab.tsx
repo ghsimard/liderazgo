@@ -1,16 +1,21 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, School, ChevronDown, ChevronRight, Trash2, MapPin, EyeOff, Eye } from "lucide-react";
+import { RefreshCw, School, ChevronDown, ChevronRight, Trash2, MapPin, EyeOff, Eye, Plus, Building2, User, Settings2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface VisibilityRow {
+  id?: string;
   fase: string;
   scope_type: string;
   scope_value: string;
@@ -80,6 +85,13 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   const [selectedRegion, setSelectedRegion] = useState<string>("todas");
   const [instRegionMap, setInstRegionMap] = useState<Record<string, string>>({});
   const [visibility, setVisibility] = useState<VisibilityRow[]>([]);
+  const [instituciones, setInstituciones] = useState<string[]>([]);
+  const [visOpen, setVisOpen] = useState(false);
+
+  // Override form state
+  const [addScopeType, setAddScopeType] = useState<string>("institucion");
+  const [addScopeValue, setAddScopeValue] = useState("");
+  const [addActive, setAddActive] = useState(true);
 
   useEffect(() => {
     loadEncuestas();
@@ -87,10 +99,11 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   }, [fase]);
 
   const loadRegiones = async () => {
-    const [{ data: regionesData }, { data: fichasData }, { data: visData }] = await Promise.all([
+    const [{ data: regionesData }, { data: fichasData }, { data: visData }, { data: instRows }] = await Promise.all([
       supabase.from("regiones").select("id, nombre").order("nombre"),
       supabase.from("fichas_rlt").select("nombre_ie, region"),
-      supabase.from("encuesta_360_visibility").select("fase, scope_type, scope_value, is_active").eq("fase", fase),
+      supabase.from("encuesta_360_visibility").select("id, fase, scope_type, scope_value, is_active").eq("fase", fase),
+      supabase.rpc("get_instituciones_con_ficha"),
     ]);
     if (regionesData) setRegiones(regionesData);
     if (fichasData) {
@@ -99,6 +112,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
       setInstRegionMap(map);
     }
     setVisibility((visData as VisibilityRow[]) || []);
+    if (instRows) setInstituciones((instRows as any[]).map((r: any) => r.nombre_ie));
   };
 
   const loadEncuestas = async () => {
@@ -229,6 +243,43 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
 
   const totalEncuestas = filtered.reduce((sum, g) => sum + g.encuestas.length, 0);
 
+  // --- Visibility management helpers ---
+  const getRegionSwitch = (regionName: string) => {
+    const row = visibility.find(r => r.scope_type === "region" && r.scope_value === regionName);
+    return row?.is_active ?? false;
+  };
+
+  const handleUpsertRegion = async (regionName: string, active: boolean) => {
+    const existing = visibility.find(r => r.scope_type === "region" && r.scope_value === regionName);
+    if (existing) {
+      const { error } = await supabase.from("encuesta_360_visibility").update({ is_active: active, updated_at: new Date().toISOString() }).eq("id", existing.id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+      else { setVisibility(prev => prev.map(r => r.id === existing.id ? { ...r, is_active: active } : r)); }
+    } else {
+      const { data, error } = await supabase.from("encuesta_360_visibility").insert({ fase, scope_type: "region", scope_value: regionName, is_active: active }).select();
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+      else if (data) { setVisibility(prev => [...prev, ...(data as VisibilityRow[])]); }
+    }
+  };
+
+  const handleAddOverride = async () => {
+    if (!addScopeValue.trim()) { toast({ title: "Error", description: "Ingrese un valor", variant: "destructive" }); return; }
+    const { data, error } = await supabase.from("encuesta_360_visibility").upsert({
+      fase, scope_type: addScopeType, scope_value: addScopeValue.trim(), is_active: addActive, updated_at: new Date().toISOString(),
+    }, { onConflict: "fase,scope_type,scope_value" }).select();
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else { toast({ title: "Override guardado" }); loadRegiones(); setAddScopeValue(""); }
+  };
+
+  const handleDeleteOverride = async (id: string) => {
+    const { error } = await supabase.from("encuesta_360_visibility").delete().eq("id", id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else { setVisibility(prev => prev.filter(r => r.id !== id)); toast({ title: "Eliminado" }); }
+  };
+
+  const overrides = visibility.filter(r => r.scope_type !== "region");
+  const scopeIcon = (type: string) => type === "institucion" ? <Building2 className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -240,6 +291,129 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   return (
     <TooltipProvider>
     <div className="space-y-4">
+      {/* Collapsible visibility management */}
+      {!isViewer && (
+        <Collapsible open={visOpen} onOpenChange={setVisOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between gap-2 h-9 text-sm">
+              <span className="flex items-center gap-2"><Settings2 className="w-4 h-4" /> Gestión de visibilidad</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${visOpen ? "rotate-180" : ""}`} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 pt-3">
+            {/* Region toggles */}
+            <Card>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-sm">Visibilidad por Región</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Región</TableHead>
+                      <TableHead className="text-xs text-center">Estado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {regiones.map(reg => (
+                      <TableRow key={reg.id}>
+                        <TableCell className="text-sm font-medium">{reg.nombre}</TableCell>
+                        <TableCell className="text-center">
+                          <Switch checked={getRegionSwitch(reg.nombre)} onCheckedChange={(checked) => handleUpsertRegion(reg.nombre, checked)} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Overrides */}
+            <Card>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-sm">Overrides (Institución / Directivo)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 px-4 pb-4">
+                <p className="text-xs text-muted-foreground">
+                  Un override de institución o directivo tiene prioridad sobre la configuración de la región.
+                </p>
+
+                <div className="flex flex-wrap items-end gap-3 p-3 border rounded-lg bg-muted/30">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Tipo</Label>
+                    <Select value={addScopeType} onValueChange={(v) => { setAddScopeType(v); setAddScopeValue(""); }}>
+                      <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="institucion">Institución</SelectItem>
+                        <SelectItem value="directivo">Directivo (Cédula)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1 flex-1 min-w-[200px]">
+                    <Label className="text-xs">Valor</Label>
+                    {addScopeType === "institucion" ? (
+                      <Select value={addScopeValue} onValueChange={setAddScopeValue}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar institución…" /></SelectTrigger>
+                        <SelectContent>
+                          {instituciones.map(inst => (<SelectItem key={inst} value={inst}>{inst}</SelectItem>))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input placeholder="Cédula del directivo" value={addScopeValue} onChange={e => setAddScopeValue(e.target.value)} className="h-8 text-xs" />
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Estado</Label>
+                    <div className="flex items-center gap-2 h-8">
+                      <Switch checked={addActive} onCheckedChange={setAddActive} />
+                      <span className="text-xs">{addActive ? "Activo" : "Inactivo"}</span>
+                    </div>
+                  </div>
+                  <Button size="sm" onClick={handleAddOverride} className="gap-1 h-8"><Plus className="w-3.5 h-3.5" /> Agregar</Button>
+                </div>
+
+                {overrides.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">Sin overrides configurados.</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Tipo</TableHead>
+                        <TableHead className="text-xs">Valor</TableHead>
+                        <TableHead className="text-xs text-center">Estado</TableHead>
+                        <TableHead className="text-xs w-16"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {overrides.map(row => (
+                        <TableRow key={row.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-1 text-xs">
+                              {scopeIcon(row.scope_type)}
+                              {row.scope_type === "institucion" ? "Institución" : "Directivo"}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs">{row.scope_value}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant={row.is_active ? "secondary" : "destructive"} className="text-xs">
+                              {row.is_active ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDeleteOverride(row.id!)}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-muted-foreground">
           {totalEncuestas} encuesta(s) en {filtered.length} institución(es)
