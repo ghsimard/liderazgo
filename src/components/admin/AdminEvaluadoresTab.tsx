@@ -30,6 +30,8 @@ interface Asignacion {
   directivo_nombre: string;
   institucion: string;
   rubrica_visible: boolean;
+  encuesta_entrada_visible: boolean;
+  encuesta_salida_visible: boolean;
   created_at: string;
 }
 
@@ -226,6 +228,19 @@ export default function AdminEvaluadoresTab() {
     }
   };
 
+  const handleBulkEncuestaVisibility = async (evaluadorId: string, field: "encuesta_entrada_visible" | "encuesta_salida_visible", visible: boolean) => {
+    const ids = asignaciones.filter(a => a.evaluador_id === evaluadorId).map(a => a.id);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("rubrica_asignaciones").update({ [field]: visible }).in("id", ids);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setAsignaciones(prev => prev.map(a => a.evaluador_id === evaluadorId ? { ...a, [field]: visible } : a));
+      const label = field === "encuesta_entrada_visible" ? "Entrada" : "Salida";
+      toast({ title: `Encuesta ${label}: ${visible ? "Activada" : "Desactivada"}` });
+    }
+  };
+
   const searchLower = search.toLowerCase();
   const filtered = search
     ? evaluadores.filter(e => {
@@ -333,6 +348,36 @@ export default function AdminEvaluadoresTab() {
                                 >
                                   {allOn ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                                   Rúbrica
+                                </Button>
+                              );
+                            })()}
+                            {(() => {
+                              const allEntrada = evAsignaciones.every(a => a.encuesta_entrada_visible);
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleBulkEncuestaVisibility(ev.id, "encuesta_entrada_visible", !allEntrada)}
+                                  className="gap-1 text-xs h-7"
+                                  title={`${allEntrada ? "Desactivar" : "Activar"} Encuesta Entrada para todos`}
+                                >
+                                  {allEntrada ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                  Entrada
+                                </Button>
+                              );
+                            })()}
+                            {(() => {
+                              const allSalida = evAsignaciones.every(a => a.encuesta_salida_visible);
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleBulkEncuestaVisibility(ev.id, "encuesta_salida_visible", !allSalida)}
+                                  className="gap-1 text-xs h-7"
+                                  title={`${allSalida ? "Desactivar" : "Activar"} Encuesta Salida para todos`}
+                                >
+                                  {allSalida ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                  Salida
                                 </Button>
                               );
                             })()}

@@ -1,47 +1,64 @@
 
 
-## Plan: Boutons Encuesta 360° pour l'évaluateur avec gestion de visibilité
+## Système RBAC — Rôles personnalisés avec permissions CRUD granulaires
 
-### Résumé
-1. L'admin contrôle la visibilité des boutons "Encuesta 360° - Entrada" et "Encuesta 360° - Salida" pour chaque évaluateur via les colonnes `encuesta_entrada_visible` / `encuesta_salida_visible` de `rubrica_asignaciones` (déjà existantes, non utilisées).
-2. L'évaluateur voit ces boutons dans MiPanel si au moins une de ses assignations a le flag correspondant à `true`.
-3. En cliquant sur un de ces boutons, l'évaluateur accède à une page dédiée listant ses institutions assignées avec des badges cliquables Visible/No visible pour contrôler la visibilité des directivos (via `encuesta_360_visibility`).
+### Statut : Migration complète ✅ (Phases 1–4 terminées)
 
-### Changements
+### Ce qui a été implémenté
 
-**1. `src/pages/MiPanel.tsx`**
-- Dans le `useEffect` pour les évaluateurs, charger les assignations (`rubrica_asignaciones`) via `rubrica_evaluadores.cedula` pour vérifier si `encuesta_entrada_visible` ou `encuesta_salida_visible` est `true` sur au moins une assignation.
-- Ajouter deux états : `evalEncuestaEntradaVisible`, `evalEncuestaSalidaVisible`.
-- Dans la section `selectedRole === "evaluador"`, afficher conditionnellement deux boutons :
-  - "Encuestas 360° - Entrada" → `/evaluador-encuestas?fase=inicial`
-  - "Encuestas 360° - Salida" → `/evaluador-encuestas?fase=final`
+1. **Tables de base de données** :
+   - `custom_roles` : rôles personnalisés (nom, description, is_system)
+   - `role_permissions` : permissions CRUD par section (clé hiérarchique avec notation pointée)
+   - `user_custom_roles` : assignation utilisateur ↔ rôle (contrainte UNIQUE)
+   - Fonction `get_user_permissions()` (SECURITY DEFINER) pour charger les permissions sans récursion RLS
 
-**2. Nouveau composant `src/components/EvaluadorEncuestasView.tsx`**
-- Page complète avec paramètre `fase` (depuis query string).
-- Récupère l'`evaluador_id` depuis `rubrica_evaluadores` via cédula.
-- Charge les institutions distinctes depuis `rubrica_asignaciones` (filtrées par `evaluador_id`).
-- Charge la visibilité depuis `encuesta_360_visibility` pour la fase donnée.
-- Affiche chaque institution avec :
-  - Badge cliquable Visible/No visible (toggle via upsert sur `encuesta_360_visibility` avec `scope_type="institucion"`)
-  - Même logique de résolution que AdminEncuestas360Tab (institution > région > défaut)
-- Bouton retour vers MiPanel.
+2. **Seed des rôles système** :
+   - Superadmin : CRUD complet sur les 10 sections
+   - Admin : CRUD complet sur les 10 sections
+   - Monitoreo : lecture seule sur 8 sections (pas Sistema ni MEL)
 
-**3. `src/App.tsx`**
-- Ajouter route `/evaluador-encuestas` → `EvaluadorEncuestasView`.
+3. **Hook `usePermissions`** (`src/hooks/usePermissions.ts`) :
+   - Charge les permissions via `get_user_permissions` RPC ou API Express
+   - Résolution hiérarchique : `sistema.gestion-cuentas` → fallback `sistema`
+   - API : `can(section, action)`, `readableSections`, `permissions`, `loading`, `reload`
 
-**4. Admin : gestion des flags évaluateur**
-- Dans le composant admin qui gère les évaluateurs/assignations (`AdminEvaluadoresTab.tsx`), ajouter des toggles pour `encuesta_entrada_visible` et `encuesta_salida_visible` par assignation (ou par évaluateur en bulk). Cela permet à l'admin de décider si l'évaluateur voit les boutons Entrada/Salida.
+4. **Catalogue des sections** (`src/data/rbacSections.ts`) :
+   - 10 sections de premier niveau + sous-sections
+   - Export `RBAC_SECTIONS` et `ALL_SECTION_KEYS`
 
-### Aucun changement DB requis
-- Les colonnes `encuesta_entrada_visible` et `encuesta_salida_visible` existent déjà sur `rubrica_asignaciones`.
-- `encuesta_360_visibility` a déjà les policies publiques INSERT/UPDATE.
+5. **Interface de gestion** (`AdminRolesTab`) :
+   - Liste des rôles (cartes) avec création/édition/suppression
+   - Matrice sections × CRUD avec checkboxes
+   - Sous-sections dépliables (Collapsible)
+   - Les rôles système ne sont modifiables que par superadmin
+   - Intégré dans Sistema > "Roles y Permisos"
 
-### Flux
-```text
-Admin active encuesta_entrada_visible sur rubrica_asignaciones
-  → Évaluateur voit bouton "Encuesta 360° - Entrada" dans MiPanel
-    → Évaluateur entre, voit ses institutions
-      → Clique badge pour toggle visibilité institution (encuesta_360_visibility)
-        → Directivos de cette institution voient/perdent le bouton dans leur MiPanel
-```
+### Migration legacy complète ✅
 
+#### Phase 1 — Backfill ✅
+- Migration SQL : backfill `user_custom_roles` depuis `user_roles` (Admin/Superadmin/Monitoreo)
+
+#### Phase 2 — Fonctions SQL de sécurité réécrites ✅
+- `has_admin_access()` → query `user_custom_roles JOIN custom_roles` (Admin/Superadmin)
+- `has_read_access()` → query `user_custom_roles JOIN custom_roles` (tout rôle)
+- **Toutes les RLS policies existantes (~20+) continuent de fonctionner sans modification**
+
+#### Phase 3 — Express middleware + frontend ✅
+- `server/middleware/auth.ts` : requireAdmin/requireAdminOrViewer/requireSuperAdmin utilisent `user_custom_roles JOIN custom_roles`
+- `src/hooks/useAdminAuth.ts` : mode Supabase utilise `user_custom_roles` au lieu de `has_role` RPC
+- `server/routes/auth.ts` : /api/auth/me retourne les rôles depuis `user_custom_roles`
+- `server/routes/users.ts` : listing, création, modification, suppression via nouvelles tables
+- `server/routes/db.ts` : whitelist et vérification admin via nouvelles tables
+- `server/routes/export.ts` : export SQL via `user_custom_roles`
+
+#### Phase 4 — Nettoyage ✅
+- Dual-write retiré de toutes les edge functions et routes Express
+- 14 RLS policies réécrites pour utiliser `has_admin_access()` au lieu de `has_role(_, app_role)`
+- Fonction `has_role(uuid, app_role)` supprimée
+- Table `user_roles` supprimée
+- Type enum `app_role` supprimé
+- Edge function `export-database` et frontend (`AppFooter`, `useAutoFillUserInfo`) migrés
+
+### Notes d'architecture
+
+Les composants enfants (`AdminFichasTab`, `AdminEncuestas360Tab`, etc.) conservent leurs props `isViewer` pour compatibilité, mais les valeurs sont désormais calculées depuis `usePermissions.can()` dans `AdminPage`/`AdminContent`. Le filtrage de la sidebar est piloté par `readableSections`.

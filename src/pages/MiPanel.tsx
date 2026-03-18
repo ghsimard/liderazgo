@@ -164,6 +164,10 @@ export default function MiPanel() {
   const [rubricaEnabled, setRubricaEnabled] = useState(false);
   const [encuestaEntradaVisible, setEncuestaEntradaVisible] = useState(true);
   const [encuestaSalidaVisible, setEncuestaSalidaVisible] = useState(true);
+
+  // Evaluador: visibility flags from rubrica_asignaciones (admin-controlled)
+  const [evalEncuestaEntradaVisible, setEvalEncuestaEntradaVisible] = useState(false);
+  const [evalEncuestaSalidaVisible, setEvalEncuestaSalidaVisible] = useState(false);
   
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
@@ -270,6 +274,26 @@ export default function MiPanel() {
             ).data?.map(i => i.id) ?? []
           );
         setInicialDone((mod4Count ?? 0) > 0);
+      }
+
+      // If evaluador, check encuesta visibility flags from rubrica_asignaciones
+      if (result.is_evaluador) {
+        const { data: evalRow } = await supabase
+          .from("rubrica_evaluadores")
+          .select("id")
+          .eq("cedula", cedula)
+          .limit(1);
+        const evalId = evalRow?.[0]?.id;
+        if (evalId) {
+          const { data: evalAsigs } = await supabase
+            .from("rubrica_asignaciones")
+            .select("encuesta_entrada_visible, encuesta_salida_visible")
+            .eq("evaluador_id", evalId);
+          if (evalAsigs && evalAsigs.length > 0) {
+            setEvalEncuestaEntradaVisible(evalAsigs.some((a: any) => a.encuesta_entrada_visible));
+            setEvalEncuestaSalidaVisible(evalAsigs.some((a: any) => a.encuesta_salida_visible));
+          }
+        }
       }
 
       setLoading(false);
@@ -485,6 +509,33 @@ export default function MiPanel() {
                     <div className="text-xs opacity-80">Registrar informe por módulo y ET</div>
                   </div>
                 </Button>
+
+                {evalEncuestaEntradaVisible && (
+                  <Button
+                    className="w-full h-14 justify-start gap-3 text-base"
+                    onClick={() => navigate("/evaluador-encuestas?fase=inicial")}
+                  >
+                    <FileBarChart className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">Encuestas 360° — Entrada</div>
+                      <div className="text-xs opacity-80">Gestionar visibilidad por institución</div>
+                    </div>
+                  </Button>
+                )}
+
+                {evalEncuestaSalidaVisible && (
+                  <Button
+                    className="w-full h-14 justify-start gap-3 text-base"
+                    onClick={() => navigate("/evaluador-encuestas?fase=final")}
+                  >
+                    <FileBarChart className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">Encuestas 360° — Salida</div>
+                      <div className="text-xs opacity-80">Gestionar visibilidad por institución</div>
+                    </div>
+                  </Button>
+                )}
+
                 <BlankFichaPdfButton />
               </>
             )}

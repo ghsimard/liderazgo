@@ -44,6 +44,7 @@ const SatisfaccionAsistencia = lazy(() => import("./pages/SatisfaccionAsistencia
 const SatisfaccionInterludio = lazy(() => import("./pages/SatisfaccionInterludio"));
 const SatisfaccionIntensivo = lazy(() => import("./pages/SatisfaccionIntensivo"));
 const Especificaciones = lazy(() => import("./pages/Especificaciones"));
+const EvaluadorEncuestasView = lazy(() => import("./components/EvaluadorEncuestasView"));
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ const App = () => (
                 {/* Rubrica Evaluation */}
                 <Route path="/rubrica-evaluacion" element={<RubricaEvaluacion />} />
                 <Route path="/informe-modulo" element={<InformeModulo />} />
+                <Route path="/evaluador-encuestas" element={<EvaluadorEncuestasView />} />
 
                 {/* Ambiente Escolar */}
                 <Route path="/encuesta-ambiente-acudientes" element={<EncuestaAmbienteAcudientes />} />
