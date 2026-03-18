@@ -68,22 +68,22 @@ export default function AdminRubricasTab() {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: mods }, { data: its }, { data: evals }, { data: asignaciones }, { data: segs }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: evals }, { data: asignaciones }, { data: segs }, { data: fichas }] = await Promise.all([
       supabase.from("rubrica_modules").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("*").order("created_at", { ascending: false }),
       supabase.from("rubrica_asignaciones").select("directivo_cedula, directivo_nombre"),
       supabase.from("rubrica_seguimientos").select("id, item_id, directivo_cedula, nivel, created_at").order("created_at", { ascending: false }),
+      supabase.from("fichas_rlt").select("numero_cedula, nombres_apellidos"),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
     if (evals) setEvaluaciones(evals);
     if (segs) setSeguimientos(segs);
-    if (asignaciones) {
-      const map: Record<string, string> = {};
-      asignaciones.forEach(a => { map[a.directivo_cedula] = a.directivo_nombre; });
-      setCedulaToName(map);
-    }
+    const map: Record<string, string> = {};
+    fichas?.forEach((f: any) => { if (f.nombres_apellidos?.trim()) map[f.numero_cedula] = f.nombres_apellidos; });
+    asignaciones?.forEach((a: any) => { if (a.directivo_nombre?.trim()) map[a.directivo_cedula] = a.directivo_nombre; });
+    setCedulaToName(map);
     setLoading(false);
   };
 
