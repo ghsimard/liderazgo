@@ -204,6 +204,28 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
     return { visible: false, source: "Sin configuración (oculto por defecto)" };
   };
 
+  const toggleInstVisibility = async (institucion: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const { data, error } = await supabase.from("encuesta_360_visibility").upsert({
+      fase,
+      scope_type: "institucion",
+      scope_value: institucion,
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "fase,scope_type,scope_value" }).select();
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Visibilidad activada", description: institucion });
+      const existing = visibility.find(r => r.scope_type === "institucion" && r.scope_value === institucion);
+      if (existing) {
+        setVisibility(prev => prev.map(r => r === existing ? { ...r, is_active: true } : r));
+      } else if (data?.[0]) {
+        setVisibility(prev => [...prev, { fase, scope_type: "institucion", scope_value: institucion, is_active: true }]);
+      }
+    }
+  };
+
   const totalEncuestas = filtered.reduce((sum, g) => sum + g.encuestas.length, 0);
 
   if (loading) {
@@ -269,11 +291,15 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                       {!vis.visible && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Badge variant="destructive" className="text-xs gap-1 shrink-0">
+                            <Badge
+                              variant="destructive"
+                              className="text-xs gap-1 shrink-0 cursor-pointer hover:opacity-80"
+                              onClick={(e) => toggleInstVisibility(g.institucion, e)}
+                            >
                               <EyeOff className="w-3 h-3" /> No visible
                             </Badge>
                           </TooltipTrigger>
-                          <TooltipContent><p className="text-xs">{vis.source}</p></TooltipContent>
+                          <TooltipContent><p className="text-xs">{vis.source} — Clic para activar</p></TooltipContent>
                         </Tooltip>
                       )}
                     </div>
