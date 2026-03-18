@@ -199,13 +199,16 @@ export default function MiPanel() {
 
       // Check if directivo has rubrica assignment (enabled by admin/evaluador)
       if (result.is_directivo && result.exists_ficha) {
-        const { count: asigCount } = await supabase
+        const { data: asigData } = await supabase
           .from("rubrica_asignaciones")
-          .select("id", { count: "exact", head: true })
+          .select("rubrica_visible, encuesta_entrada_visible, encuesta_salida_visible")
           .eq("directivo_cedula", cedula)
-          .eq("rubrica_visible", true);
-        const hasAsig = (asigCount ?? 0) > 0;
+          .limit(1);
+        const asigRow = asigData?.[0] as any;
+        const hasAsig = !!asigRow && asigRow.rubrica_visible === true;
         setRubricaEnabled(hasAsig);
+        setEncuestaEntradaVisible(asigRow?.encuesta_entrada_visible ?? true);
+        setEncuestaSalidaVisible(asigRow?.encuesta_salida_visible ?? true);
 
         // Fetch rubrica progress for directivos
         if (hasAsig) {
