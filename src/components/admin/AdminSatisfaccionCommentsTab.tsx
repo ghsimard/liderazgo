@@ -209,6 +209,9 @@ export default function AdminSatisfaccionCommentsTab() {
             <div className="flex items-center gap-2 mb-2 text-sm font-medium text-primary">
               <Sparkles className="w-4 h-4" />
               Análisis IA de comentarios
+              <Button size="icon" variant="ghost" className="h-6 w-6 ml-auto" onClick={handleCopyAnalysis}>
+                {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+              </Button>
             </div>
             <div
               className="text-sm text-foreground/85 space-y-2 prose prose-sm max-w-none"
