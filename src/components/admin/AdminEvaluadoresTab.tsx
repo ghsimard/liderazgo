@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/utils/dbClient";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,7 @@ interface Directivo {
   nombres_apellidos: string;
   numero_cedula: string;
   nombre_ie: string;
+  region: string;
 }
 
 export default function AdminEvaluadoresTab() {
@@ -56,6 +58,7 @@ export default function AdminEvaluadoresTab() {
   const [assignEvaluadorId, setAssignEvaluadorId] = useState<string | null>(null);
   const [selectedCedulas, setSelectedCedulas] = useState<string[]>([]);
   const [assignSearch, setAssignSearch] = useState("");
+  const [assignRegion, setAssignRegion] = useState("all");
 
   // Transfer dialog
   const [transferEvaluador, setTransferEvaluador] = useState<Evaluador | null>(null);
@@ -70,7 +73,7 @@ export default function AdminEvaluadoresTab() {
     const [{ data: evals }, { data: asigs }, { data: dirs }, { data: evalRows }, { data: subDates }] = await Promise.all([
       supabase.from("rubrica_evaluadores").select("*").order("nombre", { ascending: true }),
       supabase.from("rubrica_asignaciones").select("*").order("created_at", { ascending: false }),
-      supabase.from("fichas_rlt").select("nombres_apellidos, numero_cedula, nombre_ie")
+      supabase.from("fichas_rlt").select("nombres_apellidos, numero_cedula, nombre_ie, region")
         .in("cargo_actual", ["Rector/a", "Coordinador/a"])
         .order("nombres_apellidos", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("directivo_cedula"),
@@ -173,13 +176,21 @@ export default function AdminEvaluadoresTab() {
       })
     : [];
 
-  const filteredAvailable = assignSearch
-    ? availableDirectivos.filter(d =>
-        d.nombres_apellidos.toLowerCase().includes(assignSearch.toLowerCase()) ||
+  const assignRegions = useMemo(() => {
+    const set = new Set(availableDirectivos.map(d => d.region));
+    return Array.from(set).sort();
+  }, [availableDirectivos]);
+
+  const filteredAvailable = availableDirectivos.filter(d => {
+    if (assignRegion !== "all" && d.region !== assignRegion) return false;
+    if (assignSearch) {
+      const s = assignSearch.toLowerCase();
+      return d.nombres_apellidos.toLowerCase().includes(s) ||
         d.numero_cedula?.includes(assignSearch) ||
-        d.nombre_ie.toLowerCase().includes(assignSearch.toLowerCase())
-      )
-    : availableDirectivos;
+        d.nombre_ie.toLowerCase().includes(s);
+    }
+    return true;
+  });
 
   const handleDeleteAsignacion = async (id: string) => {
     const { error } = await supabase.from("rubrica_asignaciones").delete().eq("id", id);
@@ -406,7 +417,7 @@ export default function AdminEvaluadoresTab() {
       {/* Assign Directivo Dialog */}
       <Dialog open={showAssign} onOpenChange={(open) => {
         setShowAssign(open);
-        if (!open) { setSelectedCedulas([]); setAssignSearch(""); }
+        if (!open) { setSelectedCedulas([]); setAssignSearch(""); setAssignRegion("all"); }
       }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -421,12 +432,25 @@ export default function AdminEvaluadoresTab() {
             </div>
             <div>
               <Label>Directivos disponibles (Rector/a o Coordinador/a)</Label>
-              <Input
-                placeholder="Buscar por nombre, cédula o institución…"
-                value={assignSearch}
-                onChange={e => setAssignSearch(e.target.value)}
-                className="mt-1 mb-2"
-              />
+              <div className="flex gap-2 mt-1 mb-2">
+                <Select value={assignRegion} onValueChange={(v) => { setAssignRegion(v); setSelectedCedulas([]); }}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Región" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las regiones</SelectItem>
+                    {assignRegions.map((r) => (
+                      <SelectItem key={r} value={r}>{r}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Buscar por nombre, cédula o institución…"
+                  value={assignSearch}
+                  onChange={e => setAssignSearch(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
               {availableDirectivos.length === 0 ? (
                 <p className="text-xs text-muted-foreground">Todos los directivos ya están asignados a este evaluador.</p>
               ) : (
