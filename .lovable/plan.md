@@ -1,64 +1,46 @@
 
 
-## Système RBAC — Rôles personnalisés avec permissions CRUD granulaires
+## Plan : Toggles de visibilité Encuesta 360 Entrada/Salida
 
-### Statut : Migration complète ✅ (Phases 1–4 terminées)
+### Contexte
 
-### Ce qui a été implémenté
+Actuellement les boutons "Mis Encuestas 360° - Entrada" et "Mis Encuestas 360° - Salida" dans `MiPanel` sont toujours visibles pour les directivos. Il faut permettre aux Admin/Superadmin et aux Evaluadores de contrôler cette visibilité, comme c'est déjà fait pour `rubrica_visible`.
 
-1. **Tables de base de données** :
-   - `custom_roles` : rôles personnalisés (nom, description, is_system)
-   - `role_permissions` : permissions CRUD par section (clé hiérarchique avec notation pointée)
-   - `user_custom_roles` : assignation utilisateur ↔ rôle (contrainte UNIQUE)
-   - Fonction `get_user_permissions()` (SECURITY DEFINER) pour charger les permissions sans récursion RLS
+### 1. Migration base de données
 
-2. **Seed des rôles système** :
-   - Superadmin : CRUD complet sur les 10 sections
-   - Admin : CRUD complet sur les 10 sections
-   - Monitoreo : lecture seule sur 8 sections (pas Sistema ni MEL)
+Ajouter deux colonnes booléennes à `rubrica_asignaciones` :
 
-3. **Hook `usePermissions`** (`src/hooks/usePermissions.ts`) :
-   - Charge les permissions via `get_user_permissions` RPC ou API Express
-   - Résolution hiérarchique : `sistema.gestion-cuentas` → fallback `sistema`
-   - API : `can(section, action)`, `readableSections`, `permissions`, `loading`, `reload`
+```sql
+ALTER TABLE rubrica_asignaciones 
+  ADD COLUMN IF NOT EXISTS encuesta_entrada_visible boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS encuesta_salida_visible boolean NOT NULL DEFAULT false;
 
-4. **Catalogue des sections** (`src/data/rbacSections.ts`) :
-   - 10 sections de premier niveau + sous-sections
-   - Export `RBAC_SECTIONS` et `ALL_SECTION_KEYS`
+-- Activer par défaut pour les asignations existantes
+UPDATE rubrica_asignaciones SET encuesta_entrada_visible = true, encuesta_salida_visible = true;
+```
 
-5. **Interface de gestion** (`AdminRolesTab`) :
-   - Liste des rôles (cartes) avec création/édition/suppression
-   - Matrice sections × CRUD avec checkboxes
-   - Sous-sections dépliables (Collapsible)
-   - Les rôles système ne sont modifiables que par superadmin
-   - Intégré dans Sistema > "Roles y Permisos"
+Sur **Render**, exécuter ce SQL manuellement. La table `rubrica_asignaciones` est déjà dans `PUBLIC_UPDATE_TABLES`, donc pas de changement backend.
 
-### Migration legacy complète ✅
+### 2. AdminEvaluadoresTab.tsx — Panel Admin
 
-#### Phase 1 — Backfill ✅
-- Migration SQL : backfill `user_custom_roles` depuis `user_roles` (Admin/Superadmin/Monitoreo)
+- Ajouter `encuesta_entrada_visible` et `encuesta_salida_visible` à l'interface `Asignacion`.
+- Dans chaque ligne de directivo, ajouter 2 icônes de toggle supplémentaires (avec libellés courts "E" et "S" pour Entrada/Salida) à côté de l'Eye existant pour la rúbrica.
+- Ajouter des boutons bulk "Activar/Desactivar todos" pour Entrada et Salida dans l'entête de chaque évaluateur (ou un dropdown/menu pour garder l'UI propre).
+- Réutiliser le pattern existant de `handleToggleVisibility` et `handleBulkVisibility`.
 
-#### Phase 2 — Fonctions SQL de sécurité réécrites ✅
-- `has_admin_access()` → query `user_custom_roles JOIN custom_roles` (Admin/Superadmin)
-- `has_read_access()` → query `user_custom_roles JOIN custom_roles` (tout rôle)
-- **Toutes les RLS policies existantes (~20+) continuent de fonctionner sans modification**
+### 3. MiPanel.tsx — Directivo
 
-#### Phase 3 — Express middleware + frontend ✅
-- `server/middleware/auth.ts` : requireAdmin/requireAdminOrViewer/requireSuperAdmin utilisent `user_custom_roles JOIN custom_roles`
-- `src/hooks/useAdminAuth.ts` : mode Supabase utilise `user_custom_roles` au lieu de `has_role` RPC
-- `server/routes/auth.ts` : /api/auth/me retourne les rôles depuis `user_custom_roles`
-- `server/routes/users.ts` : listing, création, modification, suppression via nouvelles tables
-- `server/routes/db.ts` : whitelist et vérification admin via nouvelles tables
-- `server/routes/export.ts` : export SQL via `user_custom_roles`
+- Au chargement, récupérer `encuesta_entrada_visible` et `encuesta_salida_visible` depuis `rubrica_asignaciones` (même requête que `rubrica_visible`).
+- Conditionner l'affichage du bouton "Mis Encuestas 360° - Entrada" à `encuesta_entrada_visible === true`.
+- Conditionner l'affichage du bouton "Mis Encuestas 360° - Salida" à `encuesta_salida_visible === true`.
 
-#### Phase 4 — Nettoyage ✅
-- Dual-write retiré de toutes les edge functions et routes Express
-- 14 RLS policies réécrites pour utiliser `has_admin_access()` au lieu de `has_role(_, app_role)`
-- Fonction `has_role(uuid, app_role)` supprimée
-- Table `user_roles` supprimée
-- Type enum `app_role` supprimé
-- Edge function `export-database` et frontend (`AppFooter`, `useAutoFillUserInfo`) migrés
+### 4. RubricaEvaluacion (evaluateur) — toggle par l'évaluateur
 
-### Notes d'architecture
+- Dans l'interface d'évaluation où l'évaluateur voit ses directivos assignés, ajouter les mêmes toggles Eye/EyeOff pour Entrada et Salida (en plus de celui qui existe déjà pour la rúbrica).
 
-Les composants enfants (`AdminFichasTab`, `AdminEncuestas360Tab`, etc.) conservent leurs props `isViewer` pour compatibilité, mais les valeurs sont désormais calculées depuis `usePermissions.can()` dans `AdminPage`/`AdminContent`. Le filtrage de la sidebar est piloté par `readableSections`.
+### Déploiement Render
+
+- **Base de données** : Exécuter le SQL ci-dessus.
+- **Site statique** : Redéployer.
+- **Web Service** : Pas de changement (la table est déjà whitelistée pour UPDATE).
+
