@@ -1112,7 +1112,7 @@ export default function RubricaEvaluacion() {
                             if (!error) setAsignaciones(prev => prev.map(a => ({ ...a, rubrica_visible: newVal })));
                           }}
                         >
-                          {allOn ? <Eye className="w-3 h-3 mr-1" /> : <EyeOff className="w-3 h-3 mr-1" />}
+                          {allOn ? <Eye className="w-3 h-3 mr-1 text-green-600" /> : <EyeOff className="w-3 h-3 mr-1 text-red-500" />}
                           Rúbrica
                         </Button>
                       );
