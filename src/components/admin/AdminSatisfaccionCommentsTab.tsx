@@ -1,12 +1,14 @@
 import { useEffect, useState, useMemo } from "react";
-import { supabase } from "@/utils/dbClient";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, MessageSquare } from "lucide-react";
+import { Loader2, MessageSquare, Sparkles } from "lucide-react";
 import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toast } from "@/hooks/use-toast";
 
 const COMMENT_KEYS: Record<string, string> = {
   asistencia: "comentarios",
@@ -31,10 +33,15 @@ export default function AdminSatisfaccionCommentsTab() {
   const [filterRegion, setFilterRegion] = useState("all");
   const [filterType, setFilterType] = useState("all");
   const [filterModule, setFilterModule] = useState("all");
+  const [aiAnalysis, setAiAnalysis] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+
+  useEffect(() => {
+    setAiAnalysis("");
+  }, [filterRegion, filterType, filterModule]);
 
   useEffect(() => {
     (async () => {
-      // Fetch responses and fichas in parallel
       const [resResp, resFichas] = await Promise.all([
         supabase.from("satisfaccion_responses").select("id, form_type, module_number, region, cedula, respuestas, created_at"),
         supabase.from("fichas_rlt").select("numero_cedula, nombres_apellidos, nombre_ie, cargo_actual, region"),
@@ -43,31 +50,22 @@ export default function AdminSatisfaccionCommentsTab() {
       const responses = resResp.data ?? [];
       const fichas = resFichas.data ?? [];
 
-      // Build cedula -> ficha map, only rectors
       const rectorMap = new Map<string, { nombre: string; ie: string; region: string }>();
       for (const f of fichas) {
         if (f.cargo_actual === "Rector/a" && f.numero_cedula) {
-          rectorMap.set(f.numero_cedula, {
-            nombre: f.nombres_apellidos,
-            ie: f.nombre_ie,
-            region: f.region,
-          });
+          rectorMap.set(f.numero_cedula, { nombre: f.nombres_apellidos, ie: f.nombre_ie, region: f.region });
         }
       }
 
-      // Extract comments
       const entries: CommentEntry[] = [];
       for (const r of responses) {
         const rector = rectorMap.get(r.cedula);
         if (!rector) continue;
-
         const key = COMMENT_KEYS[r.form_type];
         if (!key) continue;
-
         const resp = r.respuestas as any;
         const text = resp?.[key];
         if (!text || typeof text !== "string" || text.trim() === "") continue;
-
         entries.push({
           id: r.id,
           nombre: rector.nombre,
@@ -80,7 +78,6 @@ export default function AdminSatisfaccionCommentsTab() {
         });
       }
 
-      // Sort newest first
       entries.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setComments(entries);
       setLoading(false);
@@ -105,6 +102,36 @@ export default function AdminSatisfaccionCommentsTab() {
       return true;
     });
   }, [comments, filterRegion, filterType, filterModule]);
+
+  const handleGenerateAnalysis = async () => {
+    setAiLoading(true);
+    setAiAnalysis("");
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-section-text", {
+        body: {
+          sectionType: "bullet_list",
+          sectionTitle: "Análisis de comentarios cualitativos",
+          comments: filtered.slice(0, 50).map((c) => c.comment),
+          filterRegion: filterRegion === "all" ? "Todas" : filterRegion,
+          filterType: filterType === "all" ? "Todos" : (FORM_TYPE_LABELS[filterType] ?? filterType),
+          filterModule: filterModule === "all" ? "Todos" : `Módulo ${filterModule}`,
+          totalResponses: filtered.length,
+          generalStats: [],
+          overallSatisfaction: null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: "Error", description: data.error, variant: "destructive" });
+      } else {
+        setAiAnalysis(data?.text || "");
+      }
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Error al generar análisis", variant: "destructive" });
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -158,7 +185,30 @@ export default function AdminSatisfaccionCommentsTab() {
           <MessageSquare className="w-3.5 h-3.5 mr-1" />
           {filtered.length} comentario{filtered.length !== 1 ? "s" : ""}
         </Badge>
+
+        {filtered.length > 0 && (
+          <Button size="sm" variant="outline" onClick={handleGenerateAnalysis} disabled={aiLoading}>
+            {aiLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />}
+            Análisis IA
+          </Button>
+        )}
       </div>
+
+      {/* AI Analysis */}
+      {aiAnalysis && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-2 mb-2 text-sm font-medium text-primary">
+              <Sparkles className="w-4 h-4" />
+              Análisis IA de comentarios
+            </div>
+            <div
+              className="text-sm text-foreground/85 space-y-2 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: aiAnalysis.split("|||").map((s) => s.trim()).filter(Boolean).map((s) => `<div>${s}</div>`).join("") }}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Comment cards */}
       {filtered.length === 0 ? (
