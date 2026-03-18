@@ -276,6 +276,26 @@ export default function MiPanel() {
         setInicialDone((mod4Count ?? 0) > 0);
       }
 
+      // If evaluador, check encuesta visibility flags from rubrica_asignaciones
+      if (result.is_evaluador) {
+        const { data: evalRow } = await supabase
+          .from("rubrica_evaluadores")
+          .select("id")
+          .eq("cedula", cedula)
+          .limit(1);
+        const evalId = evalRow?.[0]?.id;
+        if (evalId) {
+          const { data: evalAsigs } = await supabase
+            .from("rubrica_asignaciones")
+            .select("encuesta_entrada_visible, encuesta_salida_visible")
+            .eq("evaluador_id", evalId);
+          if (evalAsigs && evalAsigs.length > 0) {
+            setEvalEncuestaEntradaVisible(evalAsigs.some((a: any) => a.encuesta_entrada_visible));
+            setEvalEncuestaSalidaVisible(evalAsigs.some((a: any) => a.encuesta_salida_visible));
+          }
+        }
+      }
+
       setLoading(false);
     };
 
