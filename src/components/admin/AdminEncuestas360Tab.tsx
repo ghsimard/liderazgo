@@ -289,20 +289,19 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <CardTitle className="text-sm font-medium truncate">{g.institucion}</CardTitle>
-                      {!vis.visible && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge
-                              variant="destructive"
-                              className="text-xs gap-1 shrink-0 cursor-pointer hover:opacity-80"
-                              onClick={(e) => toggleInstVisibility(g.institucion, e)}
-                            >
-                              <EyeOff className="w-3 h-3" /> No visible
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent><p className="text-xs">{vis.source} — Clic para activar</p></TooltipContent>
-                        </Tooltip>
-                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant={vis.visible ? "secondary" : "destructive"}
+                            className="text-xs gap-1 shrink-0 cursor-pointer hover:opacity-80"
+                            onClick={(e) => toggleInstVisibility(g.institucion, vis.visible, e)}
+                          >
+                            {vis.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            {vis.visible ? "Visible" : "No visible"}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent><p className="text-xs">{vis.source} — Clic para cambiar</p></TooltipContent>
+                      </Tooltip>
                     </div>
                     <div className="flex gap-1.5 mt-1 flex-wrap">
                       {Object.entries(typeCounts).map(([type, count]) => (
