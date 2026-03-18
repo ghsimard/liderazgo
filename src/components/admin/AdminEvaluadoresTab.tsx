@@ -73,7 +73,7 @@ export default function AdminEvaluadoresTab() {
     const [{ data: evals }, { data: asigs }, { data: dirs }, { data: evalRows }, { data: subDates }] = await Promise.all([
       supabase.from("rubrica_evaluadores").select("*").order("nombre", { ascending: true }),
       supabase.from("rubrica_asignaciones").select("*").order("created_at", { ascending: false }),
-      supabase.from("fichas_rlt").select("nombres_apellidos, numero_cedula, nombre_ie")
+      supabase.from("fichas_rlt").select("nombres_apellidos, numero_cedula, nombre_ie, region")
         .in("cargo_actual", ["Rector/a", "Coordinador/a"])
         .order("nombres_apellidos", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("directivo_cedula"),
