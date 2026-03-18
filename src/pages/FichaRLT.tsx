@@ -592,8 +592,8 @@ export default function FichaRLTForm() {
   };
 
   const handleConfirmNames = () => {
-    setValue("nombres", modalNombres.trim(), { shouldValidate: true });
-    setValue("apellidos", modalApellidos.trim(), { shouldValidate: true });
+    setValue("nombres", toTitleCase(modalNombres.trim()), { shouldValidate: true });
+    setValue("apellidos", toTitleCase(modalApellidos.trim()), { shouldValidate: true });
     setShowNameModal(false);
   };
 
