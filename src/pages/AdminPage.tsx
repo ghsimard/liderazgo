@@ -579,42 +579,6 @@ export default function AdminPage() {
     setSearchParams({ tab });
   };
 
-  const handleExportDB = async () => {
-    setExporting(true);
-    try {
-      let blob: Blob;
-
-      if (USE_EXPRESS) {
-        const token = getToken();
-        if (!token) throw new Error("Session admin expirée. Reconnectez-vous.");
-        const { data, error } = await apiFetch<string>("/api/export");
-        if (error || !data) throw new Error(error || "Aucune donnée exportée.");
-        blob = new Blob([data], { type: "application/sql" });
-      } else {
-        const { data, error } = await cloudClient.functions.invoke("export-database");
-        if (error) throw new Error(error.message || "Échec de l'export.");
-        if (data instanceof Blob) {
-          blob = data;
-        } else if (typeof data === "string") {
-          blob = new Blob([data], { type: "application/sql" });
-        } else {
-          throw new Error("Réponse d'export invalide.");
-        }
-      }
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `export_db_${new Date().toISOString().slice(0, 10)}.sql`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast({ title: "Export SQL téléchargé" });
-    } catch (err: any) {
-      toast({ title: "Erreur d'export", description: err.message, variant: "destructive" });
-    } finally {
-      setExporting(false);
-    }
-  };
 
   if (!isAdmin) {
     return (
