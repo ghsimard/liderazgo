@@ -58,7 +58,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
     // Get all directivos from fichas
     const { data: fichas } = await supabase
       .from("fichas_rlt")
-      .select("nombres_apellidos, nombre_ie, region")
+      .select("nombres_apellidos, nombre_ie, region, numero_cedula")
       .in("cargo_actual", ["Rector/a", "Coordinador/a"])
       .order("nombres_apellidos");
 
@@ -68,8 +68,16 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
       .select("tipo_formulario, institucion_educativa, nombre_directivo, nombre_completo")
       .eq("fase", fase);
 
+    // Get visibility config
+    const { data: visData } = await supabase
+      .from("encuesta_360_visibility")
+      .select("fase, scope_type, scope_value, is_active")
+      .eq("fase", fase);
+    setVisibility((visData as VisibilityRow[]) || []);
+
     const directivoList = (fichas ?? []).map((f) => ({
       nombre: f.nombres_apellidos,
+      cedula: f.numero_cedula || "",
       institucion: f.nombre_ie,
       region: f.region,
     }));
@@ -97,6 +105,28 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
 
     setRows(result);
     setLoading(false);
+  };
+
+  /** Resolve visibility for a directivo with priority: directivo > institucion > region */
+  const resolveVisibility = (cedula: string, institucion: string, region: string): boolean => {
+    const directivoRow = visibility.find(r => r.scope_type === "directivo" && r.scope_value === cedula);
+    if (directivoRow) return directivoRow.is_active;
+    const instRow = visibility.find(r => r.scope_type === "institucion" && r.scope_value === institucion);
+    if (instRow) return instRow.is_active;
+    const regionRow = visibility.find(r => r.scope_type === "region" && r.scope_value === region);
+    if (regionRow) return regionRow.is_active;
+    return false;
+  };
+
+  /** Get the source of the visibility setting */
+  const getVisibilitySource = (cedula: string, institucion: string, region: string): string => {
+    const directivoRow = visibility.find(r => r.scope_type === "directivo" && r.scope_value === cedula);
+    if (directivoRow) return `Override directivo: ${directivoRow.is_active ? "Visible" : "Oculto"}`;
+    const instRow = visibility.find(r => r.scope_type === "institucion" && r.scope_value === institucion);
+    if (instRow) return `Override institución: ${instRow.is_active ? "Visible" : "Oculto"}`;
+    const regionRow = visibility.find(r => r.scope_type === "region" && r.scope_value === region);
+    if (regionRow) return `Región: ${regionRow.is_active ? "Visible" : "Oculto"}`;
+    return "Sin configuración (oculto por defecto)";
   };
 
   const filtered = useMemo(() => {
