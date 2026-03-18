@@ -1,0 +1,1 @@
+ALTER TABLE public.encuesta_360_visibility ADD CONSTRAINT encuesta_360_visibility_fase_scope_unique UNIQUE (fase, scope_type, scope_value);
