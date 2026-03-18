@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, MessageSquare, Sparkles } from "lucide-react";
+import { Loader2, MessageSquare, Sparkles, Copy, Check } from "lucide-react";
 import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -35,6 +35,14 @@ export default function AdminSatisfaccionCommentsTab() {
   const [filterModule, setFilterModule] = useState("all");
   const [aiAnalysis, setAiAnalysis] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyAnalysis = () => {
+    const text = aiAnalysis.split("|||").map(s => s.replace(/<[^>]*>/g, "").trim()).filter(Boolean).join("\n\n");
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     setAiAnalysis("");
@@ -201,6 +209,9 @@ export default function AdminSatisfaccionCommentsTab() {
             <div className="flex items-center gap-2 mb-2 text-sm font-medium text-primary">
               <Sparkles className="w-4 h-4" />
               Análisis IA de comentarios
+              <Button size="icon" variant="ghost" className="h-6 w-6 ml-auto" onClick={handleCopyAnalysis}>
+                {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+              </Button>
             </div>
             <div
               className="text-sm text-foreground/85 space-y-2 prose prose-sm max-w-none"
