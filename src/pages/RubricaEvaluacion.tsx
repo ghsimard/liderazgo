@@ -62,6 +62,8 @@ interface Asignacion {
   directivo_nombre: string;
   institucion: string;
   rubrica_visible: boolean;
+  encuesta_entrada_visible: boolean;
+  encuesta_salida_visible: boolean;
 }
 
 const NIVELES = [
@@ -323,7 +325,7 @@ export default function RubricaEvaluacion() {
 
         const { data: assigns } = await supabase
           .from("rubrica_asignaciones")
-          .select("directivo_cedula, directivo_nombre, institucion, rubrica_visible")
+          .select("directivo_cedula, directivo_nombre, institucion, rubrica_visible, encuesta_entrada_visible, encuesta_salida_visible")
           .eq("evaluador_id", ev.id);
 
         if (assigns && assigns.length > 0) {
@@ -1095,35 +1097,30 @@ export default function RubricaEvaluacion() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">{`Seleccione ${genderizeRole("el directivo", null).toLowerCase()} a evaluar`}</CardTitle>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={async () => {
-                        const { error } = await supabase
-                          .from("rubrica_asignaciones")
-                          .update({ rubrica_visible: true } as any)
-                          .eq("evaluador_id", evaluadorId);
-                        if (!error) setAsignaciones(prev => prev.map(a => ({ ...a, rubrica_visible: true })));
-                      }}
-                    >
-                      <Eye className="w-3 h-3 mr-1" /> Activar todos
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={async () => {
-                        const { error } = await supabase
-                          .from("rubrica_asignaciones")
-                          .update({ rubrica_visible: false } as any)
-                          .eq("evaluador_id", evaluadorId);
-                        if (!error) setAsignaciones(prev => prev.map(a => ({ ...a, rubrica_visible: false })));
-                      }}
-                    >
-                      <EyeOff className="w-3 h-3 mr-1" /> Desactivar todos
-                    </Button>
+                   <div className="flex flex-wrap gap-1">
+                    {(["rubrica_visible", "encuesta_entrada_visible", "encuesta_salida_visible"] as const).map(field => {
+                      const labels: Record<string, string> = { rubrica_visible: "Rúbrica", encuesta_entrada_visible: "Entrada 360", encuesta_salida_visible: "Salida 360" };
+                      const allOn = asignaciones.every(a => a[field]);
+                      return (
+                        <Button
+                          key={field}
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7"
+                          onClick={async () => {
+                            const newVal = !allOn;
+                            const { error } = await supabase
+                              .from("rubrica_asignaciones")
+                              .update({ [field]: newVal } as any)
+                              .eq("evaluador_id", evaluadorId);
+                            if (!error) setAsignaciones(prev => prev.map(a => ({ ...a, [field]: newVal })));
+                          }}
+                        >
+                          {allOn ? <EyeOff className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />}
+                          {labels[field]}
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
               </CardHeader>
@@ -1171,36 +1168,45 @@ export default function RubricaEvaluacion() {
                           </Badge>
                         )}
                         <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  const newVal = !a.rubrica_visible;
-                                  const { error } = await supabase
-                                    .from("rubrica_asignaciones")
-                                    .update({ rubrica_visible: newVal } as any)
-                                    .eq("directivo_cedula", a.directivo_cedula)
-                                    .eq("evaluador_id", evaluadorId);
-                                  if (!error) {
-                                    setAsignaciones(prev => prev.map(x =>
-                                      x.directivo_cedula === a.directivo_cedula ? { ...x, rubrica_visible: newVal } : x
-                                    ));
-                                  }
-                                }}
-                              >
-                                {a.rubrica_visible
-                                  ? <Eye className="w-4 h-4 text-emerald-600" />
-                                  : <EyeOff className="w-4 h-4 text-muted-foreground" />}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {a.rubrica_visible ? "Rúbrica visible para el directivo" : "Rúbrica oculta para el directivo"}
-                            </TooltipContent>
-                          </Tooltip>
+                          {(["rubrica_visible", "encuesta_entrada_visible", "encuesta_salida_visible"] as const).map(field => {
+                            const shortLabels: Record<string, string> = { rubrica_visible: "R", encuesta_entrada_visible: "E", encuesta_salida_visible: "S" };
+                            const fullLabels: Record<string, string> = { rubrica_visible: "Rúbrica", encuesta_entrada_visible: "Encuesta Entrada 360°", encuesta_salida_visible: "Encuesta Salida 360°" };
+                            return (
+                              <Tooltip key={field}>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      const newVal = !a[field];
+                                      const { error } = await supabase
+                                        .from("rubrica_asignaciones")
+                                        .update({ [field]: newVal } as any)
+                                        .eq("directivo_cedula", a.directivo_cedula)
+                                        .eq("evaluador_id", evaluadorId);
+                                      if (!error) {
+                                        setAsignaciones(prev => prev.map(x =>
+                                          x.directivo_cedula === a.directivo_cedula ? { ...x, [field]: newVal } : x
+                                        ));
+                                      }
+                                    }}
+                                  >
+                                    <span className="text-[10px] font-bold relative">
+                                      {shortLabels[field]}
+                                      {a[field]
+                                        ? <Eye className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1 text-emerald-600" />
+                                        : <EyeOff className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1 text-muted-foreground" />}
+                                    </span>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {a[field] ? `${fullLabels[field]} visible` : `${fullLabels[field]} oculta`}
+                                </TooltipContent>
+                              </Tooltip>
+                            );
+                          })}
                         </TooltipProvider>
                       </div>
                     </div>

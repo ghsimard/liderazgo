@@ -162,6 +162,8 @@ export default function MiPanel() {
   const [rubricaProgress, setRubricaProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 4 });
   const [inicialDone, setInicialDone] = useState(false);
   const [rubricaEnabled, setRubricaEnabled] = useState(false);
+  const [encuestaEntradaVisible, setEncuestaEntradaVisible] = useState(true);
+  const [encuestaSalidaVisible, setEncuestaSalidaVisible] = useState(true);
   
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
@@ -197,13 +199,16 @@ export default function MiPanel() {
 
       // Check if directivo has rubrica assignment (enabled by admin/evaluador)
       if (result.is_directivo && result.exists_ficha) {
-        const { count: asigCount } = await supabase
+        const { data: asigData } = await supabase
           .from("rubrica_asignaciones")
-          .select("id", { count: "exact", head: true })
+          .select("rubrica_visible, encuesta_entrada_visible, encuesta_salida_visible")
           .eq("directivo_cedula", cedula)
-          .eq("rubrica_visible", true);
-        const hasAsig = (asigCount ?? 0) > 0;
+          .limit(1);
+        const asigRow = asigData?.[0] as any;
+        const hasAsig = !!asigRow && asigRow.rubrica_visible === true;
         setRubricaEnabled(hasAsig);
+        setEncuestaEntradaVisible(asigRow?.encuesta_entrada_visible ?? true);
+        setEncuestaSalidaVisible(asigRow?.encuesta_salida_visible ?? true);
 
         // Fetch rubrica progress for directivos
         if (hasAsig) {
@@ -395,7 +400,7 @@ export default function MiPanel() {
                   );
                 })()}
 
-                {roleInfo.is_directivo && (
+                {roleInfo.is_directivo && encuestaEntradaVisible && (
                   <Button
                     className="w-full h-14 justify-start gap-3 text-base"
                     onClick={() => navigate("/encuesta-360")}
@@ -408,7 +413,7 @@ export default function MiPanel() {
                   </Button>
                 )}
 
-                {roleInfo.is_directivo && (
+                {roleInfo.is_directivo && encuestaSalidaVisible && (
                   <Button
                     className="w-full h-14 justify-start gap-3 text-base"
                     onClick={() => navigate("/encuesta-360?fase=final")}

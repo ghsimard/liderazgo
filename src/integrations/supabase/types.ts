@@ -1261,6 +1261,8 @@ export type Database = {
           created_at: string
           directivo_cedula: string
           directivo_nombre: string
+          encuesta_entrada_visible: boolean
+          encuesta_salida_visible: boolean
           evaluador_id: string
           id: string
           institucion: string
@@ -1270,6 +1272,8 @@ export type Database = {
           created_at?: string
           directivo_cedula: string
           directivo_nombre: string
+          encuesta_entrada_visible?: boolean
+          encuesta_salida_visible?: boolean
           evaluador_id: string
           id?: string
           institucion: string
@@ -1279,6 +1283,8 @@ export type Database = {
           created_at?: string
           directivo_cedula?: string
           directivo_nombre?: string
+          encuesta_entrada_visible?: boolean
+          encuesta_salida_visible?: boolean
           evaluador_id?: string
           id?: string
           institucion?: string
