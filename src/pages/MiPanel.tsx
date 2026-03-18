@@ -278,7 +278,7 @@ export default function MiPanel() {
         setInicialDone((mod4Count ?? 0) > 0);
       }
 
-      // If evaluador, check encuesta visibility flags from rubrica_asignaciones
+      // If evaluador, check encuesta visibility via encuesta_360_visibility (unified with admin)
       if (result.is_evaluador) {
         const { data: evalRow } = await supabase
           .from("rubrica_evaluadores")
@@ -289,13 +289,38 @@ export default function MiPanel() {
         if (evalId) {
           const { data: evalAsigs } = await supabase
             .from("rubrica_asignaciones")
-            .select("encuesta_entrada_visible, encuesta_salida_visible, directivo_cedula")
+            .select("directivo_cedula, directivo_nombre, institucion")
             .eq("evaluador_id", evalId);
           const hasAsigs = !!(evalAsigs && evalAsigs.length > 0);
           setEvalHasAssignments(hasAsigs);
           if (hasAsigs) {
-            setEvalEncuestaEntradaVisible(evalAsigs.some((a: any) => a.encuesta_entrada_visible));
-            setEvalEncuestaSalidaVisible(evalAsigs.some((a: any) => a.encuesta_salida_visible));
+            // Get region from first assigned directivo
+            const firstCedula = evalAsigs[0].directivo_cedula;
+            const { data: fichaData } = await supabase.rpc("get_ficha_by_cedula", { p_cedula: firstCedula });
+            const evalRegion = (fichaData as any)?.region;
+
+            // Get all visibility rows
+            const { data: visRows } = await supabase
+              .from("encuesta_360_visibility")
+              .select("fase, scope_type, scope_value, is_active");
+
+            const allVis = (visRows || []) as { fase: string; scope_type: string; scope_value: string; is_active: boolean }[];
+            const institutions = [...new Set(evalAsigs.map((a: any) => a.institucion))];
+
+            // Resolve visibility per institution with hierarchy: institucion > region > default(false)
+            const resolveVisible = (fase: string) => {
+              const dbFase = fase === "final" ? "final" : "inicial";
+              return institutions.some(inst => {
+                const instRow = allVis.find(r => r.fase === dbFase && r.scope_type === "institucion" && r.scope_value === inst);
+                if (instRow) return instRow.is_active;
+                const regionRow = allVis.find(r => r.fase === dbFase && r.scope_type === "region" && r.scope_value === evalRegion);
+                if (regionRow) return regionRow.is_active;
+                return false;
+              });
+            };
+
+            setEvalEncuestaEntradaVisible(resolveVisible("inicial"));
+            setEvalEncuestaSalidaVisible(resolveVisible("final"));
 
             // Check if any informe_modulo records exist
             const { count: informeCount } = await supabase
