@@ -321,23 +321,21 @@ export default function AdminEvaluadoresTab() {
                         </Button>
                         {evAsignaciones.length > 0 && (
                           <div className="flex flex-wrap gap-1">
-                            {(["rubrica_visible", "encuesta_entrada_visible", "encuesta_salida_visible"] as const).map(field => {
-                              const labels: Record<string, string> = { rubrica_visible: "Rúbrica", encuesta_entrada_visible: "Entrada 360", encuesta_salida_visible: "Salida 360" };
-                              const allOn = evAsignaciones.every(a => a[field]);
+                            {(() => {
+                              const allOn = evAsignaciones.every(a => a.rubrica_visible);
                               return (
                                 <Button
-                                  key={field}
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => handleBulkVisibility(ev.id, !allOn, field)}
+                                  onClick={() => handleBulkVisibility(ev.id, !allOn)}
                                   className="gap-1 text-xs h-7"
-                                  title={`${allOn ? "Desactivar" : "Activar"} ${labels[field]} para todos`}
+                                  title={`${allOn ? "Desactivar" : "Activar"} Rúbrica para todos`}
                                 >
                                   {allOn ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                  {labels[field]}
+                                  Rúbrica
                                 </Button>
                               );
-                            })}
+                            })()}
                           </div>
                         )}
                         {evAsignaciones.length > 0 && (
