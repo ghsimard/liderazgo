@@ -85,6 +85,7 @@ const PUBLIC_UPDATE_TABLES = new Set([
   "informe_directivo",
   "informe_asistencia",
   "rubrica_asignaciones",
+  "encuesta_360_visibility",
 ]);
 
 // Whitelist of allowed tables
