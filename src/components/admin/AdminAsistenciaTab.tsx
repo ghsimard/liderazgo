@@ -47,7 +47,7 @@ export default function AdminAsistenciaTab() {
   const [regiones, setRegiones] = useState<string[]>([]);
   const [entidades, setEntidades] = useState<string[]>([]);
   const [asistencia, setAsistencia] = useState<Map<string, AsistenciaRow>>(new Map());
-  const [selectedModule, setSelectedModule] = useState<number>(1);
+  const [selectedModule, setSelectedModule] = useState<number | "all">(1);
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [selectedET, setSelectedET] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -81,15 +81,19 @@ export default function AdminAsistenciaTab() {
   };
 
   const loadAsistencia = async () => {
-    const { data } = await supabase
-      .from("informe_asistencia")
-      .select("*")
-      .eq("module_number", selectedModule);
+    let query = supabase.from("informe_asistencia").select("*");
+    if (selectedModule !== "all") {
+      query = query.eq("module_number", selectedModule);
+    }
+    const { data } = await query;
 
     const map = new Map<string, AsistenciaRow>();
     if (data) {
       data.forEach(row => {
-        map.set(`${row.directivo_cedula}-${row.dia}`, row as AsistenciaRow);
+        const key = selectedModule === "all"
+          ? `${row.directivo_cedula}-${row.module_number}-${row.dia}`
+          : `${row.directivo_cedula}-${row.dia}`;
+        map.set(key, row as AsistenciaRow);
       });
     }
     setAsistencia(map);
@@ -118,10 +122,11 @@ export default function AdminAsistenciaTab() {
   const getKey = (cedula: string, dia: number) => `${cedula}-${dia}`;
 
   const toggleDay = (cedula: string, dia: number) => {
+    if (selectedModule === "all") return;
     const key = getKey(cedula, dia);
     const existing = asistencia.get(key) || {
       directivo_cedula: cedula,
-      module_number: selectedModule,
+      module_number: selectedModule as number,
       dia,
       session_am: false,
       session_pm: false,
@@ -137,10 +142,11 @@ export default function AdminAsistenciaTab() {
   };
 
   const updateField = (cedula: string, dia: number, field: "razon_inasistencia" | "observaciones", value: string) => {
+    if (selectedModule === "all") return;
     const key = getKey(cedula, dia);
     const existing = asistencia.get(key) || {
       directivo_cedula: cedula,
-      module_number: selectedModule,
+      module_number: selectedModule as number,
       dia,
       session_am: false,
       session_pm: false,
@@ -155,6 +161,17 @@ export default function AdminAsistenciaTab() {
   };
 
   const calculateRate = (cedula: string): number => {
+    if (selectedModule === "all") {
+      let attended = 0;
+      const total = MODULES.length * DAYS.length;
+      MODULES.forEach(mod => {
+        DAYS.forEach(dia => {
+          const row = asistencia.get(`${cedula}-${mod}-${dia}`);
+          if (row?.session_am) attended++;
+        });
+      });
+      return total > 0 ? Math.round((attended / total) * 100) : 0;
+    }
     let attended = 0;
     DAYS.forEach(dia => {
       const row = asistencia.get(getKey(cedula, dia));
@@ -199,13 +216,20 @@ export default function AdminAsistenciaTab() {
 
   // Stats
   const totalFiltered = filteredDirectivos.length;
-  const attendanceByDay = DAYS.map(dia => {
+  const dayCols = selectedModule === "all"
+    ? MODULES.flatMap(mod => DAYS.map(dia => ({ mod, dia, label: `M${mod}D${dia}` })))
+    : DAYS.map(dia => ({ mod: selectedModule as number, dia, label: `Día ${dia}` }));
+
+  const attendanceByCol = dayCols.map(col => {
     let count = 0;
     filteredDirectivos.forEach(d => {
-      const row = asistencia.get(getKey(d.numero_cedula, dia));
+      const key = selectedModule === "all"
+        ? `${d.numero_cedula}-${col.mod}-${col.dia}`
+        : getKey(d.numero_cedula, col.dia);
+      const row = asistencia.get(key);
       if (row?.session_am) count++;
     });
-    return { dia, count };
+    return { ...col, count };
   });
 
   if (loading) {
@@ -224,11 +248,12 @@ export default function AdminAsistenciaTab() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-muted-foreground" />
-              <Select value={String(selectedModule)} onValueChange={v => setSelectedModule(Number(v))}>
-                <SelectTrigger className="w-[140px]">
+              <Select value={String(selectedModule)} onValueChange={v => setSelectedModule(v === "all" ? "all" : Number(v))}>
+                <SelectTrigger className="w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">Todos los módulos</SelectItem>
                   {MODULES.map(m => (
                     <SelectItem key={m} value={String(m)}>Módulo {m}</SelectItem>
                   ))}
@@ -272,10 +297,12 @@ export default function AdminAsistenciaTab() {
 
             <div className="flex items-center gap-2 ml-auto">
               <Badge variant="secondary">{totalFiltered} directivos</Badge>
-              <Button onClick={handleSave} disabled={saving || !dirty} size="sm" className="gap-1.5">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Guardar
-              </Button>
+              {selectedModule !== "all" && (
+                <Button onClick={handleSave} disabled={saving || !dirty} size="sm" className="gap-1.5">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Guardar
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -286,7 +313,7 @@ export default function AdminAsistenciaTab() {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <CalendarCheck className="w-4 h-4" />
-            Asistencia — Módulo {selectedModule}
+            Asistencia {selectedModule === "all" ? "— Todos los módulos" : `— Módulo ${selectedModule}`}
           </CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -297,11 +324,21 @@ export default function AdminAsistenciaTab() {
                 <TableHead className="text-xs sticky left-[50px] bg-background z-10 min-w-[200px]">Directivo</TableHead>
                 <TableHead className="text-xs min-w-[150px]">IE</TableHead>
                 <TableHead className="text-xs min-w-[100px]">DANE</TableHead>
-                {DAYS.map(dia => (
-                  <TableHead key={dia} className="text-xs text-center min-w-[50px]">
-                    Día {dia}
-                  </TableHead>
-                ))}
+                {selectedModule === "all" ? (
+                  MODULES.map(mod => (
+                    DAYS.map(dia => (
+                      <TableHead key={`${mod}-${dia}`} className="text-xs text-center min-w-[50px]">
+                        M{mod}D{dia}
+                      </TableHead>
+                    ))
+                  ))
+                ) : (
+                  DAYS.map(dia => (
+                    <TableHead key={dia} className="text-xs text-center min-w-[50px]">
+                      Día {dia}
+                    </TableHead>
+                  ))
+                )}
                 <TableHead className="text-xs text-center min-w-[60px]">Tasa</TableHead>
                 <TableHead className="text-xs min-w-[150px]">Razón inasistencia</TableHead>
                 <TableHead className="text-xs min-w-[150px]">Observaciones</TableHead>
@@ -310,7 +347,7 @@ export default function AdminAsistenciaTab() {
             <TableBody>
               {filteredDirectivos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5 + DAYS.length + 3} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={4 + (selectedModule === "all" ? MODULES.length * DAYS.length : DAYS.length) + 4} className="text-center text-sm text-muted-foreground py-8">
                     No hay directivos que coincidan con los filtros.
                   </TableCell>
                 </TableRow>
@@ -327,17 +364,30 @@ export default function AdminAsistenciaTab() {
                       </TableCell>
                       <TableCell className="text-xs truncate max-w-[200px]">{d.nombre_ie}</TableCell>
                       <TableCell className="text-xs">{d.codigo_dane || "—"}</TableCell>
-                      {DAYS.map(dia => {
-                        const row = asistencia.get(getKey(d.numero_cedula, dia));
-                        return (
+                      {selectedModule === "all" ? (
+                        MODULES.map(mod =>
+                          DAYS.map(dia => {
+                            const row = asistencia.get(`${d.numero_cedula}-${mod}-${dia}`);
+                            return (
+                              <TableCell key={`${mod}-${dia}`} className="text-center px-1">
+                                <Checkbox checked={row?.session_am || false} disabled />
+                              </TableCell>
+                            );
+                          })
+                        )
+                      ) : (
+                        DAYS.map(dia => {
+                          const row = asistencia.get(getKey(d.numero_cedula, dia));
+                          return (
                             <TableCell key={`${dia}`} className="text-center px-1">
                               <Checkbox
                                 checked={row?.session_am || false}
                                 onCheckedChange={() => toggleDay(d.numero_cedula, dia)}
                               />
                             </TableCell>
-                        );
-                      })}
+                          );
+                        })
+                      )}
                       <TableCell className="text-center">
                         <Badge
                           variant="outline"
@@ -354,30 +404,39 @@ export default function AdminAsistenciaTab() {
                           {rate}%
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Select
-                          value={firstDayRow?.razon_inasistencia || "none"}
-                          onValueChange={v => updateField(d.numero_cedula, 1, "razon_inasistencia", v === "none" ? "" : v)}
-                        >
-                          <SelectTrigger className="h-7 text-xs min-w-[180px]">
-                            <SelectValue placeholder="—" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">—</SelectItem>
-                            {RAZONES_INASISTENCIA.map(r => (
-                              <SelectItem key={r} value={r}>{r}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={firstDayRow?.observaciones || ""}
-                          onChange={e => updateField(d.numero_cedula, 1, "observaciones", e.target.value)}
-                          className="h-7 text-xs"
-                          placeholder="—"
-                        />
-                      </TableCell>
+                      {selectedModule === "all" ? (
+                        <>
+                          <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell>
+                            <Select
+                              value={firstDayRow?.razon_inasistencia || "none"}
+                              onValueChange={v => updateField(d.numero_cedula, 1, "razon_inasistencia", v === "none" ? "" : v)}
+                            >
+                              <SelectTrigger className="h-7 text-xs min-w-[180px]">
+                                <SelectValue placeholder="—" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">—</SelectItem>
+                                {RAZONES_INASISTENCIA.map(r => (
+                                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={firstDayRow?.observaciones || ""}
+                              onChange={e => updateField(d.numero_cedula, 1, "observaciones", e.target.value)}
+                              className="h-7 text-xs"
+                              placeholder="—"
+                            />
+                          </TableCell>
+                        </>
+                      )}
                     </TableRow>
                   );
                 })
@@ -389,8 +448,8 @@ export default function AdminAsistenciaTab() {
                     <TableCell colSpan={4} className="text-xs">
                       Asistentes por día
                     </TableCell>
-                    {attendanceByDay.map(({ dia, count }) => (
-                      <TableCell key={`sum-${dia}`} className="text-center text-xs">{count}</TableCell>
+                    {attendanceByCol.map((col, i) => (
+                      <TableCell key={`sum-${i}`} className="text-center text-xs">{col.count}</TableCell>
                     ))}
                     <TableCell />
                     <TableCell />
@@ -400,10 +459,10 @@ export default function AdminAsistenciaTab() {
                     <TableCell colSpan={4} className="text-xs font-medium">
                       Tasa de asistencia del grupo
                     </TableCell>
-                    {attendanceByDay.map(({ dia, count }) => {
-                      const rate = totalFiltered > 0 ? Math.round((count / totalFiltered) * 100) : 0;
+                    {attendanceByCol.map((col, i) => {
+                      const rate = totalFiltered > 0 ? Math.round((col.count / totalFiltered) * 100) : 0;
                       return (
-                        <TableCell key={`rate-${dia}`} className="text-center text-xs">{rate}%</TableCell>
+                        <TableCell key={`rate-${i}`} className="text-center text-xs">{rate}%</TableCell>
                       );
                     })}
                     <TableCell />
