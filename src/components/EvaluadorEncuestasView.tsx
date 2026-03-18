@@ -4,9 +4,10 @@ import { supabase } from "@/utils/dbClient";
 import { useAppImages } from "@/hooks/useAppImages";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Eye, EyeOff, Loader2, Building2 } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ArrowLeft, Eye, EyeOff, Loader2, Building2, User } from "lucide-react";
 
 interface InstitutionVisibility {
   institucion: string;
@@ -153,47 +154,62 @@ export default function EvaluadorEncuestasView() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <Accordion type="multiple" className="space-y-3">
             {institutions.map(inst => (
-              <Card key={inst.institucion} className="overflow-hidden">
-                <CardContent className="py-4 px-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{inst.institucion}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {inst.directivos.length} directivo(s)
-                          {inst.source !== "institucion" && (
-                            <span className="ml-1 opacity-60">
-                              — heredado de {inst.source === "region" ? "región" : "defecto"}
-                            </span>
-                          )}
-                        </p>
+              <AccordionItem key={inst.institucion} value={inst.institucion} className="border rounded-lg overflow-hidden bg-card">
+                <div className="flex items-center px-4 py-3 gap-3">
+                  <div className="flex-1 min-w-0">
+                    <AccordionTrigger className="hover:no-underline p-0 [&[data-state=open]>svg]:rotate-180">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                        <div className="text-left min-w-0">
+                          <p className="font-medium text-sm truncate">{inst.institucion}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {inst.directivos.length} directivo(s)
+                            {inst.source !== "institucion" && (
+                              <span className="ml-1 opacity-60">
+                                — heredado de {inst.source === "region" ? "región" : "defecto"}
+                              </span>
+                            )}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <Badge
-                      className={`cursor-pointer select-none shrink-0 ${
-                        inst.isVisible
-                          ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                      onClick={() => toggling ? null : handleToggle(inst)}
-                    >
-                      {toggling === inst.institucion ? (
-                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                      ) : inst.isVisible ? (
-                        <Eye className="h-3 w-3 mr-1" />
-                      ) : (
-                        <EyeOff className="h-3 w-3 mr-1" />
-                      )}
-                      {inst.isVisible ? "Visible" : "No visible"}
-                    </Badge>
+                    </AccordionTrigger>
                   </div>
-                </CardContent>
-              </Card>
+                  <Badge
+                    className={`cursor-pointer select-none shrink-0 ${
+                      inst.isVisible
+                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                    onClick={(e) => { e.stopPropagation(); if (!toggling) handleToggle(inst); }}
+                  >
+                    {toggling === inst.institucion ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    ) : inst.isVisible ? (
+                      <Eye className="h-3 w-3 mr-1" />
+                    ) : (
+                      <EyeOff className="h-3 w-3 mr-1" />
+                    )}
+                    {inst.isVisible ? "Visible" : "No visible"}
+                  </Badge>
+                </div>
+                <AccordionContent className="px-4 pb-3 pt-0">
+                  <div className="border-t pt-3 space-y-2">
+                    {inst.directivos.map(d => (
+                      <div key={d.cedula} className="flex items-center gap-3 py-1.5 px-2 rounded-md bg-muted/40">
+                        <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{d.nombre}</p>
+                          <p className="text-xs text-muted-foreground">CC {d.cedula}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         )}
       </div>
     </div>
