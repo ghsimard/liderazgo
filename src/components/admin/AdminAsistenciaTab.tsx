@@ -216,13 +216,20 @@ export default function AdminAsistenciaTab() {
 
   // Stats
   const totalFiltered = filteredDirectivos.length;
-  const attendanceByDay = DAYS.map(dia => {
+  const dayCols = selectedModule === "all"
+    ? MODULES.flatMap(mod => DAYS.map(dia => ({ mod, dia, label: `M${mod}D${dia}` })))
+    : DAYS.map(dia => ({ mod: selectedModule as number, dia, label: `Día ${dia}` }));
+
+  const attendanceByCol = dayCols.map(col => {
     let count = 0;
     filteredDirectivos.forEach(d => {
-      const row = asistencia.get(getKey(d.numero_cedula, dia));
+      const key = selectedModule === "all"
+        ? `${d.numero_cedula}-${col.mod}-${col.dia}`
+        : getKey(d.numero_cedula, col.dia);
+      const row = asistencia.get(key);
       if (row?.session_am) count++;
     });
-    return { dia, count };
+    return { ...col, count };
   });
 
   if (loading) {
