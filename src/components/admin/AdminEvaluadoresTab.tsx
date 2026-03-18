@@ -320,6 +320,28 @@ export default function AdminEvaluadoresTab() {
                           <Link className="w-3.5 h-3.5" /> Asignar
                         </Button>
                         {evAsignaciones.length > 0 && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleBulkVisibility(ev.id, true)}
+                              className="gap-1 text-xs h-7"
+                              title="Activar visibilidad para todos"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> Activar todos
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleBulkVisibility(ev.id, false)}
+                              className="gap-1 text-xs h-7"
+                              title="Desactivar visibilidad para todos"
+                            >
+                              <EyeOff className="w-3.5 h-3.5" /> Desactivar todos
+                            </Button>
+                          </>
+                        )}
+                        {evAsignaciones.length > 0 && (
                           <Button
                             size="sm"
                             variant="outline"
