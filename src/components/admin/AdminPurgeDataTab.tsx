@@ -271,20 +271,35 @@ export default function AdminPurgeDataTab() {
                   <ShieldAlert className="h-5 w-5 text-destructive" />
                   Confirmar purga total
                 </AlertDialogTitle>
-                <AlertDialogDescription className="space-y-3">
-                  <p>
-                    Se eliminarán permanentemente <strong>{TABLES_TO_PURGE.length} tablas</strong> de datos operativos.
-                    Esta acción es <strong>irreversible</strong>.
-                  </p>
-                  <p className="text-xs">
-                    Escriba <Badge variant="outline" className="font-mono text-xs">{CONFIRM_PHRASE}</Badge> para confirmar:
-                  </p>
-                  <Input
-                    value={confirmText}
-                    onChange={(e) => setConfirmText(e.target.value)}
-                    placeholder={CONFIRM_PHRASE}
-                    className="font-mono text-sm"
-                  />
+                <AlertDialogDescription asChild>
+                  <div className="space-y-3 text-sm text-muted-foreground">
+                    <p>
+                      Se eliminarán permanentemente <strong>{TABLES_TO_PURGE.length} tablas</strong> de datos operativos.
+                      Esta acción es <strong>irreversible</strong>.
+                    </p>
+                    <div className="flex items-start gap-2 rounded-md border p-3">
+                      <Checkbox
+                        id="include-regions"
+                        checked={includeRegions}
+                        onCheckedChange={(v) => setIncludeRegions(v === true)}
+                      />
+                      <label htmlFor="include-regions" className="text-sm leading-tight cursor-pointer">
+                        <span className="font-medium">¿También eliminar las regiones?</span>
+                        <span className="block text-xs text-muted-foreground/70 mt-0.5">
+                          Solo se eliminan los agrupamientos regionales. Las entidades territoriales, municipios e instituciones se conservan intactos.
+                        </span>
+                      </label>
+                    </div>
+                    <p className="text-xs">
+                      Escriba <Badge variant="outline" className="font-mono text-xs">{CONFIRM_PHRASE}</Badge> para confirmar:
+                    </p>
+                    <Input
+                      value={confirmText}
+                      onChange={(e) => setConfirmText(e.target.value)}
+                      placeholder={CONFIRM_PHRASE}
+                      className="font-mono text-sm"
+                    />
+                  </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
