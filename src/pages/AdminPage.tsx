@@ -572,7 +572,6 @@ export default function AdminPage() {
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
   const logoCLT = images.logo_clt_noletters;
-  const [exporting, setExporting] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "formularios");
 
   const handleTabChange = (tab: string) => {
