@@ -5,7 +5,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit, FileDown, Link2, PlayCircle, FlagTriangleRight, FileBarChart, FileBarChart2, Printer, TrendingUp, Activity, Shield } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit, FileDown, Link2, PlayCircle, FlagTriangleRight, FileBarChart, FileBarChart2, Printer, TrendingUp, Activity, Shield, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, getToken } from "@/utils/apiFetch";
 import { supabase as cloudClient } from "@/utils/dbClient";
@@ -47,6 +47,7 @@ import AdminGestionCuentasTab from "@/components/admin/AdminGestionCuentasTab";
 import AdminRolesTab from "@/components/admin/AdminRolesTab";
 import AdminAmbienteMonitorTab from "@/components/admin/AdminAmbienteMonitorTab";
 import AdminAmbienteStatsTab from "@/components/admin/AdminAmbienteStatsTab";
+import AdminEncuesta360VisibilityTab from "@/components/admin/AdminEncuesta360VisibilityTab";
 
 interface FormItem {
   name: string;
@@ -218,7 +219,7 @@ function getHubTitle(activeTab: string): string {
     encuesta360: "Encuesta 360°", enlaces360: "Encuesta 360°", ponderaciones: "Encuesta 360°",
     encuestas360: "Encuesta 360°", encuestas360final: "Encuesta 360°",
     reportes360: "Encuesta 360°", reportes360final: "Encuesta 360°",
-    invitaciones: "Encuesta 360°", "blancos-360": "Encuesta 360°",
+    invitaciones: "Encuesta 360°", "blancos-360": "Encuesta 360°", visibilidad360: "Encuesta 360°",
     "fichas-rlt": "Fichas de Información", fichas: "Fichas de Información", geography: "Fichas de Información",
     "enlace-ficha": "Fichas de Información", "blank-pdf": "Fichas de Información",
     rubricas: "Rúbricas",
@@ -271,7 +272,8 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
     case "reportes360":
     case "reportes360final":
     case "invitaciones":
-    case "blancos-360": {
+    case "blancos-360":
+    case "visibilidad360": {
       const sub360Map: Record<string, string> = {
         encuesta360: "formularios",
         enlaces360: "formularios",
@@ -282,6 +284,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
         reportes360final: "informes-final",
         invitaciones: "invitaciones",
         "blancos-360": "blancos",
+        visibilidad360: "visibilidad",
       };
       const defaultSub = sub360Map[activeTab] || "formularios";
       return (
@@ -294,6 +297,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
             <TabsTrigger value="informes-inicial" className="gap-1.5"><FileBarChart className="w-4 h-4" /> Informes Entrada</TabsTrigger>
             <TabsTrigger value="informes-final" className="gap-1.5"><FileBarChart2 className="w-4 h-4" /> Informes Salida</TabsTrigger>
             
+            <TabsTrigger value="visibilidad" className="gap-1.5"><Eye className="w-4 h-4" /> Visibilidad</TabsTrigger>
             <TabsTrigger value="configuracion" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
           </TabsList>
 
@@ -355,6 +359,9 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
           </TabsContent>
           <TabsContent value="informes-final">
             <AdminReporte360Tab fase="final" />
+          </TabsContent>
+          <TabsContent value="visibilidad">
+            <AdminEncuesta360VisibilityTab />
           </TabsContent>
         </Tabs>
       );

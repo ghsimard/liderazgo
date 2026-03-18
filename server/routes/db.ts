@@ -50,6 +50,7 @@ const PUBLIC_READ_TABLES = new Set([
   "encuestas_ambiente_escolar",
   "satisfaccion_report_content",
   "satisfaccion_form_definitions",
+  "encuesta_360_visibility",
 ]);
 
 // Tables that allow public inserts (no auth required for POST without _method)
@@ -69,6 +70,7 @@ const PUBLIC_INSERT_TABLES = new Set([
   "informe_asistencia",
   "encuestas_ambiente_escolar",
   "satisfaccion_responses",
+  "encuesta_360_visibility",
 ]);
 
 // Tables that allow public updates (no auth required for PATCH)
@@ -83,6 +85,7 @@ const PUBLIC_UPDATE_TABLES = new Set([
   "informe_directivo",
   "informe_asistencia",
   "rubrica_asignaciones",
+  "encuesta_360_visibility",
 ]);
 
 // Whitelist of allowed tables
@@ -123,6 +126,7 @@ const ALLOWED_TABLES = new Set([
   "satisfaccion_responses",
   "satisfaccion_form_definitions",
   "satisfaccion_report_content",
+  "encuesta_360_visibility",
 ]);
 
 // ── Helpers ────────────────────────────────────────────

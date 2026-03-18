@@ -201,14 +201,38 @@ export default function MiPanel() {
       if (result.is_directivo && result.exists_ficha) {
         const { data: asigData } = await supabase
           .from("rubrica_asignaciones")
-          .select("rubrica_visible, encuesta_entrada_visible, encuesta_salida_visible")
+          .select("rubrica_visible")
           .eq("directivo_cedula", cedula)
           .limit(1);
         const asigRow = asigData?.[0] as any;
         const hasAsig = !!asigRow && asigRow.rubrica_visible === true;
         setRubricaEnabled(hasAsig);
-        setEncuestaEntradaVisible(asigRow?.encuesta_entrada_visible ?? true);
-        setEncuestaSalidaVisible(asigRow?.encuesta_salida_visible ?? true);
+
+        // Fetch encuesta 360 visibility from centralized config
+        const { data: fichaData2 } = await supabase.rpc("get_ficha_by_cedula", { p_cedula: cedula });
+        const fichaObj2 = fichaData2 as any;
+        const userRegion = fichaObj2?.region;
+        const userIE = fichaObj2?.nombre_ie;
+
+        const { data: visRows } = await supabase
+          .from("encuesta_360_visibility")
+          .select("fase, scope_type, scope_value, is_active");
+
+        const resolveVisibility = (fase: string) => {
+          const all = (visRows || []) as { fase: string; scope_type: string; scope_value: string; is_active: boolean }[];
+          const faseRows = all.filter(r => r.fase === fase);
+          // Priority: directivo > institucion > region
+          const directivoRow = faseRows.find(r => r.scope_type === "directivo" && r.scope_value === cedula);
+          if (directivoRow) return directivoRow.is_active;
+          const instRow = faseRows.find(r => r.scope_type === "institucion" && r.scope_value === userIE);
+          if (instRow) return instRow.is_active;
+          const regionRow = faseRows.find(r => r.scope_type === "region" && r.scope_value === userRegion);
+          if (regionRow) return regionRow.is_active;
+          return false; // hidden by default
+        };
+
+        setEncuestaEntradaVisible(resolveVisibility("inicial"));
+        setEncuestaSalidaVisible(resolveVisibility("final"));
 
         // Fetch rubrica progress for directivos
         if (hasAsig) {

@@ -30,8 +30,6 @@ interface Asignacion {
   directivo_nombre: string;
   institucion: string;
   rubrica_visible: boolean;
-  encuesta_entrada_visible: boolean;
-  encuesta_salida_visible: boolean;
   created_at: string;
 }
 
@@ -206,28 +204,25 @@ export default function AdminEvaluadoresTab() {
     }
   };
 
-  const handleToggleField = async (asig: Asignacion, field: "rubrica_visible" | "encuesta_entrada_visible" | "encuesta_salida_visible") => {
-    const newVal = !asig[field];
-    const { error } = await supabase.from("rubrica_asignaciones").update({ [field]: newVal }).eq("id", asig.id);
+  const handleToggleVisibility = async (asig: Asignacion) => {
+    const newVal = !asig.rubrica_visible;
+    const { error } = await supabase.from("rubrica_asignaciones").update({ rubrica_visible: newVal }).eq("id", asig.id);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      setAsignaciones(prev => prev.map(a => a.id === asig.id ? { ...a, [field]: newVal } : a));
+      setAsignaciones(prev => prev.map(a => a.id === asig.id ? { ...a, rubrica_visible: newVal } : a));
     }
   };
 
-  const handleToggleVisibility = async (asig: Asignacion) => handleToggleField(asig, "rubrica_visible");
-
-  const handleBulkVisibility = async (evaluadorId: string, visible: boolean, field: "rubrica_visible" | "encuesta_entrada_visible" | "encuesta_salida_visible" = "rubrica_visible") => {
+  const handleBulkVisibility = async (evaluadorId: string, visible: boolean) => {
     const ids = asignaciones.filter(a => a.evaluador_id === evaluadorId).map(a => a.id);
     if (ids.length === 0) return;
-    const { error } = await supabase.from("rubrica_asignaciones").update({ [field]: visible }).in("id", ids);
+    const { error } = await supabase.from("rubrica_asignaciones").update({ rubrica_visible: visible }).in("id", ids);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      setAsignaciones(prev => prev.map(a => a.evaluador_id === evaluadorId ? { ...a, [field]: visible } : a));
-      const labels: Record<string, string> = { rubrica_visible: "Rúbrica", encuesta_entrada_visible: "Entrada", encuesta_salida_visible: "Salida" };
-      toast({ title: `${labels[field]}: ${visible ? "Todas activadas" : "Todas desactivadas"}` });
+      setAsignaciones(prev => prev.map(a => a.evaluador_id === evaluadorId ? { ...a, rubrica_visible: visible } : a));
+      toast({ title: `Rúbrica: ${visible ? "Todas activadas" : "Todas desactivadas"}` });
     }
   };
 
@@ -326,23 +321,21 @@ export default function AdminEvaluadoresTab() {
                         </Button>
                         {evAsignaciones.length > 0 && (
                           <div className="flex flex-wrap gap-1">
-                            {(["rubrica_visible", "encuesta_entrada_visible", "encuesta_salida_visible"] as const).map(field => {
-                              const labels: Record<string, string> = { rubrica_visible: "Rúbrica", encuesta_entrada_visible: "Entrada 360", encuesta_salida_visible: "Salida 360" };
-                              const allOn = evAsignaciones.every(a => a[field]);
+                            {(() => {
+                              const allOn = evAsignaciones.every(a => a.rubrica_visible);
                               return (
                                 <Button
-                                  key={field}
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => handleBulkVisibility(ev.id, !allOn, field)}
+                                  onClick={() => handleBulkVisibility(ev.id, !allOn)}
                                   className="gap-1 text-xs h-7"
-                                  title={`${allOn ? "Desactivar" : "Activar"} ${labels[field]} para todos`}
+                                  title={`${allOn ? "Desactivar" : "Activar"} Rúbrica para todos`}
                                 >
                                   {allOn ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                  {labels[field]}
+                                  Rúbrica
                                 </Button>
                               );
-                            })}
+                            })()}
                           </div>
                         )}
                         {evAsignaciones.length > 0 && (
@@ -407,25 +400,18 @@ export default function AdminEvaluadoresTab() {
                                 <TableCell className="text-xs">{a.institucion}</TableCell>
                                  <TableCell>
                                    <div className="flex items-center gap-1">
-                                     {(["rubrica_visible", "encuesta_entrada_visible", "encuesta_salida_visible"] as const).map(field => {
-                                       const shortLabels: Record<string, string> = { rubrica_visible: "R", encuesta_entrada_visible: "E", encuesta_salida_visible: "S" };
-                                       const fullLabels: Record<string, string> = { rubrica_visible: "Rúbrica", encuesta_entrada_visible: "Encuesta Entrada", encuesta_salida_visible: "Encuesta Salida" };
-                                       return (
-                                         <Button
-                                           key={field}
-                                           size="icon"
-                                           variant="ghost"
-                                           className={`h-7 w-7 ${a[field] ? "text-primary" : "text-muted-foreground"}`}
-                                           onClick={(e) => { e.stopPropagation(); handleToggleField(a, field); }}
-                                           title={`${fullLabels[field]}: ${a[field] ? "visible — clic para ocultar" : "oculta — clic para mostrar"}`}
-                                         >
-                                           <span className="text-[10px] font-bold relative">
-                                             {shortLabels[field]}
-                                             {a[field] ? <Eye className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1" /> : <EyeOff className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1" />}
-                                           </span>
-                                         </Button>
-                                       );
-                                     })}
+                                     <Button
+                                       size="icon"
+                                       variant="ghost"
+                                       className={`h-7 w-7 ${a.rubrica_visible ? "text-primary" : "text-muted-foreground"}`}
+                                       onClick={(e) => { e.stopPropagation(); handleToggleVisibility(a); }}
+                                       title={`Rúbrica: ${a.rubrica_visible ? "visible — clic para ocultar" : "oculta — clic para mostrar"}`}
+                                     >
+                                       <span className="text-[10px] font-bold relative">
+                                         R
+                                         {a.rubrica_visible ? <Eye className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1" /> : <EyeOff className="w-2.5 h-2.5 absolute -bottom-0.5 -right-1" />}
+                                       </span>
+                                     </Button>
                                     {cedulasConEval.has(a.directivo_cedula) && (
                                       <Button
                                         size="icon"
