@@ -153,6 +153,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   }
 
   return (
+    <TooltipProvider>
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -217,10 +218,55 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((r) => (
-                  <TableRow key={r.nombre + r.institucion}>
-                    <TableCell className="font-medium text-sm">{r.nombre}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{r.institucion}</TableCell>
+                filtered.map((r) => {
+                  const isVisible = resolveVisibility(r.cedula, r.institucion, r.region);
+                  const visSource = getVisibilitySource(r.cedula, r.institucion, r.region);
+                  return (
+                  <TableRow key={r.nombre + r.institucion} className={!isVisible ? "opacity-60" : ""}>
+                    <TableCell className="font-medium text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="shrink-0">
+                              {isVisible
+                                ? <Eye className="w-3.5 h-3.5 text-emerald-500" />
+                                : <EyeOff className="w-3.5 h-3.5 text-destructive" />
+                              }
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="text-xs max-w-[200px]">
+                            {visSource}
+                          </TooltipContent>
+                        </Tooltip>
+                        {r.nombre}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        {(() => {
+                          const instOverride = visibility.find(v => v.scope_type === "institucion" && v.scope_value === r.institucion);
+                          if (instOverride) {
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="shrink-0">
+                                    {instOverride.is_active
+                                      ? <Eye className="w-3.5 h-3.5 text-emerald-500" />
+                                      : <EyeOff className="w-3.5 h-3.5 text-destructive" />
+                                    }
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="text-xs">
+                                  Override institución: {instOverride.is_active ? "Visible" : "Oculto"}
+                                </TooltipContent>
+                              </Tooltip>
+                            );
+                          }
+                          return null;
+                        })()}
+                        {r.institucion}
+                      </div>
+                    </TableCell>
                     {ROLE_KEYS.map((k) => {
                       const count = r.counts[k] || 0;
                       const min = ROLE_LIMITS[k].min;
@@ -249,7 +295,8 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                       )}
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -259,5 +306,6 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
         </p>
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
 }
