@@ -204,24 +204,25 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
     return { visible: false, source: "Sin configuración (oculto por defecto)" };
   };
 
-  const toggleInstVisibility = async (institucion: string, e: React.MouseEvent) => {
+  const toggleInstVisibility = async (institucion: string, currentlyVisible: boolean, e: React.MouseEvent) => {
     e.stopPropagation();
+    const newActive = !currentlyVisible;
     const { data, error } = await supabase.from("encuesta_360_visibility").upsert({
       fase,
       scope_type: "institucion",
       scope_value: institucion,
-      is_active: true,
+      is_active: newActive,
       updated_at: new Date().toISOString(),
     }, { onConflict: "fase,scope_type,scope_value" }).select();
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Visibilidad activada", description: institucion });
+      toast({ title: newActive ? "Visibilidad activada" : "Visibilidad desactivada", description: institucion });
       const existing = visibility.find(r => r.scope_type === "institucion" && r.scope_value === institucion);
       if (existing) {
-        setVisibility(prev => prev.map(r => r === existing ? { ...r, is_active: true } : r));
+        setVisibility(prev => prev.map(r => r === existing ? { ...r, is_active: newActive } : r));
       } else if (data?.[0]) {
-        setVisibility(prev => [...prev, { fase, scope_type: "institucion", scope_value: institucion, is_active: true }]);
+        setVisibility(prev => [...prev, { fase, scope_type: "institucion", scope_value: institucion, is_active: newActive }]);
       }
     }
   };
