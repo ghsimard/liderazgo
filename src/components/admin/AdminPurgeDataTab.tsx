@@ -36,12 +36,15 @@ const TABLES_TO_PURGE = [
   { table: "encuestas_ambiente_escolar", label: "Encuestas de ambiente escolar" },
   { table: "encuesta_360_visibility", label: "Visibilidad de encuestas 360°" },
   { table: "operator_permissions", label: "Permisos de operadores" },
+  { table: "region_instituciones", label: "Instituciones asignadas a regiones" },
+  { table: "region_municipios", label: "Municipios asignados a regiones" },
+  { table: "region_entidades", label: "Entidades asignadas a regiones" },
+  { table: "regiones", label: "Regiones" },
 ];
 
 const TABLES_PRESERVED = [
   { table: "users / user_custom_roles / custom_roles / admin_cedulas", label: "Cuentas de administración" },
-  { table: "regiones / region_entidades / region_municipios / region_instituciones", label: "Configuración geográfica" },
-  { table: "entidades_territoriales / municipios / instituciones", label: "Entidades y municipios" },
+  { table: "entidades_territoriales / municipios / instituciones", label: "Entidades territoriales, municipios e instituciones" },
   { table: "mel_kpi_config / mel_kpi_groups / mel_kpi_group_items", label: "Configuración KPI/MEL" },
   { table: "app_settings / app_images", label: "Configuración de la aplicación" },
   { table: "rubrica_modules / rubrica_items", label: "Estructura de rúbricas" },
