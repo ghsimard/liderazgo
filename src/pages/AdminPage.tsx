@@ -297,7 +297,6 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
             <TabsTrigger value="informes-inicial" className="gap-1.5"><FileBarChart className="w-4 h-4" /> Informes Entrada</TabsTrigger>
             <TabsTrigger value="informes-final" className="gap-1.5"><FileBarChart2 className="w-4 h-4" /> Informes Salida</TabsTrigger>
             
-            <TabsTrigger value="visibilidad" className="gap-1.5"><Eye className="w-4 h-4" /> Visibilidad</TabsTrigger>
             <TabsTrigger value="configuracion" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
           </TabsList>
 
