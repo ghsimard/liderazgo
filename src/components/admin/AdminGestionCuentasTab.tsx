@@ -694,11 +694,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             </div>
 
             {/* Role sections */}
-            <Accordion type="multiple" defaultValue={editingPerson ? [
-              ...(editingPerson.isAdmin ? ["admin"] : []),
-              ...(editingPerson.isEvaluador ? ["evaluador"] : []),
-              ...(editingPerson.isOperator ? ["operador"] : []),
-            ] : []}>
+            <Accordion type="multiple" value={openAccordions} onValueChange={setOpenAccordions}>
               {/* ADMIN */}
               <AccordionItem value="admin">
                 <AccordionTrigger className="py-3">
