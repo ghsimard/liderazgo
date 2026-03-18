@@ -79,6 +79,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   const [regiones, setRegiones] = useState<{ id: string; nombre: string }[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string>("todas");
   const [instRegionMap, setInstRegionMap] = useState<Record<string, string>>({});
+  const [visibility, setVisibility] = useState<VisibilityRow[]>([]);
 
   useEffect(() => {
     loadEncuestas();
