@@ -49,6 +49,7 @@ router.get("/", async (_req: Request, res: Response) => {
     const users = await query(`
       SELECT u.id, u.email, u.created_at, u.last_sign_in_at,
              COALESCE(json_agg(cr.name) FILTER (WHERE cr.name IS NOT NULL), '[]') AS roles,
+             COALESCE(json_agg(cr.id) FILTER (WHERE cr.id IS NOT NULL), '[]') AS role_ids,
              ac.cedula
       FROM users u
       LEFT JOIN user_custom_roles ucr ON ucr.user_id = u.id
@@ -60,6 +61,8 @@ router.get("/", async (_req: Request, res: Response) => {
     // Map custom role names to legacy role keys for API compatibility
     const mapped = users.map((u: any) => ({
       ...u,
+      custom_role_names: u.roles || [],
+      custom_role_ids: u.role_ids || [],
       roles: (u.roles || []).map((n: string) => customToLegacyRole(n)),
     }));
     res.json({ users: mapped });
@@ -177,9 +180,16 @@ router.put("/:id", async (req: Request, res: Response) => {
       await queryOne("UPDATE users SET email = $1 WHERE id = $2", [email.toLowerCase().trim(), id]);
     }
 
-    // Update role (dual-write)
-    if (role) {
-      // New RBAC
+    // Update role
+    if (req.body.custom_role_id) {
+      // Direct custom role ID provided — use it
+      await query("DELETE FROM user_custom_roles WHERE user_id = $1", [id]);
+      await queryOne(
+        "INSERT INTO user_custom_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        [id, req.body.custom_role_id]
+      );
+    } else if (role) {
+      // Legacy role string — map to custom role
       await query("DELETE FROM user_custom_roles WHERE user_id = $1", [id]);
       const customRoleName = legacyToCustomRoleName(role);
       const roleId = await getRoleIdByName(customRoleName);

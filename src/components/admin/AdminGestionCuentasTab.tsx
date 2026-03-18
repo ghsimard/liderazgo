@@ -179,11 +179,18 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
         existing.adminLastSignIn = u.last_sign_in_at;
         existing.email = existing.email || u.email;
         if (!existing.nombre) existing.nombre = u.email.split("@")[0];
-        // Enrich with custom role
-        const customRole = userRoleMap.get(u.id);
-        if (customRole) {
-          existing.customRoleId = customRole.id;
-          existing.customRoleName = customRole.name;
+        // Enrich with custom role — prefer Express-provided data
+        const expressRoleNames: string[] = (u as any).custom_role_names ?? [];
+        const expressRoleIds: string[] = (u as any).custom_role_ids ?? [];
+        if (USE_EXPRESS && expressRoleNames.length > 0) {
+          existing.customRoleName = expressRoleNames[0];
+          existing.customRoleId = expressRoleIds[0];
+        } else {
+          const customRole = userRoleMap.get(u.id);
+          if (customRole) {
+            existing.customRoleId = customRole.id;
+            existing.customRoleName = customRole.name;
+          }
         }
         map.set(mapKey, existing);
       }
@@ -343,7 +350,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
           if (USE_EXPRESS) {
             await apiFetch(`/api/users/${editingPerson.adminUserId}`, {
               method: "PUT",
-              body: { email, role: legacyRole, cedula: ced },
+              body: { email, role: legacyRole, cedula: ced, custom_role_id: adminRole || undefined },
             });
           } else {
             await invokeManageUsers("update_user", {
@@ -352,11 +359,11 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               role: legacyRole,
               cedula: ced,
             });
-          }
-          // Sync custom role
-          if (adminRole) {
-            await supabase.from("user_custom_roles").delete().eq("user_id", editingPerson.adminUserId);
-            await supabase.from("user_custom_roles").insert({ user_id: editingPerson.adminUserId, role_id: adminRole });
+            // Sync custom role (Supabase mode only)
+            if (adminRole) {
+              await supabase.from("user_custom_roles").delete().eq("user_id", editingPerson.adminUserId);
+              await supabase.from("user_custom_roles").insert({ user_id: editingPerson.adminUserId, role_id: adminRole });
+            }
           }
         } else if (!isEdit || !editingPerson?.isAdmin) {
           // Create new admin
