@@ -88,7 +88,10 @@ const ALLOWED_TABLES = new Set([
   "fichas_rlt",
   "encuestas_360",
   "deleted_records",
+  "custom_roles",
+  "role_permissions",
   "user_custom_roles",
+  "operator_permissions",
   "region_entidades",
   "region_municipios",
   "region_instituciones",
@@ -114,6 +117,8 @@ const ALLOWED_TABLES = new Set([
   "encuestas_ambiente_escolar",
   "satisfaccion_config",
   "satisfaccion_responses",
+  "satisfaccion_form_definitions",
+  "satisfaccion_report_content",
 ]);
 
 // ── Helpers ────────────────────────────────────────────
