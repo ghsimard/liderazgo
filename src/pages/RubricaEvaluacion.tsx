@@ -770,6 +770,50 @@ export default function RubricaEvaluacion() {
     }
   };
 
+  const handleDeleteAutoeval = async (moduleId: string, moduleNumber: number) => {
+    if (!directivoInfo) return;
+    if (!confirm(`¿Eliminar la autoevaluación del Módulo ${moduleNumber} para ${directivoInfo.nombre}? Esta acción no se puede deshacer.`)) return;
+    
+    setDeletingAutoeval(true);
+    try {
+      const modItems = items.filter(i => i.module_id === moduleId);
+      const itemIds = modItems.map(i => i.id);
+
+      // Delete evaluaciones for these items
+      await supabase
+        .from("rubrica_evaluaciones")
+        .delete()
+        .eq("directivo_cedula", directivoInfo.cedula)
+        .in("item_id", itemIds);
+
+      // Delete submission dates for this module  
+      await supabase
+        .from("rubrica_submission_dates")
+        .delete()
+        .eq("directivo_cedula", directivoInfo.cedula)
+        .eq("module_number", moduleNumber);
+
+      // Delete seguimientos
+      await supabase
+        .from("rubrica_seguimientos")
+        .delete()
+        .eq("directivo_cedula", directivoInfo.cedula)
+        .in("item_id", itemIds);
+
+      toast({ title: "Eliminado", description: `Autoevaluación del Módulo ${moduleNumber} eliminada.` });
+
+      // Reload data
+      await loadEvaluaciones(directivoInfo.cedula);
+      const newDates = await loadSubmissionDates(directivoInfo.cedula);
+      await loadSeguimientos(directivoInfo.cedula);
+      setSubmissionDates(newDates);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeletingAutoeval(false);
+    }
+  };
+
   const getDescForNivel = (item: RubricaItem, nivel: string) => {
     switch (nivel) {
       case "avanzado": return item.desc_avanzado;
