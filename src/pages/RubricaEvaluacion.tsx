@@ -125,7 +125,8 @@ export default function RubricaEvaluacion() {
   const [pendingSeguimientos, setPendingSeguimientos] = useState<Record<string, { nivel: string; comentario: string }>>({});
   const [savingSeguimiento, setSavingSeguimiento] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [showInlineReport, setShowInlineReport] = useState<string | null>(null); // module id
+  const [showInlineReport, setShowInlineReport] = useState<string | null>(null);
+  const [deletingAutoeval, setDeletingAutoeval] = useState(false);
 
   // The active role for saving (directivo or equipo)
   const role: "directivo" | "equipo" = detectedRole === "directivo" ? "directivo" : "equipo";
