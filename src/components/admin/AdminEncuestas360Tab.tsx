@@ -4,10 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, School, ChevronDown, ChevronRight, Trash2, MapPin } from "lucide-react";
+import { RefreshCw, School, ChevronDown, ChevronRight, Trash2, MapPin, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+interface VisibilityRow {
+  fase: string;
+  scope_type: string;
+  scope_value: string;
+  is_active: boolean;
+}
 
 
 interface Encuesta {
