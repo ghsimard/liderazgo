@@ -5,7 +5,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit, FileDown, Link2, PlayCircle, FlagTriangleRight, FileBarChart, FileBarChart2, Printer, TrendingUp, Activity, Shield, Eye } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, DatabaseBackup, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit, FileDown, Link2, PlayCircle, FlagTriangleRight, FileBarChart, FileBarChart2, Printer, TrendingUp, Activity, Shield, Eye, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, getToken } from "@/utils/apiFetch";
 import { supabase as cloudClient } from "@/utils/dbClient";
@@ -40,6 +40,7 @@ import AdminInvitacionesTab from "@/components/admin/AdminInvitacionesTab";
 import AdminActivityLogTab from "@/components/admin/AdminActivityLogTab";
 import AdminInformeModuloTab from "@/components/admin/AdminInformeModuloTab";
 import AdminPurgeDataTab from "@/components/admin/AdminPurgeDataTab";
+import AdminImagesTab from "@/components/admin/AdminImagesTab";
 import AdminSatisfaccionesTab from "@/components/admin/AdminSatisfaccionesTab";
 import AdminOperadoresTab from "@/components/admin/AdminOperadoresTab";
 import AdminEvaluadoresTab from "@/components/admin/AdminEvaluadoresTab";
@@ -518,6 +519,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
             {can("sistema.changelog", "read") && <TabsTrigger value="changelog" className="gap-1.5"><GitCommit className="w-4 h-4" /> Changelog</TabsTrigger>}
             {can("sistema.specs", "read") && <TabsTrigger value="specs" className="gap-1.5"><FileText className="w-4 h-4" /> Especificaciones</TabsTrigger>}
             {can("sistema.purge-data", "read") && <TabsTrigger value="purge-data" className="gap-1.5"><Trash2 className="w-4 h-4" /> Purgar datos</TabsTrigger>}
+            {can("sistema.purge-data", "read") && <TabsTrigger value="imagenes" className="gap-1.5"><ImageIcon className="w-4 h-4" /> Imágenes</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="gestion-cuentas">
@@ -551,6 +553,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
                 </div>
               </TabsContent>
               <TabsContent value="purge-data"><AdminPurgeDataTab /></TabsContent>
+              <TabsContent value="imagenes"><AdminImagesTab /></TabsContent>
             </>
           )}
         </Tabs>
