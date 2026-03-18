@@ -204,6 +204,28 @@ export default function AdminEvaluadoresTab() {
     }
   };
 
+  const handleToggleVisibility = async (asig: Asignacion) => {
+    const newVal = !asig.rubrica_visible;
+    const { error } = await supabase.from("rubrica_asignaciones").update({ rubrica_visible: newVal }).eq("id", asig.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setAsignaciones(prev => prev.map(a => a.id === asig.id ? { ...a, rubrica_visible: newVal } : a));
+    }
+  };
+
+  const handleBulkVisibility = async (evaluadorId: string, visible: boolean) => {
+    const ids = asignaciones.filter(a => a.evaluador_id === evaluadorId).map(a => a.id);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("rubrica_asignaciones").update({ rubrica_visible: visible }).in("id", ids);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setAsignaciones(prev => prev.map(a => a.evaluador_id === evaluadorId ? { ...a, rubrica_visible: visible } : a));
+      toast({ title: visible ? "Todas activadas" : "Todas desactivadas" });
+    }
+  };
+
   const searchLower = search.toLowerCase();
   const filtered = search
     ? evaluadores.filter(e => {
