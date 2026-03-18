@@ -387,13 +387,10 @@ export default function AdminAsistenciaTab() {
                 <>
                   <TableRow className="bg-muted/50 font-medium">
                     <TableCell colSpan={4} className="text-xs">
-                      Asistentes por jornada
+                      Asistentes por día
                     </TableCell>
-                    {attendanceByDay.map(({ dia, amCount, pmCount }) => (
-                      <>
-                        <TableCell key={`sum-${dia}-am`} className="text-center text-xs">{amCount}</TableCell>
-                        <TableCell key={`sum-${dia}-pm`} className="text-center text-xs">{pmCount}</TableCell>
-                      </>
+                    {attendanceByDay.map(({ dia, count }) => (
+                      <TableCell key={`sum-${dia}`} className="text-center text-xs">{count}</TableCell>
                     ))}
                     <TableCell />
                     <TableCell />
@@ -403,14 +400,10 @@ export default function AdminAsistenciaTab() {
                     <TableCell colSpan={4} className="text-xs font-medium">
                       Tasa de asistencia del grupo
                     </TableCell>
-                    {attendanceByDay.map(({ dia, amCount, pmCount }) => {
-                      const amRate = totalFiltered > 0 ? Math.round((amCount / totalFiltered) * 100) : 0;
-                      const pmRate = totalFiltered > 0 ? Math.round((pmCount / totalFiltered) * 100) : 0;
+                    {attendanceByDay.map(({ dia, count }) => {
+                      const rate = totalFiltered > 0 ? Math.round((count / totalFiltered) * 100) : 0;
                       return (
-                        <>
-                          <TableCell key={`rate-${dia}-am`} className="text-center text-xs">{amRate}%</TableCell>
-                          <TableCell key={`rate-${dia}-pm`} className="text-center text-xs">{pmRate}%</TableCell>
-                        </>
+                        <TableCell key={`rate-${dia}`} className="text-center text-xs">{rate}%</TableCell>
                       );
                     })}
                     <TableCell />
