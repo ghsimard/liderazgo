@@ -98,7 +98,7 @@ export default function AdminPurgeDataTab() {
 
     const failures = newResults.filter((r) => !r.ok);
     if (failures.length === 0) {
-      toast({ title: "Purga completada", description: `${TABLES_TO_PURGE.length} tablas vaciadas correctamente.` });
+      toast({ title: "Purga completada", description: `${tablesToPurge.length} tablas vaciadas correctamente.` });
     } else {
       toast({ title: "Purga parcial", description: `${failures.length} tabla(s) con errores.`, variant: "destructive" });
     }
