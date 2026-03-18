@@ -126,6 +126,7 @@ const ALLOWED_TABLES = new Set([
   "satisfaccion_responses",
   "satisfaccion_form_definitions",
   "satisfaccion_report_content",
+  "encuesta_360_visibility",
 ]);
 
 // ── Helpers ────────────────────────────────────────────
