@@ -519,6 +519,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
             {can("sistema.changelog", "read") && <TabsTrigger value="changelog" className="gap-1.5"><GitCommit className="w-4 h-4" /> Changelog</TabsTrigger>}
             {can("sistema.specs", "read") && <TabsTrigger value="specs" className="gap-1.5"><FileText className="w-4 h-4" /> Especificaciones</TabsTrigger>}
             {can("sistema.purge-data", "read") && <TabsTrigger value="purge-data" className="gap-1.5"><Trash2 className="w-4 h-4" /> Purgar datos</TabsTrigger>}
+            {can("sistema.purge-data", "read") && <TabsTrigger value="imagenes" className="gap-1.5"><ImageIcon className="w-4 h-4" /> Imágenes</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="gestion-cuentas">
