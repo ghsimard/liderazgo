@@ -218,7 +218,7 @@ function getHubTitle(activeTab: string): string {
     encuesta360: "Encuesta 360°", enlaces360: "Encuesta 360°", ponderaciones: "Encuesta 360°",
     encuestas360: "Encuesta 360°", encuestas360final: "Encuesta 360°",
     reportes360: "Encuesta 360°", reportes360final: "Encuesta 360°",
-    invitaciones: "Encuesta 360°", "blancos-360": "Encuesta 360°",
+    invitaciones: "Encuesta 360°", "blancos-360": "Encuesta 360°", visibilidad360: "Encuesta 360°",
     "fichas-rlt": "Fichas de Información", fichas: "Fichas de Información", geography: "Fichas de Información",
     "enlace-ficha": "Fichas de Información", "blank-pdf": "Fichas de Información",
     rubricas: "Rúbricas",
