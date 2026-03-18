@@ -1096,12 +1096,10 @@ export default function RubricaEvaluacion() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">{`Seleccione ${genderizeRole("el directivo", null).toLowerCase()} a evaluar`}</CardTitle>
                    <div className="flex flex-wrap gap-1">
-                    {(["rubrica_visible", "encuesta_entrada_visible", "encuesta_salida_visible"] as const).map(field => {
-                      const labels: Record<string, string> = { rubrica_visible: "Rúbrica", encuesta_entrada_visible: "Entrada 360", encuesta_salida_visible: "Salida 360" };
-                      const allOn = asignaciones.every(a => a[field]);
+                    {(() => {
+                      const allOn = asignaciones.every(a => a.rubrica_visible);
                       return (
                         <Button
-                          key={field}
                           variant="outline"
                           size="sm"
                           className="text-xs h-7"
@@ -1109,16 +1107,16 @@ export default function RubricaEvaluacion() {
                             const newVal = !allOn;
                             const { error } = await supabase
                               .from("rubrica_asignaciones")
-                              .update({ [field]: newVal } as any)
+                              .update({ rubrica_visible: newVal } as any)
                               .eq("evaluador_id", evaluadorId);
-                            if (!error) setAsignaciones(prev => prev.map(a => ({ ...a, [field]: newVal })));
+                            if (!error) setAsignaciones(prev => prev.map(a => ({ ...a, rubrica_visible: newVal })));
                           }}
                         >
                           {allOn ? <EyeOff className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />}
-                          {labels[field]}
+                          Rúbrica
                         </Button>
                       );
-                    })}
+                    })()}
                   </div>
                 </div>
               </CardHeader>
