@@ -122,10 +122,11 @@ export default function AdminAsistenciaTab() {
   const getKey = (cedula: string, dia: number) => `${cedula}-${dia}`;
 
   const toggleDay = (cedula: string, dia: number) => {
+    if (selectedModule === "all") return;
     const key = getKey(cedula, dia);
     const existing = asistencia.get(key) || {
       directivo_cedula: cedula,
-      module_number: selectedModule,
+      module_number: selectedModule as number,
       dia,
       session_am: false,
       session_pm: false,
@@ -141,10 +142,11 @@ export default function AdminAsistenciaTab() {
   };
 
   const updateField = (cedula: string, dia: number, field: "razon_inasistencia" | "observaciones", value: string) => {
+    if (selectedModule === "all") return;
     const key = getKey(cedula, dia);
     const existing = asistencia.get(key) || {
       directivo_cedula: cedula,
-      module_number: selectedModule,
+      module_number: selectedModule as number,
       dia,
       session_am: false,
       session_pm: false,
