@@ -553,6 +553,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
                 </div>
               </TabsContent>
               <TabsContent value="purge-data"><AdminPurgeDataTab /></TabsContent>
+              <TabsContent value="imagenes"><AdminImagesTab /></TabsContent>
             </>
           )}
         </Tabs>
