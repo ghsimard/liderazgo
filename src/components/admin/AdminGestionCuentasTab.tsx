@@ -113,6 +113,8 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
   // Operator section
   const [enableOperator, setEnableOperator] = useState(false);
   const [operatorPerms, setOperatorPerms] = useState<{ section: string; region: string; entidad: string; institucion: string; module: string }[]>([]);
+  // Accordion open state
+  const [openAccordions, setOpenAccordions] = useState<string[]>([]);
 
   // Delete / password dialogs
   const [deleteTarget, setDeleteTarget] = useState<UnifiedPerson | null>(null);
@@ -287,6 +289,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
     setEnableOperator(false);
     setOperatorPerms([]);
     setEditingPerson(null);
+    setOpenAccordions([]);
   };
 
   const openCreate = () => {
@@ -315,6 +318,11 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
         module: op.module_number?.toString() || "",
       }))
     );
+    setOpenAccordions([
+      ...(p.isAdmin ? ["admin"] : []),
+      ...(p.isEvaluador ? ["evaluador"] : []),
+      ...(p.isOperator ? ["operador"] : []),
+    ]);
     setDialogOpen(true);
   };
 
@@ -326,6 +334,14 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
     if (!formNombre.trim()) {
       toast({ title: "El nombre es requerido", variant: "destructive" });
       return;
+    }
+    // Validate operator: at least one section must be selected
+    if (enableOperator) {
+      const validPerms = operatorPerms.filter(op => op.section);
+      if (validPerms.length === 0) {
+        toast({ title: "Seleccione al menos una sección para el operador", variant: "destructive" });
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -678,16 +694,12 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             </div>
 
             {/* Role sections */}
-            <Accordion type="multiple" defaultValue={editingPerson ? [
-              ...(editingPerson.isAdmin ? ["admin"] : []),
-              ...(editingPerson.isEvaluador ? ["evaluador"] : []),
-              ...(editingPerson.isOperator ? ["operador"] : []),
-            ] : []}>
+            <Accordion type="multiple" value={openAccordions} onValueChange={setOpenAccordions}>
               {/* ADMIN */}
               <AccordionItem value="admin">
                 <AccordionTrigger className="py-3">
                   <div className="flex items-center gap-3">
-                    <Switch checked={enableAdmin} onCheckedChange={c => { setEnableAdmin(c); if (c && !adminRole && customRoles.length) { const defaultRole = customRoles.find(r => r.name === "Admin"); if (defaultRole) setAdminRole(defaultRole.id); } }} onClick={e => e.stopPropagation()} />
+                    <Switch checked={enableAdmin} onCheckedChange={c => { setEnableAdmin(c); if (c) { if (!adminRole && customRoles.length) { const defaultRole = customRoles.find(r => r.name === "Admin"); if (defaultRole) setAdminRole(defaultRole.id); } setOpenAccordions(prev => prev.includes("admin") ? prev : [...prev, "admin"]); } }} onClick={e => e.stopPropagation()} />
                     <Shield className="w-4 h-4" />
                     <span className="text-sm font-medium">Administrador</span>
                     {enableAdmin && <Badge variant="secondary" className="text-xs">Activo</Badge>}
@@ -746,7 +758,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               <AccordionItem value="evaluador">
                 <AccordionTrigger className="py-3">
                   <div className="flex items-center gap-3">
-                    <Switch checked={enableEvaluador} onCheckedChange={setEnableEvaluador} onClick={e => e.stopPropagation()} />
+                    <Switch checked={enableEvaluador} onCheckedChange={c => { setEnableEvaluador(c); if (c) setOpenAccordions(prev => prev.includes("evaluador") ? prev : [...prev, "evaluador"]); }} onClick={e => e.stopPropagation()} />
                     <Users className="w-4 h-4" />
                     <span className="text-sm font-medium">Evaluador</span>
                     {enableEvaluador && <Badge variant="secondary" className="text-xs">Activo</Badge>}
@@ -769,7 +781,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               <AccordionItem value="operador">
                 <AccordionTrigger className="py-3">
                   <div className="flex items-center gap-3">
-                    <Switch checked={enableOperator} onCheckedChange={c => { setEnableOperator(c); if (c && operatorPerms.length === 0) addOperatorPerm(); }} onClick={e => e.stopPropagation()} />
+                    <Switch checked={enableOperator} onCheckedChange={c => { setEnableOperator(c); if (c) { if (operatorPerms.length === 0) addOperatorPerm(); setOpenAccordions(prev => prev.includes("operador") ? prev : [...prev, "operador"]); } }} onClick={e => e.stopPropagation()} />
                     <UserCog className="w-4 h-4" />
                     <span className="text-sm font-medium">Operador</span>
                     {enableOperator && <Badge variant="secondary" className="text-xs">Activo</Badge>}
