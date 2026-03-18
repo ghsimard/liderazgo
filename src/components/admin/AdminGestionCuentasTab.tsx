@@ -758,7 +758,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               <AccordionItem value="evaluador">
                 <AccordionTrigger className="py-3">
                   <div className="flex items-center gap-3">
-                    <Switch checked={enableEvaluador} onCheckedChange={setEnableEvaluador} onClick={e => e.stopPropagation()} />
+                    <Switch checked={enableEvaluador} onCheckedChange={c => { setEnableEvaluador(c); if (c) setOpenAccordions(prev => prev.includes("evaluador") ? prev : [...prev, "evaluador"]); }} onClick={e => e.stopPropagation()} />
                     <Users className="w-4 h-4" />
                     <span className="text-sm font-medium">Evaluador</span>
                     {enableEvaluador && <Badge variant="secondary" className="text-xs">Activo</Badge>}
