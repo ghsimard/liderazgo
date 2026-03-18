@@ -351,6 +351,36 @@ export default function AdminEvaluadoresTab() {
                                 </Button>
                               );
                             })()}
+                            {(() => {
+                              const allEntrada = evAsignaciones.every(a => a.encuesta_entrada_visible);
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleBulkEncuestaVisibility(ev.id, "encuesta_entrada_visible", !allEntrada)}
+                                  className="gap-1 text-xs h-7"
+                                  title={`${allEntrada ? "Desactivar" : "Activar"} Encuesta Entrada para todos`}
+                                >
+                                  {allEntrada ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                  Entrada
+                                </Button>
+                              );
+                            })()}
+                            {(() => {
+                              const allSalida = evAsignaciones.every(a => a.encuesta_salida_visible);
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleBulkEncuestaVisibility(ev.id, "encuesta_salida_visible", !allSalida)}
+                                  className="gap-1 text-xs h-7"
+                                  title={`${allSalida ? "Desactivar" : "Activar"} Encuesta Salida para todos`}
+                                >
+                                  {allSalida ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                  Salida
+                                </Button>
+                              );
+                            })()}
                           </div>
                         )}
                         {evAsignaciones.length > 0 && (
