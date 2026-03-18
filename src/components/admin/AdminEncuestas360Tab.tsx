@@ -4,10 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, School, ChevronDown, ChevronRight, Trash2, MapPin } from "lucide-react";
+import { RefreshCw, School, ChevronDown, ChevronRight, Trash2, MapPin, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+interface VisibilityRow {
+  fase: string;
+  scope_type: string;
+  scope_value: string;
+  is_active: boolean;
+}
 
 
 interface Encuesta {
@@ -71,6 +79,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   const [regiones, setRegiones] = useState<{ id: string; nombre: string }[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string>("todas");
   const [instRegionMap, setInstRegionMap] = useState<Record<string, string>>({});
+  const [visibility, setVisibility] = useState<VisibilityRow[]>([]);
 
   useEffect(() => {
     loadEncuestas();
@@ -78,9 +87,10 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   }, [fase]);
 
   const loadRegiones = async () => {
-    const [{ data: regionesData }, { data: fichasData }] = await Promise.all([
+    const [{ data: regionesData }, { data: fichasData }, { data: visData }] = await Promise.all([
       supabase.from("regiones").select("id, nombre").order("nombre"),
       supabase.from("fichas_rlt").select("nombre_ie, region"),
+      supabase.from("encuesta_360_visibility").select("fase, scope_type, scope_value, is_active").eq("fase", fase),
     ]);
     if (regionesData) setRegiones(regionesData);
     if (fichasData) {
@@ -88,6 +98,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
       fichasData.forEach((f: any) => { map[f.nombre_ie] = f.region; });
       setInstRegionMap(map);
     }
+    setVisibility((visData as VisibilityRow[]) || []);
   };
 
   const loadEncuestas = async () => {
@@ -184,6 +195,15 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
     ? regionFiltered.filter((g) => g.institucion.toLowerCase().includes(search.toLowerCase()))
     : regionFiltered;
 
+  const resolveInstVisibility = (institucion: string): { visible: boolean; source: string } => {
+    const region = instRegionMap[institucion] || "";
+    const instRow = visibility.find(r => r.scope_type === "institucion" && r.scope_value === institucion);
+    if (instRow) return { visible: instRow.is_active, source: `Override institución: ${instRow.is_active ? "Visible" : "Oculto"}` };
+    const regionRow = visibility.find(r => r.scope_type === "region" && r.scope_value === region);
+    if (regionRow) return { visible: regionRow.is_active, source: `Región ${region}: ${regionRow.is_active ? "Visible" : "Oculto"}` };
+    return { visible: false, source: "Sin configuración (oculto por defecto)" };
+  };
+
   const totalEncuestas = filtered.reduce((sum, g) => sum + g.encuestas.length, 0);
 
   if (loading) {
@@ -195,6 +215,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   }
 
   return (
+    <TooltipProvider>
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-muted-foreground">
@@ -231,6 +252,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
           g.encuestas.forEach((e) => {
             typeCounts[e.tipo_formulario] = (typeCounts[e.tipo_formulario] || 0) + 1;
           });
+          const vis = resolveInstVisibility(g.institucion);
 
           return (
             <Card key={g.institucion}>
@@ -242,7 +264,19 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                   {isOpen ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
                   <School className="w-5 h-5 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm font-medium truncate">{g.institucion}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm font-medium truncate">{g.institucion}</CardTitle>
+                      {!vis.visible && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="destructive" className="text-xs gap-1 shrink-0">
+                              <EyeOff className="w-3 h-3" /> No visible
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent><p className="text-xs">{vis.source}</p></TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                     <div className="flex gap-1.5 mt-1 flex-wrap">
                       {Object.entries(typeCounts).map(([type, count]) => (
                         <Badge key={type} variant="secondary" className={`text-xs ${FORM_TYPE_COLORS[type] ?? ""}`}>
@@ -411,5 +445,6 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }
