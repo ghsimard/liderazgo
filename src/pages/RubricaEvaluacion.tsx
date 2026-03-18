@@ -925,19 +925,47 @@ export default function RubricaEvaluacion() {
                 {asignaciones.length === 0 && (
                   <p className="text-sm text-muted-foreground">No tiene directivos asignados.</p>
                 )}
-                {asignaciones.map(a => (
-                  <button
-                    key={a.directivo_cedula}
-                    onClick={() => handleSelectDirectivo(a)}
-                    className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{a.directivo_nombre}</p>
-                      <p className="text-xs text-muted-foreground">CC: {a.directivo_cedula} — {a.institucion}</p>
-                    </div>
-                    <FileText className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                ))}
+                {asignaciones.map(a => {
+                  const status = getDirectivoStatus(a.directivo_cedula);
+                  return (
+                    <button
+                      key={a.directivo_cedula}
+                      onClick={() => handleSelectDirectivo(a)}
+                      className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm">{a.directivo_nombre}</p>
+                        <p className="text-xs text-muted-foreground">CC: {a.directivo_cedula} — {a.institucion}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {status.variant === "waiting" && (
+                          <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Mód. {status.module} — {status.label}
+                          </Badge>
+                        )}
+                        {status.variant === "evaluar" && (
+                          <Badge className="text-xs whitespace-nowrap bg-emerald-600 hover:bg-emerald-700 text-white border-0">
+                            <span className="w-2 h-2 rounded-full bg-white animate-pulse mr-1.5 inline-block" />
+                            Mód. {status.module} — {status.label}
+                          </Badge>
+                        )}
+                        {status.variant === "acordar" && (
+                          <Badge className="text-xs whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white border-0">
+                            <span className="w-2 h-2 rounded-full bg-white animate-pulse mr-1.5 inline-block" />
+                            Mód. {status.module} — {status.label}
+                          </Badge>
+                        )}
+                        {status.variant === "done" && (
+                          <Badge className="text-xs whitespace-nowrap bg-emerald-100 text-emerald-800 border-emerald-300">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            {status.label}
+                          </Badge>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </CardContent>
             </Card>
           </>
