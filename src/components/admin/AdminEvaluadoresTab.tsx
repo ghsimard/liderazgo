@@ -403,6 +403,15 @@ export default function AdminEvaluadoresTab() {
                                 <TableCell className="text-xs">{a.institucion}</TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-1">
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className={`h-7 w-7 ${a.rubrica_visible ? "text-primary" : "text-muted-foreground"}`}
+                                      onClick={(e) => { e.stopPropagation(); handleToggleVisibility(a); }}
+                                      title={a.rubrica_visible ? "Rúbrica visible — clic para ocultar" : "Rúbrica oculta — clic para mostrar"}
+                                    >
+                                      {a.rubrica_visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                    </Button>
                                     {cedulasConEval.has(a.directivo_cedula) && (
                                       <Button
                                         size="icon"
@@ -410,7 +419,7 @@ export default function AdminEvaluadoresTab() {
                                         className="h-7 w-7 text-primary"
                                         onClick={(e) => { e.stopPropagation(); setDetailDirectivo({ cedula: a.directivo_cedula, nombre: a.directivo_nombre }); }}
                                       >
-                                        <Eye className="w-3.5 h-3.5" />
+                                        <Search className="w-3.5 h-3.5" />
                                       </Button>
                                     )}
                                     <Button
