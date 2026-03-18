@@ -417,7 +417,7 @@ export default function AdminEvaluadoresTab() {
       {/* Assign Directivo Dialog */}
       <Dialog open={showAssign} onOpenChange={(open) => {
         setShowAssign(open);
-        if (!open) { setSelectedCedulas([]); setAssignSearch(""); }
+        if (!open) { setSelectedCedulas([]); setAssignSearch(""); setAssignRegion("all"); }
       }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
