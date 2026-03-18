@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, MessageSquare, Sparkles } from "lucide-react";
+import { Loader2, MessageSquare, Sparkles, Copy, Check } from "lucide-react";
 import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
