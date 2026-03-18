@@ -253,6 +253,36 @@ export type Database = {
         }
         Relationships: []
       }
+      encuesta_360_visibility: {
+        Row: {
+          created_at: string
+          fase: string
+          id: string
+          is_active: boolean
+          scope_type: string
+          scope_value: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fase: string
+          id?: string
+          is_active?: boolean
+          scope_type: string
+          scope_value: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fase?: string
+          id?: string
+          is_active?: boolean
+          scope_type?: string
+          scope_value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       encuesta_invitaciones: {
         Row: {
           access_count: number
