@@ -5,7 +5,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, AlertTriangle, CheckCircle2, Search } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RefreshCw, AlertTriangle, CheckCircle2, Search, Eye, EyeOff } from "lucide-react";
 
 /** Required counts per tipo_formulario */
 const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> = {
@@ -19,12 +20,39 @@ const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> =
 
 const ROLE_KEYS = Object.keys(ROLE_LIMITS);
 
+interface VisibilityRow {
+  fase: string;
+  scope_type: string;
+  scope_value: string;
+  is_active: boolean;
+}
+
+function resolveVisibility(
+  fase: string,
+  cedula: string | null,
+  ie: string,
+  region: string,
+  visRows: VisibilityRow[]
+): boolean {
+  const faseRows = visRows.filter((r) => r.fase === fase);
+  if (cedula) {
+    const d = faseRows.find((r) => r.scope_type === "directivo" && r.scope_value === cedula);
+    if (d) return d.is_active;
+  }
+  const inst = faseRows.find((r) => r.scope_type === "institucion" && r.scope_value === ie);
+  if (inst) return inst.is_active;
+  const reg = faseRows.find((r) => r.scope_type === "region" && r.scope_value === region);
+  return reg?.is_active ?? false;
+}
+
 interface DirectivoRow {
   nombre: string;
   institucion: string;
   region: string;
+  cedula: string | null;
   counts: Record<string, number>;
   incomplete: boolean;
+  visible: boolean;
 }
 
 interface AdminEncuestaMonitorProps {
@@ -35,7 +63,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   const [rows, setRows] = useState<DirectivoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterMode, setFilterMode] = useState<"all" | "incomplete" | "complete">("all");
+  const [filterMode, setFilterMode] = useState<"all" | "incomplete" | "complete" | "no_visible">("all");
 
   useEffect(() => {
     loadData();
@@ -44,26 +72,28 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   const loadData = async () => {
     setLoading(true);
 
-    // Get all directivos from fichas
-    const { data: fichas } = await supabase
-      .from("fichas_rlt")
-      .select("nombres_apellidos, nombre_ie, region")
-      .in("cargo_actual", ["Rector/a", "Coordinador/a"])
-      .order("nombres_apellidos");
+    const [{ data: fichas }, { data: encuestas }, { data: visRows }] = await Promise.all([
+      supabase
+        .from("fichas_rlt")
+        .select("nombres_apellidos, nombre_ie, region, numero_cedula")
+        .in("cargo_actual", ["Rector/a", "Coordinador/a"])
+        .order("nombres_apellidos"),
+      supabase
+        .from("encuestas_360")
+        .select("tipo_formulario, institucion_educativa, nombre_directivo, nombre_completo")
+        .eq("fase", fase),
+      supabase.from("encuesta_360_visibility").select("fase, scope_type, scope_value, is_active"),
+    ]);
 
-    // Get all encuestas grouped
-    const { data: encuestas } = await supabase
-      .from("encuestas_360")
-      .select("tipo_formulario, institucion_educativa, nombre_directivo, nombre_completo")
-      .eq("fase", fase);
+    const visibility = (visRows ?? []) as VisibilityRow[];
 
     const directivoList = (fichas ?? []).map((f) => ({
       nombre: f.nombres_apellidos,
       institucion: f.nombre_ie,
       region: f.region,
+      cedula: f.numero_cedula,
     }));
 
-    // Count per directivo per role
     const result: DirectivoRow[] = directivoList.map((d) => {
       const counts: Record<string, number> = {};
       ROLE_KEYS.forEach((k) => { counts[k] = 0; });
@@ -81,7 +111,8 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
       });
 
       const incomplete = ROLE_KEYS.some((k) => counts[k] < ROLE_LIMITS[k].min);
-      return { ...d, counts, incomplete };
+      const visible = resolveVisibility(fase, d.cedula, d.institucion, d.region, visibility);
+      return { ...d, counts, incomplete, visible };
     });
 
     setRows(result);
@@ -92,6 +123,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
     let list = rows;
     if (filterMode === "incomplete") list = list.filter((r) => r.incomplete);
     if (filterMode === "complete") list = list.filter((r) => !r.incomplete);
+    if (filterMode === "no_visible") list = list.filter((r) => !r.visible);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -102,6 +134,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   }, [rows, filterMode, search]);
 
   const incompleteCount = rows.filter((r) => r.incomplete).length;
+  const hiddenCount = rows.filter((r) => !r.visible).length;
 
   if (loading) {
     return (
@@ -119,9 +152,17 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
             <AlertTriangle className="w-4 h-4 text-orange-500" />
             Estado de recolección por par
           </CardTitle>
-          <Badge variant={incompleteCount > 0 ? "destructive" : "secondary"}>
-            {incompleteCount} incompleto(s) / {rows.length} total
-          </Badge>
+          <div className="flex items-center gap-2">
+            {hiddenCount > 0 && (
+              <Badge variant="outline" className="gap-1 text-muted-foreground">
+                <EyeOff className="w-3 h-3" />
+                {hiddenCount} no visible(s)
+              </Badge>
+            )}
+            <Badge variant={incompleteCount > 0 ? "destructive" : "secondary"}>
+              {incompleteCount} incompleto(s) / {rows.length} total
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -137,13 +178,14 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
             />
           </div>
           <Select value={filterMode} onValueChange={(v) => setFilterMode(v as any)}>
-            <SelectTrigger className="w-[160px] h-9">
+            <SelectTrigger className="w-[170px] h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="incomplete">Solo incompletos</SelectItem>
               <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="incomplete">Solo incompletos</SelectItem>
               <SelectItem value="complete">Solo completos</SelectItem>
+              <SelectItem value="no_visible">No visibles</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -163,21 +205,24 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                     </div>
                   </TableHead>
                 ))}
+                <TableHead className="text-center">Visible</TableHead>
                 <TableHead className="text-center">Estado</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={ROLE_KEYS.length + 3} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={ROLE_KEYS.length + 4} className="text-center text-muted-foreground py-8">
                     {filterMode === "incomplete"
                       ? "✅ Todos los pares tienen el mínimo requerido"
-                      : "Sin resultados"}
+                      : filterMode === "no_visible"
+                        ? "✅ Todos los pares son visibles"
+                        : "Sin resultados"}
                   </TableCell>
                 </TableRow>
               ) : (
                 filtered.map((r) => (
-                  <TableRow key={r.nombre + r.institucion}>
+                  <TableRow key={r.nombre + r.institucion} className={!r.visible ? "opacity-60" : ""}>
                     <TableCell className="font-medium text-sm">{r.nombre}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{r.institucion}</TableCell>
                     {ROLE_KEYS.map((k) => {
@@ -200,6 +245,24 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                         </TableCell>
                       );
                     })}
+                    <TableCell className="text-center">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            {r.visible ? (
+                              <Eye className="w-4 h-4 text-green-500 mx-auto" />
+                            ) : (
+                              <EyeOff className="w-4 h-4 text-destructive mx-auto" />
+                            )}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {r.visible
+                              ? "Encuesta visible para este directivo"
+                              : "No visible — el directivo no ve el botón en su panel"}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
                     <TableCell className="text-center">
                       {r.incomplete ? (
                         <AlertTriangle className="w-4 h-4 text-orange-500 mx-auto" />
