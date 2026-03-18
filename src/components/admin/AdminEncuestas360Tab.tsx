@@ -85,6 +85,13 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   const [selectedRegion, setSelectedRegion] = useState<string>("todas");
   const [instRegionMap, setInstRegionMap] = useState<Record<string, string>>({});
   const [visibility, setVisibility] = useState<VisibilityRow[]>([]);
+  const [instituciones, setInstituciones] = useState<string[]>([]);
+  const [visOpen, setVisOpen] = useState(false);
+
+  // Override form state
+  const [addScopeType, setAddScopeType] = useState<string>("institucion");
+  const [addScopeValue, setAddScopeValue] = useState("");
+  const [addActive, setAddActive] = useState(true);
 
   useEffect(() => {
     loadEncuestas();
@@ -92,10 +99,11 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   }, [fase]);
 
   const loadRegiones = async () => {
-    const [{ data: regionesData }, { data: fichasData }, { data: visData }] = await Promise.all([
+    const [{ data: regionesData }, { data: fichasData }, { data: visData }, { data: instRows }] = await Promise.all([
       supabase.from("regiones").select("id, nombre").order("nombre"),
       supabase.from("fichas_rlt").select("nombre_ie, region"),
-      supabase.from("encuesta_360_visibility").select("fase, scope_type, scope_value, is_active").eq("fase", fase),
+      supabase.from("encuesta_360_visibility").select("id, fase, scope_type, scope_value, is_active").eq("fase", fase),
+      supabase.rpc("get_instituciones_con_ficha"),
     ]);
     if (regionesData) setRegiones(regionesData);
     if (fichasData) {
@@ -104,6 +112,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
       setInstRegionMap(map);
     }
     setVisibility((visData as VisibilityRow[]) || []);
+    if (instRows) setInstituciones((instRows as any[]).map((r: any) => r.nombre_ie));
   };
 
   const loadEncuestas = async () => {
