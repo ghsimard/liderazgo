@@ -330,20 +330,12 @@ export default function AdminAsistenciaTab() {
                       {DAYS.map(dia => {
                         const row = asistencia.get(getKey(d.numero_cedula, dia));
                         return (
-                          <>
-                            <TableCell key={`${dia}-am`} className="text-center px-1">
+                            <TableCell key={`${dia}`} className="text-center px-1">
                               <Checkbox
                                 checked={row?.session_am || false}
-                                onCheckedChange={() => toggleAttendance(d.numero_cedula, dia, "session_am")}
+                                onCheckedChange={() => toggleDay(d.numero_cedula, dia)}
                               />
                             </TableCell>
-                            <TableCell key={`${dia}-pm`} className="text-center px-1">
-                              <Checkbox
-                                checked={row?.session_pm || false}
-                                onCheckedChange={() => toggleAttendance(d.numero_cedula, dia, "session_pm")}
-                              />
-                            </TableCell>
-                          </>
                         );
                       })}
                       <TableCell className="text-center">
