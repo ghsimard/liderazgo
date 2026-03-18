@@ -318,6 +318,11 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
         module: op.module_number?.toString() || "",
       }))
     );
+    setOpenAccordions([
+      ...(p.isAdmin ? ["admin"] : []),
+      ...(p.isEvaluador ? ["evaluador"] : []),
+      ...(p.isOperator ? ["operador"] : []),
+    ]);
     setDialogOpen(true);
   };
 
@@ -329,6 +334,14 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
     if (!formNombre.trim()) {
       toast({ title: "El nombre es requerido", variant: "destructive" });
       return;
+    }
+    // Validate operator: at least one section must be selected
+    if (enableOperator) {
+      const validPerms = operatorPerms.filter(op => op.section);
+      if (validPerms.length === 0) {
+        toast({ title: "Seleccione al menos una sección para el operador", variant: "destructive" });
+        return;
+      }
     }
     setSaving(true);
     try {
