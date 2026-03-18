@@ -307,7 +307,10 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
               Permisos de "{selectedRole.name}"
-              {selectedRole.is_system && !isSuperAdmin && (
+              {isSuperAdminRole && (
+                <Badge variant="outline" className="text-[10px]">Protegido — no modificable</Badge>
+              )}
+              {!isSuperAdminRole && selectedRole.is_system && !isSuperAdmin && (
                 <Badge variant="outline" className="text-[10px]">Solo lectura</Badge>
               )}
             </CardTitle>
