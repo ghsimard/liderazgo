@@ -373,7 +373,7 @@ export default function AdminEvaluadoresTab() {
                               <TableHead className="text-xs">Directivo</TableHead>
                               <TableHead className="text-xs">Cédula</TableHead>
                               <TableHead className="text-xs">Institución</TableHead>
-                              <TableHead className="text-xs w-10"></TableHead>
+                              <TableHead className="text-xs w-24"></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
