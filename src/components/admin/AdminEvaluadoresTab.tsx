@@ -176,13 +176,21 @@ export default function AdminEvaluadoresTab() {
       })
     : [];
 
-  const filteredAvailable = assignSearch
-    ? availableDirectivos.filter(d =>
-        d.nombres_apellidos.toLowerCase().includes(assignSearch.toLowerCase()) ||
+  const assignRegions = useMemo(() => {
+    const set = new Set(availableDirectivos.map(d => d.region));
+    return Array.from(set).sort();
+  }, [availableDirectivos]);
+
+  const filteredAvailable = availableDirectivos.filter(d => {
+    if (assignRegion !== "all" && d.region !== assignRegion) return false;
+    if (assignSearch) {
+      const s = assignSearch.toLowerCase();
+      return d.nombres_apellidos.toLowerCase().includes(s) ||
         d.numero_cedula?.includes(assignSearch) ||
-        d.nombre_ie.toLowerCase().includes(assignSearch.toLowerCase())
-      )
-    : availableDirectivos;
+        d.nombre_ie.toLowerCase().includes(s);
+    }
+    return true;
+  });
 
   const handleDeleteAsignacion = async (id: string) => {
     const { error } = await supabase.from("rubrica_asignaciones").delete().eq("id", id);
