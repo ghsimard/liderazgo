@@ -81,15 +81,19 @@ export default function AdminAsistenciaTab() {
   };
 
   const loadAsistencia = async () => {
-    const { data } = await supabase
-      .from("informe_asistencia")
-      .select("*")
-      .eq("module_number", selectedModule);
+    let query = supabase.from("informe_asistencia").select("*");
+    if (selectedModule !== "all") {
+      query = query.eq("module_number", selectedModule);
+    }
+    const { data } = await query;
 
     const map = new Map<string, AsistenciaRow>();
     if (data) {
       data.forEach(row => {
-        map.set(`${row.directivo_cedula}-${row.dia}`, row as AsistenciaRow);
+        const key = selectedModule === "all"
+          ? `${row.directivo_cedula}-${row.module_number}-${row.dia}`
+          : `${row.directivo_cedula}-${row.dia}`;
+        map.set(key, row as AsistenciaRow);
       });
     }
     setAsistencia(map);
