@@ -180,7 +180,7 @@ export default function AdminPurgeDataTab() {
         <Card className="border-destructive/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2 text-destructive">
-              <Trash2 className="h-4 w-4" /> Tablas a vaciar ({TABLES_TO_PURGE.length})
+              <Trash2 className="h-4 w-4" /> Tablas a vaciar ({tablesToPurge.length})
             </CardTitle>
             <CardDescription className="text-xs">Todos los registros serán eliminados</CardDescription>
           </CardHeader>
@@ -197,6 +197,25 @@ export default function AdminPurgeDataTab() {
                     )
                   ) : (
                     <span className="h-3.5 w-3.5 rounded-full border border-destructive/40 shrink-0" />
+                  )}
+                  <span className="text-muted-foreground font-mono">{t.table}</span>
+                  <span className="text-muted-foreground/60 ml-auto text-right">{t.label}</span>
+                </div>
+              );
+            })}
+            {/* Region tables - conditional styling */}
+            {REGION_TABLES.map((t) => {
+              const result = results.find((r) => r.table === t.table);
+              return (
+                <div key={t.table} className={`flex items-center gap-2 text-xs ${includeRegions ? "" : "opacity-30"}`}>
+                  {result ? (
+                    result.ok ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    ) : (
+                      <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                    )
+                  ) : (
+                    <span className={`h-3.5 w-3.5 rounded-full border shrink-0 ${includeRegions ? "border-destructive/40" : "border-muted"}`} />
                   )}
                   <span className="text-muted-foreground font-mono">{t.table}</span>
                   <span className="text-muted-foreground/60 ml-auto text-right">{t.label}</span>
