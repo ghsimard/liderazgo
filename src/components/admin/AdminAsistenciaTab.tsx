@@ -310,7 +310,7 @@ export default function AdminAsistenciaTab() {
             <TableBody>
               {filteredDirectivos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5 + DAYS.length * 2 + 3} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={5 + DAYS.length + 3} className="text-center text-sm text-muted-foreground py-8">
                     No hay directivos que coincidan con los filtros.
                   </TableCell>
                 </TableRow>
