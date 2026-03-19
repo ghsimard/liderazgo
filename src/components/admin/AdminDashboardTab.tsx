@@ -348,7 +348,7 @@ export default function AdminDashboardTab() {
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-3 items-end">
-            <FilterSelect label="Región" value={filters.region} options={geo.regionNames}
+            <FilterSelect label="Región" value={filters.region} options={regionOptions}
               onChange={(v) => setFilters({ ...EMPTY_FILTERS, region: v })} />
             <MultiFilterSelect label="Entidad Territorial" selected={filters.entidad} options={entidadOptions}
               onChange={(v) => setFilters((f) => ({ ...f, entidad: v, municipio: [], institucion: [] }))} />
