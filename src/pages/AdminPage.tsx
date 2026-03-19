@@ -48,6 +48,7 @@ import AdminGestionCuentasTab from "@/components/admin/AdminGestionCuentasTab";
 import AdminRolesTab from "@/components/admin/AdminRolesTab";
 import AdminAmbienteMonitorTab from "@/components/admin/AdminAmbienteMonitorTab";
 import AdminAmbienteStatsTab from "@/components/admin/AdminAmbienteStatsTab";
+import AdminDashboardTab from "@/components/admin/AdminDashboardTab";
 
 
 interface FormItem {
@@ -216,6 +217,7 @@ function FormCard({ form }: { form: FormItem }) {
 
 function getHubTitle(activeTab: string): string {
   const titleMap: Record<string, string> = {
+    dashboard: "Dashboard",
     formularios: "Enlaces",
     encuesta360: "Encuesta 360°", enlaces360: "Encuesta 360°", ponderaciones: "Encuesta 360°",
     encuestas360: "Encuesta 360°", encuestas360final: "Encuesta 360°",
@@ -240,6 +242,8 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
 
   switch (activeTab) {
+    case "dashboard":
+      return <AdminDashboardTab />;
     case "formularios":
       return (
         <div className="space-y-8">
@@ -568,7 +572,7 @@ export default function AdminPage() {
   const { images } = useAppImages();
   const logoRLT = images.logo_rlt_noletters;
   const logoCLT = images.logo_clt_noletters;
-  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "formularios");
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "dashboard");
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
