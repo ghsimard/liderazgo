@@ -125,15 +125,8 @@ export default function AdminDashboardTab() {
       return [...set].sort((a, b) => a.localeCompare(b, "es"));
     }
     if (filters.region) return geo.getInstitucionesForRegion(filters.region);
-    // No filter → all institutions from all entidades
-    const set = new Set<string>();
-    geo.entidadNames.forEach((e) => {
-      geo.getMunicipiosForEntidad(e).forEach((mun) => {
-        geo.getInstitucionesForMunicipioByEntidad(e, mun).forEach((i) => set.add(i));
-      });
-    });
-    return [...set].sort((a, b) => a.localeCompare(b, "es"));
-  }, [filters.region, filters.entidad, filters.municipio, geo, entidadOptions]);
+    return allRegionInstituciones;
+  }, [filters.region, filters.entidad, filters.municipio, geo, entidadOptions, allRegionInstituciones]);
 
   // ── Resolved institution set for filtering data ──
   const resolvedInstitutions = useMemo<string[] | null>(() => {
