@@ -345,10 +345,10 @@ export default function AdminDashboardTab() {
         {/* Asistencia */}
         <KpiCard icon={CalendarCheck} title="Asistencia" value={`${asistenciaStats.total} directivos`} subtitle={`Presentes: ${asistenciaStats.present} registros · Tasa global: ${asistenciaStats.rate}%`} color="text-teal-600">
           {asistenciaByDay.length > 0 && (
-            <ResponsiveContainer width="100%" height={120}>
-              <BarChart data={asistenciaByDay} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+            <ResponsiveContainer width="100%" height={130}>
+              <BarChart data={asistenciaByDay} margin={{ top: 18, right: 5, bottom: 5, left: -20 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} unit="%" />
+                <YAxis tick={{ fontSize: 10 }} domain={[0, 110]} unit="%" ticks={[0, 25, 50, 75, 100]} />
                 <Tooltip formatter={(v: number) => `${v}%`} />
                 <Bar dataKey="rate" fill="hsl(var(--primary))" name="Presencia" radius={[2, 2, 0, 0]}>
                   <LabelList dataKey="rate" position="top" formatter={(v: number) => `${v}%`} style={{ fontSize: 10, fill: "hsl(var(--foreground))" }} />
