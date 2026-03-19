@@ -188,7 +188,7 @@ export default function AdminDashboardTab() {
     let pool = fichas.filter((f) => ["Rector/a", "Coordinador/a"].includes(f.cargo_actual) && f.numero_cedula);
     if (resolvedInstitutions) pool = pool.filter((f) => resolvedInstitutions.includes(f.nombre_ie));
     return pool
-      .map((f) => ({ value: f.numero_cedula as string, label: `${f.nombres_apellidos} (${f.cargo_actual})` }))
+      .map((f) => ({ value: f.numero_cedula as string, label: f.nombres_apellidos }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
   }, [fichas, resolvedInstitutions]);
 

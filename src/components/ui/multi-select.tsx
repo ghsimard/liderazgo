@@ -75,7 +75,7 @@ export function MultiSelect({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[260px] p-0" align="start">
+      <PopoverContent className="w-[320px] p-0" align="start">
         <div className="p-2 border-b">
           <button
             onClick={toggleAll}
@@ -94,7 +94,7 @@ export function MultiSelect({
                 checked={selected.includes(option.value)}
                 onCheckedChange={() => toggleOption(option.value)}
               />
-              <span className="truncate">{option.label}</span>
+              <span className="break-words">{option.label}</span>
             </label>
           ))}
         </div>
