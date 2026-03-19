@@ -22,10 +22,11 @@ interface Filters {
   entidad: string[];
   municipio: string[];
   institucion: string[];
+  directivo: string[];
   modulo: string;
 }
 
-const EMPTY_FILTERS: Filters = { region: "", entidad: [], municipio: [], institucion: [], modulo: "" };
+const EMPTY_FILTERS: Filters = { region: "", entidad: [], municipio: [], institucion: [], directivo: [], modulo: "" };
 
 export default function AdminDashboardTab() {
   const geo = useGeographicData();
