@@ -19,13 +19,13 @@ const PIE_COLORS = [
 
 interface Filters {
   region: string;
-  entidad: string;
-  municipio: string;
-  institucion: string;
+  entidad: string[];
+  municipio: string[];
+  institucion: string[];
   modulo: string;
 }
 
-const EMPTY_FILTERS: Filters = { region: "", entidad: "", municipio: "", institucion: "", modulo: "" };
+const EMPTY_FILTERS: Filters = { region: "", entidad: [], municipio: [], institucion: [], modulo: "" };
 
 export default function AdminDashboardTab() {
   const geo = useGeographicData();
