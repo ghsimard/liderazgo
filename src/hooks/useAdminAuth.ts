@@ -88,5 +88,5 @@ export function useAdminAuth() {
     navigate("/admin/login");
   };
 
-  return { isAdmin, isSuperAdmin, isViewer, userId, signOut };
+  return { isAdmin, isSuperAdmin, isViewer, userId, userName, signOut };
 }

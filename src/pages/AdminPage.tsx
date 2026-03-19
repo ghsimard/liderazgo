@@ -602,7 +602,10 @@ export default function AdminPage() {
                 <img src={logoCLT} alt="CLT" className="h-9" />
                 <h1 className="font-semibold text-base leading-tight hidden sm:block">Panel de Administración</h1>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                {userName && (
+                  <span className="text-sm text-primary-foreground/80 hidden sm:inline">{userName}</span>
+                )}
                 <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5 text-primary-foreground hover:bg-primary-foreground/10">
                   <LogOut className="w-4 h-4" /> Salir
                 </Button>
