@@ -210,6 +210,18 @@ export default function AdminDashboardTab() {
   }, [filteredSatisfaccion]);
 
   // Asistencia
+  const asistenciaByDay = useMemo(() => {
+    const days: Record<number, { total: number; present: number }> = {};
+    filteredAsistencia.forEach((a) => {
+      if (!days[a.dia]) days[a.dia] = { total: 0, present: 0 };
+      days[a.dia].total++;
+      if (a.session_am) days[a.dia].present++;
+    });
+    return Object.entries(days)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([dia, v]) => ({ name: `Día ${dia}`, rate: v.total ? Math.round((v.present / v.total) * 100) : 0 }));
+  }, [filteredAsistencia]);
+
   const asistenciaStats = useMemo(() => {
     const total = filteredAsistencia.length;
     if (!total) return { total: 0, present: 0, rate: 0 };
