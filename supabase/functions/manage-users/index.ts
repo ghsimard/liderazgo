@@ -114,11 +114,13 @@ Deno.serve(async (req) => {
 
         const { data: cedulaRows } = await adminClient
           .from("admin_cedulas")
-          .select("user_id, cedula")
+          .select("user_id, cedula, nombre")
           .in("user_id", userIds);
         const cedulaMap: Record<string, string> = {};
+        const nombreMap: Record<string, string> = {};
         for (const c of cedulaRows ?? []) {
           cedulaMap[c.user_id] = c.cedula;
+          nombreMap[c.user_id] = (c as any).nombre || "";
         }
 
         const users = [];
@@ -132,6 +134,7 @@ Deno.serve(async (req) => {
               last_sign_in_at: data.user.last_sign_in_at,
               role: roleMap[uid] ?? "admin",
               cedula: cedulaMap[uid] ?? "",
+              nombre: nombreMap[uid] ?? "",
             });
           }
         }
