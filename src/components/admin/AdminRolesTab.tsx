@@ -129,6 +129,10 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
 
   const toggleParentAll = async (sectionKey: string, key: CrudKey) => {
     if (!selectedRole) return;
+    if (selectedRole.name === "Superadmin" && !isSuperAdmin) {
+      toast({ title: "Solo un Superadmin puede modificar este rol.", variant: "destructive" });
+      return;
+    }
     const currentVal = getPermValue(sectionKey, key);
     const newVal = !currentVal;
 
