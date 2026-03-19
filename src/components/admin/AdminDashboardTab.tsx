@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, FileText, Gauge, ClipboardCheck, School, ThumbsUp, FileBarChart, CalendarCheck, X } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
 
 const PIE_COLORS = [
   "hsl(var(--primary))",
@@ -350,7 +350,9 @@ export default function AdminDashboardTab() {
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} unit="%" />
                 <Tooltip formatter={(v: number) => `${v}%`} />
-                <Bar dataKey="rate" fill="hsl(var(--primary))" name="Presencia" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="rate" fill="hsl(var(--primary))" name="Presencia" radius={[2, 2, 0, 0]}>
+                  <LabelList dataKey="rate" position="top" formatter={(v: number) => `${v}%`} style={{ fontSize: 10, fill: "hsl(var(--foreground))" }} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}
