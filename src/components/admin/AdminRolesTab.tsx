@@ -225,7 +225,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
   };
 
   const isSuperAdminRole = selectedRole?.name === "Superadmin";
-  const isPermReadOnly = isSuperAdminRole ? !isSuperAdmin : (!isSuperAdmin && selectedRole?.is_system);
+  const isPermReadOnly = isSuperAdminRole && !isSuperAdmin;
 
   const renderSectionRow = (sec: RbacSection, isChild = false) => {
     const indent = isChild ? "pl-6" : "";
