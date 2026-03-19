@@ -14,6 +14,7 @@ import {
   Link2,
   School,
   Copy,
+  LayoutDashboard,
   Check,
   FolderOpen,
   PlayCircle,
