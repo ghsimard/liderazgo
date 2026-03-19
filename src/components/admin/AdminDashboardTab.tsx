@@ -129,16 +129,6 @@ export default function AdminDashboardTab() {
     return allRegionInstituciones;
   }, [filters.region, filters.entidad, filters.municipio, geo, entidadOptions, allRegionInstituciones]);
 
-  // ── Directivo options (from fichas filtered by resolved institutions) ──
-  const directivoOptions = useMemo(() => {
-    let pool = fichas.filter((f) => ["Rector/a", "Coordinador/a"].includes(f.cargo_actual));
-    if (resolvedInstitutions) pool = pool.filter((f) => resolvedInstitutions.includes(f.nombre_ie));
-    return pool
-      .map((f) => ({ value: f.numero_cedula, label: `${f.cargo_actual} – ${f.numero_cedula}` }))
-      .filter((d) => d.value)
-      .sort((a, b) => a.label.localeCompare(b.label, "es"));
-  }, [fichas, resolvedInstitutions]);
-
   // ── Resolved institution set for filtering data ──
   const resolvedInstitutions = useMemo<string[] | null>(() => {
     if (filters.institucion.length > 0) return filters.institucion;
@@ -146,6 +136,15 @@ export default function AdminDashboardTab() {
     if (filters.region) return geo.getInstitucionesForRegion(filters.region);
     return null; // no geo filter → all data
   }, [filters.institucion, filters.municipio, filters.entidad, filters.region, institucionOptions, geo]);
+
+  // ── Directivo options (from fichas filtered by resolved institutions) ──
+  const directivoOptions = useMemo(() => {
+    let pool = fichas.filter((f) => ["Rector/a", "Coordinador/a"].includes(f.cargo_actual) && f.numero_cedula);
+    if (resolvedInstitutions) pool = pool.filter((f) => resolvedInstitutions.includes(f.nombre_ie));
+    return pool
+      .map((f) => ({ value: f.numero_cedula as string, label: `${f.cargo_actual} – ${f.numero_cedula}` }))
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
+  }, [fichas, resolvedInstitutions]);
 
   // Filter helpers
   const filterByInst = (rows: any[], instField: string) => {
