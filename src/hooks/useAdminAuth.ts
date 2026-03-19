@@ -34,6 +34,8 @@ export function useAdminAuth() {
         }
 
         const uid = data.user.id;
+        const email = data.user.email || "";
+        setUserName(email.split("@")[0]);
 
         if (USE_EXPRESS) {
           const roles: string[] = (data.user as any).roles ?? [];
