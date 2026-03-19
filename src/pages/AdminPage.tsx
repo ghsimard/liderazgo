@@ -523,13 +523,13 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
           </TabsList>
 
           <TabsContent value="gestion-cuentas">
-            <AdminGestionCuentasTab isSuperAdmin={can("sistema.gestion-cuentas", "delete")} isViewer={!can("sistema.gestion-cuentas", "update")} />
+            <AdminGestionCuentasTab isSuperAdmin={isSuperAdmin} isViewer={!can("sistema.gestion-cuentas", "update")} />
           </TabsContent>
           <TabsContent value="roles-permisos">
-            <AdminRolesTab isSuperAdmin={can("sistema.roles-permisos", "delete")} />
+            <AdminRolesTab isSuperAdmin={isSuperAdmin} />
           </TabsContent>
           <TabsContent value="activity-log">
-            <AdminActivityLogTab isSuperAdmin={can("sistema.activity-log", "delete")} />
+            <AdminActivityLogTab isSuperAdmin={isSuperAdmin} />
           </TabsContent>
           <TabsContent value="papelera">
             <AdminTrashManager />
