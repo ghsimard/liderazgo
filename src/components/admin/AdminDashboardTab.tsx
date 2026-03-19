@@ -88,6 +88,11 @@ export default function AdminDashboardTab() {
     return [...set].sort((a, b) => a.localeCompare(b, "es"));
   }, [geo]);
 
+  // Set of institutions that have at least one ficha
+  const institucionesConFicha = useMemo(() => {
+    return new Set(fichas.map((f) => f.nombre_ie).filter(Boolean));
+  }, [fichas]);
+
   // ── Cascading filter options ──
   const entidadOptions = useMemo(() => {
     if (filters.region) return geo.getEntidadesForRegion(filters.region);
@@ -95,14 +100,26 @@ export default function AdminDashboardTab() {
   }, [filters.region, geo, allRegionEntidades]);
 
   const municipioOptions = useMemo(() => {
+    let munis: string[];
     if (filters.entidad.length > 0) {
       const set = new Set<string>();
       filters.entidad.forEach((e) => geo.getMunicipiosForEntidad(e).forEach((m) => set.add(m)));
-      return [...set].sort((a, b) => a.localeCompare(b, "es"));
+      munis = [...set];
+    } else if (filters.region) {
+      munis = geo.getMunicipiosForRegion(filters.region);
+    } else {
+      munis = allRegionMunicipios;
     }
-    if (filters.region) return geo.getMunicipiosForRegion(filters.region);
-    return allRegionMunicipios;
-  }, [filters.region, filters.entidad, geo, allRegionMunicipios]);
+    // Keep only municipios that have at least one institution with a ficha
+    const entPool = filters.entidad.length > 0 ? filters.entidad : entidadOptions;
+    return munis.filter((mun) => {
+      for (const ent of entPool) {
+        const insts = geo.getInstitucionesForMunicipioByEntidad(ent, mun);
+        if (insts.some((inst) => institucionesConFicha.has(inst))) return true;
+      }
+      return false;
+    }).sort((a, b) => a.localeCompare(b, "es"));
+  }, [filters.region, filters.entidad, geo, allRegionMunicipios, entidadOptions, institucionesConFicha]);
 
   const institucionOptions = useMemo(() => {
     if (filters.municipio.length > 0) {
