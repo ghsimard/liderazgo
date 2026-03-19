@@ -46,13 +46,13 @@ export default function AdminDashboardTab() {
     (async () => {
       setLoading(true);
       const [fRes, eRes, rRes, aRes, sRes, iRes, atRes, mRes] = await Promise.all([
-        supabase.from("fichas_rlt").select("id, region, cargo_actual, nombre_ie"),
+        supabase.from("fichas_rlt").select("id, region, cargo_actual, nombre_ie, numero_cedula"),
         supabase.from("encuestas_360").select("id, fase, tipo_formulario, institucion_educativa, cedula_directivo"),
         supabase.from("rubrica_seguimientos").select("id, module_number, nivel, directivo_cedula"),
         supabase.from("encuestas_ambiente_escolar").select("id, tipo_formulario, institucion_educativa"),
         supabase.from("satisfaccion_responses").select("id, form_type, module_number, region"),
         supabase.from("informe_modulo").select("id, module_number, region, entidad_territorial"),
-        supabase.from("informe_asistencia").select("id, module_number, session_am, session_pm, directivo_cedula"),
+        supabase.from("informe_asistencia").select("id, module_number, session_am, session_pm, directivo_cedula, dia"),
         supabase.from("rubrica_modules").select("module_number, title").order("sort_order"),
       ]);
       setFichas(fRes.data ?? []);
@@ -137,8 +137,15 @@ export default function AdminDashboardTab() {
   const filteredAsistencia = useMemo(() => {
     let r = asistencia;
     if (filters.modulo) r = r.filter((x) => String(x.module_number) === filters.modulo);
+    if (filters.institucion) {
+      const ceds = new Set(fichas.filter((f) => f.nombre_ie === filters.institucion).map((f) => f.numero_cedula));
+      r = r.filter((x) => ceds.has(x.directivo_cedula));
+    } else if (instForRegion) {
+      const ceds = new Set(fichas.filter((f) => instForRegion.includes(f.nombre_ie)).map((f) => f.numero_cedula));
+      r = r.filter((x) => ceds.has(x.directivo_cedula));
+    }
     return r;
-  }, [asistencia, filters]);
+  }, [asistencia, filters, instForRegion, fichas]);
 
   // ── Cascading filter options ──
   const entidadOptions = useMemo(() => {
@@ -203,6 +210,18 @@ export default function AdminDashboardTab() {
   }, [filteredSatisfaccion]);
 
   // Asistencia
+  const asistenciaByDay = useMemo(() => {
+    const days: Record<number, { total: number; present: number }> = {};
+    filteredAsistencia.forEach((a) => {
+      if (!days[a.dia]) days[a.dia] = { total: 0, present: 0 };
+      days[a.dia].total++;
+      if (a.session_am) days[a.dia].present++;
+    });
+    return Object.entries(days)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([dia, v]) => ({ name: `Día ${dia}`, rate: v.total ? Math.round((v.present / v.total) * 100) : 0 }));
+  }, [filteredAsistencia]);
+
   const asistenciaStats = useMemo(() => {
     const total = filteredAsistencia.length;
     if (!total) return { total: 0, present: 0, rate: 0 };
@@ -289,14 +308,16 @@ export default function AdminDashboardTab() {
         <KpiCard icon={FileBarChart} title="Informes de Módulo" value={filteredInformes.length} color="text-indigo-600" />
 
         {/* Asistencia */}
-        <KpiCard icon={CalendarCheck} title="Asistencia" value={`${asistenciaStats.total} registros`} subtitle={`Presentes: ${asistenciaStats.present} · Tasa: ${asistenciaStats.rate}%`} color="text-teal-600">
-          {asistenciaStats.total > 0 && (
-            <div className="mt-2">
-              <div className="bg-primary/10 rounded-md p-3 text-center">
-                <div className="text-2xl font-bold text-primary">{asistenciaStats.rate}%</div>
-                <div className="text-xs text-muted-foreground">Tasa de asistencia</div>
-              </div>
-            </div>
+        <KpiCard icon={CalendarCheck} title="Asistencia" value={`${asistenciaStats.total} registros`} subtitle={`Presentes: ${asistenciaStats.present} · Tasa global: ${asistenciaStats.rate}%`} color="text-teal-600">
+          {asistenciaByDay.length > 0 && (
+            <ResponsiveContainer width="100%" height={120}>
+              <BarChart data={asistenciaByDay} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} unit="%" />
+                <Tooltip formatter={(v: number) => `${v}%`} />
+                <Bar dataKey="rate" fill="hsl(var(--primary))" name="Presencia" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </KpiCard>
       </div>
