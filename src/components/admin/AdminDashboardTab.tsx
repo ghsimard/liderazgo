@@ -205,10 +205,9 @@ export default function AdminDashboardTab() {
   // Asistencia
   const asistenciaStats = useMemo(() => {
     const total = filteredAsistencia.length;
-    if (!total) return { total: 0, am: 0, pm: 0, rateAm: 0, ratePm: 0 };
-    const am = filteredAsistencia.filter((a) => a.session_am).length;
-    const pm = filteredAsistencia.filter((a) => a.session_pm).length;
-    return { total, am, pm, rateAm: Math.round((am / total) * 100), ratePm: Math.round((pm / total) * 100) };
+    if (!total) return { total: 0, present: 0, rate: 0 };
+    const present = filteredAsistencia.filter((a) => a.session_am).length;
+    return { total, present, rate: Math.round((present / total) * 100) };
   }, [filteredAsistencia]);
 
   const hasFilters = Object.values(filters).some(Boolean);
