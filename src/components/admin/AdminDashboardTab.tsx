@@ -308,14 +308,16 @@ export default function AdminDashboardTab() {
         <KpiCard icon={FileBarChart} title="Informes de Módulo" value={filteredInformes.length} color="text-indigo-600" />
 
         {/* Asistencia */}
-        <KpiCard icon={CalendarCheck} title="Asistencia" value={`${asistenciaStats.total} registros`} subtitle={`Presentes: ${asistenciaStats.present} · Tasa: ${asistenciaStats.rate}%`} color="text-teal-600">
-          {asistenciaStats.total > 0 && (
-            <div className="mt-2">
-              <div className="bg-primary/10 rounded-md p-3 text-center">
-                <div className="text-2xl font-bold text-primary">{asistenciaStats.rate}%</div>
-                <div className="text-xs text-muted-foreground">Tasa de asistencia</div>
-              </div>
-            </div>
+        <KpiCard icon={CalendarCheck} title="Asistencia" value={`${asistenciaStats.total} registros`} subtitle={`Presentes: ${asistenciaStats.present} · Tasa global: ${asistenciaStats.rate}%`} color="text-teal-600">
+          {asistenciaByDay.length > 0 && (
+            <ResponsiveContainer width="100%" height={120}>
+              <BarChart data={asistenciaByDay} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} unit="%" />
+                <Tooltip formatter={(v: number) => `${v}%`} />
+                <Bar dataKey="rate" fill="hsl(var(--primary))" name="Presencia" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </KpiCard>
       </div>
