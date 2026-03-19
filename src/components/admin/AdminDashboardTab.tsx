@@ -81,7 +81,10 @@ export default function AdminDashboardTab() {
       return [...set].sort((a, b) => a.localeCompare(b, "es"));
     }
     if (filters.region) return geo.getMunicipiosForRegion(filters.region);
-    return [];
+    // No region, no entidad → all municipios from all entidades
+    const set = new Set<string>();
+    geo.entidadNames.forEach((e) => geo.getMunicipiosForEntidad(e).forEach((m) => set.add(m)));
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
   }, [filters.region, filters.entidad, geo]);
 
   const institucionOptions = useMemo(() => {
@@ -106,7 +109,14 @@ export default function AdminDashboardTab() {
       return [...set].sort((a, b) => a.localeCompare(b, "es"));
     }
     if (filters.region) return geo.getInstitucionesForRegion(filters.region);
-    return [];
+    // No filter → all institutions from all entidades
+    const set = new Set<string>();
+    geo.entidadNames.forEach((e) => {
+      geo.getMunicipiosForEntidad(e).forEach((mun) => {
+        geo.getInstitucionesForMunicipioByEntidad(e, mun).forEach((i) => set.add(i));
+      });
+    });
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
   }, [filters.region, filters.entidad, filters.municipio, geo, entidadOptions]);
 
   // ── Resolved institution set for filtering data ──
@@ -266,9 +276,9 @@ export default function AdminDashboardTab() {
             <MultiFilterSelect label="Entidad Territorial" selected={filters.entidad} options={entidadOptions}
               onChange={(v) => setFilters((f) => ({ ...f, entidad: v, municipio: [], institucion: [] }))} />
             <MultiFilterSelect label="Municipio" selected={filters.municipio} options={municipioOptions}
-              onChange={(v) => setFilters((f) => ({ ...f, municipio: v, institucion: [] }))} disabled={municipioOptions.length === 0} />
+              onChange={(v) => setFilters((f) => ({ ...f, municipio: v, institucion: [] }))} />
             <MultiFilterSelect label="Institución" selected={filters.institucion} options={institucionOptions}
-              onChange={(v) => setFilters((f) => ({ ...f, institucion: v }))} disabled={institucionOptions.length === 0} />
+              onChange={(v) => setFilters((f) => ({ ...f, institucion: v }))} />
             <FilterSelect label="Módulo" value={filters.modulo}
               options={modules.map((m) => String(m.module_number))}
               labels={modules.map((m) => `Módulo ${m.module_number}`)}
