@@ -12,6 +12,7 @@ export function useAdminAuth() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isViewer, setIsViewer] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
     const buildLoginRoute = (reason: string) =>
@@ -33,6 +34,8 @@ export function useAdminAuth() {
         }
 
         const uid = data.user.id;
+        const email = data.user.email || "";
+        setUserName(email.split("@")[0]);
 
         if (USE_EXPRESS) {
           const roles: string[] = (data.user as any).roles ?? [];
@@ -85,5 +88,5 @@ export function useAdminAuth() {
     navigate("/admin/login");
   };
 
-  return { isAdmin, isSuperAdmin, isViewer, userId, signOut };
+  return { isAdmin, isSuperAdmin, isViewer, userId, userName, signOut };
 }
