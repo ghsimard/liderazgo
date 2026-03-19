@@ -210,24 +210,38 @@ export default function AdminDashboardTab() {
   }, [filteredSatisfaccion]);
 
   // Asistencia
+  // Total directivos (Rector/a + Coordinador/a) as denominator
+  const totalDirectivos = useMemo(() => {
+    const ceds = new Set<string>();
+    filteredFichas
+      .filter((f) => ["Rector/a", "Coordinador/a"].includes(f.cargo_actual))
+      .forEach((f) => { if (f.numero_cedula) ceds.add(f.numero_cedula); });
+    return ceds.size;
+  }, [filteredFichas]);
+
   const asistenciaByDay = useMemo(() => {
-    const days: Record<number, { total: number; present: number }> = {};
+    if (!totalDirectivos) return [];
+    const days: Record<number, number> = {};
     filteredAsistencia.forEach((a) => {
-      if (!days[a.dia]) days[a.dia] = { total: 0, present: 0 };
-      days[a.dia].total++;
-      if (a.session_am) days[a.dia].present++;
+      if (a.session_am) days[a.dia] = (days[a.dia] || 0) + 1;
     });
     return Object.entries(days)
       .sort(([a], [b]) => Number(a) - Number(b))
-      .map(([dia, v]) => ({ name: `Día ${dia}`, rate: v.total ? Math.round((v.present / v.total) * 100) : 0 }));
-  }, [filteredAsistencia]);
+      .map(([dia, present]) => ({
+        name: `Día ${dia}`,
+        rate: Math.round((present / totalDirectivos) * 100),
+        present,
+        total: totalDirectivos,
+      }));
+  }, [filteredAsistencia, totalDirectivos]);
 
   const asistenciaStats = useMemo(() => {
-    const total = filteredAsistencia.length;
-    if (!total) return { total: 0, present: 0, rate: 0 };
+    if (!totalDirectivos) return { total: 0, present: 0, rate: 0 };
     const present = filteredAsistencia.filter((a) => a.session_am).length;
-    return { total, present, rate: Math.round((present / total) * 100) };
-  }, [filteredAsistencia]);
+    const numDays = new Set(filteredAsistencia.map((a) => a.dia)).size;
+    const expectedTotal = totalDirectivos * numDays;
+    return { total: totalDirectivos, present, rate: expectedTotal ? Math.round((present / expectedTotal) * 100) : 0 };
+  }, [filteredAsistencia, totalDirectivos]);
 
   const hasFilters = Object.values(filters).some(Boolean);
 
@@ -308,7 +322,7 @@ export default function AdminDashboardTab() {
         <KpiCard icon={FileBarChart} title="Informes de Módulo" value={filteredInformes.length} color="text-indigo-600" />
 
         {/* Asistencia */}
-        <KpiCard icon={CalendarCheck} title="Asistencia" value={`${asistenciaStats.total} registros`} subtitle={`Presentes: ${asistenciaStats.present} · Tasa global: ${asistenciaStats.rate}%`} color="text-teal-600">
+        <KpiCard icon={CalendarCheck} title="Asistencia" value={`${asistenciaStats.total} directivos`} subtitle={`Presentes: ${asistenciaStats.present} registros · Tasa global: ${asistenciaStats.rate}%`} color="text-teal-600">
           {asistenciaByDay.length > 0 && (
             <ResponsiveContainer width="100%" height={120}>
               <BarChart data={asistenciaByDay} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
