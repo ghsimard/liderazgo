@@ -350,7 +350,9 @@ export default function AdminDashboardTab() {
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} unit="%" />
                 <Tooltip formatter={(v: number) => `${v}%`} />
-                <Bar dataKey="rate" fill="hsl(var(--primary))" name="Presencia" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="rate" fill="hsl(var(--primary))" name="Presencia" radius={[2, 2, 0, 0]}>
+                  <LabelList dataKey="rate" position="top" formatter={(v: number) => `${v}%`} style={{ fontSize: 10, fill: "hsl(var(--foreground))" }} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}
