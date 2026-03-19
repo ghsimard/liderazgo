@@ -68,11 +68,30 @@ export default function AdminDashboardTab() {
     })();
   }, []);
 
+  // ── All ET/municipios/institutions across all regions (for "Todos") ──
+  const allRegionEntidades = useMemo(() => {
+    const set = new Set<string>();
+    geo.regionNames.forEach((r) => geo.getEntidadesForRegion(r).forEach((e) => set.add(e)));
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
+  }, [geo]);
+
+  const allRegionMunicipios = useMemo(() => {
+    const set = new Set<string>();
+    geo.regionNames.forEach((r) => geo.getMunicipiosForRegion(r).forEach((m) => set.add(m)));
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
+  }, [geo]);
+
+  const allRegionInstituciones = useMemo(() => {
+    const set = new Set<string>();
+    geo.regionNames.forEach((r) => geo.getInstitucionesForRegion(r).forEach((i) => set.add(i)));
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
+  }, [geo]);
+
   // ── Cascading filter options ──
   const entidadOptions = useMemo(() => {
     if (filters.region) return geo.getEntidadesForRegion(filters.region);
-    return geo.entidadNames;
-  }, [filters.region, geo]);
+    return allRegionEntidades;
+  }, [filters.region, geo, allRegionEntidades]);
 
   const municipioOptions = useMemo(() => {
     if (filters.entidad.length > 0) {
@@ -81,11 +100,8 @@ export default function AdminDashboardTab() {
       return [...set].sort((a, b) => a.localeCompare(b, "es"));
     }
     if (filters.region) return geo.getMunicipiosForRegion(filters.region);
-    // No region, no entidad → all municipios from all entidades
-    const set = new Set<string>();
-    geo.entidadNames.forEach((e) => geo.getMunicipiosForEntidad(e).forEach((m) => set.add(m)));
-    return [...set].sort((a, b) => a.localeCompare(b, "es"));
-  }, [filters.region, filters.entidad, geo]);
+    return allRegionMunicipios;
+  }, [filters.region, filters.entidad, geo, allRegionMunicipios]);
 
   const institucionOptions = useMemo(() => {
     if (filters.municipio.length > 0) {
