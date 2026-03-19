@@ -245,7 +245,7 @@ export default function AdminDashboardTab() {
     return { total: totalDirectivos, present, rate: expectedTotal ? Math.round((present / expectedTotal) * 100) : 0 };
   }, [filteredAsistencia, totalDirectivos]);
 
-  const hasFilters = Object.values(filters).some(Boolean);
+  const hasFilters = filters.region || filters.modulo || filters.entidad.length > 0 || filters.municipio.length > 0 || filters.institucion.length > 0;
 
   if (loading || geo.loading) {
     return (
