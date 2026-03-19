@@ -103,11 +103,6 @@ export default function AdminDashboardTab() {
     return [...set].sort((a, b) => a.localeCompare(b, "es"));
   }, [geo]);
 
-  // Set of institutions that have at least one ficha
-  const institucionesConFicha = useMemo(() => {
-    return new Set(fichas.map((f) => f.nombre_ie).filter(Boolean));
-  }, [fichas]);
-
   // ── Cascading filter options ──
   const entidadOptions = useMemo(() => {
     if (filters.region) return geo.getEntidadesForRegion(filters.region);
