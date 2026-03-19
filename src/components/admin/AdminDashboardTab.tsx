@@ -137,8 +137,15 @@ export default function AdminDashboardTab() {
   const filteredAsistencia = useMemo(() => {
     let r = asistencia;
     if (filters.modulo) r = r.filter((x) => String(x.module_number) === filters.modulo);
+    if (filters.institucion) {
+      const ceds = new Set(fichas.filter((f) => f.nombre_ie === filters.institucion).map((f) => f.numero_cedula));
+      r = r.filter((x) => ceds.has(x.directivo_cedula));
+    } else if (instForRegion) {
+      const ceds = new Set(fichas.filter((f) => instForRegion.includes(f.nombre_ie)).map((f) => f.numero_cedula));
+      r = r.filter((x) => ceds.has(x.directivo_cedula));
+    }
     return r;
-  }, [asistencia, filters]);
+  }, [asistencia, filters, instForRegion, fichas]);
 
   // ── Cascading filter options ──
   const entidadOptions = useMemo(() => {
