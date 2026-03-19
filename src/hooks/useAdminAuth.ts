@@ -12,6 +12,7 @@ export function useAdminAuth() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isViewer, setIsViewer] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
     const buildLoginRoute = (reason: string) =>
