@@ -236,7 +236,7 @@ function getHubTitle(activeTab: string): string {
   return titleMap[activeTab] || "Panel";
 }
 
-function AdminContent({ activeTab, permissions }: { activeTab: string; permissions: ReturnType<typeof usePermissions> }) {
+function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: string; permissions: ReturnType<typeof usePermissions>; isSuperAdmin: boolean }) {
   const { can } = permissions;
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
@@ -523,13 +523,13 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
           </TabsList>
 
           <TabsContent value="gestion-cuentas">
-            <AdminGestionCuentasTab isSuperAdmin={can("sistema.gestion-cuentas", "delete")} isViewer={!can("sistema.gestion-cuentas", "update")} />
+            <AdminGestionCuentasTab isSuperAdmin={isSuperAdmin} isViewer={!can("sistema.gestion-cuentas", "update")} />
           </TabsContent>
           <TabsContent value="roles-permisos">
-            <AdminRolesTab isSuperAdmin={can("sistema.roles-permisos", "delete")} />
+            <AdminRolesTab isSuperAdmin={isSuperAdmin} />
           </TabsContent>
           <TabsContent value="activity-log">
-            <AdminActivityLogTab isSuperAdmin={can("sistema.activity-log", "delete")} />
+            <AdminActivityLogTab isSuperAdmin={isSuperAdmin} />
           </TabsContent>
           <TabsContent value="papelera">
             <AdminTrashManager />
@@ -615,7 +615,7 @@ export default function AdminPage() {
 
           <main className="flex-1 p-4 md:p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">{getHubTitle(activeTab)}</h2>
-            <AdminContent activeTab={activeTab} permissions={permissions} />
+            <AdminContent activeTab={activeTab} permissions={permissions} isSuperAdmin={isSuperAdmin} />
           </main>
         </div>
       </div>

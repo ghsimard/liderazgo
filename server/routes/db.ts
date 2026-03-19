@@ -399,6 +399,72 @@ router.post("/:table", async (req: Request, res: Response) => {
 
     const filters: Filter[] = _filters || [];
 
+    // ── Superadmin protection for RBAC tables ──────────────
+    const RBAC_TABLES = new Set(["role_permissions", "custom_roles", "user_custom_roles"]);
+    if (RBAC_TABLES.has(table) && (method === "PATCH" || method === "DELETE" || method === "POST")) {
+      let targetsSuperadmin = false;
+
+      if (table === "role_permissions") {
+        const roleIdFromFilters = filters.find((f: Filter) => f.col === "role_id")?.val;
+        const roleIdFromBody = (_body || {}).role_id;
+        const roleIdToCheck = roleIdFromFilters || roleIdFromBody;
+        if (roleIdToCheck) {
+          const saRow = await queryOne(
+            `SELECT 1 FROM custom_roles WHERE id = $1 AND name = 'Superadmin'`,
+            [roleIdToCheck]
+          );
+          if (saRow) targetsSuperadmin = true;
+        }
+      } else if (table === "custom_roles") {
+        const idFromFilters = filters.find((f: Filter) => f.col === "id")?.val;
+        if (idFromFilters) {
+          const saRow = await queryOne(
+            `SELECT 1 FROM custom_roles WHERE id = $1 AND name = 'Superadmin'`,
+            [idFromFilters]
+          );
+          if (saRow) targetsSuperadmin = true;
+        }
+      } else if (table === "user_custom_roles") {
+        const roleIdFromFilters = filters.find((f: Filter) => f.col === "role_id")?.val;
+        const roleIdFromBody = (_body || {}).role_id;
+        const roleIdToCheck = roleIdFromFilters || roleIdFromBody;
+        if (roleIdToCheck) {
+          const saRow = await queryOne(
+            `SELECT 1 FROM custom_roles WHERE id = $1 AND name = 'Superadmin'`,
+            [roleIdToCheck]
+          );
+          if (saRow) targetsSuperadmin = true;
+        }
+      }
+
+      if (targetsSuperadmin) {
+        const authHeader = req.headers.authorization;
+        if (authHeader?.startsWith("Bearer ")) {
+          const jwt = await import("jsonwebtoken");
+          const JWT_SECRET = process.env.JWT_SECRET || "change-me";
+          try {
+            const decoded = jwt.default.verify(authHeader.slice(7), JWT_SECRET) as any;
+            const callerRole = await queryOne(
+              `SELECT cr.name FROM user_custom_roles ucr
+               JOIN custom_roles cr ON cr.id = ucr.role_id
+               WHERE ucr.user_id = $1 AND cr.name = 'Superadmin'`,
+              [decoded.userId]
+            );
+            if (!callerRole) {
+              res.status(403).json({ error: "Solo un Superadmin puede modificar el rol Superadmin" });
+              return;
+            }
+          } catch {
+            res.status(403).json({ error: "Solo un Superadmin puede modificar el rol Superadmin" });
+            return;
+          }
+        } else {
+          res.status(403).json({ error: "Solo un Superadmin puede modificar el rol Superadmin" });
+          return;
+        }
+      }
+    }
+
     if (method === "POST") {
       // INSERT or UPSERT
       let body = _body || req.body;

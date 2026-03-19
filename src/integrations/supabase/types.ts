@@ -1868,6 +1868,7 @@ export type Database = {
       }
       has_admin_access: { Args: { _user_id: string }; Returns: boolean }
       has_read_access: { Args: { _user_id: string }; Returns: boolean }
+      has_superadmin_access: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
