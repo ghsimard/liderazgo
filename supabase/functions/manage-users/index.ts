@@ -211,7 +211,7 @@ Deno.serve(async (req) => {
       }
 
       case "update_user": {
-        const { user_id, email, role, cedula } = params as Record<string, unknown>;
+        const { user_id, email, role, cedula, nombre } = params as Record<string, unknown>;
         const uuidRx = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (typeof user_id !== "string" || !uuidRx.test(user_id)) {
           return new Response(JSON.stringify({ error: "user_id must be a valid UUID" }), {
