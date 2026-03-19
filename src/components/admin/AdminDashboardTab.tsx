@@ -48,7 +48,7 @@ export default function AdminDashboardTab() {
     (async () => {
       setLoading(true);
       const [fRes, eRes, rRes, aRes, sRes, iRes, atRes, mRes] = await Promise.all([
-        supabase.from("fichas_rlt").select("id, region, cargo_actual, nombre_ie, numero_cedula"),
+        supabase.from("fichas_rlt").select("id, region, cargo_actual, nombre_ie, numero_cedula, nombres_apellidos"),
         supabase.from("encuestas_360").select("id, fase, tipo_formulario, institucion_educativa, cedula_directivo"),
         supabase.from("rubrica_seguimientos").select("id, module_number, nivel, directivo_cedula"),
         supabase.from("encuestas_ambiente_escolar").select("id, tipo_formulario, institucion_educativa"),
