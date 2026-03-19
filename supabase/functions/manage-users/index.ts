@@ -256,8 +256,10 @@ Deno.serve(async (req) => {
 
         if (typeof cedula === "string") {
           if (cedula.trim()) {
+            const upsertData: Record<string, unknown> = { user_id, cedula: cedula.trim() };
+            if (typeof nombre === "string") upsertData.nombre = nombre.trim();
             await adminClient.from("admin_cedulas").upsert(
-              { user_id, cedula: cedula.trim() },
+              upsertData,
               { onConflict: "user_id" }
             );
           } else {
