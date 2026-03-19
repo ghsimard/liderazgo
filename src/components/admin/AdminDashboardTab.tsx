@@ -152,23 +152,33 @@ export default function AdminDashboardTab() {
     return rows.filter((x) => resolvedInstitutions.includes(x[instField]));
   };
 
+  // Resolved directivo cédulas
+  const resolvedCedulas = useMemo<Set<string> | null>(() => {
+    if (filters.directivo.length > 0) return new Set(filters.directivo);
+    return null;
+  }, [filters.directivo]);
+
   // Filtered datasets
   const filteredFichas = useMemo(() => {
     let r = fichas;
     if (filters.region) r = r.filter((f) => f.region === filters.region);
     if (resolvedInstitutions) r = r.filter((f) => resolvedInstitutions.includes(f.nombre_ie));
+    if (resolvedCedulas) r = r.filter((f) => resolvedCedulas.has(f.numero_cedula));
     return r;
-  }, [fichas, filters.region, resolvedInstitutions]);
+  }, [fichas, filters.region, resolvedInstitutions, resolvedCedulas]);
 
   const filtered360 = useMemo(() => {
-    return filterByInst(encuestas360, "institucion_educativa");
-  }, [encuestas360, resolvedInstitutions]);
+    let r = filterByInst(encuestas360, "institucion_educativa");
+    if (resolvedCedulas) r = r.filter((e) => resolvedCedulas.has(e.cedula_directivo));
+    return r;
+  }, [encuestas360, resolvedInstitutions, resolvedCedulas]);
 
   const filteredRubrica = useMemo(() => {
     let r = rubricaSeg;
     if (filters.modulo) r = r.filter((x) => String(x.module_number) === filters.modulo);
+    if (resolvedCedulas) r = r.filter((x) => resolvedCedulas.has(x.directivo_cedula));
     return r;
-  }, [rubricaSeg, filters.modulo]);
+  }, [rubricaSeg, filters.modulo, resolvedCedulas]);
 
   const filteredAmbiente = useMemo(() => filterByInst(ambienteEsc, "institucion_educativa"), [ambienteEsc, resolvedInstitutions]);
 
@@ -189,12 +199,14 @@ export default function AdminDashboardTab() {
   const filteredAsistencia = useMemo(() => {
     let r = asistencia;
     if (filters.modulo) r = r.filter((x) => String(x.module_number) === filters.modulo);
-    if (resolvedInstitutions) {
+    if (resolvedCedulas) {
+      r = r.filter((x) => resolvedCedulas.has(x.directivo_cedula));
+    } else if (resolvedInstitutions) {
       const ceds = new Set(fichas.filter((f) => resolvedInstitutions.includes(f.nombre_ie)).map((f) => f.numero_cedula));
       r = r.filter((x) => ceds.has(x.directivo_cedula));
     }
     return r;
-  }, [asistencia, filters.modulo, resolvedInstitutions, fichas]);
+  }, [asistencia, filters.modulo, resolvedInstitutions, resolvedCedulas, fichas]);
 
   // ── Stats calculations ──
 
