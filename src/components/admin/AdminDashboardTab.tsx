@@ -263,11 +263,11 @@ export default function AdminDashboardTab() {
           <div className="flex flex-wrap gap-3 items-end">
             <FilterSelect label="Región" value={filters.region} options={geo.regionNames}
               onChange={(v) => setFilters({ ...EMPTY_FILTERS, region: v })} />
-            <FilterSelect label="Entidad Territorial" value={filters.entidad} options={entidadOptions}
-              onChange={(v) => setFilters((f) => ({ ...f, entidad: v, municipio: "", institucion: "" }))} disabled={!filters.region && entidadOptions.length === 0} />
-            <FilterSelect label="Municipio" value={filters.municipio} options={municipioOptions}
-              onChange={(v) => setFilters((f) => ({ ...f, municipio: v, institucion: "" }))} disabled={municipioOptions.length === 0} />
-            <FilterSelect label="Institución" value={filters.institucion} options={institucionOptions}
+            <MultiFilterSelect label="Entidad Territorial" selected={filters.entidad} options={entidadOptions}
+              onChange={(v) => setFilters((f) => ({ ...f, entidad: v, municipio: [], institucion: [] }))} />
+            <MultiFilterSelect label="Municipio" selected={filters.municipio} options={municipioOptions}
+              onChange={(v) => setFilters((f) => ({ ...f, municipio: v, institucion: [] }))} disabled={municipioOptions.length === 0} />
+            <MultiFilterSelect label="Institución" selected={filters.institucion} options={institucionOptions}
               onChange={(v) => setFilters((f) => ({ ...f, institucion: v }))} disabled={institucionOptions.length === 0} />
             <FilterSelect label="Módulo" value={filters.modulo}
               options={modules.map((m) => String(m.module_number))}
