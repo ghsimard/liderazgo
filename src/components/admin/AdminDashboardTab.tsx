@@ -343,6 +343,20 @@ export default function AdminDashboardTab() {
 
 // ── Helpers ──
 
+function MultiFilterSelect({ label, selected, options, onChange, disabled }: {
+  label: string; selected: string[]; options: string[];
+  onChange: (v: string[]) => void; disabled?: boolean;
+}) {
+  const opts = options.map((o) => ({ value: o, label: o }));
+  return (
+    <div className="flex flex-col gap-1 min-w-[160px]">
+      <label className="text-xs font-medium text-muted-foreground">{label}</label>
+      <MultiSelect options={opts} selected={selected} onChange={onChange} placeholder="Todos" disabled={disabled} className="h-9 text-sm" />
+    </div>
+  );
+}
+
+
 function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
