@@ -180,7 +180,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
         existing.adminRole = u.role || (u.roles?.includes("superadmin") ? "superadmin" : u.roles?.includes("monitoreo") ? "monitoreo" : "admin");
         existing.adminLastSignIn = u.last_sign_in_at;
         existing.email = existing.email || u.email;
-        if (!existing.nombre) existing.nombre = u.email.split("@")[0];
+        if (!existing.nombre) existing.nombre = (u as any).nombre || u.email.split("@")[0];
         // Enrich with custom role — prefer Express-provided data
         const expressRoleNames: string[] = (u as any).custom_role_names ?? [];
         const expressRoleIds: string[] = (u as any).custom_role_ids ?? [];
