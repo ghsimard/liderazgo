@@ -94,7 +94,7 @@ export function MultiSelect({
                 checked={selected.includes(option.value)}
                 onCheckedChange={() => toggleOption(option.value)}
               />
-              <span className="truncate">{option.label}</span>
+              <span className="break-words">{option.label}</span>
             </label>
           ))}
         </div>
