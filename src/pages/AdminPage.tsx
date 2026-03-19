@@ -242,6 +242,8 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
 
   switch (activeTab) {
+    case "dashboard":
+      return <AdminDashboardTab />;
     case "formularios":
       return (
         <div className="space-y-8">
