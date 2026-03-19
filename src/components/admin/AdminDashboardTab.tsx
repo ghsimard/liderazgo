@@ -322,7 +322,7 @@ export default function AdminDashboardTab() {
         <KpiCard icon={FileBarChart} title="Informes de Módulo" value={filteredInformes.length} color="text-indigo-600" />
 
         {/* Asistencia */}
-        <KpiCard icon={CalendarCheck} title="Asistencia" value={`${asistenciaStats.total} registros`} subtitle={`Presentes: ${asistenciaStats.present} · Tasa global: ${asistenciaStats.rate}%`} color="text-teal-600">
+        <KpiCard icon={CalendarCheck} title="Asistencia" value={`${asistenciaStats.total} directivos`} subtitle={`Presentes: ${asistenciaStats.present} registros · Tasa global: ${asistenciaStats.rate}%`} color="text-teal-600">
           {asistenciaByDay.length > 0 && (
             <ResponsiveContainer width="100%" height={120}>
               <BarChart data={asistenciaByDay} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
