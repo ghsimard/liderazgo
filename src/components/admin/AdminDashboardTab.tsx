@@ -104,10 +104,16 @@ export default function AdminDashboardTab() {
   }, [geo]);
 
   // ── Cascading filter options ──
+  // ET: only those with at least one institution that has a ficha
   const entidadOptions = useMemo(() => {
-    if (filters.region) return geo.getEntidadesForRegion(filters.region);
-    return allRegionEntidades;
-  }, [filters.region, geo, allRegionEntidades]);
+    const base = filters.region ? geo.getEntidadesForRegion(filters.region) : allRegionEntidades;
+    return base.filter((ent) => {
+      const munis = geo.getMunicipiosForEntidad(ent);
+      return munis.some((mun) =>
+        geo.getInstitucionesForMunicipioByEntidad(ent, mun).some((inst) => institucionesConFicha.has(inst))
+      );
+    });
+  }, [filters.region, geo, allRegionEntidades, institucionesConFicha]);
 
   const municipioOptions = useMemo(() => {
     let munis: string[];
@@ -120,7 +126,6 @@ export default function AdminDashboardTab() {
     } else {
       munis = allRegionMunicipios;
     }
-    // Keep only municipios that have at least one institution with a ficha
     const entPool = filters.entidad.length > 0 ? filters.entidad : entidadOptions;
     return munis.filter((mun) => {
       for (const ent of entPool) {
@@ -131,7 +136,9 @@ export default function AdminDashboardTab() {
     }).sort((a, b) => a.localeCompare(b, "es"));
   }, [filters.region, filters.entidad, geo, allRegionMunicipios, entidadOptions, institucionesConFicha]);
 
+  // Institución: only those with a ficha
   const institucionOptions = useMemo(() => {
+    let base: string[];
     if (filters.municipio.length > 0) {
       const entPool = filters.entidad.length > 0 ? filters.entidad : entidadOptions;
       const set = new Set<string>();
@@ -140,9 +147,8 @@ export default function AdminDashboardTab() {
           geo.getInstitucionesForMunicipioByEntidad(ent, mun).forEach((i) => set.add(i));
         }
       }
-      return [...set].sort((a, b) => a.localeCompare(b, "es"));
-    }
-    if (filters.entidad.length > 0) {
+      base = [...set];
+    } else if (filters.entidad.length > 0) {
       const set = new Set<string>();
       for (const ent of filters.entidad) {
         const munis = geo.getMunicipiosForEntidad(ent);
@@ -150,11 +156,24 @@ export default function AdminDashboardTab() {
           geo.getInstitucionesForMunicipioByEntidad(ent, mun).forEach((i) => set.add(i));
         }
       }
-      return [...set].sort((a, b) => a.localeCompare(b, "es"));
+      base = [...set];
+    } else if (filters.region) {
+      base = geo.getInstitucionesForRegion(filters.region);
+    } else {
+      base = allRegionInstituciones;
     }
-    if (filters.region) return geo.getInstitucionesForRegion(filters.region);
-    return allRegionInstituciones;
-  }, [filters.region, filters.entidad, filters.municipio, geo, entidadOptions, allRegionInstituciones]);
+    return base.filter((inst) => institucionesConFicha.has(inst)).sort((a, b) => a.localeCompare(b, "es"));
+  }, [filters.region, filters.entidad, filters.municipio, geo, entidadOptions, allRegionInstituciones, institucionesConFicha]);
+
+  // Módulo: only modules that have rubrica or satisfaccion data
+  const moduleOptions = useMemo(() => {
+    const modsWithData = new Set<number>();
+    rubricaSeg.forEach((r) => modsWithData.add(r.module_number));
+    satisfaccion.forEach((s) => modsWithData.add(s.module_number));
+    informes.forEach((i) => modsWithData.add(i.module_number));
+    asistencia.forEach((a) => modsWithData.add(a.module_number));
+    return modules.filter((m) => modsWithData.has(m.module_number));
+  }, [modules, rubricaSeg, satisfaccion, informes, asistencia]);
 
   // ── Resolved institution set for filtering data ──
   const resolvedInstitutions = useMemo<string[] | null>(() => {
