@@ -309,7 +309,11 @@ export default function AdminDashboardTab() {
             <MultiFilterSelect label="Municipio" selected={filters.municipio} options={municipioOptions}
               onChange={(v) => setFilters((f) => ({ ...f, municipio: v, institucion: [] }))} />
             <MultiFilterSelect label="Institución" selected={filters.institucion} options={institucionOptions}
-              onChange={(v) => setFilters((f) => ({ ...f, institucion: v }))} />
+              onChange={(v) => setFilters((f) => ({ ...f, institucion: v, directivo: [] }))} />
+            <div className="flex flex-col gap-1 min-w-[200px]">
+              <label className="text-xs font-medium text-muted-foreground">Directivo</label>
+              <MultiSelect options={directivoOptions} selected={filters.directivo} onChange={(v) => setFilters((f) => ({ ...f, directivo: v }))} placeholder="Todos" className="h-9 text-sm" />
+            </div>
             <FilterSelect label="Módulo" value={filters.modulo}
               options={modules.map((m) => String(m.module_number))}
               labels={modules.map((m) => `Módulo ${m.module_number}`)}
