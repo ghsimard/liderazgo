@@ -69,6 +69,21 @@ export default function AdminDashboardTab() {
     })();
   }, []);
 
+  // Set of institutions that have at least one ficha
+  const institucionesConFicha = useMemo(() => {
+    return new Set(fichas.map((f) => f.nombre_ie).filter(Boolean));
+  }, [fichas]);
+
+  // Set of regions that have at least one ficha
+  const regionesConFicha = useMemo(() => {
+    return new Set(fichas.map((f) => f.region).filter(Boolean));
+  }, [fichas]);
+
+  // Filtered region options
+  const regionOptions = useMemo(() => {
+    return geo.regionNames.filter((r) => regionesConFicha.has(r));
+  }, [geo.regionNames, regionesConFicha]);
+
   // ── All ET/municipios/institutions across all regions (for "Todos") ──
   const allRegionEntidades = useMemo(() => {
     const set = new Set<string>();
