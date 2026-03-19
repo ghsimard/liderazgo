@@ -7,6 +7,7 @@ export interface RbacSection {
 }
 
 export const RBAC_SECTIONS: RbacSection[] = [
+  { key: "dashboard", label: "Dashboard" },
   { key: "formularios", label: "Enlaces" },
   {
     key: "fichas-rlt",

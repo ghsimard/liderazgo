@@ -69,6 +69,7 @@ interface SidebarSection {
 }
 
 const topLevelItems: SidebarItem[] = [
+  { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { tab: "formularios", label: "Enlaces", icon: Link2 },
 ];
 
