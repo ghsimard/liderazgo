@@ -8,7 +8,7 @@
  */
 
 import { Router, Request, Response } from "express";
-import { pool, query } from "../db";
+import { pool, query, queryOne } from "../db";
 import { requireAuth, requireAdmin } from "../middleware/auth";
 
 const router = Router();
