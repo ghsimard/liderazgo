@@ -22,10 +22,11 @@ interface Filters {
   entidad: string[];
   municipio: string[];
   institucion: string[];
+  directivo: string[];
   modulo: string;
 }
 
-const EMPTY_FILTERS: Filters = { region: "", entidad: [], municipio: [], institucion: [], modulo: "" };
+const EMPTY_FILTERS: Filters = { region: "", entidad: [], municipio: [], institucion: [], directivo: [], modulo: "" };
 
 export default function AdminDashboardTab() {
   const geo = useGeographicData();
@@ -136,29 +137,48 @@ export default function AdminDashboardTab() {
     return null; // no geo filter → all data
   }, [filters.institucion, filters.municipio, filters.entidad, filters.region, institucionOptions, geo]);
 
+  // ── Directivo options (from fichas filtered by resolved institutions) ──
+  const directivoOptions = useMemo(() => {
+    let pool = fichas.filter((f) => ["Rector/a", "Coordinador/a"].includes(f.cargo_actual) && f.numero_cedula);
+    if (resolvedInstitutions) pool = pool.filter((f) => resolvedInstitutions.includes(f.nombre_ie));
+    return pool
+      .map((f) => ({ value: f.numero_cedula as string, label: `${f.cargo_actual} – ${f.numero_cedula}` }))
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
+  }, [fichas, resolvedInstitutions]);
+
   // Filter helpers
   const filterByInst = (rows: any[], instField: string) => {
     if (!resolvedInstitutions) return rows;
     return rows.filter((x) => resolvedInstitutions.includes(x[instField]));
   };
 
+  // Resolved directivo cédulas
+  const resolvedCedulas = useMemo<Set<string> | null>(() => {
+    if (filters.directivo.length > 0) return new Set(filters.directivo);
+    return null;
+  }, [filters.directivo]);
+
   // Filtered datasets
   const filteredFichas = useMemo(() => {
     let r = fichas;
     if (filters.region) r = r.filter((f) => f.region === filters.region);
     if (resolvedInstitutions) r = r.filter((f) => resolvedInstitutions.includes(f.nombre_ie));
+    if (resolvedCedulas) r = r.filter((f) => resolvedCedulas.has(f.numero_cedula));
     return r;
-  }, [fichas, filters.region, resolvedInstitutions]);
+  }, [fichas, filters.region, resolvedInstitutions, resolvedCedulas]);
 
   const filtered360 = useMemo(() => {
-    return filterByInst(encuestas360, "institucion_educativa");
-  }, [encuestas360, resolvedInstitutions]);
+    let r = filterByInst(encuestas360, "institucion_educativa");
+    if (resolvedCedulas) r = r.filter((e) => resolvedCedulas.has(e.cedula_directivo));
+    return r;
+  }, [encuestas360, resolvedInstitutions, resolvedCedulas]);
 
   const filteredRubrica = useMemo(() => {
     let r = rubricaSeg;
     if (filters.modulo) r = r.filter((x) => String(x.module_number) === filters.modulo);
+    if (resolvedCedulas) r = r.filter((x) => resolvedCedulas.has(x.directivo_cedula));
     return r;
-  }, [rubricaSeg, filters.modulo]);
+  }, [rubricaSeg, filters.modulo, resolvedCedulas]);
 
   const filteredAmbiente = useMemo(() => filterByInst(ambienteEsc, "institucion_educativa"), [ambienteEsc, resolvedInstitutions]);
 
@@ -179,12 +199,14 @@ export default function AdminDashboardTab() {
   const filteredAsistencia = useMemo(() => {
     let r = asistencia;
     if (filters.modulo) r = r.filter((x) => String(x.module_number) === filters.modulo);
-    if (resolvedInstitutions) {
+    if (resolvedCedulas) {
+      r = r.filter((x) => resolvedCedulas.has(x.directivo_cedula));
+    } else if (resolvedInstitutions) {
       const ceds = new Set(fichas.filter((f) => resolvedInstitutions.includes(f.nombre_ie)).map((f) => f.numero_cedula));
       r = r.filter((x) => ceds.has(x.directivo_cedula));
     }
     return r;
-  }, [asistencia, filters.modulo, resolvedInstitutions, fichas]);
+  }, [asistencia, filters.modulo, resolvedInstitutions, resolvedCedulas, fichas]);
 
   // ── Stats calculations ──
 
@@ -264,7 +286,7 @@ export default function AdminDashboardTab() {
     return { total: totalDirectivos, present, rate: expectedTotal ? Math.round((present / expectedTotal) * 100) : 0 };
   }, [filteredAsistencia, totalDirectivos]);
 
-  const hasFilters = filters.region || filters.modulo || filters.entidad.length > 0 || filters.municipio.length > 0 || filters.institucion.length > 0;
+  const hasFilters = filters.region || filters.modulo || filters.entidad.length > 0 || filters.municipio.length > 0 || filters.institucion.length > 0 || filters.directivo.length > 0;
 
   if (loading || geo.loading) {
     return (
@@ -287,7 +309,11 @@ export default function AdminDashboardTab() {
             <MultiFilterSelect label="Municipio" selected={filters.municipio} options={municipioOptions}
               onChange={(v) => setFilters((f) => ({ ...f, municipio: v, institucion: [] }))} />
             <MultiFilterSelect label="Institución" selected={filters.institucion} options={institucionOptions}
-              onChange={(v) => setFilters((f) => ({ ...f, institucion: v }))} />
+              onChange={(v) => setFilters((f) => ({ ...f, institucion: v, directivo: [] }))} />
+            <div className="flex flex-col gap-1 min-w-[200px]">
+              <label className="text-xs font-medium text-muted-foreground">Directivo</label>
+              <MultiSelect options={directivoOptions} selected={filters.directivo} onChange={(v) => setFilters((f) => ({ ...f, directivo: v }))} placeholder="Todos" className="h-9 text-sm" />
+            </div>
             <FilterSelect label="Módulo" value={filters.modulo}
               options={modules.map((m) => String(m.module_number))}
               labels={modules.map((m) => `Módulo ${m.module_number}`)}
