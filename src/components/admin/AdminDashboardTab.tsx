@@ -276,9 +276,9 @@ export default function AdminDashboardTab() {
             <MultiFilterSelect label="Entidad Territorial" selected={filters.entidad} options={entidadOptions}
               onChange={(v) => setFilters((f) => ({ ...f, entidad: v, municipio: [], institucion: [] }))} />
             <MultiFilterSelect label="Municipio" selected={filters.municipio} options={municipioOptions}
-              onChange={(v) => setFilters((f) => ({ ...f, municipio: v, institucion: [] }))} disabled={municipioOptions.length === 0} />
+              onChange={(v) => setFilters((f) => ({ ...f, municipio: v, institucion: [] }))} />
             <MultiFilterSelect label="Institución" selected={filters.institucion} options={institucionOptions}
-              onChange={(v) => setFilters((f) => ({ ...f, institucion: v }))} disabled={institucionOptions.length === 0} />
+              onChange={(v) => setFilters((f) => ({ ...f, institucion: v }))} />
             <FilterSelect label="Módulo" value={filters.modulo}
               options={modules.map((m) => String(m.module_number))}
               labels={modules.map((m) => `Módulo ${m.module_number}`)}
