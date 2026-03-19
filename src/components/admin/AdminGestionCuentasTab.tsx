@@ -180,7 +180,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
         existing.adminRole = u.role || (u.roles?.includes("superadmin") ? "superadmin" : u.roles?.includes("monitoreo") ? "monitoreo" : "admin");
         existing.adminLastSignIn = u.last_sign_in_at;
         existing.email = existing.email || u.email;
-        if (!existing.nombre) existing.nombre = u.email.split("@")[0];
+        if (!existing.nombre) existing.nombre = (u as any).nombre || u.email.split("@")[0];
         // Enrich with custom role — prefer Express-provided data
         const expressRoleNames: string[] = (u as any).custom_role_names ?? [];
         const expressRoleIds: string[] = (u as any).custom_role_ids ?? [];
@@ -374,6 +374,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               email,
               role: legacyRole,
               cedula: ced,
+              nombre: formNombre.trim(),
             });
             // Sync custom role (Supabase mode only)
             if (adminRole) {
@@ -408,7 +409,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             const freshUsers: AdminUser[] = USE_EXPRESS ? (freshData as any).data?.users ?? [] : (freshData as any).users ?? [];
             const newUser = freshUsers.find(u => u.email === email);
             if (newUser) {
-              await supabase.from("admin_cedulas").upsert({ user_id: newUser.id, cedula: ced }, { onConflict: "user_id" });
+              await supabase.from("admin_cedulas").upsert({ user_id: newUser.id, cedula: ced, nombre: formNombre.trim() }, { onConflict: "user_id" });
               if (adminRole) {
                 await supabase.from("user_custom_roles").insert({ user_id: newUser.id, role_id: adminRole });
               }

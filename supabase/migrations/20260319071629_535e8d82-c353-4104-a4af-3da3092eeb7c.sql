@@ -1,0 +1,1 @@
+ALTER TABLE public.admin_cedulas ADD COLUMN IF NOT EXISTS nombre text DEFAULT '';

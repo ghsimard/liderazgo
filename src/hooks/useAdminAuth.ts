@@ -35,7 +35,15 @@ export function useAdminAuth() {
 
         const uid = data.user.id;
         const email = data.user.email || "";
-        setUserName(email.split("@")[0]);
+
+        // Try to get stored nombre from admin_cedulas
+        const { data: cedulaData } = await supabase
+          .from("admin_cedulas")
+          .select("nombre")
+          .eq("user_id", uid)
+          .limit(1);
+        const storedName = (cedulaData?.[0] as any)?.nombre;
+        setUserName(storedName || email.split("@")[0]);
 
         if (USE_EXPRESS) {
           const roles: string[] = (data.user as any).roles ?? [];

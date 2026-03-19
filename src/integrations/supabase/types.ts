@@ -19,18 +19,21 @@ export type Database = {
           cedula: string
           created_at: string
           id: string
+          nombre: string | null
           user_id: string
         }
         Insert: {
           cedula: string
           created_at?: string
           id?: string
+          nombre?: string | null
           user_id: string
         }
         Update: {
           cedula?: string
           created_at?: string
           id?: string
+          nombre?: string | null
           user_id?: string
         }
         Relationships: []
