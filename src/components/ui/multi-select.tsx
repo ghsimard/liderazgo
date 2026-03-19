@@ -75,7 +75,7 @@ export function MultiSelect({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[260px] p-0" align="start">
+      <PopoverContent className="w-[320px] p-0" align="start">
         <div className="p-2 border-b">
           <button
             onClick={toggleAll}
