@@ -48,7 +48,7 @@ export default function AdminDashboardTab() {
     (async () => {
       setLoading(true);
       const [fRes, eRes, rRes, aRes, sRes, iRes, atRes, mRes] = await Promise.all([
-        supabase.from("fichas_rlt").select("id, region, cargo_actual, nombre_ie, numero_cedula"),
+        supabase.from("fichas_rlt").select("id, region, cargo_actual, nombre_ie, numero_cedula, nombres_apellidos"),
         supabase.from("encuestas_360").select("id, fase, tipo_formulario, institucion_educativa, cedula_directivo"),
         supabase.from("rubrica_seguimientos").select("id, module_number, nivel, directivo_cedula"),
         supabase.from("encuestas_ambiente_escolar").select("id, tipo_formulario, institucion_educativa"),
@@ -188,7 +188,7 @@ export default function AdminDashboardTab() {
     let pool = fichas.filter((f) => ["Rector/a", "Coordinador/a"].includes(f.cargo_actual) && f.numero_cedula);
     if (resolvedInstitutions) pool = pool.filter((f) => resolvedInstitutions.includes(f.nombre_ie));
     return pool
-      .map((f) => ({ value: f.numero_cedula as string, label: `${f.cargo_actual} – ${f.numero_cedula}` }))
+      .map((f) => ({ value: f.numero_cedula as string, label: `${f.nombres_apellidos} (${f.cargo_actual})` }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
   }, [fichas, resolvedInstitutions]);
 
