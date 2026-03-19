@@ -374,6 +374,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               email,
               role: legacyRole,
               cedula: ced,
+              nombre: formNombre.trim(),
             });
             // Sync custom role (Supabase mode only)
             if (adminRole) {
