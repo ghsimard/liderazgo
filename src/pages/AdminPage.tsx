@@ -565,7 +565,7 @@ function AdminContent({ activeTab, permissions }: { activeTab: string; permissio
 
 export default function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isAdmin, isSuperAdmin, userId, signOut } = useAdminAuth();
+  const { isAdmin, isSuperAdmin, userId, userName, signOut } = useAdminAuth();
   const permissions = usePermissions(userId);
   const { can, readableSections } = permissions;
   const { toast } = useToast();
