@@ -236,7 +236,7 @@ function getHubTitle(activeTab: string): string {
   return titleMap[activeTab] || "Panel";
 }
 
-function AdminContent({ activeTab, permissions }: { activeTab: string; permissions: ReturnType<typeof usePermissions> }) {
+function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: string; permissions: ReturnType<typeof usePermissions>; isSuperAdmin: boolean }) {
   const { can } = permissions;
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRefreshKey, setWizardRefreshKey] = useState(0);
