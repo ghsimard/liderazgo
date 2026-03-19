@@ -68,103 +68,104 @@ export default function AdminDashboardTab() {
     })();
   }, []);
 
-  // Get institutions for a region from geographic data
-  const instForRegion = useMemo(() => {
-    if (!filters.region) return null;
-    return geo.getInstitucionesForRegion(filters.region);
+  // ── Cascading filter options ──
+  const entidadOptions = useMemo(() => {
+    if (filters.region) return geo.getEntidadesForRegion(filters.region);
+    return geo.entidadNames;
   }, [filters.region, geo]);
+
+  const municipioOptions = useMemo(() => {
+    if (filters.entidad.length > 0) {
+      const set = new Set<string>();
+      filters.entidad.forEach((e) => geo.getMunicipiosForEntidad(e).forEach((m) => set.add(m)));
+      return [...set].sort((a, b) => a.localeCompare(b, "es"));
+    }
+    if (filters.region) return geo.getMunicipiosForRegion(filters.region);
+    return [];
+  }, [filters.region, filters.entidad, geo]);
+
+  const institucionOptions = useMemo(() => {
+    if (filters.municipio.length > 0) {
+      const entPool = filters.entidad.length > 0 ? filters.entidad : entidadOptions;
+      const set = new Set<string>();
+      for (const mun of filters.municipio) {
+        for (const ent of entPool) {
+          geo.getInstitucionesForMunicipioByEntidad(ent, mun).forEach((i) => set.add(i));
+        }
+      }
+      return [...set].sort((a, b) => a.localeCompare(b, "es"));
+    }
+    if (filters.entidad.length > 0) {
+      const set = new Set<string>();
+      for (const ent of filters.entidad) {
+        const munis = geo.getMunicipiosForEntidad(ent);
+        for (const mun of munis) {
+          geo.getInstitucionesForMunicipioByEntidad(ent, mun).forEach((i) => set.add(i));
+        }
+      }
+      return [...set].sort((a, b) => a.localeCompare(b, "es"));
+    }
+    if (filters.region) return geo.getInstitucionesForRegion(filters.region);
+    return [];
+  }, [filters.region, filters.entidad, filters.municipio, geo, entidadOptions]);
+
+  // ── Resolved institution set for filtering data ──
+  const resolvedInstitutions = useMemo<string[] | null>(() => {
+    if (filters.institucion.length > 0) return filters.institucion;
+    if (filters.municipio.length > 0 || filters.entidad.length > 0) return institucionOptions;
+    if (filters.region) return geo.getInstitucionesForRegion(filters.region);
+    return null; // no geo filter → all data
+  }, [filters.institucion, filters.municipio, filters.entidad, filters.region, institucionOptions, geo]);
 
   // Filter helpers
   const filterByInst = (rows: any[], instField: string) => {
-    let r = rows;
-    if (filters.institucion) {
-      r = r.filter((x) => x[instField] === filters.institucion);
-    } else if (instForRegion) {
-      r = r.filter((x) => instForRegion.includes(x[instField]));
-    }
-    return r;
+    if (!resolvedInstitutions) return rows;
+    return rows.filter((x) => resolvedInstitutions.includes(x[instField]));
   };
-
-  const filterByRegionDirect = (rows: any[], regionField: string) => {
-    if (filters.region) return rows.filter((x) => x[regionField] === filters.region);
-    return rows;
-  };
-
-  // Build fichas->institution mapping for cedula-based filtering
-  const fichaMap = useMemo(() => {
-    const m = new Map<string, string>();
-    fichas.forEach((f) => {
-      if (f.numero_cedula) m.set(f.numero_cedula, f.nombre_ie);
-    });
-    return m;
-  }, [fichas]);
 
   // Filtered datasets
   const filteredFichas = useMemo(() => {
     let r = fichas;
     if (filters.region) r = r.filter((f) => f.region === filters.region);
-    if (filters.institucion) r = r.filter((f) => f.nombre_ie === filters.institucion);
+    if (resolvedInstitutions) r = r.filter((f) => resolvedInstitutions.includes(f.nombre_ie));
     return r;
-  }, [fichas, filters]);
+  }, [fichas, filters.region, resolvedInstitutions]);
 
   const filtered360 = useMemo(() => {
-    let r = encuestas360;
-    r = filterByInst(r, "institucion_educativa");
-    return r;
-  }, [encuestas360, filters, instForRegion]);
+    return filterByInst(encuestas360, "institucion_educativa");
+  }, [encuestas360, resolvedInstitutions]);
 
   const filteredRubrica = useMemo(() => {
     let r = rubricaSeg;
     if (filters.modulo) r = r.filter((x) => String(x.module_number) === filters.modulo);
     return r;
-  }, [rubricaSeg, filters]);
+  }, [rubricaSeg, filters.modulo]);
 
-  const filteredAmbiente = useMemo(() => filterByInst(ambienteEsc, "institucion_educativa"), [ambienteEsc, filters, instForRegion]);
+  const filteredAmbiente = useMemo(() => filterByInst(ambienteEsc, "institucion_educativa"), [ambienteEsc, resolvedInstitutions]);
 
   const filteredSatisfaccion = useMemo(() => {
     let r = satisfaccion;
     if (filters.region) r = r.filter((x) => x.region === filters.region);
     if (filters.modulo) r = r.filter((x) => String(x.module_number) === filters.modulo);
     return r;
-  }, [satisfaccion, filters]);
+  }, [satisfaccion, filters.region, filters.modulo]);
 
   const filteredInformes = useMemo(() => {
     let r = informes;
     if (filters.region) r = r.filter((x) => x.region === filters.region);
     if (filters.modulo) r = r.filter((x) => String(x.module_number) === filters.modulo);
     return r;
-  }, [informes, filters]);
+  }, [informes, filters.region, filters.modulo]);
 
   const filteredAsistencia = useMemo(() => {
     let r = asistencia;
     if (filters.modulo) r = r.filter((x) => String(x.module_number) === filters.modulo);
-    if (filters.institucion) {
-      const ceds = new Set(fichas.filter((f) => f.nombre_ie === filters.institucion).map((f) => f.numero_cedula));
-      r = r.filter((x) => ceds.has(x.directivo_cedula));
-    } else if (instForRegion) {
-      const ceds = new Set(fichas.filter((f) => instForRegion.includes(f.nombre_ie)).map((f) => f.numero_cedula));
+    if (resolvedInstitutions) {
+      const ceds = new Set(fichas.filter((f) => resolvedInstitutions.includes(f.nombre_ie)).map((f) => f.numero_cedula));
       r = r.filter((x) => ceds.has(x.directivo_cedula));
     }
     return r;
-  }, [asistencia, filters, instForRegion, fichas]);
-
-  // ── Cascading filter options ──
-  const entidadOptions = useMemo(() => {
-    if (!filters.region) return geo.entidadNames;
-    return geo.getEntidadesForRegion(filters.region);
-  }, [filters.region, geo]);
-
-  const municipioOptions = useMemo(() => {
-    if (filters.entidad) return geo.getMunicipiosForEntidad(filters.entidad);
-    if (filters.region) return geo.getMunicipiosForRegion(filters.region);
-    return [];
-  }, [filters.region, filters.entidad, geo]);
-
-  const institucionOptions = useMemo(() => {
-    if (filters.municipio && filters.region) return geo.getInstitucionesForMunicipio(filters.region, filters.municipio);
-    if (filters.region) return geo.getInstitucionesForRegion(filters.region);
-    return [];
-  }, [filters.region, filters.municipio, geo]);
+  }, [asistencia, filters.modulo, resolvedInstitutions, fichas]);
 
   // ── Stats calculations ──
 
