@@ -205,10 +205,9 @@ export default function AdminDashboardTab() {
   // Asistencia
   const asistenciaStats = useMemo(() => {
     const total = filteredAsistencia.length;
-    if (!total) return { total: 0, am: 0, pm: 0, rateAm: 0, ratePm: 0 };
-    const am = filteredAsistencia.filter((a) => a.session_am).length;
-    const pm = filteredAsistencia.filter((a) => a.session_pm).length;
-    return { total, am, pm, rateAm: Math.round((am / total) * 100), ratePm: Math.round((pm / total) * 100) };
+    if (!total) return { total: 0, present: 0, rate: 0 };
+    const present = filteredAsistencia.filter((a) => a.session_am).length;
+    return { total, present, rate: Math.round((present / total) * 100) };
   }, [filteredAsistencia]);
 
   const hasFilters = Object.values(filters).some(Boolean);
@@ -290,16 +289,12 @@ export default function AdminDashboardTab() {
         <KpiCard icon={FileBarChart} title="Informes de Módulo" value={filteredInformes.length} color="text-indigo-600" />
 
         {/* Asistencia */}
-        <KpiCard icon={CalendarCheck} title="Asistencia" value={`${asistenciaStats.total} registros`} subtitle={`AM: ${asistenciaStats.rateAm}% · PM: ${asistenciaStats.ratePm}%`} color="text-teal-600">
+        <KpiCard icon={CalendarCheck} title="Asistencia" value={`${asistenciaStats.total} registros`} subtitle={`Presentes: ${asistenciaStats.present} · Tasa: ${asistenciaStats.rate}%`} color="text-teal-600">
           {asistenciaStats.total > 0 && (
-            <div className="flex gap-3 mt-2">
-              <div className="flex-1 bg-primary/10 rounded-md p-2 text-center">
-                <div className="text-lg font-bold text-primary">{asistenciaStats.rateAm}%</div>
-                <div className="text-[10px] text-muted-foreground">AM</div>
-              </div>
-              <div className="flex-1 bg-accent/20 rounded-md p-2 text-center">
-                <div className="text-lg font-bold" style={{ color: "hsl(210 60% 50%)" }}>{asistenciaStats.ratePm}%</div>
-                <div className="text-[10px] text-muted-foreground">PM</div>
+            <div className="mt-2">
+              <div className="bg-primary/10 rounded-md p-3 text-center">
+                <div className="text-2xl font-bold text-primary">{asistenciaStats.rate}%</div>
+                <div className="text-xs text-muted-foreground">Tasa de asistencia</div>
               </div>
             </div>
           )}
