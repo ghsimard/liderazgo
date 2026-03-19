@@ -361,8 +361,8 @@ export default function AdminDashboardTab() {
               <MultiSelect options={directivoOptions} selected={filters.directivo} onChange={(v) => setFilters((f) => ({ ...f, directivo: v }))} placeholder="Todos" className="h-9 text-sm" />
             </div>
             <FilterSelect label="Módulo" value={filters.modulo}
-              options={modules.map((m) => String(m.module_number))}
-              labels={modules.map((m) => `Módulo ${m.module_number}`)}
+              options={moduleOptions.map((m) => String(m.module_number))}
+              labels={moduleOptions.map((m) => `Módulo ${m.module_number}`)}
               onChange={(v) => setFilters((f) => ({ ...f, modulo: v }))} />
             {hasFilters && (
               <Button variant="ghost" size="sm" onClick={() => setFilters(EMPTY_FILTERS)} className="gap-1.5 text-destructive">
