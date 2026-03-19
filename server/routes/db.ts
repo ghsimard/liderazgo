@@ -397,14 +397,14 @@ router.post("/:table", async (req: Request, res: Response) => {
       }
     }
 
+    const filters: Filter[] = _filters || [];
+
     // ── Superadmin protection for RBAC tables ──────────────
     const RBAC_TABLES = new Set(["role_permissions", "custom_roles", "user_custom_roles"]);
     if (RBAC_TABLES.has(table) && (method === "PATCH" || method === "DELETE" || method === "POST")) {
-      // Check if the mutation targets the Superadmin role
       let targetsSuperadmin = false;
 
       if (table === "role_permissions") {
-        // Check if any filter or body references a role_id belonging to Superadmin
         const roleIdFromFilters = filters.find((f: Filter) => f.col === "role_id")?.val;
         const roleIdFromBody = (_body || {}).role_id;
         const roleIdToCheck = roleIdFromFilters || roleIdFromBody;
@@ -416,7 +416,6 @@ router.post("/:table", async (req: Request, res: Response) => {
           if (saRow) targetsSuperadmin = true;
         }
       } else if (table === "custom_roles") {
-        // Check if updating/deleting the Superadmin role itself
         const idFromFilters = filters.find((f: Filter) => f.col === "id")?.val;
         if (idFromFilters) {
           const saRow = await queryOne(
@@ -439,7 +438,6 @@ router.post("/:table", async (req: Request, res: Response) => {
       }
 
       if (targetsSuperadmin) {
-        // Verify caller is Superadmin
         const authHeader = req.headers.authorization;
         if (authHeader?.startsWith("Bearer ")) {
           const jwt = await import("jsonwebtoken");
@@ -466,8 +464,6 @@ router.post("/:table", async (req: Request, res: Response) => {
         }
       }
     }
-
-    const filters: Filter[] = _filters || [];
 
     if (method === "POST") {
       // INSERT or UPSERT
