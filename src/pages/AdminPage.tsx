@@ -217,6 +217,7 @@ function FormCard({ form }: { form: FormItem }) {
 
 function getHubTitle(activeTab: string): string {
   const titleMap: Record<string, string> = {
+    dashboard: "Dashboard",
     formularios: "Enlaces",
     encuesta360: "Encuesta 360°", enlaces360: "Encuesta 360°", ponderaciones: "Encuesta 360°",
     encuestas360: "Encuesta 360°", encuestas360final: "Encuesta 360°",
