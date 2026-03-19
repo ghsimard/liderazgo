@@ -14,22 +14,41 @@ async function verifyAdmin(authHeader: string) {
   const callerClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
   });
-  const { data: { user } } = await callerClient.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
 
-  // Check admin via new RBAC tables (using service role to bypass RLS)
+  // Use getClaims for faster JWT verification
+  const token = authHeader.replace("Bearer ", "");
+  const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
+  
+  let userId: string;
+  
+  if (claimsError || !claimsData?.claims?.sub) {
+    // Fallback to getUser if getClaims fails
+    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    if (userError || !user) throw new Error("Unauthorized");
+    userId = user.id;
+  } else {
+    userId = claimsData.claims.sub as string;
+  }
+
+  // Check admin via RBAC tables (using service role to bypass RLS)
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
-  const { data: roleData } = await adminClient
+  const { data: roleData, error: roleError } = await adminClient
     .from("user_custom_roles")
     .select("role_id, custom_roles(name)")
-    .eq("user_id", user.id);
+    .eq("user_id", userId);
 
-  const roleNames = (roleData ?? []).map((r: any) => r.custom_roles?.name).filter(Boolean);
-  if (!roleNames.includes("Admin") && !roleNames.includes("Superadmin")) {
+  if (roleError) {
+    console.error("Role lookup error:", roleError.message);
     throw new Error("Forbidden: admin only");
   }
 
-  return { user, roleNames };
+  const roleNames = (roleData ?? []).map((r: any) => r.custom_roles?.name).filter(Boolean);
+  if (!roleNames.includes("Admin") && !roleNames.includes("Superadmin")) {
+    console.error("User has roles:", roleNames, "but needs Admin or Superadmin");
+    throw new Error("Forbidden: admin only");
+  }
+
+  return { userId, roleNames };
 }
 
 Deno.serve(async (req) => {
@@ -46,7 +65,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { user: caller, roleNames: callerRoleNames } = await verifyAdmin(authHeader);
+    const { userId: callerId, roleNames: callerRoleNames } = await verifyAdmin(authHeader);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -73,7 +92,6 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "list": {
-        // List users via new RBAC tables
         const { data: ucrs } = await adminClient
           .from("user_custom_roles")
           .select("user_id, custom_roles(name)");
@@ -89,7 +107,6 @@ Deno.serve(async (req) => {
         for (const ucr of ucrs) {
           const roleName = (ucr as any).custom_roles?.name;
           if (!roleName) continue;
-          // Map custom role name back to legacy role key for API compatibility
           const legacyRole = roleName === "Superadmin" ? "superadmin" : roleName === "Monitoreo" ? "monitoreo" : "admin";
           roleMap[ucr.user_id] = legacyRole;
           if (!userIds.includes(ucr.user_id)) userIds.push(ucr.user_id);
@@ -163,7 +180,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Check if target is superadmin via new RBAC
         const { data: targetRoles } = await adminClient
           .from("user_custom_roles")
           .select("custom_roles(name)")
@@ -177,7 +193,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Delete from new RBAC table
         await adminClient.from("user_custom_roles").delete().eq("user_id", user_id);
         const { error } = await adminClient.auth.admin.deleteUser(user_id);
         if (error) {
@@ -201,7 +216,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Permission check via new RBAC
         const { data: targetRoles } = await adminClient
           .from("user_custom_roles")
           .select("custom_roles(name)")
@@ -214,7 +228,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Update email
         if (typeof email === "string" && email.length > 0) {
           const { error } = await adminClient.auth.admin.updateUserById(user_id, { email });
           if (error) {
@@ -224,14 +237,12 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Update role (dual-write)
         if (typeof role === "string" && ["admin", "superadmin", "monitoreo"].includes(role)) {
           if (!callerRoleNames.includes("Superadmin") && role === "superadmin") {
             return new Response(JSON.stringify({ error: "Seul un superadmin peut promouvoir au rôle superadmin" }), {
               status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
-          // New RBAC write
           const roleName = role === "superadmin" ? "Superadmin" : role === "monitoreo" ? "Monitoreo" : "Admin";
           const { data: cr } = await adminClient.from("custom_roles").select("id").eq("name", roleName).maybeSingle();
           if (cr) {
@@ -240,7 +251,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Update cedula
         if (typeof cedula === "string") {
           if (cedula.trim()) {
             await adminClient.from("admin_cedulas").upsert(
