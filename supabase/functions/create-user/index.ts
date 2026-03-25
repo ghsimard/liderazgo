@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, makeAdmin, makeSuperAdmin, makeViewer, makeAuditor, makeMonitoreo, customRoleId } = body as Record<string, unknown>;
+    const { email, password, makeAdmin, makeSuperAdmin, makeViewer, makeAuditor, makeMonitoreo, customRoleId, cedula, nombre } = body as Record<string, unknown>;
 
     if (typeof email !== "string" || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       return new Response(JSON.stringify({ error: "Email invalide" }), {
@@ -128,6 +128,16 @@ Deno.serve(async (req) => {
             { onConflict: "user_id,role_id" }
           );
         }
+      }
+
+      // Link cedula/name if provided
+      const normalizedCedula = typeof cedula === "string" ? cedula.trim() : "";
+      if (normalizedCedula) {
+        const normalizedNombre = typeof nombre === "string" ? nombre.trim() : "";
+        await adminClient.from("admin_cedulas").upsert(
+          { user_id: uid, cedula: normalizedCedula, nombre: normalizedNombre },
+          { onConflict: "user_id" }
+        );
       }
     }
 

@@ -390,28 +390,46 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             return;
           }
           if (adminPassword) {
+            let createdAdminUserId: string | null = null;
+
             if (USE_EXPRESS) {
-              await apiFetch("/api/users", {
+              const createRes = await apiFetch<{ id: string; email: string }>("/api/users", {
                 method: "POST",
                 body: { email, password: adminPassword, role: legacyRole, cedula: ced, nombre: formNombre.trim() },
               });
+              createdAdminUserId = (createRes as any)?.data?.id ?? null;
             } else {
               const { data: { session } } = await supabase.auth.getSession();
-              await supabase.functions.invoke("create-user", {
-                body: { email, password: adminPassword, makeAdmin: legacyRole !== "monitoreo", makeSuperAdmin: legacyRole === "superadmin", makeMonitoreo: legacyRole === "monitoreo" },
+              const { data: createData } = await supabase.functions.invoke("create-user", {
+                body: {
+                  email,
+                  password: adminPassword,
+                  makeAdmin: legacyRole !== "monitoreo",
+                  makeSuperAdmin: legacyRole === "superadmin",
+                  makeMonitoreo: legacyRole === "monitoreo",
+                  cedula: ced,
+                  nombre: formNombre.trim(),
+                },
                 headers: { Authorization: `Bearer ${session?.access_token}` },
               });
+              createdAdminUserId = (createData as any)?.user?.id ?? null;
             }
-            // Link cedula + custom role
-            const freshData = USE_EXPRESS
-              ? await apiFetch<{ users: AdminUser[] }>("/api/users")
-              : await invokeManageUsers("list");
-            const freshUsers: AdminUser[] = USE_EXPRESS ? (freshData as any).data?.users ?? [] : (freshData as any).users ?? [];
-            const newUser = freshUsers.find(u => u.email === email);
-            if (newUser) {
-              await supabase.from("admin_cedulas").upsert({ user_id: newUser.id, cedula: ced, nombre: formNombre.trim() }, { onConflict: "user_id" });
+
+            let targetUserId = createdAdminUserId;
+            if (!targetUserId) {
+              const freshData = USE_EXPRESS
+                ? await apiFetch<{ users: AdminUser[] }>("/api/users")
+                : await invokeManageUsers("list");
+              const freshUsers: AdminUser[] = USE_EXPRESS ? (freshData as any).data?.users ?? [] : (freshData as any).users ?? [];
+              const normalizedEmail = email.toLowerCase();
+              const newUser = freshUsers.find((u) => (u.email || "").toLowerCase() === normalizedEmail);
+              targetUserId = newUser?.id ?? null;
+            }
+
+            if (targetUserId) {
+              await supabase.from("admin_cedulas").upsert({ user_id: targetUserId, cedula: ced, nombre: formNombre.trim() }, { onConflict: "user_id" });
               if (adminRole) {
-                await supabase.from("user_custom_roles").insert({ user_id: newUser.id, role_id: adminRole });
+                await supabase.from("user_custom_roles").insert({ user_id: targetUserId, role_id: adminRole });
               }
             }
           }
