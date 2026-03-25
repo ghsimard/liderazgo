@@ -728,7 +728,6 @@ export default function SpecsHubs() {
                             </CarouselItem>
                             {[
                               { label: "Nuevo Rector/Coordinador — Bienvenida", src: "/images/specs/inicio-nuevo-bienvenida.png" },
-                              { label: "Selección de Región", src: "/images/specs/inicio-region-seleccion.png" },
                               { label: "Autorización de Datos Personales", src: "/images/specs/inicio-autorizacion-datos.png" },
                               { label: "Verificación de Nombres (Certificado)", src: "/images/specs/inicio-verificacion-nombres.png" },
                               { label: "Nueva Ficha de Información", src: "/images/specs/inicio-nueva-ficha.png" },
