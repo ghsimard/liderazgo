@@ -46,6 +46,12 @@ const SatisfaccionIntensivo = lazy(() => import("./pages/SatisfaccionIntensivo")
 const Especificaciones = lazy(() => import("./pages/Especificaciones"));
 const EvaluadorEncuestasView = lazy(() => import("./components/EvaluadorEncuestasView"));
 
+// Specs hub pages
+const SpecsHub = lazy(() => import("./pages/specs/SpecsHub"));
+const SpecsPrd = lazy(() => import("./pages/specs/SpecsPrd"));
+const SpecsDiagramas = lazy(() => import("./pages/specs/SpecsDiagramas"));
+const SpecsWireframes = lazy(() => import("./pages/specs/SpecsWireframes"));
+
 const queryClient = new QueryClient();
 
 const Loading = () => (
