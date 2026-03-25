@@ -787,24 +787,6 @@ export default function SpecsHubs() {
                         <Carousel className="w-full">
                           <CarouselContent>
                             <CarouselItem>
-                              <div className="relative border border-border rounded-lg overflow-hidden bg-muted/30" style={{ height: 350 }}>
-                                {!loadedMap[hub.id] && (
-                                  <div className="absolute inset-0 flex items-center justify-center z-10">
-                                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                                  </div>
-                                )}
-                                <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">Panel Admin (en vivo)</p>
-                                <iframe
-                                  src={`${window.location.origin}/admin`}
-                                  title="Preview Admin"
-                                  loading="lazy"
-                                  className="pointer-events-none origin-top-left"
-                                  style={{ width: "200%", height: "200%", transform: "scale(0.5)", border: "none", filter: "grayscale(1) contrast(0.85) sepia(0.08)" }}
-                                  onLoad={() => setLoadedMap((m) => ({ ...m, [hub.id]: true }))}
-                                />
-                              </div>
-                            </CarouselItem>
-                            <CarouselItem>
                               <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
                                 <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">Enlaces — Formularios y Rúbrica</p>
                                 <img src="/images/specs/admin-enlaces-preview.png" alt="Admin Enlaces" className="w-full" loading="lazy" style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }} />
