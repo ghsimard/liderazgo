@@ -1,30 +1,36 @@
 
 
-## Plan: Add Rúbricas Flow Diagram to Specs
+## Plan: Ajouter une page "Formularios" dans les Specs
 
-Add a new Mermaid sequence diagram to `SpecsDiagramas.tsx` showing the complete 4-module evaluation cycle between Directivo and Evaluador.
+Créer une nouvelle page `/specs/formularios` accessible depuis le hub `/specs` qui affiche tous les formulaires et questions de chaque Hub, avec une section spéciale pour l'Encuesta 360° montrant dominios, competencias, items et ponderaciones.
 
-### What will be added
+### Structure de la page
 
-A new diagram entry in the `diagrams` array titled **"Flujo Rúbricas — Directivo ↔ Evaluador"** using a Mermaid `sequenceDiagram` with two participants (Directivo, Evaluador) and 4 repeating cycles:
+La page sera organisée en sections dépliables (Accordion) :
 
-```text
-For each Module N (1→4):
-  Directivo  → Autoevaluación Módulo N
-  Evaluador  → Evaluación Módulo N
-  (If N>1: Evaluador can re-evaluate modules 1..N-1)
-  Evaluador + Directivo → Nivel Acordado Módulo N
-  → Module N+1 unlocked (or read-only lock if N=4)
-```
+1. **Hub Encuesta 360°** (section principale et la plus détaillée)
+   - Sous-section **Estructura** : Tableau des 3 dominios → 13 competencias → 39 ítems (avec mapping item→competencia)
+   - Sous-section **Ponderaciones** : Tableau des poids par compétence et rôle observateur (coor, doce, admi, acud, estu)
+   - Sous-section **Formularios** : 6 onglets (Docente, Estudiante, Directivo, Acudiente, Administrativo, Autoevaluación) affichant les 39 questions de chaque formulaire, séparées en Frecuencia (1-18) et Acuerdo (19-39)
+   - Sous-section **Escalas** : Les options de réponse (Frecuencia et Acuerdo)
 
-The diagram will use Mermaid `sequenceDiagram` syntax with `participant`, `Note`, `rect` blocks for each module cycle, and `alt` blocks for the re-evaluation possibility.
+2. **Hub Ambiente Escolar**
+   - 3 formulaires (Acudientes, Estudiantes, Docentes) avec leurs sections Likert (Comunicación, Prácticas Pedagógicas, Convivencia)
 
-### Technical details
+3. **Hub Satisfacción**
+   - 3 formulaires (Asistencia, Interludio, Intensivo) avec toutes les sections et questions
 
-**File**: `src/pages/specs/SpecsDiagramas.tsx`
+### Fichiers à modifier/créer
 
-- Insert a new object into the `diagrams` array (after the existing "Flujo del Evaluador" entry, position index 2)
-- Uses `sequenceDiagram` type (already supported by MermaidDiagram component)
-- The 19 steps map naturally to sequence messages between Directivo and Evaluador participants
-- Colored `rect` backgrounds will visually group each module cycle
+1. **Créer** `src/pages/specs/SpecsFormularios.tsx` — Page complète avec les données importées directement des fichiers source existants
+2. **Modifier** `src/pages/specs/SpecsHub.tsx` — Ajouter la carte "Formularios" dans le hub
+3. **Modifier** `src/App.tsx` — Ajouter la route `/specs/formularios`
+
+### Détails techniques
+
+- Importer les données directement depuis `src/data/encuesta360Data.ts`, `src/data/ambienteEscolarData.ts`, `src/data/satisfaccionData.ts` et `src/data/reporte360Phrases.ts`
+- Utiliser les composants existants : `Accordion`, `Tabs`, `Table`
+- Pour la section Encuesta 360° Estructura, construire un tableau hiérarchique à partir de `DOMAIN_ORDER`, `COMPETENCIES_BY_DOMAIN`, `COMPETENCY_LABELS`, `ITEM_COMPETENCY` et `REPORT_PHRASES`
+- Pour les ponderaciones, afficher les `COMPETENCY_WEIGHTS` en tableau (compétence × rôle)
+- Chaque formulaire liste ses questions avec numéro et texte, regroupées par type de réponse
 
