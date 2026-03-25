@@ -693,12 +693,6 @@ export default function SpecsHubs() {
                           <CarouselNext className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
                         </Carousel>
                       </div>
-                      <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
-                        <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">🎬 Recorrido completo — Evaluador</p>
-                        <video controls className="w-full" preload="metadata">
-                          <source src="/videos/encuestas-360-flujo-evaluador.mp4" type="video/mp4" />
-                        </video>
-                      </div>
                     </div>
                   ) : hub.id === "admin-enlaces" ? (
                     <div className="space-y-4">
