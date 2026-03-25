@@ -71,20 +71,29 @@ export default function ShareEncuestaDialog({
   };
 
   const handleSend = async () => {
-    if (emails.length === 0) {
+    // Auto-add any valid email currently in the input field
+    const finalEmails = [...emails];
+    const pendingTrimmed = emailInput.trim().toLowerCase();
+    if (pendingTrimmed && emailRegex.test(pendingTrimmed) && !finalEmails.includes(pendingTrimmed)) {
+      finalEmails.push(pendingTrimmed);
+    }
+
+    if (finalEmails.length === 0) {
       toast({ title: "Sin destinatarios", description: "Agregue al menos un correo.", variant: "destructive" });
       return;
     }
 
     setSending(true);
+    setEmailInput("");
+    setEmails(finalEmails);
     try {
       // Create invitation records and send emails sequentially (rate limit: 2/s)
       const results: { success: boolean; error?: string }[] = [];
 
-      for (let i = 0; i < emails.length; i++) {
+      for (let i = 0; i < finalEmails.length; i++) {
         if (i > 0) await new Promise((r) => setTimeout(r, 600));
 
-        const email = emails[i];
+        const email = finalEmails[i];
 
         // 1. Create invitation record and get the token
         const { data: invitation, error: invError } = await supabase
@@ -149,7 +158,7 @@ export default function ShareEncuestaDialog({
 
       const failed = results.filter((r) => !r.success);
       if (failed.length === 0) {
-        toast({ title: "Enviado", description: `Invitación enviada a ${emails.length} destinatario(s).` });
+        toast({ title: "Enviado", description: `Invitación enviada a ${finalEmails.length} destinatario(s).` });
         setEmails([]);
         onOpenChange(false);
         onInvitationsSent?.();
@@ -224,7 +233,7 @@ export default function ShareEncuestaDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={sending}>
             Cancelar
           </Button>
-          <Button onClick={handleSend} disabled={sending || emails.length === 0}>
+          <Button onClick={handleSend} disabled={sending || (emails.length === 0 && !emailRegex.test(emailInput.trim()))}>
             {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Enviar ({emails.length})
           </Button>
