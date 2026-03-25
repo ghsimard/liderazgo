@@ -157,10 +157,10 @@ El programa requiere una plataforma que:
 | Fase | Módulos | Estado |
 |------|---------|--------|
 | **MVP** | Ficha RLT, Identificación por cédula, Panel Admin básico | ✅ Completado |
-| **Fase 2** | Encuestas 360° Fase I (Entrada), Rúbricas, Informes de Módulo | ✅ Completado |
+| **Fase 2** | Encuestas 360° Fase I (Básica), Rúbricas, Informes de Módulo | ✅ Completado |
 | **Fase 3** | MEL, Satisfacciones, Ambiente Escolar, Operadores | ✅ Completado |
 | **Fase 4** | Configuración avanzada (ponderaciones, KPI groups, formularios dinámicos) | ✅ Completado |
-| **Fase 5** | Encuestas 360° Fase II (Salida) | 🔄 En progreso |
+| **Fase 5** | Encuestas 360° Fase II (Avanzado) | 🔄 En progreso |
 | **Fase 6** | Certificaciones, integraciones externas | 🔜 Planificado |
 
 ---
