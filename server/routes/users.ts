@@ -74,7 +74,7 @@ router.get("/", async (_req: Request, res: Response) => {
 /** POST /api/users — create a new user */
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password, role, cedula, nombre } = req.body;
 
     if (!email || !password) {
       res.status(400).json({ error: "Email et mot de passe requis" });
