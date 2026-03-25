@@ -684,6 +684,11 @@ export default function SpecsHubs() {
                               { label: "Panel de Administración", src: "/images/specs/inicio-panel-admin.png" },
                               { label: "Selector de Rol (Multirol)", src: "/images/specs/inicio-multirol.png" },
                               { label: "Panel de Operador", src: "/images/specs/inicio-panel-operador.png" },
+                              { label: "Nuevo Rector/Coordinador — Bienvenida", src: "/images/specs/inicio-nuevo-bienvenida.png" },
+                              { label: "Selección de Región", src: "/images/specs/inicio-region-seleccion.png" },
+                              { label: "Autorización de Datos Personales", src: "/images/specs/inicio-autorizacion-datos.png" },
+                              { label: "Verificación de Nombres (Certificado)", src: "/images/specs/inicio-verificacion-nombres.png" },
+                              { label: "Nueva Ficha de Información", src: "/images/specs/inicio-nueva-ficha.png" },
                             ].map((screen, i) => (
                               <CarouselItem key={i}>
                                 <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
