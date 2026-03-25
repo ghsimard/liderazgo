@@ -46,6 +46,12 @@ const SatisfaccionIntensivo = lazy(() => import("./pages/SatisfaccionIntensivo")
 const Especificaciones = lazy(() => import("./pages/Especificaciones"));
 const EvaluadorEncuestasView = lazy(() => import("./components/EvaluadorEncuestasView"));
 
+// Specs hub pages
+const SpecsHub = lazy(() => import("./pages/specs/SpecsHub"));
+const SpecsPrd = lazy(() => import("./pages/specs/SpecsPrd"));
+const SpecsDiagramas = lazy(() => import("./pages/specs/SpecsDiagramas"));
+const SpecsWireframes = lazy(() => import("./pages/specs/SpecsWireframes"));
+
 const queryClient = new QueryClient();
 
 const Loading = () => (
@@ -111,6 +117,13 @@ const App = () => (
                 <Route path="/evaluacion" element={<Evaluacion />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/especificaciones" element={<Especificaciones />} />
+
+                {/* Specs Hub */}
+                <Route path="/specs" element={<SpecsHub />} />
+                <Route path="/specs/prd" element={<SpecsPrd />} />
+                <Route path="/specs/specs" element={<Especificaciones />} />
+                <Route path="/specs/diagramas" element={<SpecsDiagramas />} />
+                <Route path="/specs/wireframes" element={<SpecsWireframes />} />
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
