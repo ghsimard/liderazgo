@@ -43,11 +43,14 @@ Los programas RLT y CLT operan en múltiples regiones de Colombia con cientos de
 
 ### 2.2 Actores del Ecosistema
 
-- **Ministerio de Educación Nacional (MEN)** — Financiador y rector de política
+- **Fundación Empresarios por la Educación (ExE)** — Propietaria de los derechos del programa Rectores Líderes Transformadores y de la Encuesta 360°
+- **COSMO** — Operador del programa Rectores Líderes Transformadores / Encuesta 360°
 - **Entidades Territoriales Certificadas (ETC)** — Secretarías de educación departamentales y municipales
 - **Instituciones Educativas (IE)** — Colegios donde ejercen los directivos
 - **Equipo de acompañamiento** — Evaluadores y formadores regionales
 - **Operadores regionales** — Entidades que ejecutan el programa en cada región
+- **Administrador del programa** — Coordinador y monitor responsables de la gestión operativa de la plataforma
+- **Empresas privadas** — Entidades del sector privado que apoyan o financian el programa
 
 ### 2.3 Necesidad de Digitalización
 
@@ -268,10 +271,9 @@ El programa requiere una plataforma que:
 3. **Informe de módulo** (`informe_modulo`) — Consolidado regional con equipo, sesiones, estrategias, articulación
 4. **Evaluación individual** — Valoración cualitativa por directivo
 
-**Generación de narrativas IA:**
+**Generación de narrativas asistidas:**
 - Edge function `generate-section-text` para textos asistidos
-- Edge function `generate-executive-summary` para resumen ejecutivo
-- Modelo: Gemini 2.5 Flash (vía Lovable AI)
+- Edge function `generate-executive-summary` para resumen ejecutivo automatizado
 
 **Generación de PDF:** Client-side con jsPDF, incluyendo logos dinámicos por región
 
@@ -711,9 +713,9 @@ Ingresa cédula → Detecta rol admin → /admin/login →
 | `send-email` | Envío de invitaciones 360° y notificaciones |
 | `create-user` | Creación de usuarios admin |
 | `manage-users` | Gestión CRUD de usuarios |
-| `generate-section-text` | Generación de narrativas IA para informes |
-| `generate-executive-summary` | Resumen ejecutivo IA para informes de módulo |
-| `rubrica-analysis` | Análisis IA de resultados de rúbrica |
+| `generate-section-text` | Generación de narrativas asistidas para informes |
+| `generate-executive-summary` | Resumen ejecutivo automatizado para informes de módulo |
+| `rubrica-analysis` | Análisis automatizado de resultados de rúbrica |
 | `github-commits` | Consulta de commits para changelog |
 | `export-database` | Exportación de datos |
 
