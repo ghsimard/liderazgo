@@ -862,6 +862,7 @@ export default function SpecsHubs() {
                               { label: "Configuración — Competencias", src: "/images/specs/admin-360-config-competencias.png" },
                               { label: "Configuración — Ítems", src: "/images/specs/admin-360-config-items.png" },
                               { label: "Configuración — Ponderaciones", src: "/images/specs/admin-360-config-ponderaciones.png" },
+                              { label: "Asistente de creación", src: "/images/specs/admin-360-config-wizard.png" },
                             ].map((screen, i) => (
                               <CarouselItem key={i}>
                                 <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
