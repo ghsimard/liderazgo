@@ -13,6 +13,7 @@ interface EmailRequest {
   text?: string;
   from?: string;
   reply_to?: string;
+  context?: { type: string; directivo_cedula: string };
 }
 
 serve(async (req) => {
@@ -29,43 +30,62 @@ serve(async (req) => {
       );
     }
 
-    // Validate auth — require admin access
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(
-        JSON.stringify({ error: "Invalid token" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const userId = claimsData.claims.sub;
-
-    // Check admin role
-    const { data: hasAdmin } = await supabase.rpc("has_admin_access", { _user_id: userId });
-    if (!hasAdmin) {
-      return new Response(
-        JSON.stringify({ error: "Admin access required" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const body: EmailRequest = await req.json();
+
+    // Determine auth mode: invitation (cedula validation) vs admin (JWT)
+    if (body.context?.type === "encuesta_invitation" && body.context?.directivo_cedula) {
+      // Invitation mode: validate cedula via service role
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+
+      const { data: ficha } = await supabaseAdmin.rpc("get_ficha_by_cedula", {
+        p_cedula: body.context.directivo_cedula,
+      });
+
+      if (!ficha) {
+        return new Response(
+          JSON.stringify({ error: "Directivo cedula not found — unauthorized" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else {
+      // Admin mode: require valid JWT + admin role
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const token = authHeader.replace("Bearer ", "");
+      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+      if (claimsError || !claimsData?.claims) {
+        return new Response(
+          JSON.stringify({ error: "Invalid token" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const userId = claimsData.claims.sub;
+      const { data: hasAdmin } = await supabase.rpc("has_admin_access", { _user_id: userId });
+      if (!hasAdmin) {
+        return new Response(
+          JSON.stringify({ error: "Admin access required" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     if (!body.to || !body.subject || (!body.html && !body.text)) {
       return new Response(

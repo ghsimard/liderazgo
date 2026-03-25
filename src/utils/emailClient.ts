@@ -17,6 +17,7 @@ export interface SendEmailParams {
   text?: string;
   from?: string;
   reply_to?: string;
+  context?: { type: string; directivo_cedula: string };
 }
 
 export interface SendEmailResult {
@@ -27,8 +28,9 @@ export interface SendEmailResult {
 
 export async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
   if (USE_EXPRESS) {
+    const endpoint = params.context ? "/api/email/send-invitation" : "/api/email/send";
     const { data, error } = await apiFetch<{ success: boolean; id?: string }>(
-      "/api/email/send",
+      endpoint,
       { method: "POST", body: params as any }
     );
     if (error) return { success: false, error };
