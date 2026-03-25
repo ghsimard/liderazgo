@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, GitBranch, Monitor, BookOpen, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, FileText, GitBranch, Monitor, BookOpen, LayoutDashboard, ClipboardList } from "lucide-react";
 
 const sections = [
   {
@@ -33,6 +33,12 @@ const sections = [
     description: "Especificaciones detalladas de cada hub: rutas, roles, funcionalidades y diagramas.",
     icon: LayoutDashboard,
     path: "/specs/hubs",
+  },
+  {
+    title: "Formularios",
+    description: "Referencia completa de todos los formularios, preguntas, estructura y ponderaciones.",
+    icon: ClipboardList,
+    path: "/specs/formularios",
   },
 ];
 
