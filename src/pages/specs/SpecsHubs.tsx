@@ -756,12 +756,6 @@ export default function SpecsHubs() {
                           style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }}
                         />
                       </div>
-                      <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
-                        <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">🎬 Recorrido completo — Directivo</p>
-                        <video controls className="w-full" preload="metadata">
-                          <source src="/videos/mi-panel-directivo-flujo.mp4" type="video/mp4" />
-                        </video>
-                      </div>
                     </div>
                   ) : hub.id === "mi-panel-evaluador" ? (
                     <div className="space-y-4">
