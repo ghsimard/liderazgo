@@ -748,11 +748,12 @@ export default function SpecsHubs() {
                   ) : hub.id === "mi-panel-directivo" ? (
                     <div className="space-y-4">
                       <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
-                        <img
+                         <img
                           src="/images/mi-panel-directivo-preview.png"
                           alt="Mi Panel — Vista Rector"
                           className="w-full rounded-lg"
                           loading="lazy"
+                          style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }}
                         />
                       </div>
                       <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
