@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { requireAuth, requireAdmin } from "../middleware/auth";
+import { queryOne } from "../db";
 
 const router = Router();
 

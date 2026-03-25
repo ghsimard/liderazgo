@@ -142,6 +142,7 @@ export default function ShareEncuestaDialog({
           subject: `Encuesta 360° — ${formLabel} — ${institucion}`,
           html: htmlBody,
           reply_to: directivoEmail,
+          context: { type: "encuesta_invitation", directivo_cedula: directivoCedula },
         });
         results.push(res);
       }

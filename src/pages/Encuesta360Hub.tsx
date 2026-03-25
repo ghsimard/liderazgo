@@ -226,6 +226,7 @@ export default function Encuesta360Hub() {
         subject: `Recordatorio — Encuesta 360° — ${formLabel} — ${directivoInfo.institucion}`,
         html: htmlBody,
         reply_to: directivoInfo.email,
+        context: { type: "encuesta_invitation", directivo_cedula: directivoInfo.cedula },
       });
 
       if (res.success) {
