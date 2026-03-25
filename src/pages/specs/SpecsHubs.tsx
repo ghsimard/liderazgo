@@ -27,6 +27,7 @@ interface HubSpec {
   role: string;
   features: HubFeature[];
   mindmap: string;
+  previewPath: string;
 }
 
 const hubs: HubSpec[] = [
