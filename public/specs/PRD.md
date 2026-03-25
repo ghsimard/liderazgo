@@ -612,8 +612,8 @@ Región
    ┌────▼────┐  ┌─────▼─────┐ ┌────▼────┐
    │Supabase │  │  Edge      │ │ Storage │
    │PostgreSQL│  │ Functions  │ │ (logos) │
-   │ + RLS   │  │ (email,IA) │ │         │
-   └─────────┘  └───────────┘  └─────────┘
+   │ + RLS   │  └───────────┘  └─────────┘
+   └─────────┘
 ```
 
 ### 8.3 Modo Dual (dbClient)
@@ -692,7 +692,7 @@ Ingresa cédula → check_cedula_role → Mi Panel →
   ├── Informe de Módulo
   │   ├── Registrar asistencia
   │   ├── Completar informe
-  │   ├── Generar narrativa IA
+  │   ├── Generar narrativa asistida
   │   └── Exportar PDF
   └── Encuestas 360°
       ├── Compartir enlace de invitación
