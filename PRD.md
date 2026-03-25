@@ -612,7 +612,8 @@ Región
    ┌────▼────┐  ┌─────▼─────┐ ┌────▼────┐
    │Supabase │  │  Edge      │ │ Storage │
    │PostgreSQL│  │ Functions  │ │ (logos) │
-   └─────────┘  └───────────┘  └─────────┘
+   │ + RLS   │  └───────────┘  └─────────┘
+   └─────────┘
 ```
 
 ### 8.3 Modo Dual (dbClient)
