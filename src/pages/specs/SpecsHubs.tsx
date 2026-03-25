@@ -691,6 +691,15 @@ export default function SpecsHubs() {
                         </video>
                       </div>
                     </div>
+                  ) : hub.id === "admin-enlaces" ? (
+                    <div className="space-y-4">
+                      <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                        <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">🎬 Recorrido — Panel de Administración</p>
+                        <video controls className="w-full" preload="metadata">
+                          <source src="/videos/panel-admin-flujo.mp4" type="video/mp4" />
+                        </video>
+                      </div>
+                    </div>
                   ) : (
                     <div className="relative border border-border rounded-lg overflow-hidden bg-muted/30" style={{ height: 350 }}>
                       {!loadedMap[hub.id] && (
