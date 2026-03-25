@@ -670,6 +670,17 @@ export default function SpecsHubs() {
                   </div>
                 </div>
 
+                {/* Blank Ficha PDF download – only for hub #2 */}
+                {hub.id === "ficha" && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Formulario en blanco (PDF)</p>
+                    <Button variant="outline" size="sm" onClick={handleDownloadBlankFicha} disabled={generatingPdf}>
+                      {generatingPdf ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
+                      Descargar Ficha de Información Básica en blanco
+                    </Button>
+                  </div>
+                )}
+
                 {/* Features table */}
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Funcionalidades</p>
