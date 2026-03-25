@@ -1,58 +1,30 @@
 
 
-## Objectif
+## Plan: Add Rúbricas Flow Diagram to Specs
 
-Remplacer les images statiques du hub **Mi Panel (Evaluador)** par un **carrousel interactif** (image par image) montrant tous les écrans possibles pour l'évaluateur, avec navigation (flèches + indicateurs).
+Add a new Mermaid sequence diagram to `SpecsDiagramas.tsx` showing the complete 4-module evaluation cycle between Directivo and Evaluador.
 
-## Écrans à inclure dans le carrousel
+### What will be added
 
-Les images existantes dans `/public/images/` pour l'évaluateur :
-1. `mi-panel-evaluador-preview.png` — Mi Panel — Vista general
-2. `evaluador-rubrica-preview.png` — Mi Rúbrica de Evaluación
-3. `evaluador-encuestas360-preview.png` — Encuestas 360° — Entrada
+A new diagram entry in the `diagrams` array titled **"Flujo Rúbricas — Directivo ↔ Evaluador"** using a Mermaid `sequenceDiagram` with two participants (Directivo, Evaluador) and 4 repeating cycles:
 
-Il faudra potentiellement ajouter d'autres captures d'écran pour couvrir tous les écrans de l'évaluateur (ex: détail d'une rúbrica, formulaire de seguimiento, informe de módulo). Mais dans un premier temps, on utilise les 3 images existantes + la vidéo reste en dessous.
-
-## Changements techniques
-
-### `src/pages/specs/SpecsHubs.tsx`
-
-Dans le bloc `hub.id === "mi-panel-evaluador"` (lignes 673-693) :
-
-1. Remplacer les 3 blocs `<img>` empilés par un **carrousel** utilisant le composant `Carousel` existant (`@/components/ui/carousel`)
-2. Chaque slide contient une image avec son label
-3. Flèches précédent/suivant + indicateurs de position (dots)
-4. La vidéo reste en dessous du carrousel, inchangée
-
-Structure :
-```tsx
-<Carousel className="w-full">
-  <CarouselContent>
-    {evaluadorScreens.map((screen, i) => (
-      <CarouselItem key={i}>
-        <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
-          <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">{screen.label}</p>
-          <img src={screen.src} alt={screen.label} className="w-full" loading="lazy" />
-        </div>
-      </CarouselItem>
-    ))}
-  </CarouselContent>
-  <CarouselPrevious />
-  <CarouselNext />
-</Carousel>
+```text
+For each Module N (1→4):
+  Directivo  → Autoevaluación Módulo N
+  Evaluador  → Evaluación Módulo N
+  (If N>1: Evaluador can re-evaluate modules 1..N-1)
+  Evaluador + Directivo → Nivel Acordado Módulo N
+  → Module N+1 unlocked (or read-only lock if N=4)
 ```
 
-Données du carrousel :
-```ts
-const evaluadorScreens = [
-  { label: "Mi Panel — Vista general", src: "/images/mi-panel-evaluador-preview.png" },
-  { label: "Mi Rúbrica de Evaluación", src: "/images/evaluador-rubrica-preview.png" },
-  { label: "Encuestas 360° — Entrada", src: "/images/evaluador-encuestas360-preview.png" },
-];
-```
+The diagram will use Mermaid `sequenceDiagram` syntax with `participant`, `Note`, `rect` blocks for each module cycle, and `alt` blocks for the re-evaluation possibility.
 
-### Imports à ajouter
-```ts
-import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
-```
+### Technical details
+
+**File**: `src/pages/specs/SpecsDiagramas.tsx`
+
+- Insert a new object into the `diagrams` array (after the existing "Flujo del Evaluador" entry, position index 2)
+- Uses `sequenceDiagram` type (already supported by MermaidDiagram component)
+- The 19 steps map naturally to sequence messages between Directivo and Evaluador participants
+- Colored `rect` backgrounds will visually group each module cycle
 
