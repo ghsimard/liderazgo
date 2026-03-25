@@ -63,6 +63,7 @@ const hubs: HubSpec[] = [
       FAQ
       Contacto
       Derechos`,
+    previewPath: "/",
   },
   /* 2 — Ficha RLT */
   {
@@ -104,6 +105,7 @@ const hubs: HubSpec[] = [
     Acciones
       Guardar
       Descargar PDF`,
+    previewPath: "/ficha",
   },
   /* 3 — Mi Panel (Directivo) */
   {
@@ -142,6 +144,7 @@ const hubs: HubSpec[] = [
     Asistencia
       AM y PM
       Observaciones`,
+    previewPath: "/mi-panel",
   },
   /* 4 — Mi Panel (Evaluador) */
   {
@@ -173,6 +176,7 @@ const hubs: HubSpec[] = [
     Informe de modulo
       Redactar
       Consultar`,
+    previewPath: "/mi-panel",
   },
   /* 5 — Hub Encuesta 360° */
   {
@@ -206,6 +210,7 @@ const hubs: HubSpec[] = [
     Post envio
       Revision modal
       Calificacion sitio`,
+    previewPath: "/encuesta-360",
   },
   /* 6 — Panel Operador */
   {
@@ -238,6 +243,7 @@ const hubs: HubSpec[] = [
       Consultar evaluaciones
     Informes
       Modulo`,
+    previewPath: "/operador",
   },
   /* 7 — Admin: Enlaces */
   {
@@ -272,6 +278,7 @@ const hubs: HubSpec[] = [
     Imagenes
       Logos
       Gestion`,
+    previewPath: "/admin",
   },
   /* 8 — Admin: Fichas */
   {
@@ -298,6 +305,7 @@ const hubs: HubSpec[] = [
       Descargar PDF
       Exportar Excel
       Eliminar`,
+    previewPath: "/admin",
   },
   /* 9 — Admin: Rúbricas */
   {
@@ -330,6 +338,7 @@ const hubs: HubSpec[] = [
       Por modulo PDF
       Regional PDF
       Analisis IA`,
+    previewPath: "/admin",
   },
   /* 10 — Admin: Encuesta 360° */
   {
@@ -368,6 +377,7 @@ const hubs: HubSpec[] = [
     Visibilidad
       Por fase
       Por scope`,
+    previewPath: "/admin",
   },
   /* 11 — Admin: Informe de Módulo */
   {
@@ -398,8 +408,8 @@ const hubs: HubSpec[] = [
     Reporte
       Consolidado
       PDF`,
+    previewPath: "/admin",
   },
-  /* 12 — Admin: Ambiente Escolar */
   {
     id: "admin-ambiente",
     title: "Panel Admin — Ambiente Escolar",
@@ -427,6 +437,7 @@ const hubs: HubSpec[] = [
     Reportes
       PDF por IE
       Exportar Excel`,
+    previewPath: "/admin",
   },
   /* 13 — Admin: Satisfacciones */
   {
@@ -461,8 +472,8 @@ const hubs: HubSpec[] = [
       Vista abierta
     Reportes
       PDF`,
+    previewPath: "/admin",
   },
-  /* 14 — Admin: MEL */
   {
     id: "admin-mel",
     title: "Panel Admin — MEL",
@@ -493,6 +504,7 @@ const hubs: HubSpec[] = [
       Global PDF
       360 MEL PDF
       Graficos`,
+    previewPath: "/admin",
   },
   /* 15 — Admin: Sistema */
   {
@@ -528,6 +540,7 @@ const hubs: HubSpec[] = [
       Por filtro
     Changelog
       Versiones`,
+    previewPath: "/admin",
   },
   /* 16 — Contacto / FAQ / Sugerencias */
   {
@@ -555,7 +568,8 @@ const hubs: HubSpec[] = [
       Formulario
     Legal
       Derechos
-      Datos de contacto`,
+    Datos de contacto`,
+    previewPath: "/contacto",
   },
 ];
 
@@ -565,6 +579,7 @@ const hubs: HubSpec[] = [
 
 export default function SpecsHubs() {
   const navigate = useNavigate();
+  const [loadedMap, setLoadedMap] = useState<Record<string, boolean>>({});
 
   return (
     <div className="min-h-screen bg-background">
@@ -614,6 +629,26 @@ export default function SpecsHubs() {
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Rol requerido</p>
                     <p className="text-sm text-foreground">{hub.role}</p>
+                  </div>
+                </div>
+
+                {/* Live preview */}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Vista previa de pantalla</p>
+                  <div className="relative border border-border rounded-lg overflow-hidden bg-muted/30" style={{ height: 350 }}>
+                    {!loadedMap[hub.id] && (
+                      <div className="absolute inset-0 flex items-center justify-center z-10">
+                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                    <iframe
+                      src={`${window.location.origin}${hub.previewPath}`}
+                      title={`Preview ${hub.title}`}
+                      loading="lazy"
+                      className="pointer-events-none origin-top-left"
+                      style={{ width: "200%", height: "200%", transform: "scale(0.5)", border: "none" }}
+                      onLoad={() => setLoadedMap((m) => ({ ...m, [hub.id]: true }))}
+                    />
                   </div>
                 </div>
 
