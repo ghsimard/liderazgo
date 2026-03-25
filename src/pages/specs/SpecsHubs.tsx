@@ -703,6 +703,49 @@ export default function SpecsHubs() {
                         </Carousel>
                       </div>
                     </div>
+                  ) : hub.id === "ficha" ? (
+                    <div className="space-y-4">
+                      <div className="px-14">
+                        <Carousel className="w-full">
+                          <CarouselContent>
+                            <CarouselItem>
+                              <div className="relative border border-border rounded-lg overflow-hidden bg-muted/30" style={{ height: 350 }}>
+                                {!loadedMap[hub.id] && (
+                                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                                  </div>
+                                )}
+                                <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">Selección de Región (en vivo)</p>
+                                <iframe
+                                  src={`${window.location.origin}/ficha`}
+                                  title="Preview Ficha"
+                                  loading="lazy"
+                                  className="pointer-events-none origin-top-left"
+                                  style={{ width: "200%", height: "200%", transform: "scale(0.5)", border: "none", filter: "grayscale(1) contrast(0.85) sepia(0.08)" }}
+                                  onLoad={() => setLoadedMap((m) => ({ ...m, [hub.id]: true }))}
+                                />
+                              </div>
+                            </CarouselItem>
+                            {[
+                              { label: "Nuevo Rector/Coordinador — Bienvenida", src: "/images/specs/inicio-nuevo-bienvenida.png" },
+                              { label: "Selección de Región", src: "/images/specs/inicio-region-seleccion.png" },
+                              { label: "Autorización de Datos Personales", src: "/images/specs/inicio-autorizacion-datos.png" },
+                              { label: "Verificación de Nombres (Certificado)", src: "/images/specs/inicio-verificacion-nombres.png" },
+                              { label: "Nueva Ficha de Información", src: "/images/specs/inicio-nueva-ficha.png" },
+                            ].map((screen, i) => (
+                              <CarouselItem key={i}>
+                                <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                                  <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">{screen.label}</p>
+                                  <img src={screen.src} alt={screen.label} className="w-full" loading="lazy" style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }} />
+                                </div>
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
+                          <CarouselNext className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
+                        </Carousel>
+                      </div>
+                    </div>
                   ) : hub.id === "mi-panel-directivo" ? (
                     <div className="space-y-4">
                       <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
