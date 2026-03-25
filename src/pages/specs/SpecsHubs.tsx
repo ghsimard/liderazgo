@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, FileDown } from "lucide-react";
+import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
+import { useAppImages } from "@/hooks/useAppImages";
 import {
   Accordion,
   AccordionContent,
