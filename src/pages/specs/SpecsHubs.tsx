@@ -782,11 +782,39 @@ export default function SpecsHubs() {
                     </div>
                   ) : hub.id === "admin-enlaces" ? (
                     <div className="space-y-4">
-                      <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
-                        <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">🎬 Recorrido — Panel de Administración</p>
-                        <video controls className="w-full" preload="metadata">
-                          <source src="/videos/panel-admin-flujo.mp4" type="video/mp4" />
-                        </video>
+                      <div className="px-14">
+                        <Carousel className="w-full">
+                          <CarouselContent>
+                            <CarouselItem>
+                              <div className="relative border border-border rounded-lg overflow-hidden bg-muted/30" style={{ height: 350 }}>
+                                {!loadedMap[hub.id] && (
+                                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                                  </div>
+                                )}
+                                <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">Panel Admin (en vivo)</p>
+                                <iframe
+                                  src={`${window.location.origin}/admin`}
+                                  title="Preview Admin"
+                                  loading="lazy"
+                                  className="pointer-events-none origin-top-left"
+                                  style={{ width: "200%", height: "200%", transform: "scale(0.5)", border: "none", filter: "grayscale(1) contrast(0.85) sepia(0.08)" }}
+                                  onLoad={() => setLoadedMap((m) => ({ ...m, [hub.id]: true }))}
+                                />
+                              </div>
+                            </CarouselItem>
+                            <CarouselItem>
+                              <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                                <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">🎬 Recorrido — Panel de Administración</p>
+                                <video controls className="w-full" preload="metadata" style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }}>
+                                  <source src="/videos/panel-admin-flujo.mp4" type="video/mp4" />
+                                </video>
+                              </div>
+                            </CarouselItem>
+                          </CarouselContent>
+                          <CarouselPrevious className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
+                          <CarouselNext className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
+                        </Carousel>
                       </div>
                     </div>
                   ) : (
