@@ -222,7 +222,7 @@ El programa requiere una plataforma que:
 - **Dominios** (`domains_360`) → **Competencias** (`competencies_360`) → **Ítems** (`items_360`)
 - Cada ítem tiene textos diferenciados por tipo de formulario (`item_texts_360`)
 - **Ponderaciones** (`competency_weights`) por competencia × rol observador, totalizando 1.000 por rol
-- Tipos de respuesta: Likert 1-4, Likert 1-5, Sí/No
+- Tipos de respuesta: Escala Likert (escala psicométrica de actitudes) de 4 niveles, Escala Likert de 5 niveles, Sí/No
 
 **Sistema de invitaciones:**
 - Generación de links únicos con token
