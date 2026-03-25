@@ -258,7 +258,7 @@ const hubs: HubSpec[] = [
     features: [
       { feature: "360° Entrada", description: "Enlaces a los 6 formularios en línea de la encuesta 360° de entrada y sus versiones PDF." },
       { feature: "360° Salida", description: "Enlaces a los 6 formularios en línea de la encuesta 360° de salida (final) y sus versiones PDF." },
-      { feature: "Rúbrica", description: "Enlace al formulario en línea de la Rúbrica de Evaluación y su versión PDF." },
+      { feature: "Rúbrica", description: "Enlace al formulario en línea de la Rúbrica de Evaluación." },
       { feature: "RLT", description: "Enlace al formulario en línea de la Ficha de Información y su versión PDF." },
       { feature: "Ambiente Escolar", description: "Enlaces a los 3 formularios en línea de Ambiente Escolar y sus versiones PDF." },
       { feature: "Satisfacción", description: "Enlaces a los formularios en línea de Satisfacción (Intensivo, Interludio, Asistencia) y sus versiones PDF." },
@@ -273,7 +273,6 @@ const hubs: HubSpec[] = [
       PDF
     Rubrica
       Formulario en linea
-      PDF
     RLT
       Ficha de Informacion
       PDF
