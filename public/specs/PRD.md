@@ -30,7 +30,7 @@ Los programas RLT y CLT operan en múltiples regiones de Colombia con cientos de
 | Fichas en Excel dispersas | Formulario digital centralizado con ~60 campos |
 | Encuestas 360° en papel | 12 formularios digitales con ponderaciones configurables |
 | Informes manuales en Word | Generación de PDF automatizada con narrativas asistidas |
-| Sin seguimiento MEL | Comparación automática entrada/salida con KPIs configurables |
+| Sin seguimiento MEL | Comparación automática entrada/salida con Indicadores Clave de Desempeño (KPIs) configurables |
 | Sin control de acceso | 5 roles diferenciados con permisos granulares |
 
 ---
@@ -113,7 +113,7 @@ El programa requiere una plataforma que:
 | Atributo | Detalle |
 |----------|---------|
 | **Rol** | Gestor general del programa |
-| **Autenticación** | Email + contraseña (JWT) |
+| **Autenticación** | Email + contraseña (JSON Web Token — JWT) |
 | **Motivación** | Tener control completo sobre los datos y la configuración |
 | **Frustración** | Complejidad de gestión multi-regional |
 | **Acciones principales** | Gestionar fichas, rúbricas, encuestas, reportes, geografía, usuarios |
@@ -147,7 +147,7 @@ El programa requiere una plataforma que:
 ### 5.2 Fuera de Alcance (Out-of-Scope)
 
 - Aplicación móvil nativa
-- Integración con sistemas del MEN (SIMAT, SINEB)
+- Integración con sistemas del Ministerio de Educación Nacional (SIMAT, SINEB)
 - Módulo de certificaciones y diplomas (roadmap futuro)
 - Chat o mensajería interna entre usuarios
 - Soporte multilingüe (solo español)
@@ -156,7 +156,7 @@ El programa requiere una plataforma que:
 
 | Fase | Módulos | Estado |
 |------|---------|--------|
-| **MVP** | Ficha RLT, Identificación por cédula, Panel Admin básico | ✅ Completado |
+| **Producto Mínimo Viable (MVP)** | Ficha RLT, Identificación por cédula, Panel Admin básico | ✅ Completado |
 | **Fase 2** | Encuestas 360° Fase I (Básica), Rúbricas, Informes de Módulo | ✅ Completado |
 | **Fase 3** | MEL, Satisfacciones, Ambiente Escolar, Operadores | ✅ Completado |
 | **Fase 4** | Configuración avanzada (ponderaciones, KPI groups, formularios dinámicos) | ✅ Completado |
@@ -193,7 +193,7 @@ El programa requiere una plataforma que:
 1. Datos personales (nombres, apellidos, fecha de nacimiento, género, cédula)
 2. Datos de contacto (celular, correo, contacto de emergencia)
 3. Información profesional (cargo, estatuto, escalafón, vinculación)
-4. Institución educativa (nombre, DANE, dirección, jornadas, niveles)
+4. Institución educativa (nombre, código DANE — Departamento Administrativo Nacional de Estadística, dirección, jornadas, niveles)
 5. Datos académicos (títulos de pregrado, especialización, maestría, doctorado)
 6. Información institucional (número de docentes, coordinadores, estudiantes por nivel)
 7. Datos adicionales (discapacidad, enfermedad base, grupo étnico, lengua materna)
@@ -212,7 +212,7 @@ El programa requiere una plataforma que:
 | Tipo | Evaluador | Evaluado |
 |------|-----------|----------|
 | Autoevaluación | El directivo mismo | El directivo |
-| Docente | Un docente de la IE | El directivo |
+| Docente | Un docente de la Institución Educativa (IE) | El directivo |
 | Estudiante | Un estudiante | El directivo |
 | Acudiente | Un padre/acudiente | El directivo |
 | Administrativo | Personal administrativo | El directivo |
@@ -359,7 +359,7 @@ El programa requiere una plataforma que:
 **Descripción:** Herramientas de administración del sistema.
 
 **Componentes:**
-- **Gestión de cuentas** — CRUD de usuarios admin con roles (admin/superadmin), badges visuales
+- **Gestión de cuentas** — Creación, consulta, edición y eliminación (CRUD) de usuarios admin con roles (admin/superadmin), badges visuales
 - **Log de actividad** — Registro automático de acciones con cédula, tipo, detalle, timestamp, IP, user-agent
 - **Papelera** — Recuperación de registros eliminados (soft delete → `deleted_records`)
 - **Purga de datos** — Eliminación masiva por tabla/región (solo superadmin, requiere confirmación por texto)
@@ -459,30 +459,30 @@ Región
 - Generación de PDF: < 10 segundos para informes complejos
 - Consultas de base de datos: < 500ms para operaciones CRUD
 
-### RNF-02: Seguridad
+### Requisito No Funcional 02: Seguridad
 - **Autenticación dual:** Cédula (público) + Email/JWT (admin)
-- **Row Level Security (RLS)** en todas las tablas sensibles
+- **Row Level Security (RLS — Seguridad a nivel de fila)** en todas las tablas sensibles
 - **Funciones `SECURITY DEFINER`** para verificación de roles sin recursión
 - **Roles en tabla separada** (`user_roles`) — nunca en tabla de perfiles
 - Tokens JWT con expiración de 24 horas
 - Nunca almacenar claves privadas en el código
 
-### RNF-03: Disponibilidad
+### Requisito No Funcional 03: Disponibilidad
 - Uptime objetivo: 99.5%
 - Tolerancia a fallos: degradación graceful si servicios externos no disponibles
 
-### RNF-04: Usabilidad
+### Requisito No Funcional 04: Usabilidad
 - Responsive design (mobile-first para directivos)
 - Interfaz en español colombiano
 - Feedback visual inmediato (toasts, estados de carga, badges)
 - Formularios con auto-guardado y validación en tiempo real
 
-### RNF-05: Accesibilidad
+### Requisito No Funcional 05: Accesibilidad
 - Contraste adecuado (WCAG AA)
 - Navegación por teclado
 - Labels semánticos en formularios
 
-### RNF-06: Mantenibilidad
+### Requisito No Funcional 06: Mantenibilidad
 - Componentes reutilizables (shadcn/ui)
 - Separación de lógica de negocio y presentación
 - Generadores de PDF modulares
@@ -709,7 +709,7 @@ Ingresa cédula → Detecta rol admin → /admin/login →
 |---------|-----------|
 | `send-email` | Envío de invitaciones 360° y notificaciones |
 | `create-user` | Creación de usuarios admin |
-| `manage-users` | Gestión CRUD de usuarios |
+| `manage-users` | Gestión completa (CRUD) de usuarios |
 | `generate-section-text` | Generación de narrativas asistidas para informes |
 | `generate-executive-summary` | Resumen ejecutivo asistido para informes de módulo |
 | `rubrica-analysis` | Análisis automatizado de resultados de rúbrica |
