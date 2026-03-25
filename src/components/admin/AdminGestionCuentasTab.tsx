@@ -361,10 +361,12 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
       const ced = formCedula.trim();
 
       // --- ADMIN ---
-      // Derive legacy role from custom role name
+      // Derive legacy role from custom role name (fallback to existing role when custom role IDs are unavailable)
       const selectedCustomRole = customRoles.find(r => r.id === adminRole);
-      const legacyRole = selectedCustomRole?.name === "Superadmin" ? "superadmin"
-        : selectedCustomRole?.name === "Monitoreo" ? "monitoreo" : "admin";
+      const selectedRoleName = selectedCustomRole?.name
+        || (editingPerson?.adminRole === "superadmin" ? "Superadmin" : editingPerson?.adminRole === "monitoreo" ? "Monitoreo" : "Admin");
+      const legacyRole = selectedRoleName === "Superadmin" ? "superadmin"
+        : selectedRoleName === "Monitoreo" ? "monitoreo" : "admin";
 
       if (enableAdmin) {
         const email = adminEmail.trim() || formEmail.trim();
