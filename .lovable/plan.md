@@ -1,76 +1,76 @@
 
 
-# Hub de Documentación /specs
+# Spécifications par Hub — Page dédiée `/specs/hubs`
 
-## Resumen
+## Constat
 
-Crear une section `/specs` dans l'application qui centralise toute la documentation du projet : PRD complet, spécifications techniques, diagrammes Mermaid et wireframes sketchy générés à partir des écrans réels.
+Le PRD (`PRD.md`) et les spécifications (`SPECIFICATIONS.md`) sont déjà complets avec les détails de chaque hub, leurs mindmaps et leurs sous-onglets. Cependant, tout est dans un seul long document. L'utilisateur souhaite une vue navigable par hub.
 
-## Structure des pages
+## Plan
 
-```text
-/specs              → Hub principal (index avec navigation)
-/specs/prd          → PRD complet (PRD.md rendu en Markdown)
-/specs/specs        → Spécifications (SPECIFICATIONS.md existant)
-/specs/diagramas    → Galerie de diagrammes Mermaid
-/specs/wireframes   → Écrans sketchy (captures avec filtre CSS hand-drawn)
-```
+### 1. Nouvelle page `/specs/hubs` (SpecsHubs.tsx)
 
-## Livrables
+Page avec un accordion ou des cartes cliquables, une section par hub de l'application (pas seulement admin). Chaque hub affiche :
+- Titre et description
+- Tableau des sous-onglets/fonctionnalités  
+- Mindmap Mermaid rendu visuellement
+- Routes associées
 
-### 1. Fichiers statiques dans `public/specs/`
+**Hubs couverts (13 sections) :**
 
-- Copier `PRD.md` vers `public/specs/PRD.md`
-- Les diagrammes `.mmd` existants (flux d'authentification, flux simplifié) seront intégrés directement dans le code comme constantes ou chargés depuis `public/specs/diagrams/`
-- Les 3 fichiers Mermaid générés précédemment y seront placés
+| # | Hub | Type |
+|---|-----|------|
+| 1 | Pantalla de Inicio | Page publique |
+| 2 | Ficha RLT | Page publique |
+| 3 | Mi Panel (Directivo) | Page publique |
+| 4 | Mi Panel (Evaluador) | Page publique |
+| 5 | Hub Encuesta 360° | Page publique |
+| 6 | Panel Operador | Page publique |
+| 7 | Panel Admin — Enlaces | Hub admin |
+| 8 | Panel Admin — Fichas | Hub admin |
+| 9 | Panel Admin — Rúbricas | Hub admin |
+| 10 | Panel Admin — Encuesta 360° | Hub admin |
+| 11 | Panel Admin — Informe de Módulo | Hub admin |
+| 12 | Panel Admin — Ambiente Escolar | Hub admin |
+| 13 | Panel Admin — Satisfacciones | Hub admin |
+| 14 | Panel Admin — MEL | Hub admin |
+| 15 | Panel Admin — Sistema | Hub admin |
+| 16 | Contacto / FAQ / Sugerencias | Pages publiques |
 
-### 2. Page hub `/specs` (SpecsHub.tsx)
+Chaque section inclura :
+- **Ruta(s)** : chemins d'accès
+- **Rol requerido** : qui peut y accéder
+- **Funcionalidades** : tableau des fonctionnalités avec description
+- **Mindmap** : diagramme Mermaid (réutilisant ceux de SPECIFICATIONS.md + en ajoutant pour les pages publiques manquantes)
 
-- Carte de navigation avec 4 sections (PRD, Spécifications, Diagrammes, Wireframes)
-- Design cohérent avec le reste de l'app (shadcn/ui cards)
-- Avis de propriété intellectuelle (comme sur `/especificaciones`)
+### 2. Ajout de mindmaps pour les pages publiques manquantes
 
-### 3. Page PRD `/specs/prd` (SpecsPrd.tsx)
+Les mindmaps suivants n'existent pas encore dans SPECIFICATIONS.md et seront créés :
+- **Pantalla de Inicio** : flux d'identification par cédula
+- **Mi Panel (Directivo)** : ficha, rúbricas, encuestas 360, satisfacción
+- **Mi Panel (Evaluador)** : rúbricas, informe de módulo, encuestas 360
+- **Panel Operador** : sections segmentées par permissions
 
-- Charge `public/specs/PRD.md` et le rend avec ReactMarkdown + remarkGfm
-- Support des diagrammes Mermaid intégrés dans le PRD (via le composant MermaidDiagram existant)
-- Boutons imprimer et télécharger PDF (réutilisation du pattern existant)
+### 3. Ajout de la carte dans le SpecsHub
 
-### 4. Page Spécifications `/specs/specs`
+Ajouter une 5e carte "Hubs de la Aplicación" dans `/specs` pointant vers `/specs/hubs`.
 
-- Redirection ou intégration de la page Especificaciones existante dans le nouveau hub
+### 4. Route dans App.tsx
 
-### 5. Page Diagrammes `/specs/diagramas` (SpecsDiagramas.tsx)
+Ajouter `<Route path="/specs/hubs" element={<SpecsHubs />} />` avec lazy loading.
 
-- Galerie de tous les diagrammes Mermaid du projet :
-  - Flux d'authentification (technique)
-  - Flux d'authentification (simplifié)
-  - Diagrammes intégrés dans SPECIFICATIONS.md (flux directivo, evaluador, operador, admin)
-- Chaque diagramme rendu avec le composant MermaidDiagram existant
-- Titre et description pour chaque diagramme
+## Fichiers
 
-### 6. Page Wireframes `/specs/wireframes` (SpecsWireframes.tsx)
-
-- Captures d'écran des pages principales de l'app avec un filtre CSS "sketchy/hand-drawn" appliqué
-- Utilisation d'iframes pointant vers les pages réelles de l'app avec un filtre CSS `grayscale` + `contrast` + police manuscrite overlay
-- Alternative plus simple : screenshots statiques prises des écrans principaux, affichées avec un filtre CSS `filter: grayscale(1) contrast(0.8) sepia(0.1)` et bordure style cahier
-- Pages à capturer : Accueil, Ficha RLT, Mi Panel, Panel Admin, Encuesta 360, Rubrica
-
-### 7. Routes dans App.tsx
-
-Ajouter les routes imbriquées sous `/specs/*` avec lazy loading.
+| Action | Fichier |
+|--------|---------|
+| Créer | `src/pages/specs/SpecsHubs.tsx` |
+| Modifier | `src/pages/specs/SpecsHub.tsx` (ajouter carte) |
+| Modifier | `src/App.tsx` (ajouter route) |
 
 ## Détails techniques
 
-- **Composants réutilisés** : MermaidDiagram, ReactMarkdown avec remarkGfm, Button, Card
-- **Pattern existant suivi** : la page Especificaciones.tsx sert de modèle pour le rendu Markdown
-- **Fichiers créés** :
-  - `public/specs/PRD.md` (copie)
-  - `public/specs/diagrams/*.mmd` (3 fichiers)
-  - `src/pages/specs/SpecsHub.tsx`
-  - `src/pages/specs/SpecsPrd.tsx`
-  - `src/pages/specs/SpecsDiagramas.tsx`
-  - `src/pages/specs/SpecsWireframes.tsx`
-- **Fichiers modifiés** :
-  - `src/App.tsx` (ajout des routes /specs/*)
+- Composant avec accordion (`shadcn/ui Accordion`) pour chaque hub
+- Chaque section contient un tableau HTML et un `MermaidDiagram`
+- Les données sont définies comme constantes dans le fichier (pas de fetch externe)
+- Toutes les informations sont extraites du code source existant (AdminPage.tsx, MiPanel.tsx, OperadorPanel.tsx, etc.)
 
