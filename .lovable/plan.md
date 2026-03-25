@@ -1,64 +1,84 @@
 
 
-## Système RBAC — Rôles personnalisés avec permissions CRUD granulaires
+# Diagramme du flux d'authentification et de session
 
-### Statut : Migration complète ✅ (Phases 1–4 terminées)
+## Ce que le diagramme couvrira
 
-### Ce qui a été implémenté
+Le flux complet depuis l'écran d'accueil (`/`) jusqu'aux panneaux finaux, incluant les deux chemins d'authentification distincts du système.
 
-1. **Tables de base de données** :
-   - `custom_roles` : rôles personnalisés (nom, description, is_system)
-   - `role_permissions` : permissions CRUD par section (clé hiérarchique avec notation pointée)
-   - `user_custom_roles` : assignation utilisateur ↔ rôle (contrainte UNIQUE)
-   - Fonction `get_user_permissions()` (SECURITY DEFINER) pour charger les permissions sans récursion RLS
+## Architecture du flux
 
-2. **Seed des rôles système** :
-   - Superadmin : CRUD complet sur les 10 sections
-   - Admin : CRUD complet sur les 10 sections
-   - Monitoreo : lecture seule sur 8 sections (pas Sistema ni MEL)
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                     ÉCRAN D'ACCUEIL (/)                         │
+│                  Saisie du numéro de cédula                     │
+│                           │                                     │
+│                  RPC: check_cedula_role()                        │
+│                           │                                     │
+│              ┌────────────┼────────────┐                        │
+│              ▼            ▼            ▼                         │
+│         is_admin    is_directivo   is_operator                   │
+│         is_evaluador               cédula inconnue              │
+│              │            │            │          │              │
+│              │            │            │     Confirmation        │
+│              │            │            │     → /ficha            │
+│              │            │            │                         │
+│    Si MULTIPLES RÔLES → Dialog de choix                         │
+│              │            │            │                         │
+│    ┌─────────┘     ┌──────┘     ┌──────┘                        │
+│    ▼               ▼            ▼                               │
+│ /admin/login    /mi-panel    /operador                           │
+└─────────────────────────────────────────────────────────────────┘
 
-3. **Hook `usePermissions`** (`src/hooks/usePermissions.ts`) :
-   - Charge les permissions via `get_user_permissions` RPC ou API Express
-   - Résolution hiérarchique : `sistema.gestion-cuentas` → fallback `sistema`
-   - API : `can(section, action)`, `readableSections`, `permissions`, `loading`, `reload`
+┌─ CHEMIN ADMIN ──────────────────────────────────────────────────┐
+│  /admin/login                                                    │
+│    Email + Mot de passe                                          │
+│           │                                                      │
+│    apiLogin(email, password)                                     │
+│    ┌──────┴──────┐                                               │
+│    │ EXPRESS     │ SUPABASE                                      │
+│    │ POST /api/  │ signInWithPassword()                          │
+│    │ auth/login  │                                               │
+│    │ → JWT token │ → session token                               │
+│    │ localStorage│ localStorage                                  │
+│    └──────┬──────┘                                               │
+│           ▼                                                      │
+│    navigate → /admin                                             │
+│           │                                                      │
+│    useAdminAuth()                                                │
+│    ├─ isAuthenticated() → token présent?                         │
+│    ├─ apiGetMe() → user + rôles                                  │
+│    ├─ Vérification rôles (Admin/Superadmin/Monitoreo)            │
+│    │   └─ Rôle manquant → redirect /admin/login?reason=...       │
+│    ├─ usePermissions(userId) → RBAC permissions                  │
+│    └─ ✅ Accès Panel de Administración                           │
+└──────────────────────────────────────────────────────────────────┘
 
-4. **Catalogue des sections** (`src/data/rbacSections.ts`) :
-   - 10 sections de premier niveau + sous-sections
-   - Export `RBAC_SECTIONS` et `ALL_SECTION_KEYS`
+┌─ CHEMIN MI PANEL ───────────────────────────────────────────────┐
+│  /mi-panel                                                       │
+│    Pas d'authentification email/password                         │
+│    Accès via cédula stockée en sessionStorage                    │
+│           │                                                      │
+│    sessionStorage.getItem("user_cedula")                         │
+│    └─ absente → redirect /                                       │
+│           │                                                      │
+│    RPC: check_cedula_role(cedula)                                │
+│    → cargo, nom, rôles, ficha                                    │
+│           │                                                      │
+│    ✅ Affichage Mi Panel                                         │
+│    (ficha, encuestas, rúbricas, etc.)                            │
+└──────────────────────────────────────────────────────────────────┘
+```
 
-5. **Interface de gestion** (`AdminRolesTab`) :
-   - Liste des rôles (cartes) avec création/édition/suppression
-   - Matrice sections × CRUD avec checkboxes
-   - Sous-sections dépliables (Collapsible)
-   - Les rôles système ne sont modifiables que par superadmin
-   - Intégré dans Sistema > "Roles y Permisos"
+## Livrable
 
-### Migration legacy complète ✅
+Un diagramme Mermaid (`.mmd`) enregistré dans `/mnt/documents/` illustrant ce flux avec les composants suivants :
 
-#### Phase 1 — Backfill ✅
-- Migration SQL : backfill `user_custom_roles` depuis `user_roles` (Admin/Superadmin/Monitoreo)
+1. **Noeud d'entrée** : Écran d'accueil — saisie cédula
+2. **RPC check_cedula_role** : Vérification des rôles dans la BD
+3. **Branchement conditionnel** : Rôle unique vs. rôles multiples (dialog de choix)
+4. **3 destinations** : `/mi-panel`, `/admin/login`, `/operador`
+5. **Sous-flux Admin** : Login email/password → JWT/Supabase Auth → `useAdminAuth()` → vérification rôles RBAC → Panel Admin
+6. **Sous-flux Mi Panel** : Cédula en sessionStorage → RPC → affichage panel
+7. **Cas d'erreur** : Cédula inconnue → confirmation → `/ficha`, token invalide → redirect login
 
-#### Phase 2 — Fonctions SQL de sécurité réécrites ✅
-- `has_admin_access()` → query `user_custom_roles JOIN custom_roles` (Admin/Superadmin)
-- `has_read_access()` → query `user_custom_roles JOIN custom_roles` (tout rôle)
-- **Toutes les RLS policies existantes (~20+) continuent de fonctionner sans modification**
-
-#### Phase 3 — Express middleware + frontend ✅
-- `server/middleware/auth.ts` : requireAdmin/requireAdminOrViewer/requireSuperAdmin utilisent `user_custom_roles JOIN custom_roles`
-- `src/hooks/useAdminAuth.ts` : mode Supabase utilise `user_custom_roles` au lieu de `has_role` RPC
-- `server/routes/auth.ts` : /api/auth/me retourne les rôles depuis `user_custom_roles`
-- `server/routes/users.ts` : listing, création, modification, suppression via nouvelles tables
-- `server/routes/db.ts` : whitelist et vérification admin via nouvelles tables
-- `server/routes/export.ts` : export SQL via `user_custom_roles`
-
-#### Phase 4 — Nettoyage ✅
-- Dual-write retiré de toutes les edge functions et routes Express
-- 14 RLS policies réécrites pour utiliser `has_admin_access()` au lieu de `has_role(_, app_role)`
-- Fonction `has_role(uuid, app_role)` supprimée
-- Table `user_roles` supprimée
-- Type enum `app_role` supprimé
-- Edge function `export-database` et frontend (`AppFooter`, `useAutoFillUserInfo`) migrés
-
-### Notes d'architecture
-
-Les composants enfants (`AdminFichasTab`, `AdminEncuestas360Tab`, etc.) conservent leurs props `isViewer` pour compatibilité, mais les valeurs sont désormais calculées depuis `usePermissions.can()` dans `AdminPage`/`AdminContent`. Le filtrage de la sidebar est piloté par `readableSections`.
