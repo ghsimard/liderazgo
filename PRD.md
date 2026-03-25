@@ -29,8 +29,8 @@ Los programas RLT y CLT operan en múltiples regiones de Colombia con cientos de
 |-------|---------|
 | Fichas en Excel dispersas | Formulario digital centralizado con ~60 campos |
 | Encuestas 360° en papel | 12 formularios digitales con ponderaciones configurables |
-| Informes manuales en Word | Generación de PDF automatizada con narrativas asistidas por IA |
-| Sin seguimiento MEL | Comparación automática entrada/salida con KPIs configurables |
+| Informes manuales en Word | Generación de PDF automatizada con narrativas asistidas |
+| Sin seguimiento MEL | Comparación automática entrada/salida con Indicadores Clave de Desempeño (KPIs) configurables |
 | Sin control de acceso | 5 roles diferenciados con permisos granulares |
 
 ---
@@ -61,6 +61,60 @@ El programa requiere una plataforma que:
 3. Genere informes consolidados por módulo, región y a nivel nacional
 4. Facilite el seguimiento longitudinal del impacto del programa
 5. Garantice la seguridad y trazabilidad de los datos
+
+### 2.4 Enfoque de Evaluación Formativa
+
+El sistema de evaluación del programa Rectores Líderes Transformadores (RLT) se fundamenta en un enfoque **formativo** (Scriven, 1967), distinto de la evaluación sumativa. La evaluación formativa es un proceso sistemático, permanente y participativo que:
+
+- **Genera condiciones de aprendizaje en doble vía:** tanto para los directivos docentes como para el equipo de acompañamiento del programa.
+- **Garantiza transparencia:** los criterios de evaluación se comunican a los participantes desde el inicio de su participación, de manera que el directivo conoce de antemano los referentes con los cuales será evaluado.
+- **Utiliza la triangulación de fuentes:** el sistema combina tres modalidades complementarias:
+  1. **Autoevaluación** — El directivo valora su propio desempeño.
+  2. **Coevaluación** — El equipo de acompañamiento evalúa al directivo en conjunto con él.
+  3. **Heteroevaluación** — Actores externos (docentes, estudiantes, acudientes, administrativos) evalúan al directivo desde su perspectiva.
+
+Este enfoque permite una lectura integral del desarrollo de competencias del directivo a lo largo del programa.
+
+### 2.5 Sistema de Evaluación del Programa
+
+El sistema de evaluación del programa se compone de dos grandes dimensiones:
+
+**1. Evaluación del desarrollo de competencias de los directivos**
+
+Se implementa a través de tres procesos:
+
+| Proceso | Instrumento | Módulos de aplicación |
+|---------|-------------|----------------------|
+| Caracterización | Ficha de Información | Módulo I (inicio) |
+| Desarrollo de competencias | Rúbrica por módulo | Módulos I a IV (progresivo) |
+| Percepción del ambiente escolar | Encuesta de Ambiente Escolar | Módulos I y VII (entrada y salida) |
+
+Adicionalmente, la **Encuesta de 360° ponderada** proporciona información comparada sobre la percepción del directivo y la de los actores de su comunidad educativa.
+
+**2. Evaluación de la implementación del programa**
+
+Se realiza a través de:
+- **Encuestas de satisfacción** — Indicadores periódicos sobre la calidad de las sesiones.
+- **Informes de módulo** — Consolidados regionales con asistencia, novedades, estrategias y acompañamiento.
+
+**Competencias evaluadas:**
+
+Las 13 competencias del programa se organizan en tres áreas de gestión:
+
+| Área de Gestión | Competencias |
+|-----------------|-------------|
+| **Gestión Estratégica** | Planeación y organización, Pensamiento estratégico, Liderazgo, Gestión del cambio |
+| **Gestión Pedagógica y Académica** | Pedagogía y didáctica, Innovación y emprendimiento, Seguimiento académico |
+| **Gestión Administrativa** | Administración de recursos, Gestión de talento humano, Gestión del entorno, Comunicación institucional, Convivencia y resolución de conflictos, Trabajo en equipo |
+
+Cada competencia se evalúa en cuatro pilares de desempeño:
+
+| Pilar | Descripción |
+|-------|-------------|
+| **Ser** | Actitudes, valores y disposición del directivo |
+| **Conocer** | Saberes y conocimientos teóricos o normativos |
+| **Hacer** | Prácticas, acciones y aplicación de conocimientos |
+| **Vivir Juntos** | Capacidad de trabajo colaborativo y relación con la comunidad |
 
 ---
 
@@ -150,7 +204,7 @@ El programa requiere una plataforma que:
 ### 5.2 Fuera de Alcance (Out-of-Scope)
 
 - Aplicación móvil nativa
-- Integración con sistemas del MEN (SIMAT, SINEB)
+- Integración con sistemas del Ministerio de Educación Nacional (SIMAT, SINEB)
 - Módulo de certificaciones y diplomas (roadmap futuro)
 - Chat o mensajería interna entre usuarios
 - Soporte multilingüe (solo español)
@@ -159,11 +213,12 @@ El programa requiere una plataforma que:
 
 | Fase | Módulos | Estado |
 |------|---------|--------|
-| **MVP** | Ficha RLT, Identificación por cédula, Panel Admin básico | ✅ Completado |
-| **Fase 2** | Encuestas 360°, Rúbricas, Informes de Módulo | ✅ Completado |
+| **Producto Mínimo Viable (MVP)** | Ficha RLT, Identificación por cédula, Panel Admin básico | ✅ Completado |
+| **Fase 2** | Encuestas 360° Fase I (Básica), Rúbricas, Informes de Módulo | ✅ Completado |
 | **Fase 3** | MEL, Satisfacciones, Ambiente Escolar, Operadores | ✅ Completado |
-| **Fase 4** | Configuración avanzada (ponderaciones, KPI groups, formularios dinámicos) | ✅ Completado |
-| **Fase 5** | Certificaciones, integraciones externas | 🔜 Planificado |
+| **Fase 4** | Configuración avanzada (ponderaciones, Indicadores Clave de Desempeño groups, formularios dinámicos) | ✅ Completado |
+| **Fase 5** | Encuestas 360° Fase II (Avanzado) | 🔄 En progreso |
+| **Fase 6** | Certificaciones, integraciones externas | 🔜 Planificado |
 
 ---
 
@@ -187,15 +242,19 @@ El programa requiere una plataforma que:
 
 ---
 
-### RF-02: Ficha RLT
+### RF-02: Ficha RLT (Proceso de Caracterización)
 
 **Descripción:** Formulario extenso (~60 campos) para recopilar información personal, profesional e institucional de cada directivo.
+
+**Objetivo pedagógico:** La Ficha de Información constituye el instrumento del proceso de caracterización. Su propósito es recoger información relevante de cada directivo participante para elaborar un perfil inicial que permita al equipo de acompañamiento conocer su contexto personal, profesional e institucional. Esta información se utiliza como insumo para adaptar las estrategias de formación a las necesidades específicas de cada región y participante.
+
+**Aplicación:** Se diligencia al inicio del programa (Módulo I). El directivo completa el formulario de manera individual.
 
 **Secciones:**
 1. Datos personales (nombres, apellidos, fecha de nacimiento, género, cédula)
 2. Datos de contacto (celular, correo, contacto de emergencia)
 3. Información profesional (cargo, estatuto, escalafón, vinculación)
-4. Institución educativa (nombre, DANE, dirección, jornadas, niveles)
+4. Institución educativa (nombre, código DANE — Departamento Administrativo Nacional de Estadística, dirección, jornadas, niveles)
 5. Datos académicos (títulos de pregrado, especialización, maestría, doctorado)
 6. Información institucional (número de docentes, coordinadores, estudiantes por nivel)
 7. Datos adicionales (discapacidad, enfermedad base, grupo étnico, lengua materna)
@@ -206,15 +265,21 @@ El programa requiere una plataforma que:
 
 ---
 
-### RF-03: Encuesta 360°
+### RF-03: Encuesta 360° Ponderada
 
 **Descripción:** Sistema de evaluación multi-perspectiva con 6 tipos de formulario × 2 fases (entrada y salida) = 12 formularios.
+
+**Objetivo pedagógico:** La Encuesta de 360° ponderada es un instrumento que permite obtener una breve información comparada entre la percepción que tiene el directivo de su propio desempeño (autoevaluación) y la percepción que tienen los diferentes actores de su comunidad educativa (heteroevaluación). Esta comparación ofrece al directivo una retroalimentación valiosa sobre las competencias en las que existe convergencia o divergencia entre su autopercepción y la mirada externa.
+
+**Aplicación:** Se aplica en dos momentos clave del programa: al inicio (Módulo I, fase de entrada) y al cierre (Módulo VII, fase de salida), lo que permite medir la evolución de las percepciones a lo largo del proceso de formación.
+
+**Tratamiento:** Las respuestas se procesan mediante un sistema de ponderaciones que asigna un peso diferenciado a cada competencia según el rol del observador, totalizando 1.000 puntos por rol. Esto permite construir un puntaje ponderado comparable entre directivos y entre fases.
 
 **Tipos de formulario:**
 | Tipo | Evaluador | Evaluado |
 |------|-----------|----------|
 | Autoevaluación | El directivo mismo | El directivo |
-| Docente | Un docente de la IE | El directivo |
+| Docente | Un docente de la Institución Educativa (IE) | El directivo |
 | Estudiante | Un estudiante | El directivo |
 | Acudiente | Un padre/acudiente | El directivo |
 | Administrativo | Personal administrativo | El directivo |
@@ -224,7 +289,7 @@ El programa requiere una plataforma que:
 - **Dominios** (`domains_360`) → **Competencias** (`competencies_360`) → **Ítems** (`items_360`)
 - Cada ítem tiene textos diferenciados por tipo de formulario (`item_texts_360`)
 - **Ponderaciones** (`competency_weights`) por competencia × rol observador, totalizando 1.000 por rol
-- Tipos de respuesta: Likert 1-4, Likert 1-5, Sí/No
+- Tipos de respuesta: Escala Likert (escala psicométrica de actitudes) de 4 niveles, Escala Likert de 5 niveles, Sí/No
 
 **Sistema de invitaciones:**
 - Generación de links únicos con token
@@ -237,9 +302,18 @@ El programa requiere una plataforma que:
 
 ---
 
-### RF-04: Rúbricas de Evaluación
+### RF-04: Rúbricas de Evaluación por Módulo
 
 **Descripción:** Instrumento de evaluación por rúbrica con 4 niveles de desempeño, organizado por módulos.
+
+**Objetivo pedagógico:** La Rúbrica por módulo es un instrumento diseñado para propiciar una conversación formativa entre el directivo y el equipo de acompañamiento. Su propósito es que ambas partes — a partir de la evidencia observada durante el módulo — lleguen a un acuerdo sobre el nivel de desempeño alcanzado por el directivo en cada criterio evaluado. La rúbrica se actualiza módulo a módulo, permitiendo un seguimiento progresivo del desarrollo de competencias.
+
+**Aplicación:** Se aplica al final de cada módulo (I a IV). El proceso sigue una secuencia de tres pasos:
+1. El directivo se autoevalúa (columna Directivo).
+2. El equipo de acompañamiento evalúa al directivo de manera independiente (columna Equipo).
+3. Ambas partes se reúnen para dialogar y acordar un nivel consensuado (columna Acordado).
+
+Una vez registrada la evaluación acordada de un módulo, el módulo siguiente se desbloquea. Al completar todos los módulos, las evaluaciones pasan a modo de solo lectura para ambas partes.
 
 **Estructura:**
 - **Módulos** (`rubrica_modules`) — Agrupación temática con número y objetivo
@@ -263,7 +337,7 @@ El programa requiere una plataforma que:
 
 ### RF-05: Informe de Módulo
 
-**Descripción:** Informe consolidado por módulo y región, con asistencia, novedades, estrategias y narrativas asistidas por IA.
+**Descripción:** Informe consolidado por módulo y región, con asistencia, novedades, estrategias y narrativas asistidas.
 
 **Componentes:**
 1. **Asistencia** (`informe_asistencia`) — Registro día a día, sesión AM/PM, con razón de inasistencia
@@ -283,6 +357,10 @@ El programa requiere una plataforma que:
 
 **Descripción:** Tres encuestas de percepción del ambiente escolar, dirigidas a diferentes actores de la comunidad educativa.
 
+**Objetivo pedagógico:** Las encuestas de percepción del ambiente escolar permiten recoger la visión de los principales actores de la comunidad educativa (estudiantes, docentes y acudientes) sobre aspectos fundamentales de la vida escolar: convivencia, prácticas pedagógicas y comunicación institucional. Estas percepciones constituyen un insumo valioso para que el directivo identifique fortalezas y áreas de mejora en su gestión del clima escolar.
+
+**Aplicación:** Se aplican en dos momentos del programa: al inicio (Módulo I) y al cierre (Módulo VII), lo que permite comparar la evolución de las percepciones antes y después de la intervención formativa.
+
 **Formularios:**
 1. Encuesta para Estudiantes
 2. Encuesta para Docentes
@@ -297,6 +375,8 @@ El programa requiere una plataforma que:
 
 **Descripción:** Encuestas de satisfacción configurables por región, módulo y tipo de formulario.
 
+**Objetivo pedagógico:** Las encuestas de satisfacción proporcionan indicadores periódicos sobre la calidad de las sesiones de formación del programa. Permiten identificar las fortalezas percibidas por los participantes y los aspectos susceptibles de mejora, alimentando así un ciclo de retroalimentación continua que contribuye al ajuste y la optimización de la implementación del programa.
+
 **Tipos:**
 1. Satisfacción de Asistencia
 2. Satisfacción de Intensivo
@@ -308,7 +388,7 @@ El programa requiere una plataforma que:
 - `satisfaccion_report_content` — Contenido editorial para informes por (región, módulo, tipo)
 
 **Tabla de respuestas:** `satisfaccion_responses`  
-**Generación de PDF:** Informe con gráficos Recharts exportados como imagen
+**Generación de PDF (Portable Document Format):** Informe con gráficos Recharts exportados como imagen
 
 ---
 
