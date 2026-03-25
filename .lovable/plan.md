@@ -1,34 +1,38 @@
 
 
-# Ajouter les écrans live à chaque Hub
+# Capture d'écran statique pour Mi Panel (Directivo)
 
 ## Résumé
 
-Ajouter une preview iframe en direct de l'écran principal de chaque hub, directement dans la section accordion de `/specs/hubs`. Le même pattern que les wireframes sera réutilisé mais sans le filtre sketchy — les écrans apparaîtront tels quels.
+Remplacer l'iframe live du hub #3 (Mi Panel Directivo) par une image statique capturée depuis l'application réelle. L'iframe ne fonctionne pas pour cette page car elle nécessite une session authentifiée.
 
-## Changements
+## Étapes
 
-### Fichier modifié : `src/pages/specs/SpecsHubs.tsx`
+### 1. Capturer la screenshot
 
-1. **Ajouter un champ `previewPath`** à l'interface `HubSpec` — le chemin de la route à afficher en iframe pour chaque hub.
+Utiliser l'outil browser pour naviguer vers le Mi Panel d'un rector sur l'app preview, prendre une capture d'écran, et la sauvegarder dans `public/images/`.
 
-2. **Renseigner `previewPath`** pour chaque hub :
-   - Inicio → `/`
-   - Ficha RLT → `/ficha`
-   - Mi Panel (Directivo/Evaluador) → `/mi-panel`
-   - Hub Encuesta 360° → `/encuesta-360`
-   - Panel Operador → `/operador`
-   - Admin (tous) → `/admin`
-   - Contacto/FAQ → `/contacto`
+### 2. Modifier `src/pages/specs/SpecsHubs.tsx`
 
-3. **Ajouter un bloc iframe** dans chaque `AccordionContent`, entre les routes/rôles et le tableau de fonctionnalités. L'iframe :
-   - Charge la page réelle de l'app (`window.location.origin + previewPath`)
-   - Est mise à l'échelle 0.5 pour tenir dans un cadre compact (~350px de haut)
-   - Est `pointer-events-none` (non interactive)
-   - A un spinner de chargement
-   - Lazy loading activé
+Dans le bloc "Live preview" (lignes 653-671), ajouter une condition : si `hub.id === "mi-panel-directivo"`, afficher une `<img>` statique au lieu de l'iframe.
 
-4. **Ajouter un state `loadedMap`** avec `useState` pour gérer les spinners de chargement.
+```tsx
+{hub.id === "mi-panel-directivo" ? (
+  <img
+    src="/images/mi-panel-directivo-preview.png"
+    alt="Mi Panel — Vista Rector"
+    className="w-full rounded-lg border border-border"
+  />
+) : (
+  // existing iframe block
+)}
+```
 
-Aucun autre fichier n'est modifié.
+### Fichiers modifiés
+- `public/images/mi-panel-directivo-preview.png` — nouvelle image
+- `src/pages/specs/SpecsHubs.tsx` — condition pour afficher l'image au lieu de l'iframe
+
+## Note importante
+
+Il faudra d'abord que je prenne la capture d'écran. Pour cela, j'aurai besoin que tu te connectes au Mi Panel d'un rector dans l'app et que tu m'envoies une capture d'écran via le chat, **ou** que tu me donnes une cédula de test valide pour que je puisse naviguer et capturer moi-même.
 
