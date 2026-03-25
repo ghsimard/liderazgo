@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, GitBranch, Monitor, BookOpen } from "lucide-react";
+import { ArrowLeft, FileText, GitBranch, Monitor, BookOpen, LayoutDashboard } from "lucide-react";
 
 const sections = [
   {
@@ -27,6 +27,12 @@ const sections = [
     description: "Vistas estilo boceto de las pantallas principales de la aplicación.",
     icon: Monitor,
     path: "/specs/wireframes",
+  },
+  {
+    title: "Hubs de la Aplicación",
+    description: "Especificaciones detalladas de cada hub: rutas, roles, funcionalidades y diagramas.",
+    icon: LayoutDashboard,
+    path: "/specs/hubs",
   },
 ];
 
