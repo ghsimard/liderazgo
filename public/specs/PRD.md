@@ -454,9 +454,9 @@ Región
 
 ## 7. Requisitos No Funcionales
 
-### RNF-01: Rendimiento
+### Requisito No Funcional 01: Rendimiento
 - Tiempo de carga inicial: < 3 segundos
-- Generación de PDF: < 10 segundos para informes complejos
+- Generación de documentos PDF (Portable Document Format): < 10 segundos para informes complejos
 - Consultas de base de datos: < 500ms para operaciones CRUD
 
 ### Requisito No Funcional 02: Seguridad
