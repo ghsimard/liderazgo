@@ -29,7 +29,7 @@ Los programas RLT y CLT operan en múltiples regiones de Colombia con cientos de
 |-------|---------|
 | Fichas en Excel dispersas | Formulario digital centralizado con ~60 campos |
 | Encuestas 360° en papel | 12 formularios digitales con ponderaciones configurables |
-| Informes manuales en Word | Generación de PDF automatizada con narrativas asistidas por IA |
+| Informes manuales en Word | Generación de PDF automatizada con narrativas asistidas |
 | Sin seguimiento MEL | Comparación automática entrada/salida con KPIs configurables |
 | Sin control de acceso | 5 roles diferenciados con permisos granulares |
 
@@ -261,7 +261,7 @@ El programa requiere una plataforma que:
 
 ### RF-05: Informe de Módulo
 
-**Descripción:** Informe consolidado por módulo y región, con asistencia, novedades, estrategias y narrativas asistidas por IA.
+**Descripción:** Informe consolidado por módulo y región, con asistencia, novedades, estrategias y narrativas asistidas.
 
 **Componentes:**
 1. **Asistencia** (`informe_asistencia`) — Registro día a día, sesión AM/PM, con razón de inasistencia
@@ -469,7 +469,7 @@ Región
 
 ### RNF-03: Disponibilidad
 - Uptime objetivo: 99.5%
-- Tolerancia a fallos: degradación graceful si servicios de IA no disponibles
+- Tolerancia a fallos: degradación graceful si servicios externos no disponibles
 
 ### RNF-04: Usabilidad
 - Responsive design (mobile-first para directivos)
