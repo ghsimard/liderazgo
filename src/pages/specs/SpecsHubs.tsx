@@ -582,6 +582,22 @@ const hubs: HubSpec[] = [
 export default function SpecsHubs() {
   const navigate = useNavigate();
   const [loadedMap, setLoadedMap] = useState<Record<string, boolean>>({});
+  const { images } = useAppImages();
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+
+  const handleDownloadBlankFicha = async () => {
+    setGeneratingPdf(true);
+    try {
+      await generarPDFFichaEnBlanco(
+        { logoRLT: images.logo_rlt_white, logoCLTDark: images.logo_clt_dark, logoCosmo: images.logo_cosmo },
+        { showLogoRlt: true, showLogoClt: true }
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
