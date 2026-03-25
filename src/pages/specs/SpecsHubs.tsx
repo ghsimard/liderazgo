@@ -770,7 +770,7 @@ export default function SpecsHubs() {
                               <CarouselItem key={i}>
                                 <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
                                   <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">{screen.label}</p>
-                                  <img src={screen.src} alt={screen.label} className="w-full" loading="lazy" />
+                                  <img src={screen.src} alt={screen.label} className="w-full" loading="lazy" style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }} />
                                 </div>
                               </CarouselItem>
                             ))}
