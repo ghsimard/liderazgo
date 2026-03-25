@@ -130,11 +130,27 @@ router.post("/", async (req: Request, res: Response) => {
 
     // Link cedula if provided
     if (cedula) {
-      await queryOne(
-        `INSERT INTO admin_cedulas (user_id, cedula, nombre) VALUES ($1, $2, $3)
-         ON CONFLICT (user_id) DO UPDATE SET cedula = $2, nombre = $3`,
-        [id, cedula.trim(), (nombre || "").trim()]
-      );
+      const normalizedCedula = String(cedula).trim();
+      const normalizedNombre = typeof nombre === "string" ? nombre.trim() : "";
+
+      try {
+        await queryOne(
+          `INSERT INTO admin_cedulas (user_id, cedula, nombre) VALUES ($1, $2, $3)
+           ON CONFLICT (user_id) DO UPDATE SET cedula = $2, nombre = $3`,
+          [id, normalizedCedula, normalizedNombre]
+        );
+      } catch (e: any) {
+        // Backward compatibility: legacy Render DB may not have admin_cedulas.nombre yet
+        if (e?.code === "42703" || String(e?.message || "").includes('column "nombre"')) {
+          await queryOne(
+            `INSERT INTO admin_cedulas (user_id, cedula) VALUES ($1, $2)
+             ON CONFLICT (user_id) DO UPDATE SET cedula = $2`,
+            [id, normalizedCedula]
+          );
+        } else {
+          throw e;
+        }
+      }
     }
 
     res.status(201).json({ id, email: email.toLowerCase().trim() });

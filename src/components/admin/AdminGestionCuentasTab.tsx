@@ -130,6 +130,13 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      const rolesPromise = USE_EXPRESS
+        ? Promise.resolve({ data: [] as CustomRole[], error: null })
+        : supabase.from("custom_roles").select("*").order("name");
+      const userRolesPromise = USE_EXPRESS
+        ? Promise.resolve({ data: [] as { user_id: string; role_id: string }[], error: null })
+        : supabase.from("user_custom_roles").select("user_id, role_id");
+
       const [adminUsersResult, evalsResult, permsResult, regionesResult, rolesResult, userRolesResult] = await Promise.all([
         USE_EXPRESS
           ? apiFetch<{ users: AdminUser[] }>("/api/users")
@@ -137,8 +144,8 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
         supabase.from("rubrica_evaluadores").select("*"),
         supabase.from("operator_permissions").select("*").order("cedula").order("section"),
         supabase.from("regiones").select("nombre").order("nombre"),
-        supabase.from("custom_roles").select("*").order("name"),
-        supabase.from("user_custom_roles").select("user_id, role_id"),
+        rolesPromise,
+        userRolesPromise,
       ]);
 
       const adminUsers: AdminUser[] = USE_EXPRESS
@@ -148,12 +155,17 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
       const permissions = permsResult.data ?? [];
       setRegiones((regionesResult.data || []).map((r: any) => r.nombre));
       const roles: CustomRole[] = (rolesResult.data ?? []) as any;
-      setCustomRoles(roles);
+      const effectiveRoles: CustomRole[] = roles.length > 0 ? roles : [
+        { id: "legacy-superadmin", name: "Superadmin", description: "", is_system: true, created_at: null } as CustomRole,
+        { id: "legacy-admin", name: "Admin", description: "", is_system: true, created_at: null } as CustomRole,
+        { id: "legacy-monitoreo", name: "Monitoreo", description: "", is_system: true, created_at: null } as CustomRole,
+      ];
+      setCustomRoles(effectiveRoles);
       const userCustomRoles: { user_id: string; role_id: string }[] = (userRolesResult.data ?? []) as any;
       // Build lookup: user_id → custom role
       const userRoleMap = new Map<string, CustomRole>();
       for (const ucr of userCustomRoles) {
-        const role = roles.find(r => r.id === ucr.role_id);
+        const role = effectiveRoles.find(r => r.id === ucr.role_id);
         if (role) userRoleMap.set(ucr.user_id, role);
       }
 
@@ -349,10 +361,12 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
       const ced = formCedula.trim();
 
       // --- ADMIN ---
-      // Derive legacy role from custom role name
+      // Derive legacy role from custom role name (fallback to existing role when custom role IDs are unavailable)
       const selectedCustomRole = customRoles.find(r => r.id === adminRole);
-      const legacyRole = selectedCustomRole?.name === "Superadmin" ? "superadmin"
-        : selectedCustomRole?.name === "Monitoreo" ? "monitoreo" : "admin";
+      const selectedRoleName = selectedCustomRole?.name
+        || (editingPerson?.adminRole === "superadmin" ? "Superadmin" : editingPerson?.adminRole === "monitoreo" ? "Monitoreo" : "Admin");
+      const legacyRole = selectedRoleName === "Superadmin" ? "superadmin"
+        : selectedRoleName === "Monitoreo" ? "monitoreo" : "admin";
 
       if (enableAdmin) {
         const email = adminEmail.trim() || formEmail.trim();
@@ -364,10 +378,11 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
         if (isEdit && editingPerson?.isAdmin && editingPerson.adminUserId) {
           // Update existing admin
           if (USE_EXPRESS) {
-            await apiFetch(`/api/users/${editingPerson.adminUserId}`, {
+            const updateRes = await apiFetch(`/api/users/${editingPerson.adminUserId}`, {
               method: "PUT",
-              body: { email, role: legacyRole, cedula: ced, custom_role_id: adminRole || undefined },
+              body: { email, role: legacyRole, cedula: ced, custom_role_id: USE_EXPRESS ? undefined : (adminRole || undefined) },
             });
+            if (updateRes.error) throw new Error(updateRes.error);
           } else {
             await invokeManageUsers("update_user", {
               user_id: editingPerson.adminUserId,
@@ -397,10 +412,11 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                 method: "POST",
                 body: { email, password: adminPassword, role: legacyRole, cedula: ced, nombre: formNombre.trim() },
               });
+              if (createRes.error) throw new Error(createRes.error);
               createdAdminUserId = (createRes as any)?.data?.id ?? null;
             } else {
               const { data: { session } } = await supabase.auth.getSession();
-              const { data: createData } = await supabase.functions.invoke("create-user", {
+              const { data: createData, error: createError } = await supabase.functions.invoke("create-user", {
                 body: {
                   email,
                   password: adminPassword,
@@ -412,6 +428,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
                 },
                 headers: { Authorization: `Bearer ${session?.access_token}` },
               });
+              if (createError) throw new Error(createError.message || "Erreur lors de la création du compte admin");
               createdAdminUserId = (createData as any)?.user?.id ?? null;
             }
 
@@ -420,13 +437,16 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
               const freshData = USE_EXPRESS
                 ? await apiFetch<{ users: AdminUser[] }>("/api/users")
                 : await invokeManageUsers("list");
+              if (USE_EXPRESS && (freshData as any)?.error) {
+                throw new Error((freshData as any).error);
+              }
               const freshUsers: AdminUser[] = USE_EXPRESS ? (freshData as any).data?.users ?? [] : (freshData as any).users ?? [];
               const normalizedEmail = email.toLowerCase();
               const newUser = freshUsers.find((u) => (u.email || "").toLowerCase() === normalizedEmail);
               targetUserId = newUser?.id ?? null;
             }
 
-            if (targetUserId) {
+            if (targetUserId && !USE_EXPRESS) {
               await supabase.from("admin_cedulas").upsert({ user_id: targetUserId, cedula: ced, nombre: formNombre.trim() }, { onConflict: "user_id" });
               if (adminRole) {
                 await supabase.from("user_custom_roles").insert({ user_id: targetUserId, role_id: adminRole });
