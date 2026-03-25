@@ -43,11 +43,14 @@ Los programas RLT y CLT operan en múltiples regiones de Colombia con cientos de
 
 ### 2.2 Actores del Ecosistema
 
-- **Ministerio de Educación Nacional (MEN)** — Financiador y rector de política
+- **Fundación Empresarios por la Educación (ExE)** — Propietaria de los derechos del programa Rectores Líderes Transformadores y de la Encuesta 360°
+- **COSMO** — Operador del programa Rectores Líderes Transformadores / Encuesta 360°
 - **Entidades Territoriales Certificadas (ETC)** — Secretarías de educación departamentales y municipales
 - **Instituciones Educativas (IE)** — Colegios donde ejercen los directivos
 - **Equipo de acompañamiento** — Evaluadores y formadores regionales
 - **Operadores regionales** — Entidades que ejecutan el programa en cada región
+- **Administrador del programa** — Coordinador y monitor responsables de la gestión operativa de la plataforma
+- **Empresas privadas** — Entidades del sector privado que apoyan o financian el programa
 
 ### 2.3 Necesidad de Digitalización
 
