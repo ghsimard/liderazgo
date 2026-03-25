@@ -689,8 +689,8 @@ export default function SpecsHubs() {
                               </CarouselItem>
                             ))}
                           </CarouselContent>
-                          <CarouselPrevious />
-                          <CarouselNext />
+                          <CarouselPrevious className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
+                          <CarouselNext className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
                         </Carousel>
                       </div>
                       <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
