@@ -726,6 +726,30 @@ Todos los PDFs se generan client-side con `jsPDF`. Los generadores se encuentran
 3. Renderizado de tablas, gráficos y textos formateados
 4. Descarga automática del archivo
 
+### D. Diagramas de Flujo
+
+Los siguientes diagramas muestran los flujos principales de la plataforma.
+
+<!-- INJECT:diagrams -->
+
+### E. Hubs de la Aplicación
+
+Especificaciones detalladas de cada hub: rutas, roles, funcionalidades y mindmaps.
+
+<!-- INJECT:hubs -->
+
+### F. Wireframes
+
+Capturas de pantalla de todas las vistas de la aplicación, organizadas por sección.
+
+<!-- INJECT:wireframes -->
+
+### G. Formularios y Preguntas
+
+Referencia completa de todos los formularios, preguntas, estructura y ponderaciones de cada hub.
+
+<!-- INJECT:formularios -->
+
 ---
 
 *Documento generado como referencia retrospectiva del producto. Para detalles operativos, consultar [SPECIFICATIONS.md](./SPECIFICATIONS.md).*

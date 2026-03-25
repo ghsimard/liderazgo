@@ -5,6 +5,32 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MermaidDiagram from "@/components/MermaidDiagram";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PrdDiagramsSection } from "./prd-sections/PrdDiagramsSection";
+import { PrdHubsSection } from "./prd-sections/PrdHubsSection";
+import { PrdWireframesSection } from "./prd-sections/PrdWireframesSection";
+import { PrdFormulariosSection } from "./prd-sections/PrdFormulariosSection";
+
+/* ── Markdown prose classes ── */
+const PROSE = `prose prose-slate dark:prose-invert max-w-none
+  prose-headings:scroll-mt-20
+  prose-h1:text-3xl prose-h1:font-bold prose-h1:text-foreground prose-h1:border-b prose-h1:border-border prose-h1:pb-3 prose-h1:mb-6
+  prose-h2:text-2xl prose-h2:font-semibold prose-h2:text-foreground prose-h2:border-b prose-h2:border-border prose-h2:pb-2 prose-h2:mt-10 prose-h2:mb-4
+  prose-h3:text-xl prose-h3:font-semibold prose-h3:text-foreground prose-h3:mt-8 prose-h3:mb-3
+  prose-h4:text-lg prose-h4:font-semibold prose-h4:text-foreground prose-h4:mt-6 prose-h4:mb-2
+  prose-p:text-muted-foreground prose-p:leading-7 prose-p:my-3
+  prose-li:text-muted-foreground prose-li:my-1
+  prose-strong:text-foreground prose-strong:font-semibold
+  prose-code:bg-muted prose-code:text-foreground prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
+  prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-lg prose-pre:p-4
+  prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:not-italic
+  prose-table:border-collapse prose-table:w-full
+  prose-th:bg-muted prose-th:text-foreground prose-th:font-semibold prose-th:text-left prose-th:px-4 prose-th:py-2.5 prose-th:border prose-th:border-border prose-th:text-sm
+  prose-td:px-4 prose-td:py-2.5 prose-td:border prose-td:border-border prose-td:text-sm prose-td:text-muted-foreground
+  prose-hr:border-border prose-hr:my-8
+  prose-a:text-primary prose-a:no-underline hover:prose-a:underline`;
 
 export default function SpecsPrd() {
   const [md, setMd] = useState("");
@@ -27,7 +53,58 @@ export default function SpecsPrd() {
     );
   }
 
+  // Split markdown at <!-- INJECT:xxx --> markers
+  const parts = md.split(/(<!-- INJECT:\w+ -->)/);
+
   mermaidCounter.current = 0;
+
+  const renderMarkdown = (text: string) => {
+    if (!text.trim()) return null;
+    return (
+      <div className={PROSE}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            code({ className, children, ...props }) {
+              const lang = className?.replace("language-", "") || "";
+              const text = String(children).replace(/\n$/, "");
+              if (lang === "mermaid") {
+                mermaidCounter.current += 1;
+                return <MermaidDiagram chart={text} id={`prd-${mermaidCounter.current}`} />;
+              }
+              if (!className) return <code {...props}>{children}</code>;
+              return (
+                <pre className="rounded-lg border border-border bg-muted p-4 overflow-x-auto !my-4">
+                  <code className="text-sm font-mono text-foreground">{text}</code>
+                </pre>
+              );
+            },
+            tr({ children, ...props }) {
+              return <tr className="even:bg-muted/30" {...props}>{children}</tr>;
+            },
+          }}
+        >
+          {text}
+        </ReactMarkdown>
+      </div>
+    );
+  };
+
+  const renderInjection = (marker: string) => {
+    const key = marker.replace("<!-- INJECT:", "").replace(" -->", "");
+    switch (key) {
+      case "diagrams":
+        return <PrdDiagramsSection />;
+      case "hubs":
+        return <PrdHubsSection />;
+      case "wireframes":
+        return <PrdWireframesSection />;
+      case "formularios":
+        return <PrdFormulariosSection />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,49 +120,12 @@ export default function SpecsPrd() {
       </div>
 
       <article className="max-w-5xl mx-auto px-4 py-8 md:px-8 print:px-0 print:max-w-none">
-        <div className="prose prose-slate dark:prose-invert max-w-none
-          prose-headings:scroll-mt-20
-          prose-h1:text-3xl prose-h1:font-bold prose-h1:text-foreground prose-h1:border-b prose-h1:border-border prose-h1:pb-3 prose-h1:mb-6
-          prose-h2:text-2xl prose-h2:font-semibold prose-h2:text-foreground prose-h2:border-b prose-h2:border-border prose-h2:pb-2 prose-h2:mt-10 prose-h2:mb-4
-          prose-h3:text-xl prose-h3:font-semibold prose-h3:text-foreground prose-h3:mt-8 prose-h3:mb-3
-          prose-h4:text-lg prose-h4:font-semibold prose-h4:text-foreground prose-h4:mt-6 prose-h4:mb-2
-          prose-p:text-muted-foreground prose-p:leading-7 prose-p:my-3
-          prose-li:text-muted-foreground prose-li:my-1
-          prose-strong:text-foreground prose-strong:font-semibold
-          prose-code:bg-muted prose-code:text-foreground prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
-          prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-lg prose-pre:p-4
-          prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:not-italic
-          prose-table:border-collapse prose-table:w-full
-          prose-th:bg-muted prose-th:text-foreground prose-th:font-semibold prose-th:text-left prose-th:px-4 prose-th:py-2.5 prose-th:border prose-th:border-border prose-th:text-sm
-          prose-td:px-4 prose-td:py-2.5 prose-td:border prose-td:border-border prose-td:text-sm prose-td:text-muted-foreground
-          prose-hr:border-border prose-hr:my-8
-          prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-        ">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              code({ className, children, ...props }) {
-                const lang = className?.replace("language-", "") || "";
-                const text = String(children).replace(/\n$/, "");
-                if (lang === "mermaid") {
-                  mermaidCounter.current += 1;
-                  return <MermaidDiagram chart={text} id={`prd-${mermaidCounter.current}`} />;
-                }
-                if (!className) return <code {...props}>{children}</code>;
-                return (
-                  <pre className="rounded-lg border border-border bg-muted p-4 overflow-x-auto !my-4">
-                    <code className="text-sm font-mono text-foreground">{text}</code>
-                  </pre>
-                );
-              },
-              tr({ children, ...props }) {
-                return <tr className="even:bg-muted/30" {...props}>{children}</tr>;
-              },
-            }}
-          >
-            {md}
-          </ReactMarkdown>
-        </div>
+        {parts.map((part, i) => {
+          if (part.startsWith("<!-- INJECT:")) {
+            return <div key={i}>{renderInjection(part)}</div>;
+          }
+          return <div key={i}>{renderMarkdown(part)}</div>;
+        })}
       </article>
 
       <style>{`@media print { .sticky { display: none !important; } footer { display: none !important; } }`}</style>
