@@ -56,4 +56,70 @@ router.post("/send", requireAuth, requireAdmin, async (req: Request, res: Respon
   }
 });
 
+/**
+ * POST /api/email/send-invitation
+ * Body: { to, subject, html?, text?, from?, reply_to?, context: { type, directivo_cedula } }
+ * No admin auth required — validates directivo cedula instead.
+ */
+router.post("/send-invitation", async (req: Request, res: Response) => {
+  if (!RESEND_API_KEY) {
+    res.status(500).json({ error: "RESEND_API_KEY is not configured" });
+    return;
+  }
+
+  const { to, subject, html, text, from, reply_to, context } = req.body;
+
+  if (!context?.directivo_cedula || context?.type !== "encuesta_invitation") {
+    res.status(400).json({ error: "Missing or invalid context for invitation" });
+    return;
+  }
+
+  if (!to || !subject || (!html && !text)) {
+    res.status(400).json({ error: "Missing required fields: to, subject, and html or text" });
+    return;
+  }
+
+  // Validate directivo exists in fichas_rlt
+  const ficha = await queryOne<{ numero_cedula: string }>(
+    `SELECT numero_cedula FROM fichas_rlt WHERE numero_cedula = $1 LIMIT 1`,
+    [context.directivo_cedula]
+  );
+
+  if (!ficha) {
+    res.status(403).json({ error: "Directivo cedula not found — unauthorized" });
+    return;
+  }
+
+  try {
+    const resendRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: from || "RLT-CLT Encuesta <notificaciones@liderazgo.net.co>",
+        to: Array.isArray(to) ? to : [to],
+        subject,
+        html,
+        text,
+        reply_to,
+      }),
+    });
+
+    const data = await resendRes.json();
+
+    if (!resendRes.ok) {
+      console.error("Resend API error:", data);
+      res.status(resendRes.status).json({ error: data.message || "Failed to send email", details: data });
+      return;
+    }
+
+    res.json({ success: true, id: data.id });
+  } catch (err: any) {
+    console.error("Invitation email send error:", err);
+    res.status(500).json({ error: err.message || "Failed to send email" });
+  }
+});
+
 export default router;
