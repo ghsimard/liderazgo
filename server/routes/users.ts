@@ -74,7 +74,7 @@ router.get("/", async (_req: Request, res: Response) => {
 /** POST /api/users — create a new user */
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password, role, cedula, nombre } = req.body;
 
     if (!email || !password) {
       res.status(400).json({ error: "Email et mot de passe requis" });
@@ -125,6 +125,15 @@ router.post("/", async (req: Request, res: Response) => {
       await queryOne(
         "INSERT INTO user_custom_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
         [id, roleId]
+      );
+    }
+
+    // Link cedula if provided
+    if (cedula) {
+      await queryOne(
+        `INSERT INTO admin_cedulas (user_id, cedula, nombre) VALUES ($1, $2, $3)
+         ON CONFLICT (user_id) DO UPDATE SET cedula = $2, nombre = $3`,
+        [id, cedula.trim(), (nombre || "").trim()]
       );
     }
 

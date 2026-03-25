@@ -393,7 +393,7 @@ export default function AdminGestionCuentasTab({ isSuperAdmin, isViewer }: Props
             if (USE_EXPRESS) {
               await apiFetch("/api/users", {
                 method: "POST",
-                body: { email, password: adminPassword, role: legacyRole },
+                body: { email, password: adminPassword, role: legacyRole, cedula: ced, nombre: formNombre.trim() },
               });
             } else {
               const { data: { session } } = await supabase.auth.getSession();
