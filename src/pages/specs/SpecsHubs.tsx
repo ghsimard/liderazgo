@@ -662,6 +662,15 @@ export default function SpecsHubs() {
                         loading="lazy"
                       />
                     </div>
+                  ) : hub.id === "mi-panel-evaluador" ? (
+                    <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                      <img
+                        src="/images/mi-panel-evaluador-preview.png"
+                        alt="Mi Panel — Vista Evaluador"
+                        className="w-full rounded-lg"
+                        loading="lazy"
+                      />
+                    </div>
                   ) : (
                     <div className="relative border border-border rounded-lg overflow-hidden bg-muted/30" style={{ height: 350 }}>
                       {!loadedMap[hub.id] && (
