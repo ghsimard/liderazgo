@@ -924,6 +924,34 @@ export default function SpecsHubs() {
                         </Carousel>
                       </div>
                     </div>
+                  ) : hub.id === "admin-satisfaccion" ? (
+                    <div className="space-y-4">
+                      <div className="px-14">
+                        <Carousel className="w-full">
+                          <CarouselContent>
+                            {[
+                              { label: "Respuestas", src: "/images/specs/admin-satisf-respuestas.png" },
+                              { label: "Detalle de respuesta", src: "/images/specs/admin-satisf-detalle.png" },
+                              { label: "Comentarios", src: "/images/specs/admin-satisf-comentarios.png" },
+                              { label: "Informe PDF", src: "/images/specs/admin-satisf-informe.png" },
+                              { label: "Formulario — Asistencia", src: "/images/specs/admin-satisf-form-asistencia.png" },
+                              { label: "Formulario — Interludio", src: "/images/specs/admin-satisf-form-interludio.png" },
+                              { label: "Formulario — Intensivo", src: "/images/specs/admin-satisf-form-intensivo.png" },
+                              { label: "Configuración", src: "/images/specs/admin-satisf-config.png" },
+                            ].map((screen, i) => (
+                              <CarouselItem key={i}>
+                                <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                                  <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">{screen.label}</p>
+                                  <img src={screen.src} alt={screen.label} className="w-full" loading="lazy" style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }} />
+                                </div>
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
+                          <CarouselNext className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
+                        </Carousel>
+                      </div>
+                    </div>
                   ) : (
                     <div className="relative border border-border rounded-lg overflow-hidden bg-muted/30" style={{ height: 350 }}>
                       {!loadedMap[hub.id] && (
