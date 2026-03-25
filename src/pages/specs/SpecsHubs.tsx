@@ -659,6 +659,24 @@ export default function SpecsHubs() {
                       <div className="px-14">
                         <Carousel className="w-full">
                           <CarouselContent>
+                            <CarouselItem>
+                              <div className="relative border border-border rounded-lg overflow-hidden bg-muted/30" style={{ height: 350 }}>
+                                {!loadedMap[hub.id] && (
+                                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                                  </div>
+                                )}
+                                <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">Ingreso de Cédula (en vivo)</p>
+                                <iframe
+                                  src={`${window.location.origin}/`}
+                                  title="Preview Inicio"
+                                  loading="lazy"
+                                  className="pointer-events-none origin-top-left"
+                                  style={{ width: "200%", height: "200%", transform: "scale(0.5)", border: "none", filter: "grayscale(1) contrast(0.85) sepia(0.08)" }}
+                                  onLoad={() => setLoadedMap((m) => ({ ...m, [hub.id]: true }))}
+                                />
+                              </div>
+                            </CarouselItem>
                             {[
                               { label: "Mi Panel — Rector", src: "/images/specs/inicio-panel-rector.png" },
                               { label: "Mi Panel — Evaluador", src: "/images/specs/inicio-panel-evaluador.png" },
