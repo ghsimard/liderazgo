@@ -51,6 +51,7 @@ const SpecsHub = lazy(() => import("./pages/specs/SpecsHub"));
 const SpecsPrd = lazy(() => import("./pages/specs/SpecsPrd"));
 const SpecsDiagramas = lazy(() => import("./pages/specs/SpecsDiagramas"));
 const SpecsWireframes = lazy(() => import("./pages/specs/SpecsWireframes"));
+const SpecsHubs = lazy(() => import("./pages/specs/SpecsHubs"));
 
 const queryClient = new QueryClient();
 
@@ -124,6 +125,7 @@ const App = () => (
                 <Route path="/specs/specs" element={<Especificaciones />} />
                 <Route path="/specs/diagramas" element={<SpecsDiagramas />} />
                 <Route path="/specs/wireframes" element={<SpecsWireframes />} />
+                <Route path="/specs/hubs" element={<SpecsHubs />} />
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
