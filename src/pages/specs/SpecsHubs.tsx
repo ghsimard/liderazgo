@@ -663,13 +663,19 @@ export default function SpecsHubs() {
                       />
                     </div>
                   ) : hub.id === "mi-panel-evaluador" ? (
-                    <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
-                      <img
-                        src="/images/mi-panel-evaluador-preview.png"
-                        alt="Mi Panel — Vista Evaluador"
-                        className="w-full rounded-lg"
-                        loading="lazy"
-                      />
+                    <div className="space-y-4">
+                      <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                        <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">Mi Panel — Vista general</p>
+                        <img src="/images/mi-panel-evaluador-preview.png" alt="Mi Panel — Vista Evaluador" className="w-full" loading="lazy" />
+                      </div>
+                      <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                        <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">Mi Rúbrica de Evaluación</p>
+                        <img src="/images/evaluador-rubrica-preview.png" alt="Rúbrica de Evaluación — Vista Evaluador" className="w-full" loading="lazy" />
+                      </div>
+                      <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                        <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">Encuestas 360° — Entrada</p>
+                        <img src="/images/evaluador-encuestas360-preview.png" alt="Encuestas 360° — Vista Evaluador" className="w-full" loading="lazy" />
+                      </div>
                     </div>
                   ) : (
                     <div className="relative border border-border rounded-lg overflow-hidden bg-muted/30" style={{ height: 350 }}>
