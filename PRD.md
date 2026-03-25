@@ -441,7 +441,7 @@ Una vez registrada la evaluación acordada de un módulo, el módulo siguiente s
 **Descripción:** Herramientas de administración del sistema.
 
 **Componentes:**
-- **Gestión de cuentas** — CRUD de usuarios admin con roles (admin/superadmin), badges visuales
+- **Gestión de cuentas** — Creación, consulta, edición y eliminación (CRUD) de usuarios admin con roles (admin/superadmin), badges visuales
 - **Log de actividad** — Registro automático de acciones con cédula, tipo, detalle, timestamp, IP, user-agent
 - **Papelera** — Recuperación de registros eliminados (soft delete → `deleted_records`)
 - **Purga de datos** — Eliminación masiva por tabla/región (solo superadmin, requiere confirmación por texto)
@@ -536,35 +536,35 @@ Región
 
 ## 7. Requisitos No Funcionales
 
-### RNF-01: Rendimiento
+### Requisito No Funcional 01: Rendimiento
 - Tiempo de carga inicial: < 3 segundos
-- Generación de PDF: < 10 segundos para informes complejos
-- Consultas de base de datos: < 500ms para operaciones CRUD
+- Generación de documentos PDF (Portable Document Format): < 10 segundos para informes complejos
+- Consultas de base de datos: < 500ms para operaciones de Creación, consulta, edición y eliminación (CRUD)
 
-### RNF-02: Seguridad
+### Requisito No Funcional 02: Seguridad
 - **Autenticación dual:** Cédula (público) + Email/JWT (admin)
-- **Row Level Security (RLS)** en todas las tablas sensibles
+- **Row Level Security (RLS — Seguridad a nivel de fila)** en todas las tablas sensibles
 - **Funciones `SECURITY DEFINER`** para verificación de roles sin recursión
 - **Roles en tabla separada** (`user_roles`) — nunca en tabla de perfiles
 - Tokens JWT con expiración de 24 horas
 - Nunca almacenar claves privadas en el código
 
-### RNF-03: Disponibilidad
+### Requisito No Funcional 03: Disponibilidad
 - Uptime objetivo: 99.5%
-- Tolerancia a fallos: degradación graceful si servicios de IA no disponibles
+- Tolerancia a fallos: degradación graceful si servicios externos no disponibles
 
-### RNF-04: Usabilidad
+### Requisito No Funcional 04: Usabilidad
 - Responsive design (mobile-first para directivos)
 - Interfaz en español colombiano
 - Feedback visual inmediato (toasts, estados de carga, badges)
 - Formularios con auto-guardado y validación en tiempo real
 
-### RNF-05: Accesibilidad
+### Requisito No Funcional 05: Accesibilidad
 - Contraste adecuado (WCAG AA)
 - Navegación por teclado
 - Labels semánticos en formularios
 
-### RNF-06: Mantenibilidad
+### Requisito No Funcional 06: Mantenibilidad
 - Componentes reutilizables (shadcn/ui)
 - Separación de lógica de negocio y presentación
 - Generadores de PDF modulares
@@ -587,7 +587,6 @@ Región
 | **Rich Text** | TipTap |
 | **Drag & Drop** | @hello-pangea/dnd |
 | **Backend** | Supabase (PostgreSQL + Auth + Storage + Edge Functions) |
-| **IA** | Lovable AI (Gemini 2.5 Flash) |
 
 ### 8.2 Diagrama de Arquitectura
 
@@ -613,7 +612,6 @@ Región
    ┌────▼────┐  ┌─────▼─────┐ ┌────▼────┐
    │Supabase │  │  Edge      │ │ Storage │
    │PostgreSQL│  │ Functions  │ │ (logos) │
-   │ + RLS   │  │ (email,IA) │ │         │
    └─────────┘  └───────────┘  └─────────┘
 ```
 
@@ -693,7 +691,7 @@ Ingresa cédula → check_cedula_role → Mi Panel →
   ├── Informe de Módulo
   │   ├── Registrar asistencia
   │   ├── Completar informe
-  │   ├── Generar narrativa IA
+  │   ├── Generar narrativa asistida
   │   └── Exportar PDF
   └── Encuestas 360°
       ├── Compartir enlace de invitación
@@ -745,7 +743,7 @@ Ingresa cédula → Detecta rol admin → /admin/login →
 |---|--------|-------------|---------|------------|
 | R-01 | Acceso no autorizado por cédula adivinada | Media | Alto | La cédula solo da acceso a datos propios; acciones admin requieren JWT |
 | R-02 | Pérdida de datos por eliminación accidental | Baja | Alto | Sistema de papelera (soft delete) con recuperación |
-| R-03 | Indisponibilidad del servicio de IA | Media | Bajo | Narrativas IA son opcionales; formularios funcionan sin IA |
+| R-03 | Indisponibilidad del servicio de narrativas | Media | Bajo | Las narrativas asistidas son opcionales; formularios funcionan sin ellas |
 | R-04 | Formularios incompletos por complejidad | Media | Medio | Auto-guardado, validación progresiva, indicadores de progreso |
 | R-05 | Escalabilidad con múltiples regiones | Baja | Medio | Arquitectura basada en regiones con filtros; índices DB apropiados |
 | R-06 | Dependencia de generación PDF client-side | Baja | Medio | jsPDF es maduro y sin dependencias server; PDFs se generan offline |
@@ -792,7 +790,7 @@ Ingresa cédula → Detecta rol admin → /admin/login →
 |---------|-----------|
 | `send-email` | Envío de invitaciones 360° y notificaciones |
 | `create-user` | Creación de usuarios admin |
-| `manage-users` | Gestión CRUD de usuarios |
+| `manage-users` | Gestión completa (Creación, consulta, edición y eliminación) de usuarios |
 | `generate-section-text` | Generación de narrativas asistidas para informes |
 | `generate-executive-summary` | Resumen ejecutivo automatizado para informes de módulo |
 | `rubrica-analysis` | Análisis automatizado de resultados de rúbrica |
