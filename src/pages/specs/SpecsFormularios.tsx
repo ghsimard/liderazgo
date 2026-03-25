@@ -231,12 +231,16 @@ export default function SpecsFormularios() {
                       <h4 className="font-semibold text-sm mb-2">Escala de Frecuencia</h4>
                       <p className="text-xs text-muted-foreground mb-2">Ítems 1–18</p>
                       <ul className="space-y-1">
-                        {FREQUENCY_OPTIONS_WITH_NOSABE.map((o, i) => (
-                          <li key={o} className="text-xs flex items-center gap-2">
-                            <span className="w-6 h-6 rounded bg-muted flex items-center justify-center font-mono text-xs">{i + 1}</span>
-                            {o}
-                          </li>
-                        ))}
+                        {FREQUENCY_OPTIONS_WITH_NOSABE.map((o, i) => {
+                          const values = [2.5, 5, 7.5, 10, null];
+                          return (
+                            <li key={o} className="text-xs flex items-center gap-2">
+                              <span className="w-6 h-6 rounded bg-muted flex items-center justify-center font-mono text-xs">{i + 1}</span>
+                              {o}
+                              <span className="ml-auto font-mono text-primary">{values[i] !== null ? `→ ${values[i]}` : "→ excluido"}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                       <p className="text-xs text-muted-foreground mt-2 italic">
                         Nota: La autoevaluación no incluye "No sé": {FREQUENCY_OPTIONS_NO_NOSABE.join(", ")}
@@ -246,12 +250,16 @@ export default function SpecsFormularios() {
                       <h4 className="font-semibold text-sm mb-2">Escala de Acuerdo</h4>
                       <p className="text-xs text-muted-foreground mb-2">Ítems 19–39</p>
                       <ul className="space-y-1">
-                        {AGREEMENT_OPTIONS_WITH_NOSABE.map((o, i) => (
-                          <li key={o} className="text-xs flex items-center gap-2">
-                            <span className="w-6 h-6 rounded bg-muted flex items-center justify-center font-mono text-xs">{i + 1}</span>
-                            {o}
-                          </li>
-                        ))}
+                        {AGREEMENT_OPTIONS_WITH_NOSABE.map((o, i) => {
+                          const values = [2.5, 5, 7.5, 10, null];
+                          return (
+                            <li key={o} className="text-xs flex items-center gap-2">
+                              <span className="w-6 h-6 rounded bg-muted flex items-center justify-center font-mono text-xs">{i + 1}</span>
+                              {o}
+                              <span className="ml-auto font-mono text-primary">{values[i] !== null ? `→ ${values[i]}` : "→ excluido"}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                       <p className="text-xs text-muted-foreground mt-2 italic">
                         Nota: La autoevaluación no incluye "No sé": {AGREEMENT_OPTIONS_NO_NOSABE.join(", ")}
