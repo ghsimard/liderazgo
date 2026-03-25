@@ -256,31 +256,33 @@ const hubs: HubSpec[] = [
     routes: ["/admin"],
     role: "Admin autenticado",
     features: [
-      { feature: "Dashboard", description: "Estadísticas globales: fichas, encuestas, evaluadores, etc." },
-      { feature: "Gestión de cuentas", description: "Crear, editar y eliminar cuentas de administradores y operadores." },
-      { feature: "Roles y permisos", description: "Configuración de roles personalizados con permisos CRUD por sección." },
-      { feature: "Operadores", description: "Asignación de operadores con scope (región, entidad, IE)." },
-      { feature: "Geografía", description: "Gestión de regiones, entidades territoriales, municipios e instituciones." },
-      { feature: "Imágenes", description: "Gestión de logos y imágenes de la aplicación." },
+      { feature: "360° Entrada", description: "Enlaces a los 6 formularios en línea de la encuesta 360° de entrada y sus versiones PDF." },
+      { feature: "360° Salida", description: "Enlaces a los 6 formularios en línea de la encuesta 360° de salida (final) y sus versiones PDF." },
+      { feature: "Rúbrica", description: "Enlace al formulario en línea de la Rúbrica de Evaluación y su versión PDF." },
+      { feature: "RLT", description: "Enlace al formulario en línea de la Ficha de Información y su versión PDF." },
+      { feature: "Ambiente Escolar", description: "Enlaces a los 3 formularios en línea de Ambiente Escolar y sus versiones PDF." },
+      { feature: "Satisfacción", description: "Enlaces a los formularios en línea de Satisfacción (Intensivo, Interludio, Asistencia) y sus versiones PDF." },
     ],
     mindmap: `mindmap
   root((Admin Enlaces))
-    Dashboard
-      Estadisticas globales
-    Cuentas
-      Admins
-      Operadores
-    Roles
-      Permisos CRUD
-      Secciones
-    Geografia
-      Regiones
-      Entidades
-      Municipios
-      Instituciones
-    Imagenes
-      Logos
-      Gestion`,
+    360 Entrada
+      6 formularios en linea
+      PDF
+    360 Salida
+      6 formularios finales
+      PDF
+    Rubrica
+      Formulario en linea
+      PDF
+    RLT
+      Ficha de Informacion
+      PDF
+    Ambiente Escolar
+      3 formularios
+      PDF
+    Satisfaccion
+      Intensivo / Interludio / Asistencia
+      PDF`,
     previewPath: "/admin",
   },
   /* 8 — Admin: Fichas */
