@@ -29,7 +29,7 @@ Los programas RLT y CLT operan en múltiples regiones de Colombia con cientos de
 |-------|---------|
 | Fichas en Excel dispersas | Formulario digital centralizado con ~60 campos |
 | Encuestas 360° en papel | 12 formularios digitales con ponderaciones configurables |
-| Informes manuales en Word | Generación de PDF automatizada con narrativas asistidas por IA |
+| Informes manuales en Word | Generación de PDF automatizada con narrativas asistidas |
 | Sin seguimiento MEL | Comparación automática entrada/salida con KPIs configurables |
 | Sin control de acceso | 5 roles diferenciados con permisos granulares |
 
@@ -157,10 +157,11 @@ El programa requiere una plataforma que:
 | Fase | Módulos | Estado |
 |------|---------|--------|
 | **MVP** | Ficha RLT, Identificación por cédula, Panel Admin básico | ✅ Completado |
-| **Fase 2** | Encuestas 360°, Rúbricas, Informes de Módulo | ✅ Completado |
+| **Fase 2** | Encuestas 360° Fase I (Entrada), Rúbricas, Informes de Módulo | ✅ Completado |
 | **Fase 3** | MEL, Satisfacciones, Ambiente Escolar, Operadores | ✅ Completado |
 | **Fase 4** | Configuración avanzada (ponderaciones, KPI groups, formularios dinámicos) | ✅ Completado |
-| **Fase 5** | Certificaciones, integraciones externas | 🔜 Planificado |
+| **Fase 5** | Encuestas 360° Fase II (Salida) | 🔄 En progreso |
+| **Fase 6** | Certificaciones, integraciones externas | 🔜 Planificado |
 
 ---
 
@@ -260,7 +261,7 @@ El programa requiere una plataforma que:
 
 ### RF-05: Informe de Módulo
 
-**Descripción:** Informe consolidado por módulo y región, con asistencia, novedades, estrategias y narrativas asistidas por IA.
+**Descripción:** Informe consolidado por módulo y región, con asistencia, novedades, estrategias y narrativas asistidas.
 
 **Componentes:**
 1. **Asistencia** (`informe_asistencia`) — Registro día a día, sesión AM/PM, con razón de inasistencia
@@ -268,10 +269,9 @@ El programa requiere una plataforma que:
 3. **Informe de módulo** (`informe_modulo`) — Consolidado regional con equipo, sesiones, estrategias, articulación
 4. **Evaluación individual** — Valoración cualitativa por directivo
 
-**Generación de narrativas IA:**
+**Generación de narrativas asistidas:**
 - Edge function `generate-section-text` para textos asistidos
 - Edge function `generate-executive-summary` para resumen ejecutivo
-- Modelo: Gemini 2.5 Flash (vía Lovable AI)
 
 **Generación de PDF:** Client-side con jsPDF, incluyendo logos dinámicos por región
 
@@ -469,7 +469,7 @@ Región
 
 ### RNF-03: Disponibilidad
 - Uptime objetivo: 99.5%
-- Tolerancia a fallos: degradación graceful si servicios de IA no disponibles
+- Tolerancia a fallos: degradación graceful si servicios externos no disponibles
 
 ### RNF-04: Usabilidad
 - Responsive design (mobile-first para directivos)
@@ -505,7 +505,6 @@ Región
 | **Rich Text** | TipTap |
 | **Drag & Drop** | @hello-pangea/dnd |
 | **Backend** | Supabase (PostgreSQL + Auth + Storage + Edge Functions) |
-| **IA** | Lovable AI (Gemini 2.5 Flash) |
 
 ### 8.2 Diagrama de Arquitectura
 
@@ -663,7 +662,7 @@ Ingresa cédula → Detecta rol admin → /admin/login →
 |---|--------|-------------|---------|------------|
 | R-01 | Acceso no autorizado por cédula adivinada | Media | Alto | La cédula solo da acceso a datos propios; acciones admin requieren JWT |
 | R-02 | Pérdida de datos por eliminación accidental | Baja | Alto | Sistema de papelera (soft delete) con recuperación |
-| R-03 | Indisponibilidad del servicio de IA | Media | Bajo | Narrativas IA son opcionales; formularios funcionan sin IA |
+| R-03 | Indisponibilidad del servicio de narrativas | Media | Bajo | Las narrativas asistidas son opcionales; formularios funcionan sin ellas |
 | R-04 | Formularios incompletos por complejidad | Media | Medio | Auto-guardado, validación progresiva, indicadores de progreso |
 | R-05 | Escalabilidad con múltiples regiones | Baja | Medio | Arquitectura basada en regiones con filtros; índices DB apropiados |
 | R-06 | Dependencia de generación PDF client-side | Baja | Medio | jsPDF es maduro y sin dependencias server; PDFs se generan offline |
@@ -711,9 +710,9 @@ Ingresa cédula → Detecta rol admin → /admin/login →
 | `send-email` | Envío de invitaciones 360° y notificaciones |
 | `create-user` | Creación de usuarios admin |
 | `manage-users` | Gestión CRUD de usuarios |
-| `generate-section-text` | Generación de narrativas IA para informes |
-| `generate-executive-summary` | Resumen ejecutivo IA para informes de módulo |
-| `rubrica-analysis` | Análisis IA de resultados de rúbrica |
+| `generate-section-text` | Generación de narrativas asistidas para informes |
+| `generate-executive-summary` | Resumen ejecutivo asistido para informes de módulo |
+| `rubrica-analysis` | Análisis automatizado de resultados de rúbrica |
 | `github-commits` | Consulta de commits para changelog |
 | `export-database` | Exportación de datos |
 
