@@ -653,21 +653,32 @@ export default function SpecsHubs() {
                 {/* Live preview */}
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Vista previa de pantalla</p>
-                  <div className="relative border border-border rounded-lg overflow-hidden bg-muted/30" style={{ height: 350 }}>
-                    {!loadedMap[hub.id] && (
-                      <div className="absolute inset-0 flex items-center justify-center z-10">
-                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                      </div>
-                    )}
-                    <iframe
-                      src={`${window.location.origin}${hub.previewPath}`}
-                      title={`Preview ${hub.title}`}
-                      loading="lazy"
-                      className="pointer-events-none origin-top-left"
-                      style={{ width: "200%", height: "200%", transform: "scale(0.5)", border: "none" }}
-                      onLoad={() => setLoadedMap((m) => ({ ...m, [hub.id]: true }))}
-                    />
-                  </div>
+                  {hub.id === "mi-panel-directivo" ? (
+                    <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                      <img
+                        src="/images/mi-panel-directivo-preview.png"
+                        alt="Mi Panel — Vista Rector"
+                        className="w-full rounded-lg"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative border border-border rounded-lg overflow-hidden bg-muted/30" style={{ height: 350 }}>
+                      {!loadedMap[hub.id] && (
+                        <div className="absolute inset-0 flex items-center justify-center z-10">
+                          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                        </div>
+                      )}
+                      <iframe
+                        src={`${window.location.origin}${hub.previewPath}`}
+                        title={`Preview ${hub.title}`}
+                        loading="lazy"
+                        className="pointer-events-none origin-top-left"
+                        style={{ width: "200%", height: "200%", transform: "scale(0.5)", border: "none" }}
+                        onLoad={() => setLoadedMap((m) => ({ ...m, [hub.id]: true }))}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Blank Ficha links – only for hub #2 */}
