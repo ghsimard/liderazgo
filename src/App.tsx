@@ -118,6 +118,13 @@ const App = () => (
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/especificaciones" element={<Especificaciones />} />
 
+                {/* Specs Hub */}
+                <Route path="/specs" element={<SpecsHub />} />
+                <Route path="/specs/prd" element={<SpecsPrd />} />
+                <Route path="/specs/specs" element={<Especificaciones />} />
+                <Route path="/specs/diagramas" element={<SpecsDiagramas />} />
+                <Route path="/specs/wireframes" element={<SpecsWireframes />} />
+
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
