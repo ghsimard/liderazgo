@@ -34,6 +34,52 @@ const diagrams = [
     F -->|No| G[Fin]`,
   },
   {
+    title: "Flujo Rúbricas — Directivo ↔ Evaluador",
+    description: "Ciclo completo de evaluacion por rubrica a traves de 4 modulos entre el directivo y su evaluador.",
+    chart: `sequenceDiagram
+    participant D as Directivo
+    participant E as Evaluador
+
+    rect rgb(219,234,254)
+    Note over D,E: Modulo 1
+    D->>D: 1. Autoevaluacion M1
+    E->>D: 2. Evaluacion M1
+    E->>D: 3. Reunion - Nivel Acordado M1
+    end
+
+    Note over D,E: Modulo 2 desbloqueado
+
+    rect rgb(220,252,231)
+    Note over D,E: Modulo 2
+    D->>D: 5. Autoevaluacion M2
+    E->>D: 6. Evaluacion M2
+    Note right of E: 7. Puede reevaluar M1
+    E->>D: 8. Reunion - Nivel Acordado M2
+    end
+
+    Note over D,E: Modulo 3 desbloqueado
+
+    rect rgb(254,249,195)
+    Note over D,E: Modulo 3
+    D->>D: 10. Autoevaluacion M3
+    E->>D: 11. Evaluacion M3
+    Note right of E: 12. Puede reevaluar M1-M2
+    E->>D: 13. Reunion - Nivel Acordado M3
+    end
+
+    Note over D,E: Modulo 4 desbloqueado
+
+    rect rgb(254,226,226)
+    Note over D,E: Modulo 4
+    D->>D: 15. Autoevaluacion M4
+    E->>D: 16. Evaluacion M4
+    Note right of E: 17. Puede reevaluar M1-M2-M3
+    E->>D: 18. Reunion - Nivel Acordado M4
+    end
+
+    Note over D,E: 19. Todos los modulos bloqueados - Read-only`,
+  },
+  {
     title: "Flujo del Operador",
     description: "Acciones disponibles para el operador regional desde su panel segmentado.",
     chart: `flowchart TD
