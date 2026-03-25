@@ -654,47 +654,7 @@ export default function SpecsHubs() {
                 {/* Live preview */}
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Vista previa de pantalla</p>
-                  {hub.id === "inicio" ? (
-                    <div className="px-14">
-                      <Carousel className="w-full">
-                        <CarouselContent>
-                          {[
-                            { label: "Estado inicial — Ingreso de cédula", type: "iframe", src: "/" },
-                            { label: "Confirmación — Cédula nueva (primer ingreso)", type: "img", src: "/images/inicio-confirmacion-preview.png" },
-                            { label: "Selector de rol — Múltiples perfiles (Admin + Evaluador + Operador)", type: "img", src: "/images/inicio-roles-preview.png" },
-                            { label: "Estado de error — Cédula inválida", type: "img", src: "/images/inicio-error-preview.png" },
-                          ].map((screen, i) => (
-                            <CarouselItem key={i}>
-                              <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
-                                <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">{screen.label}</p>
-                                {screen.type === "iframe" ? (
-                                  <div className="relative" style={{ height: 350 }}>
-                                    <iframe
-                                      src={`${window.location.origin}${screen.src}`}
-                                      title={screen.label}
-                                      loading="lazy"
-                                      className="pointer-events-none origin-top-left"
-                                      style={{ width: "200%", height: "200%", transform: "scale(0.5)", border: "none", filter: "grayscale(1) contrast(0.85) sepia(0.08)" }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <img
-                                    src={screen.src}
-                                    alt={screen.label}
-                                    className="w-full"
-                                    loading="lazy"
-                                    style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }}
-                                  />
-                                )}
-                              </div>
-                            </CarouselItem>
-                          ))}
-                        </CarouselContent>
-                        <CarouselPrevious className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
-                        <CarouselNext className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
-                      </Carousel>
-                    </div>
-                  ) : hub.id === "mi-panel-directivo" ? (
+                  {hub.id === "mi-panel-directivo" ? (
                     <div className="space-y-4">
                       <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
                         <img
