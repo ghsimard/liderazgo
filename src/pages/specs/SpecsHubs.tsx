@@ -673,7 +673,7 @@ export default function SpecsHubs() {
                     </div>
                   ) : hub.id === "mi-panel-evaluador" ? (
                     <div className="space-y-4">
-                      <div className="px-8">
+                      <div className="px-14">
                         <Carousel className="w-full">
                           <CarouselContent>
                             {[
