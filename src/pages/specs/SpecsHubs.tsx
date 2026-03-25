@@ -521,6 +521,7 @@ const hubs: HubSpec[] = [
       { feature: "Registro de actividad", description: "Log de acciones de usuarios con IP, cédula, acción y detalle." },
       { feature: "Mensajes de contacto", description: "Vista de mensajes enviados desde el formulario de contacto." },
       { feature: "Reseñas del sitio", description: "Calificaciones y comentarios dejados por usuarios." },
+      { feature: "Apreciaciones", description: "Sondeo post-envío, estadísticas de calificación y evaluaciones recibidas por formulario y rol." },
       { feature: "Papelera", description: "Registros eliminados con posibilidad de restauración." },
       { feature: "Purgar datos", description: "Eliminación masiva de datos por tipo y filtro." },
       { feature: "Changelog", description: "Historial de cambios de la aplicación." },
