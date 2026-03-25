@@ -11,6 +11,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import MermaidDiagram from "@/components/MermaidDiagram";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 
 /* ------------------------------------------------------------------ */
 /*  Data for each hub                                                  */
@@ -672,17 +673,25 @@ export default function SpecsHubs() {
                     </div>
                   ) : hub.id === "mi-panel-evaluador" ? (
                     <div className="space-y-4">
-                      <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
-                        <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">Mi Panel — Vista general</p>
-                        <img src="/images/mi-panel-evaluador-preview.png" alt="Mi Panel — Vista Evaluador" className="w-full" loading="lazy" />
-                      </div>
-                      <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
-                        <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">Mi Rúbrica de Evaluación</p>
-                        <img src="/images/evaluador-rubrica-preview.png" alt="Rúbrica de Evaluación — Vista Evaluador" className="w-full" loading="lazy" />
-                      </div>
-                      <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
-                        <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">Encuestas 360° — Entrada</p>
-                        <img src="/images/evaluador-encuestas360-preview.png" alt="Encuestas 360° — Vista Evaluador" className="w-full" loading="lazy" />
+                      <div className="px-8">
+                        <Carousel className="w-full">
+                          <CarouselContent>
+                            {[
+                              { label: "Mi Panel — Vista general", src: "/images/mi-panel-evaluador-preview.png" },
+                              { label: "Mi Rúbrica de Evaluación", src: "/images/evaluador-rubrica-preview.png" },
+                              { label: "Encuestas 360° — Entrada", src: "/images/evaluador-encuestas360-preview.png" },
+                            ].map((screen, i) => (
+                              <CarouselItem key={i}>
+                                <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                                  <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">{screen.label}</p>
+                                  <img src={screen.src} alt={screen.label} className="w-full" loading="lazy" />
+                                </div>
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious />
+                          <CarouselNext />
+                        </Carousel>
                       </div>
                       <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
                         <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">🎬 Recorrido completo — Evaluador</p>
