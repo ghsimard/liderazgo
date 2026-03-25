@@ -306,6 +306,157 @@ export function PrdFormulariosSection() {
           </AccordionContent>
         </AccordionItem>
 
+        {/* FICHA DE INFORMACIÓN */}
+        <AccordionItem value="ficha" className="border rounded-lg px-4">
+          <AccordionTrigger className="text-lg font-semibold">Ficha de Información</AccordionTrigger>
+          <AccordionContent>
+            <p className="text-sm text-muted-foreground mb-4">Formulario de registro del directivo con 59 campos organizados en 4 secciones.</p>
+            <Tabs defaultValue="personal" className="mt-2">
+              <TabsList className="flex-wrap h-auto gap-1">
+                <TabsTrigger value="personal">Datos Personales</TabsTrigger>
+                <TabsTrigger value="formacion">Formación Académica</TabsTrigger>
+                <TabsTrigger value="cargo">Cargo e IE</TabsTrigger>
+                <TabsTrigger value="ie_detalle">Detalle IE</TabsTrigger>
+              </TabsList>
+              <TabsContent value="personal">
+                <h4 className="font-semibold text-sm mb-3">Sección 1 — Datos Personales</h4>
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead className="w-8">#</TableHead><TableHead>Campo</TableHead><TableHead className="w-20">Obligatorio</TableHead><TableHead>Validación / Opciones</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {[
+                      { n: 1, label: "Acepta tratamiento de datos", req: true, val: "Checkbox — debe ser marcado" },
+                      { n: 2, label: "Nombres", req: true, val: "Mín. 2 caracteres" },
+                      { n: 3, label: "Apellidos", req: true, val: "Mín. 2 caracteres" },
+                      { n: 4, label: "Género", req: true, val: "Masculino · Femenino · No binario · Prefiero no decir" },
+                      { n: 5, label: "Número de cédula", req: true, val: "Texto libre" },
+                      { n: 6, label: "Fecha de nacimiento", req: true, val: "Día/Mes/Año — edad entre 18 y 70 años" },
+                      { n: 7, label: "Lugar de nacimiento", req: false, val: "Texto libre" },
+                      { n: 8, label: "Lengua materna", req: true, val: "Español (default) · Lengua indígena · Lengua criolla · Otra" },
+                      { n: 9, label: "Otra lengua (detalle)", req: false, val: "Visible si lengua ≠ Español" },
+                      { n: 10, label: "Celular personal", req: true, val: "10 dígitos exactos, con código de país (+57)" },
+                      { n: 11, label: "Correo personal", req: true, val: "Email válido" },
+                      { n: 12, label: "Correo institucional", req: false, val: "Email válido" },
+                      { n: 13, label: "Prefiere recibir comunicaciones en", req: true, val: "Correo personal · Correo institucional" },
+                      { n: 14, label: "Enfermedad base", req: true, val: "Sí · No" },
+                      { n: 15, label: "Detalle enfermedad", req: false, val: "Visible si enfermedad = Sí" },
+                      { n: 16, label: "Contacto de emergencia", req: false, val: "Texto libre" },
+                      { n: 17, label: "Teléfono de emergencia", req: false, val: "10 dígitos, con código de país" },
+                      { n: 18, label: "Discapacidad", req: true, val: "Sí · No" },
+                      { n: 19, label: "Detalle discapacidad", req: false, val: "Visible si discapacidad = Sí" },
+                    ].map(r => (
+                      <TableRow key={r.n}>
+                        <TableCell className="font-mono text-xs">{r.n}</TableCell>
+                        <TableCell className="text-xs font-medium">{r.label}</TableCell>
+                        <TableCell className="text-center">{r.req ? <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">Sí</span> : <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">No</span>}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{r.val}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+              <TabsContent value="formacion">
+                <h4 className="font-semibold text-sm mb-3">Sección 2 — Formación Académica</h4>
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead className="w-8">#</TableHead><TableHead>Campo</TableHead><TableHead className="w-20">Obligatorio</TableHead><TableHead>Validación / Opciones</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {[
+                      { n: 20, label: "Tipo de formación", req: true, val: "Normalista · Profesional · Licenciado · Otro" },
+                      { n: 21, label: "Título de pregrado", req: true, val: "Texto libre" },
+                      { n: 22, label: "Título de especialización", req: false, val: "Texto libre" },
+                      { n: 23, label: "Título de maestría", req: false, val: "Texto libre" },
+                      { n: 24, label: "Título de doctorado", req: false, val: "Texto libre" },
+                      { n: 25, label: "Otros títulos", req: false, val: "Texto libre" },
+                    ].map(r => (
+                      <TableRow key={r.n}>
+                        <TableCell className="font-mono text-xs">{r.n}</TableCell>
+                        <TableCell className="text-xs font-medium">{r.label}</TableCell>
+                        <TableCell className="text-center">{r.req ? <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">Sí</span> : <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">No</span>}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{r.val}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+              <TabsContent value="cargo">
+                <h4 className="font-semibold text-sm mb-3">Sección 3 — Cargo e Institución</h4>
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead className="w-8">#</TableHead><TableHead>Campo</TableHead><TableHead className="w-20">Obligatorio</TableHead><TableHead>Validación / Opciones</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {[
+                      { n: 26, label: "Región", req: true, val: "Lista dinámica desde BD" },
+                      { n: 27, label: "Institución educativa", req: true, val: "Lista filtrada par región → entidad → municipio" },
+                      { n: 28, label: "Cargo actual", req: true, val: "Rector/a · Director/a · Coordinador/a" },
+                      { n: 29, label: "Tipo de vinculación", req: true, val: "Propiedad · Encargo · Provisionalidad" },
+                      { n: 30, label: "Fecha vinculación al servicio", req: false, val: "Fecha" },
+                      { n: 31, label: "Fecha nombramiento en cargo", req: false, val: "Fecha" },
+                      { n: 32, label: "Fecha nombramiento en IE", req: false, val: "Fecha" },
+                      { n: 33, label: "Estatuto", req: false, val: "2277 · 1278" },
+                      { n: 34, label: "Grado escalafón", req: false, val: "Texto libre" },
+                    ].map(r => (
+                      <TableRow key={r.n}>
+                        <TableCell className="font-mono text-xs">{r.n}</TableCell>
+                        <TableCell className="text-xs font-medium">{r.label}</TableCell>
+                        <TableCell className="text-center">{r.req ? <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">Sí</span> : <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">No</span>}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{r.val}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+              <TabsContent value="ie_detalle">
+                <h4 className="font-semibold text-sm mb-3">Sección 4 — Detalle de la IE</h4>
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead className="w-8">#</TableHead><TableHead>Campo</TableHead><TableHead className="w-20">Obligatorio</TableHead><TableHead>Validación / Opciones</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {[
+                      { n: 35, label: "Código DANE", req: true, val: "Exactamente 12 dígitos numéricos" },
+                      { n: 36, label: "Entidad territorial", req: true, val: "Lista dinámica desde BD" },
+                      { n: 37, label: "Comuna / Barrio", req: false, val: "Texto libre" },
+                      { n: 38, label: "Dirección sede principal", req: false, val: "Texto libre" },
+                      { n: 39, label: "Sitio web", req: false, val: "Texto libre" },
+                      { n: 40, label: "Teléfono IE", req: false, val: "10 dígitos, con código de país" },
+                      { n: 41, label: "Zona de sede", req: true, val: "Urbana · Rural" },
+                      { n: 42, label: "Sedes rurales", req: true, val: "Número" },
+                      { n: 43, label: "Sedes urbanas", req: true, val: "Número" },
+                      { n: 44, label: "Jornadas", req: true, val: "Checkbox múltiple: Mañana · Tarde · Nocturna · Fin de semana · Única · Completa" },
+                      { n: 45, label: "Grupos étnicos", req: false, val: "Checkbox múltiple: Afrocolombianos · Indígenas · ROM · Raizales · Palenqueros · Ninguno" },
+                      { n: 46, label: "Proyectos transversales", req: false, val: "Rich text editor" },
+                      { n: 47, label: "Desplazamiento a la IE", req: false, val: "Texto libre" },
+                      { n: 48, label: "Niveles educativos", req: true, val: "Checkbox múltiple: Preescolar · Primaria · Básica secundaria · Media · Ciclo complementario" },
+                      { n: 49, label: "Tipo de bachillerato", req: true, val: "Checkbox múltiple: Académico · Técnico · Comercial · Pedagógico · Agropecuario · Industrial" },
+                      { n: 50, label: "Modelo pedagógico", req: false, val: "Texto libre" },
+                      { n: 51, label: "Número de docentes", req: true, val: "Número" },
+                      { n: 52, label: "Número de coordinadores", req: true, val: "Número" },
+                      { n: 53, label: "Número de administrativos", req: true, val: "Número" },
+                      { n: 54, label: "Número de orientadores", req: true, val: "Número" },
+                      { n: 55, label: "Estudiantes preescolar", req: false, val: "Número" },
+                      { n: 56, label: "Estudiantes primaria", req: false, val: "Número" },
+                      { n: 57, label: "Estudiantes básica secundaria", req: false, val: "Número" },
+                      { n: 58, label: "Estudiantes media", req: false, val: "Número" },
+                      { n: 59, label: "Estudiantes ciclo complementario", req: false, val: "Número" },
+                    ].map(r => (
+                      <TableRow key={r.n}>
+                        <TableCell className="font-mono text-xs">{r.n}</TableCell>
+                        <TableCell className="text-xs font-medium">{r.label}</TableCell>
+                        <TableCell className="text-center">{r.req ? <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">Sí</span> : <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">No</span>}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{r.val}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+            </Tabs>
+          </AccordionContent>
+        </AccordionItem>
+
         {/* RÚBRICAS */}
         <AccordionItem value="rubricas" className="border rounded-lg px-4">
           <AccordionTrigger className="text-lg font-semibold">Hub Rúbricas</AccordionTrigger>
