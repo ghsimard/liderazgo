@@ -952,6 +952,33 @@ export default function SpecsHubs() {
                         </Carousel>
                       </div>
                     </div>
+                  ) : hub.id === "admin-sistema" ? (
+                    <div className="space-y-4">
+                      <div className="px-14">
+                        <Carousel className="w-full">
+                          <CarouselContent>
+                            {[
+                              { label: "Cuentas", src: "/images/specs/admin-sistema-cuentas.png" },
+                              { label: "Roles y Permisos — Admin", src: "/images/specs/admin-sistema-roles-admin.png" },
+                              { label: "Roles y Permisos — Monitoreo", src: "/images/specs/admin-sistema-roles-monitoreo.png" },
+                              { label: "Registro de Actividad", src: "/images/specs/admin-sistema-actividad.png" },
+                              { label: "Papelera", src: "/images/specs/admin-sistema-papelera.png" },
+                              { label: "Apreciaciones", src: "/images/specs/admin-sistema-apreciaciones.png" },
+                              { label: "Mensajes", src: "/images/specs/admin-sistema-mensajes.png" },
+                            ].map((screen, i) => (
+                              <CarouselItem key={i}>
+                                <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                                  <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">{screen.label}</p>
+                                  <img src={screen.src} alt={screen.label} className="w-full" loading="lazy" style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }} />
+                                </div>
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
+                          <CarouselNext className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
+                        </Carousel>
+                      </div>
+                    </div>
                   ) : hub.id === "admin-mel" ? (
                     <div className="space-y-4">
                       <div className="px-14">
