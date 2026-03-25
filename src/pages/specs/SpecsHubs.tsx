@@ -273,7 +273,6 @@ const hubs: HubSpec[] = [
       PDF
     Rubrica
       Formulario en linea
-      PDF
     RLT
       Ficha de Informacion
       PDF
