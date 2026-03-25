@@ -654,7 +654,33 @@ export default function SpecsHubs() {
                 {/* Live preview */}
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Vista previa de pantalla</p>
-                  {hub.id === "mi-panel-directivo" ? (
+                  {hub.id === "inicio" ? (
+                    <div className="space-y-4">
+                      <div className="px-14">
+                        <Carousel className="w-full">
+                          <CarouselContent>
+                            {[
+                              { label: "Mi Panel — Rector", src: "/images/specs/inicio-panel-rector.png" },
+                              { label: "Mi Panel — Evaluador", src: "/images/specs/inicio-panel-evaluador.png" },
+                              { label: "Acceso Administrador", src: "/images/specs/inicio-acceso-admin.png" },
+                              { label: "Panel de Administración", src: "/images/specs/inicio-panel-admin.png" },
+                              { label: "Selector de Rol (Multirol)", src: "/images/specs/inicio-multirol.png" },
+                              { label: "Panel de Operador", src: "/images/specs/inicio-panel-operador.png" },
+                            ].map((screen, i) => (
+                              <CarouselItem key={i}>
+                                <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+                                  <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">{screen.label}</p>
+                                  <img src={screen.src} alt={screen.label} className="w-full" loading="lazy" style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }} />
+                                </div>
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
+                          <CarouselNext className="bg-primary text-primary-foreground hover:bg-primary/90 border-none shadow-md" />
+                        </Carousel>
+                      </div>
+                    </div>
+                  ) : hub.id === "mi-panel-directivo" ? (
                     <div className="space-y-4">
                       <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
                         <img
