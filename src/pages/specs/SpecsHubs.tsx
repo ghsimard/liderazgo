@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, FileDown } from "lucide-react";
+import { generarPDFFichaEnBlanco } from "@/utils/blankFichaPdfGenerator";
+import { useAppImages } from "@/hooks/useAppImages";
 import {
   Accordion,
   AccordionContent,
@@ -580,6 +582,22 @@ const hubs: HubSpec[] = [
 export default function SpecsHubs() {
   const navigate = useNavigate();
   const [loadedMap, setLoadedMap] = useState<Record<string, boolean>>({});
+  const { images } = useAppImages();
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+
+  const handleDownloadBlankFicha = async () => {
+    setGeneratingPdf(true);
+    try {
+      await generarPDFFichaEnBlanco(
+        { logoRLT: images.logo_rlt_white, logoCLTDark: images.logo_clt_dark, logoCosmo: images.logo_cosmo },
+        { showLogoRlt: true, showLogoClt: true }
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -651,6 +669,17 @@ export default function SpecsHubs() {
                     />
                   </div>
                 </div>
+
+                {/* Blank Ficha PDF download – only for hub #2 */}
+                {hub.id === "ficha" && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Formulario en blanco (PDF)</p>
+                    <Button variant="outline" size="sm" onClick={handleDownloadBlankFicha} disabled={generatingPdf}>
+                      {generatingPdf ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
+                      Descargar Ficha de Información Básica en blanco
+                    </Button>
+                  </div>
+                )}
 
                 {/* Features table */}
                 <div>
