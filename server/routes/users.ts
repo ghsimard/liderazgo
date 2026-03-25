@@ -128,6 +128,15 @@ router.post("/", async (req: Request, res: Response) => {
       );
     }
 
+    // Link cedula if provided
+    if (cedula) {
+      await queryOne(
+        `INSERT INTO admin_cedulas (user_id, cedula, nombre) VALUES ($1, $2, $3)
+         ON CONFLICT (user_id) DO UPDATE SET cedula = $2, nombre = $3`,
+        [id, cedula.trim(), (nombre || "").trim()]
+      );
+    }
+
     res.status(201).json({ id, email: email.toLowerCase().trim() });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
