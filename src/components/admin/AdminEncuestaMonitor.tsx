@@ -53,7 +53,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
 
     const { data: encuestas } = await supabase
       .from("encuestas_360")
-      .select("tipo_formulario, institucion_educativa, nombre_directivo, nombre_completo")
+      .select("tipo_formulario, institucion_educativa, nombre_directivo, nombre_completo, cedula_directivo, cedula")
       .eq("fase", fase);
 
     const directivoList = (fichas ?? []).map((f) => ({
