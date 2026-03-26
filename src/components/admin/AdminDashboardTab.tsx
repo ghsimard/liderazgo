@@ -294,11 +294,72 @@ export default function AdminDashboardTab() {
     return Object.entries(counts).map(([name, value]) => ({ name: capitalize(name), value }));
   }, [filteredAmbiente]);
 
-  // Satisfacción
+  // Satisfacción — nivel general
   const satByType = useMemo(() => {
     const counts: Record<string, number> = {};
     filteredSatisfaccion.forEach((s) => { counts[s.form_type] = (counts[s.form_type] || 0) + 1; });
     return Object.entries(counts).map(([name, value]) => ({ name: capitalize(name), value }));
+  }, [filteredSatisfaccion]);
+
+  // Compute overall satisfaction % from grid/likert questions
+  const satisfactionLevel = useMemo(() => {
+    if (filteredSatisfaccion.length === 0) return null;
+
+    // Group by form_type
+    const byType: Record<string, any[]> = {};
+    filteredSatisfaccion.forEach((s) => {
+      if (!byType[s.form_type]) byType[s.form_type] = [];
+      byType[s.form_type].push(s);
+    });
+
+    const typeAverages: { label: string; value: number }[] = [];
+
+    for (const [formType, rows] of Object.entries(byType)) {
+      const formDef = SATISFACCION_FORMS[formType] as SatisfaccionFormDef | undefined;
+      if (!formDef) continue;
+
+      const gridAvgs: number[] = [];
+
+      for (const section of formDef.sections) {
+        for (const q of section.questions) {
+          if (q.type === "grid-sino" || q.type === "grid-frequency" || q.type === "grid-logistic") {
+            if (section.title.toLowerCase().includes("autoevaluación") || section.title.toLowerCase().includes("autoevaluacion")) continue;
+
+            const rowPcts: number[] = [];
+            for (const row of (q.rows || [])) {
+              let positiveCount = 0;
+              let total = 0;
+              for (const r of rows) {
+                const gridVal = r.respuestas?.[q.key];
+                if (gridVal && typeof gridVal === "object") {
+                  const cellVal = gridVal[row.key];
+                  if (cellVal !== undefined && cellVal !== null && cellVal !== "") {
+                    total++;
+                    if (q.type === "grid-sino" && cellVal === "si") positiveCount++;
+                    else if (q.type === "grid-frequency" && (cellVal === "frecuentemente" || cellVal === "siempre" || cellVal === "algunas_veces")) positiveCount++;
+                    else if (q.type === "grid-logistic" && (cellVal === "3" || cellVal === "4")) positiveCount++;
+                  }
+                }
+              }
+              if (total > 0) rowPcts.push((positiveCount / total) * 100);
+            }
+            if (rowPcts.length > 0) {
+              gridAvgs.push(rowPcts.reduce((a, b) => a + b, 0) / rowPcts.length);
+            }
+          }
+        }
+      }
+
+      if (gridAvgs.length > 0) {
+        const avg = Math.round((gridAvgs.reduce((a, b) => a + b, 0) / gridAvgs.length) * 100) / 100;
+        typeAverages.push({ label: capitalize(formType), value: avg });
+      }
+    }
+
+    if (typeAverages.length === 0) return null;
+
+    const overall = Math.round((typeAverages.reduce((a, b) => a + b.value, 0) / typeAverages.length) * 100) / 100;
+    return { overall, byType: typeAverages };
   }, [filteredSatisfaccion]);
 
   // Asistencia
