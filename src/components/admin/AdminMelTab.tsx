@@ -27,6 +27,7 @@ interface DirectivoOption {
   genero: string | null;
   region: string;
   entidad_territorial: string;
+  cedula: string;
 }
 
 function DeltaBadge({ value, pct }: { value: number; pct?: number | null }) {
@@ -358,7 +359,7 @@ export default function AdminMelTab() {
     setLoading(true);
     const { data: fichas } = await supabase
       .from("fichas_rlt")
-      .select("nombres_apellidos, nombre_ie, cargo_actual, genero, region, entidad_territorial")
+      .select("nombres_apellidos, nombre_ie, cargo_actual, genero, region, entidad_territorial, numero_cedula")
       .in("cargo_actual", ["Rector/a", "Coordinador/a"])
       .order("nombres_apellidos");
 
@@ -370,6 +371,7 @@ export default function AdminMelTab() {
         genero: f.genero ?? null,
         region: f.region ?? "",
         entidad_territorial: f.entidad_territorial ?? "",
+        cedula: f.numero_cedula ?? "",
       }))
     );
     setLoading(false);
@@ -406,7 +408,7 @@ export default function AdminMelTab() {
   const handleAnalyze = async (d: DirectivoOption) => {
     setAnalyzing(d.nombre);
     try {
-      const data = await calcularMelAnalysis(d.nombre, d.institucion);
+      const data = await calcularMelAnalysis(d.nombre, d.institucion, d.cedula);
       if (!data.hasInicial && !data.hasFinal) {
         toast({ title: "Sin datos", description: "No hay encuestas 360° para este par.", variant: "destructive" });
       } else {
@@ -443,7 +445,7 @@ export default function AdminMelTab() {
 
     for (const d of filteredDirectivos) {
       try {
-        const data = await calcularMelAnalysis(d.nombre, d.institucion);
+        const data = await calcularMelAnalysis(d.nombre, d.institucion, d.cedula);
         const rc = regionConfigs.get(d.region) || { showRLT: true, showCLT: true };
         if (data.hasInicial || data.hasFinal) {
           const blob = await generarMelPDF(data, { ...baseLogos, ...rc }, { returnBlob: true });
