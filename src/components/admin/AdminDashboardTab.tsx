@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { RefreshCw, FileText, Gauge, ClipboardCheck, School, ThumbsUp, FileBarChart, CalendarCheck, X } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
+import { SATISFACCION_FORMS } from "@/data/satisfaccionData";
+import type { SatisfaccionFormDef } from "@/data/satisfaccionData";
 
 const PIE_COLORS = [
   "hsl(var(--primary))",
@@ -52,7 +55,7 @@ export default function AdminDashboardTab() {
         supabase.from("encuestas_360").select("id, fase, tipo_formulario, institucion_educativa, cedula_directivo"),
         supabase.from("rubrica_seguimientos").select("id, module_number, nivel, directivo_cedula"),
         supabase.from("encuestas_ambiente_escolar").select("id, tipo_formulario, institucion_educativa"),
-        supabase.from("satisfaccion_responses").select("id, form_type, module_number, region"),
+        supabase.from("satisfaccion_responses").select("id, form_type, module_number, region, respuestas"),
         supabase.from("informe_modulo").select("id, module_number, region, entidad_territorial"),
         supabase.from("informe_asistencia").select("id, module_number, session_am, session_pm, directivo_cedula, dia"),
         supabase.from("rubrica_modules").select("module_number, title").order("sort_order"),
@@ -291,11 +294,72 @@ export default function AdminDashboardTab() {
     return Object.entries(counts).map(([name, value]) => ({ name: capitalize(name), value }));
   }, [filteredAmbiente]);
 
-  // Satisfacción
+  // Satisfacción — nivel general
   const satByType = useMemo(() => {
     const counts: Record<string, number> = {};
     filteredSatisfaccion.forEach((s) => { counts[s.form_type] = (counts[s.form_type] || 0) + 1; });
     return Object.entries(counts).map(([name, value]) => ({ name: capitalize(name), value }));
+  }, [filteredSatisfaccion]);
+
+  // Compute overall satisfaction % from grid/likert questions
+  const satisfactionLevel = useMemo(() => {
+    if (filteredSatisfaccion.length === 0) return null;
+
+    // Group by form_type
+    const byType: Record<string, any[]> = {};
+    filteredSatisfaccion.forEach((s) => {
+      if (!byType[s.form_type]) byType[s.form_type] = [];
+      byType[s.form_type].push(s);
+    });
+
+    const typeAverages: { label: string; value: number }[] = [];
+
+    for (const [formType, rows] of Object.entries(byType)) {
+      const formDef = SATISFACCION_FORMS[formType] as SatisfaccionFormDef | undefined;
+      if (!formDef) continue;
+
+      const gridAvgs: number[] = [];
+
+      for (const section of formDef.sections) {
+        for (const q of section.questions) {
+          if (q.type === "grid-sino" || q.type === "grid-frequency" || q.type === "grid-logistic") {
+            if (section.title.toLowerCase().includes("autoevaluación") || section.title.toLowerCase().includes("autoevaluacion")) continue;
+
+            const rowPcts: number[] = [];
+            for (const row of (q.rows || [])) {
+              let positiveCount = 0;
+              let total = 0;
+              for (const r of rows) {
+                const gridVal = r.respuestas?.[q.key];
+                if (gridVal && typeof gridVal === "object") {
+                  const cellVal = gridVal[row.key];
+                  if (cellVal !== undefined && cellVal !== null && cellVal !== "") {
+                    total++;
+                    if (q.type === "grid-sino" && cellVal === "si") positiveCount++;
+                    else if (q.type === "grid-frequency" && (cellVal === "frecuentemente" || cellVal === "siempre" || cellVal === "algunas_veces")) positiveCount++;
+                    else if (q.type === "grid-logistic" && (cellVal === "3" || cellVal === "4")) positiveCount++;
+                  }
+                }
+              }
+              if (total > 0) rowPcts.push((positiveCount / total) * 100);
+            }
+            if (rowPcts.length > 0) {
+              gridAvgs.push(rowPcts.reduce((a, b) => a + b, 0) / rowPcts.length);
+            }
+          }
+        }
+      }
+
+      if (gridAvgs.length > 0) {
+        const avg = Math.round((gridAvgs.reduce((a, b) => a + b, 0) / gridAvgs.length) * 100) / 100;
+        typeAverages.push({ label: capitalize(formType), value: avg });
+      }
+    }
+
+    if (typeAverages.length === 0) return null;
+
+    const overall = Math.round((typeAverages.reduce((a, b) => a + b.value, 0) / typeAverages.length) * 100) / 100;
+    return { overall, byType: typeAverages };
   }, [filteredSatisfaccion]);
 
   // Asistencia
@@ -407,8 +471,29 @@ export default function AdminDashboardTab() {
         </KpiCard>
 
         {/* Satisfacción */}
-        <KpiCard icon={ThumbsUp} title="Satisfacción" value={filteredSatisfaccion.length} color="text-pink-600">
-          {satByType.length > 0 && <MiniPie data={satByType} />}
+        <KpiCard icon={ThumbsUp} title="Satisfacción" value={filteredSatisfaccion.length}
+          subtitle={satisfactionLevel ? `Nivel general: ${satisfactionLevel.overall}%` : undefined}
+          color="text-pink-600">
+          {satisfactionLevel && (
+            <div className="space-y-2 mt-3">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">{satisfactionLevel.overall}%</div>
+                <p className="text-[10px] text-muted-foreground">Nivel General de Satisfacción</p>
+              </div>
+              <div className="space-y-1.5">
+                {satisfactionLevel.byType.map((t) => (
+                  <div key={t.label} className="space-y-0.5">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">{t.label}</span>
+                      <span className="font-semibold">{t.value}%</span>
+                    </div>
+                    <Progress value={t.value} className="h-1.5" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {!satisfactionLevel && satByType.length > 0 && <MiniPie data={satByType} />}
         </KpiCard>
 
         {/* Informe de Módulo */}
