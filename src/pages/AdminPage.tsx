@@ -49,6 +49,7 @@ import AdminRolesTab from "@/components/admin/AdminRolesTab";
 import AdminAmbienteMonitorTab from "@/components/admin/AdminAmbienteMonitorTab";
 import AdminAmbienteStatsTab from "@/components/admin/AdminAmbienteStatsTab";
 import AdminDashboardTab from "@/components/admin/AdminDashboardTab";
+import AdminCaracterizacionTab from "@/components/admin/AdminCaracterizacionTab";
 
 
 interface FormItem {
@@ -224,7 +225,7 @@ function getHubTitle(activeTab: string): string {
     reportes360: "Encuesta 360°", reportes360final: "Encuesta 360°",
     invitaciones: "Encuesta 360°", "blancos-360": "Encuesta 360°",
     "fichas-rlt": "Fichas de Información", fichas: "Fichas de Información", geography: "Fichas de Información",
-    "enlace-ficha": "Fichas de Información", "blank-pdf": "Fichas de Información",
+    "enlace-ficha": "Fichas de Información", "blank-pdf": "Fichas de Información", caracterizacion: "Fichas de Información",
     rubricas: "Rúbricas",
     "informe-modulo": "Informe de Módulo",
     "ambiente-escolar": "Ambiente Escolar", "ambiente-monitoreo": "Ambiente Escolar", "ambiente-estadisticas": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar",
@@ -370,13 +371,15 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
     case "fichas":
     case "geography":
     case "enlace-ficha":
-    case "blank-pdf": {
+    case "blank-pdf":
+    case "caracterizacion": {
       const subFichasMap: Record<string, string> = {
         "fichas-rlt": "lista",
         fichas: "lista",
         geography: "regiones",
         "enlace-ficha": "enlace",
         "blank-pdf": "enlace",
+        caracterizacion: "caracterizacion",
       };
       const defaultSubFichas = subFichasMap[activeTab] || "lista";
       return (
@@ -386,6 +389,7 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
             <TabsTrigger value="enlace" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlace y PDF</TabsTrigger>
             <TabsTrigger value="regiones" className="gap-1.5"><MapPin className="w-4 h-4" /> Configuración</TabsTrigger>
             {can("fichas-rlt.campos", "read") && <TabsTrigger value="campos" className="gap-1.5"><BookOpen className="w-4 h-4" /> Campos y reglas</TabsTrigger>}
+            <TabsTrigger value="caracterizacion" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Caracterización</TabsTrigger>
           </TabsList>
 
           <TabsContent value="lista">
@@ -418,6 +422,10 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
               </div>
             </TabsContent>
           )}
+
+          <TabsContent value="caracterizacion">
+            <AdminCaracterizacionTab />
+          </TabsContent>
         </Tabs>
       );
     }
