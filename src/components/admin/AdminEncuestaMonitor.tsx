@@ -69,11 +69,11 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
 
       (encuestas ?? []).forEach((e) => {
         if (e.tipo_formulario === "autoevaluacion") {
-          if (e.nombre_completo === d.nombre && e.institucion_educativa === d.institucion) {
+          if (e.cedula && e.cedula === d.cedula) {
             counts.autoevaluacion++;
           }
         } else {
-          if (e.nombre_directivo === d.nombre && e.institucion_educativa === d.institucion) {
+          if (e.cedula_directivo && e.cedula_directivo === d.cedula) {
             counts[e.tipo_formulario] = (counts[e.tipo_formulario] || 0) + 1;
           }
         }
