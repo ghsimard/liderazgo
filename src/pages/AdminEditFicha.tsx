@@ -9,6 +9,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { useGeographicData } from "@/hooks/useGeographicData";
+import { genderizeRole } from "@/utils/genderizeRole";
 import {
   FormFieldWrapper,
   FormInput,
@@ -1073,7 +1074,7 @@ export default function AdminEditFicha() {
                 {regionSeleccionada === "Quibdó" ? (
                   <input
                     id="cargo_actual"
-                    value="Rector/a"
+                    value={genderizeRole("Rector/a", watch("genero"))}
                     readOnly
                     disabled
                     className="form-input floating-input opacity-75 cursor-not-allowed"
@@ -1084,8 +1085,8 @@ export default function AdminEditFicha() {
                     {...register("cargo_actual")}
                     hasError={!!err("cargo_actual")}
                     options={[
-                      { value: "Rector/a", label: "Rector/a" },
-                      { value: "Coordinador/a", label: "Coordinador/a" },
+                      { value: "Rector/a", label: genderizeRole("Rector/a", watch("genero")) },
+                      { value: "Coordinador/a", label: genderizeRole("Coordinador/a", watch("genero")) },
                     ]}
                   />
                 )}
