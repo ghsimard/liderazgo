@@ -169,7 +169,7 @@ export default function MiPanel() {
   const [evalEncuestaEntradaVisible, setEvalEncuestaEntradaVisible] = useState(false);
   const [evalEncuestaSalidaVisible, setEvalEncuestaSalidaVisible] = useState(false);
   const [evalHasAssignments, setEvalHasAssignments] = useState(false);
-  const [evalHasInformes, setEvalHasInformes] = useState(false);
+  
   
   // When both directivo + evaluador, user chooses
   const [selectedRole, setSelectedRole] = useState<"directivo" | "evaluador" | null>(null);
@@ -322,11 +322,6 @@ export default function MiPanel() {
             setEvalEncuestaEntradaVisible(resolveVisible("inicial"));
             setEvalEncuestaSalidaVisible(resolveVisible("final"));
 
-            // Check if any informe_modulo records exist
-            const { count: informeCount } = await supabase
-              .from("informe_modulo")
-              .select("id", { count: "exact", head: true });
-            setEvalHasInformes((informeCount ?? 0) > 0);
           }
         }
       }
@@ -535,7 +530,7 @@ export default function MiPanel() {
                     </div>
                   </Button>
                 )}
-                {evalHasInformes && (
+                {evalHasAssignments && (
                   <Button
                     className="w-full h-14 justify-start gap-3 text-base"
                     variant="outline"
