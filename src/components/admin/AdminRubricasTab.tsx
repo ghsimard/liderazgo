@@ -287,6 +287,7 @@ export default function AdminRubricasTab() {
                             <TableHeader>
                               <TableRow>
                               <TableHead className="text-xs">Ítem</TableHead>
+                                <TableHead className="text-xs">Fecha</TableHead>
                                 <TableHead className="text-xs">Directivo</TableHead>
                                 <TableHead className="text-xs">Equipo</TableHead>
                                 <TableHead className="text-xs">Acordado</TableHead>
@@ -303,6 +304,9 @@ export default function AdminRubricasTab() {
                                     <TableCell className="text-xs">
                                       <Badge variant="outline" className="text-[10px] mr-1">{item.item_type}</Badge>
                                       {item.item_label}
+                                    </TableCell>
+                                    <TableCell className="text-xs text-muted-foreground">
+                                      {new Date(ev.created_at).toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" })}
                                     </TableCell>
                                     <TableCell><NivelBadge nivel={ev.directivo_nivel} /></TableCell>
                                     <TableCell><NivelBadge nivel={ev.equipo_nivel} /></TableCell>
