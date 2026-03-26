@@ -471,8 +471,29 @@ export default function AdminDashboardTab() {
         </KpiCard>
 
         {/* Satisfacción */}
-        <KpiCard icon={ThumbsUp} title="Satisfacción" value={filteredSatisfaccion.length} color="text-pink-600">
-          {satByType.length > 0 && <MiniPie data={satByType} />}
+        <KpiCard icon={ThumbsUp} title="Satisfacción" value={filteredSatisfaccion.length}
+          subtitle={satisfactionLevel ? `Nivel general: ${satisfactionLevel.overall}%` : undefined}
+          color="text-pink-600">
+          {satisfactionLevel && (
+            <div className="space-y-2 mt-3">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">{satisfactionLevel.overall}%</div>
+                <p className="text-[10px] text-muted-foreground">Nivel General de Satisfacción</p>
+              </div>
+              <div className="space-y-1.5">
+                {satisfactionLevel.byType.map((t) => (
+                  <div key={t.label} className="space-y-0.5">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">{t.label}</span>
+                      <span className="font-semibold">{t.value}%</span>
+                    </div>
+                    <Progress value={t.value} className="h-1.5" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {!satisfactionLevel && satByType.length > 0 && <MiniPie data={satByType} />}
         </KpiCard>
 
         {/* Informe de Módulo */}
