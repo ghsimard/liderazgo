@@ -297,6 +297,7 @@ const hubs: HubSpec[] = [
       { feature: "Exportación Excel", description: "Descarga masiva de fichas en formato Excel." },
       { feature: "Descarga PDF individual", description: "Generar PDF de una ficha específica." },
       { feature: "Eliminación", description: "Soft-delete con envío a la papelera." },
+      { feature: "Caracterización", description: "Estadísticas de los directivos: género, edades, formación, roles, vinculación, personal IE, estudiantes por nivel." },
     ],
     mindmap: `mindmap
   root((Admin Fichas))
@@ -308,7 +309,12 @@ const hubs: HubSpec[] = [
       Editar ficha
       Descargar PDF
       Exportar Excel
-      Eliminar`,
+      Eliminar
+    Caracterizacion
+      Genero y edades
+      Formacion academica
+      Datos institucionales
+      Personal y estudiantes`,
     previewPath: "/admin",
   },
   /* 9 — Admin: Rúbricas */
@@ -804,10 +810,11 @@ export default function SpecsHubs() {
                       <div className="px-14">
                         <Carousel className="w-full">
                           <CarouselContent>
-                            {[
+                             {[
                               { label: "Lista de Fichas", src: "/images/specs/admin-fichas-lista.png" },
                               { label: "Enlace y PDF", src: "/images/specs/admin-fichas-enlace-pdf.png" },
                               { label: "Configuración (ET, Región, Municipio, Institución)", src: "/images/specs/admin-fichas-configuracion.png" },
+                              { label: "Caracterización", src: "/specs/videos/admin-caracterizacion.mov", isVideo: true },
                             ].map((screen, i) => (
                               <CarouselItem key={i}>
                                 <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
