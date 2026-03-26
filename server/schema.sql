@@ -357,6 +357,7 @@ AS $$
         AND cargo_actual IN ('Rector/a', 'Coordinador/a')
     ),
     'is_evaluador', EXISTS (SELECT 1 FROM rubrica_evaluadores WHERE cedula = p_cedula),
+    'is_operator', EXISTS (SELECT 1 FROM operator_permissions WHERE cedula = p_cedula),
     'cargo_actual', (SELECT cargo_actual FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
     'nombre', COALESCE(
       (SELECT nombres_apellidos FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
@@ -766,6 +767,84 @@ CREATE TABLE IF NOT EXISTS public.operator_permissions (
 
 CREATE INDEX IF NOT EXISTS idx_operator_permissions_cedula
   ON public.operator_permissions(cedula);
+
+-- ============================================================
+-- Encuesta 360 Visibility
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.encuesta_360_visibility (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  fase TEXT NOT NULL,
+  scope_type TEXT NOT NULL,
+  scope_value TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (fase, scope_type, scope_value)
+);
+
+-- ============================================================
+-- Domains 360
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.domains_360 (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key TEXT NOT NULL UNIQUE,
+  label TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+-- ============================================================
+-- Visibility columns on rubrica_asignaciones
+-- ============================================================
+
+ALTER TABLE public.rubrica_asignaciones ADD COLUMN IF NOT EXISTS rubrica_visible BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.rubrica_asignaciones ADD COLUMN IF NOT EXISTS encuesta_entrada_visible BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.rubrica_asignaciones ADD COLUMN IF NOT EXISTS encuesta_salida_visible BOOLEAN NOT NULL DEFAULT false;
+
+-- ============================================================
+-- Trigger: update fichas_rlt.updated_at automatically
+-- ============================================================
+
+ALTER TABLE public.fichas_rlt ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+
+CREATE OR REPLACE FUNCTION public.update_fichas_rlt_updated_at()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN NEW.updated_at = now(); RETURN NEW; END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_fichas_rlt_updated_at ON public.fichas_rlt;
+CREATE TRIGGER trg_fichas_rlt_updated_at BEFORE UPDATE ON public.fichas_rlt
+  FOR EACH ROW EXECUTE FUNCTION update_fichas_rlt_updated_at();
+
+-- ============================================================
+-- Function: has_superadmin_access (RBAC)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.has_superadmin_access(_user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_custom_roles ucr
+    JOIN public.custom_roles cr ON cr.id = ucr.role_id
+    WHERE ucr.user_id = _user_id AND cr.name = 'Superadmin'
+  )
+$$;
+
+-- ============================================================
+-- Trigger: update rubrica_evaluaciones.updated_at automatically
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.update_rubrica_updated_at()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN NEW.updated_at = now(); RETURN NEW; END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_rubrica_evaluaciones_updated_at ON public.rubrica_evaluaciones;
+CREATE TRIGGER trg_rubrica_evaluaciones_updated_at BEFORE UPDATE ON public.rubrica_evaluaciones
+  FOR EACH ROW EXECUTE FUNCTION update_rubrica_updated_at();
 
 -- ============================================================
 -- SEED: Create initial admin user
