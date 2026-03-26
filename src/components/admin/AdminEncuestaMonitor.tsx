@@ -53,7 +53,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
 
     const { data: encuestas } = await supabase
       .from("encuestas_360")
-      .select("tipo_formulario, institucion_educativa, nombre_directivo, nombre_completo")
+      .select("tipo_formulario, institucion_educativa, nombre_directivo, nombre_completo, cedula_directivo, cedula")
       .eq("fase", fase);
 
     const directivoList = (fichas ?? []).map((f) => ({
@@ -69,11 +69,11 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
 
       (encuestas ?? []).forEach((e) => {
         if (e.tipo_formulario === "autoevaluacion") {
-          if (e.nombre_completo === d.nombre && e.institucion_educativa === d.institucion) {
+          if (e.cedula && e.cedula === d.cedula) {
             counts.autoevaluacion++;
           }
         } else {
-          if (e.nombre_directivo === d.nombre && e.institucion_educativa === d.institucion) {
+          if (e.cedula_directivo && e.cedula_directivo === d.cedula) {
             counts[e.tipo_formulario] = (counts[e.tipo_formulario] || 0) + 1;
           }
         }
