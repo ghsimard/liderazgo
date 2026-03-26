@@ -815,11 +815,15 @@ export default function SpecsHubs() {
                               { label: "Enlace y PDF", src: "/images/specs/admin-fichas-enlace-pdf.png" },
                               { label: "Configuración (ET, Región, Municipio, Institución)", src: "/images/specs/admin-fichas-configuracion.png" },
                               { label: "Caracterización", src: "/specs/videos/admin-caracterizacion.mov", isVideo: true },
-                            ].map((screen, i) => (
+                            ].map((screen: any, i: number) => (
                               <CarouselItem key={i}>
                                 <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
                                   <p className="text-xs font-medium text-muted-foreground px-3 py-2 bg-muted/50">{screen.label}</p>
-                                  <img src={screen.src} alt={screen.label} className="w-full" loading="lazy" style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }} />
+                                  {screen.isVideo ? (
+                                    <video src={screen.src} controls muted className="w-full" style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }} />
+                                  ) : (
+                                    <img src={screen.src} alt={screen.label} className="w-full" loading="lazy" style={{ filter: "grayscale(1) contrast(0.85) sepia(0.08)" }} />
+                                  )}
                                 </div>
                               </CarouselItem>
                             ))}
