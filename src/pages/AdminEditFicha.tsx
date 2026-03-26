@@ -910,7 +910,7 @@ export default function AdminEditFicha() {
               <FormFieldWrapper name="tipo_formacion" label="Tipo de formación" className="md:col-span-2" staticLabel>
                 <FormRadioGroup
                   name="tipo_formacion"
-                  options={[{ value: "Profesional", label: "Profesional" }, { value: "Licenciado/a", label: "Licenciado/a" }]}
+                  options={[{ value: "Profesional", label: "Profesional" }, { value: "Licenciado/a", label: genderizeRole("Licenciado/a", watch("genero")) }]}
                   value={watch("tipo_formacion")}
                   onChange={(v) => setValue("tipo_formacion", v, { shouldValidate: true })}
                 />
