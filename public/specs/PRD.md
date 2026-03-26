@@ -425,7 +425,7 @@ Una vez registrada la evaluación acordada de un módulo, el módulo siguiente s
 
 **Hubs:**
 1. **Enlaces** — Links a formularios públicos y PDFs en blanco
-2. **Fichas** — Listado, búsqueda, filtros, exportación de fichas RLT
+2. **Fichas** — Listado, búsqueda, filtros, exportación de fichas RLT, caracterización estadística de directivos
 3. **Rúbricas** — Resultados, informes, evaluadores, asignaciones, configuración
 4. **Encuesta 360°** — Monitoreo, reporte 360°, configuración de dominios/competencias/ítems/ponderaciones
 5. **Informe de Módulo** — Asistencia, informes por módulo, evaluación individual
