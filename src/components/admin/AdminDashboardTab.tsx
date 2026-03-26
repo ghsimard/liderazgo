@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { RefreshCw, FileText, Gauge, ClipboardCheck, School, ThumbsUp, FileBarChart, CalendarCheck, X } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
+import { SATISFACCION_FORMS } from "@/data/satisfaccionData";
+import type { SatisfaccionFormDef } from "@/data/satisfaccionData";
 
 const PIE_COLORS = [
   "hsl(var(--primary))",
