@@ -30,6 +30,7 @@ interface Encuesta {
   nombre_completo: string | null;
   nombre_directivo: string | null;
   cedula_directivo: string | null;
+  cedula: string | null;
   institucion_educativa: string;
   cargo_directivo: string;
   dias_contacto: string | null;
@@ -144,7 +145,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
     const [{ data }, { data: fichasGenero }] = await Promise.all([
       supabase
         .from("encuestas_360")
-        .select("id, tipo_formulario, nombre_completo, nombre_directivo, cedula_directivo, institucion_educativa, cargo_directivo, dias_contacto, created_at, respuestas")
+        .select("id, tipo_formulario, nombre_completo, nombre_directivo, cedula_directivo, cedula, institucion_educativa, cargo_directivo, dias_contacto, created_at, respuestas")
         .eq("fase", fase)
         .order("institucion_educativa")
         .order("created_at", { ascending: false }),
