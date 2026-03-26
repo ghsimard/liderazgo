@@ -1,33 +1,58 @@
 
 
-## Plan: Appliquer le genre aux titres (Rector/a → Rector ou Rectora) dans Encuestas 360
+## Plan: Caractérisation des Fichas dans le Tablero de Control
 
-Le champ `cargo_directivo` dans `encuestas_360` stocke la forme neutre ("Rector/a", "Coordinador/a"). Il faut afficher la forme genrée selon le champ `genero` de la fiche du directivo.
+Ajouter une nouvelle carte KPI "Caracterización" dans le dashboard qui affiche les statistiques de caractérisation des directivos à partir des données de `fichas_rlt`.
 
-### Modification
+### Données à afficher
 
-**Fichier** : `src/components/admin/AdminEncuestas360Tab.tsx`
+Toutes les statistiques seront calculées sur les fichas filtrées (respect des filtres cascade existants).
 
-1. **Ajouter l'import** de `genderizeRole` depuis `@/utils/genderizeRole`
+| Indicateur | Champ source | Calcul |
+|---|---|---|
+| % Hombres / Mujeres | `genero` | Distribution par genre |
+| % Rango de edades | `fecha_nacimiento` | Tranches (20-30, 31-40, 41-50, 51-60, 60+) |
+| % Enfermedades de base | `enfermedad_base` | % "Sí" vs "No" |
+| % Discapacidad | `discapacidad` | % "Sí" vs "No" |
+| % Tipo de formación | `tipo_formacion` | Distribution (Normalista, Licenciado/a, etc.) |
+| % Especialización | `titulo_especializacion` | % non-null/non-vide |
+| % Maestría | `titulo_maestria` | % non-null/non-vide |
+| % Doctorado | `titulo_doctorado` | % non-null/non-vide |
+| # Escuelas por municipio | `nombre_ie` + table municipios | Compte distinct par municipio |
+| % Rol (cargo) | `cargo_actual` | Distribution (existe déjà comme `fichasByCargo`) |
+| % Tipo de vinculación | `tipo_vinculacion` | Distribution |
+| % Estatuto | `estatuto` | Distribution |
+| % Sede principal (zona) | `zona_sede` | Distribution (Urbana/Rural) |
+| % Jornadas | `jornadas` | Distribution (array → éclater) |
+| % Grupos étnicos | `grupos_etnicos` | Distribution (string CSV → éclater) |
+| Total personal IE | `num_docentes + num_coordinadores + num_orientadores + num_administrativos` | Somme |
+| Total estudiantes por nivel | `estudiantes_preescolar/primaria/basica_secundaria/media/ciclo_complementario` | Sommes par niveau |
 
-2. **Charger les genres** : après le fetch des encuestas, récupérer les `fichas_rlt` avec `numero_cedula` et `genero`. Construire un `Map<string, string>` (cédula → genero).
+### Modifications
 
-3. **Appliquer `genderizeRole`** partout où `cargo_directivo` est affiché :
-   - Ligne 533 : `cargo: genderizeRole(e.cargo_directivo, generoMap.get(e.cedula_directivo ?? ""))`
-   - Ligne 542 : `{group.cargo}` — déjà genré via l'étape précédente
-   - Ligne 641 (modale détail) : `genderizeRole(selectedEncuesta.cargo_directivo, generoMap.get(selectedEncuesta.cedula_directivo ?? ""))`
+**Fichier** : `src/components/admin/AdminDashboardTab.tsx`
 
-**Fichier** : `src/components/admin/AdminEncuestaMonitor.tsx`
+1. **Étendre la requête fichas** (ligne 54) : ajouter les champs nécessaires au `select` :
+   ```
+   genero, fecha_nacimiento, enfermedad_base, discapacidad, tipo_formacion,
+   titulo_especializacion, titulo_maestria, titulo_doctorado, tipo_vinculacion,
+   estatuto, zona_sede, jornadas, grupos_etnicos, num_docentes, num_coordinadores,
+   num_orientadores, num_administrativos, estudiantes_preescolar, estudiantes_primaria,
+   estudiantes_basica_secundaria, estudiantes_media, estudiantes_ciclo_complementario,
+   entidad_territorial
+   ```
 
-Le monitor ne montre pas le cargo, donc aucun changement nécessaire.
+2. **Ajouter les calculs `useMemo`** pour chaque indicateur à partir de `filteredFichas`
 
-### Détail technique
+3. **Ajouter une nouvelle carte KPI large** (pleine largeur ou `col-span-2/3`) avec des sous-sections :
+   - Section "Demografía" : genre (pie), âges (bar), enfermedades, discapacidad
+   - Section "Formación" : tipo_formacion (pie), barres pour Especialización/Maestría/Doctorado
+   - Section "Institucional" : vinculación, estatuto, zona sede, jornadas, grupos étnicos
+   - Section "Estadísticas IE" : totaux personnel et étudiants
 
-- La requête fichas est légère : `select("numero_cedula, genero")` sur tous les directivos
-- Le `generoMap` est construit une seule fois au chargement et stocké en state
-- `genderizeRole("Rector/a", "Masculino")` → `"Rector"`, `genderizeRole("Rector/a", "Femenino")` → `"Rectora"`
+4. **Visualisations** : Réutiliser `MiniPie` pour les distributions, barres horizontales `Progress` pour les pourcentages simples, petites tables pour les données tabulaires (municipios, étudiants par niveau)
 
 ### Fichier modifié
 
-- `src/components/admin/AdminEncuestas360Tab.tsx`
+- `src/components/admin/AdminDashboardTab.tsx`
 
