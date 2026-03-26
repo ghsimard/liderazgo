@@ -91,7 +91,19 @@ export interface Reporte360Data {
 
 // ── Main calculation function ──
 
-export async function calcularReporte360(nombreDirectivo: string, institucion: string, fase: "inicial" | "final" = "inicial"): Promise<Reporte360Data> {
+export async function calcularReporte360(nombreDirectivo: string, institucion: string, fase: "inicial" | "final" = "inicial", cedula?: string): Promise<Reporte360Data> {
+  // 0. Resolve cédula from fichas_rlt if not provided
+  let resolvedCedula = cedula;
+  if (!resolvedCedula) {
+    const { data: fichaLookup } = await supabase
+      .from("fichas_rlt")
+      .select("numero_cedula")
+      .eq("nombres_apellidos", nombreDirectivo)
+      .eq("nombre_ie", institucion)
+      .limit(1);
+    resolvedCedula = fichaLookup?.[0]?.numero_cedula ?? undefined;
+  }
+
   // 1. Fetch all encuestas for this directivo
   const { data: encuestas, error: encError } = await supabase
     .from("encuestas_360")
@@ -101,14 +113,18 @@ export async function calcularReporte360(nombreDirectivo: string, institucion: s
 
   if (encError) throw encError;
 
-  // Separate autoevaluacion and observer responses
-  const autoEncuesta = (encuestas ?? []).find(
-    (e) => e.tipo_formulario === "autoevaluacion" && e.nombre_completo === nombreDirectivo
-  );
+  // Separate autoevaluacion and observer responses — match by cédula when available
+  const autoEncuesta = (encuestas ?? []).find((e) => {
+    if (e.tipo_formulario !== "autoevaluacion") return false;
+    if (resolvedCedula && e.cedula) return e.cedula === resolvedCedula;
+    return e.nombre_completo === nombreDirectivo;
+  });
 
-  const observerEncuestas = (encuestas ?? []).filter(
-    (e) => e.tipo_formulario !== "autoevaluacion" && e.nombre_directivo === nombreDirectivo
-  );
+  const observerEncuestas = (encuestas ?? []).filter((e) => {
+    if (e.tipo_formulario === "autoevaluacion") return false;
+    if (resolvedCedula && e.cedula_directivo) return e.cedula_directivo === resolvedCedula;
+    return e.nombre_directivo === nombreDirectivo;
+  });
 
   // 2. Fetch item mapping (item_number → competency_key + response_type)
   const { data: items } = await supabase
