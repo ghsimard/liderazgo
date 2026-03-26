@@ -219,12 +219,16 @@ export default function AdminFichasTab({ isViewer = false }: { isViewer?: boolea
       const ie = ficha.nombre_ie;
       const cedula = ficha.numero_cedula;
 
-      // Fetch related encuestas
-      const { data: relatedEncuestas } = await supabase
-        .from("encuestas_360")
-        .select("*")
-        .eq("institucion_educativa", ie)
-        .or(`nombre_directivo.eq.${nombre},and(nombre_completo.eq.${nombre},tipo_formulario.eq.autoevaluacion)`);
+      // Fetch related encuestas by cédula
+      let relatedEncuestas: any[] = [];
+      if (cedula) {
+        const { data: enc360 } = await supabase
+          .from("encuestas_360")
+          .select("*")
+          .eq("institucion_educativa", ie)
+          .or(`cedula_directivo.eq.${cedula},and(cedula.eq.${cedula},tipo_formulario.eq.autoevaluacion)`);
+        relatedEncuestas = enc360 ?? [];
+      }
 
       // Fetch related rubrica data by cedula
       let relatedEvaluaciones: any[] = [];
@@ -251,7 +255,7 @@ export default function AdminFichasTab({ isViewer = false }: { isViewer?: boolea
         record_label: `${nombre} — ${ie}`,
         deleted_data: {
           ficha,
-          encuestas: relatedEncuestas ?? [],
+          encuestas: relatedEncuestas,
           rubrica_evaluaciones: relatedEvaluaciones,
           rubrica_asignaciones: relatedAsignaciones,
           rubrica_submission_dates: relatedSubmissionDates,
@@ -259,9 +263,11 @@ export default function AdminFichasTab({ isViewer = false }: { isViewer?: boolea
         } as any,
       }]);
 
-      // Delete related encuestas
-      await supabase.from("encuestas_360").delete().eq("nombre_directivo", nombre).eq("institucion_educativa", ie);
-      await supabase.from("encuestas_360").delete().eq("nombre_completo", nombre).eq("institucion_educativa", ie).eq("tipo_formulario", "autoevaluacion");
+      // Delete related encuestas by cédula
+      if (cedula) {
+        await supabase.from("encuestas_360").delete().eq("cedula_directivo", cedula).eq("institucion_educativa", ie);
+        await supabase.from("encuestas_360").delete().eq("cedula", cedula).eq("institucion_educativa", ie).eq("tipo_formulario", "autoevaluacion");
+      }
 
       // Delete related rubrica data
       if (cedula) {
