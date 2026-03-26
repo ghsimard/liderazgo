@@ -30,6 +30,7 @@ interface Encuesta {
   nombre_completo: string | null;
   nombre_directivo: string | null;
   cedula_directivo: string | null;
+  cedula: string | null;
   institucion_educativa: string;
   cargo_directivo: string;
   dias_contacto: string | null;
@@ -144,7 +145,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
     const [{ data }, { data: fichasGenero }] = await Promise.all([
       supabase
         .from("encuestas_360")
-        .select("id, tipo_formulario, nombre_completo, nombre_directivo, cedula_directivo, institucion_educativa, cargo_directivo, dias_contacto, created_at, respuestas")
+        .select("id, tipo_formulario, nombre_completo, nombre_directivo, cedula_directivo, cedula, institucion_educativa, cargo_directivo, dias_contacto, created_at, respuestas")
         .eq("fase", fase)
         .order("institucion_educativa")
         .order("created_at", { ascending: false }),
@@ -159,11 +160,18 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
       if (f.numero_cedula && f.genero) gMap.set(f.numero_cedula, f.genero);
       if (f.nombres_apellidos && f.genero) nameToGenero.set(f.nombres_apellidos.toLowerCase(), f.genero);
     });
-    // For encuestas without cedula_directivo, patch generoMap using nombre_directivo
+    // For encuestas without cedula_directivo, patch generoMap using nombre or cedula fallbacks
     (data ?? []).forEach((e: any) => {
-      if (!e.cedula_directivo && e.nombre_directivo) {
-        const g = nameToGenero.get(e.nombre_directivo.toLowerCase());
-        if (g) gMap.set(`name:${e.nombre_directivo}`, g);
+      const key = e.cedula_directivo || e.cedula;
+      if (key && gMap.has(key)) return; // already have it
+      // Try nombre_directivo or nombre_completo
+      const name = e.nombre_directivo || e.nombre_completo;
+      if (name) {
+        const g = nameToGenero.get(name.toLowerCase());
+        if (g) {
+          if (key) gMap.set(key, g);
+          gMap.set(`name:${name}`, g);
+        }
       }
     });
     setGeneroMap(gMap);
@@ -553,7 +561,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                         ? (e.nombre_completo || "Sin nombre")
                         : (e.nombre_directivo || "Sin nombre");
                       if (!byDirectivo[dirName]) {
-                        byDirectivo[dirName] = { nombre: dirName, cargo: genderizeRole(e.cargo_directivo, generoMap.get(e.cedula_directivo ?? "") || generoMap.get(`name:${e.nombre_directivo}`)), encuestas: [] };
+                        byDirectivo[dirName] = { nombre: dirName, cargo: genderizeRole(e.cargo_directivo, generoMap.get(e.cedula_directivo ?? "") || generoMap.get(e.cedula ?? "") || generoMap.get(`name:${e.nombre_directivo || e.nombre_completo}`)), encuestas: [] };
                       }
                       byDirectivo[dirName].encuestas.push(e);
                     });
@@ -661,7 +669,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
               <div className="text-sm text-muted-foreground space-y-0.5 pt-1">
                 <p><strong>Institución:</strong> {selectedEncuesta.institucion_educativa}</p>
                 <p><strong>Par evaluado:</strong> {selectedEncuesta.tipo_formulario === "autoevaluacion" ? selectedEncuesta.nombre_completo : selectedEncuesta.nombre_directivo}</p>
-                <p><strong>Cargo:</strong> {genderizeRole(selectedEncuesta.cargo_directivo, generoMap.get(selectedEncuesta.cedula_directivo ?? "") || generoMap.get(`name:${selectedEncuesta.nombre_directivo}`))} · <strong>Fecha:</strong> {new Date(selectedEncuesta.created_at).toLocaleDateString("es-CO")}</p>
+                <p><strong>Cargo:</strong> {genderizeRole(selectedEncuesta.cargo_directivo, generoMap.get(selectedEncuesta.cedula_directivo ?? "") || generoMap.get(selectedEncuesta.cedula ?? "") || generoMap.get(`name:${selectedEncuesta.nombre_directivo || selectedEncuesta.nombre_completo}`))} · <strong>Fecha:</strong> {new Date(selectedEncuesta.created_at).toLocaleDateString("es-CO")}</p>
                 {selectedEncuesta.dias_contacto && <p><strong>Días de contacto:</strong> {selectedEncuesta.dias_contacto}</p>}
               </div>
             )}
