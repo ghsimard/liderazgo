@@ -1,58 +1,23 @@
 
 
-## Plan: Caractérisation des Fichas dans le Tablero de Control
+## Plan: Corriger la visibilité du bouton "Informe de Módulo" pour les évaluateurs
 
-Ajouter une nouvelle carte KPI "Caracterización" dans le dashboard qui affiche les statistiques de caractérisation des directivos à partir des données de `fichas_rlt`.
+### Problème
 
-### Données à afficher
+Le bouton "Informe de Módulo" dans Mi Panel est conditionné par `evalHasInformes`, qui vérifie si des enregistrements existent déjà dans `informe_modulo`. Un évaluateur ne peut donc jamais accéder au formulaire pour créer le premier informe — c'est un cercle vicieux.
 
-Toutes les statistiques seront calculées sur les fichas filtrées (respect des filtres cascade existants).
+### Solution
 
-| Indicateur | Champ source | Calcul |
-|---|---|---|
-| % Hombres / Mujeres | `genero` | Distribution par genre |
-| % Rango de edades | `fecha_nacimiento` | Tranches (20-30, 31-40, 41-50, 51-60, 60+) |
-| % Enfermedades de base | `enfermedad_base` | % "Sí" vs "No" |
-| % Discapacidad | `discapacidad` | % "Sí" vs "No" |
-| % Tipo de formación | `tipo_formacion` | Distribution (Normalista, Licenciado/a, etc.) |
-| % Especialización | `titulo_especializacion` | % non-null/non-vide |
-| % Maestría | `titulo_maestria` | % non-null/non-vide |
-| % Doctorado | `titulo_doctorado` | % non-null/non-vide |
-| # Escuelas por municipio | `nombre_ie` + table municipios | Compte distinct par municipio |
-| % Rol (cargo) | `cargo_actual` | Distribution (existe déjà comme `fichasByCargo`) |
-| % Tipo de vinculación | `tipo_vinculacion` | Distribution |
-| % Estatuto | `estatuto` | Distribution |
-| % Sede principal (zona) | `zona_sede` | Distribution (Urbana/Rural) |
-| % Jornadas | `jornadas` | Distribution (array → éclater) |
-| % Grupos étnicos | `grupos_etnicos` | Distribution (string CSV → éclater) |
-| Total personal IE | `num_docentes + num_coordinadores + num_orientadores + num_administrativos` | Somme |
-| Total estudiantes por nivel | `estudiantes_preescolar/primaria/basica_secundaria/media/ciclo_complementario` | Sommes par niveau |
+Remplacer la condition de visibilité : au lieu de vérifier l'existence d'informes, vérifier que l'évaluateur **a des directivos assignés** (même condition que pour les rúbricas, `evalHasAssignments`). C'est la condition logique correcte — un évaluateur avec des assignations doit pouvoir créer des informes de módulo.
 
-### Modifications
+### Modification
 
-**Fichier** : `src/components/admin/AdminDashboardTab.tsx`
+**Fichier** : `src/pages/MiPanel.tsx`
 
-1. **Étendre la requête fichas** (ligne 54) : ajouter les champs nécessaires au `select` :
-   ```
-   genero, fecha_nacimiento, enfermedad_base, discapacidad, tipo_formacion,
-   titulo_especializacion, titulo_maestria, titulo_doctorado, tipo_vinculacion,
-   estatuto, zona_sede, jornadas, grupos_etnicos, num_docentes, num_coordinadores,
-   num_orientadores, num_administrativos, estudiantes_preescolar, estudiantes_primaria,
-   estudiantes_basica_secundaria, estudiantes_media, estudiantes_ciclo_complementario,
-   entidad_territorial
-   ```
+- Ligne ~538 : changer `{evalHasInformes && (` → `{evalHasAssignments && (`
+- Optionnel : supprimer la variable `evalHasInformes` et la requête associée (lignes ~326-329) puisqu'elle ne sera plus utilisée.
 
-2. **Ajouter les calculs `useMemo`** pour chaque indicateur à partir de `filteredFichas`
+### Impact
 
-3. **Ajouter une nouvelle carte KPI large** (pleine largeur ou `col-span-2/3`) avec des sous-sections :
-   - Section "Demografía" : genre (pie), âges (bar), enfermedades, discapacidad
-   - Section "Formación" : tipo_formacion (pie), barres pour Especialización/Maestría/Doctorado
-   - Section "Institucional" : vinculación, estatuto, zona sede, jornadas, grupos étnicos
-   - Section "Estadísticas IE" : totaux personnel et étudiants
-
-4. **Visualisations** : Réutiliser `MiniPie` pour les distributions, barres horizontales `Progress` pour les pourcentages simples, petites tables pour les données tabulaires (municipios, étudiants par niveau)
-
-### Fichier modifié
-
-- `src/components/admin/AdminDashboardTab.tsx`
+Un seul fichier modifié, changement minimal.
 
