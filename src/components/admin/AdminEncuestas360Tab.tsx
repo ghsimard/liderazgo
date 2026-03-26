@@ -160,11 +160,18 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
       if (f.numero_cedula && f.genero) gMap.set(f.numero_cedula, f.genero);
       if (f.nombres_apellidos && f.genero) nameToGenero.set(f.nombres_apellidos.toLowerCase(), f.genero);
     });
-    // For encuestas without cedula_directivo, patch generoMap using nombre_directivo
+    // For encuestas without cedula_directivo, patch generoMap using nombre or cedula fallbacks
     (data ?? []).forEach((e: any) => {
-      if (!e.cedula_directivo && e.nombre_directivo) {
-        const g = nameToGenero.get(e.nombre_directivo.toLowerCase());
-        if (g) gMap.set(`name:${e.nombre_directivo}`, g);
+      const key = e.cedula_directivo || e.cedula;
+      if (key && gMap.has(key)) return; // already have it
+      // Try nombre_directivo or nombre_completo
+      const name = e.nombre_directivo || e.nombre_completo;
+      if (name) {
+        const g = nameToGenero.get(name.toLowerCase());
+        if (g) {
+          if (key) gMap.set(key, g);
+          gMap.set(`name:${name}`, g);
+        }
       }
     });
     setGeneroMap(gMap);
