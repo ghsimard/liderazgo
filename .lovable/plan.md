@@ -1,57 +1,86 @@
 
 
-## Plan: Enrichir le PRD avec le contenu du document ExE sur l'évaluation formative
+## Plan: Synchroniser les noms dans la base Render (production)
 
-Le document PDF de la Fundación Empresarios por la Educación (2019) décrit en détail le Sistema de Evaluación du programme RLT. Plusieurs sections du PRD peuvent être enrichies avec ce contenu officiel.
+La base Cloud est déjà synchronisée (0 divergences trouvées). Le problème est uniquement sur la base Render.
 
-### Modifications dans `public/specs/PRD.md` et `PRD.md` (racine)
+### Étape 1 — Diagnostic (à exécuter sur Render)
 
-**1. Nouvelle section 2.4 — Enfoque de Evaluación Formativa** (après 2.3)
+Exécuter ces requêtes SQL pour identifier les divergences :
 
-Ajouter une section expliquant l'approche formative de l'évaluation telle que décrite dans le document :
-- L'évaluation est un processus systématique, permanent et participatif
-- Elle génère des conditions d'apprentissage dans deux sens (directivos et équipe du programme)
-- Transparence des critères dès le début de la participation
-- Processus de triangulation : autoevaluación, coevaluación et heteroevaluación
-- Distinction avec l'évaluation sommative (Scriven, 1967)
+```sql
+-- 1. Noms divergents dans encuestas_360 (nombre_directivo)
+SELECT e.id, e.cedula_directivo, e.nombre_directivo AS nom_encuesta, f.nombres_apellidos AS nom_ficha
+FROM encuestas_360 e
+JOIN fichas_rlt f ON f.numero_cedula = e.cedula_directivo
+WHERE e.nombre_directivo IS DISTINCT FROM f.nombres_apellidos
+  AND e.cedula_directivo IS NOT NULL;
 
-**2. Nouvelle section 2.5 — Sistema de Evaluación del Programa** (après 2.4)
+-- 2. Noms divergents dans encuestas_360 (autoevaluaciones — nombre_completo)
+SELECT e.id, e.cedula, e.nombre_completo AS nom_encuesta, f.nombres_apellidos AS nom_ficha
+FROM encuestas_360 e
+JOIN fichas_rlt f ON f.numero_cedula = e.cedula
+WHERE e.tipo_formulario = 'autoevaluacion'
+  AND e.nombre_completo IS DISTINCT FROM f.nombres_apellidos
+  AND e.cedula IS NOT NULL;
 
-Décrire les deux éléments constitutifs du système :
-1. Evaluación del desarrollo de competencias (3 processus : caracterización, desarrollo de competencias, percepción del ambiente escolar)
-2. Evaluación de la implementación del Programa
+-- 3. Noms divergents dans rubrica_asignaciones
+SELECT ra.id, ra.directivo_cedula, ra.directivo_nombre AS nom_asignacion, f.nombres_apellidos AS nom_ficha
+FROM rubrica_asignaciones ra
+JOIN fichas_rlt f ON f.numero_cedula = ra.directivo_cedula
+WHERE ra.directivo_nombre IS DISTINCT FROM f.nombres_apellidos;
 
-Inclure les 13 compétences organisées en 3 gestiones et les 4 piliers de desempeño (Ser, Conocer, Hacer, Vivir Juntos).
+-- 4. Noms divergents dans encuesta_invitaciones
+SELECT ei.id, ei.directivo_cedula, ei.directivo_nombre AS nom_invitation, f.nombres_apellidos AS nom_ficha
+FROM encuesta_invitaciones ei
+JOIN fichas_rlt f ON f.numero_cedula = ei.directivo_cedula
+WHERE ei.directivo_nombre IS DISTINCT FROM f.nombres_apellidos
+  AND ei.directivo_cedula IS NOT NULL;
+```
 
-**3. Enrichir RF-02 (Ficha RLT)** — lignes ~191-207
+### Étape 2 — Correction (à exécuter sur Render après validation du diagnostic)
 
-Ajouter le paragraphe officiel sur l'objectif, l'application, le traitement et l'usage pédagogique de la Ficha, tiré du document ExE (section 1.1 Proceso de caracterización).
+```sql
+-- A. Corriger nombre_directivo dans encuestas_360
+UPDATE encuestas_360 e
+SET nombre_directivo = f.nombres_apellidos
+FROM fichas_rlt f
+WHERE f.numero_cedula = e.cedula_directivo
+  AND e.nombre_directivo IS DISTINCT FROM f.nombres_apellidos
+  AND e.cedula_directivo IS NOT NULL;
 
-**4. Enrichir RF-03 (Encuesta 360°)** — lignes ~210-238
+-- B. Corriger nombre_completo dans autoevaluaciones
+UPDATE encuestas_360 e
+SET nombre_completo = f.nombres_apellidos
+FROM fichas_rlt f
+WHERE f.numero_cedula = e.cedula
+  AND e.tipo_formulario = 'autoevaluacion'
+  AND e.nombre_completo IS DISTINCT FROM f.nombres_apellidos
+  AND e.cedula IS NOT NULL;
 
-Intégrer la description officielle de l'Encuesta de 360° ponderada : objectif (breve información comparada), application (modules I et VII), traitement (ponderaciones) et usage pédagogique (perception directivo vs. observateurs).
+-- C. Corriger directivo_nombre dans rubrica_asignaciones
+UPDATE rubrica_asignaciones ra
+SET directivo_nombre = f.nombres_apellidos
+FROM fichas_rlt f
+WHERE f.numero_cedula = ra.directivo_cedula
+  AND ra.directivo_nombre IS DISTINCT FROM f.nombres_apellidos;
 
-**5. Enrichir RF-04 (Rúbricas)** — lignes ~241+
+-- D. Corriger directivo_nombre dans encuesta_invitaciones
+UPDATE encuesta_invitaciones ei
+SET directivo_nombre = f.nombres_apellidos
+FROM fichas_rlt f
+WHERE f.numero_cedula = ei.directivo_cedula
+  AND ei.directivo_nombre IS DISTINCT FROM f.nombres_apellidos
+  AND ei.directivo_cedula IS NOT NULL;
+```
 
-Intégrer la description officielle de la Rúbrica por módulo : objectif (propiciar conversación), application (accord entre directivo et équipe local sur le niveau), traitement, et usage pédagogique. Mentionner que les rúbricas doivent être actualisées module par module.
+### Étape 3 — Renforcer le code (optionnel, implémentation future)
 
-**6. Enrichir la section Satisfacción** (RF existant)
+Modifier `AdminEncuestaMonitor.tsx` pour matcher par **cédula** au lieu du nom (plan déjà proposé précédemment), ce qui rend le système résistant aux divergences futures.
 
-Ajouter l'objectif officiel des encuestas de satisfacción et leur usage pédagogique (indicateurs périodiques, identification des forces et aspects à améliorer).
+### Actions requises
 
-**7. Enrichir la section Ambiente Escolar** (RF existant)
+🗄️ **Base de données Render** : Exécuter les requêtes de diagnostic (étape 1), puis les corrections (étape 2) directement sur la base PostgreSQL de production Render.
 
-Ajouter la description officielle : objectif (perception des acteurs sur convivencia, prácticas pedagógicas et comunicación), application (modules I et VII), et usage pédagogique.
-
-### Règles de rédaction
-
-- Aucune mention de "IA", "AI", "Lovable"
-- Acronymes étendus à la première occurrence
-- Textes adaptés du document source, reformulés pour le contexte de la plateforme numérique
-- Les deux fichiers PRD (public + racine) seront synchronisés
-
-### Fichiers modifiés
-
-- `public/specs/PRD.md`
-- `PRD.md`
+Aucune modification de code n'est nécessaire pour cette correction ponctuelle.
 
