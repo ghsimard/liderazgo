@@ -225,7 +225,7 @@ function getHubTitle(activeTab: string): string {
     reportes360: "Encuesta 360°", reportes360final: "Encuesta 360°",
     invitaciones: "Encuesta 360°", "blancos-360": "Encuesta 360°",
     "fichas-rlt": "Fichas de Información", fichas: "Fichas de Información", geography: "Fichas de Información",
-    "enlace-ficha": "Fichas de Información", "blank-pdf": "Fichas de Información",
+    "enlace-ficha": "Fichas de Información", "blank-pdf": "Fichas de Información", caracterizacion: "Fichas de Información",
     rubricas: "Rúbricas",
     "informe-modulo": "Informe de Módulo",
     "ambiente-escolar": "Ambiente Escolar", "ambiente-monitoreo": "Ambiente Escolar", "ambiente-estadisticas": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar",
