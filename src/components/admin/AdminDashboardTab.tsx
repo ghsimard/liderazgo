@@ -55,7 +55,7 @@ export default function AdminDashboardTab() {
         supabase.from("encuestas_360").select("id, fase, tipo_formulario, institucion_educativa, cedula_directivo"),
         supabase.from("rubrica_seguimientos").select("id, module_number, nivel, directivo_cedula"),
         supabase.from("encuestas_ambiente_escolar").select("id, tipo_formulario, institucion_educativa"),
-        supabase.from("satisfaccion_responses").select("id, form_type, module_number, region"),
+        supabase.from("satisfaccion_responses").select("id, form_type, module_number, region, respuestas"),
         supabase.from("informe_modulo").select("id, module_number, region, entidad_territorial"),
         supabase.from("informe_asistencia").select("id, module_number, session_am, session_pm, directivo_cedula, dia"),
         supabase.from("rubrica_modules").select("module_number, title").order("sort_order"),
