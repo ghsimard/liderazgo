@@ -22,6 +22,7 @@ interface DirectivoOption {
   genero: string | null;
   region: string;
   entidad_territorial: string;
+  cedula: string;
 }
 
 function DeltaBadge({ value, pct }: { value: number; pct?: number | null }) {
@@ -181,7 +182,7 @@ export default function AdminMelGlobalReport({ directivos, filterLabel, selected
 
     for (const d of directivos) {
       try {
-        const data = await calcularMelAnalysis(d.nombre, d.institucion);
+        const data = await calcularMelAnalysis(d.nombre, d.institucion, d.cedula);
         if (data.hasInicial || data.hasFinal) results.push(data);
       } catch {
         // skip

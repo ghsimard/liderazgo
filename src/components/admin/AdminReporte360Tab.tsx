@@ -21,6 +21,7 @@ interface DirectivoOption {
   region: string;
   entidad_territorial: string;
   municipio: string;
+  cedula: string;
 }
 
 interface AdminReporte360TabProps {
@@ -56,7 +57,7 @@ export default function AdminReporte360Tab({ fase = "inicial" }: AdminReporte360
     // Load fichas with institution join to get municipio name
     const { data: fichas } = await supabase
       .from("fichas_rlt")
-      .select("nombres_apellidos, nombre_ie, cargo_actual, genero, region, entidad_territorial")
+      .select("nombres_apellidos, nombre_ie, cargo_actual, genero, region, entidad_territorial, numero_cedula")
       .in("cargo_actual", ["Rector/a", "Coordinador/a"])
       .order("nombres_apellidos");
 
@@ -82,6 +83,7 @@ export default function AdminReporte360Tab({ fase = "inicial" }: AdminReporte360
         region: f.region ?? "",
         entidad_territorial: f.entidad_territorial ?? "",
         municipio: instMunMap.get(f.nombre_ie) ?? "",
+        cedula: f.numero_cedula ?? "",
       }))
     );
 
@@ -136,7 +138,7 @@ export default function AdminReporte360Tab({ fase = "inicial" }: AdminReporte360
   const handleView = async (d: DirectivoOption) => {
     setViewing(d.nombre);
     try {
-      const data = await calcularReporte360(d.nombre, d.institucion, fase);
+      const data = await calcularReporte360(d.nombre, d.institucion, fase, d.cedula);
       setViewerData(data);
       setViewerOpen(true);
     } catch (err: any) {
@@ -148,7 +150,7 @@ export default function AdminReporte360Tab({ fase = "inicial" }: AdminReporte360
   const handleGenerate = async (d: DirectivoOption) => {
     setGenerating(d.nombre);
     try {
-      const data = await calcularReporte360(d.nombre, d.institucion, fase);
+      const data = await calcularReporte360(d.nombre, d.institucion, fase, d.cedula);
       await generarReporte360PDF(data, { logoRLT, logoCLT, logoCosmo: images.logo_cosmo, coverBg: images.cover_bg, lightbulb: images.lightbulb_icon });
       toast({ title: "Informe generado", description: `PDF descargado para ${d.nombre}` });
     } catch (err: any) {
@@ -165,7 +167,7 @@ export default function AdminReporte360Tab({ fase = "inicial" }: AdminReporte360
       let count = 0;
       for (const d of filteredDirectivos) {
         try {
-          const data = await calcularReporte360(d.nombre, d.institucion, fase);
+          const data = await calcularReporte360(d.nombre, d.institucion, fase, d.cedula);
           const blob = await generarReporte360PDF(data, { logoRLT, logoCLT, logoCosmo: images.logo_cosmo, coverBg: images.cover_bg, lightbulb: images.lightbulb_icon }, { returnBlob: true });
           if (blob) {
             zip.file(`Informe_360_${d.nombre.replace(/\s+/g, "_")}.pdf`, blob);

@@ -51,19 +51,20 @@ export interface MelAnalysisData {
 
 export async function calcularMelAnalysis(
   nombreDirectivo: string,
-  institucion: string
+  institucion: string,
+  cedula?: string
 ): Promise<MelAnalysisData> {
   let inicial: Reporte360Data | null = null;
   let final_: Reporte360Data | null = null;
 
   try {
-    inicial = await calcularReporte360(nombreDirectivo, institucion, "inicial");
+    inicial = await calcularReporte360(nombreDirectivo, institucion, "inicial", cedula);
   } catch {
     // no inicial data
   }
 
   try {
-    final_ = await calcularReporte360(nombreDirectivo, institucion, "final");
+    final_ = await calcularReporte360(nombreDirectivo, institucion, "final", cedula);
   } catch {
     // no final data
   }
