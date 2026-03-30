@@ -8,7 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Save, Filter, CalendarCheck, Loader2 } from "lucide-react";
+import { Search, Filter, CalendarCheck, Loader2, Check } from "lucide-react";
+import { toast } from "sonner";
 
 interface Directivo {
   numero_cedula: string;
