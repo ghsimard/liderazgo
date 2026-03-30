@@ -182,7 +182,8 @@ export default function AdminAsistenciaTab() {
     const key = getKey(cedula, dia);
     const row = asistencia.get(key);
     if (row) saveRow(row);
-  };
+
+  const calculateRate = (cedula: string): number => {
     if (selectedModule === "all") {
       let attended = 0;
       const total = MODULES.length * DAYS.length;
@@ -200,40 +201,6 @@ export default function AdminAsistenciaTab() {
       if (row?.session_am) attended++;
     });
     return DAYS.length > 0 ? Math.round((attended / DAYS.length) * 100) : 0;
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const rows = Array.from(asistencia.values()).filter(
-        r => r.session_am || r.session_pm || r.razon_inasistencia || r.observaciones
-      );
-
-      // Upsert all rows
-      const { error } = await supabase
-        .from("informe_asistencia")
-        .upsert(
-          rows.map(r => ({
-            directivo_cedula: r.directivo_cedula,
-            module_number: r.module_number,
-            dia: r.dia,
-            session_am: r.session_am,
-            session_pm: r.session_pm,
-            razon_inasistencia: r.razon_inasistencia || null,
-            observaciones: r.observaciones || null,
-          })),
-          { onConflict: "directivo_cedula,module_number,dia" }
-        );
-
-      if (error) throw error;
-      toast({ title: "Guardado", description: "La asistencia se ha guardado correctamente." });
-      setDirty(false);
-      await loadAsistencia();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
   };
 
   // Stats
