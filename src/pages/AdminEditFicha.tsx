@@ -1305,6 +1305,13 @@ export default function AdminEditFicha() {
                     </div>
                   );
                 })}
+                <div className="flex items-center justify-between pt-2 border-t mt-2">
+                  <span className="font-semibold text-sm">Total estudiantes</span>
+                  <span className="font-bold text-base w-20 text-center">
+                    {["estudiantes_preescolar","estudiantes_primaria","estudiantes_basica_secundaria","estudiantes_media","estudiantes_ciclo_complementario"]
+                      .reduce((s, f) => s + (parseInt(watch(f as any)) || 0), 0)}
+                  </span>
+                </div>
               </div>
             </FormSection>
 
