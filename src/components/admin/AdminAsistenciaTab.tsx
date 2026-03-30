@@ -43,7 +43,6 @@ const RAZONES_INASISTENCIA = [
 ];
 
 export default function AdminAsistenciaTab() {
-  const { toast } = useToast();
   const [directivos, setDirectivos] = useState<Directivo[]>([]);
   const [regiones, setRegiones] = useState<string[]>([]);
   const [entidades, setEntidades] = useState<string[]>([]);
@@ -53,8 +52,6 @@ export default function AdminAsistenciaTab() {
   const [selectedET, setSelectedET] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     loadDirectivos();
