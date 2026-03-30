@@ -415,6 +415,7 @@ export default function AdminAsistenciaTab() {
                             <Input
                               value={firstDayRow?.observaciones || ""}
                               onChange={e => updateField(d.numero_cedula, 1, "observaciones", e.target.value)}
+                              onBlur={() => handleObservacionesBlur(d.numero_cedula, 1)}
                               className="h-7 text-xs"
                               placeholder="—"
                             />
