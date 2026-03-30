@@ -1,26 +1,28 @@
 
 
-## Plan: Afficher le total d'étudiants (admin seulement) dans AdminEditFicha
+## Plan: Sauvegarde en temps réel de l'Asistencia
 
-### Modification
+### Problème actuel
+L'onglet Asistencia nécessite de cliquer manuellement sur "Guardar" pour persister les changements. L'utilisateur veut que chaque modification (checkbox, raison, observations) soit sauvegardée immédiatement en base.
 
-**Fichier** : `src/pages/AdminEditFicha.tsx`
+### Solution
+Modifier `src/components/admin/AdminAsistenciaTab.tsx` pour effectuer un upsert automatique à chaque changement :
 
-Après la boucle `.map()` des niveaux éducatifs (ligne ~1307), insérer une ligne récapitulative affichant la somme dynamique des 5 champs étudiants via `watch()`. Ce total n'apparaît que dans `AdminEditFicha.tsx` — aucune modification à `FichaRLT.tsx` (le formulaire directivo).
+1. **Checkbox (toggleDay)** : Après la mise à jour locale du state, appeler immédiatement un upsert sur `informe_asistencia` pour la ligne concernée
+2. **Raison d'inasistencia (Select)** : Idem, upsert immédiat au changement de valeur
+3. **Observaciones (Input)** : Upsert au `onBlur` (perte de focus) pour éviter un appel à chaque frappe
+4. **Suppression du bouton "Guardar"** et du state `dirty`/`saving` global — chaque changement se sauvegarde seul
+5. **Feedback visuel** : Petit indicateur discret (toast léger ou icône de synchro) pour confirmer la sauvegarde sans être intrusif
 
-```tsx
-{/* Après ligne 1307, dans le div existant */}
-<div className="flex items-center justify-between pt-2 border-t mt-2">
-  <span className="font-semibold text-sm">Total estudiantes</span>
-  <span className="font-bold text-base w-20 text-center">
-    {["estudiantes_preescolar","estudiantes_primaria","estudiantes_basica_secundaria","estudiantes_media","estudiantes_ciclo_complementario"]
-      .reduce((s, f) => s + (parseInt(watch(f as any)) || 0), 0)}
-  </span>
-</div>
-```
+### Détails techniques
 
-### Impact
+- Créer une fonction `saveRow(row: AsistenciaRow)` qui fait un upsert individuel avec `onConflict: "directivo_cedula,module_number,dia"`
+- `toggleDay` : appelle `saveRow` après `setAsistencia`
+- `updateField` pour `razon_inasistencia` : appelle `saveRow` directement (le Select déclenche `onValueChange` une seule fois)
+- `updateField` pour `observaciones` : le state reste local à chaque frappe, mais un `onBlur` sur l'Input déclenche `saveRow`
+- Retirer le bouton "Guardar", les states `saving` et `dirty`
+- En cas d'erreur de sauvegarde, afficher un toast destructif
 
-- Un seul fichier modifié : `AdminEditFicha.tsx`
-- `FichaRLT.tsx` (formulaire directivo) reste inchangé — le total est invisible pour les directivos
+### Fichier modifié
+- `src/components/admin/AdminAsistenciaTab.tsx`
 
