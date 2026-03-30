@@ -182,6 +182,7 @@ export default function AdminAsistenciaTab() {
     const key = getKey(cedula, dia);
     const row = asistencia.get(key);
     if (row) saveRow(row);
+  };
 
   const calculateRate = (cedula: string): number => {
     if (selectedModule === "all") {
