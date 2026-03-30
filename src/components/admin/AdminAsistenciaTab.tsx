@@ -95,7 +95,26 @@ export default function AdminAsistenciaTab() {
       });
     }
     setAsistencia(map);
-    setDirty(false);
+  };
+
+  const saveRow = async (row: AsistenciaRow) => {
+    const { error } = await supabase
+      .from("informe_asistencia")
+      .upsert(
+        {
+          directivo_cedula: row.directivo_cedula,
+          module_number: row.module_number,
+          dia: row.dia,
+          session_am: row.session_am,
+          session_pm: row.session_pm,
+          razon_inasistencia: row.razon_inasistencia || null,
+          observaciones: row.observaciones || null,
+        },
+        { onConflict: "directivo_cedula,module_number,dia" }
+      );
+    if (error) {
+      toast.error("Error al guardar asistencia");
+    }
   };
 
   const filteredDirectivos = directivos.filter(d => {
@@ -112,7 +131,6 @@ export default function AdminAsistenciaTab() {
     return true;
   });
 
-  // Filter entidades based on selected region
   const filteredEntidades = selectedRegion === "all"
     ? entidades
     : [...new Set(directivos.filter(d => d.region === selectedRegion).map(d => d.entidad_territorial).filter(Boolean) as string[])].sort();
@@ -136,7 +154,7 @@ export default function AdminAsistenciaTab() {
     const newMap = new Map(asistencia);
     newMap.set(key, updated);
     setAsistencia(newMap);
-    setDirty(true);
+    saveRow(updated);
   };
 
   const updateField = (cedula: string, dia: number, field: "razon_inasistencia" | "observaciones", value: string) => {
@@ -155,10 +173,16 @@ export default function AdminAsistenciaTab() {
     const newMap = new Map(asistencia);
     newMap.set(key, updated);
     setAsistencia(newMap);
-    setDirty(true);
+    if (field === "razon_inasistencia") {
+      saveRow(updated);
+    }
   };
 
-  const calculateRate = (cedula: string): number => {
+  const handleObservacionesBlur = (cedula: string, dia: number) => {
+    const key = getKey(cedula, dia);
+    const row = asistencia.get(key);
+    if (row) saveRow(row);
+  };
     if (selectedModule === "all") {
       let attended = 0;
       const total = MODULES.length * DAYS.length;
