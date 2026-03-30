@@ -6,9 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { Search, Save, Filter, CalendarCheck, Loader2 } from "lucide-react";
+import { Search, Filter, CalendarCheck, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Directivo {
   numero_cedula: string;
@@ -42,7 +41,6 @@ const RAZONES_INASISTENCIA = [
 ];
 
 export default function AdminAsistenciaTab() {
-  const { toast } = useToast();
   const [directivos, setDirectivos] = useState<Directivo[]>([]);
   const [regiones, setRegiones] = useState<string[]>([]);
   const [entidades, setEntidades] = useState<string[]>([]);
@@ -52,8 +50,6 @@ export default function AdminAsistenciaTab() {
   const [selectedET, setSelectedET] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     loadDirectivos();
@@ -97,7 +93,26 @@ export default function AdminAsistenciaTab() {
       });
     }
     setAsistencia(map);
-    setDirty(false);
+  };
+
+  const saveRow = async (row: AsistenciaRow) => {
+    const { error } = await supabase
+      .from("informe_asistencia")
+      .upsert(
+        {
+          directivo_cedula: row.directivo_cedula,
+          module_number: row.module_number,
+          dia: row.dia,
+          session_am: row.session_am,
+          session_pm: row.session_pm,
+          razon_inasistencia: row.razon_inasistencia || null,
+          observaciones: row.observaciones || null,
+        },
+        { onConflict: "directivo_cedula,module_number,dia" }
+      );
+    if (error) {
+      toast.error("Error al guardar asistencia");
+    }
   };
 
   const filteredDirectivos = directivos.filter(d => {
@@ -114,7 +129,6 @@ export default function AdminAsistenciaTab() {
     return true;
   });
 
-  // Filter entidades based on selected region
   const filteredEntidades = selectedRegion === "all"
     ? entidades
     : [...new Set(directivos.filter(d => d.region === selectedRegion).map(d => d.entidad_territorial).filter(Boolean) as string[])].sort();
@@ -138,7 +152,7 @@ export default function AdminAsistenciaTab() {
     const newMap = new Map(asistencia);
     newMap.set(key, updated);
     setAsistencia(newMap);
-    setDirty(true);
+    saveRow(updated);
   };
 
   const updateField = (cedula: string, dia: number, field: "razon_inasistencia" | "observaciones", value: string) => {
@@ -157,7 +171,15 @@ export default function AdminAsistenciaTab() {
     const newMap = new Map(asistencia);
     newMap.set(key, updated);
     setAsistencia(newMap);
-    setDirty(true);
+    if (field === "razon_inasistencia") {
+      saveRow(updated);
+    }
+  };
+
+  const handleObservacionesBlur = (cedula: string, dia: number) => {
+    const key = getKey(cedula, dia);
+    const row = asistencia.get(key);
+    if (row) saveRow(row);
   };
 
   const calculateRate = (cedula: string): number => {
@@ -178,40 +200,6 @@ export default function AdminAsistenciaTab() {
       if (row?.session_am) attended++;
     });
     return DAYS.length > 0 ? Math.round((attended / DAYS.length) * 100) : 0;
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const rows = Array.from(asistencia.values()).filter(
-        r => r.session_am || r.session_pm || r.razon_inasistencia || r.observaciones
-      );
-
-      // Upsert all rows
-      const { error } = await supabase
-        .from("informe_asistencia")
-        .upsert(
-          rows.map(r => ({
-            directivo_cedula: r.directivo_cedula,
-            module_number: r.module_number,
-            dia: r.dia,
-            session_am: r.session_am,
-            session_pm: r.session_pm,
-            razon_inasistencia: r.razon_inasistencia || null,
-            observaciones: r.observaciones || null,
-          })),
-          { onConflict: "directivo_cedula,module_number,dia" }
-        );
-
-      if (error) throw error;
-      toast({ title: "Guardado", description: "La asistencia se ha guardado correctamente." });
-      setDirty(false);
-      await loadAsistencia();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
   };
 
   // Stats
@@ -297,12 +285,6 @@ export default function AdminAsistenciaTab() {
 
             <div className="flex items-center gap-2 ml-auto">
               <Badge variant="secondary">{totalFiltered} directivos</Badge>
-              {selectedModule !== "all" && (
-                <Button onClick={handleSave} disabled={saving || !dirty} size="sm" className="gap-1.5">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  Guardar
-                </Button>
-              )}
             </div>
           </div>
         </CardContent>
@@ -431,6 +413,7 @@ export default function AdminAsistenciaTab() {
                             <Input
                               value={firstDayRow?.observaciones || ""}
                               onChange={e => updateField(d.numero_cedula, 1, "observaciones", e.target.value)}
+                              onBlur={() => handleObservacionesBlur(d.numero_cedula, 1)}
                               className="h-7 text-xs"
                               placeholder="—"
                             />
