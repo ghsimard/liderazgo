@@ -209,7 +209,7 @@ export async function generarPDFFicha(
   drawSection("INFORMACIÓN PERSONAL*");
   drawRowDouble("Nombres y Apellido", val("nombres") && val("apellidos") ? `${val("nombres")} ${val("apellidos")}` : (val("nombres") || val("apellidos")), "Género", val("genero"));
   drawRow("Número de cédula", val("numero_cedula"));
-  drawRowDouble("Lugar de nacimiento", val("lugar_nacimiento"), "Fecha de nacimiento (dd/mm/aaaa)", val("fecha_nacimiento"));
+  drawRowDouble("Lugar de nacimiento", val("lugar_nacimiento"), "Fecha de nacimiento (dd/mm/aaaa)", val("fecha_nacimiento") ? formatDateOnly(val("fecha_nacimiento")!) : undefined);
   drawRowDouble("Lengua materna", val("lengua_materna"), "Número de celular personal", val("celular_personal"));
   if (datos["lengua_otra"]) drawRow("Otra lengua", val("lengua_otra"));
   drawRow("Correo electrónico personal", val("correo_personal"));
