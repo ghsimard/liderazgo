@@ -194,6 +194,11 @@ export async function generarPDFFicha(
     y += 6;
   };
 
+  const formatDateOnly = (v: string): string => {
+    const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : v;
+  };
+
   const val = (key: string) => {
     const v = datos[key];
     if (Array.isArray(v)) return v.join(", ");
@@ -204,7 +209,7 @@ export async function generarPDFFicha(
   drawSection("INFORMACIÓN PERSONAL*");
   drawRowDouble("Nombres y Apellido", val("nombres") && val("apellidos") ? `${val("nombres")} ${val("apellidos")}` : (val("nombres") || val("apellidos")), "Género", val("genero"));
   drawRow("Número de cédula", val("numero_cedula"));
-  drawRowDouble("Lugar de nacimiento", val("lugar_nacimiento"), "Fecha de nacimiento (dd/mm/aaaa)", val("fecha_nacimiento"));
+  drawRowDouble("Lugar de nacimiento", val("lugar_nacimiento"), "Fecha de nacimiento (dd/mm/aaaa)", val("fecha_nacimiento") ? formatDateOnly(val("fecha_nacimiento")!) : undefined);
   drawRowDouble("Lengua materna", val("lengua_materna"), "Número de celular personal", val("celular_personal"));
   if (datos["lengua_otra"]) drawRow("Otra lengua", val("lengua_otra"));
   drawRow("Correo electrónico personal", val("correo_personal"));
@@ -221,9 +226,9 @@ export async function generarPDFFicha(
   drawRow("Nombre completo de la IE actual", val("nombre_ie"));
   drawRow("Cargo", genderizeRole(val("cargo_actual"), val("genero")));
   drawRow("Tipo de vinculación", val("tipo_vinculacion"));
-  drawRow("Fecha de vinculación al servicio educativo estatal (dd/mm/aaaa)", val("fecha_vinculacion_servicio"));
-  drawRow("Fecha de nombramiento estatal en el cargo actual (dd/mm/aaaa)", val("fecha_nombramiento_cargo"));
-  drawRow("Fecha de nombramiento del cargo actual en la IE (dd/mm/aaaa)", val("fecha_nombramiento_ie"));
+  drawRow("Fecha de vinculación al servicio educativo estatal (dd/mm/aaaa)", val("fecha_vinculacion_servicio") ? formatDateOnly(val("fecha_vinculacion_servicio")!) : undefined);
+  drawRow("Fecha de nombramiento estatal en el cargo actual (dd/mm/aaaa)", val("fecha_nombramiento_cargo") ? formatDateOnly(val("fecha_nombramiento_cargo")!) : undefined);
+  drawRow("Fecha de nombramiento del cargo actual en la IE (dd/mm/aaaa)", val("fecha_nombramiento_ie") ? formatDateOnly(val("fecha_nombramiento_ie")!) : undefined);
   drawRow("Estatuto al que pertenece", val("estatuto"));
   drawRow("Grado en el escalafón", val("grado_escalafon"));
 
