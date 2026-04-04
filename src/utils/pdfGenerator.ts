@@ -226,9 +226,9 @@ export async function generarPDFFicha(
   drawRow("Nombre completo de la IE actual", val("nombre_ie"));
   drawRow("Cargo", genderizeRole(val("cargo_actual"), val("genero")));
   drawRow("Tipo de vinculación", val("tipo_vinculacion"));
-  drawRow("Fecha de vinculación al servicio educativo estatal (dd/mm/aaaa)", val("fecha_vinculacion_servicio"));
-  drawRow("Fecha de nombramiento estatal en el cargo actual (dd/mm/aaaa)", val("fecha_nombramiento_cargo"));
-  drawRow("Fecha de nombramiento del cargo actual en la IE (dd/mm/aaaa)", val("fecha_nombramiento_ie"));
+  drawRow("Fecha de vinculación al servicio educativo estatal (dd/mm/aaaa)", val("fecha_vinculacion_servicio") ? formatDateOnly(val("fecha_vinculacion_servicio")!) : undefined);
+  drawRow("Fecha de nombramiento estatal en el cargo actual (dd/mm/aaaa)", val("fecha_nombramiento_cargo") ? formatDateOnly(val("fecha_nombramiento_cargo")!) : undefined);
+  drawRow("Fecha de nombramiento del cargo actual en la IE (dd/mm/aaaa)", val("fecha_nombramiento_ie") ? formatDateOnly(val("fecha_nombramiento_ie")!) : undefined);
   drawRow("Estatuto al que pertenece", val("estatuto"));
   drawRow("Grado en el escalafón", val("grado_escalafon"));
 
