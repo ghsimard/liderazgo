@@ -145,7 +145,20 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
       const logoRLT = appImages["logo_rlt_white"] || "";
       const logoCLT = appImages["logo_clt"] || "";
       const logoCosmo = appImages["logo_cosmo"] || "";
-      const logos: LoadedLogos = await loadPdfLogos({ logoRLT, logoCLT, logoCosmo }, true, true);
+      let showRlt = true;
+      let showClt = true;
+      if (regionFilter !== "__all__") {
+        const { data: regData } = await supabase
+          .from("regiones")
+          .select("mostrar_logo_rlt, mostrar_logo_clt")
+          .eq("nombre", regionFilter)
+          .single();
+        if (regData) {
+          showRlt = regData.mostrar_logo_rlt;
+          showClt = regData.mostrar_logo_clt;
+        }
+      }
+      const logos: LoadedLogos = await loadPdfLogos({ logoRLT, logoCLT, logoCosmo }, showRlt, showClt);
 
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "letter" });
       const pageW = doc.internal.pageSize.getWidth();
