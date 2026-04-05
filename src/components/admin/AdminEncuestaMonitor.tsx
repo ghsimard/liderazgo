@@ -311,13 +311,6 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
         y += actualRowH;
       }
 
-      // Summary at bottom
-      y += 5;
-      checkPageBreak(15);
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "italic");
-      doc.setTextColor(120, 120, 120);
-      doc.text(`Fuente: Datos del sistema RLT-CLT 2025 - Generado el ${new Date().toLocaleDateString("es-CO")}`, margin, y);
 
       addHeaderFooter();
 
