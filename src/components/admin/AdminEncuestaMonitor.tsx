@@ -209,10 +209,12 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
       y = CONTENT_START_Y;
 
       // Column widths
-      const colName = contentW * 0.22;
-      const colInst = contentW * 0.22;
-      const colRole = (contentW * 0.48) / ROLE_KEYS.length;
-      const colStatus = contentW * 0.08;
+      const colRole = 12;
+      const colStatus = 14;
+      const usedByRolesAndStatus = colRole * ROLE_KEYS.length + colStatus;
+      const remaining = contentW - usedByRolesAndStatus;
+      const colName = remaining * 0.45;
+      const colInst = remaining * 0.55;
       const rowH = 7;
 
       // Draw table header
