@@ -209,10 +209,12 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
       y = CONTENT_START_Y;
 
       // Column widths
-      const colName = contentW * 0.22;
-      const colInst = contentW * 0.22;
-      const colRole = (contentW * 0.48) / ROLE_KEYS.length;
-      const colStatus = contentW * 0.08;
+      const colRole = 12;
+      const colStatus = 14;
+      const usedByRolesAndStatus = colRole * ROLE_KEYS.length + colStatus;
+      const remaining = contentW - usedByRolesAndStatus;
+      const colName = remaining * 0.45;
+      const colInst = remaining * 0.55;
       const rowH = 7;
 
       // Draw table header
@@ -238,29 +240,46 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
       drawTableHeader();
 
       for (const r of filtered) {
-        checkPageBreak(rowH + 2);
+        doc.setFontSize(6.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(30, 30, 30);
 
-        // Alternate row background
+        doc.setFontSize(6.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(30, 30, 30);
+
+        // Wrap name to fit column
+        const nameLines = doc.splitTextToSize(r.nombre, colName - 3);
+        const instLines = doc.splitTextToSize(r.institucion, colInst - 3);
+        const maxLines = Math.max(nameLines.length, instLines.length);
+        const actualRowH = Math.max(rowH, maxLines * 3.2 + 2);
+
+        // Re-check page break with actual height
+        if (y + actualRowH > pageH - CONTENT_BOTTOM_MARGIN) {
+          addHeaderFooter();
+          doc.addPage();
+          y = CONTENT_START_Y;
+          drawTableHeader();
+        }
+
         doc.setDrawColor(220, 220, 220);
         doc.line(margin, y, margin + contentW, y);
 
         if (r.incomplete) {
           doc.setFillColor(255, 250, 245);
-          doc.rect(margin, y, contentW, rowH, "F");
+          doc.rect(margin, y, contentW, actualRowH, "F");
         }
 
-        doc.setFontSize(7);
+        doc.setFontSize(6.5);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(30, 30, 30);
+        doc.text(nameLines, margin + 2, y + 3.5);
 
-        const nombre = r.nombre.length > 28 ? r.nombre.substring(0, 25) + "..." : r.nombre;
-        doc.text(nombre, margin + 2, y + 5);
-
-        const inst = r.institucion.length > 28 ? r.institucion.substring(0, 25) + "..." : r.institucion;
         doc.setTextColor(80, 80, 80);
-        doc.text(inst, margin + colName + 2, y + 5);
+        doc.text(instLines, margin + colName + 2, y + 3.5);
 
         let xPos = margin + colName + colInst;
+        const midY = y + actualRowH / 2 + 1.5;
         ROLE_KEYS.forEach((k) => {
           const count = r.counts[k] || 0;
           const min = ROLE_LIMITS[k].min;
@@ -273,21 +292,23 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
             doc.setTextColor(220, 38, 38);
           }
           doc.setFont("helvetica", "bold");
-          doc.text(`${count}/${min}`, xPos + colRole / 2, y + 5, { align: "center" });
+          doc.setFontSize(6.5);
+          doc.text(`${count}/${min}`, xPos + colRole / 2, midY, { align: "center" });
           xPos += colRole;
         });
 
         // Status
         doc.setFont("helvetica", "bold");
+        doc.setFontSize(6.5);
         if (r.incomplete) {
           doc.setTextColor(217, 119, 6);
-          doc.text("Pendiente", margin + contentW - colStatus / 2, y + 5, { align: "center" });
+          doc.text("Pend.", margin + contentW - colStatus / 2, midY, { align: "center" });
         } else {
           doc.setTextColor(5, 150, 105);
-          doc.text("Completo", margin + contentW - colStatus / 2, y + 5, { align: "center" });
+          doc.text("OK", margin + contentW - colStatus / 2, midY, { align: "center" });
         }
 
-        y += rowH;
+        y += actualRowH;
       }
 
       // Summary at bottom
