@@ -184,10 +184,10 @@ export function drawPageHeaderLogos(
     doc.addImage(cltB64, "PNG", opts.pageW - opts.margin - cltDims.w, logoY, cltDims.w, cltDims.h);
   } else if (hasRlt) {
     const dims = logoDims(rltSize.width, rltSize.height, targetH);
-    doc.addImage(rltB64, "PNG", opts.pageW - opts.margin - dims.w, logoY, dims.w, dims.h);
+    doc.addImage(rltB64, "PNG", (opts.pageW - dims.w) / 2, logoY, dims.w, dims.h);
   } else if (hasClt) {
     const dims = logoDims(cltSize.width, cltSize.height, targetH);
-    doc.addImage(cltB64, "PNG", opts.pageW - opts.margin - dims.w, logoY, dims.w, dims.h);
+    doc.addImage(cltB64, "PNG", (opts.pageW - dims.w) / 2, logoY, dims.w, dims.h);
   }
 }
 
