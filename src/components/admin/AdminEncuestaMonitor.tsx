@@ -142,9 +142,9 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
     }
     setGeneratingPdf(true);
     try {
-      const logoRLT = getImageUrl("logo_rlt_white") || "";
-      const logoCLT = getImageUrl("logo_clt_white") || "";
-      const logoCosmo = getImageUrl("logo_cosmo") || "";
+      const logoRLT = appImages["logo_rlt_white"] || "";
+      const logoCLT = appImages["logo_clt"] || "";
+      const logoCosmo = appImages["logo_cosmo"] || "";
       const logos: LoadedLogos = await loadPdfLogos({ logoRLT, logoCLT, logoCosmo }, true, true);
 
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "letter" });
