@@ -4,8 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, AlertTriangle, CheckCircle2, Search } from "lucide-react";
+import { RefreshCw, AlertTriangle, CheckCircle2, Search, FileDown } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
+import {
+  loadPdfLogos,
+  drawCoverLogos,
+  drawPageHeaderLogos,
+  drawFooterCosmo,
+  CONTENT_START_Y,
+  CONTENT_BOTTOM_MARGIN,
+  type LoadedLogos,
+} from "@/utils/pdfLogoHelper";
+import { useAppImages } from "@/hooks/useAppImages";
 
 /** Required counts per tipo_formulario */
 const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> = {
@@ -37,6 +50,15 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterMode, setFilterMode] = useState<"all" | "incomplete" | "complete">("all");
+  const [regionFilter, setRegionFilter] = useState<string>("__all__");
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const { toast } = useToast();
+  const { getImageUrl } = useAppImages();
+
+  const regions = useMemo(() => {
+    const set = new Set(rows.map((r) => r.region).filter(Boolean));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
+  }, [rows]);
 
   useEffect(() => {
     loadData();
@@ -89,6 +111,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
 
   const filtered = useMemo(() => {
     let list = rows;
+    if (regionFilter !== "__all__") list = list.filter((r) => r.region === regionFilter);
     if (filterMode === "incomplete") list = list.filter((r) => r.incomplete);
     if (filterMode === "complete") list = list.filter((r) => !r.incomplete);
     if (search.trim()) {
@@ -98,9 +121,196 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
       );
     }
     return list;
-  }, [rows, filterMode, search]);
+  }, [rows, filterMode, search, regionFilter]);
 
-  const incompleteCount = rows.filter((r) => r.incomplete).length;
+  const incompleteCount = useMemo(() => {
+    let list = rows;
+    if (regionFilter !== "__all__") list = list.filter((r) => r.region === regionFilter);
+    return list.filter((r) => r.incomplete).length;
+  }, [rows, regionFilter]);
+
+  const totalForRegion = useMemo(() => {
+    if (regionFilter === "__all__") return rows.length;
+    return rows.filter((r) => r.region === regionFilter).length;
+  }, [rows, regionFilter]);
+
+  // ── PDF Generation ──
+  const generatePdf = async () => {
+    if (filtered.length === 0) {
+      toast({ title: "Sin datos", description: "No hay datos para generar el PDF.", variant: "destructive" });
+      return;
+    }
+    setGeneratingPdf(true);
+    try {
+      const logoRLT = getImageUrl("logo_rlt_white") || "";
+      const logoCLT = getImageUrl("logo_clt_white") || "";
+      const logoCosmo = getImageUrl("logo_cosmo") || "";
+      const logos: LoadedLogos = await loadPdfLogos({ logoRLT, logoCLT, logoCosmo }, true, true);
+
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "letter" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentW = pageW - margin * 2;
+      let y = 0;
+
+      const addHeaderFooter = () => {
+        drawPageHeaderLogos(doc, logos, { margin, pageW });
+        drawFooterCosmo(doc, logos, { margin, pageW, pageH, pageNum: doc.getNumberOfPages() });
+      };
+
+      const checkPageBreak = (needed: number): boolean => {
+        if (y + needed > pageH - CONTENT_BOTTOM_MARGIN) {
+          addHeaderFooter();
+          doc.addPage();
+          y = CONTENT_START_Y;
+          return true;
+        }
+        return false;
+      };
+
+      // ── Cover ──
+      y = 30;
+      y = drawCoverLogos(doc, logos, { y, pageW, targetH: 28 }) + 15;
+
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30, 30, 30);
+      const faseLabel = fase === "inicial" ? "Entrada" : "Salida";
+      doc.text(`ESTADO DE RECOLECCIÓN - ${faseLabel.toUpperCase()}`, pageW / 2, y, { align: "center" });
+      y += 8;
+      doc.setFontSize(14);
+      doc.setTextColor(80, 80, 80);
+      doc.text("Encuesta 360°", pageW / 2, y, { align: "center" });
+      y += 10;
+
+      if (regionFilter !== "__all__") {
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 30, 30);
+        doc.text(`Región: ${regionFilter}`, pageW / 2, y, { align: "center" });
+        y += 8;
+      }
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Fecha: ${new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}`, pageW / 2, y, { align: "center" });
+      y += 6;
+
+      const regionInc = filtered.filter((r) => r.incomplete).length;
+      const regionComp = filtered.length - regionInc;
+      doc.text(`Total: ${filtered.length} directivos  |  Completos: ${regionComp}  |  Incompletos: ${regionInc}`, pageW / 2, y, { align: "center" });
+
+      drawFooterCosmo(doc, logos, { margin, pageW, pageH, pageNum: 1 });
+
+      // ── Table pages ──
+      doc.addPage();
+      y = CONTENT_START_Y;
+
+      // Column widths
+      const colName = contentW * 0.22;
+      const colInst = contentW * 0.22;
+      const colRole = (contentW * 0.48) / ROLE_KEYS.length;
+      const colStatus = contentW * 0.08;
+      const rowH = 7;
+
+      // Draw table header
+      const drawTableHeader = () => {
+        doc.setFillColor(240, 240, 240);
+        doc.rect(margin, y, contentW, rowH, "F");
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 30, 30);
+        doc.text("Par (Directivo)", margin + 2, y + 5);
+        doc.text("Institución", margin + colName + 2, y + 5);
+        let xPos = margin + colName + colInst;
+        ROLE_KEYS.forEach((k) => {
+          const lbl = ROLE_LIMITS[k].label;
+          const short = lbl.length > 8 ? lbl.substring(0, 7) + "." : lbl;
+          doc.text(short, xPos + colRole / 2, y + 5, { align: "center" });
+          xPos += colRole;
+        });
+        doc.text("Estado", margin + contentW - colStatus / 2, y + 5, { align: "center" });
+        y += rowH;
+      };
+
+      drawTableHeader();
+
+      for (const r of filtered) {
+        checkPageBreak(rowH + 2);
+
+        // Alternate row background
+        doc.setDrawColor(220, 220, 220);
+        doc.line(margin, y, margin + contentW, y);
+
+        if (r.incomplete) {
+          doc.setFillColor(255, 250, 245);
+          doc.rect(margin, y, contentW, rowH, "F");
+        }
+
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(30, 30, 30);
+
+        const nombre = r.nombre.length > 28 ? r.nombre.substring(0, 25) + "..." : r.nombre;
+        doc.text(nombre, margin + 2, y + 5);
+
+        const inst = r.institucion.length > 28 ? r.institucion.substring(0, 25) + "..." : r.institucion;
+        doc.setTextColor(80, 80, 80);
+        doc.text(inst, margin + colName + 2, y + 5);
+
+        let xPos = margin + colName + colInst;
+        ROLE_KEYS.forEach((k) => {
+          const count = r.counts[k] || 0;
+          const min = ROLE_LIMITS[k].min;
+          const ok = count >= min;
+          if (ok) {
+            doc.setTextColor(5, 150, 105);
+          } else if (count > 0) {
+            doc.setTextColor(217, 119, 6);
+          } else {
+            doc.setTextColor(220, 38, 38);
+          }
+          doc.setFont("helvetica", "bold");
+          doc.text(`${count}/${min}`, xPos + colRole / 2, y + 5, { align: "center" });
+          xPos += colRole;
+        });
+
+        // Status
+        doc.setFont("helvetica", "bold");
+        if (r.incomplete) {
+          doc.setTextColor(217, 119, 6);
+          doc.text("Pendiente", margin + contentW - colStatus / 2, y + 5, { align: "center" });
+        } else {
+          doc.setTextColor(5, 150, 105);
+          doc.text("Completo", margin + contentW - colStatus / 2, y + 5, { align: "center" });
+        }
+
+        y += rowH;
+      }
+
+      // Summary at bottom
+      y += 5;
+      checkPageBreak(15);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(120, 120, 120);
+      doc.text(`Fuente: Datos del sistema RLT-CLT 2025 - Generado el ${new Date().toLocaleDateString("es-CO")}`, margin, y);
+
+      addHeaderFooter();
+
+      const regionSlug = regionFilter !== "__all__" ? `_${regionFilter.replace(/\s+/g, "_")}` : "";
+      doc.save(`Estado_Recoleccion_360_${faseLabel}${regionSlug}_${new Date().toISOString().slice(0, 10)}.pdf`);
+
+      toast({ title: "PDF generado", description: "El archivo se descargó correctamente." });
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -118,13 +328,36 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
             <AlertTriangle className="w-4 h-4 text-orange-500" />
             Estado de recolección por par
           </CardTitle>
-          <Badge variant={incompleteCount > 0 ? "destructive" : "secondary"}>
-            {incompleteCount} incompleto(s) / {rows.length} total
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={incompleteCount > 0 ? "destructive" : "secondary"}>
+              {incompleteCount} incompleto(s) / {totalForRegion} total
+            </Badge>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={generatePdf}
+              disabled={generatingPdf || filtered.length === 0}
+              className="h-8 gap-1.5"
+            >
+              {generatingPdf ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+              PDF
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
+          <Select value={regionFilter} onValueChange={setRegionFilter}>
+            <SelectTrigger className="w-[180px] h-9">
+              <SelectValue placeholder="Región" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas las regiones</SelectItem>
+              {regions.map((r) => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="relative flex-1 min-w-[180px] max-w-xs">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
