@@ -251,16 +251,39 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
           doc.rect(margin, y, contentW, rowH, "F");
         }
 
-        doc.setFontSize(7);
+        doc.setFontSize(6.5);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(30, 30, 30);
 
-        const nombre = r.nombre.length > 28 ? r.nombre.substring(0, 25) + "..." : r.nombre;
-        doc.text(nombre, margin + 2, y + 5);
+        // Wrap name to fit column
+        const nameLines = doc.splitTextToSize(r.nombre, colName - 3);
+        const instLines = doc.splitTextToSize(r.institucion, colInst - 3);
+        const maxLines = Math.max(nameLines.length, instLines.length);
+        const actualRowH = Math.max(rowH, maxLines * 3.2 + 2);
 
-        const inst = r.institucion.length > 28 ? r.institucion.substring(0, 25) + "..." : r.institucion;
+        // Re-check page break with actual height
+        if (y + actualRowH > pageH - CONTENT_BOTTOM_MARGIN) {
+          addHeaderFooter();
+          doc.addPage();
+          y = CONTENT_START_Y;
+          drawTableHeader();
+        }
+
+        doc.setDrawColor(220, 220, 220);
+        doc.line(margin, y, margin + contentW, y);
+
+        if (r.incomplete) {
+          doc.setFillColor(255, 250, 245);
+          doc.rect(margin, y, contentW, actualRowH, "F");
+        }
+
+        doc.setFontSize(6.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(30, 30, 30);
+        doc.text(nameLines, margin + 2, y + 3.5);
+
         doc.setTextColor(80, 80, 80);
-        doc.text(inst, margin + colName + 2, y + 5);
+        doc.text(instLines, margin + colName + 2, y + 3.5);
 
         let xPos = margin + colName + colInst;
         ROLE_KEYS.forEach((k) => {
