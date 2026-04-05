@@ -1,33 +1,19 @@
 
 
-## Plan: Supprimer l'heure des dates dans le PDF de Ficha
+## Plan: Logos PDF selon la région filtrée
 
 ### Problème
-
-La fonction `val()` dans `pdfGenerator.ts` (ligne 197) fait un simple `String(v)` sur les valeurs brutes de la base de données. Les champs date arrivent au format ISO (`2024-05-15T00:00:00.000Z`), ce qui affiche la date **avec l'heure** dans le PDF.
-
-Les champs affectés :
-- `fecha_nacimiento`
-- `fecha_vinculacion_servicio`
-- `fecha_nombramiento_cargo`
-- `fecha_nombramiento_ie`
+Le PDF affiche toujours les deux logos (RLT + CLT) quel que soit le filtre région. Chaque région a des flags `mostrar_logo_rlt` / `mostrar_logo_clt` dans la table `regiones` qui devraient piloter l'affichage.
 
 ### Solution
 
-Ajouter une fonction utilitaire `formatDateOnly` dans `pdfGenerator.ts` qui détecte les chaînes ISO date et les reformate en `dd/mm/yyyy`. Puis l'appliquer dans les appels `val()` pour ces 4 champs date.
+**Fichier** : `src/components/admin/AdminEncuestaMonitor.tsx`
 
-```typescript
-const formatDateOnly = (v: string): string => {
-  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : v;
-};
-```
+1. **Charger les flags régionaux** : Dans `generatePdf`, quand `regionFilter !== "__all__"`, faire un `supabase.from("regiones").select("mostrar_logo_rlt, mostrar_logo_clt").eq("nombre", regionFilter).single()` pour récupérer les flags.
 
-Modifier les lignes 207, 224-226 pour utiliser `formatDateOnly` :
-- `val("fecha_nacimiento")` → `val("fecha_nacimiento") ? formatDateOnly(val("fecha_nacimiento")!) : undefined`
-- Idem pour les 3 autres champs date
+2. **Passer les flags à `loadPdfLogos`** : Remplacer le `loadPdfLogos(..., true, true)` actuel (ligne 148) par `loadPdfLogos(..., showRlt, showClt)` où les valeurs viennent de la requête (ou `true` par défaut si "Todas las regiones").
 
-### Fichier modifié
-
-- `src/utils/pdfGenerator.ts`
+### Impact
+- Un seul fichier modifié
+- Aucune migration nécessaire
 
