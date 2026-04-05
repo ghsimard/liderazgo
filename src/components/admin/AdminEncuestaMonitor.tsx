@@ -286,6 +286,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
         doc.text(instLines, margin + colName + 2, y + 3.5);
 
         let xPos = margin + colName + colInst;
+        const midY = y + actualRowH / 2 + 1.5;
         ROLE_KEYS.forEach((k) => {
           const count = r.counts[k] || 0;
           const min = ROLE_LIMITS[k].min;
@@ -298,21 +299,23 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
             doc.setTextColor(220, 38, 38);
           }
           doc.setFont("helvetica", "bold");
-          doc.text(`${count}/${min}`, xPos + colRole / 2, y + 5, { align: "center" });
+          doc.setFontSize(6.5);
+          doc.text(`${count}/${min}`, xPos + colRole / 2, midY, { align: "center" });
           xPos += colRole;
         });
 
         // Status
         doc.setFont("helvetica", "bold");
+        doc.setFontSize(6.5);
         if (r.incomplete) {
           doc.setTextColor(217, 119, 6);
-          doc.text("Pendiente", margin + contentW - colStatus / 2, y + 5, { align: "center" });
+          doc.text("Pend.", margin + contentW - colStatus / 2, midY, { align: "center" });
         } else {
           doc.setTextColor(5, 150, 105);
-          doc.text("Completo", margin + contentW - colStatus / 2, y + 5, { align: "center" });
+          doc.text("OK", margin + contentW - colStatus / 2, midY, { align: "center" });
         }
 
-        y += rowH;
+        y += actualRowH;
       }
 
       // Summary at bottom
