@@ -53,7 +53,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   const [regionFilter, setRegionFilter] = useState<string>("__all__");
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const { toast } = useToast();
-  const { getImageUrl } = useAppImages();
+  const { images: appImages } = useAppImages();
 
   const regions = useMemo(() => {
     const set = new Set(rows.map((r) => r.region).filter(Boolean));
