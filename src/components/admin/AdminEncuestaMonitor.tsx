@@ -240,16 +240,9 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
       drawTableHeader();
 
       for (const r of filtered) {
-        checkPageBreak(rowH + 2);
-
-        // Alternate row background
-        doc.setDrawColor(220, 220, 220);
-        doc.line(margin, y, margin + contentW, y);
-
-        if (r.incomplete) {
-          doc.setFillColor(255, 250, 245);
-          doc.rect(margin, y, contentW, rowH, "F");
-        }
+        doc.setFontSize(6.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(30, 30, 30);
 
         doc.setFontSize(6.5);
         doc.setFont("helvetica", "normal");
