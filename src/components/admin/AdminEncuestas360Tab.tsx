@@ -71,9 +71,10 @@ const FORM_TYPE_LABELS: Record<string, string> = {
 interface AdminEncuestas360TabProps {
   fase?: "inicial" | "final";
   isViewer?: boolean;
+  allowedRegions?: string[];
 }
 
-export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = false }: AdminEncuestas360TabProps) {
+export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = false, allowedRegions }: AdminEncuestas360TabProps) {
   const { toast } = useToast();
   const [groups, setGroups] = useState<InstitutionGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,8 +85,8 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
   const [loadingTexts, setLoadingTexts] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Encuesta | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [regiones, setRegiones] = useState<{ id: string; nombre: string }[]>([]);
-  const [selectedRegion, setSelectedRegion] = useState<string>("todas");
+  const [allRegiones, setAllRegiones] = useState<{ id: string; nombre: string }[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string>(allowedRegions?.length === 1 ? allowedRegions[0] : "todas");
   const [instRegionMap, setInstRegionMap] = useState<Record<string, string>>({});
   const [visibility, setVisibility] = useState<VisibilityRow[]>([]);
   const [instituciones, setInstituciones] = useState<string[]>([]);
@@ -112,7 +113,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
       supabase.from("region_instituciones").select("region_id, institucion_id"),
       supabase.from("instituciones").select("id, nombre"),
     ]);
-    if (regionesData) setRegiones(regionesData);
+    if (regionesData) setAllRegiones(regionesData);
     if (fichasData) {
       const map: Record<string, string> = {};
       fichasData.forEach((f: any) => { map[f.nombre_ie] = f.region; });
@@ -375,7 +376,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {regiones.map(reg => (
+                    {(allowedRegions?.length ? allRegiones.filter(r => allowedRegions.includes(r.nombre)) : allRegiones).map(reg => (
                       <TableRow key={reg.id}>
                         <TableCell className="text-sm font-medium">{reg.nombre}</TableCell>
                         <TableCell className="text-center">
@@ -487,7 +488,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas las regiones</SelectItem>
-                {regiones.map((r) => (
+                {(allowedRegions?.length ? allRegiones.filter(r => allowedRegions.includes(r.nombre)) : allRegiones).map((r) => (
                   <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
                 ))}
               </SelectContent>

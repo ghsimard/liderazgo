@@ -38,7 +38,7 @@ interface FichaFilterData {
   institucion: string;
 }
 
-export default function AdminFichasTab({ isViewer = false }: { isViewer?: boolean }) {
+export default function AdminFichasTab({ isViewer = false, allowedRegions }: { isViewer?: boolean; allowedRegions?: string[] }) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { images } = useAppImages();
@@ -92,7 +92,8 @@ export default function AdminFichasTab({ isViewer = false }: { isViewer?: boolea
 
   // Cascade filter options
   const regionOptions = useMemo(() => {
-    const vals = [...new Set(filterData.map((d) => d.region).filter(Boolean))].sort();
+    let vals = [...new Set(filterData.map((d) => d.region).filter(Boolean))].sort();
+    if (allowedRegions?.length) vals = vals.filter(v => allowedRegions.includes(v));
     return vals.map((v) => ({ value: v, label: v }));
   }, [filterData]);
 

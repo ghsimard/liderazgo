@@ -102,27 +102,30 @@ export default function OperadorPanel() {
     );
   }
 
+  const allowedRegions = activeSection
+    ? [...new Set(permissions.filter(p => p.section === activeSection && p.region).map(p => p.region!))]
+    : [];
+
   const renderSection = () => {
     if (!activeSection) return null;
-    const filters = getSectionFilters(activeSection);
 
     switch (activeSection) {
       case "asistencia":
-        return <AdminAsistenciaTab />;
+        return <AdminAsistenciaTab allowedRegions={allowedRegions} />;
       case "informe-modulo":
         return <AdminInformeModuloTab />;
       case "rubricas":
-        return <AdminRubricasTab />;
+        return <AdminRubricasTab allowedRegions={allowedRegions} />;
       case "encuesta360":
-        return <AdminEncuestas360Tab fase="inicial" />;
+        return <AdminEncuestas360Tab fase="inicial" allowedRegions={allowedRegions} />;
       case "fichas-rlt":
-        return <AdminFichasTab />;
+        return <AdminFichasTab allowedRegions={allowedRegions} />;
       case "ambiente-escolar":
-        return <AdminAmbienteMonitorTab />;
+        return <AdminAmbienteMonitorTab allowedRegions={allowedRegions} />;
       case "satisfacciones":
-        return <AdminSatisfaccionesTab />;
+        return <AdminSatisfaccionesTab allowedRegions={allowedRegions} />;
       case "mel":
-        return <AdminMelTab />;
+        return <AdminMelTab allowedRegions={allowedRegions} />;
       case "certificaciones":
         return (
           <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">

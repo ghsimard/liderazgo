@@ -333,7 +333,7 @@ function MelDetailDialog({ open, onOpenChange, data, images, regionName }: { ope
   );
 }
 
-export default function AdminMelTab() {
+export default function AdminMelTab({ allowedRegions }: { allowedRegions?: string[] } = {}) {
   const { toast } = useToast();
   const { images } = useAppImages();
   const [directivos, setDirectivos] = useState<DirectivoOption[]>([]);
@@ -378,9 +378,10 @@ export default function AdminMelTab() {
   };
 
   const regionOptions = useMemo(() => {
-    const vals = [...new Set(directivos.map((d) => d.region).filter(Boolean))].sort();
+    let vals = [...new Set(directivos.map((d) => d.region).filter(Boolean))].sort();
+    if (allowedRegions?.length) vals = vals.filter(v => allowedRegions.includes(v));
     return vals.map((v) => ({ value: v, label: v }));
-  }, [directivos]);
+  }, [directivos, allowedRegions]);
 
   const entidadOptions = useMemo(() => {
     let pool = directivos;

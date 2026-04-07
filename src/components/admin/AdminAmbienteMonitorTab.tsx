@@ -32,7 +32,7 @@ function CountBadge({ count }: { count: number }) {
   return <Badge variant={variant} className={className}>{count}</Badge>;
 }
 
-export default function AdminAmbienteMonitorTab() {
+export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedRegions?: string[] } = {}) {
   const [directivos, setDirectivos] = useState<Directivo[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,7 +131,7 @@ export default function AdminAmbienteMonitorTab() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas las regiones</SelectItem>
-            {regionNames.map((r) => (
+            {(allowedRegions?.length ? regionNames.filter(r => allowedRegions.includes(r)) : regionNames).map((r) => (
               <SelectItem key={r} value={r}>{r}</SelectItem>
             ))}
           </SelectContent>
