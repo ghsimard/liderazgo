@@ -9,6 +9,14 @@ import { Loader2, FileText, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 
+function parseJson<T>(val: unknown, fallback: T): T {
+  if (Array.isArray(val) || (val !== null && typeof val === "object")) return val as T;
+  if (typeof val === "string") {
+    try { return JSON.parse(val) as T; } catch { return fallback; }
+  }
+  return fallback;
+}
+
 interface EquipoMember { nombre: string; rol: string }
 interface AjusteActividad { actividad: string; aciertos: string; desaciertos: string; ajustes: string }
 interface SesionesProgramadas {
