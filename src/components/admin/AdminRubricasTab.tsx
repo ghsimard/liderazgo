@@ -88,7 +88,7 @@ export default function AdminRubricasTab({ allowedRegions }: { allowedRegions?: 
     if (its) setItems(its);
     if (evals) setEvaluaciones(evals);
     if (segs) setSeguimientos(segs);
-    if (regs) setAllRegiones(regs);
+    if (regs) setRegiones(regs);
 
     // Build name map: asignaciones first (fallback), then fichas_rlt (source of truth)
     const map: Record<string, string> = {};
