@@ -37,7 +37,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [contactDialog, setContactDialog] = useState<Directivo | null>(null);
-  const [filterRegion, setFilterRegion] = useState<string>("all");
+  const [filterRegion, setFilterRegion] = useState<string>(allowedRegions?.length === 1 ? allowedRegions[0] : "all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchText, setSearchText] = useState("");
   const { regionNames, getInstitucionesForRegion } = useGeographicData();
@@ -130,7 +130,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
             <SelectValue placeholder="Región" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas las regiones</SelectItem>
+            {!(allowedRegions?.length === 1) && <SelectItem value="all">Todas las regiones</SelectItem>}
             {(allowedRegions?.length ? regionNames.filter(r => allowedRegions.includes(r)) : regionNames).map((r) => (
               <SelectItem key={r} value={r}>{r}</SelectItem>
             ))}

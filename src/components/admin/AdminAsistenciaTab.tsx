@@ -46,7 +46,7 @@ export default function AdminAsistenciaTab({ allowedRegions }: { allowedRegions?
   const [entidades, setEntidades] = useState<string[]>([]);
   const [asistencia, setAsistencia] = useState<Map<string, AsistenciaRow>>(new Map());
   const [selectedModule, setSelectedModule] = useState<number | "all">(1);
-  const [selectedRegion, setSelectedRegion] = useState<string>("all");
+  const [selectedRegion, setSelectedRegion] = useState<string>(allowedRegions?.length === 1 ? allowedRegions[0] : "all");
   const [selectedET, setSelectedET] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -255,7 +255,7 @@ export default function AdminAsistenciaTab({ allowedRegions }: { allowedRegions?
                 <SelectValue placeholder="Región" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas las regiones</SelectItem>
+                {!(allowedRegions?.length === 1) && <SelectItem value="all">Todas las regiones</SelectItem>}
                 {(allowedRegions?.length ? allRegiones.filter(r => allowedRegions.includes(r)) : allRegiones).map(r => (
                   <SelectItem key={r} value={r}>{r}</SelectItem>
                 ))}

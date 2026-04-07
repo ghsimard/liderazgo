@@ -487,7 +487,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                 <SelectValue placeholder="Región" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todas">Todas las regiones</SelectItem>
+                {!(allowedRegions?.length === 1) && <SelectItem value="todas">Todas las regiones</SelectItem>}
                 {(allowedRegions?.length ? allRegiones.filter(r => allowedRegions.includes(r.nombre)) : allRegiones).map((r) => (
                   <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
                 ))}
