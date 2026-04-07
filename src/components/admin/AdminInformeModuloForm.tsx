@@ -31,7 +31,7 @@ const EMPTY_SESIONES: SesionesProgramadas = {
 };
 const MODULES = [1, 2, 3, 4];
 
-export default function AdminInformeModuloForm() {
+export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegions?: string[] } = {}) {
   const [loading, setLoading] = useState(true);
   const [regiones, setRegiones] = useState<string[]>([]);
   const [entidades, setEntidades] = useState<string[]>([]);
@@ -48,7 +48,10 @@ export default function AdminInformeModuloForm() {
         .select("region, entidad_territorial")
         .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
       if (fichas) {
-        setRegiones([...new Set(fichas.map((f: any) => f.region).filter(Boolean))].sort() as string[]);
+        let allRegions = [...new Set(fichas.map((f: any) => f.region).filter(Boolean))].sort() as string[];
+        if (allowedRegions?.length) allRegions = allRegions.filter(r => allowedRegions.includes(r));
+        setRegiones(allRegions);
+        if (allRegions.length === 1) setSelectedRegion(allRegions[0]);
       }
       setLoading(false);
     })();

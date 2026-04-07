@@ -5,7 +5,7 @@ import AdminInformeModuloForm from "./AdminInformeModuloForm";
 import AdminInformeReportTab from "./AdminInformeReportTab";
 import AdminEvalIndividualTab from "./AdminEvalIndividualTab";
 
-export default function AdminInformeModuloTab({ isViewer = false }: { isViewer?: boolean }) {
+export default function AdminInformeModuloTab({ isViewer = false, allowedRegions }: { isViewer?: boolean; allowedRegions?: string[] }) {
   return (
     <Tabs defaultValue="asistencia">
       <TabsList className="hub-tabs mb-4 flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md rounded-lg">
@@ -25,24 +25,24 @@ export default function AdminInformeModuloTab({ isViewer = false }: { isViewer?:
 
       <TabsContent value="asistencia">
         <fieldset disabled={isViewer} className="contents">
-          <AdminAsistenciaTab />
+          <AdminAsistenciaTab allowedRegions={allowedRegions} />
         </fieldset>
       </TabsContent>
 
       <TabsContent value="informe">
         <fieldset disabled={isViewer} className="contents">
-          <AdminInformeModuloForm />
+          <AdminInformeModuloForm allowedRegions={allowedRegions} />
         </fieldset>
       </TabsContent>
 
       <TabsContent value="evaluacion">
         <fieldset disabled={isViewer} className="contents">
-          <AdminEvalIndividualTab />
+          <AdminEvalIndividualTab allowedRegions={allowedRegions} />
         </fieldset>
       </TabsContent>
 
       <TabsContent value="reportes">
-        <AdminInformeReportTab />
+        <AdminInformeReportTab allowedRegions={allowedRegions} />
       </TabsContent>
     </Tabs>
   );
