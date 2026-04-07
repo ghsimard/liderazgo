@@ -347,7 +347,7 @@ export default function AdminMelTab({ allowedRegions }: { allowedRegions?: strin
   const [viewMode, setViewMode] = useState<"individual" | "global">("individual");
 
   // Filters
-  const [selRegions, setSelRegions] = useState<string[]>([]);
+  const [selRegions, setSelRegions] = useState<string[]>(allowedRegions?.length === 1 ? [allowedRegions[0]] : []);
   const [selEntidades, setSelEntidades] = useState<string[]>([]);
   const [selInstituciones, setSelInstituciones] = useState<string[]>([]);
 

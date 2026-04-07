@@ -207,7 +207,7 @@ export default function AdminRubricasTab({ allowedRegions }: { allowedRegions?: 
                 <SelectValue placeholder="Todas las regiones" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas las regiones</SelectItem>
+                {!(allowedRegions?.length === 1) && <SelectItem value="all">Todas las regiones</SelectItem>}
                 {effectiveRegiones.map(r => (
                   <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
                 ))}

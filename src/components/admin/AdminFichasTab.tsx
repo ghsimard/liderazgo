@@ -55,7 +55,7 @@ export default function AdminFichasTab({ isViewer = false, allowedRegions }: { i
   const [filterData, setFilterData] = useState<FichaFilterData[]>([]);
 
   // Multi-select filter state
-  const [selRegions, setSelRegions] = useState<string[]>([]);
+  const [selRegions, setSelRegions] = useState<string[]>(allowedRegions?.length === 1 ? [allowedRegions[0]] : []);
   const [selEntidades, setSelEntidades] = useState<string[]>([]);
   const [selMunicipios, setSelMunicipios] = useState<string[]>([]);
   const [selInstituciones, setSelInstituciones] = useState<string[]>([]);

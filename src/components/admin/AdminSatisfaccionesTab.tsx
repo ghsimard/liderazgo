@@ -153,7 +153,7 @@ export default function AdminSatisfaccionesTab({ isViewer = false, allowedRegion
   const [loadingResponses, setLoadingResponses] = useState(false);
   const [filterType, setFilterType] = useState<string>("all");
   const [filterModule, setFilterModule] = useState<string>("all");
-  const [filterRegion, setFilterRegion] = useState<string>("all");
+  const [filterRegion, setFilterRegion] = useState<string>(allowedRegions?.length === 1 ? allowedRegions[0] : "all");
 
   // Names & institution cache: cedula -> { name, ie }
   const [namesMap, setNamesMap] = useState<Record<string, { name: string; ie: string }>>({});
