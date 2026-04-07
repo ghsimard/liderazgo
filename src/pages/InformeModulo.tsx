@@ -15,12 +15,31 @@ import { Label } from "@/components/ui/label";
 import { useAppImages } from "@/hooks/useAppImages";
 
 /* ── Helpers ─────────────────────────────────────────── */
-function parseJson<T>(val: unknown, fallback: T): T {
-  if (Array.isArray(val) || (val !== null && typeof val === "object")) return val as T;
-  if (typeof val === "string") {
-    try { return JSON.parse(val) as T; } catch { return fallback; }
+function parseJsonValue(val: unknown): unknown {
+  let current = val;
+
+  for (let i = 0; i < 2; i += 1) {
+    if (typeof current !== "string") break;
+    try {
+      current = JSON.parse(current);
+    } catch {
+      break;
+    }
   }
-  return fallback;
+
+  return current;
+}
+
+function parseJsonArray<T>(val: unknown, fallback: T[]): T[] {
+  const parsed = parseJsonValue(val);
+  return Array.isArray(parsed) ? parsed as T[] : fallback;
+}
+
+function parseJsonObject<T extends object>(val: unknown, fallback: T): T {
+  const parsed = parseJsonValue(val);
+  return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+    ? { ...fallback, ...(parsed as Partial<T>) }
+    : fallback;
 }
 
 /* ── Types ──────────────────────────────────────────── */
@@ -227,20 +246,20 @@ export default function InformeModulo() {
         fecha_inicio_interludio: row.fecha_inicio_interludio || "",
         fecha_fin_interludio: row.fecha_fin_interludio || "",
         aprendizajes_intensivo: row.aprendizajes_intensivo || "",
-        ajustes_actividades: parseJson<AjusteActividad[]>(row.ajustes_actividades, []),
+        ajustes_actividades: parseJsonArray<AjusteActividad>(row.ajustes_actividades, []),
         articulacion_intensivo: row.articulacion_intensivo || "",
-        sesiones_programadas: parseJson<SesionesProgramadas>(row.sesiones_programadas, { ...EMPTY_SESIONES }),
-        sesiones_realizadas: parseJson<SesionesProgramadas>(row.sesiones_realizadas, { ...EMPTY_SESIONES }),
+        sesiones_programadas: parseJsonObject<SesionesProgramadas>(row.sesiones_programadas, { ...EMPTY_SESIONES }),
+        sesiones_realizadas: parseJsonObject<SesionesProgramadas>(row.sesiones_realizadas, { ...EMPTY_SESIONES }),
         razones_diferencias: row.razones_diferencias || "",
         acompanamiento_descripcion: row.acompanamiento_descripcion || "",
         acompanamiento_no_cumplido: row.acompanamiento_no_cumplido || "",
-        acompanamiento_directivos: parseJson<AcompanamientoDirectivo[]>(row.acompanamiento_directivos, []),
-        estrategias: parseJson<Estrategia[]>(row.estrategias, [...DEFAULT_ESTRATEGIAS]),
+        acompanamiento_directivos: parseJsonArray<AcompanamientoDirectivo>(row.acompanamiento_directivos, []),
+        estrategias: parseJsonArray<Estrategia>(row.estrategias, [...DEFAULT_ESTRATEGIAS]),
         aprendizajes_interludio: row.aprendizajes_interludio || "",
         articulacion_interludio: row.articulacion_interludio || "",
         contexto_plan_sectorial: row.contexto_plan_sectorial || "",
         contexto_articulacion: row.contexto_articulacion || "",
-        novedades: parseJson<Novedad[]>(row.novedades, []),
+        novedades: parseJsonArray<Novedad>(row.novedades, []),
       });
       const { data: equipoRows } = await supabase.from("informe_modulo_equipo").select("*").eq("informe_id", row.id);
       setEquipo(equipoRows || []);
