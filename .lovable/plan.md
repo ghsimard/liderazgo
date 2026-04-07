@@ -1,35 +1,39 @@
 
 
-## Plan: Fix "invalid input syntax for type json" in Express DB proxy
+## Plan: Parser les champs JSONB renvoyés comme chaînes par le proxy Express
 
-### Problem
-On production (Render), saving an Informe de Módulo fails with "invalid input syntax for type json". The Express DB proxy (`server/routes/db.ts`) passes JavaScript objects directly as `pg` query parameters. The `node-pg` library does NOT auto-stringify objects — it calls `.toString()`, producing `[object Object]`, which PostgreSQL rejects as invalid JSON.
-
-This affects all jsonb columns: `ajustes_actividades`, `estrategias`, `novedades`, `sesiones_programadas`, `sesiones_realizadas`, `acompanamiento_directivos`.
+### Problème
+Sur production (Render), le proxy Express renvoie les colonnes JSONB comme des **chaînes JSON** au lieu d'objets JavaScript parsés. Le code fait un simple cast TypeScript (`as AjusteActividad[]`) qui ne parse rien — le résultat est une string, et `.map()` échoue.
 
 ### Solution
-In `server/routes/db.ts`, serialize any object/array values to JSON strings before passing them as `pg` parameters. This applies to both INSERT (line ~492) and UPDATE/PATCH (line ~526) code paths.
+Ajouter une fonction utilitaire `parseJson` et l'appliquer à tous les champs JSONB lors du chargement des données (lignes 221-234).
 
-### File modified
-`server/routes/db.ts`
+### Fichier modifié
+`src/pages/InformeModulo.tsx`
 
-### Technical detail
-Add a helper function:
+### Détail technique
+
+Ajouter un helper en haut du fichier :
 ```typescript
-function pgValue(val: any): any {
-  if (val !== null && typeof val === "object" && !(val instanceof Date)) {
-    return JSON.stringify(val);
+function parseJson<T>(val: unknown, fallback: T): T {
+  if (Array.isArray(val) || (val !== null && typeof val === "object")) return val as T;
+  if (typeof val === "string") {
+    try { return JSON.parse(val) as T; } catch { return fallback; }
   }
-  return val;
+  return fallback;
 }
 ```
 
-Apply it in:
-1. **INSERT path** (line 492): `const vals = cols.map((c) => pgValue(row[c]));`
-2. **PATCH path** (line 526): `params.push(pgValue(body[col]));`
+L'appliquer aux 5 champs JSONB (lignes 221-234) :
+- `ajustes_actividades` → `parseJson<AjusteActividad[]>(row.ajustes_actividades, [])`
+- `sesiones_programadas` → `parseJson<SesionesProgramadas>(row.sesiones_programadas, {...EMPTY_SESIONES})`
+- `sesiones_realizadas` → `parseJson<SesionesProgramadas>(row.sesiones_realizadas, {...EMPTY_SESIONES})`
+- `acompanamiento_directivos` → `parseJson<AcompanamientoDirectivo[]>(row.acompanamiento_directivos, [])`
+- `estrategias` → `parseJson<Estrategia[]>(row.estrategias, [...DEFAULT_ESTRATEGIAS])`
+- `novedades` → `parseJson<Novedad[]>(row.novedades, [])`
 
 ### Impact
-- Server-side only (`server/routes/db.ts`)
-- No migration needed
-- Requires redeployment on Render
+- Frontend uniquement
+- Aucune migration
+- Redéployer le **site statique** sur Render
 
