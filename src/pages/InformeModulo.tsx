@@ -14,6 +14,15 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { Label } from "@/components/ui/label";
 import { useAppImages } from "@/hooks/useAppImages";
 
+/* ── Helpers ─────────────────────────────────────────── */
+function parseJson<T>(val: unknown, fallback: T): T {
+  if (Array.isArray(val) || (val !== null && typeof val === "object")) return val as T;
+  if (typeof val === "string") {
+    try { return JSON.parse(val) as T; } catch { return fallback; }
+  }
+  return fallback;
+}
+
 /* ── Types ──────────────────────────────────────────── */
 
 interface EquipoMember { id?: string; nombre: string; rol: string }
@@ -218,20 +227,20 @@ export default function InformeModulo() {
         fecha_inicio_interludio: row.fecha_inicio_interludio || "",
         fecha_fin_interludio: row.fecha_fin_interludio || "",
         aprendizajes_intensivo: row.aprendizajes_intensivo || "",
-        ajustes_actividades: (row.ajustes_actividades as AjusteActividad[]) || [],
+        ajustes_actividades: parseJson<AjusteActividad[]>(row.ajustes_actividades, []),
         articulacion_intensivo: row.articulacion_intensivo || "",
-        sesiones_programadas: (row.sesiones_programadas as SesionesProgramadas) || { ...EMPTY_SESIONES },
-        sesiones_realizadas: (row.sesiones_realizadas as SesionesProgramadas) || { ...EMPTY_SESIONES },
+        sesiones_programadas: parseJson<SesionesProgramadas>(row.sesiones_programadas, { ...EMPTY_SESIONES }),
+        sesiones_realizadas: parseJson<SesionesProgramadas>(row.sesiones_realizadas, { ...EMPTY_SESIONES }),
         razones_diferencias: row.razones_diferencias || "",
         acompanamiento_descripcion: row.acompanamiento_descripcion || "",
         acompanamiento_no_cumplido: row.acompanamiento_no_cumplido || "",
-        acompanamiento_directivos: (row.acompanamiento_directivos as AcompanamientoDirectivo[]) || [],
-        estrategias: (row.estrategias as Estrategia[]) || [...DEFAULT_ESTRATEGIAS],
+        acompanamiento_directivos: parseJson<AcompanamientoDirectivo[]>(row.acompanamiento_directivos, []),
+        estrategias: parseJson<Estrategia[]>(row.estrategias, [...DEFAULT_ESTRATEGIAS]),
         aprendizajes_interludio: row.aprendizajes_interludio || "",
         articulacion_interludio: row.articulacion_interludio || "",
         contexto_plan_sectorial: row.contexto_plan_sectorial || "",
         contexto_articulacion: row.contexto_articulacion || "",
-        novedades: (row.novedades as Novedad[]) || [],
+        novedades: parseJson<Novedad[]>(row.novedades, []),
       });
       const { data: equipoRows } = await supabase.from("informe_modulo_equipo").select("*").eq("informe_id", row.id);
       setEquipo(equipoRows || []);
