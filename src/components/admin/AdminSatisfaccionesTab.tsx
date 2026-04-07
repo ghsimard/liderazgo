@@ -473,7 +473,7 @@ export default function AdminSatisfaccionesTab({ isViewer = false, allowedRegion
             <div className="space-y-1">
               <Label className="text-xs">Región</Label>
               <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} className="border rounded px-2 py-1 text-sm bg-background">
-                <option value="all">Todas</option>
+                {!(allowedRegions?.length === 1) && <option value="all">Todas</option>}
                 {(allowedRegions?.length ? regions.filter(r => allowedRegions.includes(r)) : regions).map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
