@@ -40,9 +40,9 @@ const RAZONES_INASISTENCIA = [
   "Otras",
 ];
 
-export default function AdminAsistenciaTab() {
+export default function AdminAsistenciaTab({ allowedRegions }: { allowedRegions?: string[] }) {
   const [directivos, setDirectivos] = useState<Directivo[]>([]);
-  const [regiones, setRegiones] = useState<string[]>([]);
+  const [allRegiones, setAllRegiones] = useState<string[]>([]);
   const [entidades, setEntidades] = useState<string[]>([]);
   const [asistencia, setAsistencia] = useState<Map<string, AsistenciaRow>>(new Map());
   const [selectedModule, setSelectedModule] = useState<number | "all">(1);
@@ -70,8 +70,9 @@ export default function AdminAsistenciaTab() {
       setDirectivos(data.filter(d => d.numero_cedula));
       const regs = [...new Set(data.map(d => d.region).filter(Boolean))] as string[];
       const ets = [...new Set(data.map(d => d.entidad_territorial).filter(Boolean))] as string[];
-      setRegiones(regs);
+      setAllRegiones(regs);
       setEntidades(ets);
+      if (allowedRegions?.length === 1) setSelectedRegion(allowedRegions[0]);
     }
     setLoading(false);
   };
@@ -255,7 +256,7 @@ export default function AdminAsistenciaTab() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas las regiones</SelectItem>
-                {regiones.map(r => (
+                {(allowedRegions?.length ? allRegiones.filter(r => allowedRegions.includes(r)) : allRegiones).map(r => (
                   <SelectItem key={r} value={r}>{r}</SelectItem>
                 ))}
               </SelectContent>
