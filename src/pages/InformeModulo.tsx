@@ -35,7 +35,7 @@ function parseJsonArray<T>(val: unknown, fallback: T[]): T[] {
   return Array.isArray(parsed) ? parsed as T[] : fallback;
 }
 
-function parseJsonObject<T extends Record<string, unknown>>(val: unknown, fallback: T): T {
+function parseJsonObject<T extends object>(val: unknown, fallback: T): T {
   const parsed = parseJsonValue(val);
   return parsed && typeof parsed === "object" && !Array.isArray(parsed)
     ? { ...fallback, ...(parsed as Partial<T>) }
