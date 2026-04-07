@@ -113,7 +113,7 @@ export default function OperadorPanel() {
       case "asistencia":
         return <AdminAsistenciaTab allowedRegions={allowedRegions} />;
       case "informe-modulo":
-        return <AdminInformeModuloTab />;
+        return <AdminInformeModuloTab allowedRegions={allowedRegions} />;
       case "rubricas":
         return <AdminRubricasTab allowedRegions={allowedRegions} />;
       case "encuesta360":

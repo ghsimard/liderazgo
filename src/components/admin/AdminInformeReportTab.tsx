@@ -20,7 +20,7 @@ import {
 
 const MODULES = [1, 2, 3, 4];
 
-export default function AdminInformeReportTab() {
+export default function AdminInformeReportTab({ allowedRegions }: { allowedRegions?: string[] } = {}) {
   const { toast } = useToast();
   const { images } = useAppImages();
 
@@ -41,7 +41,10 @@ export default function AdminInformeReportTab() {
   useEffect(() => {
     (async () => {
       const { data: regs } = await supabase.from("regiones").select("id, nombre, mostrar_logo_rlt, mostrar_logo_clt").order("nombre");
-      setRegiones(regs || []);
+      let effectiveRegs = regs || [];
+      if (allowedRegions?.length) effectiveRegs = effectiveRegs.filter(r => allowedRegions.includes(r.nombre));
+      setRegiones(effectiveRegs);
+      if (effectiveRegs.length === 1) setSelectedRegion(effectiveRegs[0].nombre);
       setLoading(false);
     })();
   }, []);
