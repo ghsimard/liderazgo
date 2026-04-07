@@ -1,26 +1,35 @@
 
 
-## Plan: Charger les Entidades Territoriales depuis les tables géographiques
+## Plan: Fix "invalid input syntax for type json" in Express DB proxy
 
-### Problème
-Le dropdown **Entidad Territorial** dans `AdminInformeModuloForm.tsx` (lignes 65-77) charge ses options depuis `fichas_rlt`. Si aucun directivo n'existe pour la région sélectionnée dans cette table, le dropdown reste vide — même si des données `informe_modulo` existent pour cette région/ET.
+### Problem
+On production (Render), saving an Informe de Módulo fails with "invalid input syntax for type json". The Express DB proxy (`server/routes/db.ts`) passes JavaScript objects directly as `pg` query parameters. The `node-pg` library does NOT auto-stringify objects — it calls `.toString()`, producing `[object Object]`, which PostgreSQL rejects as invalid JSON.
+
+This affects all jsonb columns: `ajustes_actividades`, `estrategias`, `novedades`, `sesiones_programadas`, `sesiones_realizadas`, `acompanamiento_directivos`.
 
 ### Solution
-Remplacer la requête `fichas_rlt` du useEffect (lignes 65-77) par une requête sur les tables géographiques : `regiones` → `region_entidades` → `entidades_territoriales`.
+In `server/routes/db.ts`, serialize any object/array values to JSON strings before passing them as `pg` parameters. This applies to both INSERT (line ~492) and UPDATE/PATCH (line ~526) code paths.
 
-### Fichier modifié
-`src/components/admin/AdminInformeModuloForm.tsx`
+### File modified
+`server/routes/db.ts`
 
-### Détail technique
-Dans le `useEffect` déclenché par `selectedRegion` (ligne 65) :
-1. Chercher l'ID de la région dans `regiones` via `nombre = selectedRegion`
-2. Lire `region_entidades` filtrée par `region_id`
-3. Lire `entidades_territoriales` avec les IDs obtenus
-4. Peupler le dropdown ET avec ces noms
-5. Si une seule ET → la pré-sélectionner automatiquement
+### Technical detail
+Add a helper function:
+```typescript
+function pgValue(val: any): any {
+  if (val !== null && typeof val === "object" && !(val instanceof Date)) {
+    return JSON.stringify(val);
+  }
+  return val;
+}
+```
+
+Apply it in:
+1. **INSERT path** (line 492): `const vals = cols.map((c) => pgValue(row[c]));`
+2. **PATCH path** (line 526): `params.push(pgValue(body[col]));`
 
 ### Impact
-- Frontend uniquement
-- Aucune migration
-- 🖥️ Redéployer le site statique sur Render
+- Server-side only (`server/routes/db.ts`)
+- No migration needed
+- Requires redeployment on Render
 
