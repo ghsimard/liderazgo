@@ -15,12 +15,31 @@ import { Label } from "@/components/ui/label";
 import { useAppImages } from "@/hooks/useAppImages";
 
 /* ── Helpers ─────────────────────────────────────────── */
-function parseJson<T>(val: unknown, fallback: T): T {
-  if (Array.isArray(val) || (val !== null && typeof val === "object")) return val as T;
-  if (typeof val === "string") {
-    try { return JSON.parse(val) as T; } catch { return fallback; }
+function parseJsonValue(val: unknown): unknown {
+  let current = val;
+
+  for (let i = 0; i < 2; i += 1) {
+    if (typeof current !== "string") break;
+    try {
+      current = JSON.parse(current);
+    } catch {
+      break;
+    }
   }
-  return fallback;
+
+  return current;
+}
+
+function parseJsonArray<T>(val: unknown, fallback: T[]): T[] {
+  const parsed = parseJsonValue(val);
+  return Array.isArray(parsed) ? parsed as T[] : fallback;
+}
+
+function parseJsonObject<T extends Record<string, unknown>>(val: unknown, fallback: T): T {
+  const parsed = parseJsonValue(val);
+  return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+    ? { ...fallback, ...(parsed as Partial<T>) }
+    : fallback;
 }
 
 /* ── Types ──────────────────────────────────────────── */
