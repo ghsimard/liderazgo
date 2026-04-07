@@ -413,7 +413,7 @@ export default function AdminSatisfaccionesTab({ isViewer = false, allowedRegion
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {regions.map((region) => (
+                      {(allowedRegions?.length ? regions.filter(r => allowedRegions.includes(r)) : regions).map((region) => (
                         <TableRow key={region}>
                           <TableCell className="font-medium text-sm">{region}</TableCell>
                           {MODULES.map((m) => {
@@ -474,7 +474,7 @@ export default function AdminSatisfaccionesTab({ isViewer = false, allowedRegion
               <Label className="text-xs">Región</Label>
               <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} className="border rounded px-2 py-1 text-sm bg-background">
                 <option value="all">Todas</option>
-                {regions.map((r) => <option key={r} value={r}>{r}</option>)}
+                {(allowedRegions?.length ? regions.filter(r => allowedRegions.includes(r)) : regions).map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             </div>
