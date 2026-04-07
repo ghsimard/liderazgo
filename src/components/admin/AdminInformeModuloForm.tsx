@@ -172,7 +172,7 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
                 <div><Label className="text-xs text-muted-foreground">Fecha fin</Label><Input value={data.fecha_fin_intensivo || "—"} disabled className="mt-1" /></div>
               </div>
               <ReadOnlyField label="2.1. Aprendizajes del intensivo" value={data.aprendizajes_intensivo} />
-              {(data.ajustes_actividades as AjusteActividad[])?.length > 0 && (
+              {parseJson<AjusteActividad[]>(data.ajustes_actividades, [])?.length > 0 && (
                 <div>
                   <Label className="text-xs font-medium">2.2. Ajustes a las actividades</Label>
                   <Table className="mt-2">
@@ -181,7 +181,7 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
                       <TableHead className="text-xs">Desaciertos</TableHead><TableHead className="text-xs">Ajustes</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
-                      {(data.ajustes_actividades as AjusteActividad[]).map((a, i) => (
+                      {parseJson<AjusteActividad[]>(data.ajustes_actividades, []).map((a, i) => (
                         <TableRow key={i}><TableCell className="text-xs">{a.actividad}</TableCell><TableCell className="text-xs">{a.aciertos}</TableCell><TableCell className="text-xs">{a.desaciertos}</TableCell><TableCell className="text-xs">{a.ajustes}</TableCell></TableRow>
                       ))}
                     </TableBody>
@@ -218,7 +218,7 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
                     </TableRow></TableHeader>
                     <TableBody>
                       {(["sesiones_programadas", "sesiones_realizadas"] as const).map(key => {
-                        const s = (data[key] as SesionesProgramadas) || EMPTY_SESIONES;
+                        const s = parseJson<SesionesProgramadas>(data[key], EMPTY_SESIONES);
                         return (
                           <TableRow key={key}>
                             <TableCell className="text-xs font-medium">{key === "sesiones_programadas" ? "Programadas" : "Realizadas"}</TableCell>
@@ -240,7 +240,7 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
               <ReadOnlyField label="Razones de las diferencias" value={data.razones_diferencias} />
               <ReadOnlyField label="3.2. Acompañamiento — Descripción" value={data.acompanamiento_descripcion} />
               <ReadOnlyField label="Objetivos no cumplidos" value={data.acompanamiento_no_cumplido} />
-              {(data.acompanamiento_directivos as AcompanamientoDirectivo[])?.length > 0 && (
+              {parseJson<AcompanamientoDirectivo[]>(data.acompanamiento_directivos, [])?.length > 0 && (
                 <div>
                   <Label className="text-xs text-muted-foreground">Registro por directivo</Label>
                   <div className="overflow-x-auto mt-1">
@@ -257,7 +257,7 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
                         <TableHead className="text-[10px]">Obs.</TableHead>
                       </TableRow></TableHeader>
                       <TableBody>
-                        {(data.acompanamiento_directivos as AcompanamientoDirectivo[]).map((ad, i) => (
+                        {parseJson<AcompanamientoDirectivo[]>(data.acompanamiento_directivos, []).map((ad, i) => (
                           <TableRow key={i}>
                             <TableCell className="text-xs">{ad.nombre}</TableCell>
                             <TableCell className="text-xs text-center">{ad.coaching_individual}</TableCell>
@@ -275,7 +275,7 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
                   </div>
                 </div>
               )}
-              {(data.estrategias as Estrategia[])?.length > 0 && (
+              {parseJson<Estrategia[]>(data.estrategias, [])?.length > 0 && (
                 <div>
                   <Label className="text-xs text-muted-foreground">Estrategias</Label>
                   <Table className="mt-1">
@@ -283,7 +283,7 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
                       <TableHead className="text-xs">Estrategia</TableHead><TableHead className="text-xs">Fortalezas</TableHead><TableHead className="text-xs">Dificultades</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
-                      {(data.estrategias as Estrategia[]).map((e, i) => (
+                      {parseJson<Estrategia[]>(data.estrategias, []).map((e, i) => (
                         <TableRow key={i}><TableCell className="text-xs font-medium">{e.nombre}</TableCell><TableCell className="text-xs">{e.fortalezas || "—"}</TableCell><TableCell className="text-xs">{e.dificultades || "—"}</TableCell></TableRow>
                       ))}
                     </TableBody>
@@ -305,7 +305,7 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
           </Card>
 
           {/* 5. NOVEDADES */}
-          {(data.novedades as Novedad[])?.length > 0 && (
+          {parseJson<Novedad[]>(data.novedades, [])?.length > 0 && (
             <Card>
               <CardHeader><CardTitle className="text-sm">5. Novedades</CardTitle></CardHeader>
               <CardContent>
@@ -315,7 +315,7 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
                     <TableHead className="text-xs">Novedad</TableHead><TableHead className="text-xs">Fecha</TableHead><TableHead className="text-xs">Soporte</TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
-                    {(data.novedades as Novedad[]).map((n, i) => (
+                    {parseJson<Novedad[]>(data.novedades, []).map((n, i) => (
                       <TableRow key={i}><TableCell className="text-xs">{n.nombre}</TableCell><TableCell className="text-xs">{n.institucion}</TableCell><TableCell className="text-xs">{n.novedad}</TableCell><TableCell className="text-xs">{n.fecha}</TableCell><TableCell className="text-xs">{n.soporte}</TableCell></TableRow>
                     ))}
                   </TableBody>
