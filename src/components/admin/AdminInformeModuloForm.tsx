@@ -65,13 +65,19 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
   useEffect(() => {
     if (!selectedRegion) { setEntidades([]); return; }
     (async () => {
-      const { data: fichas } = await supabase
-        .from("fichas_rlt")
-        .select("entidad_territorial")
-        .eq("region", selectedRegion)
-        .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
-      if (fichas) {
-        setEntidades([...new Set(fichas.map((f: any) => f.entidad_territorial).filter(Boolean))].sort() as string[]);
+      const { data: regRow } = await supabase
+        .from("regiones").select("id").eq("nombre", selectedRegion).limit(1).single();
+      if (!regRow) { setEntidades([]); return; }
+      const { data: reLinks } = await supabase
+        .from("region_entidades").select("entidad_territorial_id").eq("region_id", regRow.id);
+      if (!reLinks || reLinks.length === 0) { setEntidades([]); return; }
+      const etIds = reLinks.map((r: any) => r.entidad_territorial_id);
+      const { data: ets } = await supabase
+        .from("entidades_territoriales").select("nombre").in("id", etIds);
+      if (ets) {
+        const names = ets.map((e: any) => e.nombre).sort() as string[];
+        setEntidades(names);
+        if (names.length === 1) setSelectedET(names[0]);
       }
     })();
   }, [selectedRegion]);
