@@ -87,7 +87,7 @@ export default function AdminRubricasTab() {
     if (its) setItems(its);
     if (evals) setEvaluaciones(evals);
     if (segs) setSeguimientos(segs);
-    if (regs) setRegiones(regs);
+    if (regs) setAllRegiones(regs);
 
     // Build name map: asignaciones first (fallback), then fichas_rlt (source of truth)
     const map: Record<string, string> = {};
@@ -207,7 +207,7 @@ export default function AdminRubricasTab() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas las regiones</SelectItem>
-                {regiones.map(r => (
+                {(allowedRegions?.length ? allRegiones.filter(r => allowedRegions.includes(r.nombre)) : allRegiones).map(r => (
                   <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
                 ))}
               </SelectContent>
