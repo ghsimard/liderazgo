@@ -71,6 +71,7 @@ const PUBLIC_INSERT_TABLES = new Set([
   "encuestas_ambiente_escolar",
   "satisfaccion_responses",
   "encuesta_360_visibility",
+  "rubrica_asignaciones",
 ]);
 
 // Tables that allow public updates (no auth required for PATCH)
