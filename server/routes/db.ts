@@ -134,6 +134,17 @@ const ALLOWED_TABLES = new Set([
 /** Validate column/table names to prevent SQL injection via identifiers */
 const VALID_IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
+/** Serialize objects/arrays to JSON strings for pg parameters */
+function pgValue(val: any): any {
+  if (val !== null && typeof val === "object" && !(val instanceof Date) && !Array.isArray(val)) {
+    return JSON.stringify(val);
+  }
+  if (Array.isArray(val) && val.length > 0 && typeof val[0] === "object") {
+    return JSON.stringify(val);
+  }
+  return val;
+}
+
 function sanitizeIdentifier(name: string): string {
   if (!VALID_IDENTIFIER.test(name)) {
     throw new Error(`Invalid identifier: "${name}"`);
@@ -489,7 +500,7 @@ router.post("/:table", async (req: Request, res: Response) => {
       const insertedRows: any[] = [];
 
       for (const row of rows) {
-        const vals = cols.map((c) => row[c]);
+        const vals = cols.map((c) => pgValue(row[c]));
         const placeholders = cols.map((_, i) => `$${i + 1}`);
         let sql = `INSERT INTO ${sanitizeIdentifier(table)} (${cols.map(c => sanitizeIdentifier(c)).join(",")}) VALUES (${placeholders.join(",")})`;
 
@@ -523,7 +534,7 @@ router.post("/:table", async (req: Request, res: Response) => {
 
       const params: any[] = [];
       const setParts = setCols.map((col) => {
-        params.push(body[col]);
+        params.push(pgValue(body[col]));
         return `${sanitizeIdentifier(col)} = $${params.length}`;
       });
 
