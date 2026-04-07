@@ -70,9 +70,11 @@ export default function AdminAsistenciaTab({ allowedRegions }: { allowedRegions?
       setDirectivos(data.filter(d => d.numero_cedula));
       const regs = [...new Set(data.map(d => d.region).filter(Boolean))] as string[];
       const ets = [...new Set(data.map(d => d.entidad_territorial).filter(Boolean))] as string[];
-      setAllRegiones(regs);
+      // If allowedRegions is set, use it as source; otherwise use data-derived regions
+      const effectiveRegs = allowedRegions?.length ? allowedRegions.sort() : regs;
+      setAllRegiones(effectiveRegs);
       setEntidades(ets);
-      if (allowedRegions?.length === 1) setSelectedRegion(allowedRegions[0]);
+      if (effectiveRegs.length === 1) setSelectedRegion(effectiveRegs[0]);
     }
     setLoading(false);
   };
@@ -256,7 +258,7 @@ export default function AdminAsistenciaTab({ allowedRegions }: { allowedRegions?
               </SelectTrigger>
               <SelectContent>
                 {!(allowedRegions?.length === 1) && <SelectItem value="all">Todas las regiones</SelectItem>}
-                {(allowedRegions?.length ? allRegiones.filter(r => allowedRegions.includes(r)) : allRegiones).map(r => (
+                {allRegiones.map(r => (
                   <SelectItem key={r} value={r}>{r}</SelectItem>
                 ))}
               </SelectContent>

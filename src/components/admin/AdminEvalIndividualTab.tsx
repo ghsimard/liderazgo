@@ -33,15 +33,19 @@ export default function AdminEvalIndividualTab({ allowedRegions }: { allowedRegi
 
   useEffect(() => {
     (async () => {
-      const { data: fichas } = await supabase
-        .from("fichas_rlt")
-        .select("region")
-        .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
-      if (fichas) {
-        let allRegions = [...new Set(fichas.map((f: any) => f.region).filter(Boolean))].sort() as string[];
-        if (allowedRegions?.length) allRegions = allRegions.filter(r => allowedRegions.includes(r));
-        setRegiones(allRegions);
-        if (allRegions.length === 1) setSelectedRegion(allRegions[0]);
+      if (allowedRegions?.length) {
+        setRegiones([...allowedRegions].sort());
+        if (allowedRegions.length === 1) setSelectedRegion(allowedRegions[0]);
+      } else {
+        const { data: fichas } = await supabase
+          .from("fichas_rlt")
+          .select("region")
+          .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+        if (fichas) {
+          const allRegions = [...new Set(fichas.map((f: any) => f.region).filter(Boolean))].sort() as string[];
+          setRegiones(allRegions);
+          if (allRegions.length === 1) setSelectedRegion(allRegions[0]);
+        }
       }
       setLoading(false);
     })();
