@@ -1,43 +1,61 @@
 
+### Diagnostic
 
-## Plan: Masquer "Todas las regiones" et pré-sélectionner la région unique
+Oui: le problème ne vient pas de la permission admin, mais de la source utilisée pour remplir le dropdown.
 
-### Problème
-Quand un opérateur n'a qu'une seule région autorisée, le dropdown affiche un champ vide avec "Todas las regiones" dans la liste. Il devrait voir uniquement sa région, pré-sélectionnée.
+Pour l’opérateur `88888888`, la permission lue est bien `Quibdó`.  
+Mais dans `AdminAsistenciaTab.tsx`, la liste des régions est construite depuis `fichas_rlt` :
 
-### Solution
+- `loadDirectivos()` lit les directivos dans `fichas_rlt`
+- puis fabrique `allRegiones` à partir des régions réellement présentes dans ces fiches
+- or, dans les données actuelles, `fichas_rlt` ne retourne que `Oriente`
+- donc `Quibdó` n’existe pas dans les options du `Select`
 
-Deux corrections dans chaque composant utilisant `allowedRegions` :
+Résultat:
+- `selectedRegion` vaut bien `Quibdó`
+- mais comme aucun `<SelectItem value="Quibdó" />` n’est rendu, le composant affiche un champ vide
+- en ouvrant le dropdown, on ne voit pas `Quibdó`, seulement les options issues des données existantes
 
-1. **Masquer l'option "Todas las regiones"** quand `allowedRegions?.length === 1`
-2. **S'assurer que la région est pré-sélectionnée** dès l'initialisation
+Ce n’est donc pas un problème d’accent ni de permission: c’est un problème de peuplement du dropdown.
 
-### Fichiers modifiés (7 composants)
+### Plan de correction
 
-| Composant | Correction |
-|---|---|
-| `AdminAsistenciaTab` | Cacher `<SelectItem value="all">` si `allowedRegions?.length === 1` ; initialiser `selectedRegion` avec `allowedRegions[0]` si length === 1 |
-| `AdminRubricasTab` | Idem (déjà initialisé correctement, juste masquer l'option "all") |
-| `AdminEncuestas360Tab` | Idem |
-| `AdminFichasTab` | MultiSelect — si 1 seule région, pré-sélectionner `selRegions` |
-| `AdminAmbienteMonitorTab` | Cacher option "all" + auto-select |
-| `AdminSatisfaccionesTab` | Idem selon le type de Select utilisé |
-| `AdminMelTab` | MultiSelect — pré-sélectionner si 1 seule région |
-| `AdminInformeModuloForm` | Déjà géré, vérifier cohérence |
-| `AdminEvalIndividualTab` | Déjà géré, vérifier cohérence |
-| `AdminInformeReportTab` | Vérifier cohérence |
+1. **Corriger `AdminAsistenciaTab.tsx`**
+   - ne plus dépendre uniquement de `fichas_rlt` pour alimenter la liste des régions
+   - si `allowedRegions` existe, utiliser cette liste comme source d’options du dropdown
+   - conserver le filtrage des directivos par région pour le tableau
+   - si la région autorisée n’a encore aucun directivo, afficher quand même `Quibdó` dans le dropdown, avec tableau vide / 0 résultat
 
-### Pattern de correction (Select simple)
-```tsx
-{!(allowedRegions?.length === 1) && (
-  <SelectItem value="all">Todas las regiones</SelectItem>
-)}
-```
+2. **Appliquer le même correctif aux autres sous-onglets du module**
+   - `AdminInformeModuloForm.tsx`
+   - `AdminEvalIndividualTab.tsx`
+   
+   Ces composants construisent aussi leurs régions depuis `fichas_rlt`, donc ils peuvent produire le même bug pour une région permise sans données.
 
-### Pattern de correction (MultiSelect)
-Initialiser `selRegions` avec `allowedRegions` quand `length === 1`.
+3. **Ne pas toucher `AdminInformeReportTab.tsx`**
+   - lui charge déjà les régions depuis la table `regiones`
+   - il est donc sur la bonne approche
+
+### Résultat attendu
+
+Pour un opérateur ayant uniquement la permission `Quibdó` :
+
+- le dropdown Région affiche directement `Quibdó`
+- aucune autre région comme `Oriente` n’apparaît
+- s’il n’existe aucun directivo dans `Quibdó`, l’écran montre simplement **aucune donnée** au lieu d’un dropdown vide
+
+### Détails techniques
+
+Pattern à appliquer dans les composants concernés :
+
+- calculer une liste `effectiveRegions`
+  - `allowedRegions` si elle existe
+  - sinon les régions issues des données
+- rendre le `Select` depuis `effectiveRegions`
+- pré-sélectionner automatiquement la région unique si `effectiveRegions.length === 1`
 
 ### Impact
-- Aucune migration
-- L'admin continue de voir "Todas las regiones" (car `allowedRegions` est undefined/vide pour l'admin)
 
+- uniquement frontend
+- aucune migration base de données
+- aucune mise à jour Render spécifique autre que redéployer le code corrigé
