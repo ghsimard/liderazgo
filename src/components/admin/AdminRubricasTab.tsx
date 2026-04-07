@@ -53,7 +53,7 @@ const NIVEL_COLORS: Record<string, string> = {
   sin_evidencia: "bg-red-100 text-red-800",
 };
 
-export default function AdminRubricasTab() {
+export default function AdminRubricasTab({ allowedRegions }: { allowedRegions?: string[] } = {}) {
   const { toast } = useToast();
   const [modules, setModules] = useState<RubricaModule[]>([]);
   const [items, setItems] = useState<RubricaItem[]>([]);
@@ -65,8 +65,9 @@ export default function AdminRubricasTab() {
   const [cedulaToName, setCedulaToName] = useState<Record<string, string>>({});
   const [regiones, setRegiones] = useState<{ id: string; nombre: string }[]>([]);
   const [cedulaToRegion, setCedulaToRegion] = useState<Record<string, string>>({});
-  const [selectedRegion, setSelectedRegion] = useState<string>("all");
-  const [deletingAutoeval, setDeletingAutoeval] = useState<string | null>(null); // module_id being deleted
+  const [selectedRegion, setSelectedRegion] = useState<string>(allowedRegions?.length === 1 ? allowedRegions[0] : "all");
+  const [deletingAutoeval, setDeletingAutoeval] = useState<string | null>(null);
+  const effectiveRegiones = allowedRegions?.length ? regiones.filter(r => allowedRegions.includes(r.nombre)) : regiones;
 
   useEffect(() => {
     loadData();
@@ -207,7 +208,7 @@ export default function AdminRubricasTab() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas las regiones</SelectItem>
-                {(allowedRegions?.length ? allRegiones.filter(r => allowedRegions.includes(r.nombre)) : allRegiones).map(r => (
+                {effectiveRegiones.map(r => (
                   <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
                 ))}
               </SelectContent>

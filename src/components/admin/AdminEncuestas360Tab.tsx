@@ -376,7 +376,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {regiones.map(reg => (
+                    {(allowedRegions?.length ? allRegiones.filter(r => allowedRegions.includes(r.nombre)) : allRegiones).map(reg => (
                       <TableRow key={reg.id}>
                         <TableCell className="text-sm font-medium">{reg.nombre}</TableCell>
                         <TableCell className="text-center">
@@ -488,7 +488,7 @@ export default function AdminEncuestas360Tab({ fase = "inicial", isViewer = fals
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas las regiones</SelectItem>
-                {regiones.map((r) => (
+                {(allowedRegions?.length ? allRegiones.filter(r => allowedRegions.includes(r.nombre)) : allRegiones).map((r) => (
                   <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
                 ))}
               </SelectContent>
