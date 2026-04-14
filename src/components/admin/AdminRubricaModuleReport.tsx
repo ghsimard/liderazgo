@@ -98,12 +98,14 @@ export default function AdminRubricaModuleReport({ allowedRegions }: { allowedRe
 
   const loadInitialData = async () => {
     setLoading(true);
-    const [{ data: mods }, { data: its }, { data: asigs }, { data: evalores }, { data: subDates }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: asigs }, { data: evalores }, { data: subDates }, { data: fichas }, { data: regs }] = await Promise.all([
       supabase.from("rubrica_modules").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_asignaciones").select("directivo_cedula, directivo_nombre, institucion, evaluador_id"),
       supabase.from("rubrica_evaluadores").select("id, nombre"),
       supabase.from("rubrica_submission_dates").select("directivo_cedula, module_number, submission_type"),
+      supabase.from("fichas_rlt").select("numero_cedula, region"),
+      supabase.from("regiones").select("id, nombre").order("nombre"),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
