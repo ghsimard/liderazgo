@@ -282,14 +282,27 @@ export default function AdminRubricaModuleReport({ allowedRegions }: { allowedRe
         <Card className="lg:col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Directivos</CardTitle>
-            <div className="flex items-center gap-2 mt-2">
-              <Search className="w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="h-8 text-xs"
-              />
+            <div className="space-y-2 mt-2">
+              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Todas las regiones" />
+                </SelectTrigger>
+                <SelectContent>
+                  {!(allowedRegions?.length === 1) && <SelectItem value="all">Todas las regiones</SelectItem>}
+                  {effectiveRegiones.map(r => (
+                    <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-1 max-h-[500px] overflow-y-auto">
