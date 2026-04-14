@@ -1,42 +1,36 @@
 
-# Plan : Restructurer le PDF de valorisation en 3 scénarios
 
-## Contexte financier calculé
-- **Valeur totale application** : ~$181.818.182 COP (~$43.290 USD au taux 4.200)
-- **Hébergement mensuel** : ~$100 USD/mois (DB, email, domaine, API, app web)
-- **Modèle licence par usager** : 100 utilisateurs/an × 5 ans = 500 user-years → ~$87 USD/usager/an → ~$7 USD/usager/mois
+# Plan : Montants en COP uniquement + Scénario 2 "on demand"
 
-## Structure du nouveau PDF (6 pages)
+## Changements requis dans `/tmp/gen_valorisation_final.py`
 
-### Page 1 — Méthodologie (existante, conservée)
-Explication du modèle LOC proportionnel, sans changement.
+### 1. Supprimer toutes les références USD
+- Retirer `fmt_usd()` et `TOTAL_USD`
+- Convertir tous les montants en COP (taux $4.200 COP = $1 USD)
+- Infrastructure : ~$420.000 COP/mes (au lieu de $100 USD)
+- Tarifa de referencia : uniquement "$2.466 COP/LOC"
 
-### Page 2 — Décomposition LOC + Valorisation (pages 2-3 actuelles fusionnées)
-Tableau LOC et tableau de valeurs par hub, plus compact.
+### 2. Scénario 2 — Licence par usager "on demand"
+Reformuler : pas d'amortissement sur 5 ans, mais un **prix par usager actif par mois**, facturé à la demande.
 
-### Page 3 — Scénario 1 : Licence perpétuelle
-- Prix unique = valeur totale de l'application
-- **Inclus** : code source complet, 1 an de support technique
-- **Exclus** : hébergement DB, email transactionnel, nom de domaine, serveur web/API
-- **Coûts récurrents** : ~$100 USD/mois pour l'infrastructure (variable selon utilisateurs, trafic, volume de données)
-- Pas de nouveaux développements inclus
+**Calcul :**
+- Valeur totale : $181.818.182 COP
+- Amortissement cible : 500 user-years → **$363.636 COP/usager/an** → **~$30.303 COP/usager/mes**
+- Présentation simplifiée : **$30.000 COP/usuario/mes** (arrondi)
 
-### Page 4 — Scénario 2 : Licence par usager (SaaS)
-- **Définition licence** : 1 compte actif = directivo, admin, coach, operador ou evaluador
-- **Objectif** : amortir la valeur totale en 5 ans avec ~100 utilisateurs/an
-- **Calcul** : ~$87 USD/usager/an (~$7 USD/usager/mois)
-- Tableau de projection sur 5 ans montrant revenus cumulés
-- Note : hébergement (~$100 USD/mois) inclus dans le prix ou facturé séparément selon le modèle
+**Contenu page 4 :**
+- Prix affiché : ~$30.000 COP/usuario/mes
+- Définition licence (directivo, admin, coach, operador, evaluador)
+- Tableau de projection conservé mais en COP
+- "On demand" = facturation mensuelle selon utilisateurs réels
 
-### Page 5 — Scénario 3 (à définir)
-Le troisième scénario n'a pas été précisé. **Question : quel serait le 3e scénario ?** Options possibles :
-- Licence annuelle (location sans transfert de code)
-- Modèle hybride (licence + pourcentage par usager)
-- Développement sur mesure (facturation horaire)
+### 3. Scénario 1 — Montants en COP uniquement
+- Prix affiché : $181.818.182 COP (sans "≈ $43,290 USD")
+- Table infrastructure convertie en COP/mes
 
-### Page 6 — Diagramme de dépendances entre hubs (existant, conservé)
+### 4. Scénario 3 — Montants en COP uniquement  
+- Cuota mensuelle : ~$5.050.505 COP/mes (36 cuotas)
+- Per-user : ~$21.000 COP/usuario/mes
 
-## Implémentation technique
-- Réécriture de `/tmp/gen_valorisation_v9.py` pour ajouter les pages scénarios
-- Régénération du titre via le script existant
-- QA visuelle page par page via `pdftoppm`
+### 5. Régénération + QA visuelle des 6 pages
+
