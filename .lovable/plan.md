@@ -1,38 +1,22 @@
 
 
-## Plan: Générer un PDF de valorisation de l'application
+## Plan : Ajouter le hub Certification au PDF de valorisation
 
-### Objectif
-Créer un document PDF professionnel contenant :
-1. Tableau de ventilation par hub (%, heures, complexité)
-2. Graphe de dépendances entre hubs (diagramme visuel)
-3. Scénarios de packages avec prix par combinaison
+### Modifications
+Régénérer le script Python `/tmp/gen_valorisation_es.py` avec :
 
-### Approche technique
-- Script Python avec **reportlab** (Platypus pour la mise en page)
-- Graphe de dépendances dessiné via canvas (boîtes + flèches)
-- Tableau de prix paramétré avec un taux horaire configurable (75 USD/h par défaut)
-- Output : `/mnt/documents/Valorisation_Application_RLT.pdf`
+1. **Nouveau hub "Certificaciones"** : ~40h, ajouté au tableau de ventilation (Page 2)
+2. **Total recalculé** : ~1,960h (au lieu de 1,920h), prix total ajusté en COP
+3. **Grafo de dependencias** (Page 3) : Ajouter une boîte "Certificaciones" connectée à "Ficha"
+4. **Paquetes** (Page 4) : Intégrer Certificaciones dans les packs pertinents (Pack Complet au minimum, possiblement Pack Évaluation Complète)
+5. **Pourcentages recalculés** pour tous les hubs
 
-### Contenu du PDF
+### Données du hub
+- Hub : Certificaciones
+- Heures : 40h
+- % du total : ~2%
+- Prix : 40 × 315,000 = $12,600,000 COP
 
-**Page 1 — Couverture**
-- Titre, date, mention "Document confidentiel"
-
-**Page 2 — Ventilation par Hub**
-- Tableau : Hub | Lignes de code | Heures estimées | % du total | Complexité
-
-**Page 3 — Graphe de dépendances**
-- Diagramme visuel montrant les relations entre hubs (Ficha comme racine, flèches vers 360, Rúbricas, etc.)
-
-**Page 4 — Scénarios de packages**
-- 6 packs avec composition, heures cumulées, % et prix
-- Tableau comparatif
-
-**Page 5 — Notes méthodologiques**
-- Base de calcul, multiplicateurs de complexité, disclaimer
-
-### Fichiers
-- Script temporaire : `/tmp/gen_valorisation.py`
-- Output : `/mnt/documents/Valorisation_Application_RLT.pdf`
+### Output
+- Fichier : `/mnt/documents/Valoracion_Aplicacion_RLT.pdf` (remplace l'existant)
 
