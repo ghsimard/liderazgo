@@ -277,33 +277,37 @@ export default function AdminRubricaModuleReport({ allowedRegions }: { allowedRe
         Seleccione un directivo y un módulo para consultar el informe detallado de rúbrica.
       </p>
 
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex-1 flex items-center gap-2 min-w-[200px]">
+          <Search className="w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por cédula o nombre…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
+        <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Todas las regiones" />
+          </SelectTrigger>
+          <SelectContent>
+            {!(allowedRegions?.length === 1) && <SelectItem value="all">Todas las regiones</SelectItem>}
+            {effectiveRegiones.map(r => (
+              <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Badge variant="secondary">{filteredAsignaciones.length} directivos</Badge>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: Directivo list */}
         <Card className="lg:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Directivos ({filteredAsignaciones.length})</CardTitle>
-            <div className="space-y-2 mt-2">
-              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Todas las regiones" />
-                </SelectTrigger>
-                <SelectContent>
-                  {!(allowedRegions?.length === 1) && <SelectItem value="all">Todas las regiones</SelectItem>}
-                  {effectiveRegiones.map(r => (
-                    <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex items-center gap-2">
-                <Search className="w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar…"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="h-8 text-xs"
-                />
-              </div>
-            </div>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Users className="w-4 h-4" /> Directivos
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1 max-h-[500px] overflow-y-auto">
             {filteredAsignaciones.length === 0 ? (
