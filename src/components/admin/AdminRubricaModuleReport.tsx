@@ -68,7 +68,7 @@ const NIVEL_LABELS: Record<string, string> = {
   sin_evidencia: "Sin evidencia",
 };
 
-export default function AdminRubricaModuleReport() {
+export default function AdminRubricaModuleReport({ allowedRegions }: { allowedRegions?: string[] } = {}) {
   const { toast } = useToast();
   const { images } = useAppImages();
   const [modules, setModules] = useState<RubricaModule[]>([]);
@@ -76,6 +76,10 @@ export default function AdminRubricaModuleReport() {
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [regiones, setRegiones] = useState<{ id: string; nombre: string }[]>([]);
+  const [cedulaToRegion, setCedulaToRegion] = useState<Record<string, string>>({});
+  const [selectedRegion, setSelectedRegion] = useState<string>(allowedRegions?.length === 1 ? allowedRegions[0] : "all");
+  const effectiveRegiones = allowedRegions?.length ? regiones.filter(r => allowedRegions.includes(r.nombre)) : regiones;
 
   // Selection state
   const [selectedCedula, setSelectedCedula] = useState<string | null>(null);
@@ -94,12 +98,14 @@ export default function AdminRubricaModuleReport() {
 
   const loadInitialData = async () => {
     setLoading(true);
-    const [{ data: mods }, { data: its }, { data: asigs }, { data: evalores }, { data: subDates }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: asigs }, { data: evalores }, { data: subDates }, { data: fichas }, { data: regs }] = await Promise.all([
       supabase.from("rubrica_modules").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_asignaciones").select("directivo_cedula, directivo_nombre, institucion, evaluador_id"),
       supabase.from("rubrica_evaluadores").select("id, nombre"),
       supabase.from("rubrica_submission_dates").select("directivo_cedula, module_number, submission_type"),
+      supabase.from("fichas_rlt").select("numero_cedula, region"),
+      supabase.from("regiones").select("id, nombre").order("nombre"),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
@@ -132,6 +138,11 @@ export default function AdminRubricaModuleReport() {
       }
       setSubmissionDates(map);
     }
+    if (regs) setRegiones(regs);
+    // Build cedula → region map
+    const regionMap: Record<string, string> = {};
+    fichas?.forEach((f: any) => { if (f.region) regionMap[f.numero_cedula] = f.region; });
+    setCedulaToRegion(regionMap);
     setLoading(false);
   };
 
@@ -234,13 +245,14 @@ export default function AdminRubricaModuleReport() {
   };
 
   const searchLower = search.toLowerCase();
-  const filteredAsignaciones = search
-    ? asignaciones.filter(a =>
-        a.directivo_nombre.toLowerCase().includes(searchLower) ||
-        a.directivo_cedula.includes(search) ||
-        a.institucion.toLowerCase().includes(searchLower)
-      )
-    : asignaciones;
+  const filteredAsignaciones = asignaciones.filter(a => {
+    const matchesSearch = !search ||
+      a.directivo_nombre.toLowerCase().includes(searchLower) ||
+      a.directivo_cedula.includes(search) ||
+      a.institucion.toLowerCase().includes(searchLower);
+    const matchesRegion = selectedRegion === "all" || cedulaToRegion[a.directivo_cedula] === selectedRegion;
+    return matchesSearch && matchesRegion;
+  });
 
   const selectedModule = modules.find(m => m.id === selectedModuleId);
   const selectedDirectivo = asignaciones.find(a => a.directivo_cedula === selectedCedula);
@@ -270,14 +282,27 @@ export default function AdminRubricaModuleReport() {
         <Card className="lg:col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Directivos</CardTitle>
-            <div className="flex items-center gap-2 mt-2">
-              <Search className="w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="h-8 text-xs"
-              />
+            <div className="space-y-2 mt-2">
+              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Todas las regiones" />
+                </SelectTrigger>
+                <SelectContent>
+                  {!(allowedRegions?.length === 1) && <SelectItem value="all">Todas las regiones</SelectItem>}
+                  {effectiveRegiones.map(r => (
+                    <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-1 max-h-[500px] overflow-y-auto">

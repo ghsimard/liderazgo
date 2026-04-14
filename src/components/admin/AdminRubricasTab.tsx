@@ -187,7 +187,7 @@ export default function AdminRubricasTab({ allowedRegions }: { allowedRegions?: 
       </TabsContent>
 
       <TabsContent value="informes">
-        <AdminRubricaModuleReport />
+        <AdminRubricaModuleReport allowedRegions={allowedRegions} />
       </TabsContent>
 
       <TabsContent value="resultados">
