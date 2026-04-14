@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
-import { Search, FileDown, BookOpen, Loader2 } from "lucide-react";
+import { Search, FileDown, BookOpen, Loader2, Users } from "lucide-react";
 import { generarPDFRubricaModulo, type RubricaModuleReportData } from "@/utils/rubricaModulePdfGenerator";
 
 interface RubricaModule {
