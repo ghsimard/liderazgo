@@ -68,7 +68,7 @@ const NIVEL_LABELS: Record<string, string> = {
   sin_evidencia: "Sin evidencia",
 };
 
-export default function AdminRubricaModuleReport() {
+export default function AdminRubricaModuleReport({ allowedRegions }: { allowedRegions?: string[] } = {}) {
   const { toast } = useToast();
   const { images } = useAppImages();
   const [modules, setModules] = useState<RubricaModule[]>([]);
@@ -76,6 +76,10 @@ export default function AdminRubricaModuleReport() {
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [regiones, setRegiones] = useState<{ id: string; nombre: string }[]>([]);
+  const [cedulaToRegion, setCedulaToRegion] = useState<Record<string, string>>({});
+  const [selectedRegion, setSelectedRegion] = useState<string>(allowedRegions?.length === 1 ? allowedRegions[0] : "all");
+  const effectiveRegiones = allowedRegions?.length ? regiones.filter(r => allowedRegions.includes(r.nombre)) : regiones;
 
   // Selection state
   const [selectedCedula, setSelectedCedula] = useState<string | null>(null);
