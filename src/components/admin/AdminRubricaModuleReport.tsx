@@ -138,6 +138,11 @@ export default function AdminRubricaModuleReport({ allowedRegions }: { allowedRe
       }
       setSubmissionDates(map);
     }
+    if (regs) setRegiones(regs);
+    // Build cedula → region map
+    const regionMap: Record<string, string> = {};
+    fichas?.forEach((f: any) => { if (f.region) regionMap[f.numero_cedula] = f.region; });
+    setCedulaToRegion(regionMap);
     setLoading(false);
   };
 
@@ -240,13 +245,14 @@ export default function AdminRubricaModuleReport({ allowedRegions }: { allowedRe
   };
 
   const searchLower = search.toLowerCase();
-  const filteredAsignaciones = search
-    ? asignaciones.filter(a =>
-        a.directivo_nombre.toLowerCase().includes(searchLower) ||
-        a.directivo_cedula.includes(search) ||
-        a.institucion.toLowerCase().includes(searchLower)
-      )
-    : asignaciones;
+  const filteredAsignaciones = asignaciones.filter(a => {
+    const matchesSearch = !search ||
+      a.directivo_nombre.toLowerCase().includes(searchLower) ||
+      a.directivo_cedula.includes(search) ||
+      a.institucion.toLowerCase().includes(searchLower);
+    const matchesRegion = selectedRegion === "all" || cedulaToRegion[a.directivo_cedula] === selectedRegion;
+    return matchesSearch && matchesRegion;
+  });
 
   const selectedModule = modules.find(m => m.id === selectedModuleId);
   const selectedDirectivo = asignaciones.find(a => a.directivo_cedula === selectedCedula);
