@@ -281,7 +281,7 @@ export default function AdminRubricaModuleReport({ allowedRegions }: { allowedRe
         {/* Left: Directivo list */}
         <Card className="lg:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Directivos</CardTitle>
+            <CardTitle className="text-sm">Directivos ({filteredAsignaciones.length})</CardTitle>
             <div className="space-y-2 mt-2">
               <Select value={selectedRegion} onValueChange={setSelectedRegion}>
                 <SelectTrigger className="h-8 text-xs">
