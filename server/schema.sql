@@ -847,6 +847,156 @@ CREATE TRIGGER trg_rubrica_evaluaciones_updated_at BEFORE UPDATE ON public.rubri
   FOR EACH ROW EXECUTE FUNCTION update_rubrica_updated_at();
 
 -- ============================================================
+-- Ambiente Escolar 2025: ae_rectores_2025
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.ae_rectores_2025 (
+  id SERIAL PRIMARY KEY,
+  excel_id INTEGER,
+  entiendo_la_informacion_y_acepto_el_trato_de_mis_datos_personal TEXT,
+  nombre_s_y_apellido_s_completo_s TEXT,
+  numero_de_cedula TEXT,
+  genero TEXT,
+  lugar_de_nacimiento TEXT,
+  fecha_de_nacimiento TEXT,
+  lengua_materna TEXT,
+  numero_de_celular_personal TEXT,
+  correo_electronico_personal TEXT,
+  correo_electronico_institucional_el_que_usted_usa_en_su_rol_com TEXT,
+  prefiere_recibir_comunicaciones_en_el_correo TEXT,
+  tiene_alguna_enfermedad_de_base_por_la_que_pueda_requerir_atenc TEXT,
+  si_requiere_atencion_medica_urgente_durante_algun_encuentro_pre TEXT,
+  cual_es_su_numero_de_contacto TEXT,
+  tiene_alguna_discapacidad TEXT,
+  tipo_de_formacion TEXT,
+  titulo_de_pregrado TEXT,
+  titulo_de_especializacion TEXT,
+  titulo_de_maestria TEXT,
+  titulo_de_doctorado TEXT,
+  nombre_de_la_institucion_educativa_en_la_actualmente_desempena_ TEXT,
+  cargo_actual TEXT,
+  tipo_de_vinculacion_actual TEXT,
+  fecha_de_vinculacion_al_servicio_educativo_estatal TEXT,
+  fecha_de_nombramiento_estatal_en_el_cargo_actual TEXT,
+  fecha_de_nombramiento_del_cargo_actual_en_la_ie TEXT,
+  estatuto_al_que_pertenece TEXT,
+  grado_en_el_escalafon TEXT,
+  codigo_dane_de_la_ie_12_digitos TEXT,
+  entidad_territorial TEXT,
+  comuna_corregimiento_o_localidad TEXT,
+  zona_de_la_sede_principal_de_la_ie TEXT,
+  zona_de_la_sede_principal_de_la_ie2 TEXT,
+  direccion_de_la_sede_principal TEXT,
+  telefono_de_contacto_de_la_ie TEXT,
+  sitio_web TEXT,
+  correo_electronico_institucional TEXT,
+  numero_total_de_sedes_de_la_ie_incluida_la_sede_principal TEXT,
+  numero_de_sedes_en_zona_rural TEXT,
+  numero_de_sedes_en_zona_urbana TEXT,
+  jornadas_de_la_ie_seleccion_multiple TEXT,
+  grupos_etnicos_en_la_ie_seleccion_multiple TEXT,
+  proyectos_transversales_de_la_ie TEXT,
+  estudiantes_o_familias_de_la_ie_en_condicion_de_desplazamiento TEXT,
+  niveles_educativos_que_ofrece_la_ie_seleccion_multiple TEXT,
+  tipo_de_bachillerato_que_ofrece_la_ie TEXT,
+  modelo_o_enfoque_pedagogico TEXT,
+  numero_de_docentes TEXT,
+  numero_de_coordinadoras_es TEXT,
+  numero_de_administrativos TEXT,
+  numero_de_orientadoras_es TEXT,
+  numero_de_estudiantes_en_preescolar TEXT,
+  numero_de_estudiantes_en_basica_primaria TEXT,
+  numero_de_estudiantes_en_basica_secundaria TEXT,
+  numero_de_estudiantes_en_media TEXT,
+  numero_de_estudiantes_en_ciclo_complementario TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ============================================================
+-- Ambiente Escolar 2025: ae_docentes_submissions_2025
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.ae_docentes_submissions_2025 (
+  id SERIAL PRIMARY KEY,
+  institucion_educativa TEXT NOT NULL,
+  jornada TEXT,
+  grados_asignados TEXT,
+  anos_como_docente TEXT,
+  retroalimentacion_de TEXT,
+  practicas_pedagogicas JSONB NOT NULL DEFAULT '{}'::jsonb,
+  convivencia JSONB NOT NULL DEFAULT '{}'::jsonb,
+  comunicacion JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ============================================================
+-- Ambiente Escolar 2025: ae_estudiantes_submissions_2025
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.ae_estudiantes_submissions_2025 (
+  id SERIAL PRIMARY KEY,
+  institucion_educativa TEXT NOT NULL,
+  jornada TEXT,
+  grado_actual TEXT,
+  anos_estudiando TEXT,
+  practicas_pedagogicas JSONB NOT NULL DEFAULT '{}'::jsonb,
+  convivencia JSONB NOT NULL DEFAULT '{}'::jsonb,
+  comunicacion JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ============================================================
+-- Ambiente Escolar 2025: ae_acudientes_submissions_2025
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.ae_acudientes_submissions_2025 (
+  id SERIAL PRIMARY KEY,
+  institucion_educativa TEXT NOT NULL,
+  grados_estudiantes TEXT,
+  practicas_pedagogicas JSONB NOT NULL DEFAULT '{}'::jsonb,
+  convivencia JSONB NOT NULL DEFAULT '{}'::jsonb,
+  comunicacion JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ============================================================
+-- Ambiente Escolar 2025: ae_cohortes
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.ae_cohortes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre TEXT NOT NULL,
+  entidad_territorial TEXT NOT NULL,
+  year INTEGER NOT NULL,
+  grupo INTEGER NOT NULL DEFAULT 1,
+  is_baseline BOOLEAN NOT NULL DEFAULT true,
+  fecha_inicio DATE,
+  fecha_certificacion DATE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ============================================================
+-- Ambiente Escolar 2025: ae_cohorte_instituciones
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.ae_cohorte_instituciones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cohorte_id UUID NOT NULL REFERENCES public.ae_cohortes(id) ON DELETE CASCADE,
+  institucion_educativa TEXT NOT NULL
+);
+
+-- Ajouter colonnes cohorte_id et entidad_territorial à encuestas_ambiente_escolar
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='encuestas_ambiente_escolar' AND column_name='cohorte_id') THEN
+    ALTER TABLE public.encuestas_ambiente_escolar ADD COLUMN cohorte_id UUID REFERENCES public.ae_cohortes(id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='encuestas_ambiente_escolar' AND column_name='entidad_territorial') THEN
+    ALTER TABLE public.encuestas_ambiente_escolar ADD COLUMN entidad_territorial TEXT;
+  END IF;
+END$$;
+
+-- ============================================================
 -- SEED: Create initial admin user
 -- DO NOT hardcode passwords here. Use the secure setup script:
 --   node server/create-admin.js
