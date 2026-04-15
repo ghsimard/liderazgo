@@ -1,108 +1,37 @@
 
 
-# Plan : Import des 4 tables Ambiente Escolar (RLT-Stats) dans Lovable Cloud
+# Plan : Aligner ae_rectores_2025 sur Render et vérifier l'ensemble
 
-## Résumé des données
+## Contexte
+La table `ae_rectores_2025` existe sur Lovable Cloud (99 lignes, 57 colonnes TEXT) mais pas sur Render. L'utilisateur accepte sa création sur prod.
 
-| Table | Lignes | Colonnes |
-|-------|--------|----------|
-| `rectores` | 99 | 59 (id, excel_id, consentement, nom, cédula, genre, dates, formation, IE, cargo, géographie, stats élèves...) |
-| `docentes_form_submissions` | 2 715 | 10 (id, created_at, institucion_educativa, anos_como_docente, grados_asignados, jornada, retroalimentacion_de, comunicacion, practicas_pedagogicas, convivencia) |
-| `estudiantes_form_submissions` | 7 201 | 9 (id, created_at, institucion_educativa, anos_estudiando, grado_actual, jornada, comunicacion, practicas_pedagogicas, convivencia) |
-| `acudientes_form_submissions` | 8 029 | 7 (id, created_at, institucion_educativa, grados_estudiantes, comunicacion, practicas_pedagogicas, convivencia) |
+## Actions
 
-Les colonnes `comunicacion`, `practicas_pedagogicas` et `convivencia` contiennent des objets JSON (clé=question, valeur=réponse Likert).
+### 1. 🗄️ Base de données (Render) — Manuel
+Exécuter le script SQL ci-dessus pour créer `ae_rectores_2025` sur Render.
+Puis insérer les 99 lignes de données (export CSV depuis Cloud, import via `\copy` ou INSERT).
 
----
+### 2. ⚙️ Web Service (Render) — Code
+Ajouter `ae_rectores_2025` dans `PUBLIC_READ_TABLES` de `server/routes/db.ts` pour que le frontend puisse lire cette table via le proxy.
 
-## Etape 1 — Migration : Créer les 4 tables dans Lovable Cloud
+### 3. 🖥️ Frontend — Aucun changement
+Le composant `AdminAmbiente2025Tab.tsx` lit déjà `ae_rectores_2025` — il fonctionnera dès que la table sera accessible via le proxy.
 
-Migration SQL pour créer les tables miroir avec le préfixe `ae_` et suffixe `_2025` :
+### 4. Script de vérification complet
+Générer et fournir un script SQL "env-aware" qui vérifie l'existence et le contenu des 7 tables AE sur n'importe quel environnement (Cloud ou Render) :
+- `ae_rectores_2025` (99 lignes attendues)
+- `ae_docentes_submissions_2025` (2 715)
+- `ae_estudiantes_submissions_2025` (7 201)
+- `ae_acudientes_submissions_2025` (8 029)
+- `ae_cohortes` (3)
+- `ae_cohorte_instituciones` (86)
+- `encuestas_ambiente_escolar` (17 615) + colonnes `cohorte_id`, `entidad_territorial`
 
-### `ae_rectores_2025`
-- `id` serial PRIMARY KEY
-- `excel_id` integer
-- 57 colonnes TEXT correspondant exactement aux en-têtes du CSV (noms longs avec underscores)
-- `created_at` timestamptz DEFAULT now()
+### 5. Export des données pour insertion Render
+Exécuter un script dans le sandbox pour exporter les 99 lignes de `ae_rectores_2025` depuis Cloud en fichier CSV téléchargeable, que tu pourras importer sur Render via `\copy`.
 
-### `ae_docentes_submissions_2025`
-- `id` serial PRIMARY KEY
-- `created_at` timestamptz
-- `institucion_educativa` text NOT NULL
-- `anos_como_docente` text
-- `grados_asignados` text (stocké comme texte brut du format PostgreSQL array)
-- `jornada` text
-- `retroalimentacion_de` text
-- `comunicacion` jsonb NOT NULL DEFAULT '{}'
-- `practicas_pedagogicas` jsonb NOT NULL DEFAULT '{}'
-- `convivencia` jsonb NOT NULL DEFAULT '{}'
-
-### `ae_estudiantes_submissions_2025`
-- `id` serial PRIMARY KEY
-- `created_at` timestamptz
-- `institucion_educativa` text NOT NULL
-- `anos_estudiando` text
-- `grado_actual` text
-- `jornada` text
-- `comunicacion` jsonb NOT NULL DEFAULT '{}'
-- `practicas_pedagogicas` jsonb NOT NULL DEFAULT '{}'
-- `convivencia` jsonb NOT NULL DEFAULT '{}'
-
-### `ae_acudientes_submissions_2025`
-- `id` serial PRIMARY KEY
-- `created_at` timestamptz
-- `institucion_educativa` text NOT NULL
-- `grados_estudiantes` text
-- `comunicacion` jsonb NOT NULL DEFAULT '{}'
-- `practicas_pedagogicas` jsonb NOT NULL DEFAULT '{}'
-- `convivencia` jsonb NOT NULL DEFAULT '{}'
-
-### RLS Policies (pour les 4 tables)
-- SELECT : `has_admin_access(auth.uid())` pour les admins
-- INSERT/UPDATE/DELETE : `has_admin_access(auth.uid())`
-- SELECT supplémentaire pour `has_read_access(auth.uid())`
-
----
-
-## Etape 2 — Import des données CSV
-
-Script Python exécuté dans le sandbox qui :
-1. Copie les 4 fichiers uploadés dans `/tmp/`
-2. Parse chaque CSV avec pandas (séparateur tab `\t` pour les submissions, virgule pour rectores)
-3. Convertit les colonnes `comunicacion`, `practicas_pedagogicas`, `convivencia` de format PostgreSQL JSONB string vers JSON valide
-4. Insère les données via `psql COPY` ou insertions SQL par lots dans Lovable Cloud
-
-Volume total : ~18 000 lignes, gérable en insertions directes.
-
----
-
-## Etape 3 — Sous-onglet "Ambiente Escolar 2025" dans l'admin
-
-### Frontend
-- Nouveau composant `AdminAmbiente2025Tab.tsx` ajouté sous le menu "Ambiente Escolar"
-- Mise à jour de `rbacSections.ts` : ajouter `ambiente-escolar.ae-2025` (label: "Línea Base 2025")
-- Mise à jour de `AdminPage.tsx` : routing vers le nouveau composant
-
-### Contenu initial du composant
-- Compteurs : nombre de recteurs, soumissions docentes/estudiantes/acudientes
-- Filtre par institution (dropdown des IE depuis `ae_rectores_2025`)
-- Tableau récapitulatif des moyennes Likert par catégorie (comunicacion, practicas, convivencia) et par type de répondant
-
----
-
-## Etape 4 — Mémoire projet
-
-Sauvegarder `mem://features/ambiente-escolar/baseline-2025` documentant les 4 tables importées, leur structure, et le lien avec le module comparatif futur.
-
----
-
-## Ordre d'exécution
-
-1. Migration SQL (4 tables + RLS)
-2. Script d'import des CSV (exec sandbox)
-3. Composant admin + routing
-4. Mémoire
-
-## Actions requises de votre part
-Aucune — tout sera fait dans Lovable Cloud avec les fichiers CSV déjà uploadés.
+### Détails techniques
+- Fichier modifié : `server/routes/db.ts` (ajout d'une entrée dans `PUBLIC_READ_TABLES`)
+- Fichier généré : `/mnt/documents/ae_rectores_2025.csv` (export des données)
+- Fichier généré : `/mnt/documents/verify_ae_tables.sql` (script de vérification)
 
