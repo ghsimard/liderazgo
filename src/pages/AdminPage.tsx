@@ -228,7 +228,7 @@ function getHubTitle(activeTab: string): string {
     "enlace-ficha": "Fichas de Información", "blank-pdf": "Fichas de Información", caracterizacion: "Fichas de Información",
     rubricas: "Rúbricas",
     "informe-modulo": "Informe de Módulo",
-    "ambiente-escolar": "Ambiente Escolar", "ambiente-monitoreo": "Ambiente Escolar", "ambiente-estadisticas": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar",
+    "ambiente-escolar": "Ambiente Escolar", "ambiente-monitoreo": "Ambiente Escolar", "ambiente-estadisticas": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar", "ae-2025": "Ambiente Escolar",
     satisfacciones: "Encuestas de Satisfacción",
     certificaciones: "Certificaciones",
     mel: "MEL", "mel-rubricas": "MEL", "mel-config": "MEL",
