@@ -61,26 +61,37 @@ export default function AdminAmbiente2025Tab() {
 
   useEffect(() => { loadData(); }, []);
 
+  async function fetchAll<T>(table: string, columns: string): Promise<T[]> {
+    const PAGE = 1000;
+    let all: T[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await cloudClient
+        .from(table)
+        .select(columns)
+        .range(from, from + PAGE - 1);
+      if (error || !data || data.length === 0) break;
+      all = all.concat(data as T[]);
+      if (data.length < PAGE) break;
+      from += PAGE;
+    }
+    return all;
+  }
+
   const loadData = async () => {
     setLoading(true);
-    const [r, d, e, a] = await Promise.all([
-      cloudClient.from("ae_rectores_2025").select("nombre_de_la_institucion_educativa_en_la_actualmente_desempena_, entidad_territorial"),
-      cloudClient.from("ae_docentes_submissions_2025").select("institucion_educativa, comunicacion, practicas_pedagogicas, convivencia"),
-      cloudClient.from("ae_estudiantes_submissions_2025").select("institucion_educativa, comunicacion, practicas_pedagogicas, convivencia"),
-      cloudClient.from("ae_acudientes_submissions_2025").select("institucion_educativa, comunicacion, practicas_pedagogicas, convivencia"),
+    const [rectData, dData, eData, aData] = await Promise.all([
+      fetchAll<Rector>("ae_rectores_2025", "nombre_de_la_institucion_educativa_en_la_actualmente_desempena_, entidad_territorial"),
+      fetchAll<Submission>("ae_docentes_submissions_2025", "institucion_educativa, comunicacion, practicas_pedagogicas, convivencia"),
+      fetchAll<Submission>("ae_estudiantes_submissions_2025", "institucion_educativa, comunicacion, practicas_pedagogicas, convivencia"),
+      fetchAll<Submission>("ae_acudientes_submissions_2025", "institucion_educativa, comunicacion, practicas_pedagogicas, convivencia"),
     ]);
 
-    const rectData = (r.data || []) as Rector[];
     setRectores(rectData);
-
-    const dData = (d.data || []) as Submission[];
-    const eData = (e.data || []) as Submission[];
-    const aData = (a.data || []) as Submission[];
     setDocentes(dData);
     setEstudiantes(eData);
     setAcudientes(aData);
 
-    // Collect unique entidades territoriales
     const allETs = new Set<string>();
     rectData.forEach(r => r.entidad_territorial && allETs.add(r.entidad_territorial));
     setEntidades([...allETs].sort());
