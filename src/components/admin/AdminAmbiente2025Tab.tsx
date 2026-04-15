@@ -13,6 +13,11 @@ interface Submission {
   convivencia: Record<string, string> | string;
 }
 
+interface Rector {
+  nombre_de_la_institucion_educativa_en_la_actualmente_desempena_: string | null;
+  entidad_territorial: string | null;
+}
+
 const LIKERT_MAP: Record<string, number> = {
   "Siempre": 5,
   "Casi siempre": 4,
@@ -44,11 +49,14 @@ function avgLikert(submissions: Submission[], field: "comunicacion" | "practicas
 
 export default function AdminAmbiente2025Tab() {
   const [loading, setLoading] = useState(true);
-  const [rectoresCount, setRectoresCount] = useState(0);
+  
+  const [rectores, setRectores] = useState<Rector[]>([]);
   const [docentes, setDocentes] = useState<Submission[]>([]);
   const [estudiantes, setEstudiantes] = useState<Submission[]>([]);
   const [acudientes, setAcudientes] = useState<Submission[]>([]);
   const [instituciones, setInstituciones] = useState<string[]>([]);
+  const [entidades, setEntidades] = useState<string[]>([]);
+  const [filterET, setFilterET] = useState<string>("__all__");
   const [filterIE, setFilterIE] = useState<string>("__all__");
 
   useEffect(() => { loadData(); }, []);
@@ -56,14 +64,14 @@ export default function AdminAmbiente2025Tab() {
   const loadData = async () => {
     setLoading(true);
     const [r, d, e, a] = await Promise.all([
-      cloudClient.from("ae_rectores_2025").select("nombre_de_la_institucion_educativa_en_la_actualmente_desempena_"),
+      cloudClient.from("ae_rectores_2025").select("nombre_de_la_institucion_educativa_en_la_actualmente_desempena_, entidad_territorial"),
       cloudClient.from("ae_docentes_submissions_2025").select("institucion_educativa, comunicacion, practicas_pedagogicas, convivencia"),
       cloudClient.from("ae_estudiantes_submissions_2025").select("institucion_educativa, comunicacion, practicas_pedagogicas, convivencia"),
       cloudClient.from("ae_acudientes_submissions_2025").select("institucion_educativa, comunicacion, practicas_pedagogicas, convivencia"),
     ]);
 
-    const rectData = (r.data || []) as { nombre_de_la_institucion_educativa_en_la_actualmente_desempena_: string }[];
-    setRectoresCount(rectData.length);
+    const rectData = (r.data || []) as Rector[];
+    setRectores(rectData);
 
     const dData = (d.data || []) as Submission[];
     const eData = (e.data || []) as Submission[];
@@ -71,6 +79,11 @@ export default function AdminAmbiente2025Tab() {
     setDocentes(dData);
     setEstudiantes(eData);
     setAcudientes(aData);
+
+    // Collect unique entidades territoriales
+    const allETs = new Set<string>();
+    rectData.forEach(r => r.entidad_territorial && allETs.add(r.entidad_territorial));
+    setEntidades([...allETs].sort());
 
     const allIEs = new Set<string>();
     rectData.forEach(r => r.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_ && allIEs.add(r.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_));
@@ -81,15 +94,51 @@ export default function AdminAmbiente2025Tab() {
     setLoading(false);
   };
 
+  // Get IEs belonging to the selected ET (from rectores mapping)
+  const iesForET = useMemo(() => {
+    if (filterET === "__all__") return null;
+    const ies = new Set<string>();
+    rectores.forEach(r => {
+      if (r.entidad_territorial === filterET && r.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_) {
+        ies.add(r.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_);
+      }
+    });
+    return ies;
+  }, [rectores, filterET]);
+
+  // Filtered IE list for dropdown
+  const filteredInstituciones = useMemo(() => {
+    if (!iesForET) return instituciones;
+    return instituciones.filter(ie => iesForET.has(ie));
+  }, [instituciones, iesForET]);
+
+  // Reset IE filter when ET changes and selected IE is not in new list
+  useEffect(() => {
+    if (filterIE !== "__all__" && iesForET && !iesForET.has(filterIE)) {
+      setFilterIE("__all__");
+    }
+  }, [filterET]);
+
+  const rectoresCount = useMemo(() => {
+    let list = rectores;
+    if (filterET !== "__all__") list = list.filter(r => r.entidad_territorial === filterET);
+    if (filterIE !== "__all__") list = list.filter(r => r.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_ === filterIE);
+    return list.length;
+  }, [rectores, filterET, filterIE]);
+
   const filtered = useMemo(() => {
-    const filter = (arr: Submission[]) =>
-      filterIE === "__all__" ? arr : arr.filter(s => s.institucion_educativa === filterIE);
+    const filter = (arr: Submission[]) => {
+      let result = arr;
+      if (iesForET) result = result.filter(s => iesForET.has(s.institucion_educativa));
+      if (filterIE !== "__all__") result = result.filter(s => s.institucion_educativa === filterIE);
+      return result;
+    };
     return {
       docentes: filter(docentes),
       estudiantes: filter(estudiantes),
       acudientes: filter(acudientes),
     };
-  }, [docentes, estudiantes, acudientes, filterIE]);
+  }, [docentes, estudiantes, acudientes, filterIE, iesForET]);
 
   const categories: ("comunicacion" | "practicas_pedagogicas" | "convivencia")[] = [
     "comunicacion", "practicas_pedagogicas", "convivencia"
@@ -115,17 +164,30 @@ export default function AdminAmbiente2025Tab() {
           <h3 className="text-lg font-semibold">Línea Base 2025</h3>
           <p className="text-sm text-muted-foreground">Datos importados de la aplicación RLT-Stats (Ambiente Escolar anterior)</p>
         </div>
-        <Select value={filterIE} onValueChange={setFilterIE}>
-          <SelectTrigger className="w-full sm:w-[320px]">
-            <SelectValue placeholder="Filtrar por institución" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Todas las instituciones</SelectItem>
-            {instituciones.map(ie => (
-              <SelectItem key={ie} value={ie}>{ie}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Select value={filterET} onValueChange={(v) => { setFilterET(v); }}>
+            <SelectTrigger className="w-full sm:w-[240px]">
+              <SelectValue placeholder="Filtrar por entidad territorial" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas las entidades</SelectItem>
+              {entidades.map(et => (
+                <SelectItem key={et} value={et}>{et}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterIE} onValueChange={setFilterIE}>
+            <SelectTrigger className="w-full sm:w-[320px]">
+              <SelectValue placeholder="Filtrar por institución" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas las instituciones</SelectItem>
+              {filteredInstituciones.map(ie => (
+                <SelectItem key={ie} value={ie}>{ie}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* KPI Cards */}
