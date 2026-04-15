@@ -164,17 +164,30 @@ export default function AdminAmbiente2025Tab() {
           <h3 className="text-lg font-semibold">Línea Base 2025</h3>
           <p className="text-sm text-muted-foreground">Datos importados de la aplicación RLT-Stats (Ambiente Escolar anterior)</p>
         </div>
-        <Select value={filterIE} onValueChange={setFilterIE}>
-          <SelectTrigger className="w-full sm:w-[320px]">
-            <SelectValue placeholder="Filtrar por institución" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Todas las instituciones</SelectItem>
-            {instituciones.map(ie => (
-              <SelectItem key={ie} value={ie}>{ie}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Select value={filterET} onValueChange={(v) => { setFilterET(v); }}>
+            <SelectTrigger className="w-full sm:w-[240px]">
+              <SelectValue placeholder="Filtrar por entidad territorial" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas las entidades</SelectItem>
+              {entidades.map(et => (
+                <SelectItem key={et} value={et}>{et}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterIE} onValueChange={setFilterIE}>
+            <SelectTrigger className="w-full sm:w-[320px]">
+              <SelectValue placeholder="Filtrar por institución" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas las instituciones</SelectItem>
+              {filteredInstituciones.map(ie => (
+                <SelectItem key={ie} value={ie}>{ie}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* KPI Cards */}
