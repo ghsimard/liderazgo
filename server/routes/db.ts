@@ -123,6 +123,8 @@ const ALLOWED_TABLES = new Set([
   "informe_directivo",
   "informe_asistencia",
   "encuestas_ambiente_escolar",
+  "ae_cohortes",
+  "ae_cohorte_instituciones",
   "satisfaccion_config",
   "satisfaccion_responses",
   "satisfaccion_form_definitions",
