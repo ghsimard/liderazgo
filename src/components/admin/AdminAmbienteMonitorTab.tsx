@@ -45,12 +45,33 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [fichasRes, subRes] = await Promise.all([
-        supabase.from("fichas_rlt").select("nombre_ie, nombres_apellidos, correo_personal, correo_institucional, celular_personal, telefono_ie, prefiere_correo, cargo_actual, region"),
-        supabase.from("encuestas_ambiente_escolar").select("institucion_educativa, tipo_formulario"),
-      ]);
+
+      // Fetch all fichas
+      const fichasRes = await supabase
+        .from("fichas_rlt")
+        .select("nombre_ie, nombres_apellidos, correo_personal, correo_institucional, celular_personal, telefono_ie, prefiere_correo, cargo_actual, region");
+
+      // Fetch ALL submissions with pagination (default limit is 1000)
+      const allSubmissions: Submission[] = [];
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      let keepGoing = true;
+      while (keepGoing) {
+        const { data } = await supabase
+          .from("encuestas_ambiente_escolar")
+          .select("institucion_educativa, tipo_formulario")
+          .range(from, from + PAGE_SIZE - 1);
+        if (data && data.length > 0) {
+          allSubmissions.push(...(data as Submission[]));
+          from += PAGE_SIZE;
+          if (data.length < PAGE_SIZE) keepGoing = false;
+        } else {
+          keepGoing = false;
+        }
+      }
+
       setDirectivos((fichasRes.data as Directivo[]) || []);
-      setSubmissions((subRes.data as Submission[]) || []);
+      setSubmissions(allSubmissions);
       setLoading(false);
     }
     load();
