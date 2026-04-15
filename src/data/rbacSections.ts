@@ -40,6 +40,7 @@ export const RBAC_SECTIONS: RbacSection[] = [
       { key: "ambiente-escolar.monitoreo", label: "Monitoreo" },
       { key: "ambiente-escolar.estadisticas", label: "Estadísticas" },
       { key: "ambiente-escolar.enlaces", label: "Enlaces" },
+      { key: "ambiente-escolar.ae-2025", label: "Línea Base 2025" },
     ],
   },
   { key: "satisfacciones", label: "Satisfacciones" },

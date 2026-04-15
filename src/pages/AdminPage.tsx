@@ -48,6 +48,7 @@ import AdminGestionCuentasTab from "@/components/admin/AdminGestionCuentasTab";
 import AdminRolesTab from "@/components/admin/AdminRolesTab";
 import AdminAmbienteMonitorTab from "@/components/admin/AdminAmbienteMonitorTab";
 import AdminAmbienteStatsTab from "@/components/admin/AdminAmbienteStatsTab";
+import AdminAmbiente2025Tab from "@/components/admin/AdminAmbiente2025Tab";
 import AdminDashboardTab from "@/components/admin/AdminDashboardTab";
 import AdminCaracterizacionTab from "@/components/admin/AdminCaracterizacionTab";
 
@@ -228,7 +229,7 @@ function getHubTitle(activeTab: string): string {
     "enlace-ficha": "Fichas de Información", "blank-pdf": "Fichas de Información", caracterizacion: "Fichas de Información",
     rubricas: "Rúbricas",
     "informe-modulo": "Informe de Módulo",
-    "ambiente-escolar": "Ambiente Escolar", "ambiente-monitoreo": "Ambiente Escolar", "ambiente-estadisticas": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar",
+    "ambiente-escolar": "Ambiente Escolar", "ambiente-monitoreo": "Ambiente Escolar", "ambiente-estadisticas": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar", "ae-2025": "Ambiente Escolar",
     satisfacciones: "Encuestas de Satisfacción",
     certificaciones: "Certificaciones",
     mel: "MEL", "mel-rubricas": "MEL", "mel-config": "MEL",
@@ -467,12 +468,14 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
     case "blancos-ambiente":
     case "ambiente-escolar":
     case "ambiente-monitoreo":
-    case "ambiente-estadisticas": {
+    case "ambiente-estadisticas":
+    case "ae-2025": {
       const subAmbienteMap: Record<string, string> = {
         "ambiente-escolar": "monitoreo",
         "ambiente-monitoreo": "monitoreo",
         "ambiente-estadisticas": "estadisticas",
         "blancos-ambiente": "enlaces",
+        "ae-2025": "ae-2025",
       };
       const defaultSubAmbiente = subAmbienteMap[activeTab] || "monitoreo";
       return (
@@ -481,6 +484,7 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
             <TabsTrigger value="monitoreo" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Monitoreo</TabsTrigger>
             <TabsTrigger value="estadisticas" className="gap-1.5"><TrendingUp className="w-4 h-4" /> Estadísticas</TabsTrigger>
             <TabsTrigger value="enlaces" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlaces</TabsTrigger>
+            <TabsTrigger value="ae-2025" className="gap-1.5"><Layers className="w-4 h-4" /> Línea Base 2025</TabsTrigger>
           </TabsList>
 
           <TabsContent value="monitoreo">
@@ -501,6 +505,9 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
                 ].map((f) => <FormCard key={f.path} form={f} />)}
               </div>
             </div>
+          </TabsContent>
+          <TabsContent value="ae-2025">
+            <AdminAmbiente2025Tab />
           </TabsContent>
         </Tabs>
       );
