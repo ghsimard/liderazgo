@@ -38,6 +38,339 @@ export type Database = {
         }
         Relationships: []
       }
+      ae_acudientes_submissions_2025: {
+        Row: {
+          comunicacion: Json
+          convivencia: Json
+          created_at: string | null
+          grados_estudiantes: string | null
+          id: number
+          institucion_educativa: string
+          practicas_pedagogicas: Json
+        }
+        Insert: {
+          comunicacion?: Json
+          convivencia?: Json
+          created_at?: string | null
+          grados_estudiantes?: string | null
+          id?: number
+          institucion_educativa: string
+          practicas_pedagogicas?: Json
+        }
+        Update: {
+          comunicacion?: Json
+          convivencia?: Json
+          created_at?: string | null
+          grados_estudiantes?: string | null
+          id?: number
+          institucion_educativa?: string
+          practicas_pedagogicas?: Json
+        }
+        Relationships: []
+      }
+      ae_docentes_submissions_2025: {
+        Row: {
+          anos_como_docente: string | null
+          comunicacion: Json
+          convivencia: Json
+          created_at: string | null
+          grados_asignados: string | null
+          id: number
+          institucion_educativa: string
+          jornada: string | null
+          practicas_pedagogicas: Json
+          retroalimentacion_de: string | null
+        }
+        Insert: {
+          anos_como_docente?: string | null
+          comunicacion?: Json
+          convivencia?: Json
+          created_at?: string | null
+          grados_asignados?: string | null
+          id?: number
+          institucion_educativa: string
+          jornada?: string | null
+          practicas_pedagogicas?: Json
+          retroalimentacion_de?: string | null
+        }
+        Update: {
+          anos_como_docente?: string | null
+          comunicacion?: Json
+          convivencia?: Json
+          created_at?: string | null
+          grados_asignados?: string | null
+          id?: number
+          institucion_educativa?: string
+          jornada?: string | null
+          practicas_pedagogicas?: Json
+          retroalimentacion_de?: string | null
+        }
+        Relationships: []
+      }
+      ae_estudiantes_submissions_2025: {
+        Row: {
+          anos_estudiando: string | null
+          comunicacion: Json
+          convivencia: Json
+          created_at: string | null
+          grado_actual: string | null
+          id: number
+          institucion_educativa: string
+          jornada: string | null
+          practicas_pedagogicas: Json
+        }
+        Insert: {
+          anos_estudiando?: string | null
+          comunicacion?: Json
+          convivencia?: Json
+          created_at?: string | null
+          grado_actual?: string | null
+          id?: number
+          institucion_educativa: string
+          jornada?: string | null
+          practicas_pedagogicas?: Json
+        }
+        Update: {
+          anos_estudiando?: string | null
+          comunicacion?: Json
+          convivencia?: Json
+          created_at?: string | null
+          grado_actual?: string | null
+          id?: number
+          institucion_educativa?: string
+          jornada?: string | null
+          practicas_pedagogicas?: Json
+        }
+        Relationships: []
+      }
+      ae_rectores_2025: {
+        Row: {
+          cargo_actual: string | null
+          codigo_dane_de_la_ie_12_digitos: string | null
+          comuna_corregimiento_o_localidad: string | null
+          correo_electronico_institucional: string | null
+          correo_electronico_institucional_el_que_usted_usa_en_su_rol_com:
+            | string
+            | null
+          correo_electronico_personal: string | null
+          created_at: string | null
+          cual_es_su_numero_de_contacto: string | null
+          direccion_de_la_sede_principal: string | null
+          entidad_territorial: string | null
+          entiendo_la_informacion_y_acepto_el_trato_de_mis_datos_personal:
+            | string
+            | null
+          estatuto_al_que_pertenece: string | null
+          estudiantes_o_familias_de_la_ie_en_condicion_de_desplazamiento:
+            | string
+            | null
+          excel_id: number | null
+          fecha_de_nacimiento: string | null
+          fecha_de_nombramiento_del_cargo_actual_en_la_ie: string | null
+          fecha_de_nombramiento_estatal_en_el_cargo_actual: string | null
+          fecha_de_vinculacion_al_servicio_educativo_estatal: string | null
+          genero: string | null
+          grado_en_el_escalafon: string | null
+          grupos_etnicos_en_la_ie_seleccion_multiple: string | null
+          id: number
+          jornadas_de_la_ie_seleccion_multiple: string | null
+          lengua_materna: string | null
+          lugar_de_nacimiento: string | null
+          modelo_o_enfoque_pedagogico: string | null
+          niveles_educativos_que_ofrece_la_ie_seleccion_multiple: string | null
+          nombre_de_la_institucion_educativa_en_la_actualmente_desempena_:
+            | string
+            | null
+          nombre_s_y_apellido_s_completo_s: string | null
+          numero_de_administrativos: string | null
+          numero_de_cedula: string | null
+          numero_de_celular_personal: string | null
+          numero_de_coordinadoras_es: string | null
+          numero_de_docentes: string | null
+          numero_de_estudiantes_en_basica_primaria: string | null
+          numero_de_estudiantes_en_basica_secundaria: string | null
+          numero_de_estudiantes_en_ciclo_complementario: string | null
+          numero_de_estudiantes_en_media: string | null
+          numero_de_estudiantes_en_preescolar: string | null
+          numero_de_orientadoras_es: string | null
+          numero_de_sedes_en_zona_rural: string | null
+          numero_de_sedes_en_zona_urbana: string | null
+          numero_total_de_sedes_de_la_ie_incluida_la_sede_principal:
+            | string
+            | null
+          prefiere_recibir_comunicaciones_en_el_correo: string | null
+          proyectos_transversales_de_la_ie: string | null
+          si_requiere_atencion_medica_urgente_durante_algun_encuentro_pre:
+            | string
+            | null
+          sitio_web: string | null
+          telefono_de_contacto_de_la_ie: string | null
+          tiene_alguna_discapacidad: string | null
+          tiene_alguna_enfermedad_de_base_por_la_que_pueda_requerir_atenc:
+            | string
+            | null
+          tipo_de_bachillerato_que_ofrece_la_ie: string | null
+          tipo_de_formacion: string | null
+          tipo_de_vinculacion_actual: string | null
+          titulo_de_doctorado: string | null
+          titulo_de_especializacion: string | null
+          titulo_de_maestria: string | null
+          titulo_de_pregrado: string | null
+          zona_de_la_sede_principal_de_la_ie: string | null
+          zona_de_la_sede_principal_de_la_ie2: string | null
+        }
+        Insert: {
+          cargo_actual?: string | null
+          codigo_dane_de_la_ie_12_digitos?: string | null
+          comuna_corregimiento_o_localidad?: string | null
+          correo_electronico_institucional?: string | null
+          correo_electronico_institucional_el_que_usted_usa_en_su_rol_com?:
+            | string
+            | null
+          correo_electronico_personal?: string | null
+          created_at?: string | null
+          cual_es_su_numero_de_contacto?: string | null
+          direccion_de_la_sede_principal?: string | null
+          entidad_territorial?: string | null
+          entiendo_la_informacion_y_acepto_el_trato_de_mis_datos_personal?:
+            | string
+            | null
+          estatuto_al_que_pertenece?: string | null
+          estudiantes_o_familias_de_la_ie_en_condicion_de_desplazamiento?:
+            | string
+            | null
+          excel_id?: number | null
+          fecha_de_nacimiento?: string | null
+          fecha_de_nombramiento_del_cargo_actual_en_la_ie?: string | null
+          fecha_de_nombramiento_estatal_en_el_cargo_actual?: string | null
+          fecha_de_vinculacion_al_servicio_educativo_estatal?: string | null
+          genero?: string | null
+          grado_en_el_escalafon?: string | null
+          grupos_etnicos_en_la_ie_seleccion_multiple?: string | null
+          id?: number
+          jornadas_de_la_ie_seleccion_multiple?: string | null
+          lengua_materna?: string | null
+          lugar_de_nacimiento?: string | null
+          modelo_o_enfoque_pedagogico?: string | null
+          niveles_educativos_que_ofrece_la_ie_seleccion_multiple?: string | null
+          nombre_de_la_institucion_educativa_en_la_actualmente_desempena_?:
+            | string
+            | null
+          nombre_s_y_apellido_s_completo_s?: string | null
+          numero_de_administrativos?: string | null
+          numero_de_cedula?: string | null
+          numero_de_celular_personal?: string | null
+          numero_de_coordinadoras_es?: string | null
+          numero_de_docentes?: string | null
+          numero_de_estudiantes_en_basica_primaria?: string | null
+          numero_de_estudiantes_en_basica_secundaria?: string | null
+          numero_de_estudiantes_en_ciclo_complementario?: string | null
+          numero_de_estudiantes_en_media?: string | null
+          numero_de_estudiantes_en_preescolar?: string | null
+          numero_de_orientadoras_es?: string | null
+          numero_de_sedes_en_zona_rural?: string | null
+          numero_de_sedes_en_zona_urbana?: string | null
+          numero_total_de_sedes_de_la_ie_incluida_la_sede_principal?:
+            | string
+            | null
+          prefiere_recibir_comunicaciones_en_el_correo?: string | null
+          proyectos_transversales_de_la_ie?: string | null
+          si_requiere_atencion_medica_urgente_durante_algun_encuentro_pre?:
+            | string
+            | null
+          sitio_web?: string | null
+          telefono_de_contacto_de_la_ie?: string | null
+          tiene_alguna_discapacidad?: string | null
+          tiene_alguna_enfermedad_de_base_por_la_que_pueda_requerir_atenc?:
+            | string
+            | null
+          tipo_de_bachillerato_que_ofrece_la_ie?: string | null
+          tipo_de_formacion?: string | null
+          tipo_de_vinculacion_actual?: string | null
+          titulo_de_doctorado?: string | null
+          titulo_de_especializacion?: string | null
+          titulo_de_maestria?: string | null
+          titulo_de_pregrado?: string | null
+          zona_de_la_sede_principal_de_la_ie?: string | null
+          zona_de_la_sede_principal_de_la_ie2?: string | null
+        }
+        Update: {
+          cargo_actual?: string | null
+          codigo_dane_de_la_ie_12_digitos?: string | null
+          comuna_corregimiento_o_localidad?: string | null
+          correo_electronico_institucional?: string | null
+          correo_electronico_institucional_el_que_usted_usa_en_su_rol_com?:
+            | string
+            | null
+          correo_electronico_personal?: string | null
+          created_at?: string | null
+          cual_es_su_numero_de_contacto?: string | null
+          direccion_de_la_sede_principal?: string | null
+          entidad_territorial?: string | null
+          entiendo_la_informacion_y_acepto_el_trato_de_mis_datos_personal?:
+            | string
+            | null
+          estatuto_al_que_pertenece?: string | null
+          estudiantes_o_familias_de_la_ie_en_condicion_de_desplazamiento?:
+            | string
+            | null
+          excel_id?: number | null
+          fecha_de_nacimiento?: string | null
+          fecha_de_nombramiento_del_cargo_actual_en_la_ie?: string | null
+          fecha_de_nombramiento_estatal_en_el_cargo_actual?: string | null
+          fecha_de_vinculacion_al_servicio_educativo_estatal?: string | null
+          genero?: string | null
+          grado_en_el_escalafon?: string | null
+          grupos_etnicos_en_la_ie_seleccion_multiple?: string | null
+          id?: number
+          jornadas_de_la_ie_seleccion_multiple?: string | null
+          lengua_materna?: string | null
+          lugar_de_nacimiento?: string | null
+          modelo_o_enfoque_pedagogico?: string | null
+          niveles_educativos_que_ofrece_la_ie_seleccion_multiple?: string | null
+          nombre_de_la_institucion_educativa_en_la_actualmente_desempena_?:
+            | string
+            | null
+          nombre_s_y_apellido_s_completo_s?: string | null
+          numero_de_administrativos?: string | null
+          numero_de_cedula?: string | null
+          numero_de_celular_personal?: string | null
+          numero_de_coordinadoras_es?: string | null
+          numero_de_docentes?: string | null
+          numero_de_estudiantes_en_basica_primaria?: string | null
+          numero_de_estudiantes_en_basica_secundaria?: string | null
+          numero_de_estudiantes_en_ciclo_complementario?: string | null
+          numero_de_estudiantes_en_media?: string | null
+          numero_de_estudiantes_en_preescolar?: string | null
+          numero_de_orientadoras_es?: string | null
+          numero_de_sedes_en_zona_rural?: string | null
+          numero_de_sedes_en_zona_urbana?: string | null
+          numero_total_de_sedes_de_la_ie_incluida_la_sede_principal?:
+            | string
+            | null
+          prefiere_recibir_comunicaciones_en_el_correo?: string | null
+          proyectos_transversales_de_la_ie?: string | null
+          si_requiere_atencion_medica_urgente_durante_algun_encuentro_pre?:
+            | string
+            | null
+          sitio_web?: string | null
+          telefono_de_contacto_de_la_ie?: string | null
+          tiene_alguna_discapacidad?: string | null
+          tiene_alguna_enfermedad_de_base_por_la_que_pueda_requerir_atenc?:
+            | string
+            | null
+          tipo_de_bachillerato_que_ofrece_la_ie?: string | null
+          tipo_de_formacion?: string | null
+          tipo_de_vinculacion_actual?: string | null
+          titulo_de_doctorado?: string | null
+          titulo_de_especializacion?: string | null
+          titulo_de_maestria?: string | null
+          titulo_de_pregrado?: string | null
+          zona_de_la_sede_principal_de_la_ie?: string | null
+          zona_de_la_sede_principal_de_la_ie2?: string | null
+        }
+        Relationships: []
+      }
       app_images: {
         Row: {
           id: string
