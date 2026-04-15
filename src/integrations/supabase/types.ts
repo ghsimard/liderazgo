@@ -68,6 +68,68 @@ export type Database = {
         }
         Relationships: []
       }
+      ae_cohorte_instituciones: {
+        Row: {
+          cohorte_id: string
+          id: string
+          institucion_educativa: string
+        }
+        Insert: {
+          cohorte_id: string
+          id?: string
+          institucion_educativa: string
+        }
+        Update: {
+          cohorte_id?: string
+          id?: string
+          institucion_educativa?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ae_cohorte_instituciones_cohorte_id_fkey"
+            columns: ["cohorte_id"]
+            isOneToOne: false
+            referencedRelation: "ae_cohortes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ae_cohortes: {
+        Row: {
+          created_at: string
+          entidad_territorial: string
+          fecha_certificacion: string | null
+          fecha_inicio: string | null
+          grupo: number
+          id: string
+          is_baseline: boolean
+          nombre: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          entidad_territorial: string
+          fecha_certificacion?: string | null
+          fecha_inicio?: string | null
+          grupo?: number
+          id?: string
+          is_baseline?: boolean
+          nombre: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          entidad_territorial?: string
+          fecha_certificacion?: string | null
+          fecha_inicio?: string | null
+          grupo?: number
+          id?: string
+          is_baseline?: boolean
+          nombre?: string
+          year?: number
+        }
+        Relationships: []
+      }
       ae_docentes_submissions_2025: {
         Row: {
           anos_como_docente: string | null
@@ -720,27 +782,41 @@ export type Database = {
       }
       encuestas_ambiente_escolar: {
         Row: {
+          cohorte_id: string | null
           created_at: string
+          entidad_territorial: string | null
           id: string
           institucion_educativa: string
           respuestas: Json
           tipo_formulario: string
         }
         Insert: {
+          cohorte_id?: string | null
           created_at?: string
+          entidad_territorial?: string | null
           id?: string
           institucion_educativa: string
           respuestas?: Json
           tipo_formulario: string
         }
         Update: {
+          cohorte_id?: string | null
           created_at?: string
+          entidad_territorial?: string | null
           id?: string
           institucion_educativa?: string
           respuestas?: Json
           tipo_formulario?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "encuestas_ambiente_escolar_cohorte_id_fkey"
+            columns: ["cohorte_id"]
+            isOneToOne: false
+            referencedRelation: "ae_cohortes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       entidades_territoriales: {
         Row: {
