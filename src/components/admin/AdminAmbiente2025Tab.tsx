@@ -49,7 +49,7 @@ function avgLikert(submissions: Submission[], field: "comunicacion" | "practicas
 
 export default function AdminAmbiente2025Tab() {
   const [loading, setLoading] = useState(true);
-  const [rectoresCount, setRectoresCount] = useState(0);
+  
   const [rectores, setRectores] = useState<Rector[]>([]);
   const [docentes, setDocentes] = useState<Submission[]>([]);
   const [estudiantes, setEstudiantes] = useState<Submission[]>([]);
