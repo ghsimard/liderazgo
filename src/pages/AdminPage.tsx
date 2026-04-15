@@ -48,6 +48,7 @@ import AdminGestionCuentasTab from "@/components/admin/AdminGestionCuentasTab";
 import AdminRolesTab from "@/components/admin/AdminRolesTab";
 import AdminAmbienteMonitorTab from "@/components/admin/AdminAmbienteMonitorTab";
 import AdminAmbienteStatsTab from "@/components/admin/AdminAmbienteStatsTab";
+import AdminAmbiente2025Tab from "@/components/admin/AdminAmbiente2025Tab";
 import AdminDashboardTab from "@/components/admin/AdminDashboardTab";
 import AdminCaracterizacionTab from "@/components/admin/AdminCaracterizacionTab";
 
