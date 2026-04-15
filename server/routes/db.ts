@@ -48,6 +48,8 @@ const PUBLIC_READ_TABLES = new Set([
   "satisfaccion_config",
   "satisfaccion_responses",
   "encuestas_ambiente_escolar",
+  "ae_cohortes",
+  "ae_cohorte_instituciones",
   "satisfaccion_report_content",
   "satisfaccion_form_definitions",
   "encuesta_360_visibility",
