@@ -13,6 +13,11 @@ interface Submission {
   convivencia: Record<string, string> | string;
 }
 
+interface Rector {
+  nombre_de_la_institucion_educativa_en_la_actualmente_desempena_: string | null;
+  entidad_territorial: string | null;
+}
+
 const LIKERT_MAP: Record<string, number> = {
   "Siempre": 5,
   "Casi siempre": 4,
