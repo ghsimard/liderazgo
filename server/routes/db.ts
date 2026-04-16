@@ -180,61 +180,83 @@ function buildWhereClause(filters: Filter[], params: any[]): string {
 
     // Validate column name
     const safeCol = sanitizeIdentifier(f.col);
+
+    // Detect "not.<op>" prefix
+    let negate = false;
+    let opType = f.type;
+    if (opType.startsWith("not.")) {
+      negate = true;
+      opType = opType.slice(4);
+    }
+
     const idx = params.length + 1;
-    switch (f.type) {
+    let clause = "";
+    switch (opType) {
       case "eq":
         params.push(f.val);
-        clauses.push(`${safeCol} = $${idx}`);
+        clause = `${safeCol} = $${idx}`;
         break;
       case "neq":
         params.push(f.val);
-        clauses.push(`${safeCol} != $${idx}`);
+        clause = `${safeCol} != $${idx}`;
         break;
       case "gt":
         params.push(f.val);
-        clauses.push(`${safeCol} > $${idx}`);
+        clause = `${safeCol} > $${idx}`;
         break;
       case "gte":
         params.push(f.val);
-        clauses.push(`${safeCol} >= $${idx}`);
+        clause = `${safeCol} >= $${idx}`;
         break;
       case "lt":
         params.push(f.val);
-        clauses.push(`${safeCol} < $${idx}`);
+        clause = `${safeCol} < $${idx}`;
         break;
       case "lte":
         params.push(f.val);
-        clauses.push(`${safeCol} <= $${idx}`);
+        clause = `${safeCol} <= $${idx}`;
         break;
       case "like":
         params.push(f.val);
-        clauses.push(`${safeCol} LIKE $${idx}`);
+        clause = `${safeCol} LIKE $${idx}`;
         break;
       case "ilike":
         params.push(f.val);
-        clauses.push(`${safeCol} ILIKE $${idx}`);
+        clause = `${safeCol} ILIKE $${idx}`;
         break;
       case "in":
         if (Array.isArray(f.val) && f.val.length > 0) {
           const placeholders = f.val.map((_: any, i: number) => `$${params.length + i + 1}`);
           params.push(...f.val);
-          clauses.push(`${safeCol} IN (${placeholders.join(",")})`);
+          clause = `${safeCol} IN (${placeholders.join(",")})`;
         } else if (typeof f.val === "string") {
           const vals = f.val.split(",");
           const placeholders = vals.map((_: any, i: number) => `$${params.length + i + 1}`);
           params.push(...vals);
-          clauses.push(`${safeCol} IN (${placeholders.join(",")})`);
+          clause = `${safeCol} IN (${placeholders.join(",")})`;
         }
         break;
       case "is":
         if (f.val === null || f.val === "null") {
-          clauses.push(`${safeCol} IS NULL`);
+          clause = `${safeCol} IS NULL`;
         } else if (f.val === true || f.val === "true") {
-          clauses.push(`${safeCol} IS TRUE`);
+          clause = `${safeCol} IS TRUE`;
         } else if (f.val === false || f.val === "false") {
-          clauses.push(`${safeCol} IS FALSE`);
+          clause = `${safeCol} IS FALSE`;
         }
         break;
+    }
+
+    if (clause) {
+      // For IS NULL / IS TRUE / IS FALSE → use IS NOT
+      if (negate) {
+        if (clause.includes(" IS ")) {
+          clause = clause.replace(" IS ", " IS NOT ");
+        } else {
+          clause = `NOT (${clause})`;
+        }
+      }
+      clauses.push(clause);
     }
   }
 
@@ -261,6 +283,12 @@ function parseOrExpression(expr: string, params: any[]): string | null {
 function parseFiltersFromQuery(qs: Record<string, any>): Filter[] {
   const filters: Filter[] = [];
   for (const [key, val] of Object.entries(qs)) {
+    // Match "not.<op>.<col>" first, then plain "<op>.<col>"
+    const notMatch = key.match(/^not\.(eq|neq|gt|gte|lt|lte|like|ilike|in|is)\.(.+)$/);
+    if (notMatch) {
+      filters.push({ type: `not.${notMatch[1]}`, col: notMatch[2], val });
+      continue;
+    }
     const match = key.match(/^(eq|neq|gt|gte|lt|lte|like|ilike|in|is|or)\.(.+)$/);
     if (match) {
       filters.push({ type: match[1], col: match[2], val });

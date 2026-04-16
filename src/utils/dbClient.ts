@@ -84,6 +84,10 @@ class QueryBuilder<T = any> {
   ilike(col: string, val: string) { this._filters.push({ type: "ilike", col, val }); return this; }
   in(col: string, vals: any[]) { this._filters.push({ type: "in", col, val: vals }); return this; }
   is(col: string, val: any) { this._filters.push({ type: "is", col, val }); return this; }
+  not(col: string, op: string, val: any) {
+    this._filters.push({ type: `not.${op}`, col, val });
+    return this;
+  }
   or(expr: string) { this._filters.push({ type: "or", col: "_expr", val: expr }); return this; }
 
   order(col: string, opts?: { ascending?: boolean }) {
