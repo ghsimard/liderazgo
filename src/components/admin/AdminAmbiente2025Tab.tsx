@@ -130,11 +130,12 @@ export default function AdminAmbiente2025Tab() {
     }
   }, [filterET]);
 
-  const rectoresCount = useMemo(() => {
+  const ieCount = useMemo(() => {
     let list = rectores;
     if (filterET !== "__all__") list = list.filter(r => r.entidad_territorial === filterET);
     if (filterIE !== "__all__") list = list.filter(r => r.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_ === filterIE);
-    return list.length;
+    const uniqueIEs = new Set(list.map(r => r.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_).filter(Boolean));
+    return uniqueIEs.size;
   }, [rectores, filterET, filterIE]);
 
   const filtered = useMemo(() => {
@@ -207,8 +208,8 @@ export default function AdminAmbiente2025Tab() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="rounded-lg bg-blue-100 p-2"><School className="w-5 h-5 text-blue-600" /></div>
             <div>
-              <p className="text-2xl font-bold">{rectoresCount}</p>
-              <p className="text-xs text-muted-foreground">Rectores / IE</p>
+              <p className="text-2xl font-bold">{ieCount}</p>
+              <p className="text-xs text-muted-foreground">Instituciones Educativas</p>
             </div>
           </CardContent>
         </Card>
