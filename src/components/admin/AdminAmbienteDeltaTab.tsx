@@ -144,6 +144,7 @@ export default function AdminAmbienteDeltaTab() {
           </div>
         )}
       </div>
+      <p className="text-xs text-muted-foreground">Escala Likert: 1 (Nunca) — {MAX_SCORE} (Siempre). Δ expresado en puntos sobre {MAX_SCORE}.</p>
 
       {analysis && analysis.groups.map((g) => (
         <Card key={g.grupo}>
