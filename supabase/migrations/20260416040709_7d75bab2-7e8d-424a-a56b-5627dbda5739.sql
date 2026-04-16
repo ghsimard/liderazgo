@@ -1,0 +1,1 @@
+ALTER TABLE ae_cohortes DROP COLUMN grupo;

@@ -100,7 +100,6 @@ export type Database = {
           entidad_territorial: string
           fecha_certificacion: string | null
           fecha_inicio: string | null
-          grupo: number
           id: string
           is_baseline: boolean
           nombre: string
@@ -111,7 +110,6 @@ export type Database = {
           entidad_territorial: string
           fecha_certificacion?: string | null
           fecha_inicio?: string | null
-          grupo?: number
           id?: string
           is_baseline?: boolean
           nombre: string
@@ -122,7 +120,6 @@ export type Database = {
           entidad_territorial?: string
           fecha_certificacion?: string | null
           fecha_inicio?: string | null
-          grupo?: number
           id?: string
           is_baseline?: boolean
           nombre?: string
