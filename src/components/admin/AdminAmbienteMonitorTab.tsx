@@ -58,6 +58,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
   const [contactDialog, setContactDialog] = useState<Directivo | null>(null);
   const [filterCohorte, setFilterCohorte] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterFase, setFilterFase] = useState<string>("all");
   const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
