@@ -147,11 +147,22 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       }
     }
 
+    // Helper: match directivo by exact name or by prefix before " - "
+    const findDirectivo = (ie: string) => {
+      const exact = directivos.find(d => d.nombre_ie === ie);
+      if (exact) return exact;
+      // ae_cohorte_instituciones may have "IE Name - Municipio" while fichas_rlt has just "IE Name"
+      const prefix = ie.includes(" - ") ? ie.split(" - ")[0].trim() : null;
+      if (prefix) return directivos.find(d => d.nombre_ie === prefix);
+      // Also check if ficha name starts with ie (reverse case)
+      return directivos.find(d => d.nombre_ie.startsWith(ie));
+    };
+
     const sorted = Array.from(allInstitutions).sort();
     const allRows = sorted.map(ie => ({
       ie,
       ...countMap[ie],
-      directivo: directivos.find(d => d.nombre_ie === ie),
+      directivo: findDirectivo(ie),
     }));
 
     const totalD = allRows.reduce((a, r) => a + r.docentes, 0);
