@@ -260,22 +260,6 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
             <X className="w-3 h-3 mr-1" /> Limpiar filtros
           </Button>
         )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            const base = window.location.origin;
-            const links = [
-              `Docentes: ${base}/encuesta-ambiente-docentes`,
-              `Estudiantes: ${base}/encuesta-ambiente-estudiantes`,
-              `Acudientes: ${base}/encuesta-ambiente-acudientes`,
-            ].join("\n");
-            navigator.clipboard.writeText(links);
-            toast({ title: "Enlaces copiados", description: "Los 3 enlaces han sido copiados al portapapeles." });
-          }}
-        >
-          <Copy className="w-3 h-3 mr-1" /> Copiar enlaces
-        </Button>
       </div>
 
       {/* Summary */}
