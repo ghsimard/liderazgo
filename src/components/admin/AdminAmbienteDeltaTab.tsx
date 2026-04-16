@@ -174,14 +174,15 @@ export default function AdminAmbienteDeltaTab() {
 }
 
 function ScoreBar({ label, value, color }: { label: string; value: number | null; color: string }) {
+  const pct = value !== null ? (value / MAX_SCORE) * 100 : 0;
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-muted-foreground">
         <span>{label}</span>
-        <span>{value !== null ? `${value.toFixed(1)}%` : "—"}</span>
+        <span>{value !== null ? `${value.toFixed(2)} / ${MAX_SCORE}` : "—"}</span>
       </div>
       <div className="h-2 bg-muted rounded-full overflow-hidden">
-        {value !== null && <div className={`h-full ${color}`} style={{ width: `${value}%` }} />}
+        {value !== null && <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />}
       </div>
     </div>
   );
@@ -189,12 +190,12 @@ function ScoreBar({ label, value, color }: { label: string; value: number | null
 
 function DeltaIndicator({ delta, ini, evo }: { delta: number | null; ini: number | null; evo: number | null }) {
   if (delta === null) return <span className="text-xs text-muted-foreground">Sin datos comparables</span>;
-  const Icon = delta > 0.5 ? ArrowUp : delta < -0.5 ? ArrowDown : Minus;
-  const color = delta > 0.5 ? "text-green-600" : delta < -0.5 ? "text-destructive" : "text-muted-foreground";
+  const Icon = delta > 0.05 ? ArrowUp : delta < -0.05 ? ArrowDown : Minus;
+  const color = delta > 0.05 ? "text-green-600" : delta < -0.05 ? "text-destructive" : "text-muted-foreground";
   return (
     <span className={`flex items-center gap-1 text-sm font-semibold ${color}`}>
       <Icon className="w-4 h-4" />
-      {delta > 0 ? "+" : ""}{delta.toFixed(1)} pts
+      {delta > 0 ? "+" : ""}{delta.toFixed(2)}
     </span>
   );
 }
