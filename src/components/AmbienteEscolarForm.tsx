@@ -130,7 +130,7 @@ const InstitutionCombobox = forwardRef<HTMLDivElement, {
       </div>
     </div>
   );
-}
+});
 
 // ── Likert grid ──
 const LikertGrid = React.forwardRef<HTMLDivElement, {
