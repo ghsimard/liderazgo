@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Mail, Phone, Eye, Search, X } from "lucide-react";
+import { RefreshCw, Mail, Phone, Eye, Search, X, Copy, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Cohorte {
   id: string;
