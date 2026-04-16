@@ -13,7 +13,6 @@ interface Cohorte {
   nombre: string;
   entidad_territorial: string;
   year: number;
-  grupo: number;
 }
 
 interface CohorteInstitution {
@@ -62,7 +61,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
 
       // Fetch cohortes, cohorte institutions, fichas in parallel
       const [cohortesRes, instRes, fichasRes] = await Promise.all([
-        supabase.from("ae_cohortes").select("id, nombre, entidad_territorial, year, grupo").order("year", { ascending: false }).order("nombre"),
+        supabase.from("ae_cohortes").select("id, nombre, entidad_territorial, year").order("year", { ascending: false }).order("nombre"),
         supabase.from("ae_cohorte_instituciones").select("cohorte_id, institucion_educativa"),
         supabase.from("fichas_rlt").select("nombre_ie, nombres_apellidos, correo_personal, correo_institucional, celular_personal, telefono_ie, prefiere_correo, cargo_actual, region"),
       ]);
