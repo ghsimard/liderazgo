@@ -283,7 +283,7 @@ interface AmbienteEscolarFormProps {
   formType: "acudientes" | "estudiantes" | "docentes";
 }
 
-export default function AmbienteEscolarForm({ formType }: AmbienteEscolarFormProps) {
+const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>(function AmbienteEscolarForm({ formType }, ref) {
   const { toast } = useToast();
   const { images } = useAppImages();
   const [submitted, setSubmitted] = useState(false);
@@ -618,4 +618,6 @@ export default function AmbienteEscolarForm({ formType }: AmbienteEscolarFormPro
       </div>
     </div>
   );
-}
+});
+
+export default AmbienteEscolarForm;

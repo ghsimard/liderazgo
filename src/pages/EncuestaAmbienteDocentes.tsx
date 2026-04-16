@@ -1,5 +1,6 @@
+import { forwardRef } from "react";
 import AmbienteEscolarForm from "@/components/AmbienteEscolarForm";
 
-export default function EncuestaAmbienteDocentes() {
+export default forwardRef<HTMLDivElement>(function EncuestaAmbienteDocentes(_props, ref) {
   return <AmbienteEscolarForm formType="docentes" />;
-}
+});
