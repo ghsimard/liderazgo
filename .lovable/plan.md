@@ -1,32 +1,40 @@
 
 
-# Plan : Renommer les cohortes et supprimer la colonne `grupo`
+# Plan : Lien institution → cohorte automatique
 
 ## Résumé
-Deux actions combinées : (1) renommer les 5 cohortes existantes dans `ae_cohortes` en retirant "G1" et en mettant à jour l'année pour Quibdó/Oriente, (2) supprimer la colonne `grupo` devenue inutile.
+Au lieu d'envoyer des URLs paramétrées par cohorte, on envoie **3 liens simples** (un par type de formulaire). Quand l'usager choisit son institution, le système retrouve automatiquement la cohorte associée via `ae_cohorte_instituciones` et insère `cohorte_id` + `entidad_territorial` dans la soumission.
 
-**Important** : Les clés dans `instituciones.ts` ("Oriente", "Quibdó") et les références dans `FichaRLT.tsx`/`AdminEditFicha.tsx` concernent la table `regiones` (géographie), PAS les cohortes — elles ne changent pas.
+## Flux simplifié
+
+```text
+3 liens fixes :
+  /encuesta-ambiente-docentes
+  /encuesta-ambiente-estudiantes
+  /encuesta-ambiente-acudientes
+
+Usager choisit IE → lookup ae_cohorte_instituciones → cohorte_id + ET auto-injectés
+```
 
 ## Étapes
 
-### 1. 🗄️ Données — Renommer les cohortes (outil insert)
-```sql
-UPDATE ae_cohortes SET nombre = 'Medellín 2025' WHERE id = 'c25708c1-54f7-4044-96bc-7d15bf449d4f';
-UPDATE ae_cohortes SET nombre = 'Rionegro 2025' WHERE id = '1724cd6d-c72d-49b2-94e0-6d96948c3a1e';
-UPDATE ae_cohortes SET nombre = 'Itagüí 2025' WHERE id = '2ca48e5d-2c62-4576-a341-a158474fa088';
-UPDATE ae_cohortes SET nombre = 'Quibdó 2026', year = 2026 WHERE id = 'd1a2b3c4-0001-4000-8000-000000000001';
-UPDATE ae_cohortes SET nombre = 'Oriente 2026', year = 2026 WHERE id = 'd1a2b3c4-0002-4000-8000-000000000002';
-```
+### 1. Modifier `InstitutionCombobox` dans `AmbienteEscolarForm.tsx`
+- Au lieu de charger depuis la table `instituciones` (toutes les IE du programme), charger depuis `ae_cohorte_instituciones` jointe à `ae_cohortes` pour ne proposer **que les IE participant au module AE**.
+- Retourner aussi le `cohorte_id` et `entidad_territorial` associés à l'institution sélectionnée.
 
-### 2. 🗄️ Schéma — Supprimer la colonne `grupo` (migration)
-```sql
-ALTER TABLE ae_cohortes DROP COLUMN grupo;
-```
+### 2. Modifier le `handleSubmit`
+- Ajouter `cohorte_id` et `entidad_territorial` dans l'objet inséré dans `encuestas_ambiente_escolar`, déterminés automatiquement par l'institution choisie.
 
-### 3. 🖥️ Frontend — Nettoyer `AdminAmbienteMonitorTab.tsx`
-- Retirer `grupo` de l'interface `Cohorte` (ligne 16)
-- Retirer `grupo` du `.select()` (ligne 65) : `"id, nombre, entidad_territorial, year"`
+### 3. Admin Monitor — Bouton "Copiar enlaces"
+- Ajouter un petit bouton dans `AdminAmbienteMonitorTab.tsx` qui copie les 3 liens fixes dans le presse-papier pour faciliter l'envoi aux recteurs.
 
-### Fichiers modifiés
-- `src/components/admin/AdminAmbienteMonitorTab.tsx` — 2 lignes
+## Détails techniques
+
+| Fichier | Modification |
+|---|---|
+| `src/components/AmbienteEscolarForm.tsx` | `InstitutionCombobox` charge depuis `ae_cohorte_instituciones` + `ae_cohortes`, expose `cohorte_id`/`entidad_territorial` ; `handleSubmit` les inclut dans l'insert |
+| `src/components/admin/AdminAmbienteMonitorTab.tsx` | Bouton "Copiar enlaces" avec les 3 URLs |
+
+### Rétrocompatibilité
+Les soumissions existantes (sans `cohorte_id`) restent inchangées. Le monitor les associe déjà par nom d'institution.
 
