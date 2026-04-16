@@ -88,12 +88,14 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       }
 
       const currentCohortes = (cohortesRes.data as Cohorte[]) || [];
-      const currentCohorteIds = new Set(currentCohortes.map(c => c.id));
-      const filteredInst = ((instRes.data as CohorteInstitution[]) || []).filter(ci => currentCohorteIds.has(ci.cohorte_id));
+      const currentCohorteIds = new Set(currentCohortes.map((c) => c.id));
+      const filteredInst = ((instRes.data as CohorteInstitution[]) || []).filter((ci) => currentCohorteIds.has(ci.cohorte_id));
+      const filteredSubmissions = allSubmissions.filter((submission) => submission.cohorte_id && currentCohorteIds.has(submission.cohorte_id));
+
       setCohortes(currentCohortes);
       setCohorteInstitutions(filteredInst);
       setDirectivos((fichasRes.data as Directivo[]) || []);
-      setSubmissions(allSubmissions);
+      setSubmissions(filteredSubmissions);
       setLoading(false);
     }
     load();
@@ -116,10 +118,13 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
   }, [visibleCohortes, filterCohorte]);
 
   const { rows, totals, filteredRows, filteredTotals } = useMemo(() => {
-    // Build institution list from cohorte_instituciones
+    // Build institution list only from active cohortes
     const allInstitutions = new Set(cohorteInstitutions.map(ci => ci.institucion_educativa));
-    // Also include institutions from submissions that might not be in cohorte_instituciones
-    submissions.forEach(s => allInstitutions.add(s.institucion_educativa));
+    submissions.forEach((s) => {
+      if (s.cohorte_id && allInstitutions.has(s.institucion_educativa)) {
+        allInstitutions.add(s.institucion_educativa);
+      }
+    });
 
     // Count submissions per institution per tipo_formulario
     const countMap: Record<string, { docentes: number; estudiantes: number; acudientes: number; cohorte_ids: Set<string> }> = {};
