@@ -130,11 +130,12 @@ export default function AdminAmbiente2025Tab() {
     }
   }, [filterET]);
 
-  const rectoresCount = useMemo(() => {
+  const ieCount = useMemo(() => {
     let list = rectores;
     if (filterET !== "__all__") list = list.filter(r => r.entidad_territorial === filterET);
     if (filterIE !== "__all__") list = list.filter(r => r.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_ === filterIE);
-    return list.length;
+    const uniqueIEs = new Set(list.map(r => r.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_).filter(Boolean));
+    return uniqueIEs.size;
   }, [rectores, filterET, filterIE]);
 
   const filtered = useMemo(() => {
