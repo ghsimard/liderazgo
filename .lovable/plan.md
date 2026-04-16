@@ -1,103 +1,85 @@
 
 
-## Décisions intégrées
+## Constat
 
-1. **Hors fenêtre** → Bloquer avec message clair en espagnol : *"La campaña [nombre] está [programada para iniciar el DD/MM/YYYY | cerrada desde el DD/MM/YYYY]. No se aceptan respuestas en este momento."*
-2. **Pas de rappels email** automatiques.
-3. **Archivage** automatique après 3 ans (vue séparée filtrée par défaut).
+| Source | Volume | État |
+|---|---|---|
+| `ae_docentes_submissions_2025` | 2 715 | Données Inicial déjà collectées (mai-oct 2025) |
+| `ae_estudiantes_submissions_2025` | 7 201 | Données Inicial déjà collectées |
+| `ae_acudientes_submissions_2025` | 8 029 | Données Inicial déjà collectées |
+| `encuestas_ambiente_escolar` | 17 615 | Réponses sans `campana_id` ni `fase` |
 
-## Terminologie — propositions pour remplacer Entrada/Salida
+Les **3 cohortes 2025** (Itagüí, Medellín, Rionegro) ont leurs **86 institutions** mappées dans `ae_cohorte_instituciones` et leurs réponses Inicial sont **déjà dans la BD** — mais réparties dans 2 emplacements différents :
+- Tables historiques `ae_*_submissions_2025` (import RLT-Stats d'origine)
+- Table unifiée `encuestas_ambiente_escolar` (probablement une migration partielle déjà faite)
 
-| Option | Phase 1 | Phase 2 | Notes |
-|---|---|---|---|
-| **A. Diagnóstico / Impacto** | Diagnóstico | Impacto | Évoque l'état initial puis l'effet du programme |
-| **B. Línea Base / Cierre** | Línea Base | Cierre | Cohérent avec "Línea Base 2025" déjà utilisé |
-| **C. Antes / Después** | Antes | Después | Simple, naturel pour les répondants |
-| **D. Inicial / Evolución** | Inicial | Evolución | Souligne la dimension de progression |
+## Plan d'action
 
-Je recommande **B (Línea Base / Cierre)** pour la cohérence avec la nomenclature existante du projet (onglet "Línea Base 2025"), mais à valider.
+### 1. Créer 3 campagnes Inicial rétroactives (SQL)
 
-## Concept "Campaña"
+Pour Itagüí 2025, Medellín 2025, Rionegro 2025 :
+- `fase = 'linea_base'` (= "Inicial" en UI)
+- `fecha_inicio = 2025-05-15` (date min réelle des données)
+- `fecha_fin = 2025-10-14` (date max réelle)
+- `nombre = "<Cohorte> — Inicial"`
 
-Une campagne = fenêtre temporelle de collecte définie par :
-- **Cohorte** (région/ET, ex: Oriente 2026)
-- **Fase** (línea_base ou cierre)
-- **Fecha inicio + fecha fin** (obligatoires)
-- **Estado auto-calculé** : Programada / Activa / Cerrada / Archivada (>3 ans)
+### 2. Backfill des `campana_id` + `fase` sur données existantes
 
-Une seule campagne par (cohorte, fase) — contrainte unique.
+Mettre à jour `encuestas_ambiente_escolar` :
+- Pour chaque ligne dont `institucion_educativa` appartient à une des 3 cohortes 2025 → injecter le `campana_id` Inicial correspondant et `fase = 'linea_base'`
 
-## Flux usager
-
-```text
-Usager ouvre /encuesta-ambiente-docentes
-  → choisit institución
-  → système cherche campaña Activa pour (institución, hoy entre fechas)
-  → si trouvée : injecte cohorte_id + fase + entidad_territorial
-  → si Programada : "La campaña inicia el DD/MM/YYYY"
-  → si Cerrada : "La campaña terminó el DD/MM/YYYY"
-  → si aucune : "No hay campaña activa para tu institución"
+```sql
+UPDATE encuestas_ambiente_escolar e
+SET campana_id = camp.id, fase = 'linea_base'
+FROM ae_cohorte_instituciones ci
+JOIN ae_campanas camp ON camp.cohorte_id = ci.cohorte_id AND camp.fase = 'linea_base'
+WHERE e.institucion_educativa = ci.institucion_educativa
+  AND e.campana_id IS NULL;
 ```
 
-## Changements base de données
+### 3. Affichage Admin "Campañas"
 
-**Nouvelle table `ae_campanas`**
-| Colonne | Type | Description |
-|---|---|---|
-| id | uuid PK | |
-| cohorte_id | uuid → ae_cohortes | |
-| fase | text | 'linea_base' ou 'cierre' |
-| fecha_inicio | date NOT NULL | |
-| fecha_fin | date NOT NULL | check fin ≥ inicio |
-| nombre | text | auto: "Oriente 2026 — Línea Base" |
-| created_at | timestamptz | now() |
+Les 3 campagnes Inicial 2025 apparaîtront automatiquement avec :
+- **Estado : Cerrada** (fecha_fin = 2025-10-14 < aujourd'hui)
+- **Respuestas : nombre réel** déjà collecté (visible dans la colonne "Respuestas")
+- **Suppression bloquée** (réponses associées)
 
-UNIQUE (cohorte_id, fase)
+L'admin n'aura qu'à créer les **campagnes Evolución 2026** quand il sera prêt à relancer la collecte.
 
-**Modification `encuestas_ambiente_escolar`**
-- Ajouter colonne `fase` (text, nullable rétrocompatible)
-- Ajouter colonne `campana_id` (uuid, nullable) pour traçabilité directe
+### 4. Onglet Delta — comparaison fonctionnelle dès le départ
 
-## Interface Admin — nouvel onglet "Campañas"
+Une fois les Evolución créées, le sous-onglet "Análisis por Campaña" pourra immédiatement comparer Inicial 2025 (déjà chargée) vs Evolución (à venir) pour les 3 cohortes.
 
-Dans la section Ambiente Escolar (à côté de Monitoreo / Enlaces / Estadísticas / Delta) :
+### 5. Mise à jour RENDER (manuel SQL)
 
-- **Tableau** : Cohorte | Fase | Inicio | Fin | Estado (badge) | Respuestas | Acciones
-- **Bouton "Nueva campaña"** : sélection cohorte + fase + dates avec validation
-- **Filtres** : región, fase, estado (Programada/Activa/Cerrada/Archivada)
-- **Toggle "Mostrar archivadas"** : par défaut masquées
-- **Édition/Suppression** : suppression bloquée si réponses existent
+Sur Render, il faudra exécuter en plus du SQL de création de table déjà fourni :
 
-## Onglet Delta — enrichissement
+```sql
+-- Insérer les 3 campagnes Inicial rétroactives
+INSERT INTO ae_campanas (cohorte_id, fase, fecha_inicio, fecha_fin, nombre)
+SELECT id, 'linea_base', '2025-05-15', '2025-10-14', nombre || ' — Inicial'
+FROM ae_cohortes
+WHERE nombre IN ('Itagüí 2025', 'Medellín 2025', 'Rionegro 2025')
+ON CONFLICT (cohorte_id, fase) DO NOTHING;
 
-Sous l'onglet Delta existant, ajouter sous-onglet **"Análisis por Campaña"** :
-- Sélection cohorte + comparaison Línea Base vs Cierre
-- Calcul Δ par dimension (Convivencia, Comunicación, Prácticas Pedagógicas) et par grupo (docentes/estudiantes/acudientes)
-- Visualisation : barres horizontales avec flèche ▲▼ et delta en points
-
-## Monitoreo — adaptation
-
-Ajouter filtre **Fase** (Todas / Línea Base / Cierre) pour distinguer visuellement les deux vagues dans le tableau de comptage.
-
-## Fichiers impactés
-
-| Fichier | Action |
-|---|---|
-| Migration SQL | Créer `ae_campanas` + colonnes `fase`/`campana_id` sur `encuestas_ambiente_escolar` |
-| `src/components/AmbienteEscolarForm.tsx` | Lookup campagne active après sélection IE ; injection auto + messages d'erreur fenêtre |
-| `src/components/admin/AdminAmbienteCampanasTab.tsx` | NOUVEAU — CRUD campagnes |
-| `src/components/admin/AdminAmbienteMonitorTab.tsx` | Ajouter filtre Fase |
-| `src/components/admin/AdminAmbienteDeltaTab.tsx` | NOUVEAU — Analyse Δ par campagne |
-| `src/pages/AdminPage.tsx` | Nouvel onglet "Campañas" + sous-onglet Delta |
+-- Backfill (si la table encuestas_ambiente_escolar contient déjà des données sur Render)
+UPDATE encuestas_ambiente_escolar e
+SET campana_id = camp.id, fase = 'linea_base'
+FROM ae_cohorte_instituciones ci
+JOIN ae_campanas camp ON camp.cohorte_id = ci.cohorte_id AND camp.fase = 'linea_base'
+WHERE e.institucion_educativa = ci.institucion_educativa
+  AND e.campana_id IS NULL;
+```
 
 ## Actions de déploiement
 
-- 🗄️ **Base de données** (Manual SQL) : table `ae_campanas` + 2 colonnes ajoutées
-- 🖥️ **Site statique (Frontend)** : redéploiement Render — nouvel onglet Admin + logique formulaires publics + analyse Delta
-- ⚙️ **Web Service (Backend Express)** : aucun changement — proxy DB existant suffit
+- 🗄️ **Base de données (Lovable Cloud)** : 1 migration → INSERT campagnes + UPDATE backfill (auto-appliqué)
+- 🗄️ **Base de données (Render)** : SQL manuel ci-dessus à exécuter après la migration de structure
+- 🖥️ **Site statique (Frontend)** : aucun changement de code requis — l'onglet Campañas affichera automatiquement les 3 entrées
+- ⚙️ **Web Service (Backend Express)** : aucun changement
 
-## À confirmer avant codage
+## À confirmer
 
-1. **Terminologie** : valides-tu **Línea Base / Cierre** (option B) ou préfères-tu une autre option (A, C, D) ?
-2. **Suppression d'une campagne avec réponses** : interdite totalement, ou autorisée pour Superadmin uniquement ?
+1. Les **dates rétroactives** Inicial 2025 (2025-05-15 → 2025-10-14, dérivées des données réelles) — OK ou tu préfères d'autres bornes ?
+2. Les tables historiques `ae_docentes_submissions_2025` / `ae_estudiantes_submissions_2025` / `ae_acudientes_submissions_2025` — on les laisse intactes (consultables dans l'onglet "Línea Base 2025") ou on les considère comme legacy à terme ?
 
