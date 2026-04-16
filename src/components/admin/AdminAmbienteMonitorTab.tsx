@@ -273,7 +273,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
         </div>
 
         {hasFilters && (
-          <Button variant="outline" size="sm" onClick={() => { setFilterCohorte("all"); setFilterStatus("all"); setSearchText(""); }}>
+          <Button variant="outline" size="sm" onClick={() => { setFilterCohorte("all"); setFilterStatus("all"); setFilterFase("all"); setSearchText(""); }}>
             <X className="w-3 h-3 mr-1" /> Limpiar filtros
           </Button>
         )}
