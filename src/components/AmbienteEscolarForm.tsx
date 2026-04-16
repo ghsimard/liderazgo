@@ -338,6 +338,9 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
   // Common
   const [institucion, setInstitucion] = useState("");
   const [cohorteInfo, setCohorteInfo] = useState<{ cohorte_id: string; entidad_territorial: string } | null>(null);
+  const [campanaActiva, setCampanaActiva] = useState<CampanaActiva | null>(null);
+  const [campanaError, setCampanaError] = useState<string | null>(null);
+  const [campanaLoading, setCampanaLoading] = useState(false);
 
   // Acudientes: grados (checkbox)
   const [gradosAcudiente, setGradosAcudiente] = useState<string[]>([]);
@@ -358,6 +361,58 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
 
   // Validation
   const [fieldErrors, setFieldErrors] = useState<Set<string>>(new Set());
+
+  // Lookup campaña activa quand l'institution change
+  useEffect(() => {
+    if (!cohorteInfo) {
+      setCampanaActiva(null);
+      setCampanaError(null);
+      return;
+    }
+    (async () => {
+      setCampanaLoading(true);
+      setCampanaError(null);
+      const today = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("ae_campanas" as any)
+        .select("*")
+        .eq("cohorte_id", cohorteInfo.cohorte_id)
+        .order("fecha_inicio", { ascending: false });
+      setCampanaLoading(false);
+      if (error) {
+        setCampanaError("Error al verificar la disponibilidad de la encuesta.");
+        return;
+      }
+      const campanas = (data as any as CampanaActiva[]) || [];
+      if (campanas.length === 0) {
+        setCampanaError("No hay ninguna campaña configurada para tu institución. Contacta al administrador.");
+        setCampanaActiva(null);
+        return;
+      }
+      // Find active one (today within range)
+      const activa = campanas.find((c) => today >= c.fecha_inicio && today <= c.fecha_fin);
+      if (activa) {
+        setCampanaActiva(activa);
+        return;
+      }
+      // Find next upcoming
+      const upcoming = campanas.filter((c) => today < c.fecha_inicio).sort((a, b) => a.fecha_inicio.localeCompare(b.fecha_inicio))[0];
+      if (upcoming) {
+        setCampanaError(`La campaña "${upcoming.nombre}" está programada para iniciar el ${fmtDate(upcoming.fecha_inicio)}. No se aceptan respuestas en este momento.`);
+        setCampanaActiva(null);
+        return;
+      }
+      // Most recent closed
+      const closed = campanas.filter((c) => today > c.fecha_fin).sort((a, b) => b.fecha_fin.localeCompare(a.fecha_fin))[0];
+      if (closed) {
+        setCampanaError(`La campaña "${closed.nombre}" está cerrada desde el ${fmtDate(closed.fecha_fin)}. No se aceptan respuestas en este momento.`);
+        setCampanaActiva(null);
+        return;
+      }
+      setCampanaError("No hay ninguna campaña activa para tu institución en este momento.");
+      setCampanaActiva(null);
+    })();
+  }, [cohorteInfo]);
 
   const likertSections: LikertSection[] =
     formType === "acudientes"
