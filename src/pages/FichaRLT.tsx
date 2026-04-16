@@ -804,7 +804,7 @@ export default function FichaRLTForm() {
     }
 
     setValue("nombre_ie", "");
-    if (region === "Quibdó") {
+    if (region === "Quibdó 2026") {
       setValue("cargo_actual", "Rector/a", { shouldValidate: true });
     }
   };
@@ -1436,7 +1436,7 @@ export default function FichaRLTForm() {
                     disabled
                     className="form-input floating-input opacity-75 cursor-not-allowed"
                   />
-                ) : regionSeleccionada === "Quibdó" ? (
+                ) : regionSeleccionada === "Quibdó 2026" ? (
                   <input
                     id="cargo_actual"
                     value={genderizeRole("Rector/a", watch("genero"))}
