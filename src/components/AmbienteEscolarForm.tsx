@@ -599,6 +599,28 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
           hasError={fieldErrors.has("institucion")}
         />
 
+        {/* Campagne active / message d'erreur */}
+        {institucion && campanaLoading && (
+          <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin" /> Verificando disponibilidad de la encuesta…
+          </div>
+        )}
+        {institucion && !campanaLoading && campanaActiva && (
+          <div className="rounded-md border border-green-600/40 bg-green-50 dark:bg-green-950/20 p-3 text-sm">
+            <p className="font-medium text-green-900 dark:text-green-100">
+              ✓ Campaña activa: {campanaActiva.nombre}
+            </p>
+            <p className="text-xs text-green-800 dark:text-green-200 mt-0.5">
+              Fase: {FASE_LABEL_UI[campanaActiva.fase] || campanaActiva.fase} · Hasta el {fmtDate(campanaActiva.fecha_fin)}
+            </p>
+          </div>
+        )}
+        {institucion && !campanaLoading && campanaError && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+            {campanaError}
+          </div>
+        )}
+
         {/* Form-specific demographic questions */}
         {formType === "acudientes" && (
           <CheckboxGroup
