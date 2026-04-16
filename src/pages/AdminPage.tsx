@@ -49,6 +49,8 @@ import AdminRolesTab from "@/components/admin/AdminRolesTab";
 import AdminAmbienteMonitorTab from "@/components/admin/AdminAmbienteMonitorTab";
 import AdminAmbienteStatsTab from "@/components/admin/AdminAmbienteStatsTab";
 import AdminAmbiente2025Tab from "@/components/admin/AdminAmbiente2025Tab";
+import AdminAmbienteCampanasTab from "@/components/admin/AdminAmbienteCampanasTab";
+import AdminAmbienteDeltaTab from "@/components/admin/AdminAmbienteDeltaTab";
 import AdminDashboardTab from "@/components/admin/AdminDashboardTab";
 import AdminCaracterizacionTab from "@/components/admin/AdminCaracterizacionTab";
 
@@ -229,7 +231,7 @@ function getHubTitle(activeTab: string): string {
     "enlace-ficha": "Fichas de Información", "blank-pdf": "Fichas de Información", caracterizacion: "Fichas de Información",
     rubricas: "Rúbricas",
     "informe-modulo": "Informe de Módulo",
-    "ambiente-escolar": "Ambiente Escolar", "ambiente-monitoreo": "Ambiente Escolar", "ambiente-estadisticas": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar", "ae-2025": "Ambiente Escolar", "ambiente-delta": "Ambiente Escolar",
+    "ambiente-escolar": "Ambiente Escolar", "ambiente-monitoreo": "Ambiente Escolar", "ambiente-estadisticas": "Ambiente Escolar", "blancos-ambiente": "Ambiente Escolar", "ae-2025": "Ambiente Escolar", "ambiente-delta": "Ambiente Escolar", "ambiente-campanas": "Ambiente Escolar",
     satisfacciones: "Encuestas de Satisfacción",
     certificaciones: "Certificaciones",
     mel: "MEL", "mel-rubricas": "MEL", "mel-config": "MEL",
@@ -470,6 +472,7 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
     case "ambiente-monitoreo":
     case "ambiente-estadisticas":
     case "ae-2025":
+    case "ambiente-campanas":
     case "ambiente-delta": {
       const subAmbienteMap: Record<string, string> = {
         "ambiente-escolar": "monitoreo",
@@ -478,12 +481,14 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
         "blancos-ambiente": "enlaces",
         "ae-2025": "delta",
         "ambiente-delta": "delta",
+        "ambiente-campanas": "campanas",
       };
       const defaultSubAmbiente = subAmbienteMap[activeTab] || "monitoreo";
       return (
         <Tabs defaultValue={defaultSubAmbiente} className="space-y-4">
           <TabsList className="hub-tabs flex-wrap h-auto gap-1 sticky top-[3.5rem] z-10 bg-primary/90 text-primary-foreground py-2 shadow-md rounded-lg">
             <TabsTrigger value="monitoreo" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Monitoreo</TabsTrigger>
+            <TabsTrigger value="campanas" className="gap-1.5"><FlagTriangleRight className="w-4 h-4" /> Campañas</TabsTrigger>
             <TabsTrigger value="estadisticas" className="gap-1.5"><TrendingUp className="w-4 h-4" /> Estadísticas</TabsTrigger>
             <TabsTrigger value="enlaces" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlaces</TabsTrigger>
             <TabsTrigger value="delta" className="gap-1.5"><Layers className="w-4 h-4" /> Delta</TabsTrigger>
@@ -491,6 +496,9 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
 
           <TabsContent value="monitoreo">
             <AdminAmbienteMonitorTab />
+          </TabsContent>
+          <TabsContent value="campanas">
+            <AdminAmbienteCampanasTab />
           </TabsContent>
           <TabsContent value="estadisticas">
             <AdminAmbienteStatsTab />
@@ -509,10 +517,14 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
             </div>
           </TabsContent>
           <TabsContent value="delta">
-            <Tabs defaultValue="linea-base-2025" className="space-y-4">
+            <Tabs defaultValue="por-campana" className="space-y-4">
               <TabsList>
+                <TabsTrigger value="por-campana">Análisis por Campaña</TabsTrigger>
                 <TabsTrigger value="linea-base-2025">Línea Base 2025</TabsTrigger>
               </TabsList>
+              <TabsContent value="por-campana">
+                <AdminAmbienteDeltaTab />
+              </TabsContent>
               <TabsContent value="linea-base-2025">
                 <AdminAmbiente2025Tab />
               </TabsContent>

@@ -37,7 +37,10 @@ interface Submission {
   institucion_educativa: string;
   tipo_formulario: string;
   cohorte_id: string | null;
+  fase: string | null;
 }
+
+const FASE_LABEL: Record<string, string> = { linea_base: "Inicial", cierre: "Evolución" };
 
 function CountBadge({ count }: { count: number }) {
   const variant = count === 0 ? "destructive" : count < 25 ? "secondary" : "default";
@@ -55,6 +58,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
   const [contactDialog, setContactDialog] = useState<Directivo | null>(null);
   const [filterCohorte, setFilterCohorte] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterFase, setFilterFase] = useState<string>("all");
   const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
@@ -76,7 +80,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       while (keepGoing) {
         const { data } = await supabase
           .from("encuestas_ambiente_escolar")
-          .select("institucion_educativa, tipo_formulario, cohorte_id")
+          .select("institucion_educativa, tipo_formulario, cohorte_id, fase")
           .range(from, from + PAGE_SIZE - 1);
         if (data && data.length > 0) {
           allSubmissions.push(...(data as Submission[]));
@@ -138,6 +142,8 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       }
     }
     for (const s of submissions) {
+      // Apply fase filter at submission level
+      if (filterFase !== "all" && s.fase !== filterFase) continue;
       const key = s.tipo_formulario as "docentes" | "estudiantes" | "acudientes";
       if (countMap[s.institucion_educativa] && key in countMap[s.institucion_educativa]) {
         countMap[s.institucion_educativa][key]++;
@@ -200,7 +206,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       filteredRows: filtered,
       filteredTotals: { docentes: fD, estudiantes: fE, acudientes: fA, total: fD + fE + fA },
     };
-  }, [directivos, submissions, cohorteInstitutions, filterCohorte, searchText, filterStatus]);
+  }, [directivos, submissions, cohorteInstitutions, filterCohorte, searchText, filterStatus, filterFase]);
 
   if (loading) {
     return (
@@ -210,7 +216,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
     );
   }
 
-  const hasFilters = filterCohorte !== "all" || filterStatus !== "all" || searchText !== "";
+  const hasFilters = filterCohorte !== "all" || filterStatus !== "all" || filterFase !== "all" || searchText !== "";
 
   return (
     <div className="space-y-4">
@@ -225,6 +231,17 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
             {visibleCohortes.map(c => (
               <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filterFase} onValueChange={setFilterFase}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Fase" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las fases</SelectItem>
+            <SelectItem value="linea_base">Inicial</SelectItem>
+            <SelectItem value="cierre">Evolución</SelectItem>
           </SelectContent>
         </Select>
 
@@ -256,7 +273,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
         </div>
 
         {hasFilters && (
-          <Button variant="outline" size="sm" onClick={() => { setFilterCohorte("all"); setFilterStatus("all"); setSearchText(""); }}>
+          <Button variant="outline" size="sm" onClick={() => { setFilterCohorte("all"); setFilterStatus("all"); setFilterFase("all"); setSearchText(""); }}>
             <X className="w-3 h-3 mr-1" /> Limpiar filtros
           </Button>
         )}

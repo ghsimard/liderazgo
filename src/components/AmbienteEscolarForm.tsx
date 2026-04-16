@@ -32,6 +32,22 @@ interface CohorteInstitution {
   year?: number;
 }
 
+interface CampanaActiva {
+  id: string;
+  cohorte_id: string;
+  fase: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  nombre: string;
+}
+
+const FASE_LABEL_UI: Record<string, string> = { linea_base: "Inicial", cierre: "Evolución" };
+
+function fmtDate(d: string) {
+  const [y, m, day] = d.split("-");
+  return `${day}/${m}/${y}`;
+}
+
 // ── Institution search combobox (reused pattern) ──
 const InstitutionCombobox = forwardRef<HTMLDivElement, {
   value: string;
@@ -322,6 +338,9 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
   // Common
   const [institucion, setInstitucion] = useState("");
   const [cohorteInfo, setCohorteInfo] = useState<{ cohorte_id: string; entidad_territorial: string } | null>(null);
+  const [campanaActiva, setCampanaActiva] = useState<CampanaActiva | null>(null);
+  const [campanaError, setCampanaError] = useState<string | null>(null);
+  const [campanaLoading, setCampanaLoading] = useState(false);
 
   // Acudientes: grados (checkbox)
   const [gradosAcudiente, setGradosAcudiente] = useState<string[]>([]);
@@ -342,6 +361,58 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
 
   // Validation
   const [fieldErrors, setFieldErrors] = useState<Set<string>>(new Set());
+
+  // Lookup campaña activa quand l'institution change
+  useEffect(() => {
+    if (!cohorteInfo) {
+      setCampanaActiva(null);
+      setCampanaError(null);
+      return;
+    }
+    (async () => {
+      setCampanaLoading(true);
+      setCampanaError(null);
+      const today = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("ae_campanas" as any)
+        .select("*")
+        .eq("cohorte_id", cohorteInfo.cohorte_id)
+        .order("fecha_inicio", { ascending: false });
+      setCampanaLoading(false);
+      if (error) {
+        setCampanaError("Error al verificar la disponibilidad de la encuesta.");
+        return;
+      }
+      const campanas = (data as any as CampanaActiva[]) || [];
+      if (campanas.length === 0) {
+        setCampanaError("No hay ninguna campaña configurada para tu institución. Contacta al administrador.");
+        setCampanaActiva(null);
+        return;
+      }
+      // Find active one (today within range)
+      const activa = campanas.find((c) => today >= c.fecha_inicio && today <= c.fecha_fin);
+      if (activa) {
+        setCampanaActiva(activa);
+        return;
+      }
+      // Find next upcoming
+      const upcoming = campanas.filter((c) => today < c.fecha_inicio).sort((a, b) => a.fecha_inicio.localeCompare(b.fecha_inicio))[0];
+      if (upcoming) {
+        setCampanaError(`La campaña "${upcoming.nombre}" está programada para iniciar el ${fmtDate(upcoming.fecha_inicio)}. No se aceptan respuestas en este momento.`);
+        setCampanaActiva(null);
+        return;
+      }
+      // Most recent closed
+      const closed = campanas.filter((c) => today > c.fecha_fin).sort((a, b) => b.fecha_fin.localeCompare(a.fecha_fin))[0];
+      if (closed) {
+        setCampanaError(`La campaña "${closed.nombre}" está cerrada desde el ${fmtDate(closed.fecha_fin)}. No se aceptan respuestas en este momento.`);
+        setCampanaActiva(null);
+        return;
+      }
+      setCampanaError("No hay ninguna campaña activa para tu institución en este momento.");
+      setCampanaActiva(null);
+    })();
+  }, [cohorteInfo]);
 
   const likertSections: LikertSection[] =
     formType === "acudientes"
@@ -392,6 +463,14 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
   };
 
   const handleSubmit = async () => {
+    if (!campanaActiva) {
+      toast({
+        title: "No se puede enviar",
+        description: campanaError || "No hay una campaña activa para tu institución.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!validate()) return;
     setSubmitting(true);
 
@@ -414,14 +493,16 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
 
     try {
       const insertData: any = {
-          tipo_formulario: formType,
-          institucion_educativa: institucion,
-          respuestas,
-        };
-        if (cohorteInfo) {
-          insertData.cohorte_id = cohorteInfo.cohorte_id;
-          insertData.entidad_territorial = cohorteInfo.entidad_territorial;
-        }
+        tipo_formulario: formType,
+        institucion_educativa: institucion,
+        respuestas,
+        cohorte_id: campanaActiva.cohorte_id,
+        campana_id: campanaActiva.id,
+        fase: campanaActiva.fase,
+      };
+      if (cohorteInfo?.entidad_territorial) {
+        insertData.entidad_territorial = cohorteInfo.entidad_territorial;
+      }
       const { error } = await supabase
         .from("encuestas_ambiente_escolar" as any)
         .insert(insertData as any);
@@ -517,6 +598,28 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
           }}
           hasError={fieldErrors.has("institucion")}
         />
+
+        {/* Campagne active / message d'erreur */}
+        {institucion && campanaLoading && (
+          <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin" /> Verificando disponibilidad de la encuesta…
+          </div>
+        )}
+        {institucion && !campanaLoading && campanaActiva && (
+          <div className="rounded-md border border-green-600/40 bg-green-50 dark:bg-green-950/20 p-3 text-sm">
+            <p className="font-medium text-green-900 dark:text-green-100">
+              ✓ Campaña activa: {campanaActiva.nombre}
+            </p>
+            <p className="text-xs text-green-800 dark:text-green-200 mt-0.5">
+              Fase: {FASE_LABEL_UI[campanaActiva.fase] || campanaActiva.fase} · Hasta el {fmtDate(campanaActiva.fecha_fin)}
+            </p>
+          </div>
+        )}
+        {institucion && !campanaLoading && campanaError && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+            {campanaError}
+          </div>
+        )}
 
         {/* Form-specific demographic questions */}
         {formType === "acudientes" && (
@@ -631,7 +734,7 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
         <div className="flex justify-center pt-4 pb-8">
           <Button
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || !campanaActiva}
             size="lg"
             className="min-w-[200px]"
           >
