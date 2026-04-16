@@ -79,17 +79,25 @@ export default function AdminAmbienteCampanasTab() {
 
   async function load() {
     setLoading(true);
-    const [cohortesRes, campanasRes, encuestasRes] = await Promise.all([
+    const [cohortesRes, campanasRes] = await Promise.all([
       supabase.from("ae_cohortes").select("id, nombre, entidad_territorial, year").order("year", { ascending: false }).order("nombre"),
       supabase.from("ae_campanas" as any).select("*").order("fecha_inicio", { ascending: false }),
-      supabase.from("encuestas_ambiente_escolar").select("campana_id"),
     ]);
     setCohortes((cohortesRes.data as Cohorte[]) || []);
-    setCampanas((campanasRes.data as any as Campana[]) || []);
+    const camps = (campanasRes.data as any as Campana[]) || [];
+    setCampanas(camps);
+
+    // Count responses per campaign with server-side count (avoids 1000-row default limit)
     const counts: Record<string, number> = {};
-    ((encuestasRes.data as any[]) || []).forEach((r) => {
-      if (r.campana_id) counts[r.campana_id] = (counts[r.campana_id] || 0) + 1;
-    });
+    await Promise.all(
+      camps.map(async (c) => {
+        const { count } = await supabase
+          .from("encuestas_ambiente_escolar")
+          .select("id", { count: "exact", head: true })
+          .eq("campana_id", c.id);
+        counts[c.id] = count || 0;
+      })
+    );
     setRespuestasCount(counts);
     setLoading(false);
   }
