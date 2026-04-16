@@ -58,14 +58,14 @@ const InstitutionCombobox = forwardRef<HTMLDivElement, {
         if (institutionsError) throw institutionsError;
         if (cohortesError) throw cohortesError;
 
-        const cohortesById = new Map(
-          (cohortRows ?? []).map((row: any) => [row.id, row])
+        const cohortesById = new Map<string, any>(
+          ((cohortRows ?? []) as any[]).map((row) => [row.id, row])
         );
 
         const groupedByInstitution = new Map<string, CohorteInstitution[]>();
 
-        for (const row of institutionRows ?? []) {
-          const cohorte = cohortesById.get(row.cohorte_id);
+        for (const row of (institutionRows ?? []) as any[]) {
+          const cohorte: any = cohortesById.get(row.cohorte_id);
           const item: CohorteInstitution = {
             institucion_educativa: row.institucion_educativa,
             cohorte_id: row.cohorte_id,
