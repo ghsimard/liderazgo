@@ -28,6 +28,8 @@ interface CohorteInstitution {
   institucion_educativa: string;
   cohorte_id: string;
   entidad_territorial: string;
+  is_baseline?: boolean;
+  year?: number;
 }
 
 // ── Institution search combobox (reused pattern) ──
@@ -44,22 +46,50 @@ const InstitutionCombobox = forwardRef<HTMLDivElement, {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await supabase
-          .from("ae_cohorte_instituciones" as any)
-          .select("institucion_educativa, cohorte_id, ae_cohortes(entidad_territorial)" as any);
-        const items: CohorteInstitution[] = (data ?? []).map((row: any) => ({
-          institucion_educativa: row.institucion_educativa,
-          cohorte_id: row.cohorte_id,
-          entidad_territorial: row.ae_cohortes?.entidad_territorial ?? "",
-        }));
-        // Deduplicate by institution name (keep first match)
-        const seen = new Set<string>();
-        const unique = items.filter(i => {
-          if (seen.has(i.institucion_educativa)) return false;
-          seen.add(i.institucion_educativa);
-          return true;
-        });
-        unique.sort((a, b) => a.institucion_educativa.localeCompare(b.institucion_educativa));
+        const [{ data: institutionRows, error: institutionsError }, { data: cohortRows, error: cohortesError }] = await Promise.all([
+          supabase
+            .from("ae_cohorte_instituciones" as any)
+            .select("institucion_educativa, cohorte_id" as any),
+          supabase
+            .from("ae_cohortes" as any)
+            .select("id, entidad_territorial, is_baseline, year" as any),
+        ]);
+
+        if (institutionsError) throw institutionsError;
+        if (cohortesError) throw cohortesError;
+
+        const cohortesById = new Map<string, any>(
+          ((cohortRows ?? []) as any[]).map((row) => [row.id, row])
+        );
+
+        const groupedByInstitution = new Map<string, CohorteInstitution[]>();
+
+        for (const row of (institutionRows ?? []) as any[]) {
+          const cohorte: any = cohortesById.get(row.cohorte_id);
+          const item: CohorteInstitution = {
+            institucion_educativa: row.institucion_educativa,
+            cohorte_id: row.cohorte_id,
+            entidad_territorial: cohorte?.entidad_territorial ?? "",
+            is_baseline: cohorte?.is_baseline ?? true,
+            year: cohorte?.year ?? 0,
+          };
+
+          const existing = groupedByInstitution.get(item.institucion_educativa) ?? [];
+          existing.push(item);
+          groupedByInstitution.set(item.institucion_educativa, existing);
+        }
+
+        const unique = Array.from(groupedByInstitution.values())
+          .map((items) =>
+            items.sort((a, b) => {
+              if ((a.is_baseline ?? true) !== (b.is_baseline ?? true)) {
+                return (a.is_baseline ?? true) ? 1 : -1;
+              }
+              return (b.year ?? 0) - (a.year ?? 0);
+            })[0]
+          )
+          .sort((a, b) => a.institucion_educativa.localeCompare(b.institucion_educativa, "es"));
+
         setCohorteInstitutions(unique);
       } catch (err) {
         console.error("Error loading instituciones:", err);
