@@ -1,85 +1,106 @@
 
 
-## Constat
+## 1. Diagnostic — État de RENDER
 
-| Source | Volume | État |
-|---|---|---|
-| `ae_docentes_submissions_2025` | 2 715 | Données Inicial déjà collectées (mai-oct 2025) |
-| `ae_estudiantes_submissions_2025` | 7 201 | Données Inicial déjà collectées |
-| `ae_acudientes_submissions_2025` | 8 029 | Données Inicial déjà collectées |
-| `encuestas_ambiente_escolar` | 17 615 | Réponses sans `campana_id` ni `fase` |
+### ✅ Ce que tu as déjà appliqué sur Render
+La dernière migration que tu as lancée correspond exactement à `20260416221900` (la plus récente). Elle a créé :
+- Table `ae_campanas` (avec PK, FK, contraintes uniques, index)
+- Colonnes `fase` + `campana_id` sur `encuestas_ambiente_escolar`
+- Les 2 index (`idx_encuestas_ae_campana`, `idx_encuestas_ae_fase`)
 
-Les **3 cohortes 2025** (Itagüí, Medellín, Rionegro) ont leurs **86 institutions** mappées dans `ae_cohorte_instituciones` et leurs réponses Inicial sont **déjà dans la BD** — mais réparties dans 2 emplacements différents :
-- Tables historiques `ae_*_submissions_2025` (import RLT-Stats d'origine)
-- Table unifiée `encuestas_ambiente_escolar` (probablement une migration partielle déjà faite)
+**Aucune migration postérieure n'existe** — tu es à jour côté **structure**.
 
-## Plan d'action
+### ⚠️ Ce qui manque encore sur Render
 
-### 1. Créer 3 campagnes Inicial rétroactives (SQL)
+| # | Élément | Statut Lovable Cloud | Statut Render |
+|---|---|---|---|
+| A | Colonne `ae_cohortes.grupo` supprimée | ✅ Supprimée (migr. 20260416040709) | ❌ Probablement encore présente |
+| B | 3 campagnes "Inicial" 2025 (Itagüí, Medellín, Rionegro) | ✅ Insérées | ❌ Table vide |
+| C | Backfill `campana_id` + `fase = 'linea_base'` sur 17 615 réponses existantes | ✅ Fait (17 615 / 17 615 lignes liées) | ❌ Pas fait |
 
-Pour Itagüí 2025, Medellín 2025, Rionegro 2025 :
-- `fase = 'linea_base'` (= "Inicial" en UI)
-- `fecha_inicio = 2025-05-15` (date min réelle des données)
-- `fecha_fin = 2025-10-14` (date max réelle)
-- `nombre = "<Cohorte> — Inicial"`
+---
 
-### 2. Backfill des `campana_id` + `fase` sur données existantes
+## 2. Vérifications à exécuter sur Render (3 requêtes SELECT)
 
-Mettre à jour `encuestas_ambiente_escolar` :
-- Pour chaque ligne dont `institucion_educativa` appartient à une des 3 cohortes 2025 → injecter le `campana_id` Inicial correspondant et `fase = 'linea_base'`
+Connecte-toi à la DB Render via psql/pgAdmin et lance dans l'ordre :
 
+### 🗄️ Vérif 1 — La colonne `grupo` existe-t-elle encore ?
 ```sql
-UPDATE encuestas_ambiente_escolar e
-SET campana_id = camp.id, fase = 'linea_base'
-FROM ae_cohorte_instituciones ci
-JOIN ae_campanas camp ON camp.cohorte_id = ci.cohorte_id AND camp.fase = 'linea_base'
-WHERE e.institucion_educativa = ci.institucion_educativa
-  AND e.campana_id IS NULL;
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'ae_cohortes' AND column_name = 'grupo';
+```
+- **0 ligne** → déjà supprimée, saute le bloc A ci-dessous
+- **1 ligne** → exécute le bloc A
+
+### 🗄️ Vérif 2 — Les 3 campagnes Inicial existent-elles ?
+```sql
+SELECT cohorte_id, fase, nombre FROM ae_campanas ORDER BY nombre;
+```
+- **3 lignes (Itagüí/Medellín/Rionegro — Inicial)** → saute le bloc B
+- **0 ligne** → exécute le bloc B
+
+### 🗄️ Vérif 3 — Le backfill est-il fait ?
+```sql
+SELECT COUNT(*) AS total, COUNT(campana_id) AS lies, COUNT(fase) AS avec_fase
+FROM encuestas_ambiente_escolar;
+```
+- Si `lies = 0` ou `lies < total` → exécute le bloc C
+- Si `lies = total` → c'est bon
+
+---
+
+## 3. SQL de synchronisation — à exécuter sur Render
+
+### 🗄️ Bloc A — Supprimer la colonne `grupo` (si vérif 1 retourne 1 ligne)
+```sql
+ALTER TABLE public.ae_cohortes DROP COLUMN IF EXISTS grupo;
 ```
 
-### 3. Affichage Admin "Campañas"
-
-Les 3 campagnes Inicial 2025 apparaîtront automatiquement avec :
-- **Estado : Cerrada** (fecha_fin = 2025-10-14 < aujourd'hui)
-- **Respuestas : nombre réel** déjà collecté (visible dans la colonne "Respuestas")
-- **Suppression bloquée** (réponses associées)
-
-L'admin n'aura qu'à créer les **campagnes Evolución 2026** quand il sera prêt à relancer la collecte.
-
-### 4. Onglet Delta — comparaison fonctionnelle dès le départ
-
-Une fois les Evolución créées, le sous-onglet "Análisis por Campaña" pourra immédiatement comparer Inicial 2025 (déjà chargée) vs Evolución (à venir) pour les 3 cohortes.
-
-### 5. Mise à jour RENDER (manuel SQL)
-
-Sur Render, il faudra exécuter en plus du SQL de création de table déjà fourni :
-
+### 🗄️ Bloc B — Créer les 3 campagnes Inicial 2025
 ```sql
--- Insérer les 3 campagnes Inicial rétroactives
-INSERT INTO ae_campanas (cohorte_id, fase, fecha_inicio, fecha_fin, nombre)
-SELECT id, 'linea_base', '2025-05-15', '2025-10-14', nombre || ' — Inicial'
-FROM ae_cohortes
+INSERT INTO public.ae_campanas (cohorte_id, fase, fecha_inicio, fecha_fin, nombre)
+SELECT id, 'linea_base', DATE '2025-05-15', DATE '2025-10-14', nombre || ' — Inicial'
+FROM public.ae_cohortes
 WHERE nombre IN ('Itagüí 2025', 'Medellín 2025', 'Rionegro 2025')
 ON CONFLICT (cohorte_id, fase) DO NOTHING;
+```
 
--- Backfill (si la table encuestas_ambiente_escolar contient déjà des données sur Render)
-UPDATE encuestas_ambiente_escolar e
-SET campana_id = camp.id, fase = 'linea_base'
-FROM ae_cohorte_instituciones ci
-JOIN ae_campanas camp ON camp.cohorte_id = ci.cohorte_id AND camp.fase = 'linea_base'
+### 🗄️ Bloc C — Backfill des réponses existantes
+```sql
+UPDATE public.encuestas_ambiente_escolar e
+SET campana_id = camp.id,
+    fase = 'linea_base'
+FROM public.ae_cohorte_instituciones ci
+JOIN public.ae_campanas camp
+  ON camp.cohorte_id = ci.cohorte_id AND camp.fase = 'linea_base'
 WHERE e.institucion_educativa = ci.institucion_educativa
   AND e.campana_id IS NULL;
 ```
 
-## Actions de déploiement
+### 🗄️ Bloc D — Vérification finale (post-exécution)
+```sql
+SELECT
+  (SELECT COUNT(*) FROM ae_campanas) AS nb_campanas,
+  (SELECT COUNT(*) FROM encuestas_ambiente_escolar WHERE campana_id IS NOT NULL) AS reponses_liees,
+  (SELECT COUNT(*) FROM encuestas_ambiente_escolar) AS total_reponses;
+```
+Résultat attendu : `nb_campanas = 3`, `reponses_liees = total_reponses` (≈ 17 615).
 
-- 🗄️ **Base de données (Lovable Cloud)** : 1 migration → INSERT campagnes + UPDATE backfill (auto-appliqué)
-- 🗄️ **Base de données (Render)** : SQL manuel ci-dessus à exécuter après la migration de structure
-- 🖥️ **Site statique (Frontend)** : aucun changement de code requis — l'onglet Campañas affichera automatiquement les 3 entrées
-- ⚙️ **Web Service (Backend Express)** : aucun changement
+---
 
-## À confirmer
+## 4. Récapitulatif des actions de déploiement
 
-1. Les **dates rétroactives** Inicial 2025 (2025-05-15 → 2025-10-14, dérivées des données réelles) — OK ou tu préfères d'autres bornes ?
-2. Les tables historiques `ae_docentes_submissions_2025` / `ae_estudiantes_submissions_2025` / `ae_acudientes_submissions_2025` — on les laisse intactes (consultables dans l'onglet "Línea Base 2025") ou on les considère comme legacy à terme ?
+| Cible | Action requise |
+|---|---|
+| 🖥️ **Site statique (Frontend)** | Aucune — code déjà déployé, lit `ae_campanas` via `dbClient` |
+| ⚙️ **Web Service (Backend Express)** | Aucune — proxy générique, pas de route spécifique campañas |
+| 🗄️ **Base de données (Render — SQL manuel)** | Lance les 3 vérifs, puis applique les blocs A/B/C nécessaires, puis bloc D pour valider |
+
+---
+
+## 5. Après synchro — comportement attendu
+
+- Onglet **Admin → Ambiente Escolar → Campañas** : 3 lignes "Cerrada" avec leur compteur de réponses (255 docentes Itagüí, etc.)
+- Onglet **Análisis por Campaña** : sélecteur de cohorte fonctionnel, scores Inicial affichés, "Sin datos comparables" pour Evolución (jusqu'à création des campagnes 2026)
+- Suppression d'une campagne Inicial : **bloquée** (réponses associées)
 
