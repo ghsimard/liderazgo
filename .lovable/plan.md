@@ -1,40 +1,103 @@
 
 
-# Plan : Lien institution → cohorte automatique
+## Décisions intégrées
 
-## Résumé
-Au lieu d'envoyer des URLs paramétrées par cohorte, on envoie **3 liens simples** (un par type de formulaire). Quand l'usager choisit son institution, le système retrouve automatiquement la cohorte associée via `ae_cohorte_instituciones` et insère `cohorte_id` + `entidad_territorial` dans la soumission.
+1. **Hors fenêtre** → Bloquer avec message clair en espagnol : *"La campaña [nombre] está [programada para iniciar el DD/MM/YYYY | cerrada desde el DD/MM/YYYY]. No se aceptan respuestas en este momento."*
+2. **Pas de rappels email** automatiques.
+3. **Archivage** automatique après 3 ans (vue séparée filtrée par défaut).
 
-## Flux simplifié
+## Terminologie — propositions pour remplacer Entrada/Salida
+
+| Option | Phase 1 | Phase 2 | Notes |
+|---|---|---|---|
+| **A. Diagnóstico / Impacto** | Diagnóstico | Impacto | Évoque l'état initial puis l'effet du programme |
+| **B. Línea Base / Cierre** | Línea Base | Cierre | Cohérent avec "Línea Base 2025" déjà utilisé |
+| **C. Antes / Después** | Antes | Después | Simple, naturel pour les répondants |
+| **D. Inicial / Evolución** | Inicial | Evolución | Souligne la dimension de progression |
+
+Je recommande **B (Línea Base / Cierre)** pour la cohérence avec la nomenclature existante du projet (onglet "Línea Base 2025"), mais à valider.
+
+## Concept "Campaña"
+
+Une campagne = fenêtre temporelle de collecte définie par :
+- **Cohorte** (région/ET, ex: Oriente 2026)
+- **Fase** (línea_base ou cierre)
+- **Fecha inicio + fecha fin** (obligatoires)
+- **Estado auto-calculé** : Programada / Activa / Cerrada / Archivada (>3 ans)
+
+Une seule campagne par (cohorte, fase) — contrainte unique.
+
+## Flux usager
 
 ```text
-3 liens fixes :
-  /encuesta-ambiente-docentes
-  /encuesta-ambiente-estudiantes
-  /encuesta-ambiente-acudientes
-
-Usager choisit IE → lookup ae_cohorte_instituciones → cohorte_id + ET auto-injectés
+Usager ouvre /encuesta-ambiente-docentes
+  → choisit institución
+  → système cherche campaña Activa pour (institución, hoy entre fechas)
+  → si trouvée : injecte cohorte_id + fase + entidad_territorial
+  → si Programada : "La campaña inicia el DD/MM/YYYY"
+  → si Cerrada : "La campaña terminó el DD/MM/YYYY"
+  → si aucune : "No hay campaña activa para tu institución"
 ```
 
-## Étapes
+## Changements base de données
 
-### 1. Modifier `InstitutionCombobox` dans `AmbienteEscolarForm.tsx`
-- Au lieu de charger depuis la table `instituciones` (toutes les IE du programme), charger depuis `ae_cohorte_instituciones` jointe à `ae_cohortes` pour ne proposer **que les IE participant au module AE**.
-- Retourner aussi le `cohorte_id` et `entidad_territorial` associés à l'institution sélectionnée.
+**Nouvelle table `ae_campanas`**
+| Colonne | Type | Description |
+|---|---|---|
+| id | uuid PK | |
+| cohorte_id | uuid → ae_cohortes | |
+| fase | text | 'linea_base' ou 'cierre' |
+| fecha_inicio | date NOT NULL | |
+| fecha_fin | date NOT NULL | check fin ≥ inicio |
+| nombre | text | auto: "Oriente 2026 — Línea Base" |
+| created_at | timestamptz | now() |
 
-### 2. Modifier le `handleSubmit`
-- Ajouter `cohorte_id` et `entidad_territorial` dans l'objet inséré dans `encuestas_ambiente_escolar`, déterminés automatiquement par l'institution choisie.
+UNIQUE (cohorte_id, fase)
 
-### 3. Admin Monitor — Bouton "Copiar enlaces"
-- Ajouter un petit bouton dans `AdminAmbienteMonitorTab.tsx` qui copie les 3 liens fixes dans le presse-papier pour faciliter l'envoi aux recteurs.
+**Modification `encuestas_ambiente_escolar`**
+- Ajouter colonne `fase` (text, nullable rétrocompatible)
+- Ajouter colonne `campana_id` (uuid, nullable) pour traçabilité directe
 
-## Détails techniques
+## Interface Admin — nouvel onglet "Campañas"
 
-| Fichier | Modification |
+Dans la section Ambiente Escolar (à côté de Monitoreo / Enlaces / Estadísticas / Delta) :
+
+- **Tableau** : Cohorte | Fase | Inicio | Fin | Estado (badge) | Respuestas | Acciones
+- **Bouton "Nueva campaña"** : sélection cohorte + fase + dates avec validation
+- **Filtres** : región, fase, estado (Programada/Activa/Cerrada/Archivada)
+- **Toggle "Mostrar archivadas"** : par défaut masquées
+- **Édition/Suppression** : suppression bloquée si réponses existent
+
+## Onglet Delta — enrichissement
+
+Sous l'onglet Delta existant, ajouter sous-onglet **"Análisis por Campaña"** :
+- Sélection cohorte + comparaison Línea Base vs Cierre
+- Calcul Δ par dimension (Convivencia, Comunicación, Prácticas Pedagógicas) et par grupo (docentes/estudiantes/acudientes)
+- Visualisation : barres horizontales avec flèche ▲▼ et delta en points
+
+## Monitoreo — adaptation
+
+Ajouter filtre **Fase** (Todas / Línea Base / Cierre) pour distinguer visuellement les deux vagues dans le tableau de comptage.
+
+## Fichiers impactés
+
+| Fichier | Action |
 |---|---|
-| `src/components/AmbienteEscolarForm.tsx` | `InstitutionCombobox` charge depuis `ae_cohorte_instituciones` + `ae_cohortes`, expose `cohorte_id`/`entidad_territorial` ; `handleSubmit` les inclut dans l'insert |
-| `src/components/admin/AdminAmbienteMonitorTab.tsx` | Bouton "Copiar enlaces" avec les 3 URLs |
+| Migration SQL | Créer `ae_campanas` + colonnes `fase`/`campana_id` sur `encuestas_ambiente_escolar` |
+| `src/components/AmbienteEscolarForm.tsx` | Lookup campagne active après sélection IE ; injection auto + messages d'erreur fenêtre |
+| `src/components/admin/AdminAmbienteCampanasTab.tsx` | NOUVEAU — CRUD campagnes |
+| `src/components/admin/AdminAmbienteMonitorTab.tsx` | Ajouter filtre Fase |
+| `src/components/admin/AdminAmbienteDeltaTab.tsx` | NOUVEAU — Analyse Δ par campagne |
+| `src/pages/AdminPage.tsx` | Nouvel onglet "Campañas" + sous-onglet Delta |
 
-### Rétrocompatibilité
-Les soumissions existantes (sans `cohorte_id`) restent inchangées. Le monitor les associe déjà par nom d'institution.
+## Actions de déploiement
+
+- 🗄️ **Base de données** (Manual SQL) : table `ae_campanas` + 2 colonnes ajoutées
+- 🖥️ **Site statique (Frontend)** : redéploiement Render — nouvel onglet Admin + logique formulaires publics + analyse Delta
+- ⚙️ **Web Service (Backend Express)** : aucun changement — proxy DB existant suffit
+
+## À confirmer avant codage
+
+1. **Terminologie** : valides-tu **Línea Base / Cierre** (option B) ou préfères-tu une autre option (A, C, D) ?
+2. **Suppression d'une campagne avec réponses** : interdite totalement, ou autorisée pour Superadmin uniquement ?
 
