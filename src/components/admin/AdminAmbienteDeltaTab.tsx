@@ -98,19 +98,29 @@ export default function AdminAmbienteDeltaTab() {
     const inicial = campanasCohorte.find((c) => c.fase === "linea_base");
     const evolucion = campanasCohorte.find((c) => c.fase === "cierre");
 
+    // ⚠️ TEMP SIMULATION — remove after demo
+    const SIM_COHORTE_ID = "2ca48e5d-2c62-4576-a341-a158474fa088"; // Itagüí 2025
+    const isSimCohorte = selectedCohorte === SIM_COHORTE_ID;
+
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const result = groups.map((g) => {
       const subsIni = inicial ? submissions.filter((s) => s.campana_id === inicial.id && s.tipo_formulario === g) : [];
       const subsEvo = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id && s.tipo_formulario === g) : [];
       const sections = SECTIONS_BY_FORM[g].map((sec) => {
         const ini = avgScore(subsIni, sec.itemIds);
-        const evo = avgScore(subsEvo, sec.itemIds);
+        let evo = avgScore(subsEvo, sec.itemIds);
+        // ⚠️ TEMP SIMULATION — Itagüí / Docentes / Comunicación
+        if (isSimCohorte && g === "docentes" && sec.title === "Comunicación") {
+          evo = 4.67;
+        }
         const delta = ini !== null && evo !== null ? evo - ini : null;
         return { title: sec.title, ini, evo, delta };
       });
-      return { grupo: g, countIni: subsIni.length, countEvo: subsEvo.length, sections };
+      const countEvoFinal = isSimCohorte && g === "docentes" ? 240 : subsEvo.length;
+      return { grupo: g, countIni: subsIni.length, countEvo: countEvoFinal, sections };
     });
-    return { inicial, evolucion, groups: result };
+    const evolucionFinal = evolucion ?? (isSimCohorte ? ({ id: "sim", cohorte_id: selectedCohorte, fase: "cierre", nombre: "SIMULADO" } as Campana) : undefined);
+    return { inicial, evolucion: evolucionFinal, groups: result };
   }, [selectedCohorte, campanas, submissions]);
 
   if (loading) {
