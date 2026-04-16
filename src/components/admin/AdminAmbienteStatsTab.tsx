@@ -48,6 +48,7 @@ interface RawSubmission {
   institucion_educativa: string;
   tipo_formulario: string;
   respuestas: Record<string, string>;
+  cohorte_id: string | null;
 }
 
 interface FichaInfo {
@@ -176,12 +177,16 @@ export default function AdminAmbienteStatsTab() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [subData, fichaData, regRes] = await Promise.all([
-        fetchAllRows<RawSubmission>("encuestas_ambiente_escolar", "institucion_educativa, tipo_formulario, respuestas"),
+      const [subData, fichaData, regRes, cohortesRes] = await Promise.all([
+        fetchAllRows<RawSubmission>("encuestas_ambiente_escolar", "institucion_educativa, tipo_formulario, respuestas, cohorte_id"),
         fetchAllRows<FichaInfo>("fichas_rlt", "nombre_ie, region, entidad_territorial"),
         supabase.from("regiones").select("nombre, mostrar_logo_rlt, mostrar_logo_clt"),
+        supabase.from("ae_cohortes").select("id, year").gte("year", 2026),
       ]);
-      setSubmissions(subData);
+      // Only keep submissions belonging to current cohortes (2026+)
+      const currentCohorteIds = new Set((cohortesRes.data || []).map((c: any) => c.id));
+      const filteredSubs = subData.filter(s => s.cohorte_id && currentCohorteIds.has(s.cohorte_id));
+      setSubmissions(filteredSubs);
       setFichas(fichaData);
       setRegions((regRes.data || []) as RegionInfo[]);
       setLoading(false);
