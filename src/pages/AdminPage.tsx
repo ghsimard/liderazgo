@@ -486,7 +486,7 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
             <TabsTrigger value="monitoreo" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Monitoreo</TabsTrigger>
             <TabsTrigger value="estadisticas" className="gap-1.5"><TrendingUp className="w-4 h-4" /> Estadísticas</TabsTrigger>
             <TabsTrigger value="enlaces" className="gap-1.5"><Link2 className="w-4 h-4" /> Enlaces</TabsTrigger>
-            <TabsTrigger value="delta" className="gap-1.5"><Layers className="w-4 h-4" /> Ambiente Delta</TabsTrigger>
+            <TabsTrigger value="delta" className="gap-1.5"><Layers className="w-4 h-4" /> Delta</TabsTrigger>
           </TabsList>
 
           <TabsContent value="monitoreo">
