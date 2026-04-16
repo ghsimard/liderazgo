@@ -87,8 +87,11 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
         }
       }
 
-      setCohortes((cohortesRes.data as Cohorte[]) || []);
-      setCohorteInstitutions((instRes.data as CohorteInstitution[]) || []);
+      const currentCohortes = (cohortesRes.data as Cohorte[]) || [];
+      const currentCohorteIds = new Set(currentCohortes.map(c => c.id));
+      const filteredInst = ((instRes.data as CohorteInstitution[]) || []).filter(ci => currentCohorteIds.has(ci.cohorte_id));
+      setCohortes(currentCohortes);
+      setCohorteInstitutions(filteredInst);
       setDirectivos((fichasRes.data as Directivo[]) || []);
       setSubmissions(allSubmissions);
       setLoading(false);
