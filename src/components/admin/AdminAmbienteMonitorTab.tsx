@@ -7,7 +7,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw, Mail, Phone, Eye, Search, X } from "lucide-react";
-import { useGeographicData } from "@/hooks/useGeographicData";
+
+interface Cohorte {
+  id: string;
+  nombre: string;
+  entidad_territorial: string;
+  year: number;
+  grupo: number;
+}
+
+interface CohorteInstitution {
+  cohorte_id: string;
+  institucion_educativa: string;
+}
 
 interface Directivo {
   nombre_ie: string;
@@ -24,6 +36,7 @@ interface Directivo {
 interface Submission {
   institucion_educativa: string;
   tipo_formulario: string;
+  cohorte_id: string | null;
 }
 
 function CountBadge({ count }: { count: number }) {
@@ -33,25 +46,28 @@ function CountBadge({ count }: { count: number }) {
 }
 
 export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedRegions?: string[] } = {}) {
+  const [cohortes, setCohortes] = useState<Cohorte[]>([]);
+  const [cohorteInstitutions, setCohorteInstitutions] = useState<CohorteInstitution[]>([]);
   const [directivos, setDirectivos] = useState<Directivo[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [contactDialog, setContactDialog] = useState<Directivo | null>(null);
-  const [filterRegion, setFilterRegion] = useState<string>(allowedRegions?.length === 1 ? allowedRegions[0] : "all");
+  const [filterCohorte, setFilterCohorte] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchText, setSearchText] = useState("");
-  const { regionNames, getInstitucionesForRegion } = useGeographicData();
 
   useEffect(() => {
     async function load() {
       setLoading(true);
 
-      // Fetch all fichas
-      const fichasRes = await supabase
-        .from("fichas_rlt")
-        .select("nombre_ie, nombres_apellidos, correo_personal, correo_institucional, celular_personal, telefono_ie, prefiere_correo, cargo_actual, region");
+      // Fetch cohortes, cohorte institutions, fichas in parallel
+      const [cohortesRes, instRes, fichasRes] = await Promise.all([
+        supabase.from("ae_cohortes").select("id, nombre, entidad_territorial, year, grupo").order("year", { ascending: false }).order("nombre"),
+        supabase.from("ae_cohorte_instituciones").select("cohorte_id, institucion_educativa"),
+        supabase.from("fichas_rlt").select("nombre_ie, nombres_apellidos, correo_personal, correo_institucional, celular_personal, telefono_ie, prefiere_correo, cargo_actual, region"),
+      ]);
 
-      // Fetch ALL submissions with pagination (default limit is 1000)
+      // Fetch ALL submissions with pagination
       const allSubmissions: Submission[] = [];
       const PAGE_SIZE = 1000;
       let from = 0;
@@ -59,7 +75,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       while (keepGoing) {
         const { data } = await supabase
           .from("encuestas_ambiente_escolar")
-          .select("institucion_educativa, tipo_formulario")
+          .select("institucion_educativa, tipo_formulario, cohorte_id")
           .range(from, from + PAGE_SIZE - 1);
         if (data && data.length > 0) {
           allSubmissions.push(...(data as Submission[]));
@@ -70,6 +86,8 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
         }
       }
 
+      setCohortes((cohortesRes.data as Cohorte[]) || []);
+      setCohorteInstitutions((instRes.data as CohorteInstitution[]) || []);
       setDirectivos((fichasRes.data as Directivo[]) || []);
       setSubmissions(allSubmissions);
       setLoading(false);
@@ -77,40 +95,72 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
     load();
   }, []);
 
-  const { rows, totals, filteredRows, filteredTotals } = useMemo(() => {
-    const institutions = new Set<string>();
-    directivos.forEach((d) => institutions.add(d.nombre_ie));
-    submissions.forEach((s) => institutions.add(s.institucion_educativa));
+  // Filter cohortes by allowedRegions (map region to ET)
+  const visibleCohortes = useMemo(() => {
+    if (!allowedRegions?.length) return cohortes;
+    // Map region names to entidad_territorial for filtering
+    const etMap: Record<string, string> = { Oriente: "Antioquia", Quibdó: "Quibdó" };
+    const allowedETs = allowedRegions.map(r => etMap[r] || r);
+    return cohortes.filter(c => allowedETs.includes(c.entidad_territorial));
+  }, [cohortes, allowedRegions]);
 
-    const countMap: Record<string, { docentes: number; estudiantes: number; acudientes: number }> = {};
-    for (const ie of institutions) {
-      countMap[ie] = { docentes: 0, estudiantes: 0, acudientes: 0 };
+  // Auto-select if only one cohorte visible
+  useEffect(() => {
+    if (visibleCohortes.length === 1 && filterCohorte === "all") {
+      setFilterCohorte(visibleCohortes[0].id);
+    }
+  }, [visibleCohortes, filterCohorte]);
+
+  const { rows, totals, filteredRows, filteredTotals } = useMemo(() => {
+    // Build institution list from cohorte_instituciones
+    const allInstitutions = new Set(cohorteInstitutions.map(ci => ci.institucion_educativa));
+    // Also include institutions from submissions that might not be in cohorte_instituciones
+    submissions.forEach(s => allInstitutions.add(s.institucion_educativa));
+
+    // Count submissions per institution per tipo_formulario
+    const countMap: Record<string, { docentes: number; estudiantes: number; acudientes: number; cohorte_ids: Set<string> }> = {};
+    for (const ie of allInstitutions) {
+      countMap[ie] = { docentes: 0, estudiantes: 0, acudientes: 0, cohorte_ids: new Set() };
+    }
+    // Map institutions to cohorte_ids
+    for (const ci of cohorteInstitutions) {
+      if (countMap[ci.institucion_educativa]) {
+        countMap[ci.institucion_educativa].cohorte_ids.add(ci.cohorte_id);
+      }
     }
     for (const s of submissions) {
-      const key = s.tipo_formulario as keyof (typeof countMap)[string];
+      const key = s.tipo_formulario as "docentes" | "estudiantes" | "acudientes";
       if (countMap[s.institucion_educativa] && key in countMap[s.institucion_educativa]) {
         countMap[s.institucion_educativa][key]++;
       }
+      if (s.cohorte_id && countMap[s.institucion_educativa]) {
+        countMap[s.institucion_educativa].cohorte_ids.add(s.cohorte_id);
+      }
     }
 
-    const sorted = Array.from(institutions).sort();
-    const allRows = sorted.map((ie) => ({ ie, ...countMap[ie], directivo: directivos.find((d) => d.nombre_ie === ie) }));
-    const totalD = sorted.reduce((a, ie) => a + countMap[ie].docentes, 0);
-    const totalE = sorted.reduce((a, ie) => a + countMap[ie].estudiantes, 0);
-    const totalA = sorted.reduce((a, ie) => a + countMap[ie].acudientes, 0);
+    const sorted = Array.from(allInstitutions).sort();
+    const allRows = sorted.map(ie => ({
+      ie,
+      ...countMap[ie],
+      directivo: directivos.find(d => d.nombre_ie === ie),
+    }));
+
+    const totalD = allRows.reduce((a, r) => a + r.docentes, 0);
+    const totalE = allRows.reduce((a, r) => a + r.estudiantes, 0);
+    const totalA = allRows.reduce((a, r) => a + r.acudientes, 0);
 
     // Apply filters
-    let regionInstitutions: string[] | null = null;
-    if (filterRegion !== "all") {
-      regionInstitutions = getInstitucionesForRegion(filterRegion);
-    }
-
-    const filtered = allRows.filter((r) => {
-      if (regionInstitutions && !regionInstitutions.includes(r.ie)) return false;
+    const filtered = allRows.filter(r => {
+      // Cohorte filter
+      if (filterCohorte !== "all") {
+        if (!r.cohorte_ids.has(filterCohorte)) return false;
+      }
+      // Search filter
       if (searchText) {
         const q = searchText.toLowerCase();
         if (!r.ie.toLowerCase().includes(q)) return false;
       }
+      // Status filter
       if (filterStatus === "sin") return r.docentes + r.estudiantes + r.acudientes === 0;
       if (filterStatus === "pocas") {
         const total = r.docentes + r.estudiantes + r.acudientes;
@@ -130,7 +180,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       filteredRows: filtered,
       filteredTotals: { docentes: fD, estudiantes: fE, acudientes: fA, total: fD + fE + fA },
     };
-  }, [directivos, submissions, filterRegion, searchText, filterStatus, getInstitucionesForRegion]);
+  }, [directivos, submissions, cohorteInstitutions, filterCohorte, searchText, filterStatus]);
 
   if (loading) {
     return (
@@ -140,20 +190,20 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
     );
   }
 
-  const hasFilters = filterRegion !== "all" || filterStatus !== "all" || searchText !== "";
+  const hasFilters = filterCohorte !== "all" || filterStatus !== "all" || searchText !== "";
 
   return (
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <Select value={filterRegion} onValueChange={setFilterRegion}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Región" />
+        <Select value={filterCohorte} onValueChange={setFilterCohorte}>
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Cohorte" />
           </SelectTrigger>
           <SelectContent>
-            {!(allowedRegions?.length === 1) && <SelectItem value="all">Todas las regiones</SelectItem>}
-            {(allowedRegions?.length ? regionNames.filter(r => allowedRegions.includes(r)) : regionNames).map((r) => (
-              <SelectItem key={r} value={r}>{r}</SelectItem>
+            {!(visibleCohortes.length === 1) && <SelectItem value="all">Todas las cohortes</SelectItem>}
+            {visibleCohortes.map(c => (
+              <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -186,7 +236,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
         </div>
 
         {hasFilters && (
-          <Button variant="outline" size="sm" onClick={() => { setFilterRegion("all"); setFilterStatus("all"); setSearchText(""); }}>
+          <Button variant="outline" size="sm" onClick={() => { setFilterCohorte("all"); setFilterStatus("all"); setSearchText(""); }}>
             <X className="w-3 h-3 mr-1" /> Limpiar filtros
           </Button>
         )}
