@@ -176,13 +176,13 @@ export default function AdminAmbienteStatsTab() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [subRes, fichaRes, regRes] = await Promise.all([
-        supabase.from("encuestas_ambiente_escolar").select("institucion_educativa, tipo_formulario, respuestas"),
-        supabase.from("fichas_rlt").select("nombre_ie, region, entidad_territorial"),
+      const [subData, fichaData, regRes] = await Promise.all([
+        fetchAllRows<RawSubmission>("encuestas_ambiente_escolar", "institucion_educativa, tipo_formulario, respuestas"),
+        fetchAllRows<FichaInfo>("fichas_rlt", "nombre_ie, region, entidad_territorial"),
         supabase.from("regiones").select("nombre, mostrar_logo_rlt, mostrar_logo_clt"),
       ]);
-      setSubmissions((subRes.data || []) as RawSubmission[]);
-      setFichas((fichaRes.data || []) as FichaInfo[]);
+      setSubmissions(subData);
+      setFichas(fichaData);
       setRegions((regRes.data || []) as RegionInfo[]);
       setLoading(false);
     }
