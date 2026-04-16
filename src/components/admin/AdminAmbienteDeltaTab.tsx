@@ -23,6 +23,7 @@ const SECTIONS_BY_FORM: Record<string, { title: string; itemIds: string[] }[]> =
   docentes: DOCENTES_LIKERT.map((s) => ({ title: s.title, itemIds: s.items.map((i) => i.id) })),
 };
 
+// Returns raw Likert mean on a 1..MAX_SCORE scale (same method as "Línea Base 2025")
 function avgScore(subs: Submission[], itemIds: string[]): number | null {
   let sum = 0;
   let count = 0;
@@ -38,7 +39,7 @@ function avgScore(subs: Submission[], itemIds: string[]): number | null {
     }
   }
   if (count === 0) return null;
-  return (sum / count) / MAX_SCORE * 100; // % score
+  return sum / count; // raw Likert average (1..MAX_SCORE)
 }
 
 export default function AdminAmbienteDeltaTab() {
