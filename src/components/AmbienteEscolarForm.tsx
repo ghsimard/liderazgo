@@ -214,7 +214,7 @@ const LikertGrid = React.forwardRef<HTMLDivElement, {
       </div>
     </div>
   );
-}
+});
 
 // ── Checkbox group ──
 const CheckboxGroup = React.forwardRef<HTMLDivElement, {
@@ -253,7 +253,7 @@ const CheckboxGroup = React.forwardRef<HTMLDivElement, {
       </div>
     </div>
   );
-}
+});
 
 // ── Radio single select ──
 const RadioSingleSelect = React.forwardRef<HTMLDivElement, {
@@ -280,7 +280,7 @@ const RadioSingleSelect = React.forwardRef<HTMLDivElement, {
       </RadioGroup>
     </div>
   );
-}
+});
 
 // ── Main form ──
 interface AmbienteEscolarFormProps {
