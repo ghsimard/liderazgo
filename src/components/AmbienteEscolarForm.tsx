@@ -32,6 +32,22 @@ interface CohorteInstitution {
   year?: number;
 }
 
+interface CampanaActiva {
+  id: string;
+  cohorte_id: string;
+  fase: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  nombre: string;
+}
+
+const FASE_LABEL_UI: Record<string, string> = { linea_base: "Inicial", cierre: "Evolución" };
+
+function fmtDate(d: string) {
+  const [y, m, day] = d.split("-");
+  return `${day}/${m}/${y}`;
+}
+
 // ── Institution search combobox (reused pattern) ──
 const InstitutionCombobox = forwardRef<HTMLDivElement, {
   value: string;
