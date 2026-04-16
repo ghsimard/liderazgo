@@ -64,23 +64,23 @@ export default function AdminDashboardTab() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [fRes, eRes, rRes, aRes, sRes, iRes, atRes, mRes] = await Promise.all([
-        supabase.from("fichas_rlt").select("id, region, cargo_actual, nombre_ie, numero_cedula, nombres_apellidos"),
-        supabase.from("encuestas_360").select("id, fase, tipo_formulario, institucion_educativa, cedula_directivo"),
-        supabase.from("rubrica_seguimientos").select("id, module_number, nivel, directivo_cedula"),
-        supabase.from("encuestas_ambiente_escolar").select("id, tipo_formulario, institucion_educativa"),
-        supabase.from("satisfaccion_responses").select("id, form_type, module_number, region, respuestas"),
-        supabase.from("informe_modulo").select("id, module_number, region, entidad_territorial"),
-        supabase.from("informe_asistencia").select("id, module_number, session_am, session_pm, directivo_cedula, dia"),
+      const [fData, eData, rData, aData, sData, iData, atData, mRes] = await Promise.all([
+        fetchAllRows("fichas_rlt", "id, region, cargo_actual, nombre_ie, numero_cedula, nombres_apellidos"),
+        fetchAllRows("encuestas_360", "id, fase, tipo_formulario, institucion_educativa, cedula_directivo"),
+        fetchAllRows("rubrica_seguimientos", "id, module_number, nivel, directivo_cedula"),
+        fetchAllRows("encuestas_ambiente_escolar", "id, tipo_formulario, institucion_educativa"),
+        fetchAllRows("satisfaccion_responses", "id, form_type, module_number, region, respuestas"),
+        fetchAllRows("informe_modulo", "id, module_number, region, entidad_territorial"),
+        fetchAllRows("informe_asistencia", "id, module_number, session_am, session_pm, directivo_cedula, dia"),
         supabase.from("rubrica_modules").select("module_number, title").order("sort_order"),
       ]);
-      setFichas(fRes.data ?? []);
-      setEncuestas360(eRes.data ?? []);
-      setRubricaSeg(rRes.data ?? []);
-      setAmbienteEsc(aRes.data ?? []);
-      setSatisfaccion(sRes.data ?? []);
-      setInformes(iRes.data ?? []);
-      setAsistencia(atRes.data ?? []);
+      setFichas(fData);
+      setEncuestas360(eData);
+      setRubricaSeg(rData);
+      setAmbienteEsc(aData);
+      setSatisfaccion(sData);
+      setInformes(iData);
+      setAsistencia(atData);
       setModules(mRes.data ?? []);
       setLoading(false);
     })();
