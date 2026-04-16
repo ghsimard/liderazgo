@@ -24,6 +24,12 @@ import {
   type LikertSection,
 } from "@/data/ambienteEscolarData";
 
+interface CohorteInstitution {
+  institucion_educativa: string;
+  cohorte_id: string;
+  entidad_territorial: string;
+}
+
 // ── Institution search combobox (reused pattern) ──
 function InstitutionCombobox({
   value,
@@ -31,22 +37,34 @@ function InstitutionCombobox({
   hasError,
 }: {
   value: string;
-  onChange: (v: string) => void;
+  onChange: (v: string, cohorteInfo?: { cohorte_id: string; entidad_territorial: string }) => void;
   hasError?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const [instituciones, setInstituciones] = useState<string[]>([]);
+  const [cohorteInstitutions, setCohorteInstitutions] = useState<CohorteInstitution[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
         const { data } = await supabase
-          .from("instituciones")
-          .select("nombre")
-          .order("nombre");
-        setInstituciones((data ?? []).map((i) => i.nombre));
+          .from("ae_cohorte_instituciones" as any)
+          .select("institucion_educativa, cohorte_id, ae_cohortes(entidad_territorial)" as any);
+        const items: CohorteInstitution[] = (data ?? []).map((row: any) => ({
+          institucion_educativa: row.institucion_educativa,
+          cohorte_id: row.cohorte_id,
+          entidad_territorial: row.ae_cohortes?.entidad_territorial ?? "",
+        }));
+        // Deduplicate by institution name (keep first match)
+        const seen = new Set<string>();
+        const unique = items.filter(i => {
+          if (seen.has(i.institucion_educativa)) return false;
+          seen.add(i.institucion_educativa);
+          return true;
+        });
+        unique.sort((a, b) => a.institucion_educativa.localeCompare(b.institucion_educativa));
+        setCohorteInstitutions(unique);
       } catch (err) {
         console.error("Error loading instituciones:", err);
       } finally {
@@ -54,6 +72,8 @@ function InstitutionCombobox({
       }
     })();
   }, []);
+
+  const instituciones = cohorteInstitutions.map(ci => ci.institucion_educativa);
 
   const filtered =
     query.length >= 3
@@ -95,7 +115,8 @@ function InstitutionCombobox({
                 key={ie}
                 className="cursor-pointer px-3 py-2 text-sm hover:bg-accent"
                 onMouseDown={() => {
-                  onChange(ie);
+                  const match = cohorteInstitutions.find(ci => ci.institucion_educativa === ie);
+                  onChange(ie, match ? { cohorte_id: match.cohorte_id, entidad_territorial: match.entidad_territorial } : undefined);
                   setQuery(ie);
                   setOpen(false);
                 }}
