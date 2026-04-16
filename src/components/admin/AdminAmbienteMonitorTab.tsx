@@ -13,7 +13,6 @@ interface Cohorte {
   nombre: string;
   entidad_territorial: string;
   year: number;
-  grupo: number;
 }
 
 interface CohorteInstitution {
