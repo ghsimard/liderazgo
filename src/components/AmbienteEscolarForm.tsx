@@ -312,6 +312,7 @@ export default function AmbienteEscolarForm({ formType }: AmbienteEscolarFormPro
 
   // Common
   const [institucion, setInstitucion] = useState("");
+  const [cohorteInfo, setCohorteInfo] = useState<{ cohorte_id: string; entidad_territorial: string } | null>(null);
 
   // Acudientes: grados (checkbox)
   const [gradosAcudiente, setGradosAcudiente] = useState<string[]>([]);
@@ -403,13 +404,18 @@ export default function AmbienteEscolarForm({ formType }: AmbienteEscolarFormPro
     }
 
     try {
-      const { error } = await supabase
-        .from("encuestas_ambiente_escolar" as any)
-        .insert({
+      const insertData: any = {
           tipo_formulario: formType,
           institucion_educativa: institucion,
           respuestas,
-        } as any);
+        };
+        if (cohorteInfo) {
+          insertData.cohorte_id = cohorteInfo.cohorte_id;
+          insertData.entidad_territorial = cohorteInfo.entidad_territorial;
+        }
+      const { error } = await supabase
+        .from("encuestas_ambiente_escolar" as any)
+        .insert(insertData as any);
 
       if (error) throw error;
 
@@ -491,8 +497,9 @@ export default function AmbienteEscolarForm({ formType }: AmbienteEscolarFormPro
         {/* Institution */}
         <InstitutionCombobox
           value={institucion}
-          onChange={(v) => {
+          onChange={(v, info) => {
             setInstitucion(v);
+            setCohorteInfo(info ?? null);
             setFieldErrors((prev) => {
               const n = new Set(prev);
               n.delete("institucion");
