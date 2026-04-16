@@ -734,7 +734,7 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
         <div className="flex justify-center pt-4 pb-8">
           <Button
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || !campanaActiva}
             size="lg"
             className="min-w-[200px]"
           >
