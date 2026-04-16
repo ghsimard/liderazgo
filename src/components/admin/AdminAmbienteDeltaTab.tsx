@@ -195,10 +195,16 @@ function DeltaIndicator({ delta, ini, evo }: { delta: number | null; ini: number
   if (delta === null) return <span className="text-xs text-muted-foreground">Sin datos comparables</span>;
   const Icon = delta > 0.05 ? ArrowUp : delta < -0.05 ? ArrowDown : Minus;
   const color = delta > 0.05 ? "text-green-600" : delta < -0.05 ? "text-destructive" : "text-muted-foreground";
+  const pctRel = ini && ini !== 0 ? (delta / ini) * 100 : null;
   return (
     <span className={`flex items-center gap-1 text-sm font-semibold ${color}`}>
       <Icon className="w-4 h-4" />
-      {delta > 0 ? "+" : ""}{delta.toFixed(2)}
+      {delta > 0 ? "+" : ""}{delta.toFixed(2)} pt
+      {pctRel !== null && (
+        <span className="text-xs font-normal opacity-80">
+          ({pctRel > 0 ? "+" : ""}{pctRel.toFixed(1)}%)
+        </span>
+      )}
     </span>
   );
 }
