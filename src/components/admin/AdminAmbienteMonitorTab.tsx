@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Mail, Phone, Eye, Search, X, Copy, Check } from "lucide-react";
+import { RefreshCw, Mail, Phone, Eye, Search, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Cohorte {
@@ -260,22 +260,6 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
             <X className="w-3 h-3 mr-1" /> Limpiar filtros
           </Button>
         )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            const base = window.location.origin;
-            const links = [
-              `Docentes: ${base}/encuesta-ambiente-docentes`,
-              `Estudiantes: ${base}/encuesta-ambiente-estudiantes`,
-              `Acudientes: ${base}/encuesta-ambiente-acudientes`,
-            ].join("\n");
-            navigator.clipboard.writeText(links);
-            toast({ title: "Enlaces copiados", description: "Los 3 enlaces han sido copiados al portapapeles." });
-          }}
-        >
-          <Copy className="w-3 h-3 mr-1" /> Copiar enlaces
-        </Button>
       </div>
 
       {/* Summary */}
