@@ -132,6 +132,7 @@ const ALLOWED_TABLES = new Set([
   "encuestas_ambiente_escolar",
   "ae_cohortes",
   "ae_cohorte_instituciones",
+  "ae_campanas",
   "satisfaccion_config",
   "satisfaccion_responses",
   "satisfaccion_form_definitions",
