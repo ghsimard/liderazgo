@@ -206,7 +206,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       filteredRows: filtered,
       filteredTotals: { docentes: fD, estudiantes: fE, acudientes: fA, total: fD + fE + fA },
     };
-  }, [directivos, submissions, cohorteInstitutions, filterCohorte, searchText, filterStatus]);
+  }, [directivos, submissions, cohorteInstitutions, filterCohorte, searchText, filterStatus, filterFase]);
 
   if (loading) {
     return (
@@ -216,7 +216,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
     );
   }
 
-  const hasFilters = filterCohorte !== "all" || filterStatus !== "all" || searchText !== "";
+  const hasFilters = filterCohorte !== "all" || filterStatus !== "all" || filterFase !== "all" || searchText !== "";
 
   return (
     <div className="space-y-4">
@@ -231,6 +231,17 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
             {visibleCohortes.map(c => (
               <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filterFase} onValueChange={setFilterFase}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Fase" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las fases</SelectItem>
+            <SelectItem value="linea_base">Inicial</SelectItem>
+            <SelectItem value="cierre">Evolución</SelectItem>
           </SelectContent>
         </Select>
 
