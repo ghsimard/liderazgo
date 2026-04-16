@@ -50,6 +50,7 @@ const PUBLIC_READ_TABLES = new Set([
   "encuestas_ambiente_escolar",
   "ae_cohortes",
   "ae_cohorte_instituciones",
+  "ae_campanas",
   "ae_rectores_2025",
   "ae_docentes_submissions_2025",
   "ae_estudiantes_submissions_2025",
