@@ -283,6 +283,12 @@ function parseOrExpression(expr: string, params: any[]): string | null {
 function parseFiltersFromQuery(qs: Record<string, any>): Filter[] {
   const filters: Filter[] = [];
   for (const [key, val] of Object.entries(qs)) {
+    // Match "not.<op>.<col>" first, then plain "<op>.<col>"
+    const notMatch = key.match(/^not\.(eq|neq|gt|gte|lt|lte|like|ilike|in|is)\.(.+)$/);
+    if (notMatch) {
+      filters.push({ type: `not.${notMatch[1]}`, col: notMatch[2], val });
+      continue;
+    }
     const match = key.match(/^(eq|neq|gt|gte|lt|lte|like|ilike|in|is|or)\.(.+)$/);
     if (match) {
       filters.push({ type: match[1], col: match[2], val });
