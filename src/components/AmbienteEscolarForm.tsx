@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, forwardRef } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/utils/dbClient";
 import { useToast } from "@/hooks/use-toast";
