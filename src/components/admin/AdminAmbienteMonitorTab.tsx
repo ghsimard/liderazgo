@@ -37,7 +37,10 @@ interface Submission {
   institucion_educativa: string;
   tipo_formulario: string;
   cohorte_id: string | null;
+  fase: string | null;
 }
+
+const FASE_LABEL: Record<string, string> = { linea_base: "Inicial", cierre: "Evolución" };
 
 function CountBadge({ count }: { count: number }) {
   const variant = count === 0 ? "destructive" : count < 25 ? "secondary" : "default";
