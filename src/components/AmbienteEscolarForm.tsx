@@ -31,15 +31,11 @@ interface CohorteInstitution {
 }
 
 // ── Institution search combobox (reused pattern) ──
-function InstitutionCombobox({
-  value,
-  onChange,
-  hasError,
-}: {
+const InstitutionCombobox = forwardRef<HTMLDivElement, {
   value: string;
   onChange: (v: string, cohorteInfo?: { cohorte_id: string; entidad_territorial: string }) => void;
   hasError?: boolean;
-}) {
+}>(function InstitutionCombobox({ value, onChange, hasError }, ref) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [cohorteInstitutions, setCohorteInstitutions] = useState<CohorteInstitution[]>([]);
@@ -134,7 +130,7 @@ function InstitutionCombobox({
       </div>
     </div>
   );
-}
+});
 
 // ── Likert grid ──
 const LikertGrid = React.forwardRef<HTMLDivElement, {
@@ -287,7 +283,7 @@ interface AmbienteEscolarFormProps {
   formType: "acudientes" | "estudiantes" | "docentes";
 }
 
-export default function AmbienteEscolarForm({ formType }: AmbienteEscolarFormProps) {
+const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>(function AmbienteEscolarForm({ formType }, ref) {
   const { toast } = useToast();
   const { images } = useAppImages();
   const [submitted, setSubmitted] = useState(false);
@@ -622,4 +618,6 @@ export default function AmbienteEscolarForm({ formType }: AmbienteEscolarFormPro
       </div>
     </div>
   );
-}
+});
+
+export default AmbienteEscolarForm;
