@@ -142,6 +142,8 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       }
     }
     for (const s of submissions) {
+      // Apply fase filter at submission level
+      if (filterFase !== "all" && s.fase !== filterFase) continue;
       const key = s.tipo_formulario as "docentes" | "estudiantes" | "acudientes";
       if (countMap[s.institucion_educativa] && key in countMap[s.institucion_educativa]) {
         countMap[s.institucion_educativa][key]++;
