@@ -1,11 +1,11 @@
 // Mapa región → entidad territorial réelle (Antioquia pour Oriente, Chocó pour Quibdó)
 export const entidadTerritorialPorRegion: Record<string, string> = {
-  Oriente: "Antioquia",
-  Quibdó: "Quibdó",
+  "Oriente 2026": "Antioquia",
+  "Quibdó 2026": "Quibdó",
 };
 
 export const institucionesPorRegion: Record<string, string[]> = {
-  Oriente: [
+  "Oriente 2026": [
     "Institución Educativa Ignacio Botero - El Retiro",
     "Institución Educativa La Paz - La Ceja",
     "Institución Educativa Rural Campestre Nuevo Horizonte - El Carmen de Viboral",
@@ -23,7 +23,7 @@ export const institucionesPorRegion: Record<string, string[]> = {
     "Institución Educativa Rural Chaparral - Granada",
     "Institución Educativa San Vicente Ferrer - San Vicente",
   ],
-  Quibdó: [
+  "Quibdó 2026": [
     "Centro Educativo Diego Luis Córdoba",
     "Centro Educativo El Barranco",
     "Centro Educativo Indígena Emberá Alfonso Dumasa de Caimanero de Jampapa",

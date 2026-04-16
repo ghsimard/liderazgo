@@ -1069,9 +1069,9 @@ export default function AdminEditFicha() {
                 <FormInput id="codigo_dane" {...register("codigo_dane")} maxLength={12} hasError={!!err("codigo_dane")} />
               </FormFieldWrapper>
 
-              {/* Cargo actual — locked for Quibdó, dropdown for others */}
+              {/* Cargo actual — locked for Quibdó 2026, dropdown for others */}
               <FormFieldWrapper name="cargo_actual" label="Cargo actual" required>
-                {regionSeleccionada === "Quibdó" ? (
+                {regionSeleccionada === "Quibdó 2026" ? (
                   <input
                     id="cargo_actual"
                     value={genderizeRole("Rector/a", watch("genero"))}

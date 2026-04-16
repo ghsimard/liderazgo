@@ -98,7 +98,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
   const visibleCohortes = useMemo(() => {
     if (!allowedRegions?.length) return cohortes;
     // Map region names to entidad_territorial for filtering
-    const etMap: Record<string, string> = { Oriente: "Antioquia", Quibdó: "Quibdó" };
+    const etMap: Record<string, string> = { "Oriente 2026": "Antioquia", "Quibdó 2026": "Quibdó" };
     const allowedETs = allowedRegions.map(r => etMap[r] || r);
     return cohortes.filter(c => allowedETs.includes(c.entidad_territorial));
   }, [cohortes, allowedRegions]);
