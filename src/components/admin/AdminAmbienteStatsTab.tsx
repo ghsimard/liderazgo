@@ -8,6 +8,20 @@ import { Button } from "@/components/ui/button";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Progress } from "@/components/ui/progress";
 import { RefreshCw, Users, BookOpen, GraduationCap, Filter, Download, FileText, FlaskConical } from "lucide-react";
+
+async function fetchAllRows<T = any>(table: string, columns: string): Promise<T[]> {
+  const PAGE = 1000;
+  let all: T[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase.from(table).select(columns).range(from, from + PAGE - 1);
+    if (error || !data || data.length === 0) break;
+    all = all.concat(data as T[]);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
 import { ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, FREQUENCY_OPTIONS, JORNADA_OPTIONS, GRADOS_COMPLETOS, GRADOS_ESTUDIANTE, ANOS_OPTIONS, FUENTES_RETROALIMENTACION, type LikertSection } from "@/data/ambienteEscolarData";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { generarAmbienteEscolarReportPDF, type AmbienteReportData } from "@/utils/ambienteEscolarReportPdfGenerator";
