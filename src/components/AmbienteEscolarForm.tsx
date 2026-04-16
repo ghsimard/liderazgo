@@ -463,6 +463,14 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
   };
 
   const handleSubmit = async () => {
+    if (!campanaActiva) {
+      toast({
+        title: "No se puede enviar",
+        description: campanaError || "No hay una campaña activa para tu institución.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!validate()) return;
     setSubmitting(true);
 
@@ -485,14 +493,16 @@ const AmbienteEscolarForm = forwardRef<HTMLDivElement, AmbienteEscolarFormProps>
 
     try {
       const insertData: any = {
-          tipo_formulario: formType,
-          institucion_educativa: institucion,
-          respuestas,
-        };
-        if (cohorteInfo) {
-          insertData.cohorte_id = cohorteInfo.cohorte_id;
-          insertData.entidad_territorial = cohorteInfo.entidad_territorial;
-        }
+        tipo_formulario: formType,
+        institucion_educativa: institucion,
+        respuestas,
+        cohorte_id: campanaActiva.cohorte_id,
+        campana_id: campanaActiva.id,
+        fase: campanaActiva.fase,
+      };
+      if (cohorteInfo?.entidad_territorial) {
+        insertData.entidad_territorial = cohorteInfo.entidad_territorial;
+      }
       const { error } = await supabase
         .from("encuestas_ambiente_escolar" as any)
         .insert(insertData as any);
