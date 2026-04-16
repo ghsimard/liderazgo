@@ -46,6 +46,7 @@ function CountBadge({ count }: { count: number }) {
 }
 
 export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedRegions?: string[] } = {}) {
+  const { toast } = useToast();
   const [cohortes, setCohortes] = useState<Cohorte[]>([]);
   const [cohorteInstitutions, setCohorteInstitutions] = useState<CohorteInstitution[]>([]);
   const [directivos, setDirectivos] = useState<Directivo[]>([]);
