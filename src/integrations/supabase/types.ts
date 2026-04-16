@@ -68,6 +68,44 @@ export type Database = {
         }
         Relationships: []
       }
+      ae_campanas: {
+        Row: {
+          cohorte_id: string
+          created_at: string
+          fase: string
+          fecha_fin: string
+          fecha_inicio: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          cohorte_id: string
+          created_at?: string
+          fase: string
+          fecha_fin: string
+          fecha_inicio: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          cohorte_id?: string
+          created_at?: string
+          fase?: string
+          fecha_fin?: string
+          fecha_inicio?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ae_campanas_cohorte_id_fkey"
+            columns: ["cohorte_id"]
+            isOneToOne: false
+            referencedRelation: "ae_cohortes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ae_cohorte_instituciones: {
         Row: {
           cohorte_id: string
@@ -779,33 +817,46 @@ export type Database = {
       }
       encuestas_ambiente_escolar: {
         Row: {
+          campana_id: string | null
           cohorte_id: string | null
           created_at: string
           entidad_territorial: string | null
+          fase: string | null
           id: string
           institucion_educativa: string
           respuestas: Json
           tipo_formulario: string
         }
         Insert: {
+          campana_id?: string | null
           cohorte_id?: string | null
           created_at?: string
           entidad_territorial?: string | null
+          fase?: string | null
           id?: string
           institucion_educativa: string
           respuestas?: Json
           tipo_formulario: string
         }
         Update: {
+          campana_id?: string | null
           cohorte_id?: string | null
           created_at?: string
           entidad_territorial?: string | null
+          fase?: string | null
           id?: string
           institucion_educativa?: string
           respuestas?: Json
           tipo_formulario?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "encuestas_ambiente_escolar_campana_id_fkey"
+            columns: ["campana_id"]
+            isOneToOne: false
+            referencedRelation: "ae_campanas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "encuestas_ambiente_escolar_cohorte_id_fkey"
             columns: ["cohorte_id"]
