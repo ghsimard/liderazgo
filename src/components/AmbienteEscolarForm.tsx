@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, forwardRef } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/utils/dbClient";
 import { useToast } from "@/hooks/use-toast";
@@ -137,17 +137,12 @@ function InstitutionCombobox({
 }
 
 // ── Likert grid ──
-function LikertGrid({
-  section,
-  answers,
-  onChange,
-  errors,
-}: {
+const LikertGrid = React.forwardRef<HTMLDivElement, {
   section: LikertSection;
   answers: Record<string, string>;
   onChange: (id: string, value: string) => void;
   errors: Set<string>;
-}) {
+}>(function LikertGrid({ section, answers, onChange, errors }, ref) {
   return (
     <div className="space-y-4">
       <div>
@@ -219,22 +214,16 @@ function LikertGrid({
       </div>
     </div>
   );
-}
+});
 
 // ── Checkbox group ──
-function CheckboxGroup({
-  label,
-  options,
-  selected,
-  onChange,
-  hasError,
-}: {
+const CheckboxGroup = React.forwardRef<HTMLDivElement, {
   label: string;
   options: string[];
   selected: string[];
   onChange: (v: string[]) => void;
   hasError?: boolean;
-}) {
+}>(function CheckboxGroup({ label, options, selected, onChange, hasError }, ref) {
   const toggle = (opt: string) => {
     onChange(
       selected.includes(opt)
@@ -264,22 +253,16 @@ function CheckboxGroup({
       </div>
     </div>
   );
-}
+});
 
 // ── Radio single select ──
-function RadioSingleSelect({
-  label,
-  options,
-  value,
-  onChange,
-  hasError,
-}: {
+const RadioSingleSelect = React.forwardRef<HTMLDivElement, {
   label: string;
   options: string[];
   value: string;
   onChange: (v: string) => void;
   hasError?: boolean;
-}) {
+}>(function RadioSingleSelect({ label, options, value, onChange, hasError }, ref) {
   return (
     <div className={`space-y-2 ${hasError ? "ring-1 ring-destructive rounded-md p-3" : ""}`}>
       <label className="text-sm font-medium">
@@ -297,7 +280,7 @@ function RadioSingleSelect({
       </RadioGroup>
     </div>
   );
-}
+});
 
 // ── Main form ──
 interface AmbienteEscolarFormProps {
