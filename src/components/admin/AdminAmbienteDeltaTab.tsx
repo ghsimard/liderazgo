@@ -12,8 +12,10 @@ interface Submission { campana_id: string | null; tipo_formulario: string; respu
 const DB_TO_UI: Record<string, string> = { linea_base: "Inicial", cierre: "Evolución" };
 
 // Convert frequency option to numeric score (1..N)
+// FREQUENCY_OPTIONS is declared in display order (Siempre → Nunca for stacked charts),
+// so we must REVERSE the index to map Nunca=1 ... Siempre=5.
 const FREQ_SCORE: Record<string, number> = Object.fromEntries(
-  FREQUENCY_OPTIONS.map((opt, i) => [opt, i + 1])
+  FREQUENCY_OPTIONS.map((opt, i) => [opt, FREQUENCY_OPTIONS.length - i])
 );
 const MAX_SCORE = FREQUENCY_OPTIONS.length;
 
