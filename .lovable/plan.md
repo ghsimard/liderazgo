@@ -1,37 +1,57 @@
 
 
-# Plan : Aligner ae_rectores_2025 sur Render et vérifier l'ensemble
+# Plan : Implémenter les cohortes dans Ambiente Escolar Monitoreo
 
 ## Contexte
-La table `ae_rectores_2025` existe sur Lovable Cloud (99 lignes, 57 colonnes TEXT) mais pas sur Render. L'utilisateur accepte sa création sur prod.
 
-## Actions
+Actuellement, le moniteur (`AdminAmbienteMonitorTab`) utilise le système géographique (régions → institutions via `useGeographicData`) pour filtrer. Or, les données AE 2025 sont structurées par **cohortes** (`ae_cohortes` + `ae_cohorte_instituciones`).
 
-### 1. 🗄️ Base de données (Render) — Manuel
-Exécuter le script SQL ci-dessus pour créer `ae_rectores_2025` sur Render.
-Puis insérer les 99 lignes de données (export CSV depuis Cloud, import via `\copy` ou INSERT).
+### État actuel des cohortes
+- **Medellín 2025 G1** : 64 institutions, 12 679 soumissions
+- **Rionegro 2025 G1** : 15 institutions, 2 513 soumissions
+- **Itagüí 2025 G1** : 7 institutions, 2 423 soumissions
+- **Quibdó** : Pas de cohorte créée (institutions dans `institucionesPorRegion` statique, 25 IE)
+- **Oriente** : Pas de cohorte créée (institutions dans `institucionesPorRegion` statique, 16 IE)
 
-### 2. ⚙️ Web Service (Render) — Code
-Ajouter `ae_rectores_2025` dans `PUBLIC_READ_TABLES` de `server/routes/db.ts` pour que le frontend puisse lire cette table via le proxy.
+Toutes les 17 615 soumissions ont un `cohorte_id` (aucune orpheline).
 
-### 3. 🖥️ Frontend — Aucun changement
-Le composant `AdminAmbiente2025Tab.tsx` lit déjà `ae_rectores_2025` — il fonctionnera dès que la table sera accessible via le proxy.
+## Modifications
 
-### 4. Script de vérification complet
-Générer et fournir un script SQL "env-aware" qui vérifie l'existence et le contenu des 7 tables AE sur n'importe quel environnement (Cloud ou Render) :
-- `ae_rectores_2025` (99 lignes attendues)
-- `ae_docentes_submissions_2025` (2 715)
-- `ae_estudiantes_submissions_2025` (7 201)
-- `ae_acudientes_submissions_2025` (8 029)
-- `ae_cohortes` (3)
-- `ae_cohorte_instituciones` (86)
-- `encuestas_ambiente_escolar` (17 615) + colonnes `cohorte_id`, `entidad_territorial`
+### 1. Créer les cohortes manquantes (migration SQL)
 
-### 5. Export des données pour insertion Render
-Exécuter un script dans le sandbox pour exporter les 99 lignes de `ae_rectores_2025` depuis Cloud en fichier CSV téléchargeable, que tu pourras importer sur Render via `\copy`.
+Insérer dans `ae_cohortes` :
+- **Quibdó 2024 G1** (ET: Quibdó, year: 2024, is_baseline: true)
+- **Oriente 2024 G1** (ET: Antioquia, year: 2024, is_baseline: true)
 
-### Détails techniques
-- Fichier modifié : `server/routes/db.ts` (ajout d'une entrée dans `PUBLIC_READ_TABLES`)
-- Fichier généré : `/mnt/documents/ae_rectores_2025.csv` (export des données)
-- Fichier généré : `/mnt/documents/verify_ae_tables.sql` (script de vérification)
+Puis insérer les 25 + 16 institutions correspondantes dans `ae_cohorte_instituciones` en utilisant les noms exacts de `institucionesPorRegion`.
+
+### 2. Refactorer AdminAmbienteMonitorTab
+
+Remplacer le filtre par **région géographique** par un filtre par **cohorte** :
+
+- **Charger les cohortes** depuis `ae_cohortes` + `ae_cohorte_instituciones` au lieu de `useGeographicData`
+- **Filtre "Cohorte"** : dropdown listant toutes les cohortes (ex: "Medellín 2025 G1", "Quibdó 2024 G1", etc.)
+- **Liste d'institutions** : pour chaque cohorte sélectionnée, afficher uniquement les IE de `ae_cohorte_instituciones`
+- **Comptage des soumissions** : filtrer `encuestas_ambiente_escolar` par `cohorte_id` au lieu de matcher par nom d'institution
+- Conserver les filtres existants (statut, recherche texte)
+
+### 3. Détails techniques
+
+```text
+Flux de données :
+  ae_cohortes ──→ dropdown filtre
+       │
+  ae_cohorte_instituciones ──→ liste des IE attendues
+       │
+  encuestas_ambiente_escolar (WHERE cohorte_id = X) ──→ comptage par tipo_formulario
+       │
+  fichas_rlt (JOIN par nombre_ie) ──→ info contact directivo
+```
+
+- Le `SELECT` sur `encuestas_ambiente_escolar` inclura `cohorte_id` pour grouper
+- Les institutions sans soumissions apparaîtront avec badges rouges (0)
+- La pagination (boucle while > 1000) reste en place mais filtrée par cohorte
+
+### Fichier modifié
+- `src/components/admin/AdminAmbienteMonitorTab.tsx` — réécriture du chargement et des filtres
 
