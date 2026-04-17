@@ -317,18 +317,7 @@ export default function AdminAmbienteDeltaTab() {
       <p className="text-xs text-muted-foreground">Escala Likert: 1 (Nunca) — {MAX_SCORE} (Siempre). Δ expresado en puntos sobre {MAX_SCORE}.</p>
 
       {/* Sistema de calificación (statique, toujours visible) */}
-      <Card className="border-muted">
-        <CardContent className="p-5 space-y-2 text-sm">
-          <h3 className="text-base font-bold">Sistema de calificación</h3>
-          <ul className="list-disc ml-5 space-y-1 text-muted-foreground">
-            <li>Escala Likert de frecuencia: <strong>1 (Nunca) → {MAX_SCORE} (Siempre)</strong>.</li>
-            <li>Cálculo del Δ: promedio Evolución − promedio Inicial, por sección y por grupo.</li>
-            <li>Umbral pedagógico significativo: <strong>ΔP ≥ 0.5 puntos</strong> indica mejora notable; ΔP ≤ −0.5 indica retroceso.</li>
-            <li>Convención visual: <span className="text-green-600 font-semibold">▲ verde</span> (mejora), <span className="text-destructive font-semibold">▼ rojo</span> (retroceso), <span className="text-muted-foreground font-semibold">= gris</span> (estable, |Δ| &lt; 0.05).</li>
-            <li>Promedio global de la cohorte: media no ponderada de los promedios de los 3 grupos (Docentes, Estudiantes, Acudientes).</li>
-          </ul>
-        </CardContent>
-      </Card>
+      {ratingCard}
 
       {/* Cohort-level summary card */}
       {analysis && (
