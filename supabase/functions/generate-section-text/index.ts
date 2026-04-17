@@ -9,7 +9,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { sectionType, sectionTitle, chartData, generalStats, filterType, filterModule, filterRegion, totalResponses, comments, overallSatisfaction } = await req.json();
+    const { sectionType, sectionTitle, chartData, generalStats, filterType, filterModule, filterRegion, totalResponses, comments, overallSatisfaction, cohorteNombre, maxScore, cohortIni, cohortEvo, cohortDelta, deltasPorGrupo } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -78,6 +78,29 @@ Genera entre 4 y 6 puntos clave (viñetas) que sinteticen:
 
 Cada viñeta debe ser un párrafo corto (1-2 oraciones). Usa HTML simple (<p>, <strong>, <em>).
 Responde SOLO con las viñetas, una por línea, separadas por |||. Sin numeración ni viñetas de texto.`;
+    } else if (sectionType === "ambiente_delta") {
+      const groupsDesc = (deltasPorGrupo || []).map((g: any) => {
+        const secs = (g.sections || [])
+          .map((s: any) => `    · ${s.title}: Inicial ${s.ini ?? "—"} → Evolución ${s.evo ?? "—"} (Δ ${s.delta ?? "—"})`)
+          .join("\n");
+        return `Grupo ${g.grupo} (n inicial=${g.countIni}, n evolución=${g.countEvo}, promedio global Inicial ${g.iniGlobal ?? "—"} → Evolución ${g.evoGlobal ?? "—"}, ΔGlobal ${g.deltaGlobal ?? "—"}):\n${secs}`;
+      }).join("\n\n");
+      prompt = `Programa Rectores Líderes Transformadores (RLT) en Colombia. Cohorte: ${cohorteNombre}.
+Análisis comparativo Δ del Ambiente Escolar entre la fase Inicial (línea base) y la fase Evolución (cierre).
+Escala Likert 1 (Nunca) a ${maxScore} (Siempre). Umbral pedagógico significativo: ΔP ≥ 0.5 puntos.
+
+Promedio global cohorte: Inicial ${cohortIni ?? "—"} → Evolución ${cohortEvo ?? "—"} (ΔGlobal ${cohortDelta ?? "—"} pt)
+
+Detalle por grupo y sección:
+${groupsDesc}
+
+Como experto en clima escolar, redacta un análisis interpretativo (200-280 palabras) que:
+1. Comente brevemente la evolución global de la cohorte.
+2. Identifique 2 fortalezas claras (mayores deltas positivos) por grupo, citando la sección y el valor del Δ.
+3. Identifique 2 áreas de mejora (deltas negativos o estancamiento por debajo de 0.2 pt) por grupo, citando la sección y el valor.
+4. Cierre con 1 recomendación pedagógica concreta y accionable para el equipo directivo.
+
+Tono profesional, formativo, en español formal, tercera persona. No menciones "IA" ni el modelo. Estructura tu respuesta en HTML simple usando <p>, <strong> y <em>. Sin título principal.`;
     } else {
       throw new Error(`Tipo de sección no soportado: ${sectionType}`);
     }
