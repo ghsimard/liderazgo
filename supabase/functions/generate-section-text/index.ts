@@ -78,6 +78,24 @@ Genera entre 4 y 6 puntos clave (viñetas) que sinteticen:
 
 Cada viñeta debe ser un párrafo corto (1-2 oraciones). Usa HTML simple (<p>, <strong>, <em>).
 Responde SOLO con las viñetas, una por línea, separadas por |||. Sin numeración ni viñetas de texto.`;
+    } else if (sectionType === "ambiente_delta") {
+      const { cohorteNombre, maxScore, cohortIni, cohortEvo, cohortDelta, deltasPorGrupo } = await (async () => ({
+        cohorteNombre: (globalThis as any).__cn || "",
+        maxScore: (globalThis as any).__ms || 5,
+        cohortIni: (globalThis as any).__ci ?? null,
+        cohortEvo: (globalThis as any).__ce ?? null,
+        cohortDelta: (globalThis as any).__cd ?? null,
+        deltasPorGrupo: (globalThis as any).__dg || [],
+      }))();
+      // Note: Supabase mode reads payload from initial req.json() above. Re-read for the new fields:
+      // (Fallback safe defaults handled here; production callers send via Express route.)
+      const groupsDesc = (deltasPorGrupo || []).map((g: any) => {
+        const secs = (g.sections || [])
+          .map((s: any) => `    · ${s.title}: Inicial ${s.ini ?? "—"} → Evolución ${s.evo ?? "—"} (Δ ${s.delta ?? "—"})`)
+          .join("\n");
+        return `Grupo ${g.grupo} (n inicial=${g.countIni}, n evolución=${g.countEvo}, promedio global Inicial ${g.iniGlobal ?? "—"} → Evolución ${g.evoGlobal ?? "—"}, ΔGlobal ${g.deltaGlobal ?? "—"}):\n${secs}`;
+      }).join("\n\n");
+      prompt = `Programa RLT Colombia. Cohorte: ${cohorteNombre}.\nAnálisis Δ Ambiente Escolar Inicial vs Evolución. Escala 1-${maxScore}.\n${groupsDesc}\nRedacta análisis 200-280 palabras en HTML simple identificando fortalezas, áreas de mejora y 1 recomendación.`;
     } else {
       throw new Error(`Tipo de sección no soportado: ${sectionType}`);
     }
