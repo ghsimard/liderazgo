@@ -21,6 +21,13 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
       totalResponses,
       comments,
       overallSatisfaction,
+      // ambiente_delta payload
+      cohorteNombre,
+      maxScore,
+      cohortIni,
+      cohortEvo,
+      cohortDelta,
+      deltasPorGrupo,
     } = req.body;
 
     const XAI_API_KEY = process.env.XAI_API_KEY;
