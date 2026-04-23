@@ -20,6 +20,7 @@ import type { SatisfaccionFormDef, SatisfaccionQuestion } from "@/data/satisfacc
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import AdminAsistenciaStats from "./AdminAsistenciaStats";
 
 const FORM_TYPES = ["asistencia", "interludio", "intensivo"] as const;
 const MODULES = [1, 2, 3, 4];
@@ -42,14 +43,17 @@ const COLORS = [
   "hsl(var(--chart-5))",
 ];
 
-export default function AdminSatisfaccionStats({ regions }: { regions: string[] }) {
+export default function AdminSatisfaccionStats({ regions, allowedRegions }: { regions: string[]; allowedRegions?: string[] }) {
   const [loading, setLoading] = useState(true);
   const [responses, setResponses] = useState<ResponseRow[]>([]);
   const [filterType, setFilterType] = useState<string>("intensivo");
   const [filterModule, setFilterModule] = useState<string>("all");
-  const [filterRegion, setFilterRegion] = useState<string>("all");
+  const [filterRegion, setFilterRegion] = useState<string>(allowedRegions?.length === 1 ? allowedRegions[0] : "all");
+
+  const isAsistencia = filterType === "asistencia";
 
   const fetchResponses = async () => {
+    if (isAsistencia) { setLoading(false); return; }
     setLoading(true);
     let query = supabase.from("satisfaccion_responses").select("*");
     if (filterType !== "all") query = query.eq("form_type", filterType);
@@ -212,7 +216,9 @@ export default function AdminSatisfaccionStats({ regions }: { regions: string[] 
     return merged;
   }, [stats]);
 
-  if (loading) {
+  const visibleRegions = allowedRegions?.length ? regions.filter(r => allowedRegions.includes(r)) : regions;
+
+  if (loading && !isAsistencia) {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>;
   }
 
@@ -236,11 +242,51 @@ export default function AdminSatisfaccionStats({ regions }: { regions: string[] 
         <div className="space-y-1">
           <Label className="text-xs">Región</Label>
           <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} className="border rounded px-2 py-1 text-sm bg-background">
-            <option value="all">Todas</option>
-            {regions.map((r) => <option key={r} value={r}>{r}</option>)}
+            {!(allowedRegions?.length === 1) && <option value="all">Todas</option>}
+            {visibleRegions.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
         </div>
       </div>
+
+      {/* Asistencia uses a dedicated data source (informe_asistencia) */}
+      {isAsistencia ? (
+        <AdminAsistenciaStats
+          filterModule={filterModule}
+          filterRegion={filterRegion}
+          allowedRegions={allowedRegions}
+        />
+      ) : (
+        <SatisfaccionStatsContent
+          filterType={filterType}
+          filterModule={filterModule}
+          filterRegion={filterRegion}
+          totalResponses={totalResponses}
+          stats={stats}
+          mergedSections={mergedSections}
+        />
+      )}
+    </div>
+  );
+}
+
+function SatisfaccionStatsContent({
+  filterType,
+  filterModule,
+  filterRegion,
+  totalResponses,
+  stats,
+  mergedSections,
+}: {
+  filterType: string;
+  filterModule: string;
+  filterRegion: string;
+  totalResponses: number;
+  stats: any;
+  mergedSections: any[];
+}) {
+  return (
+    <>
+      {/* Ficha técnica */}
 
       {/* Ficha técnica */}
       <Card>
@@ -338,7 +384,7 @@ export default function AdminSatisfaccionStats({ regions }: { regions: string[] 
           ))}
         </>
       )}
-    </div>
+    </>
   );
 }
 
