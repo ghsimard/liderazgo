@@ -9,6 +9,7 @@ import { FORM_TYPE_LABELS } from "@/data/satisfaccionData";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
+import { regionsMatch, normalizeRegion } from "@/utils/normalizeRegion";
 
 const COMMENT_KEYS: Record<string, string> = {
   asistencia: "comentarios",
@@ -93,8 +94,14 @@ export default function AdminSatisfaccionCommentsTab() {
   }, []);
 
   const regions = useMemo(() => {
-    const set = new Set(comments.map((c) => c.region));
-    return Array.from(set).sort();
+    // Deduplicate regions by their normalized form to avoid showing
+    // duplicates like "Quibdó" and "Quibdó 2026" as separate options.
+    const seen = new Map<string, string>();
+    for (const c of comments) {
+      const k = normalizeRegion(c.region);
+      if (!seen.has(k)) seen.set(k, c.region);
+    }
+    return Array.from(seen.values()).sort();
   }, [comments]);
 
   const modules = useMemo(() => {
@@ -104,7 +111,7 @@ export default function AdminSatisfaccionCommentsTab() {
 
   const filtered = useMemo(() => {
     return comments.filter((c) => {
-      if (filterRegion !== "all" && c.region !== filterRegion) return false;
+      if (filterRegion !== "all" && !regionsMatch(c.region, filterRegion)) return false;
       if (filterType !== "all" && c.form_type !== filterType) return false;
       if (filterModule !== "all" && c.module_number !== Number(filterModule)) return false;
       return true;
