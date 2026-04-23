@@ -20,6 +20,7 @@ import type { SatisfaccionFormDef, SatisfaccionQuestion } from "@/data/satisfacc
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { regionsMatch } from "@/utils/normalizeRegion";
 
 const FORM_TYPES = ["asistencia", "interludio", "intensivo"] as const;
 const MODULES = [1, 2, 3, 4];
@@ -44,26 +45,33 @@ const COLORS = [
 
 export default function AdminSatisfaccionStats({ regions }: { regions: string[] }) {
   const [loading, setLoading] = useState(true);
-  const [responses, setResponses] = useState<ResponseRow[]>([]);
+  const [allResponses, setAllResponses] = useState<ResponseRow[]>([]);
   const [filterType, setFilterType] = useState<string>("intensivo");
   const [filterModule, setFilterModule] = useState<string>("all");
   const [filterRegion, setFilterRegion] = useState<string>("all");
 
   const fetchResponses = async () => {
     setLoading(true);
+    // Fetch without region filter; we filter client-side with normalization
+    // to tolerate accents, casing and year suffixes (e.g. "Quibdó 2026" vs "Quibdó").
     let query = supabase.from("satisfaccion_responses").select("*");
     if (filterType !== "all") query = query.eq("form_type", filterType);
     if (filterModule !== "all") query = query.eq("module_number", parseInt(filterModule));
-    if (filterRegion !== "all") query = query.eq("region", filterRegion);
     const { data } = await query;
-    setResponses((data || []) as ResponseRow[]);
+    setAllResponses((data || []) as ResponseRow[]);
     setLoading(false);
   };
 
-  useEffect(() => { fetchResponses(); }, [filterType, filterModule, filterRegion]);
+  useEffect(() => { fetchResponses(); }, [filterType, filterModule]);
+
+  const responses = useMemo(
+    () => filterRegion === "all" ? allResponses : allResponses.filter(r => regionsMatch(r.region, filterRegion)),
+    [allResponses, filterRegion]
+  );
 
   const formDef = SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined;
   const totalResponses = responses.length;
+  const totalAllRegions = allResponses.length;
 
   // ── Compute statistics ──
   const stats = useMemo(() => {
@@ -280,7 +288,16 @@ export default function AdminSatisfaccionStats({ regions }: { regions: string[] 
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <BarChart3 className="w-10 h-10 mx-auto mb-3 opacity-40" />
-            <p>Sin datos para generar estadísticas</p>
+            <p>
+              {filterRegion !== "all" && totalAllRegions > 0
+                ? `No hay respuestas registradas para "${filterRegion}" con este filtro.`
+                : "Sin datos para generar estadísticas"}
+            </p>
+            {filterRegion !== "all" && totalAllRegions > 0 && (
+              <p className="text-xs mt-2">
+                Total de respuestas para este tipo/módulo (todas las regiones): <strong>{totalAllRegions}</strong>
+              </p>
+            )}
           </CardContent>
         </Card>
       ) : (
