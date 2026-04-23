@@ -384,7 +384,7 @@ function SatisfaccionStatsContent({
           ))}
         </>
       )}
-    </div>
+    </>
   );
 }
 
