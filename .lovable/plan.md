@@ -1,53 +1,57 @@
 
 
-L'utilisateur veut :
-1. Le rapport PDF avec deltas + analyse automatisée + système de notation (déjà planifié)
-2. **NOUVEAU** : Afficher aussi le rapport dans l'UI (pas seulement en PDF téléchargeable)
+## Diagnostic — Stats vides quand une région est sélectionnée
 
-Je vais réviser le plan pour inclure l'affichage UI en plus du PDF.
+### Cause probable
+Dans `AdminSatisfaccionStats.tsx` (ligne 57), le filtre est :
+```ts
+if (filterRegion !== "all") query = query.eq("region", filterRegion);
+```
 
-## Plan révisé — Rapport Δ Ambiente Escolar (UI + PDF)
+La liste déroulante est alimentée par `regiones.nombre` (ex. **"Quibdó 2026"**, **"Oriente 2026"**), tandis que la colonne `satisfaccion_responses.region` est remplie au moment de la soumission depuis `fichas_rlt.region` (ex. **"Quibdó"** sans suffixe d'année, ou différence de casse/accent).
 
-### Objectif
-Dans l'onglet **Admin → Ambiente Escolar → Análisis por Campaña**, ajouter :
-- Une **sección "Sistema de calificación"** (statique, toujours visible)
-- Une **sección "Análisis automatizado"** (générée par Grok, affichée dans l'UI avec bouton "Generar análisis")
-- Un bouton **"Descargar informe PDF"** qui exporte le tout (couverture + tableau deltas + sistema notación + análisis)
+Quand `"all"` → aucun filtre → tout s'affiche.
+Quand une région est choisie → `eq("region", "Quibdó 2026")` retourne 0 ligne → bloc "Sin datos".
 
-### Composants
+### Plan de correction
 
-| Fichier | Action |
-|---|---|
-| `src/components/admin/AdminAmbienteDeltaTab.tsx` | Ajouter 2 cartes UI (Sistema notación + Análisis automatizado) + 2 boutons (Generar análisis / Descargar PDF) + état `analysisText` |
-| `server/routes/generate-section-text.ts` | Étendre avec un nouveau `sectionType: "ambiente_delta"` qui reçoit cohorte + deltas par grupo/sección et retourne narrativa interprétative |
-| `src/utils/ambienteDeltaPdfGenerator.ts` | **Nouveau** — jsPDF + autoTable, marges 32/18mm, logos `_white`, dates DD/MM/YYYY |
+**Étape 1 — Vérification (1 requête diagnostique)**
+Exécuter côté Render pour confirmer le mismatch :
+```sql
+SELECT DISTINCT region FROM satisfaccion_responses ORDER BY region;
+SELECT DISTINCT nombre FROM regiones ORDER BY nombre;
+```
+→ Comparer les deux listes pour voir l'écart exact (suffixe année, accent, espaces).
 
-### Sección "Sistema de calificación" (UI + PDF, contenu statique espagnol)
-- Escala Likert 1-5 (Nunca → Siempre)
-- Cálculo del Δ : promedio Salida − promedio Entrada, por sección y grupo
-- Umbral significativo : ΔP ≥ 0.5 puntos
-- Convención visual : ▲ verde (+), ▼ rojo (−), = gris (estable)
-- Promedio cohorte = media no ponderada de los 3 grupos
+**Étape 2 — Correctif frontend (`AdminSatisfaccionStats.tsx`)**
 
-### Sección "Análisis automatizado"
-- Bouton **"Generar análisis"** → POST `/api/generate-section-text` avec `sectionType: "ambiente_delta"` + payload `{ cohorte, deltasPorGrupo, n_inicial, n_evolucion }`
-- Prompt système : "Experto en clima escolar. Interpreta deltas Entrada→Salida por grupo (Docentes, Estudiantes, Acudientes), identifica 2 fortalezas y 2 áreas de mejora, propón 1 recomendación. Máx 250 palabras. Respuesta en HTML simple."
-- Affichage UI : carte avec `dangerouslySetInnerHTML` (cohérent avec les autres analyses Grok du projet)
-- Stockage : état local React (régénérable, non persisté en DB — cohérent avec le reste du système)
+Remplacer le filtre strict par une **comparaison normalisée côté client** (cohérent avec la contrainte du proxy Express qui ne supporte pas `ilike`/`like` complexes — voir `mem://tech/db-shim-proxy-architecture`) :
 
-### Inclusion dans le PDF
-1. Page 1 : couverture (logos blancs, cohorte, fechas campañas Inicial/Evolución, n respuestas)
-2. Page 2 : "Sistema de calificación" (texte statique)
-3. Page 3+ : tableau deltas par grupo (Docentes / Estudiantes / Acudientes) + Δ global cohorte
-4. Page finale : "Análisis automatizado" (HTML stripé en texte)
+1. Récupérer **toutes** les réponses du `form_type`/`module` choisis (sans `eq` sur region).
+2. Filtrer en JS avec une fonction de normalisation :
+   ```ts
+   const norm = (s: string) => (s || "").toLowerCase().normalize("NFD")
+     .replace(/[\u0300-\u036f]/g, "").replace(/\s*\d{4}\s*$/, "").trim();
+   const filtered = filterRegion === "all" 
+     ? data 
+     : data.filter(r => norm(r.region) === norm(filterRegion));
+   ```
+   → Tolère : accents, casse, suffixe année (« 2026 »), espaces.
 
-Si l'analyse n'a pas encore été générée, le PDF affiche un encart "— Genere el análisis automatizado en la interfaz antes de exportar —".
+**Étape 3 — Affichage informatif quand 0 résultat**
+Remplacer le bloc « Sin datos para generar estadísticas » par un message qui distingue :
+- *« No hay respuestas registradas con este filtro. »* + un compteur indiquant combien de respuestas existent au total pour ce tipo+módulo (toutes régions confondues), pour aider le diagnostic.
+
+**Étape 4 — Cohérence**
+Appliquer la même normalisation dans :
+- `AdminSatisfaccionReportTab.tsx` (filtre région du rapport)
+- `AdminSatisfaccionCommentsTab.tsx` (filtre région des commentaires)
 
 ### Récap déploiement
 
 | Cible | Action |
 |---|---|
-| 🖥️ Site statique (Frontend) | **Redéployer** (cartes UI + boutons + générateur PDF) |
-| ⚙️ Web Service (Backend Express) | **Redéployer** (extension `generate-section-text` avec `sectionType: "ambiente_delta"`) |
-| 🗄️ Base de données | Aucune |
+| 🖥️ Site statique (Frontend) | **Redéployer** (logique de filtre normalisée) |
+| ⚙️ Web Service (Backend Express) | Aucune |
+| 🗄️ Base de données | Aucune (option : long terme, normaliser `fichas_rlt.region` pour matcher `regiones.nombre` — à discuter séparément) |
 
