@@ -216,7 +216,9 @@ export default function AdminSatisfaccionStats({ regions, allowedRegions }: { re
     return merged;
   }, [stats]);
 
-  if (loading) {
+  const visibleRegions = allowedRegions?.length ? regions.filter(r => allowedRegions.includes(r)) : regions;
+
+  if (loading && !isAsistencia) {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>;
   }
 
@@ -240,11 +242,51 @@ export default function AdminSatisfaccionStats({ regions, allowedRegions }: { re
         <div className="space-y-1">
           <Label className="text-xs">Región</Label>
           <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} className="border rounded px-2 py-1 text-sm bg-background">
-            <option value="all">Todas</option>
-            {regions.map((r) => <option key={r} value={r}>{r}</option>)}
+            {!(allowedRegions?.length === 1) && <option value="all">Todas</option>}
+            {visibleRegions.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
         </div>
       </div>
+
+      {/* Asistencia uses a dedicated data source (informe_asistencia) */}
+      {isAsistencia ? (
+        <AdminAsistenciaStats
+          filterModule={filterModule}
+          filterRegion={filterRegion}
+          allowedRegions={allowedRegions}
+        />
+      ) : (
+        <SatisfaccionStatsContent
+          filterType={filterType}
+          filterModule={filterModule}
+          filterRegion={filterRegion}
+          totalResponses={totalResponses}
+          stats={stats}
+          mergedSections={mergedSections}
+        />
+      )}
+    </div>
+  );
+}
+
+function SatisfaccionStatsContent({
+  filterType,
+  filterModule,
+  filterRegion,
+  totalResponses,
+  stats,
+  mergedSections,
+}: {
+  filterType: string;
+  filterModule: string;
+  filterRegion: string;
+  totalResponses: number;
+  stats: any;
+  mergedSections: any[];
+}) {
+  return (
+    <>
+      {/* Ficha técnica */}
 
       {/* Ficha técnica */}
       <Card>
