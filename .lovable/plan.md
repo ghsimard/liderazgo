@@ -1,44 +1,58 @@
 
 
-## Plan — Migration SQL pour aligner les régions
+## Plan — Statistiques Asistencia basées sur `informe_asistencia`
 
-### Diagnostic confirmé (production)
+### Diagnostic
 
-| `satisfaccion_responses.region` | Total | Form type | Dropdown attendu |
-|---|---|---|---|
-| `Oriente` | 28 | intensivo | `Oriente 2026` |
-| `Quibdó` | 20 | intensivo | `Quibdó 2026` |
+Quand l'utilisateur sélectionne **"Asistencia"** dans `Admin → Satisfacciones → Estadísticas`, le code actuel (`AdminSatisfaccionStats.tsx`) interroge `satisfaccion_responses` avec `form_type='asistencia'`. Or :
 
-→ Mismatch unique : suffixe ` 2026` manquant. L'accent et la casse sont déjà corrects.
+- `satisfaccion_responses` ne contient **aucune** ligne `asistencia` en prod (confirmé).
+- Les **vraies** données d'assistance sont dans la table `informe_asistencia`, alimentée par l'onglet **Informe de Módulo → Asistencia** (1 ligne par directivo × module × jour, avec cases `session_am` et `session_pm`).
 
-### Correctif — 1 seule requête SQL en production
+Le concept "Asistencia" dans le hub Satisfacciones n'est donc pas un sondage de satisfaction — c'est une présence physique. Il faut une vue dédiée.
 
-```sql
-UPDATE satisfaccion_responses 
-SET region = region || ' 2026' 
-WHERE region IN ('Oriente', 'Quibdó');
-```
+### Approche retenue
 
-### Vérification post-migration
+Brancher une **vue alternative dédiée** quand `filterType === "asistencia"` dans `AdminSatisfaccionStats`, qui lit `informe_asistencia` au lieu de `satisfaccion_responses`. Les autres types (`intensivo`, `interludio`) gardent le comportement actuel.
 
-```sql
-SELECT region, COUNT(*) 
-FROM satisfaccion_responses 
-GROUP BY region 
-ORDER BY region;
-```
+### Indicateurs proposés (vue Asistencia)
 
-Résultat attendu : `Oriente 2026` (28), `Quibdó 2026` (20). Le filtre dropdown fonctionnera immédiatement.
+Basés sur la structure `informe_asistencia` (cedula, module_number, dia 1-5, session_am, session_pm, razon_inasistencia) :
 
-### Action de fond (optionnelle, suivi séparé)
+1. **Ficha técnica** — Module sélectionné, Région, Total directivos attendus (depuis `fichas_rlt`), Total sessions enregistrées
+2. **Tasa de asistencia global** — % de sessions présentes (AM+PM cochées) sur total attendu (directivos × 5 jours × 2 sessions)
+3. **Asistencia por día** — barres horizontales : Día 1 à 5 avec % présence AM et PM
+4. **Asistencia por región** (si filtre = Todas) — comparaison régionale du taux de présence
+5. **Razones de inasistencia** — barres horizontales : fréquence de chaque motif (Diligencias salud, MEN, etc.)
+6. **Lista de directivos con baja asistencia** — table des directivos avec < 80% de présence (cedula, nom, IE, région, % présent)
 
-Identifier le composant qui INSERT dans `satisfaccion_responses` avec `region` sans suffixe (probablement `SatisfaccionIntensivo.tsx` qui lit `fichas_rlt.region` mais perd le suffixe quelque part, ou source hardcodée). À corriger pour éviter la régression sur les futures soumissions. Si tu veux, je peux investiguer dans une étape ultérieure.
+### Filtres disponibles
+
+- **Módulo** : 1 / 2 / 3 / 4 / Todos (déjà présent)
+- **Región** : Todas + liste régions (déjà présent, respecte `allowedRegions` opérateur)
+- (Le filtre "Tipo de encuesta" reste mais sélectionner "Asistencia" déclenche cette vue alternative)
+
+### Détails techniques
+
+**Fichier modifié** : `src/components/admin/AdminSatisfaccionStats.tsx`
+
+- Ajouter un branchement en haut du composant : `if (filterType === 'asistencia') return <AsistenciaStatsView ... />`
+- Créer un sous-composant `AsistenciaStatsView` (même fichier ou nouveau fichier `AdminAsistenciaStats.tsx`) qui :
+  - Charge `informe_asistencia` filtré par `module_number` (et joint en mémoire avec `fichas_rlt` pour récupérer région + nom + IE par cédula, comme `AdminAsistenciaTab` le fait déjà)
+  - Calcule les agrégats (% présence par jour, par région, motifs)
+  - Réutilise le composant `HorizontalBarSection` existant pour cohérence visuelle
+
+**Calcul du taux d'attendu** : nombre de directivos `fichas_rlt` avec `cargo_actual IN ('Rector/a','Coordinador/a')` et région correspondant au filtre, × 5 jours × 2 sessions.
 
 ### Récap déploiement
 
 | Cible | Action |
 |---|---|
-| 🖥️ Site statique (Frontend) | Aucune |
-| ⚙️ Web Service (Backend Express) | Aucune |
-| 🗄️ Base de données (Render) | **Toi** : exécuter le UPDATE ci-dessus en prod, puis le SELECT de vérification |
+| 🖥️ Site statique (Frontend) | ✅ Modifier `AdminSatisfaccionStats.tsx` (+ éventuellement nouveau fichier `AdminAsistenciaStats.tsx`) — redéploiement frontend |
+| ⚙️ Web Service (Backend Express) | ❌ Aucune (lecture standard via dbClient sur `informe_asistencia` + `fichas_rlt`, déjà whitelistées) |
+| 🗄️ Base de données (Render) | ❌ Aucune (les données existent déjà dans `informe_asistencia`) |
+
+### Hors-scope (à confirmer si tu veux)
+
+- Conserver ou retirer l'option `Asistencia` du filtre "Tipo de encuesta" du bloc Satisfacciones (puisqu'elle ne fait plus partie du même paradigme). Recommandation : la garder pour la continuité UX mais avec la vue dédiée.
 
