@@ -1,53 +1,44 @@
 
 
-L'utilisateur veut :
-1. Le rapport PDF avec deltas + analyse automatisée + système de notation (déjà planifié)
-2. **NOUVEAU** : Afficher aussi le rapport dans l'UI (pas seulement en PDF téléchargeable)
+## Plan — Migration SQL pour aligner les régions
 
-Je vais réviser le plan pour inclure l'affichage UI en plus du PDF.
+### Diagnostic confirmé (production)
 
-## Plan révisé — Rapport Δ Ambiente Escolar (UI + PDF)
+| `satisfaccion_responses.region` | Total | Form type | Dropdown attendu |
+|---|---|---|---|
+| `Oriente` | 28 | intensivo | `Oriente 2026` |
+| `Quibdó` | 20 | intensivo | `Quibdó 2026` |
 
-### Objectif
-Dans l'onglet **Admin → Ambiente Escolar → Análisis por Campaña**, ajouter :
-- Une **sección "Sistema de calificación"** (statique, toujours visible)
-- Une **sección "Análisis automatizado"** (générée par Grok, affichée dans l'UI avec bouton "Generar análisis")
-- Un bouton **"Descargar informe PDF"** qui exporte le tout (couverture + tableau deltas + sistema notación + análisis)
+→ Mismatch unique : suffixe ` 2026` manquant. L'accent et la casse sont déjà corrects.
 
-### Composants
+### Correctif — 1 seule requête SQL en production
 
-| Fichier | Action |
-|---|---|
-| `src/components/admin/AdminAmbienteDeltaTab.tsx` | Ajouter 2 cartes UI (Sistema notación + Análisis automatizado) + 2 boutons (Generar análisis / Descargar PDF) + état `analysisText` |
-| `server/routes/generate-section-text.ts` | Étendre avec un nouveau `sectionType: "ambiente_delta"` qui reçoit cohorte + deltas par grupo/sección et retourne narrativa interprétative |
-| `src/utils/ambienteDeltaPdfGenerator.ts` | **Nouveau** — jsPDF + autoTable, marges 32/18mm, logos `_white`, dates DD/MM/YYYY |
+```sql
+UPDATE satisfaccion_responses 
+SET region = region || ' 2026' 
+WHERE region IN ('Oriente', 'Quibdó');
+```
 
-### Sección "Sistema de calificación" (UI + PDF, contenu statique espagnol)
-- Escala Likert 1-5 (Nunca → Siempre)
-- Cálculo del Δ : promedio Salida − promedio Entrada, por sección y grupo
-- Umbral significativo : ΔP ≥ 0.5 puntos
-- Convención visual : ▲ verde (+), ▼ rojo (−), = gris (estable)
-- Promedio cohorte = media no ponderada de los 3 grupos
+### Vérification post-migration
 
-### Sección "Análisis automatizado"
-- Bouton **"Generar análisis"** → POST `/api/generate-section-text` avec `sectionType: "ambiente_delta"` + payload `{ cohorte, deltasPorGrupo, n_inicial, n_evolucion }`
-- Prompt système : "Experto en clima escolar. Interpreta deltas Entrada→Salida por grupo (Docentes, Estudiantes, Acudientes), identifica 2 fortalezas y 2 áreas de mejora, propón 1 recomendación. Máx 250 palabras. Respuesta en HTML simple."
-- Affichage UI : carte avec `dangerouslySetInnerHTML` (cohérent avec les autres analyses Grok du projet)
-- Stockage : état local React (régénérable, non persisté en DB — cohérent avec le reste du système)
+```sql
+SELECT region, COUNT(*) 
+FROM satisfaccion_responses 
+GROUP BY region 
+ORDER BY region;
+```
 
-### Inclusion dans le PDF
-1. Page 1 : couverture (logos blancs, cohorte, fechas campañas Inicial/Evolución, n respuestas)
-2. Page 2 : "Sistema de calificación" (texte statique)
-3. Page 3+ : tableau deltas par grupo (Docentes / Estudiantes / Acudientes) + Δ global cohorte
-4. Page finale : "Análisis automatizado" (HTML stripé en texte)
+Résultat attendu : `Oriente 2026` (28), `Quibdó 2026` (20). Le filtre dropdown fonctionnera immédiatement.
 
-Si l'analyse n'a pas encore été générée, le PDF affiche un encart "— Genere el análisis automatizado en la interfaz antes de exportar —".
+### Action de fond (optionnelle, suivi séparé)
+
+Identifier le composant qui INSERT dans `satisfaccion_responses` avec `region` sans suffixe (probablement `SatisfaccionIntensivo.tsx` qui lit `fichas_rlt.region` mais perd le suffixe quelque part, ou source hardcodée). À corriger pour éviter la régression sur les futures soumissions. Si tu veux, je peux investiguer dans une étape ultérieure.
 
 ### Récap déploiement
 
 | Cible | Action |
 |---|---|
-| 🖥️ Site statique (Frontend) | **Redéployer** (cartes UI + boutons + générateur PDF) |
-| ⚙️ Web Service (Backend Express) | **Redéployer** (extension `generate-section-text` avec `sectionType: "ambiente_delta"`) |
-| 🗄️ Base de données | Aucune |
+| 🖥️ Site statique (Frontend) | Aucune |
+| ⚙️ Web Service (Backend Express) | Aucune |
+| 🗄️ Base de données (Render) | **Toi** : exécuter le UPDATE ci-dessus en prod, puis le SELECT de vérification |
 
