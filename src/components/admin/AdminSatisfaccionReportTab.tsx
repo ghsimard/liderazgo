@@ -35,7 +35,6 @@ import { FORM_TYPE_LABELS, SATISFACCION_FORMS } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion } from "@/data/satisfaccionData";
 import { generateSatisfaccionReport } from "@/utils/satisfaccionPdfGenerator";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { regionsMatch } from "@/utils/normalizeRegion";
 
 const FORM_TYPES = ["asistencia", "interludio", "intensivo"] as const;
 const MODULES = [1, 2, 3, 4];
@@ -240,15 +239,14 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
 
   useEffect(() => { loadReportContent(); }, [loadReportContent]);
 
-  // Fetch responses for auto-generated content (region filtered client-side with normalization)
+  // Fetch responses for auto-generated content
   const fetchResponses = useCallback(async () => {
     setLoadingData(true);
     let query = supabase.from("satisfaccion_responses").select("*").eq("form_type", filterType);
     if (filterModule !== "all") query = query.eq("module_number", parseInt(filterModule));
+    if (filterRegion) query = query.eq("region", filterRegion);
     const { data } = await query;
-    const all = (data || []) as ResponseRow[];
-    const filtered = filterRegion ? all.filter(r => regionsMatch(r.region, filterRegion)) : all;
-    setResponses(filtered);
+    setResponses((data || []) as ResponseRow[]);
     setLoadingData(false);
   }, [filterType, filterModule, filterRegion]);
 
