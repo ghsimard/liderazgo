@@ -20,6 +20,7 @@ import type { SatisfaccionFormDef, SatisfaccionQuestion } from "@/data/satisfacc
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import AdminAsistenciaStats from "./AdminAsistenciaStats";
 
 const FORM_TYPES = ["asistencia", "interludio", "intensivo"] as const;
 const MODULES = [1, 2, 3, 4];
@@ -42,14 +43,17 @@ const COLORS = [
   "hsl(var(--chart-5))",
 ];
 
-export default function AdminSatisfaccionStats({ regions }: { regions: string[] }) {
+export default function AdminSatisfaccionStats({ regions, allowedRegions }: { regions: string[]; allowedRegions?: string[] }) {
   const [loading, setLoading] = useState(true);
   const [responses, setResponses] = useState<ResponseRow[]>([]);
   const [filterType, setFilterType] = useState<string>("intensivo");
   const [filterModule, setFilterModule] = useState<string>("all");
-  const [filterRegion, setFilterRegion] = useState<string>("all");
+  const [filterRegion, setFilterRegion] = useState<string>(allowedRegions?.length === 1 ? allowedRegions[0] : "all");
+
+  const isAsistencia = filterType === "asistencia";
 
   const fetchResponses = async () => {
+    if (isAsistencia) { setLoading(false); return; }
     setLoading(true);
     let query = supabase.from("satisfaccion_responses").select("*");
     if (filterType !== "all") query = query.eq("form_type", filterType);

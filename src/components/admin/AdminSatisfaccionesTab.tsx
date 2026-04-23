@@ -540,7 +540,7 @@ export default function AdminSatisfaccionesTab({ isViewer = false, allowedRegion
         </TabsContent>
 
         <TabsContent value="stats" className="mt-4">
-          <AdminSatisfaccionStats regions={regions} />
+          <AdminSatisfaccionStats regions={regions} allowedRegions={allowedRegions} />
         </TabsContent>
 
         <TabsContent value="report" className="mt-4 data-[state=inactive]:hidden" forceMount>
