@@ -435,6 +435,8 @@ router.post("/:table", async (req: Request, res: Response) => {
       // Public upsert allowed when table allows both public insert and update
     } else if (method === "PATCH" && PUBLIC_UPDATE_TABLES.has(table)) {
       // Public update allowed, no auth needed
+    } else if (method === "DELETE" && PUBLIC_DELETE_TABLES.has(table)) {
+      // Public delete allowed, no auth needed (used by Evaluador "replace children" flows)
     } else {
       // Need admin auth — check manually since we may not use middleware
       const authHeader = req.headers.authorization;
