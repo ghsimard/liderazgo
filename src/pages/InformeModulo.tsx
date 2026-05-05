@@ -191,21 +191,21 @@ export default function InformeModulo() {
         .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial")
         .in("numero_cedula", cedulas);
 
-      // Group by region
+      // Group by region + entidad_territorial (one informe per ET)
       const groupMap = new Map<string, AsignacionGroup>();
       (fichas || []).forEach(f => {
-        const key = f.region;
+        const et = f.entidad_territorial || "—";
+        const key = `${f.region}||${et}`;
         if (!groupMap.has(key)) {
-          groupMap.set(key, { region: f.region, entidades: [], directivos: [] });
+          groupMap.set(key, { region: f.region, entidades: [et], directivos: [] });
         }
         const grp = groupMap.get(key)!;
-        if (f.entidad_territorial && !grp.entidades.includes(f.entidad_territorial)) {
-          grp.entidades.push(f.entidad_territorial);
-        }
         grp.directivos.push({ cedula: f.numero_cedula, nombre: f.nombres_apellidos, ie: f.nombre_ie });
       });
 
-      const grps = Array.from(groupMap.values()).sort((a, b) => a.region.localeCompare(b.region));
+      const grps = Array.from(groupMap.values()).sort((a, b) =>
+        a.region.localeCompare(b.region) || a.entidades[0].localeCompare(b.entidades[0])
+      );
       setGroups(grps);
 
       if (grps.length === 1) {
