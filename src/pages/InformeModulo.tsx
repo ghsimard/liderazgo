@@ -191,21 +191,21 @@ export default function InformeModulo() {
         .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial")
         .in("numero_cedula", cedulas);
 
-      // Group by region
+      // Group by region + entidad_territorial (one informe per ET)
       const groupMap = new Map<string, AsignacionGroup>();
       (fichas || []).forEach(f => {
-        const key = f.region;
+        const et = f.entidad_territorial || "—";
+        const key = `${f.region}||${et}`;
         if (!groupMap.has(key)) {
-          groupMap.set(key, { region: f.region, entidades: [], directivos: [] });
+          groupMap.set(key, { region: f.region, entidades: [et], directivos: [] });
         }
         const grp = groupMap.get(key)!;
-        if (f.entidad_territorial && !grp.entidades.includes(f.entidad_territorial)) {
-          grp.entidades.push(f.entidad_territorial);
-        }
         grp.directivos.push({ cedula: f.numero_cedula, nombre: f.nombres_apellidos, ie: f.nombre_ie });
       });
 
-      const grps = Array.from(groupMap.values()).sort((a, b) => a.region.localeCompare(b.region));
+      const grps = Array.from(groupMap.values()).sort((a, b) =>
+        a.region.localeCompare(b.region) || a.entidades[0].localeCompare(b.entidades[0])
+      );
       setGroups(grps);
 
       if (grps.length === 1) {
@@ -233,6 +233,7 @@ export default function InformeModulo() {
       .from("informe_modulo")
       .select("*")
       .eq("region", region)
+      .eq("entidad_territorial", et)
       .eq("module_number", moduleNum)
       .limit(1);
 
@@ -262,7 +263,15 @@ export default function InformeModulo() {
         novedades: parseJsonArray<Novedad>(row.novedades, []),
       });
       const { data: equipoRows } = await supabase.from("informe_modulo_equipo").select("*").eq("informe_id", row.id);
-      setEquipo(equipoRows || []);
+      // Defensive dedup: legacy data may contain duplicates from past failed saves
+      const seen = new Set<string>();
+      const uniqueEquipo = (equipoRows || []).filter((m: any) => {
+        const k = `${(m.nombre || "").trim().toLowerCase()}||${(m.rol || "").trim().toLowerCase()}`;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+      setEquipo(uniqueEquipo);
       // Load directivo evaluations
       await loadDirectivoEvals(moduleNum, directivos);
     } else {
@@ -373,12 +382,23 @@ export default function InformeModulo() {
       }
 
       if (informeId) {
-        await supabase.from("informe_modulo_equipo").delete().eq("informe_id", informeId);
-        const validEquipo = equipo.filter(e => e.nombre.trim());
+        const { error: delErr } = await supabase.from("informe_modulo_equipo").delete().eq("informe_id", informeId);
+        if (delErr) throw new Error(`No se pudo limpiar el equipo anterior: ${delErr.message}`);
+
+        // Dedup before insert: same nombre+rol counts only once
+        const seen = new Set<string>();
+        const validEquipo = equipo.filter(e => {
+          if (!e.nombre.trim()) return false;
+          const k = `${e.nombre.trim().toLowerCase()}||${(e.rol || "").trim().toLowerCase()}`;
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
         if (validEquipo.length > 0) {
-          await supabase.from("informe_modulo_equipo").insert(
-            validEquipo.map(e => ({ informe_id: informeId, nombre: e.nombre, rol: e.rol }))
+          const { error: insErr } = await supabase.from("informe_modulo_equipo").insert(
+            validEquipo.map(e => ({ informe_id: informeId, nombre: e.nombre.trim(), rol: (e.rol || "").trim() }))
           );
+          if (insErr) throw new Error(`No se pudo guardar el equipo: ${insErr.message}`);
         }
       }
 
