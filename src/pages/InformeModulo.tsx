@@ -233,6 +233,7 @@ export default function InformeModulo() {
       .from("informe_modulo")
       .select("*")
       .eq("region", region)
+      .eq("entidad_territorial", et)
       .eq("module_number", moduleNum)
       .limit(1);
 
@@ -262,7 +263,15 @@ export default function InformeModulo() {
         novedades: parseJsonArray<Novedad>(row.novedades, []),
       });
       const { data: equipoRows } = await supabase.from("informe_modulo_equipo").select("*").eq("informe_id", row.id);
-      setEquipo(equipoRows || []);
+      // Defensive dedup: legacy data may contain duplicates from past failed saves
+      const seen = new Set<string>();
+      const uniqueEquipo = (equipoRows || []).filter((m: any) => {
+        const k = `${(m.nombre || "").trim().toLowerCase()}||${(m.rol || "").trim().toLowerCase()}`;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+      setEquipo(uniqueEquipo);
       // Load directivo evaluations
       await loadDirectivoEvals(moduleNum, directivos);
     } else {
