@@ -55,7 +55,7 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads";
 app.use("/uploads", express.static(path.resolve(UPLOAD_DIR)));
 
 // Serve the React frontend (after build)
-app.use(express.static(path.resolve(__dirname, "../dist")));
+app.use(express.static(FRONTEND_DIST_DIR));
 
 // ─── API Routes ───────────────────────────────────────
 app.use("/api/auth", authRoutes);
@@ -145,7 +145,13 @@ app.get("/api/health", (_req, res) => {
 
 // SPA fallback — serve index.html for all non-API routes
 app.get("*", (_req, res) => {
-  res.sendFile(path.resolve(__dirname, "../dist/index.html"));
+  const indexPath = path.join(FRONTEND_DIST_DIR, "index.html");
+  if (!fs.existsSync(indexPath)) {
+    console.error(`[server] Frontend index.html missing at ${indexPath}`);
+    res.status(500).send("Frontend build not found on server.");
+    return;
+  }
+  res.sendFile(indexPath);
 });
 
 // ─── Ensure required geography junction tables exist (Render self-healing) ───
