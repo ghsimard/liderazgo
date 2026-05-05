@@ -1,58 +1,104 @@
+## Plan — Stabiliser le backend Render (502 généralisés)
 
+### Diagnostic mis à jour
 
-## Plan — Statistiques Asistencia basées sur `informe_asistencia`
+Les nouveaux logs montrent que **les 502 ne sont pas localisés** à quelques routes lentes : ils touchent en cascade `/api/auth/login`, `/api/auth/me`, `/api/images`, `/api/db/app_settings`, `/api/db/regiones`, `/api/db/users`, `/api/db/rubrica_evaluadores`, `/api/db/operator_permissions`, `/api/rpc/check_cedula_role`, `/api/db/informe_modulo_equipo`, et même certains `OPTIONS` (CORS preflight).
 
-### Diagnostic
+Quand un preflight `OPTIONS` (qui ne touche pas la base de données) renvoie 502, ce n'est plus une requête SQL lente isolée — c'est **le worker Express lui-même qui est saturé** ou redémarre. Confirmé par :
+- `informe_modulo_equipo` (table minuscule : `id, informe_id, nombre, rol`) qui prend **8949 ms / 9065 ms / 10229 ms** → impossible sans saturation des connexions PG
+- vagues alternant 502 puis 200 → typique d'un worker qui crash et redémarre
 
-Quand l'utilisateur sélectionne **"Asistencia"** dans `Admin → Satisfacciones → Estadísticas`, le code actuel (`AdminSatisfaccionStats.tsx`) interroge `satisfaccion_responses` avec `form_type='asistencia'`. Or :
+### Cause racine — trois problèmes cumulés
 
-- `satisfaccion_responses` ne contient **aucune** ligne `asistencia` en prod (confirmé).
-- Les **vraies** données d'assistance sont dans la table `informe_asistencia`, alimentée par l'onglet **Informe de Módulo → Asistencia** (1 ligne par directivo × module × jour, avec cases `session_am` et `session_pm`).
+**1. Pool PG sans timeout** (`server/db.ts`)
 
-Le concept "Asistencia" dans le hub Satisfacciones n'est donc pas un sondage de satisfaction — c'est une présence physique. Il faut une vue dédiée.
+```ts
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: ...,
+});
+```
 
-### Approche retenue
+Aucune limite, aucun timeout :
+- `connectionTimeoutMillis` non défini → attente infinie pour obtenir une connexion
+- `statement_timeout` non défini → une requête peut bloquer indéfiniment
 
-Brancher une **vue alternative dédiée** quand `filterType === "asistencia"` dans `AdminSatisfaccionStats`, qui lit `informe_asistencia` au lieu de `satisfaccion_responses`. Les autres types (`intensivo`, `interludio`) gardent le comportement actuel.
+Conséquence : une requête lente garde sa connexion, le pool (max 10 par défaut) se sature, **toutes** les requêtes suivantes attendent ou crashent → 502.
 
-### Indicateurs proposés (vue Asistencia)
+**2. Index manquants** sur `informe_modulo_equipo`, `informe_directivo`, `informe_asistencia` → full scans qui aggravent (1).
 
-Basés sur la structure `informe_asistencia` (cedula, module_number, dia 1-5, session_am, session_pm, razon_inasistencia) :
+**3. Plan Render Free** (probable) : 512 MB RAM, CPU partagé. Quand le worker sature, Render le tue → 502 sur tout, y compris OPTIONS, le temps qu'il redémarre.
 
-1. **Ficha técnica** — Module sélectionné, Région, Total directivos attendus (depuis `fichas_rlt`), Total sessions enregistrées
-2. **Tasa de asistencia global** — % de sessions présentes (AM+PM cochées) sur total attendu (directivos × 5 jours × 2 sessions)
-3. **Asistencia por día** — barres horizontales : Día 1 à 5 avec % présence AM et PM
-4. **Asistencia por región** (si filtre = Todas) — comparaison régionale du taux de présence
-5. **Razones de inasistencia** — barres horizontales : fréquence de chaque motif (Diligencias salud, MEN, etc.)
-6. **Lista de directivos con baja asistencia** — table des directivos avec < 80% de présence (cedula, nom, IE, région, % présent)
+### Correctifs
 
-### Filtres disponibles
+#### 1. Durcir le pool PG (`server/db.ts`)
 
-- **Módulo** : 1 / 2 / 3 / 4 / Todos (déjà présent)
-- **Región** : Todas + liste régions (déjà présent, respecte `allowedRegions` opérateur)
-- (Le filtre "Tipo de encuesta" reste mais sélectionner "Asistencia" déclenche cette vue alternative)
+```ts
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  max: 10,
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 5_000,    // fail-fast si pool saturé
+  statement_timeout: 15_000,          // tue toute requête > 15s côté PG
+  query_timeout: 15_000,              // protection côté node-pg
+});
 
-### Détails techniques
+// Empêche un crash de connexion idle de tuer le worker
+pool.on("error", (err) => {
+  console.error("[pg pool] idle client error:", err);
+});
+```
 
-**Fichier modifié** : `src/components/admin/AdminSatisfaccionStats.tsx`
+Bénéfice : plus aucune requête ne peut bloquer plus de 15s ; les erreurs PG remontent comme 500 propres au lieu de 502 opaques ; le worker ne crashe plus sur erreurs idle.
 
-- Ajouter un branchement en haut du composant : `if (filterType === 'asistencia') return <AsistenciaStatsView ... />`
-- Créer un sous-composant `AsistenciaStatsView` (même fichier ou nouveau fichier `AdminAsistenciaStats.tsx`) qui :
-  - Charge `informe_asistencia` filtré par `module_number` (et joint en mémoire avec `fichas_rlt` pour récupérer région + nom + IE par cédula, comme `AdminAsistenciaTab` le fait déjà)
-  - Calcule les agrégats (% présence par jour, par région, motifs)
-  - Réutilise le composant `HorizontalBarSection` existant pour cohérence visuelle
+#### 2. Ajouter les index manquants (à exécuter en prod par toi)
 
-**Calcul du taux d'attendu** : nombre de directivos `fichas_rlt` avec `cargo_actual IN ('Rector/a','Coordinador/a')` et région correspondant au filtre, × 5 jours × 2 sessions.
+```sql
+CREATE INDEX IF NOT EXISTS idx_informe_modulo_equipo_informe_id
+  ON public.informe_modulo_equipo (informe_id);
+
+CREATE INDEX IF NOT EXISTS idx_informe_directivo_module_cedula
+  ON public.informe_directivo (module_number, directivo_cedula);
+
+CREATE INDEX IF NOT EXISTS idx_informe_directivo_informe_id
+  ON public.informe_directivo (informe_id);
+
+CREATE INDEX IF NOT EXISTS idx_informe_asistencia_module_cedula
+  ON public.informe_asistencia (module_number, directivo_cedula);
+```
+
+#### 3. Sync `server/schema.sql` (documenter les index pour les futures réinits)
+
+#### 4. Diagnostic immédiat — vérifier le plan Render
+
+À regarder dans le dashboard Render → `liderazgo-api` → **Metrics** :
+- Pic de **CPU > 100%** ? → besoin d'upgrade
+- Pic de **RAM proche de 512 MB** (free) ? → besoin d'upgrade
+- **Restarts** récents du service ? → confirme la saturation
+
+Si oui, **upgrader le Render Web Service au plan Starter ($7/mois)** pour passer à 512 MB → 2 GB RAM et CPU dédié. Aucune action côté Lovable ne peut compenser un worker qui manque de RAM.
+
+### Ordre de déploiement recommandé
+
+1. **Maintenant** (correctifs code Lovable, gratuits) :
+   - Durcir `server/db.ts`
+   - Documenter les index dans `server/schema.sql`
+   - → push, Render redéploie automatiquement
+2. **Toi en prod immédiatement** : exécuter le bloc `CREATE INDEX` sur la base Render
+3. **Vérifier** les logs Render dans les 10 min suivantes :
+   - Si plus de 502 → c'était bien le pool + index, terminé
+   - Si encore 502 → problème de plan Render, upgrade requis
 
 ### Récap déploiement
 
 | Cible | Action |
 |---|---|
-| 🖥️ Site statique (Frontend) | ✅ Modifier `AdminSatisfaccionStats.tsx` (+ éventuellement nouveau fichier `AdminAsistenciaStats.tsx`) — redéploiement frontend |
-| ⚙️ Web Service (Backend Express) | ❌ Aucune (lecture standard via dbClient sur `informe_asistencia` + `fichas_rlt`, déjà whitelistées) |
-| 🗄️ Base de données (Render) | ❌ Aucune (les données existent déjà dans `informe_asistencia`) |
+| 🖥️ Site statique (Frontend) | ❌ Aucune |
+| ⚙️ Web Service (Backend Express) | ✅ Modifier `server/db.ts` + `server/schema.sql` — redéploiement auto Render |
+| 🗄️ Base de données (Render) | ✅ **Toi** : exécuter `CREATE INDEX` ci-dessus en prod |
+| ☁️ Plan Render Web Service | ⚠️ **Toi** : vérifier Metrics, upgrade Starter si CPU/RAM saturés |
 
-### Hors-scope (à confirmer si tu veux)
+### Hors-scope (à confirmer plus tard si besoin)
 
-- Conserver ou retirer l'option `Asistencia` du filtre "Tipo de encuesta" du bloc Satisfacciones (puisqu'elle ne fait plus partie du même paradigme). Recommandation : la garder pour la continuité UX mais avec la vue dédiée.
-
+- Investiguer pourquoi `informe_modulo_equipo` (table de jointure simple) prenait 8s+ : possible verrouillage par une transaction longue. Les correctifs proposés masquent le symptôme ; si ça persiste après les index, ouvrir un ticket dédié pour analyser les locks PG.
