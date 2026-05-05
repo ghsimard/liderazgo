@@ -1,80 +1,62 @@
-# Plan de correction
+# Plan : corriger les builds Render qui crashent (status 134)
 
 ## Diagnostic confirmé
-Les logs montrent un problème important côté backend Render :
 
-- le process Node atteint la limite mémoire (`FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory`)
-- juste après, le service redémarre
-- pendant ce crash, des utilisateurs reçoivent des erreurs 502 en production
+Les deux derniers déploiements ont échoué avec **status 134 (SIGABRT)** pendant la phase build, juste après `vite build ... transforming...`.
 
-Donc ce n’est pas un simple warning : c’est un vrai crash du worker backend.
+Cause : la variable `NODE_OPTIONS=--max-old-space-size=768` ajoutée sur Render s'applique **aussi** au process Node qui exécute `vite build`. Or 768 MB ne suffisent pas pour bundler le frontend (jsPDF, recharts, mermaid, framer-motion, tiptap, supabase, etc.). Vite plante en plein milieu de la transformation des modules.
 
-## Ce que je vais corriger
+Avant cet ajout, le build passait — c'est donc bien la variable elle-même qui casse le build.
 
-### 1. Instrumenter le backend pour identifier précisément la route fautive
-Le log partagé ne contient pas l’URL complète sur toutes les lignes, donc je vais ajouter un logging léger côté serveur pour capturer :
-- méthode
-- route
-- table ciblée pour `/api/db/:table`
-- temps de réponse
-- taille de réponse
-- mémoire utilisée avant/après sur les réponses lourdes
+## Ce que je vais faire
 
-Objectif : confirmer noir sur blanc quelle route provoque le pic mémoire en production.
+### 1. Modifier `package.json`
 
-### 2. Sécuriser la route proxy base de données
-Dans `server/routes/db.ts`, je vais ajouter des garde-fous pour éviter qu’une lecture générique consomme trop de mémoire :
-- limite par défaut sur certaines lectures sans pagination
-- logs sur les requêtes les plus volumineuses
-- retour plus défensif sur les tables potentiellement lourdes
-- meilleure visibilité sur les `select("*")` et les appels sans `limit`
+Inscrire la limite mémoire **directement dans le script de build**, pour qu'elle s'applique uniquement à Vite et pas au runtime serveur :
 
-Objectif : empêcher qu’une requête générique fasse exploser le worker.
+```text
+"build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 vite build"
+```
 
-### 3. Optimiser les écrans du module Informe qui multiplient les requêtes
-J’ai déjà repéré plusieurs appels liés à `informe_modulo` et `informe_modulo_equipo`, notamment dans :
-- `src/pages/InformeModulo.tsx`
-- `src/components/admin/AdminInformeModuloForm.tsx`
-- `src/components/admin/AdminInformeReportTab.tsx`
+En réalité, comme Render tourne sous Linux, on peut se passer de `cross-env` et écrire :
 
-Je vais réduire la charge en :
-- remplaçant certains `select("*")` par des sélections ciblées
-- regroupant les lectures `informe_modulo_equipo` en une seule requête batch au lieu de boucles requête-par-requête
-- évitant les rechargements inutiles si les mêmes données sont déjà en mémoire
+```text
+"build": "NODE_OPTIONS=--max-old-space-size=4096 vite build"
+```
 
-Objectif : diminuer le nombre d’appels backend et la taille des réponses.
+4096 MB est large mais sans risque : Render alloue plus de mémoire **pendant le build** que pendant le runtime, donc Vite aura la marge nécessaire pour bundler.
 
-### 4. Vérifier et alléger la route d’export serveur
-La route `server/routes/export.ts` construit actuellement un très gros dump SQL en mémoire dans une seule string.
-Même si ce n’est pas forcément l’unique cause, c’est une route à risque élevé pour un OOM.
+### 2. Action côté toi sur Render
 
-Je vais la rendre plus sûre en :
-- évitant l’accumulation complète en mémoire si possible
-- limitant ou segmentant les exports lourds
-- gardant un comportement stable pour les administrateurs
+Une fois le code poussé, tu devras **supprimer** la variable d'environnement `NODE_OPTIONS` sur le service `liderazgo-api` :
 
-Objectif : éliminer une autre source probable de crash mémoire.
+- Render → liderazgo-api → Environment
+- Trouver la ligne `NODE_OPTIONS = --max-old-space-size=768`
+- Cliquer la corbeille pour la supprimer
+- Save
 
-### 5. Ajouter un correctif temporaire de stabilité pour la production
-En parallèle du correctif code, je prévois une mesure de stabilisation côté Render :
-- définir `NODE_OPTIONS=--max-old-space-size=512` ou `768` selon la marge disponible
+Pourquoi : laisser le runtime Node utiliser sa valeur par défaut (≈1.5 Go sur instance Starter). Mes garde-fous de la dernière passe (cap 5000 lignes sur `/api/db`, export streaming, batch query Informe) suffisent à éviter l'OOM runtime sans avoir besoin de cette variable.
 
-Important : ce sera un filet de sécurité, pas la vraie solution.
-La vraie solution reste la réduction de la consommation mémoire dans le code.
+### 3. Vérification après déploiement
+
+Logs Render attendus (onglet Logs) :
+```text
+🚀 Server running on port 10000
+```
+
+Et plus aucun `==> Build failed 😞` ni `Exited with status 134`.
 
 ## Résultat attendu
-Après ce correctif :
-- plus de crash `heap out of memory`
-- plus de redémarrages du service pendant l’usage normal
-- disparition des 502 liés à ce plantage
-- backend plus robuste sur mobile et desktop
+
+- Le build Vite passe (4 Go disponibles pendant la phase build)
+- Le runtime serveur démarre correctement
+- Plus de crash OOM grâce aux corrections déjà déployées dans le code
+- Plus de variable `NODE_OPTIONS` côté Render à maintenir
+
+## Fichier modifié
+
+- `package.json` (ligne 8 uniquement)
 
 ## Détail technique
-Fichiers que je modifierai probablement :
-- `server/routes/db.ts`
-- `server/routes/export.ts`
-- `src/pages/InformeModulo.tsx`
-- `src/components/admin/AdminInformeModuloForm.tsx`
-- `src/components/admin/AdminInformeReportTab.tsx`
 
-Point important : le screenshot précédent montrait une erreur sur une requête `informe_modulo_equipo`, mais les logs texte seuls ne donnent pas encore la route exacte à 100 %. Je vais donc d’abord instrumenter proprement, puis corriger la ou les routes réellement responsables dans le même passage.
+La syntaxe `VAR=value cmd` fonctionne nativement sur Linux/macOS (utilisée par Render). Pour la compatibilité Windows en dev local, il faudrait `cross-env`, mais comme tu es sur Mac et que le build de prod tourne sur Linux Render, c'est inutile. Si plus tard un dev Windows rejoint le projet, on ajoutera `cross-env` en devDependency.
