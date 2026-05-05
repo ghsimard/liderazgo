@@ -382,12 +382,23 @@ export default function InformeModulo() {
       }
 
       if (informeId) {
-        await supabase.from("informe_modulo_equipo").delete().eq("informe_id", informeId);
-        const validEquipo = equipo.filter(e => e.nombre.trim());
+        const { error: delErr } = await supabase.from("informe_modulo_equipo").delete().eq("informe_id", informeId);
+        if (delErr) throw new Error(`No se pudo limpiar el equipo anterior: ${delErr.message}`);
+
+        // Dedup before insert: same nombre+rol counts only once
+        const seen = new Set<string>();
+        const validEquipo = equipo.filter(e => {
+          if (!e.nombre.trim()) return false;
+          const k = `${e.nombre.trim().toLowerCase()}||${(e.rol || "").trim().toLowerCase()}`;
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
         if (validEquipo.length > 0) {
-          await supabase.from("informe_modulo_equipo").insert(
-            validEquipo.map(e => ({ informe_id: informeId, nombre: e.nombre, rol: e.rol }))
+          const { error: insErr } = await supabase.from("informe_modulo_equipo").insert(
+            validEquipo.map(e => ({ informe_id: informeId, nombre: e.nombre.trim(), rol: (e.rol || "").trim() }))
           );
+          if (insErr) throw new Error(`No se pudo guardar el equipo: ${insErr.message}`);
         }
       }
 
