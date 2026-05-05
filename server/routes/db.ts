@@ -354,9 +354,12 @@ router.get("/:table", async (req: Request, res: Response) => {
       orderClause = ` ORDER BY ${orderParts.join(", ")}`;
     }
 
-    // Limit & Range
-    let limitClause = "";
-    if (req.query.limit) limitClause = ` LIMIT ${parseInt(req.query.limit as string, 10)}`;
+    // Limit & Range — apply a hard cap to prevent OOM on accidental full-table scans
+    const HARD_MAX_ROWS = 5000;
+    let effectiveLimit: number | null = null;
+    if (req.query.limit) {
+      effectiveLimit = Math.min(parseInt(req.query.limit as string, 10) || HARD_MAX_ROWS, HARD_MAX_ROWS);
+    }
 
     let offsetClause = "";
     if (req.query.from) {
@@ -364,9 +367,14 @@ router.get("/:table", async (req: Request, res: Response) => {
       if (req.query.to) {
         const from = parseInt(req.query.from as string, 10);
         const to = parseInt(req.query.to as string, 10);
-        limitClause = ` LIMIT ${to - from + 1}`;
+        effectiveLimit = Math.min(to - from + 1, HARD_MAX_ROWS);
       }
     }
+
+    if (isSingle && effectiveLimit == null) effectiveLimit = 1;
+    // Fallback hard cap when caller did not specify any limit/range
+    if (effectiveLimit == null) effectiveLimit = HARD_MAX_ROWS;
+    const limitClause = ` LIMIT ${effectiveLimit}`;
 
     if (isHead && countMode) {
       // COUNT only
@@ -379,6 +387,10 @@ router.get("/:table", async (req: Request, res: Response) => {
     const sql = `SELECT ${selectCols} FROM ${sanitizeIdentifier(table)}${where}${orderClause}${limitClause}${offsetClause}`;
     const result = await pool.query(sql, params);
 
+    if (result.rows.length >= HARD_MAX_ROWS) {
+      console.warn(`[db] cap hit table=${table} rows=${result.rows.length} url=${req.originalUrl}`);
+    }
+
     if (isSingle) {
       res.json({ data: result.rows[0] ?? null });
     } else if (countMode) {
@@ -390,6 +402,7 @@ router.get("/:table", async (req: Request, res: Response) => {
       res.json({ data: result.rows });
     }
   } catch (err: any) {
+    console.error(`[db] GET ${req.originalUrl} failed:`, err.message);
     res.status(500).json({ error: err.message });
   }
 });
