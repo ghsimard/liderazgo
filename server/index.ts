@@ -1,9 +1,29 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+// ─── Resolve frontend build directory ───────────────────
+// Compiled file lives at:   /opt/render/project/src/server/dist/index.js
+// Vite frontend build lives at: /opt/render/project/src/dist/index.html
+// So we need to go up TWO levels from __dirname (server/dist → server → repo root) then into "dist".
+const FRONTEND_DIST_DIR = (() => {
+  const candidates = [
+    path.resolve(__dirname, "../../dist"), // production: server/dist/index.js → repo/dist
+    path.resolve(__dirname, "../dist"),    // legacy fallback
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(path.join(c, "index.html"))) return c;
+  }
+  console.warn(
+    `[server] WARNING: no frontend index.html found. Tried: ${candidates.join(", ")}`,
+  );
+  return candidates[0];
+})();
+console.log(`[server] Serving frontend from: ${FRONTEND_DIST_DIR}`);
 
 import { requireAuth, requireAdminOrViewer } from "./middleware/auth";
 import authRoutes from "./routes/auth";
