@@ -1,108 +1,80 @@
-## Plan — Corriger l’erreur Render `ENOENT ... /server/dist/index.html`
+# Plan de correction
 
-### Diagnostic confirmé
+## Diagnostic confirmé
+Les logs montrent un problème important côté backend Render :
 
-La nouvelle capture montre une cause différente des timeouts SQL précédents :
+- le process Node atteint la limite mémoire (`FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory`)
+- juste après, le service redémarre
+- pendant ce crash, des utilisateurs reçoivent des erreurs 502 en production
 
-```text
-Error: ENOENT: no such file or directory, stat '/opt/render/project/src/server/dist/index.html'
-```
+Donc ce n’est pas un simple warning : c’est un vrai crash du worker backend.
 
-Le backend démarre bien (`Server running on port 3001`), mais il essaie de servir le frontend depuis un mauvais dossier.
+## Ce que je vais corriger
 
-### Cause racine
+### 1. Instrumenter le backend pour identifier précisément la route fautive
+Le log partagé ne contient pas l’URL complète sur toutes les lignes, donc je vais ajouter un logging léger côté serveur pour capturer :
+- méthode
+- route
+- table ciblée pour `/api/db/:table`
+- temps de réponse
+- taille de réponse
+- mémoire utilisée avant/après sur les réponses lourdes
 
-Dans `server/index.ts`, Express sert actuellement :
+Objectif : confirmer noir sur blanc quelle route provoque le pic mémoire en production.
 
-```ts
-app.use(express.static(path.resolve(__dirname, "../dist")));
-res.sendFile(path.resolve(__dirname, "../dist/index.html"));
-```
+### 2. Sécuriser la route proxy base de données
+Dans `server/routes/db.ts`, je vais ajouter des garde-fous pour éviter qu’une lecture générique consomme trop de mémoire :
+- limite par défaut sur certaines lectures sans pagination
+- logs sur les requêtes les plus volumineuses
+- retour plus défensif sur les tables potentiellement lourdes
+- meilleure visibilité sur les `select("*")` et les appels sans `limit`
 
-Or sur Render, avec le start command actuel :
+Objectif : empêcher qu’une requête générique fasse exploser le worker.
 
-```text
-cd server && node dist/index.js
-```
+### 3. Optimiser les écrans du module Informe qui multiplient les requêtes
+J’ai déjà repéré plusieurs appels liés à `informe_modulo` et `informe_modulo_equipo`, notamment dans :
+- `src/pages/InformeModulo.tsx`
+- `src/components/admin/AdminInformeModuloForm.tsx`
+- `src/components/admin/AdminInformeReportTab.tsx`
 
-le fichier compilé tourne depuis :
+Je vais réduire la charge en :
+- remplaçant certains `select("*")` par des sélections ciblées
+- regroupant les lectures `informe_modulo_equipo` en une seule requête batch au lieu de boucles requête-par-requête
+- évitant les rechargements inutiles si les mêmes données sont déjà en mémoire
 
-```text
-/opt/render/project/src/server/dist/index.js
-```
+Objectif : diminuer le nombre d’appels backend et la taille des réponses.
 
-Donc `../dist/index.html` devient :
+### 4. Vérifier et alléger la route d’export serveur
+La route `server/routes/export.ts` construit actuellement un très gros dump SQL en mémoire dans une seule string.
+Même si ce n’est pas forcément l’unique cause, c’est une route à risque élevé pour un OOM.
 
-```text
-/opt/render/project/src/server/dist/index.html
-```
+Je vais la rendre plus sûre en :
+- évitant l’accumulation complète en mémoire si possible
+- limitant ou segmentant les exports lourds
+- gardant un comportement stable pour les administrateurs
 
-mais le build Vite du frontend est en réalité généré à la racine du repo :
+Objectif : éliminer une autre source probable de crash mémoire.
 
-```text
-/opt/render/project/src/dist/index.html
-```
+### 5. Ajouter un correctif temporaire de stabilité pour la production
+En parallèle du correctif code, je prévois une mesure de stabilisation côté Render :
+- définir `NODE_OPTIONS=--max-old-space-size=512` ou `768` selon la marge disponible
 
-Il manque donc **un niveau de remontée**. Le bon chemin est `../../dist`, pas `../dist`.
+Important : ce sera un filet de sécurité, pas la vraie solution.
+La vraie solution reste la réduction de la consommation mémoire dans le code.
 
-### Correctif proposé
+## Résultat attendu
+Après ce correctif :
+- plus de crash `heap out of memory`
+- plus de redémarrages du service pendant l’usage normal
+- disparition des 502 liés à ce plantage
+- backend plus robuste sur mobile et desktop
 
-#### 1. Corriger le chemin du frontend dans `server/index.ts`
+## Détail technique
+Fichiers que je modifierai probablement :
+- `server/routes/db.ts`
+- `server/routes/export.ts`
+- `src/pages/InformeModulo.tsx`
+- `src/components/admin/AdminInformeModuloForm.tsx`
+- `src/components/admin/AdminInformeReportTab.tsx`
 
-Remplacer le chemin statique et le fallback SPA par une résolution robuste vers le vrai build Vite :
-
-- définir une constante dédiée du type `FRONTEND_DIST_DIR`
-- pointer vers `path.resolve(__dirname, "../../dist")`
-- réutiliser cette constante pour :
-  - `express.static(...)`
-  - `sendFile(.../index.html)`
-
-Cela évite que le serveur cherche le frontend dans `server/dist/`.
-
-#### 2. Ajouter une protection explicite sur le fallback SPA
-
-Si `index.html` est absent, renvoyer une erreur serveur claire dans les logs au lieu d’un échec implicite difficile à diagnostiquer.
-
-Objectif : si le build frontend manque vraiment un jour, le log dira clairement quel fichier est attendu.
-
-#### 3. Vérifier qu’aucune autre hypothèse de déploiement n’est codée en dur
-
-Je relirai les références au dossier `dist` côté serveur pour m’assurer qu’il n’y a pas d’autre chemin relatif cassé par le `cd server && node dist/index.js`.
-
-### Résultat attendu
-
-Après redéploiement Render :
-
-- `/` ne doit plus renvoyer 502
-- les routes frontend servies par Express doivent fonctionner normalement
-- l’erreur `ENOENT ... /server/dist/index.html` doit disparaître des logs
-
-### Détail technique
-
-Chemins actuels vs attendus :
-
-```text
-Exécutable serveur:
-/opt/render/project/src/server/dist/index.js
-
-Chemin actuel résolu par ../dist:
-/opt/render/project/src/server/dist
-
-Chemin réel du build frontend:
-/opt/render/project/src/dist
-```
-
-### Impact par cible
-
-| Cible | Action |
-|---|---|
-| Frontend React | Aucune logique métier à changer |
-| Backend Express | Corriger `server/index.ts` |
-| Base de données | Aucune |
-| Render config | Optionnel : si tu veux, définir `/api/health` comme health check dédié, mais le correctif code suffit déjà |
-
-### Hors-scope
-
-- Les optimisations PG/index déjà traitées précédemment
-- Toute refonte du pipeline de build Render
-- Migration vers un déploiement séparé frontend/backend
+Point important : le screenshot précédent montrait une erreur sur une requête `informe_modulo_equipo`, mais les logs texte seuls ne donnent pas encore la route exacte à 100 %. Je vais donc d’abord instrumenter proprement, puis corriger la ou les routes réellement responsables dans le même passage.
