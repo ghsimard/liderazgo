@@ -549,6 +549,19 @@ CREATE TABLE IF NOT EXISTS public.informe_asistencia (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Indexes for performance on Informe Modulo tables (lookups by informe_id / module + cedula)
+CREATE INDEX IF NOT EXISTS idx_informe_modulo_equipo_informe_id
+  ON public.informe_modulo_equipo (informe_id);
+
+CREATE INDEX IF NOT EXISTS idx_informe_directivo_module_cedula
+  ON public.informe_directivo (module_number, directivo_cedula);
+
+CREATE INDEX IF NOT EXISTS idx_informe_directivo_informe_id
+  ON public.informe_directivo (informe_id);
+
+CREATE INDEX IF NOT EXISTS idx_informe_asistencia_module_cedula
+  ON public.informe_asistencia (module_number, directivo_cedula);
+
 -- ============================================================
 -- Encuestas Ambiente Escolar
 -- ============================================================
