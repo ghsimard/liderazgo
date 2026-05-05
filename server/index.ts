@@ -1,9 +1,29 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+// ─── Resolve frontend build directory ───────────────────
+// Compiled file lives at:   /opt/render/project/src/server/dist/index.js
+// Vite frontend build lives at: /opt/render/project/src/dist/index.html
+// So we need to go up TWO levels from __dirname (server/dist → server → repo root) then into "dist".
+const FRONTEND_DIST_DIR = (() => {
+  const candidates = [
+    path.resolve(__dirname, "../../dist"), // production: server/dist/index.js → repo/dist
+    path.resolve(__dirname, "../dist"),    // legacy fallback
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(path.join(c, "index.html"))) return c;
+  }
+  console.warn(
+    `[server] WARNING: no frontend index.html found. Tried: ${candidates.join(", ")}`,
+  );
+  return candidates[0];
+})();
+console.log(`[server] Serving frontend from: ${FRONTEND_DIST_DIR}`);
 
 import { requireAuth, requireAdminOrViewer } from "./middleware/auth";
 import authRoutes from "./routes/auth";
@@ -35,7 +55,7 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads";
 app.use("/uploads", express.static(path.resolve(UPLOAD_DIR)));
 
 // Serve the React frontend (after build)
-app.use(express.static(path.resolve(__dirname, "../dist")));
+app.use(express.static(FRONTEND_DIST_DIR));
 
 // ─── API Routes ───────────────────────────────────────
 app.use("/api/auth", authRoutes);
@@ -125,7 +145,13 @@ app.get("/api/health", (_req, res) => {
 
 // SPA fallback — serve index.html for all non-API routes
 app.get("*", (_req, res) => {
-  res.sendFile(path.resolve(__dirname, "../dist/index.html"));
+  const indexPath = path.join(FRONTEND_DIST_DIR, "index.html");
+  if (!fs.existsSync(indexPath)) {
+    console.error(`[server] Frontend index.html missing at ${indexPath}`);
+    res.status(500).send("Frontend build not found on server.");
+    return;
+  }
+  res.sendFile(indexPath);
 });
 
 // ─── Ensure required geography junction tables exist (Render self-healing) ───
