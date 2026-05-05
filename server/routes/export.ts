@@ -59,58 +59,66 @@ const EXPORT_TABLES = [
 
 router.get("/", requireAuth, requireSuperAdmin, async (_req: Request, res: Response) => {
   try {
-    let sql = `-- Database Export\n-- Generated: ${new Date().toISOString()}\n\n`;
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="export_${new Date().toISOString().slice(0, 10)}.sql"`);
+    res.write(`-- Database Export\n-- Generated: ${new Date().toISOString()}\n\n`);
 
     // Export users
-    sql += `-- ══ Users ══\n`;
+    res.write(`-- ══ Users ══\n`);
     const users = await query("SELECT id, email, password_hash, created_at FROM users ORDER BY created_at");
     for (const u of users) {
-      sql += `INSERT INTO users (id, email, password_hash, created_at) VALUES ('${u.id}', '${esc(u.email)}', '${esc(u.password_hash)}', '${u.created_at}') ON CONFLICT (id) DO NOTHING;\n`;
+      res.write(
+        `INSERT INTO users (id, email, password_hash, created_at) VALUES ('${u.id}', '${esc(u.email)}', '${esc(u.password_hash)}', '${u.created_at}') ON CONFLICT (id) DO NOTHING;\n`,
+      );
     }
 
     const ucrs = await query("SELECT user_id, role_id, created_at FROM user_custom_roles");
     for (const r of ucrs) {
-      sql += `INSERT INTO user_custom_roles (user_id, role_id, created_at) VALUES ('${r.user_id}', '${r.role_id}', '${r.created_at}') ON CONFLICT (user_id, role_id) DO NOTHING;\n`;
+      res.write(
+        `INSERT INTO user_custom_roles (user_id, role_id, created_at) VALUES ('${r.user_id}', '${r.role_id}', '${r.created_at}') ON CONFLICT (user_id, role_id) DO NOTHING;\n`,
+      );
     }
+    res.write(`\n`);
 
-    sql += `\n`;
-
-    // Export each table
+    // Export each table — stream row by row to avoid building one giant string in memory
     for (const table of EXPORT_TABLES) {
-      sql += `-- ══ ${table} ══\n`;
+      res.write(`-- ══ ${table} ══\n`);
       const rows = await query(`SELECT * FROM "${table}" ORDER BY 1`);
       if (rows.length === 0) {
-        sql += `-- (empty)\n\n`;
+        res.write(`-- (empty)\n\n`);
         continue;
       }
-
       const cols = Object.keys(rows[0]);
+      const colList = cols.map((c) => `"${c}"`).join(", ");
       for (const row of rows) {
         const vals = cols.map((c) => formatVal(row[c]));
-        sql += `INSERT INTO "${table}" (${cols.map(c => `"${c}"`).join(", ")}) VALUES (${vals.join(", ")}) ON CONFLICT DO NOTHING;\n`;
+        res.write(`INSERT INTO "${table}" (${colList}) VALUES (${vals.join(", ")}) ON CONFLICT DO NOTHING;\n`);
       }
-      sql += `\n`;
+      res.write(`\n`);
     }
 
     // Export uploaded files as base64
     const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads";
     if (fs.existsSync(UPLOAD_DIR)) {
-      sql += `-- ══ Uploaded Files (base64) ══\n`;
+      res.write(`-- ══ Uploaded Files (base64) ══\n`);
       const files = fs.readdirSync(UPLOAD_DIR);
       for (const file of files) {
         const filePath = path.join(UPLOAD_DIR, file);
         if (fs.statSync(filePath).isFile()) {
           const b64 = fs.readFileSync(filePath).toString("base64");
-          sql += `-- FILE: ${file}\n-- BASE64: ${b64.substring(0, 100)}...\n`;
+          res.write(`-- FILE: ${file}\n-- BASE64: ${b64.substring(0, 100)}...\n`);
         }
       }
     }
 
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.setHeader("Content-Disposition", `attachment; filename="export_${new Date().toISOString().slice(0, 10)}.sql"`);
-    res.send(sql);
+    res.end();
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error("[export] failed:", err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    } else {
+      res.end(`\n-- ERROR: ${err.message}\n`);
+    }
   }
 });
 

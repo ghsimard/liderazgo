@@ -50,6 +50,43 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "10mb" }));
 
+// ─── Lightweight request instrumentation ──────────────
+// Logs slow / heavy / failing API calls + memory pressure to help diagnose OOM crashes
+app.use((req, res, next) => {
+  if (!req.path.startsWith("/api/")) return next();
+  const start = Date.now();
+  let bytes = 0;
+  const origWrite = res.write.bind(res);
+  const origEnd = res.end.bind(res);
+  res.write = ((chunk: any, ...rest: any[]) => {
+    if (chunk) bytes += Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(String(chunk));
+    return (origWrite as any)(chunk, ...rest);
+  }) as any;
+  res.end = ((chunk: any, ...rest: any[]) => {
+    if (chunk) bytes += Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(String(chunk));
+    return (origEnd as any)(chunk, ...rest);
+  }) as any;
+  res.on("finish", () => {
+    const ms = Date.now() - start;
+    const heap = process.memoryUsage().heapUsed;
+    const heavy = bytes > 500_000 || ms > 3_000 || res.statusCode >= 500;
+    if (heavy) {
+      console.warn(
+        `[api] ${req.method} ${req.originalUrl} status=${res.statusCode} ms=${ms} bytes=${bytes} heapMB=${(heap / 1024 / 1024).toFixed(0)}`,
+      );
+    }
+  });
+  next();
+});
+
+// Track unhandled errors so we get a useful trace before any crash
+process.on("uncaughtException", (err) => {
+  console.error("[fatal] uncaughtException:", err);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[fatal] unhandledRejection:", reason);
+});
+
 // Serve uploaded images as static files
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads";
 app.use("/uploads", express.static(path.resolve(UPLOAD_DIR)));
