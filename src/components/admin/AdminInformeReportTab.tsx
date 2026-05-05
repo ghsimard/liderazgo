@@ -140,10 +140,22 @@ export default function AdminInformeReportTab({ allowedRegions }: { allowedRegio
           novedades: (r.novedades as any[]) || [],
         }));
 
-        // Load equipo for each informe
-        for (const inf of rows || []) {
-          const { data: eq } = await supabase.from("informe_modulo_equipo").select("nombre, rol").eq("informe_id", inf.id);
-          equipoMap[`${inf.region}_${inf.module_number}`] = eq || [];
+        // Load equipo for all informes in a single batched query
+        const informeIds = (rows || []).map((r: any) => r.id).filter(Boolean);
+        if (informeIds.length > 0) {
+          const { data: allEquipo } = await supabase
+            .from("informe_modulo_equipo")
+            .select("informe_id, nombre, rol")
+            .in("informe_id", informeIds);
+          const byInforme = new Map<string, { nombre: string; rol: string }[]>();
+          (allEquipo || []).forEach((e: any) => {
+            const list = byInforme.get(e.informe_id) || [];
+            list.push({ nombre: e.nombre, rol: e.rol });
+            byInforme.set(e.informe_id, list);
+          });
+          for (const inf of rows || []) {
+            equipoMap[`${inf.region}_${inf.module_number}`] = byInforme.get(inf.id) || [];
+          }
         }
       }
 
