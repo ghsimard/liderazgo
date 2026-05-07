@@ -100,8 +100,28 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
       .eq("region", selectedRegion).eq("entidad_territorial", selectedET).eq("module_number", selectedModule).limit(1);
 
     if (rows && rows.length > 0) {
-      setData(rows[0]);
-      const { data: eq } = await supabase.from("informe_modulo_equipo").select("*").eq("informe_id", rows[0].id);
+      const row = rows[0];
+      // Reconcile acompanamiento_directivos with current fichas_rlt (read-only view)
+      const ets = String(selectedET).split(",").map(s => s.trim()).filter(Boolean);
+      const { data: fichas } = await supabase
+        .from("fichas_rlt")
+        .select("numero_cedula, nombres_apellidos, entidad_territorial")
+        .eq("region", selectedRegion)
+        .in("entidad_territorial", ets)
+        .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+      const existing = parseJson<AcompanamientoDirectivo[]>(row.acompanamiento_directivos, []) || [];
+      const existingCedulas = new Set(existing.map(d => d.cedula));
+      const additions: AcompanamientoDirectivo[] = (fichas || [])
+        .filter((f: any) => f.numero_cedula && !existingCedulas.has(f.numero_cedula))
+        .map((f: any) => ({
+          cedula: f.numero_cedula, nombre: f.nombres_apellidos,
+          coaching_individual: 0, otras_coaching: 0,
+          visita_individual: 0, visita_grupal: 0,
+          autoformacion: 0, intercambio_pares: 0,
+          acompanamiento_virtual: 0, observacion: "",
+        }));
+      setData({ ...row, acompanamiento_directivos: [...existing, ...additions] });
+      const { data: eq } = await supabase.from("informe_modulo_equipo").select("*").eq("informe_id", row.id);
       setEquipo(eq || []);
     } else {
       setData(null);
