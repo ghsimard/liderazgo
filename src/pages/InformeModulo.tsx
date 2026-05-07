@@ -673,7 +673,10 @@ export default function InformeModulo() {
                   <Label className="text-xs text-muted-foreground mt-3 block">Cuando no se cumplieron los objetivos</Label>
                   <Textarea value={data.acompanamiento_no_cumplido} onChange={e => update("acompanamiento_no_cumplido", e.target.value)} rows={3} className="mt-1" />
                   {/* Directivos table */}
-                  <Label className="text-xs text-muted-foreground mt-3 block">Registro por directivo</Label>
+                  <Label className="text-xs text-muted-foreground mt-3 inline-flex items-center gap-2">
+                    Registro por directivo
+                    <Badge variant="secondary">{data.acompanamiento_directivos.length} directivos</Badge>
+                  </Label>
                   <div className="overflow-x-auto mt-1">
                     <Table>
                       <TableHeader><TableRow>
