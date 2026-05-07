@@ -1,0 +1,1 @@
+TRUNCATE public.informe_asistencia, public.informe_directivo, public.informe_modulo_equipo, public.informe_modulo, public.fichas_rlt RESTART IDENTITY CASCADE;
