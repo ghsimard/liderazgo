@@ -254,7 +254,20 @@ export default function InformeModulo() {
         razones_diferencias: row.razones_diferencias || "",
         acompanamiento_descripcion: row.acompanamiento_descripcion || "",
         acompanamiento_no_cumplido: row.acompanamiento_no_cumplido || "",
-        acompanamiento_directivos: parseJsonArray<AcompanamientoDirectivo>(row.acompanamiento_directivos, []),
+        acompanamiento_directivos: (() => {
+          const existing = parseJsonArray<AcompanamientoDirectivo>(row.acompanamiento_directivos, []);
+          const existingCedulas = new Set(existing.map(d => d.cedula));
+          const additions: AcompanamientoDirectivo[] = directivos
+            .filter(d => !existingCedulas.has(d.cedula))
+            .map(d => ({
+              cedula: d.cedula, nombre: d.nombre,
+              coaching_individual: 0, otras_coaching: 0,
+              visita_individual: 0, visita_grupal: 0,
+              autoformacion: 0, intercambio_pares: 0,
+              acompanamiento_virtual: 0, observacion: "",
+            }));
+          return [...existing, ...additions];
+        })(),
         estrategias: parseJsonArray<Estrategia>(row.estrategias, [...DEFAULT_ESTRATEGIAS]),
         aprendizajes_interludio: row.aprendizajes_interludio || "",
         articulacion_interludio: row.articulacion_interludio || "",
