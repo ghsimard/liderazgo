@@ -14,6 +14,255 @@ export type Database = {
   }
   public: {
     Tables: {
+      _backup_rubrica_asignaciones_20260507: {
+        Row: {
+          created_at: string | null
+          directivo_cedula: string | null
+          directivo_nombre: string | null
+          encuesta_entrada_visible: boolean | null
+          encuesta_salida_visible: boolean | null
+          evaluador_id: string | null
+          id: string | null
+          institucion: string | null
+          rubrica_visible: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          directivo_cedula?: string | null
+          directivo_nombre?: string | null
+          encuesta_entrada_visible?: boolean | null
+          encuesta_salida_visible?: boolean | null
+          evaluador_id?: string | null
+          id?: string | null
+          institucion?: string | null
+          rubrica_visible?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          directivo_cedula?: string | null
+          directivo_nombre?: string | null
+          encuesta_entrada_visible?: boolean | null
+          encuesta_salida_visible?: boolean | null
+          evaluador_id?: string | null
+          id?: string | null
+          institucion?: string | null
+          rubrica_visible?: boolean | null
+        }
+        Relationships: []
+      }
+      _backup_rubrica_evaluaciones_20260507: {
+        Row: {
+          acordado_comentario: string | null
+          acordado_nivel: string | null
+          created_at: string | null
+          directivo_cedula: string | null
+          directivo_comentario: string | null
+          directivo_nivel: string | null
+          equipo_comentario: string | null
+          equipo_nivel: string | null
+          id: string | null
+          item_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          acordado_comentario?: string | null
+          acordado_nivel?: string | null
+          created_at?: string | null
+          directivo_cedula?: string | null
+          directivo_comentario?: string | null
+          directivo_nivel?: string | null
+          equipo_comentario?: string | null
+          equipo_nivel?: string | null
+          id?: string | null
+          item_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          acordado_comentario?: string | null
+          acordado_nivel?: string | null
+          created_at?: string | null
+          directivo_cedula?: string | null
+          directivo_comentario?: string | null
+          directivo_nivel?: string | null
+          equipo_comentario?: string | null
+          equipo_nivel?: string | null
+          id?: string | null
+          item_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      _backup_rubrica_evaluadores_20260507: {
+        Row: {
+          cedula: string | null
+          created_at: string | null
+          email: string | null
+          id: string | null
+          nombre: string | null
+        }
+        Insert: {
+          cedula?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          nombre?: string | null
+        }
+        Update: {
+          cedula?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          nombre?: string | null
+        }
+        Relationships: []
+      }
+      _backup_rubrica_items_20260507: {
+        Row: {
+          created_at: string | null
+          desc_avanzado: string | null
+          desc_basico: string | null
+          desc_intermedio: string | null
+          desc_sin_evidencia: string | null
+          id: string | null
+          item_label: string | null
+          item_type: string | null
+          module_id: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          desc_avanzado?: string | null
+          desc_basico?: string | null
+          desc_intermedio?: string | null
+          desc_sin_evidencia?: string | null
+          id?: string | null
+          item_label?: string | null
+          item_type?: string | null
+          module_id?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          desc_avanzado?: string | null
+          desc_basico?: string | null
+          desc_intermedio?: string | null
+          desc_sin_evidencia?: string | null
+          id?: string | null
+          item_label?: string | null
+          item_type?: string | null
+          module_id?: string | null
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      _backup_rubrica_modules_20260507: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          module_number: number | null
+          objective: string | null
+          sort_order: number | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          module_number?: number | null
+          objective?: string | null
+          sort_order?: number | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          module_number?: number | null
+          objective?: string | null
+          sort_order?: number | null
+          title?: string | null
+        }
+        Relationships: []
+      }
+      _backup_rubrica_regional_analyses_20260507: {
+        Row: {
+          analysis_text: string | null
+          id: string | null
+          module_id: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          analysis_text?: string | null
+          id?: string | null
+          module_id?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          analysis_text?: string | null
+          id?: string | null
+          module_id?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      _backup_rubrica_seguimientos_20260507: {
+        Row: {
+          comentario: string | null
+          created_at: string | null
+          directivo_cedula: string | null
+          id: string | null
+          item_id: string | null
+          module_number: number | null
+          nivel: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          comentario?: string | null
+          created_at?: string | null
+          directivo_cedula?: string | null
+          id?: string | null
+          item_id?: string | null
+          module_number?: number | null
+          nivel?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          comentario?: string | null
+          created_at?: string | null
+          directivo_cedula?: string | null
+          id?: string | null
+          item_id?: string | null
+          module_number?: number | null
+          nivel?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      _backup_rubrica_submission_dates_20260507: {
+        Row: {
+          directivo_cedula: string | null
+          id: string | null
+          module_number: number | null
+          submission_type: string | null
+          submitted_at: string | null
+        }
+        Insert: {
+          directivo_cedula?: string | null
+          id?: string | null
+          module_number?: number | null
+          submission_type?: string | null
+          submitted_at?: string | null
+        }
+        Update: {
+          directivo_cedula?: string | null
+          id?: string | null
+          module_number?: number | null
+          submission_type?: string | null
+          submitted_at?: string | null
+        }
+        Relationships: []
+      }
       admin_cedulas: {
         Row: {
           cedula: string
