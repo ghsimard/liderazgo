@@ -242,7 +242,12 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
               <ReadOnlyField label="Objetivos no cumplidos" value={data.acompanamiento_no_cumplido} />
               {parseJson<AcompanamientoDirectivo[]>(data.acompanamiento_directivos, [])?.length > 0 && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Registro por directivo</Label>
+                  <Label className="text-xs text-muted-foreground inline-flex items-center gap-2">
+                    Registro por directivo
+                    <Badge variant="secondary">
+                      {parseJson<AcompanamientoDirectivo[]>(data.acompanamiento_directivos, []).length} directivos
+                    </Badge>
+                  </Label>
                   <div className="overflow-x-auto mt-1">
                     <Table>
                       <TableHeader><TableRow>
