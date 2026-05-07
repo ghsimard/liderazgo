@@ -343,7 +343,7 @@ export async function generarPDFInformeModulo(
       // Acompañamiento directivos table
       if (inf.acompanamiento_directivos?.length > 0) {
         doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(30, 30, 30);
-        doc.text("Registro por directivo", margin, y); y += 5;
+        doc.text(`Registro por directivo (${inf.acompanamiento_directivos.length} directivos)`, margin, y); y += 5;
         const adW = [contentW * 0.22, contentW * 0.08, contentW * 0.08, contentW * 0.08, contentW * 0.08, contentW * 0.08, contentW * 0.08, contentW * 0.08, contentW * 0.22];
         drawTableRow(["Directivo", "C.Ind", "Otras", "V.Ind", "V.Gr", "Auto", "Pares", "Virt", "Obs."], adW, true, true);
         for (const ad of inf.acompanamiento_directivos) {
