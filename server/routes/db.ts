@@ -58,6 +58,7 @@ const PUBLIC_READ_TABLES = new Set([
   "satisfaccion_report_content",
   "satisfaccion_form_definitions",
   "encuesta_360_visibility",
+  "operator_permissions",
 ]);
 
 // Tables that allow public inserts (no auth required for POST without _method)
