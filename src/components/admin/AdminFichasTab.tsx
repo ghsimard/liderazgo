@@ -236,18 +236,27 @@ export default function AdminFichasTab({ isViewer = false, allowedRegions }: { i
       let relatedAsignaciones: any[] = [];
       let relatedSubmissionDates: any[] = [];
       let relatedSeguimientos: any[] = [];
+      let relatedAsistencia: any[] = [];
+      let relatedInformeDirectivo: any[] = [];
+      let relatedInvitaciones: any[] = [];
 
       if (cedula) {
-        const [evalRes, asigRes, subRes, segRes] = await Promise.all([
+        const [evalRes, asigRes, subRes, segRes, asisRes, infDirRes, invRes] = await Promise.all([
           supabase.from("rubrica_evaluaciones").select("*").eq("directivo_cedula", cedula),
           supabase.from("rubrica_asignaciones").select("*").eq("directivo_cedula", cedula),
           supabase.from("rubrica_submission_dates").select("*").eq("directivo_cedula", cedula),
           supabase.from("rubrica_seguimientos").select("*").eq("directivo_cedula", cedula),
+          supabase.from("informe_asistencia").select("*").eq("directivo_cedula", cedula),
+          supabase.from("informe_directivo").select("*").eq("directivo_cedula", cedula),
+          supabase.from("encuesta_invitaciones").select("*").eq("directivo_cedula", cedula),
         ]);
         relatedEvaluaciones = evalRes.data ?? [];
         relatedAsignaciones = asigRes.data ?? [];
         relatedSubmissionDates = subRes.data ?? [];
         relatedSeguimientos = segRes.data ?? [];
+        relatedAsistencia = asisRes.data ?? [];
+        relatedInformeDirectivo = infDirRes.data ?? [];
+        relatedInvitaciones = invRes.data ?? [];
       }
 
       // Save everything to trash
@@ -261,6 +270,9 @@ export default function AdminFichasTab({ isViewer = false, allowedRegions }: { i
           rubrica_asignaciones: relatedAsignaciones,
           rubrica_submission_dates: relatedSubmissionDates,
           rubrica_seguimientos: relatedSeguimientos,
+          informe_asistencia: relatedAsistencia,
+          informe_directivo: relatedInformeDirectivo,
+          encuesta_invitaciones: relatedInvitaciones,
         } as any,
       }]);
 
@@ -270,13 +282,16 @@ export default function AdminFichasTab({ isViewer = false, allowedRegions }: { i
         await supabase.from("encuestas_360").delete().eq("cedula", cedula).eq("institucion_educativa", ie).eq("tipo_formulario", "autoevaluacion");
       }
 
-      // Delete related rubrica data
+      // Delete related rubrica + informe + invitaciones data
       if (cedula) {
         await Promise.all([
           supabase.from("rubrica_evaluaciones").delete().eq("directivo_cedula", cedula),
           supabase.from("rubrica_submission_dates").delete().eq("directivo_cedula", cedula),
           supabase.from("rubrica_seguimientos").delete().eq("directivo_cedula", cedula),
           supabase.from("rubrica_asignaciones").delete().eq("directivo_cedula", cedula),
+          supabase.from("informe_asistencia").delete().eq("directivo_cedula", cedula),
+          supabase.from("informe_directivo").delete().eq("directivo_cedula", cedula),
+          supabase.from("encuesta_invitaciones").delete().eq("directivo_cedula", cedula),
         ]);
       }
     }
