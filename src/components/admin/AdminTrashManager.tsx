@@ -97,7 +97,7 @@ export default function AdminTrashManager() {
         const { id, ...rest } = d;
         await supabase.from("encuestas_360").insert([{ id, ...rest }]);
       } else if (record.record_type === "ficha_rlt") {
-        const { ficha, encuestas, rubrica_evaluaciones, rubrica_asignaciones, rubrica_submission_dates, rubrica_seguimientos } = d;
+        const { ficha, encuestas, rubrica_evaluaciones, rubrica_asignaciones, rubrica_submission_dates, rubrica_seguimientos, informe_asistencia, informe_directivo, encuesta_invitaciones } = d;
         await supabase.from("fichas_rlt").insert([ficha]);
         if (encuestas?.length > 0) {
           await supabase.from("encuestas_360").insert(encuestas);
@@ -106,6 +106,9 @@ export default function AdminTrashManager() {
         if (rubrica_asignaciones?.length > 0) await supabase.from("rubrica_asignaciones").insert(rubrica_asignaciones);
         if (rubrica_submission_dates?.length > 0) await supabase.from("rubrica_submission_dates").insert(rubrica_submission_dates);
         if (rubrica_seguimientos?.length > 0) await supabase.from("rubrica_seguimientos").insert(rubrica_seguimientos);
+        if (informe_asistencia?.length > 0) await supabase.from("informe_asistencia").insert(informe_asistencia);
+        if (informe_directivo?.length > 0) await supabase.from("informe_directivo").insert(informe_directivo);
+        if (encuesta_invitaciones?.length > 0) await supabase.from("encuesta_invitaciones").insert(encuesta_invitaciones);
       } else if (record.record_type === "region") {
         if (d.region) await supabase.from("regiones").insert([d.region]);
         if (d.entidades?.length > 0) await supabase.from("region_entidades").insert(d.entidades.map(({ id, ...rest }: any) => rest));
