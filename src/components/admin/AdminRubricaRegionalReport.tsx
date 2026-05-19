@@ -27,6 +27,10 @@ interface RubricaItem {
   item_type: string;
   item_label: string;
   sort_order: number;
+  desc_avanzado?: string | null;
+  desc_intermedio?: string | null;
+  desc_basico?: string | null;
+  desc_sin_evidencia?: string | null;
 }
 
 interface Evaluacion {
@@ -43,6 +47,10 @@ interface ItemDistribution {
   basico: number;
   sinEvidencia: number;
   total: number;
+  descAvanzado?: string;
+  descIntermedio?: string;
+  descBasico?: string;
+  descSinEvidencia?: string;
 }
 
 const NIVEL_COLORS = {
