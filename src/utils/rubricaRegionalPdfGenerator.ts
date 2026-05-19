@@ -29,6 +29,10 @@ export interface RegionalModuleData {
     basico: number;
     sinEvidencia: number;
     total: number;
+    descAvanzado?: string;
+    descIntermedio?: string;
+    descBasico?: string;
+    descSinEvidencia?: string;
   }[];
   analysis?: string;
 }
@@ -284,6 +288,83 @@ export async function generarPDFRegionalRubricas(
     const sourceWidth = doc.getTextWidth(sourceText);
     doc.text(sourceText, pageW - margin - sourceWidth, y);
     y += 6;
+
+    // ── Definiciones por ítem y nivel ──
+    const itemsWithDescs = mod.distribution.filter(d =>
+      d.descAvanzado || d.descIntermedio || d.descBasico || d.descSinEvidencia
+    );
+    if (itemsWithDescs.length > 0) {
+      doc.addPage();
+      y = CONTENT_START_Y;
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30, 30, 30);
+      doc.text(`DEFINICIONES POR ÍTEM Y NIVEL — MÓDULO ${mod.moduleNumber}`, margin, y);
+      y += 7;
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(100, 100, 100);
+      doc.text("Criterios de la rúbrica para interpretar la distribución del cuadro anterior.", margin, y);
+      y += 8;
+
+      const niveles: { key: "descAvanzado" | "descIntermedio" | "descBasico" | "descSinEvidencia"; label: string; color: { r: number; g: number; b: number } }[] = [
+        { key: "descAvanzado", label: "Avanzado", color: NIVEL_COLORS.avanzado },
+        { key: "descIntermedio", label: "Intermedio", color: NIVEL_COLORS.intermedio },
+        { key: "descBasico", label: "Básico", color: NIVEL_COLORS.basico },
+        { key: "descSinEvidencia", label: "Sin evidencia", color: NIVEL_COLORS.sinEvidencia },
+      ];
+
+      for (const d of itemsWithDescs) {
+        // Pré-calcul de la hauteur du bloc ítem pour éviter de scinder
+        let blockH = 7; // ítem header
+        for (const n of niveles) {
+          const txt = d[n.key] || "";
+          if (!txt) continue;
+          const lines = doc.splitTextToSize(txt, contentW - 28);
+          blockH += Math.max(5, lines.length * 3.5) + 2;
+        }
+        blockH += 4;
+
+        checkPageBreak(blockH);
+
+        // Ítem header
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 30, 30);
+        const headerLabel = `[${d.itemType}] ${d.itemLabel}`;
+        const headerLines = doc.splitTextToSize(headerLabel, contentW);
+        doc.text(headerLines, margin, y);
+        y += headerLines.length * 4 + 2;
+
+        // Niveles
+        for (const n of niveles) {
+          const txt = d[n.key] || "";
+          if (!txt) continue;
+
+          // Badge couleur
+          doc.setFillColor(n.color.r, n.color.g, n.color.b);
+          doc.rect(margin, y - 2.5, 2, 3, "F");
+
+          // Label niveau
+          doc.setFontSize(7.5);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(n.color.r, n.color.g, n.color.b);
+          doc.text(n.label, margin + 4, y);
+
+          // Définition
+          doc.setFontSize(7.5);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(60, 60, 60);
+          const descLines = doc.splitTextToSize(txt, contentW - 28);
+          doc.text(descLines, margin + 26, y);
+          y += Math.max(4, descLines.length * 3.5) + 2;
+        }
+        y += 4;
+      }
+    }
+
 
     // ── AI Analysis ──
     if (mod.analysis) {

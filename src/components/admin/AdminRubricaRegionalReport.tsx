@@ -27,6 +27,10 @@ interface RubricaItem {
   item_type: string;
   item_label: string;
   sort_order: number;
+  desc_avanzado?: string | null;
+  desc_intermedio?: string | null;
+  desc_basico?: string | null;
+  desc_sin_evidencia?: string | null;
 }
 
 interface Evaluacion {
@@ -43,6 +47,10 @@ interface ItemDistribution {
   basico: number;
   sinEvidencia: number;
   total: number;
+  descAvanzado?: string;
+  descIntermedio?: string;
+  descBasico?: string;
+  descSinEvidencia?: string;
 }
 
 const NIVEL_COLORS = {
@@ -95,7 +103,7 @@ export default function AdminRubricaRegionalReport() {
     setLoading(true);
     const [{ data: mods }, { data: its }, { data: evals }, { data: saved }, { data: fichas }, { data: segs }] = await Promise.all([
       supabase.from("rubrica_modules").select("id, module_number, title, objective").order("sort_order", { ascending: true }),
-      supabase.from("rubrica_items").select("id, module_id, item_type, item_label, sort_order").order("sort_order", { ascending: true }),
+      supabase.from("rubrica_items").select("id, module_id, item_type, item_label, sort_order, desc_avanzado, desc_intermedio, desc_basico, desc_sin_evidencia").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel"),
       supabase.from("rubrica_regional_analyses").select("module_id, analysis_text"),
       supabase.from("fichas_rlt").select("numero_cedula, region"),
@@ -185,6 +193,10 @@ export default function AdminRubricaRegionalReport() {
             itemLabel: item.item_label,
             itemType: item.item_type,
             avanzado: 0, intermedio: 0, basico: 0, sinEvidencia: 0, total: 0,
+            descAvanzado: item.desc_avanzado || "",
+            descIntermedio: item.desc_intermedio || "",
+            descBasico: item.desc_basico || "",
+            descSinEvidencia: item.desc_sin_evidencia || "",
           });
           continue;
         }
@@ -212,6 +224,10 @@ export default function AdminRubricaRegionalReport() {
           basico: Math.round((counts.basico / total) * 100),
           sinEvidencia: Math.round((counts.sin_evidencia / total) * 100),
           total,
+          descAvanzado: item.desc_avanzado || "",
+          descIntermedio: item.desc_intermedio || "",
+          descBasico: item.desc_basico || "",
+          descSinEvidencia: item.desc_sin_evidencia || "",
         });
       }
 
