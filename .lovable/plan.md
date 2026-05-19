@@ -1,46 +1,36 @@
-# Problème : une opératrice ne voit pas Asistencia sur Render (prod)
+# Ajout du descripteur de niveau dans le PDF des Rúbricas
 
-## Cause racine
+## Problème
 
-Dans le panneau Opérateur, l'app appelle :
+Dans le PDF d'un module de rúbrica (`Informe_Rubrica_Mx_xxx.pdf`), chaque ítem affiche actuellement, pour chaque colonne (Autoevaluación, Evaluación Equipo, Nivel Acordado, Seguimiento) :
 
-```ts
-supabase.from("operator_permissions").select("*").eq("cedula", cedula)
-```
+- le **nom du niveau** (ex. « Avanzado »)
+- le **commentaire** du rector / équipe
 
-Sur **Render (production)**, ce `supabase` est en réalité le proxy Express (`@/utils/dbClient`). Le proxy, dans `server/routes/db.ts`, définit une liste blanche `PUBLIC_READ_TABLES` — les tables lisibles sans token JWT.
+Mais il manque la **définition du niveau** : c'est-à-dire le texte de la rúbrica qui décrit ce que signifie « Avanzado » pour cet ítem (le `desc_avanzado` / `desc_intermedio` / `desc_basico` / `desc_sin_evidencia` correspondant).
 
-**`operator_permissions` n'est PAS dans cette liste** → Express renvoie **401 « Authentification requise »**, parce que l'opératrice s'identifie uniquement avec `user_cedula` en sessionStorage (pas de `auth_token` JWT).
+L'utilisateur ne peut donc pas savoir, en lisant le PDF seul, à quoi correspond le niveau choisi.
 
-Résultat : `permissions = []` → le panneau affiche *« No tiene permisos asignados »*, ou bien les cartes (Asistencia, etc.) n'apparaissent jamais. Dans la preview Lovable ça fonctionne parce que le dbClient y attaque Supabase directement et les policies RLS sont différentes.
+## Solution
 
-Les tables consommées ensuite par Asistencia (`fichas_rlt`, `informe_asistencia`) **sont déjà** dans `PUBLIC_READ_TABLES` — donc dès que la première étape est corrigée, le reste se charge.
+Dans `src/utils/rubricaModulePdfGenerator.ts`, ajouter sous le nom du niveau (entre le badge « Avanzado » et le commentaire) le **texte descriptif du niveau choisi**, extrait de `descAvanzado` / `descIntermedio` / `descBasico` / `descSinEvidencia` de l'ítem courant.
 
-## Changement proposé
+Si la colonne n'a pas de niveau (« — »), aucun descripteur n'est affiché.
 
-### ⚙️ Web Service (Backend Express, `server/routes/db.ts`)
+## Détails techniques
 
-Ajouter `operator_permissions` à `PUBLIC_READ_TABLES` pour autoriser la lecture par cédula sans JWT (comme le font déjà `fichas_rlt`, `informe_asistencia`, etc.).
+Fichier : `src/utils/rubricaModulePdfGenerator.ts`
 
-```ts
-const PUBLIC_READ_TABLES = new Set([
-  ...,
-  "operator_permissions",   // ← ajouter
-]);
-```
+1. Supprimer la ligne actuelle qui imprime `Objetivo: ${item.descAvanzado}` sous le titre de l'ítem (elle est trompeuse : ce n'est pas un objectif, c'est la définition du niveau Avanzado).
+2. Ajouter une petite fonction utilitaire `getDescForNivel(item, nivel)` qui renvoie la chaîne descriptive selon la clé (`avanzado` → `descAvanzado`, etc.).
+3. Dans la boucle des 4 colonnes, après l'impression du badge `nivelText` et avant le commentaire, imprimer en italique gris (fontSize 7) le descripteur correspondant, wrappé à `colW - 4`.
+4. Recalculer `colY` et `maxH` pour inclure la hauteur de ce nouveau bloc (et donc allonger la cellule si nécessaire).
+5. Pour la colonne « Seguimiento », ne pas afficher de descripteur (la rúbrica de seguimiento utilise les mêmes niveaux ; on garde la cohérence visuelle en affichant le descripteur du niveau choisi).
 
-Les écritures (insert/update/delete) **restent réservées aux Admin/Superadmin**, car on ne touche pas à `PUBLIC_INSERT_TABLES`, `PUBLIC_UPDATE_TABLES`, `PUBLIC_DELETE_TABLES`.
+Aucun changement requis pour : base de données, Express Render, `blankRubricaPdfGenerator.ts` (déjà OK car il liste tous les niveaux), ou autres composants.
 
-### 🖥️ Site statique (Frontend)
-Aucun changement.
+## Actions par environnement
 
-### 🗄️ Base de données (SQL manuel)
-Aucun changement (la table existe déjà ; sa RLS Supabase est indépendante du proxy Render).
-
-## Risque
-
-Minimal. La table ne contient que des assignations de permissions (cédula + section + région). Pas de PII sensible. La cédula est utilisée comme filtre `.eq("cedula", ...)` côté client ; n'importe qui pourrait théoriquement interroger les permissions d'une autre cédula, ce qui reste cohérent avec le pattern déjà appliqué à `fichas_rlt` et aux autres tables opérationnelles.
-
-## Déploiement
-
-Après merge du changement sur GitHub, Render redéploie le Web Service automatiquement. Aucune migration SQL.
+- 🖥️ **Site statique (Frontend)** : modifier `src/utils/rubricaModulePdfGenerator.ts` uniquement. Merge GitHub → déploiement automatique.
+- ⚙️ **Web Service (Backend Express)** : aucune action.
+- 🗄️ **Base de données** : aucune action.
