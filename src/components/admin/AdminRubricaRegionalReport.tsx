@@ -103,7 +103,7 @@ export default function AdminRubricaRegionalReport() {
     setLoading(true);
     const [{ data: mods }, { data: its }, { data: evals }, { data: saved }, { data: fichas }, { data: segs }] = await Promise.all([
       supabase.from("rubrica_modules").select("id, module_number, title, objective").order("sort_order", { ascending: true }),
-      supabase.from("rubrica_items").select("id, module_id, item_type, item_label, sort_order").order("sort_order", { ascending: true }),
+      supabase.from("rubrica_items").select("id, module_id, item_type, item_label, sort_order, desc_avanzado, desc_intermedio, desc_basico, desc_sin_evidencia").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel"),
       supabase.from("rubrica_regional_analyses").select("module_id, analysis_text"),
       supabase.from("fichas_rlt").select("numero_cedula, region"),
