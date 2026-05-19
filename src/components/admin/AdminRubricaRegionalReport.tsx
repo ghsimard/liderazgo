@@ -224,6 +224,10 @@ export default function AdminRubricaRegionalReport() {
           basico: Math.round((counts.basico / total) * 100),
           sinEvidencia: Math.round((counts.sin_evidencia / total) * 100),
           total,
+          descAvanzado: item.desc_avanzado || "",
+          descIntermedio: item.desc_intermedio || "",
+          descBasico: item.desc_basico || "",
+          descSinEvidencia: item.desc_sin_evidencia || "",
         });
       }
 
