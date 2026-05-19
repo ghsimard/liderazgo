@@ -29,6 +29,10 @@ export interface RegionalModuleData {
     basico: number;
     sinEvidencia: number;
     total: number;
+    descAvanzado?: string;
+    descIntermedio?: string;
+    descBasico?: string;
+    descSinEvidencia?: string;
   }[];
   analysis?: string;
 }
