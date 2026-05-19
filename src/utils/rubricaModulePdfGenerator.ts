@@ -147,13 +147,17 @@ export async function generarPDFRubricaModulo(
     doc.text(`${typePrefix}: ${item.itemLabel}`, margin, y);
     y += 6;
 
-    // Item objective (desc_avanzado as reference description)
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "italic");
-    doc.setTextColor(80, 80, 80);
-    const objText = doc.splitTextToSize(`Objetivo: ${item.descAvanzado}`, contentW);
-    doc.text(objText, margin, y);
-    y += objText.length * 3.5 + 4;
+    // Helper: descripteur du niveau choisi pour cet ítem
+    const getDescForNivel = (nivel: string | null): string | null => {
+      if (!nivel) return null;
+      switch (nivel) {
+        case "avanzado": return item.descAvanzado;
+        case "intermedio": return item.descIntermedio;
+        case "basico": return item.descBasico;
+        case "sin_evidencia": return item.descSinEvidencia;
+        default: return null;
+      }
+    };
 
     // Four columns: Directivo, Equipo, Acordado, Seguimiento
     const colW = (contentW - 9) / 4;
@@ -191,6 +195,17 @@ export async function generarPDFRubricaModulo(
       const nivelText = col.nivel ? NIVEL_LABELS[col.nivel] || col.nivel : "—";
       doc.text(nivelText, x + 2, colY + 4);
       colY += 7;
+
+      // Descripteur du niveau choisi (definition de la rubrica)
+      const descNivel = getDescForNivel(col.nivel);
+      if (descNivel) {
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(100, 100, 100);
+        const descLines = doc.splitTextToSize(descNivel, colW - 4);
+        doc.text(descLines, x + 2, colY + 4);
+        colY += descLines.length * 3 + 4;
+      }
 
       // Comment
       doc.setFontSize(8);
