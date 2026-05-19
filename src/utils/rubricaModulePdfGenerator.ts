@@ -196,6 +196,17 @@ export async function generarPDFRubricaModulo(
       doc.text(nivelText, x + 2, colY + 4);
       colY += 7;
 
+      // Descripteur du niveau choisi (definition de la rubrica)
+      const descNivel = getDescForNivel(col.nivel);
+      if (descNivel) {
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(100, 100, 100);
+        const descLines = doc.splitTextToSize(descNivel, colW - 4);
+        doc.text(descLines, x + 2, colY + 4);
+        colY += descLines.length * 3 + 4;
+      }
+
       // Comment
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
