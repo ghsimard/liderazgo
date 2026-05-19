@@ -193,6 +193,10 @@ export default function AdminRubricaRegionalReport() {
             itemLabel: item.item_label,
             itemType: item.item_type,
             avanzado: 0, intermedio: 0, basico: 0, sinEvidencia: 0, total: 0,
+            descAvanzado: item.desc_avanzado || "",
+            descIntermedio: item.desc_intermedio || "",
+            descBasico: item.desc_basico || "",
+            descSinEvidencia: item.desc_sin_evidencia || "",
           });
           continue;
         }
