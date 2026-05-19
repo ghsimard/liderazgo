@@ -137,16 +137,6 @@ export async function generarPDFRubricaModulo(
   y += 10;
 
   for (const item of data.items) {
-    checkPageBreak(90);
-
-    // Item header
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 30, 30);
-    const typePrefix = item.itemType === "PROCESO" || item.itemType === "proceso" ? "Proceso" : "Producto";
-    doc.text(`${typePrefix}: ${item.itemLabel}`, margin, y);
-    y += 6;
-
     // Helper: descripteur du niveau choisi pour cet ítem
     const getDescForNivel = (nivel: string | null): string | null => {
       if (!nivel) return null;
@@ -159,7 +149,7 @@ export async function generarPDFRubricaModulo(
       }
     };
 
-    // Four columns: Directivo, Equipo, Acordado, Seguimiento
+    const typePrefix = item.itemType === "PROCESO" || item.itemType === "proceso" ? "Proceso" : "Producto";
     const colW = (contentW - 9) / 4;
 
     // Find the last seguimiento for this item
@@ -173,8 +163,36 @@ export async function generarPDFRubricaModulo(
       { title: "SEGUIMIENTO", nivel: lastSeg?.nivel || null, comentario: lastSeg?.comentario || null },
     ];
 
+    // ── Pré-calcul des hauteurs (sans dessiner) pour éviter tout débordement
+    const colHeights = columns.map((col, ci) => {
+      let h = 7 + 7; // title + nivel
+      const descNivel = getDescForNivel(col.nivel);
+      if (descNivel) {
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "italic");
+        const descLines = doc.splitTextToSize(descNivel, colW - 4);
+        h += descLines.length * 3 + 4;
+      }
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      const comment = col.comentario || (ci === 3 ? "Sin seguimiento" : "Sin comentario");
+      const lines = doc.splitTextToSize(comment, colW - 4);
+      h += lines.length * 3.5 + 6;
+      return h;
+    });
+    const maxH = Math.max(30, ...colHeights);
+    const totalBlockH = 6 /*header*/ + maxH + 6 /*spacing*/;
+
+    checkPageBreak(totalBlockH);
+
+    // Item header
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text(`${typePrefix}: ${item.itemLabel}`, margin, y);
+    y += 6;
+
     const startY = y;
-    let maxH = 0;
 
     for (let ci = 0; ci < columns.length; ci++) {
       const col = columns[ci];
@@ -214,17 +232,13 @@ export async function generarPDFRubricaModulo(
       const comment = col.comentario || (ci === 3 ? "Sin seguimiento" : "Sin comentario");
       const lines = doc.splitTextToSize(comment, colW - 4);
       doc.text(lines, x + 2, colY + 4);
-      colY += lines.length * 3.5 + 6;
 
-      const colH = colY - startY;
-      if (colH > maxH) maxH = colH;
-
-      // Draw column border
+      // Draw column border using shared maxH
       doc.setDrawColor(200, 200, 200);
-      doc.rect(x, startY, colW, Math.max(colH, 30));
+      doc.rect(x, startY, colW, maxH);
     }
 
-    y = startY + Math.max(maxH, 30) + 6;
+    y = startY + maxH + 6;
   }
 
   // ── SEGUIMIENTOS (if any) ──
