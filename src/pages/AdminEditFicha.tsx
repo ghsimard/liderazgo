@@ -1087,6 +1087,8 @@ export default function AdminEditFicha() {
                     options={[
                       { value: "Rector/a", label: genderizeRole("Rector/a", watch("genero")) },
                       { value: "Coordinador/a", label: genderizeRole("Coordinador/a", watch("genero")) },
+                      { value: "Director/a rural", label: genderizeRole("Director/a rural", watch("genero")) },
+                      { value: "Director/a de núcleo", label: genderizeRole("Director/a de núcleo", watch("genero")) },
                     ]}
                   />
                 )}
