@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Save, RotateCcw, Plus, Trash2, Eye, Pencil, GripVertical, ChevronDown, ChevronUp, X, ExternalLink } from "lucide-react";
+import { Loader2, Save, RotateCcw, Plus, Trash2, Eye, Pencil, GripVertical, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FORM_TYPE_LABELS, asistenciaForm, interludioForm, intensivoForm } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionSection, SatisfaccionQuestion, QuestionType, SatisfaccionOption } from "@/data/satisfaccionData";
@@ -51,12 +51,6 @@ export default function AdminSatisfaccionFormsTab() {
   const [mode, setMode] = useState<"preview" | "edit">("preview");
   const [isFromDb, setIsFromDb] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewModule, setPreviewModule] = useState<number>(1);
-
-  const openRealForm = () => {
-    const url = `/satisfaccion-${selectedType}?module=${previewModule}`;
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
 
   const loadFormDef = useCallback(async (formType: string) => {
     setLoading(true);
@@ -244,31 +238,7 @@ export default function AdminSatisfaccionFormsTab() {
           </Tabs>
           {isFromDb && <Badge variant="secondary" className="text-xs">Personalizado</Badge>}
         </div>
-        <div className="flex gap-2 items-center flex-wrap">
-          <div className="flex items-center gap-1">
-            <Label className="text-xs text-muted-foreground">Módulo:</Label>
-            {[1, 2, 3, 4].map((m) => (
-              <Button
-                key={m}
-                variant={previewModule === m ? "default" : "outline"}
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => setPreviewModule(m)}
-                title={`Vista previa Módulo ${m}`}
-              >
-                {m}
-              </Button>
-            ))}
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="gap-1.5"
-            onClick={openRealForm}
-            title="Abrir el formulario público en una nueva pestaña"
-          >
-            <ExternalLink className="w-3.5 h-3.5" /> Abrir formulario real
-          </Button>
+        <div className="flex gap-2">
           <Button
             variant={mode === "preview" ? "default" : "outline"}
             size="sm"
@@ -294,7 +264,7 @@ export default function AdminSatisfaccionFormsTab() {
           <CardContent className="pt-6">
             <SatisfaccionForm
               formDef={formDef}
-              moduleNumber={previewModule}
+              moduleNumber={1}
               region="(Vista previa)"
               onSubmit={async () => {}}
               readOnly
@@ -403,11 +373,11 @@ export default function AdminSatisfaccionFormsTab() {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Vista previa — {FORM_TYPE_LABELS[selectedType]} — Módulo {previewModule}</DialogTitle>
+            <DialogTitle>Vista previa — {FORM_TYPE_LABELS[selectedType]}</DialogTitle>
           </DialogHeader>
           <SatisfaccionForm
             formDef={formDef}
-            moduleNumber={previewModule}
+            moduleNumber={1}
             region="(Vista previa)"
             onSubmit={async () => {}}
             readOnly
