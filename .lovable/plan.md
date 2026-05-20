@@ -1,101 +1,101 @@
-# Edición por Módulo de los formularios Intensivo e Interludio
+# Édition par Module des formulaires Intensivo et Interludio
 
-## Objetivo
+## Objectif
 
-1. Agregar un selector de **Módulo (1-4)** en la pestaña Admin → Satisfacciones → Formularios para previsualizar y editar.
-2. Permitir que el admin **edite, agregue o quite preguntas/secciones** de los formularios *Intensivo* e *Interludio* **de manera independiente para cada módulo (1, 2, 3, 4)**. El formulario *Asistencia* se mantiene único (no depende del módulo).
-3. Documentar el impacto sobre el **Informe PDF** de Satisfacciones.
-
----
-
-## 1. Selector de Módulo (1-4)
-
-En `AdminSatisfaccionFormsTab.tsx`, junto al selector de formulario, se agrega:
-
-- Para **Intensivo** e **Interludio**: pestañas `Módulo 1 / 2 / 3 / 4`.
-- Para **Asistencia**: el selector queda oculto (formulario único, idéntico a todos los módulos).
-
-El selector controla tanto la Vista previa como el modo Editar, y se pasa como `moduleNumber` real al componente `SatisfaccionForm` (en lugar del hardcoded `1`).
+1. Ajouter un sélecteur de **Module (1-4)** dans l'onglet Admin → Satisfacciones → Formularios pour prévisualiser et éditer.
+2. Permettre à l'admin de **modifier, ajouter ou supprimer des questions/sections** dans les formulaires *Intensivo* et *Interludio* **de manière indépendante pour chaque module (1, 2, 3, 4)**. Le formulaire *Asistencia* reste unique (ne dépend pas du module).
+3. Documenter l'impact sur le **Rapport PDF** des Satisfacciones.
 
 ---
 
-## 2. Edición por módulo
+## 1. Sélecteur de Module (1-4)
 
-### Modelo de datos
+Dans `AdminSatisfaccionFormsTab.tsx`, à côté du sélecteur de formulaire, on ajoute :
 
-Hoy la tabla `satisfaccion_form_definitions` guarda **una sola definición por `form_type`** (UNIQUE en `form_type`).
+- Pour **Intensivo** et **Interludio** : onglets `Module 1 / 2 / 3 / 4`.
+- Pour **Asistencia** : le sélecteur est masqué (formulaire unique, identique pour tous les modules).
 
-Cambios:
-
-- Agregar columna `module_number INTEGER NULL` (NULL = aplica a todos los módulos, usado por Asistencia y como *fallback* cuando un módulo aún no tiene override).
-- Reemplazar la restricción UNIQUE `(form_type)` por UNIQUE `(form_type, module_number)`.
-- Lógica de carga (`loadFormDefinition`):
-  1. Buscar definición específica `form_type = X AND module_number = N`.
-  2. Si no existe, buscar `form_type = X AND module_number IS NULL` (definición global heredada de la versión actual).
-  3. Si no existe, usar el `DEFAULT_FORMS` estático de `src/data/satisfaccionData.ts`.
-
-### Comportamiento en el editor
-
-- Al cambiar de módulo se recarga la definición correspondiente.
-- Botón **Guardar** persiste la definición con el `module_number` activo.
-- Botón **Restablecer** borra solo la fila de ese módulo (vuelve al fallback global o al default).
-- Indicador visual:
-  - "Personalizado para Módulo N" si hay fila propia.
-  - "Heredado (global)" si hereda de la definición sin `module_number`.
-  - "Por defecto" si no hay nada en DB.
-- Nuevo botón **"Copiar desde otro módulo"** (Módulo 1 → 2, etc.) para acelerar la configuración.
-
-### Aplicación en el formulario público
-
-`loadFormDefinition()` en `src/data/satisfaccionData.ts` (y el componente `SatisfaccionPage`) recibe ahora `(formType, moduleNumber)` y aplica la misma cascada Específico → Global → Default. Las páginas `/satisfaccion-intensivo` y `/satisfaccion-interludio` ya conocen `moduleNumber` por la query string.
+Le sélecteur contrôle à la fois la Vue préliminaire et le mode Édition, et passe le `moduleNumber` réel au composant `SatisfaccionForm` (au lieu du `1` actuellement codé en dur).
 
 ---
 
-## 3. Impacto en el Informe PDF de Satisfacciones
+## 2. Édition par module
 
-El "Informe PDF" (pestaña Admin → Satisfacciones → Informes, generado por `AdminSatisfaccionReportTab.tsx` + `satisfaccionPdfGenerator.ts`) y la portada compartida con el "Informe Regional" se ven afectados así:
+### Modèle de données
 
-### A. Etiquetas y agrupación de preguntas
-Hoy el informe lee siempre `SATISFACCION_FORMS[formType]` (definición **estática**) para:
-- Mostrar el texto de cada pregunta/sección en el PDF.
-- Agrupar respuestas por sección.
-- Calcular promedios Likert, conteos Sí/No/Parcial, frecuencias, etc.
+Actuellement, la table `satisfaccion_form_definitions` stocke **une seule définition par `form_type`** (contrainte UNIQUE sur `form_type`).
 
-Después del cambio, debe leer la definición **del módulo filtrado** (misma cascada Específico → Global → Default). Si el admin filtra "Todos los módulos", el informe usará la definición global/default para etiquetar.
+Changements :
 
-### B. Preguntas que ya no existen / preguntas nuevas
-- **Preguntas eliminadas** en un módulo: ya no aparecen en el PDF de ese módulo, pero las respuestas históricas siguen en `satisfaccion_responses` (se mostrarán bajo "Preguntas no reconocidas" o se omitirán, según prefieras).
-- **Preguntas nuevas**: solo tendrán respuestas a partir del momento en que se publican; el PDF mostrará "Sin respuestas" para periodos anteriores.
+- Ajouter la colonne `module_number INTEGER NULL` (NULL = s'applique à tous les modules, utilisé par Asistencia et comme *fallback* lorsqu'un module n'a pas encore de surcouche).
+- Remplacer la contrainte UNIQUE `(form_type)` par UNIQUE `(form_type, module_number)`.
+- Logique de chargement (`loadFormDefinition`) :
+  1. Chercher la définition spécifique `form_type = X AND module_number = N`.
+  2. Si elle n'existe pas, chercher `form_type = X AND module_number IS NULL` (définition globale héritée de la version actuelle).
+  3. Si elle n'existe pas, utiliser la définition `DEFAULT_FORMS` statique de `src/data/satisfaccionData.ts`.
 
-### C. Claves de pregunta (`key`)
-Si el admin **renombra una `key`**, las respuestas previas quedan huérfanas (no se agruparán con las nuevas). Se recomienda:
-- Bloquear edición de `key` cuando ya hay respuestas para esa combinación módulo+pregunta, o
-- Mostrar advertencia en el editor.
+### Comportement dans l'éditeur
 
-### D. Comentarios narrativos y "Aspectos destacados"
-La tabla `satisfaccion_report_content` ya está particionada por `(form_type, module_number, region)`, así que **no requiere migración**. Los textos narrativos seguirán ligados al módulo correspondiente.
+- En changeant de module, la définition correspondante se recharge.
+- Le bouton **Enregistrer** persiste la définition avec le `module_number` actif.
+- Le bouton **Réinitialiser** supprime uniquement la ligne de ce module (revient au fallback global ou au défaut).
+- Indicateur visuel :
+  - « Personnalisé pour le Module N » s'il y a une ligne propre.
+  - « Hérité (global) » s'il hérite de la définition sans `module_number`.
+  - « Par défaut » s'il n'y a rien en base de données.
+- Nouveau bouton **« Copier depuis un autre module »** (Module 1 → 2, etc.) pour accélérer la configuration.
 
-### E. Logos y portada
-Sin cambios. La portada del PDF (logos extra, región, módulo) sigue funcionando como hoy.
+### Application dans le formulaire public
 
-### F. Componentes a actualizar
-- `AdminSatisfaccionReportTab.tsx` (líneas 130, 257, 353, 1421): reemplazar `SATISFACCION_FORMS[formType]` por una carga async/memoizada que respete `module_number`.
-- `satisfaccionPdfGenerator.ts`: recibir el `formDef` ya resuelto en vez de importarlo del estático.
-- `loadFormDefinition()` en `src/data/satisfaccionData.ts`: nueva firma `(formType, moduleNumber, supabaseClient)`.
+`loadFormDefinition()` dans `src/data/satisfaccionData.ts` (et le composant `SatisfaccionPage`) reçoit désormais `(formType, moduleNumber)` et applique la même cascade Spécifique → Global → Défaut. Les pages `/satisfaccion-intensivo` et `/satisfaccion-interludio` connaissent déjà `moduleNumber` via la query string.
 
 ---
 
-## Acciones por entorno (Render)
+## 3. Impact sur le Rapport PDF des Satisfacciones
+
+Le « Rapport PDF » (onglet Admin → Satisfacciones → Informes, généré par `AdminSatisfaccionReportTab.tsx` + `satisfaccionPdfGenerator.ts`) et la page de couverture partagée avec le « Rapport Régional » sont affectés comme suit :
+
+### A. Étiquettes et regroupement des questions
+Aujourd'hui, le rapport lit toujours `SATISFACCION_FORMS[formType]` (définition **statique**) pour :
+- Afficher le texte de chaque question/section dans le PDF.
+- Regrouper les réponses par section.
+- Calculer les moyennes Likert, les comptages Sí/No/Parcial, les fréquences, etc.
+
+Après le changement, il doit lire la définition **du module filtré** (même cascade Spécifique → Global → Défaut). Si l'admin filtre « Tous les modules », le rapport utilisera la définition globale/défaut pour les étiquettes.
+
+### B. Questions qui n'existent plus / questions nouvelles
+- **Questions supprimées** dans un module : n'apparaissent plus dans le PDF de ce module, mais les réponses historiques restent dans `satisfaccion_responses` (elles s'afficheront sous « Questions non reconnues » ou seront omises, selon ta préférence).
+- **Questions nouvelles** : n'auront des réponses qu'à partir du moment où elles sont publiées ; le PDF affichera « Sans réponses » pour les périodes antérieures.
+
+### C. Clés de question (`key`)
+Si l'admin **renomme une `key`**, les réponses précédentes deviennent orphelines (ne seront pas regroupées avec les nouvelles). Il est recommandé de :
+- Bloquer l'édition de `key` lorsqu'il y a déjà des réponses pour cette combinaison module+question, ou
+- Afficher un avertissement dans l'éditeur.
+
+### D. Commentaires narratifs et « Aspects saillants »
+La table `satisfaccion_report_content` est déjà partitionnée par `(form_type, module_number, region)`, donc **elle ne nécessite aucune migration**. Les textes narratifs resteront liés au module correspondant.
+
+### E. Logos et page de couverture
+Aucun changement. La page de couverture du PDF (logos supplémentaires, région, module) continue de fonctionner comme aujourd'hui.
+
+### F. Composants à mettre à jour
+- `AdminSatisfaccionReportTab.tsx` (lignes 130, 257, 353, 1421) : remplacer `SATISFACCION_FORMS[formType]` par un chargement async/mémorisé qui respecte `module_number`.
+- `satisfaccionPdfGenerator.ts` : recevoir le `formDef` déjà résolu au lieu de l'importer du statique.
+- `loadFormDefinition()` dans `src/data/satisfaccionData.ts` : nouvelle signature `(formType, moduleNumber, supabaseClient)`.
+
+---
+
+## Actions par environnement (Render)
 
 - 🖥️ **Site statique (Frontend)** :
-  - Modificar `AdminSatisfaccionFormsTab.tsx` (selector de módulo, guardar/cargar por módulo, botón "copiar desde").
-  - Modificar `AdminSatisfaccionReportTab.tsx` y `satisfaccionPdfGenerator.ts` para usar la definición específica del módulo.
-  - Actualizar `loadFormDefinition()` en `src/data/satisfaccionData.ts` y las páginas `SatisfaccionIntensivo` / `SatisfaccionInterludio`.
+  - Modifier `AdminSatisfaccionFormsTab.tsx` (sélecteur de module, enregistrer/charger par module, bouton « copier depuis »).
+  - Modifier `AdminSatisfaccionReportTab.tsx` et `satisfaccionPdfGenerator.ts` pour utiliser la définition spécifique du module.
+  - Mettre à jour `loadFormDefinition()` dans `src/data/satisfaccionData.ts` et les pages `SatisfaccionIntensivo` / `SatisfaccionInterludio`.
 
 - ⚙️ **Web Service (Backend Express)** :
-  - Sin cambios de código (la tabla ya está expuesta vía el proxy `dbClient`). Solo verificar que `satisfaccion_form_definitions` siga en la whitelist (ya lo está, líneas 59 y 145 de `server/routes/db.ts`).
+  - Aucun changement de code (la table est déjà exposée via le proxy `dbClient`). Vérifier uniquement que `satisfaccion_form_definitions` reste dans la whitelist (elle l'est déjà, lignes 59 et 145 de `server/routes/db.ts`).
 
-- 🗄️ **Base de datos (SQL manual en Render)** :
+- 🗄️ **Base de données (SQL manuel sur Render)** :
   ```sql
   ALTER TABLE public.satisfaccion_form_definitions
     ADD COLUMN IF NOT EXISTS module_number INTEGER;
@@ -106,4 +106,4 @@ Sin cambios. La portada del PDF (logos extra, región, módulo) sigue funcionand
   CREATE UNIQUE INDEX IF NOT EXISTS satisfaccion_form_definitions_type_module_key
     ON public.satisfaccion_form_definitions (form_type, COALESCE(module_number, -1));
   ```
-  Esta misma migración debe aplicarse en Supabase (Lovable Cloud) para mantener paridad.
+  Cette même migration doit être appliquée sur Supabase (Lovable Cloud) pour maintenir la parité.
