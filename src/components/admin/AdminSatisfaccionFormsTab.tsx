@@ -244,7 +244,31 @@ export default function AdminSatisfaccionFormsTab() {
           </Tabs>
           {isFromDb && <Badge variant="secondary" className="text-xs">Personalizado</Badge>}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center flex-wrap">
+          <div className="flex items-center gap-1">
+            <Label className="text-xs text-muted-foreground">Módulo:</Label>
+            {[1, 2, 3, 4].map((m) => (
+              <Button
+                key={m}
+                variant={previewModule === m ? "default" : "outline"}
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setPreviewModule(m)}
+                title={`Vista previa Módulo ${m}`}
+              >
+                {m}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-1.5"
+            onClick={openRealForm}
+            title="Abrir el formulario público en una nueva pestaña"
+          >
+            <ExternalLink className="w-3.5 h-3.5" /> Abrir formulario real
+          </Button>
           <Button
             variant={mode === "preview" ? "default" : "outline"}
             size="sm"
@@ -270,7 +294,7 @@ export default function AdminSatisfaccionFormsTab() {
           <CardContent className="pt-6">
             <SatisfaccionForm
               formDef={formDef}
-              moduleNumber={1}
+              moduleNumber={previewModule}
               region="(Vista previa)"
               onSubmit={async () => {}}
               readOnly
