@@ -1,109 +1,112 @@
-# Édition par Module des formulaires Intensivo et Interludio
+# Ampliación de cargos directivos en la Ficha de Información Básica
 
-## Objectif
+## Objetivo
 
-1. Ajouter un sélecteur de **Module (1-4)** dans l'onglet Admin → Satisfacciones → Formularios pour prévisualiser et éditer.
-2. Permettre à l'admin de **modifier, ajouter ou supprimer des questions/sections** dans les formulaires *Intensivo* et *Interludio* **de manière indépendante pour chaque module (1, 2, 3, 4)**. Le formulaire *Asistencia* reste unique (ne dépend pas du module).
-3. Documenter l'impact sur le **Rapport PDF** des Satisfacciones.
+Añadir dos cargos nuevos al selector "Cargo actual" de la Ficha, además de los actuales:
 
----
+- Rector/a (existente)
+- Coordinador/a (existente)
+- **Director/a rural** (nuevo)
+- **Director/a de núcleo** (nuevo)
 
-## 1. Sélecteur de Module (1-4)
+Los cuatro cargos se consideran **directivos plenos**: deben participar en todos los módulos (Encuestas 360, Asistencia, Informe, MEL, Reportes, Dashboard, Rúbricas, etc.) exactamente como Rector/a y Coordinador/a hoy.
 
-Dans `AdminSatisfaccionFormsTab.tsx`, à côté du sélecteur de formulaire, on ajoute :
+## Alcance funcional
 
-- Pour **Intensivo** et **Interludio** : onglets `Module 1 / 2 / 3 / 4`.
-- Pour **Asistencia** : le sélecteur est masqué (formulaire unique, identique pour tous les modules).
+- Disponibles en **todas las regiones** del selector de la Ficha pública y de la edición Admin.
+- Excepción mantenida: la región "Quibdó 2026" sigue forzando "Rector/a" (no cambia).
+- Etiquetas con flexión de género en la UI vía `genderizeRole` ("Director rural" / "Directora rural", "Director de núcleo" / "Directora de núcleo"). El valor almacenado en BD permanece neutro ("Director/a rural", "Director/a de núcleo").
 
-Le sélecteur contrôle à la fois la Vue préliminaire et le mode Édition, et passe le `moduleNumber` réel au composant `SatisfaccionForm` (au lieu du `1` actuellement codé en dur).
+## Cambios necesarios
 
----
+### 🖥️ Site statique (Frontend)
 
-## 2. Édition par module
+1. **Selector de cargo en la Ficha pública** — `src/pages/FichaRLT.tsx`
+   - Añadir las dos opciones nuevas al `FormSelect` de `cargo_actual`.
 
-### Modèle de données
+2. **Edición Admin de la Ficha** — `src/pages/AdminEditFicha.tsx`
+   - Replicar las dos opciones nuevas en el mismo selector.
 
-Actuellement, la table `satisfaccion_form_definitions` stocke **une seule définition par `form_type`** (contrainte UNIQUE sur `form_type`).
+3. **Flexión de género** — `src/utils/genderizeRole.ts`
+   - Añadir reglas: `Director\/a rural` → "Director rural" / "Directora rural", `Director\/a de núcleo` → "Director de núcleo" / "Directora de núcleo". (Las reglas existentes para "Director/a" ya cubren parcialmente, pero conviene asegurar la coincidencia exacta de las nuevas etiquetas compuestas.)
 
-Changements :
+4. **Listas de filtros "directivos"** — actualizar todos los `.in("cargo_actual", [...])` para incluir los 4 cargos. Archivos afectados:
+   - `src/data/encuesta360Data.ts`
+   - `src/utils/melRubricaCalculator.ts`
+   - `src/components/admin/AdminEvalIndividualTab.tsx`
+   - `src/components/admin/AdminEncuestaMonitor.tsx`
+   - `src/components/admin/AdminDashboardTab.tsx`
+   - `src/components/admin/AdminMelRubricasTab.tsx`
+   - `src/components/admin/AdminReporte360Tab.tsx`
+   - `src/components/admin/AdminAsistenciaTab.tsx`
+   - `src/components/admin/AdminInformeReportTab.tsx`
+   - `src/components/admin/AdminEvaluadoresTab.tsx`
+   - `src/components/admin/AdminAsistenciaStats.tsx`
+   - `src/components/admin/AdminMelTab.tsx`
+   - `src/components/admin/AdminInformeModuloForm.tsx`
+   - Para evitar mantener la lista en 13 lugares, centralizar la constante en `src/utils/genderizeRole.ts` (o un nuevo `src/utils/directivoRoles.ts`) exportando `DIRECTIVO_CARGOS = ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]` e importarla en todos los puntos anteriores.
 
-- Ajouter la colonne `module_number INTEGER NULL` (NULL = s'applique à tous les modules, utilisé par Asistencia et comme *fallback* lorsqu'un module n'a pas encore de surcouche).
-- Remplacer la contrainte UNIQUE `(form_type)` par UNIQUE `(form_type, module_number)`.
-- Logique de chargement (`loadFormDefinition`) :
-  1. Chercher la définition spécifique `form_type = X AND module_number = N`.
-  2. Si elle n'existe pas, chercher `form_type = X AND module_number IS NULL` (définition globale héritée de la version actuelle).
-  3. Si elle n'existe pas, utiliser la définition `DEFAULT_FORMS` statique de `src/data/satisfaccionData.ts`.
+### ⚙️ Web Service (Backend Express)
 
-### Comportement dans l'éditeur
+1. **Filtros server-side en proxy RPC** — `server/routes/rpc.ts` (3 ocurrencias en líneas ~41, ~159, ~203):
+   - Reemplazar `IN ('Rector/a', 'Coordinador/a')` por `IN ('Rector/a', 'Coordinador/a', 'Director/a rural', 'Director/a de núcleo')`.
+   - Afecta funciones: `get_directivos_por_institucion`, validación de cédula de directivo, etc.
 
-- En changeant de module, la définition correspondante se recharge.
-- Le bouton **Enregistrer** persiste la définition avec le `module_number` actif.
-- Le bouton **Réinitialiser** supprime uniquement la ligne de ce module (revient au fallback global ou au défaut).
-- Indicateur visuel :
-  - « Personnalisé pour le Module N » s'il y a une ligne propre.
-  - « Hérité (global) » s'il hérite de la définition sans `module_number`.
-  - « Par défaut » s'il n'y a rien en base de données.
-- Nouveau bouton **« Copier depuis un autre module »** (Module 1 → 2, etc.) pour accélérer la configuration.
+2. **Esquema documental** — `server/schema.sql` (2 ocurrencias en líneas ~357, ~652):
+   - Actualizar los `IN (...)` en las funciones SQL versionadas para que el archivo refleje la realidad de producción.
 
-### Application dans le formulaire public
+### 🗄️ Base de datos (Manual SQL en Render)
 
-`loadFormDefinition()` dans `src/data/satisfaccionData.ts` (et le composant `SatisfaccionPage`) reçoit désormais `(formType, moduleNumber)` et applique la même cascade Spécifique → Global → Défaut. Les pages `/satisfaccion-intensivo` et `/satisfaccion-interludio` connaissent déjà `moduleNumber` via la query string.
+No hay cambio de esquema (la columna `cargo_actual` es `text` libre).
 
----
+Sin embargo, las funciones SQL `get_directivos_por_institucion(p_nombre_ie)` y `check_cedula_role(p_cedula)` están desplegadas en la BD productiva con la lista cerrada de dos cargos. Para que reconozcan los nuevos cargos hay que ejecutar **manualmente** en el Editor SQL de la base:
 
-## 3. Impact sur le Rapport PDF des Satisfacciones
+```sql
+CREATE OR REPLACE FUNCTION public.get_directivos_por_institucion(p_nombre_ie text)
+RETURNS TABLE(cargo_actual text, nombres_apellidos text, numero_cedula text, genero text)
+LANGUAGE sql STABLE AS $$
+  SELECT cargo_actual, nombres_apellidos, numero_cedula, genero
+  FROM fichas_rlt
+  WHERE nombre_ie = p_nombre_ie
+    AND cargo_actual IN ('Rector/a','Coordinador/a','Director/a rural','Director/a de núcleo')
+  ORDER BY nombres_apellidos;
+$$;
 
-Le « Rapport PDF » (onglet Admin → Satisfacciones → Informes, généré par `AdminSatisfaccionReportTab.tsx` + `satisfaccionPdfGenerator.ts`) et la page de couverture partagée avec le « Rapport Régional » sont affectés comme suit :
+CREATE OR REPLACE FUNCTION public.check_cedula_role(p_cedula text)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT jsonb_build_object(
+    'exists_ficha', EXISTS (SELECT 1 FROM fichas_rlt WHERE numero_cedula = p_cedula),
+    'is_admin',     EXISTS (SELECT 1 FROM admin_cedulas WHERE cedula = p_cedula),
+    'is_directivo', EXISTS (
+      SELECT 1 FROM fichas_rlt
+      WHERE numero_cedula = p_cedula
+        AND cargo_actual IN ('Rector/a','Coordinador/a','Director/a rural','Director/a de núcleo')
+    ),
+    'is_evaluador', EXISTS (SELECT 1 FROM rubrica_evaluadores WHERE cedula = p_cedula),
+    'is_operator',  EXISTS (SELECT 1 FROM operator_permissions WHERE cedula = p_cedula),
+    'cargo_actual', (SELECT cargo_actual FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
+    'nombre', COALESCE(
+      (SELECT nombres_apellidos FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
+      (SELECT nombre FROM rubrica_evaluadores WHERE cedula = p_cedula LIMIT 1)
+    ),
+    'genero', (SELECT genero FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1)
+  );
+$$;
+```
 
-### A. Étiquettes et regroupement des questions
-Aujourd'hui, le rapport lit toujours `SATISFACCION_FORMS[formType]` (définition **statique**) pour :
-- Afficher le texte de chaque question/section dans le PDF.
-- Regrouper les réponses par section.
-- Calculer les moyennes Likert, les comptages Sí/No/Parcial, les fréquences, etc.
+## Impacto en módulos existentes
 
-Après le changement, il doit lire la définition **du module filtré** (même cascade Spécifique → Global → Défaut). Si l'admin filtre « Tous les modules », le rapport utilisera la définition globale/défaut pour les étiquettes.
+Una vez aplicado, los nuevos cargos:
 
-### B. Questions qui n'existent plus / questions nouvelles
-- **Questions supprimées** dans un module : n'apparaissent plus dans le PDF de ce module, mais les réponses historiques restent dans `satisfaccion_responses` (elles s'afficheront sous « Questions non reconnues » ou seront omises, selon ta préférence).
-- **Questions nouvelles** : n'auront des réponses qu'à partir du moment où elles sont publiées ; le PDF affichera « Sans réponses » pour les périodes antérieures.
+- Pueden iniciar sesión como directivos vía cédula.
+- Aparecen en Encuestas 360 (Autoevaluación, evaluadores, monitor, reportes).
+- Aparecen en Asistencia, Informe, MEL, Rúbricas, Dashboard, Reporte 360.
+- Son reconocidos por el flujo de verificación de la Ficha y por "Mi Panel".
 
-### C. Clés de question (`key`)
-Si l'admin **renomme une `key`**, les réponses précédentes deviennent orphelines (ne seront pas regroupées avec les nouvelles). Il est recommandé de :
-- Bloquer l'édition de `key` lorsqu'il y a déjà des réponses pour cette combinaison module+question, ou
-- Afficher un avertissement dans l'éditeur.
+No se requiere migración de datos: las fichas existentes con "Rector/a" o "Coordinador/a" no se ven afectadas.
 
-### D. Commentaires narratifs et « Aspects saillants »
-La table `satisfaccion_report_content` est déjà partitionnée par `(form_type, module_number, region)`, donc **elle ne nécessite aucune migration**. Les textes narratifs resteront liés au module correspondant.
+## Detalles técnicos
 
-### E. Logos et page de couverture
-Aucun changement. La page de couverture du PDF (logos supplémentaires, région, module) continue de fonctionner comme aujourd'hui.
-
-### F. Composants à mettre à jour
-- `AdminSatisfaccionReportTab.tsx` (lignes 130, 257, 353, 1421) : remplacer `SATISFACCION_FORMS[formType]` par un chargement async/mémorisé qui respecte `module_number`.
-- `satisfaccionPdfGenerator.ts` : recevoir le `formDef` déjà résolu au lieu de l'importer du statique.
-- `loadFormDefinition()` dans `src/data/satisfaccionData.ts` : nouvelle signature `(formType, moduleNumber, supabaseClient)`.
-
----
-
-## Actions par environnement (Render)
-
-- 🖥️ **Site statique (Frontend)** :
-  - Modifier `AdminSatisfaccionFormsTab.tsx` (sélecteur de module, enregistrer/charger par module, bouton « copier depuis »).
-  - Modifier `AdminSatisfaccionReportTab.tsx` et `satisfaccionPdfGenerator.ts` pour utiliser la définition spécifique du module.
-  - Mettre à jour `loadFormDefinition()` dans `src/data/satisfaccionData.ts` et les pages `SatisfaccionIntensivo` / `SatisfaccionInterludio`.
-
-- ⚙️ **Web Service (Backend Express)** :
-  - Aucun changement de code (la table est déjà exposée via le proxy `dbClient`). Vérifier uniquement que `satisfaccion_form_definitions` reste dans la whitelist (elle l'est déjà, lignes 59 et 145 de `server/routes/db.ts`).
-
-- 🗄️ **Base de données (SQL manuel sur Render)** :
-  ```sql
-  ALTER TABLE public.satisfaccion_form_definitions
-    ADD COLUMN IF NOT EXISTS module_number INTEGER;
-
-  ALTER TABLE public.satisfaccion_form_definitions
-    DROP CONSTRAINT IF EXISTS satisfaccion_form_definitions_form_type_key;
-
-  CREATE UNIQUE INDEX IF NOT EXISTS satisfaccion_form_definitions_type_module_key
-    ON public.satisfaccion_form_definitions (form_type, COALESCE(module_number, -1));
-  ```
-  Cette même migration doit être appliquée sur Supabase (Lovable Cloud) pour maintenir la parité.
+- Mantener los valores almacenados con el sufijo `/a` para coherencia con el esquema de género actual (`genderizeRole` los flexiona en la UI).
+- La centralización de `DIRECTIVO_CARGOS` reduce el riesgo de olvidar un punto cuando se vuelvan a añadir cargos en el futuro.
+- No se tocan archivos auto-generados (`src/integrations/supabase/types.ts`, `.env`).
