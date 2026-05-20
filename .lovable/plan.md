@@ -1,112 +1,47 @@
-# Ajout de cargos directifs dans la Fiche d'Information de Base
+# Désactiver la 360 Estudiante pour les Centros Educativos
 
 ## Objectif
 
-Ajouter deux nouveaux cargos au sélecteur « Cargo actual » de la Fiche, en plus des actuels :
+Lorsqu'une institución est un **Centro Educativo (CE)** — détecté par le préfixe de `nombre_ie` — le formulaire **« Estudiante »** de la Encuesta 360° ne doit pas apparaître dans le Hub du directif (`/encuesta-360`). Les autres rôles (Autoevaluación, Directivo Par, Docente, Administrativo, Acudiente) restent inchangés. Les IE (Instituciones Educativas) conservent tous les formulaires.
 
-- Rector/a (existant)
-- Coordinador/a (existant)
-- **Director/a rural** (nouveau)
-- **Director/a de núcleo** (nouveau)
+## Règle de détection
 
-Les quatre cargos sont considérés comme **directifs à part entière** : ils doivent participer à tous les modules (Encuestas 360, Asistencia, Informe, MEL, Reportes, Dashboard, Rúbricas, etc.) exactement comme Rector/a et Coordinador/a aujourd'hui.
+Un `nombre_ie` est considéré **Centro Educativo** si son nom (insensible à la casse, après trim) commence par :
+- `CE ` (ex: « CE La Esperanza »)
+- `Centro Educativo` (ex: « Centro Educativo Rural Bellavista »)
 
-## Portée fonctionnelle
+Sinon → considéré comme IE (Institución Educativa).
 
-- Disponibles dans **toutes les régions** du sélecteur de la Fiche publique et de l'édition Admin.
-- Exception maintenue : la région « Quibdó 2026 » continue de forcer « Rector/a » (inchangé).
-- Étiquettes avec flexion de genre dans l'UI via `genderizeRole` (« Director rural » / « Directora rural », « Director de núcleo » / « Directora de núcleo »). La valeur stockée en BDD reste neutre (« Director/a rural », « Director/a de núcleo »).
+Pas de changement de schéma BDD : la règle est dérivée du nom existant.
 
-## Changements nécessaires
+## Portée
 
-### 🖥️ Site statique (Frontend)
+- **Masquer uniquement le bouton « Estudiante »** dans le Hub 360 (`Encuesta360Hub.tsx`).
+- Aucun changement au formulaire lui-même, ni aux URLs, ni aux rapports, ni au monitoring admin (un directif d'IE qui aurait été reclassée garde l'accès via URL existante).
 
-1. **Sélecteur de cargo dans la Fiche publique** — `src/pages/FichaRLT.tsx`
-   - Ajouter les deux nouvelles options au `FormSelect` de `cargo_actual`.
+## Changements
 
-2. **Édition Admin de la Fiche** — `src/pages/AdminEditFicha.tsx`
-   - Répliquer les deux nouvelles options dans le même sélecteur.
+### 🖥️ Site statique (Frontend) — uniquement
 
-3. **Flexion de genre** — `src/utils/genderizeRole.ts`
-   - Ajouter les règles : `Director\/a rural` → « Director rural » / « Directora rural », `Director\/a de núcleo` → « Director de núcleo » / « Directora de núcleo ». (Les règles existantes pour « Director/a » couvrent partiellement, mais il faut assurer la correspondance exacte des nouvelles étiquettes composées.)
+1. **Nouveau utilitaire** — `src/utils/institutionType.ts`
+   - Exporter `isCentroEducativo(nombreIe: string): boolean` avec la règle de préfixe ci-dessus.
 
-4. **Listes de filtres « directivos »** — mettre à jour tous les `.in("cargo_actual", [...])` pour inclure les 4 cargos. Fichiers affectés :
-   - `src/data/encuesta360Data.ts`
-   - `src/utils/melRubricaCalculator.ts`
-   - `src/components/admin/AdminEvalIndividualTab.tsx`
-   - `src/components/admin/AdminEncuestaMonitor.tsx`
-   - `src/components/admin/AdminDashboardTab.tsx`
-   - `src/components/admin/AdminMelRubricasTab.tsx`
-   - `src/components/admin/AdminReporte360Tab.tsx`
-   - `src/components/admin/AdminAsistenciaTab.tsx`
-   - `src/components/admin/AdminInformeReportTab.tsx`
-   - `src/components/admin/AdminEvaluadoresTab.tsx`
-   - `src/components/admin/AdminAsistenciaStats.tsx`
-   - `src/components/admin/AdminMelTab.tsx`
-   - `src/components/admin/AdminInformeModuloForm.tsx`
-   - Pour éviter de maintenir la liste à 13 endroits, centraliser la constante dans `src/utils/genderizeRole.ts` (ou un nouveau `src/utils/directivoRoles.ts`) en exportant `DIRECTIVO_CARGOS = ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]` et l'importer dans tous les points ci-dessus.
+2. **Hub 360** — `src/pages/Encuesta360Hub.tsx`
+   - Importer `isCentroEducativo`.
+   - Calculer `const esCE = isCentroEducativo(directivoInfo?.institucion ?? "")`.
+   - Dans le `.map(formsBase)` ligne ~282, filtrer : `if (form.tipo === "estudiante" && esCE) return null;` (ou `formsBase.filter(...)` en amont).
 
 ### ⚙️ Web Service (Backend Express)
 
-1. **Filtres côté serveur dans le proxy RPC** — `server/routes/rpc.ts` (3 occurrences aux lignes ~41, ~159, ~203) :
-   - Remplacer `IN ('Rector/a', 'Coordinador/a')` par `IN ('Rector/a', 'Coordinador/a', 'Director/a rural', 'Director/a de núcleo')`.
-   - Affecte les fonctions : `get_directivos_por_institucion`, validation de la cédula du directif, etc.
+Aucun changement.
 
-2. **Schéma documentaire** — `server/schema.sql` (2 occurrences aux lignes ~357, ~652) :
-   - Mettre à jour les `IN (...)` dans les fonctions SQL versionnées pour que le fichier reflète la réalité de la production.
+### 🗄️ Base de données (SQL manuel)
 
-### 🗄️ Base de données (SQL manuel sur Render)
+Aucun changement.
 
-Pas de changement de schéma (la colonne `cargo_actual` est `text` libre).
+## Impact
 
-Cependant, les fonctions SQL `get_directivos_por_institucion(p_nombre_ie)` et `check_cedula_role(p_cedula)` sont déployées dans la BDD de production avec la liste fermée de deux cargos. Pour qu'elles reconnaissent les nouveaux cargos, exécuter **manuellement** dans l'éditeur SQL de la base :
-
-```sql
-CREATE OR REPLACE FUNCTION public.get_directivos_por_institucion(p_nombre_ie text)
-RETURNS TABLE(cargo_actual text, nombres_apellidos text, numero_cedula text, genero text)
-LANGUAGE sql STABLE AS $$
-  SELECT cargo_actual, nombres_apellidos, numero_cedula, genero
-  FROM fichas_rlt
-  WHERE nombre_ie = p_nombre_ie
-    AND cargo_actual IN ('Rector/a','Coordinador/a','Director/a rural','Director/a de núcleo')
-  ORDER BY nombres_apellidos;
-$$;
-
-CREATE OR REPLACE FUNCTION public.check_cedula_role(p_cedula text)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT jsonb_build_object(
-    'exists_ficha', EXISTS (SELECT 1 FROM fichas_rlt WHERE numero_cedula = p_cedula),
-    'is_admin',     EXISTS (SELECT 1 FROM admin_cedulas WHERE cedula = p_cedula),
-    'is_directivo', EXISTS (
-      SELECT 1 FROM fichas_rlt
-      WHERE numero_cedula = p_cedula
-        AND cargo_actual IN ('Rector/a','Coordinador/a','Director/a rural','Director/a de núcleo')
-    ),
-    'is_evaluador', EXISTS (SELECT 1 FROM rubrica_evaluadores WHERE cedula = p_cedula),
-    'is_operator',  EXISTS (SELECT 1 FROM operator_permissions WHERE cedula = p_cedula),
-    'cargo_actual', (SELECT cargo_actual FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
-    'nombre', COALESCE(
-      (SELECT nombres_apellidos FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1),
-      (SELECT nombre FROM rubrica_evaluadores WHERE cedula = p_cedula LIMIT 1)
-    ),
-    'genero', (SELECT genero FROM fichas_rlt WHERE numero_cedula = p_cedula LIMIT 1)
-  );
-$$;
-```
-
-## Impact sur les modules existants
-
-Une fois appliqué, les nouveaux cargos :
-
-- Peuvent se connecter en tant que directifs via la cédula.
-- Apparaissent dans les Encuestas 360 (Auto-évaluation, évaluateurs, monitor, rapports).
-- Apparaissent dans Asistencia, Informe, MEL, Rúbricas, Dashboard, Reporte 360.
-- Sont reconnus par le flux de vérification de la Fiche et par « Mi Panel ».
-
-Aucune migration de données requise : les fiches existantes avec « Rector/a » ou « Coordinador/a » ne sont pas affectées.
-
-## Détails techniques
-
-- Maintenir les valeurs stockées avec le suffixe `/a` pour la cohérence avec le schéma de genre actuel (`genderizeRole` les fléchit dans l'UI).
-- La centralisation de `DIRECTIVO_CARGOS` réduit le risque d'oublier un point lors d'ajouts futurs.
-- Aucun fichier auto-généré n'est touché (`src/integrations/supabase/types.ts`, `.env`).
+- Les directifs des CE ne verront plus le bouton « Estudiante » dans le Hub 360 (Entrada et Salida).
+- Les réponses estudiante déjà enregistrées (s'il y en a) restent dans la BDD et continuent d'apparaître dans les rapports / monitor.
+- Si un CE est reclassé en IE plus tard (ou inversement), il suffit de renommer `nombre_ie` — aucune migration nécessaire.
+- Aucun risque pour les IE : la règle n'affecte que les noms commençant explicitement par « CE » ou « Centro Educativo ».
