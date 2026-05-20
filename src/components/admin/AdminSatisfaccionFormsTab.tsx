@@ -301,11 +301,17 @@ export default function AdminSatisfaccionFormsTab() {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>;
   }
 
+  const sourceBadge = source === "specific"
+    ? (isModular ? `Personalizado · Módulo ${selectedModule}` : "Personalizado")
+    : source === "global"
+      ? "Heredado (global)"
+      : "Por defecto";
+
   return (
     <div className="space-y-4">
       {/* Form type selector + mode toggle */}
       <div className="flex flex-wrap gap-3 items-center justify-between">
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           <Label className="text-sm font-medium">Formulario:</Label>
           <Tabs value={selectedType} onValueChange={setSelectedType}>
             <TabsList>
@@ -314,7 +320,24 @@ export default function AdminSatisfaccionFormsTab() {
               ))}
             </TabsList>
           </Tabs>
-          {isFromDb && <Badge variant="secondary" className="text-xs">Personalizado</Badge>}
+          {isModular && (
+            <>
+              <Label className="text-sm font-medium ml-2">Módulo:</Label>
+              <Tabs value={String(selectedModule)} onValueChange={(v) => setSelectedModule(parseInt(v, 10))}>
+                <TabsList>
+                  {[1, 2, 3, 4].map(m => (
+                    <TabsTrigger key={m} value={String(m)}>{m}</TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </>
+          )}
+          <Badge
+            variant={source === "specific" ? "default" : "secondary"}
+            className="text-xs"
+          >
+            {sourceBadge}
+          </Badge>
         </div>
         <div className="flex gap-2">
           <Button
@@ -342,7 +365,7 @@ export default function AdminSatisfaccionFormsTab() {
           <CardContent className="pt-6">
             <SatisfaccionForm
               formDef={formDef}
-              moduleNumber={1}
+              moduleNumber={isModular ? selectedModule : 1}
               region="(Vista previa)"
               onSubmit={async () => {}}
               readOnly
