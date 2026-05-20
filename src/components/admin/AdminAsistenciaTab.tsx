@@ -63,7 +63,7 @@ export default function AdminAsistenciaTab({ allowedRegions }: { allowedRegions?
     const { data } = await supabase
       .from("fichas_rlt")
       .select("numero_cedula, nombres_apellidos, nombre_ie, codigo_dane, region, entidad_territorial")
-      .in("cargo_actual", ["Rector/a", "Coordinador/a"])
+      .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"])
       .order("nombres_apellidos");
 
     if (data) {

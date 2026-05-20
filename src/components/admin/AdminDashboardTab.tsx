@@ -202,7 +202,7 @@ export default function AdminDashboardTab() {
 
   // ── Directivo options (from fichas filtered by resolved institutions) ──
   const directivoOptions = useMemo(() => {
-    let pool = fichas.filter((f) => ["Rector/a", "Coordinador/a"].includes(f.cargo_actual) && f.numero_cedula);
+    let pool = fichas.filter((f) => ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"].includes(f.cargo_actual) && f.numero_cedula);
     if (resolvedInstitutions) pool = pool.filter((f) => resolvedInstitutions.includes(f.nombre_ie));
     return pool
       .map((f) => ({ value: f.numero_cedula as string, label: f.nombres_apellidos }))
@@ -381,7 +381,7 @@ export default function AdminDashboardTab() {
   const totalDirectivos = useMemo(() => {
     const ceds = new Set<string>();
     filteredFichas
-      .filter((f) => ["Rector/a", "Coordinador/a"].includes(f.cargo_actual))
+      .filter((f) => ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"].includes(f.cargo_actual))
       .forEach((f) => { if (f.numero_cedula) ceds.add(f.numero_cedula); });
     return ceds.size;
   }, [filteredFichas]);

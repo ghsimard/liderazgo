@@ -59,7 +59,7 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
         const { data: fichas } = await supabase
           .from("fichas_rlt")
           .select("region, entidad_territorial")
-          .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+          .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]);
         if (fichas) {
           const allRegions = [...new Set(fichas.map((f: any) => f.region).filter(Boolean))].sort() as string[];
           setRegiones(allRegions);
@@ -108,7 +108,7 @@ export default function AdminInformeModuloForm({ allowedRegions }: { allowedRegi
         .select("numero_cedula, nombres_apellidos, entidad_territorial")
         .eq("region", selectedRegion)
         .in("entidad_territorial", ets)
-        .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+        .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]);
       const existing = parseJson<AcompanamientoDirectivo[]>(row.acompanamiento_directivos, []) || [];
       const existingCedulas = new Set(existing.map(d => d.cedula));
       const additions: AcompanamientoDirectivo[] = (fichas || [])

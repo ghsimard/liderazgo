@@ -64,7 +64,7 @@ export default function AdminAsistenciaStats({ filterModule, filterRegion, allow
       const { data: dirData } = await supabase
         .from("fichas_rlt")
         .select("numero_cedula, nombres_apellidos, nombre_ie, region")
-        .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+        .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]);
 
       // Load asistencia
       let q = supabase.from("informe_asistencia").select("*");

@@ -73,7 +73,7 @@ export default function AdminInformeReportTab({ allowedRegions }: { allowedRegio
         .from("fichas_rlt")
         .select("numero_cedula")
         .eq("region", selectedRegion)
-        .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+        .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]);
       if (fichas && fichas.length > 0) {
         const cedulas = fichas.map(f => f.numero_cedula).filter(Boolean) as string[];
         const { count: ec } = await supabase
@@ -165,7 +165,7 @@ export default function AdminInformeReportTab({ allowedRegions }: { allowedRegio
           .from("fichas_rlt")
           .select("numero_cedula, nombres_apellidos, nombre_ie")
           .eq("region", selectedRegion)
-          .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+          .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]);
 
         if (fichas && fichas.length > 0) {
           const cedulas = fichas.map(f => f.numero_cedula).filter(Boolean) as string[];

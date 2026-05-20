@@ -40,7 +40,7 @@ export default function AdminEvalIndividualTab({ allowedRegions }: { allowedRegi
         const { data: fichas } = await supabase
           .from("fichas_rlt")
           .select("region")
-          .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+          .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]);
         if (fichas) {
           const allRegions = [...new Set(fichas.map((f: any) => f.region).filter(Boolean))].sort() as string[];
           setRegiones(allRegions);
@@ -64,7 +64,7 @@ export default function AdminEvalIndividualTab({ allowedRegions }: { allowedRegi
         .from("fichas_rlt")
         .select("numero_cedula, nombres_apellidos, nombre_ie")
         .eq("region", selectedRegion)
-        .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+        .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]);
 
       if (!fichas || fichas.length === 0) {
         setEvals([]);

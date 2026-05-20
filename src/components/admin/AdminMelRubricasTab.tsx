@@ -127,7 +127,7 @@ export default function AdminMelRubricasTab() {
       supabase
         .from("fichas_rlt")
         .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial, cargo_actual")
-        .in("cargo_actual", ["Rector/a", "Coordinador/a"])
+        .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"])
         .order("nombres_apellidos"),
       supabase.from("app_settings").select("key, value").eq("key", "mel_rubricas_show_individual"),
     ]);

@@ -70,7 +70,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
     const { data: fichas } = await supabase
       .from("fichas_rlt")
       .select("nombres_apellidos, nombre_ie, region, numero_cedula")
-      .in("cargo_actual", ["Rector/a", "Coordinador/a"])
+      .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"])
       .order("nombres_apellidos");
 
     const { data: encuestas } = await supabase
