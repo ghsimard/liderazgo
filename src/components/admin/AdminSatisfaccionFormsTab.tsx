@@ -403,11 +403,11 @@ export default function AdminSatisfaccionFormsTab() {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Vista previa — {FORM_TYPE_LABELS[selectedType]}</DialogTitle>
+            <DialogTitle>Vista previa — {FORM_TYPE_LABELS[selectedType]} — Módulo {previewModule}</DialogTitle>
           </DialogHeader>
           <SatisfaccionForm
             formDef={formDef}
-            moduleNumber={1}
+            moduleNumber={previewModule}
             region="(Vista previa)"
             onSubmit={async () => {}}
             readOnly
