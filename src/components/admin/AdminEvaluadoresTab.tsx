@@ -78,7 +78,7 @@ export default function AdminEvaluadoresTab() {
       supabase.from("rubrica_evaluadores").select("*").order("nombre", { ascending: true }),
       supabase.from("rubrica_asignaciones").select("*").order("created_at", { ascending: false }),
       supabase.from("fichas_rlt").select("nombres_apellidos, numero_cedula, nombre_ie, region")
-        .in("cargo_actual", ["Rector/a", "Coordinador/a"])
+        .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"])
         .order("nombres_apellidos", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("directivo_cedula"),
       supabase.from("rubrica_submission_dates").select("directivo_cedula, module_number, submission_type"),
@@ -537,7 +537,7 @@ export default function AdminEvaluadoresTab() {
               </p>
             </div>
             <div>
-              <Label>Directivos disponibles (Rector/a o Coordinador/a)</Label>
+              <Label>Directivos disponibles (Rector/a, Coordinador/a, Director/a rural, Director/a de núcleo)</Label>
               <div className="flex gap-2 mt-1 mb-2">
                 <Select value={assignRegion} onValueChange={(v) => { setAssignRegion(v); setSelectedCedulas([]); }}>
                   <SelectTrigger className="w-[180px]">

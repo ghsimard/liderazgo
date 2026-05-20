@@ -64,7 +64,7 @@ export default function AdminAsistenciaStats({ filterModule, filterRegion, allow
       const { data: dirData } = await supabase
         .from("fichas_rlt")
         .select("numero_cedula, nombres_apellidos, nombre_ie, region")
-        .in("cargo_actual", ["Rector/a", "Coordinador/a"]);
+        .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]);
 
       // Load asistencia
       let q = supabase.from("informe_asistencia").select("*");
@@ -230,7 +230,7 @@ export default function AdminAsistenciaStats({ filterModule, filterRegion, allow
             </TableBody>
           </Table>
           <p className="text-xs text-muted-foreground mt-3">
-            Cálculo: Directivos (Rector/a + Coordinador/a) × 5 días × 2 sesiones (AM + PM) × {stats.moduleCount} {stats.moduleCount === 1 ? "módulo" : "módulos"}.
+            Cálculo: Directivos (Rector/a + Coordinador/a + Director/a rural + Director/a de núcleo) × 5 días × 2 sesiones (AM + PM) × {stats.moduleCount} {stats.moduleCount === 1 ? "módulo" : "módulos"}.
           </p>
         </CardContent>
       </Card>

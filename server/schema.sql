@@ -354,7 +354,7 @@ AS $$
     'is_directivo', EXISTS (
       SELECT 1 FROM fichas_rlt
       WHERE numero_cedula = p_cedula
-        AND cargo_actual IN ('Rector/a', 'Coordinador/a')
+        AND cargo_actual IN ('Rector/a', 'Coordinador/a', 'Director/a rural', 'Director/a de núcleo')
     ),
     'is_evaluador', EXISTS (SELECT 1 FROM rubrica_evaluadores WHERE cedula = p_cedula),
     'is_operator', EXISTS (SELECT 1 FROM operator_permissions WHERE cedula = p_cedula),
@@ -649,7 +649,7 @@ AS $$
   SELECT cargo_actual, nombres_apellidos, numero_cedula, genero
   FROM fichas_rlt
   WHERE nombre_ie = p_nombre_ie
-    AND cargo_actual IN ('Rector/a', 'Coordinador/a')
+    AND cargo_actual IN ('Rector/a', 'Coordinador/a', 'Director/a rural', 'Director/a de núcleo')
   ORDER BY nombres_apellidos;
 $$;
 

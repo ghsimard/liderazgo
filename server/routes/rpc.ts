@@ -38,7 +38,7 @@ router.get("/get_directivos_por_institucion", async (req: Request, res: Response
       `SELECT nombres_apellidos, numero_cedula, cargo_actual, genero
        FROM fichas_rlt
        WHERE nombre_ie = $1
-         AND cargo_actual IN ('Rector/a', 'Coordinador/a')
+         AND cargo_actual IN ('Rector/a', 'Coordinador/a', 'Director/a rural', 'Director/a de núcleo')
        ORDER BY nombres_apellidos`,
       [p_nombre_ie]
     );
@@ -156,7 +156,7 @@ router.get("/directivos", async (req: Request, res: Response) => {
       `SELECT nombres_apellidos, numero_cedula, cargo_actual, genero
        FROM fichas_rlt
        WHERE nombre_ie = $1
-         AND cargo_actual IN ('Rector/a', 'Coordinador/a')
+         AND cargo_actual IN ('Rector/a', 'Coordinador/a', 'Director/a rural', 'Director/a de núcleo')
        ORDER BY nombres_apellidos`,
       [institucion]
     );
@@ -200,7 +200,7 @@ router.get("/check_cedula_role", async (req: Request, res: Response) => {
       `SELECT EXISTS (SELECT 1 FROM admin_cedulas WHERE cedula = $1) AS v`, [p_cedula]
     ).catch(() => [{ v: false }]);
     const directivo = await query(
-      `SELECT nombres_apellidos, cargo_actual FROM fichas_rlt WHERE numero_cedula = $1 AND cargo_actual IN ('Rector/a', 'Coordinador/a') LIMIT 1`,
+      `SELECT nombres_apellidos, cargo_actual FROM fichas_rlt WHERE numero_cedula = $1 AND cargo_actual IN ('Rector/a', 'Coordinador/a', 'Director/a rural', 'Director/a de núcleo') LIMIT 1`,
       [p_cedula]
     );
     const is_evaluador = await query(

@@ -230,7 +230,7 @@ export async function calcularMelRubricas(
     supabase.from("rubrica_seguimientos").select("item_id, directivo_cedula, nivel, created_at").order("created_at"),
     supabase.from("fichas_rlt")
       .select("numero_cedula, nombres_apellidos, nombre_ie, region, entidad_territorial, cargo_actual")
-      .in("cargo_actual", ["Rector/a", "Coordinador/a"]),
+      .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]),
     supabase.from("regiones").select("id, nombre, kpi_group_id"),
     supabase.from("mel_kpi_group_items").select("group_id, kpi_config_id, meta_override"),
   ]);

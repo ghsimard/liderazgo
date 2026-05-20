@@ -360,7 +360,7 @@ export default function AdminMelTab({ allowedRegions }: { allowedRegions?: strin
     const { data: fichas } = await supabase
       .from("fichas_rlt")
       .select("nombres_apellidos, nombre_ie, cargo_actual, genero, region, entidad_territorial, numero_cedula")
-      .in("cargo_actual", ["Rector/a", "Coordinador/a"])
+      .in("cargo_actual", ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"])
       .order("nombres_apellidos");
 
     setDirectivos(
