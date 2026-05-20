@@ -1428,14 +1428,16 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
 // ── Question Picker for chart_analysis sections ──
 function QuestionPicker({
   filterType,
+  formDef: providedFormDef,
   selectedKeys,
   onChange,
 }: {
   filterType: string;
+  formDef?: SatisfaccionFormDef;
   selectedKeys: string[];
   onChange: (keys: string[]) => void;
 }) {
-  const formDef = SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined;
+  const formDef = providedFormDef || (SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined);
   if (!formDef) return null;
 
   const chartableTypes = new Set(["radio", "likert4", "checkbox-max3", "grid-sino", "grid-frequency", "grid-logistic"]);
