@@ -11,7 +11,7 @@ import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import SatisfaccionForm from "@/components/SatisfaccionForm";
-import { SATISFACCION_FORMS, FORM_TYPE_LABELS } from "@/data/satisfaccionData";
+import { SATISFACCION_FORMS, FORM_TYPE_LABELS, loadFormDefinition, type SatisfaccionFormDef } from "@/data/satisfaccionData";
 
 interface SatisfaccionPageProps {
   formType: "asistencia" | "interludio" | "intensivo";
