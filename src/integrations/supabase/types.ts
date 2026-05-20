@@ -2325,6 +2325,7 @@ export type Database = {
           definition: Json
           form_type: string
           id: string
+          module_number: number | null
           updated_at: string
           updated_by: string | null
         }
@@ -2332,6 +2333,7 @@ export type Database = {
           definition?: Json
           form_type: string
           id?: string
+          module_number?: number | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -2339,6 +2341,7 @@ export type Database = {
           definition?: Json
           form_type?: string
           id?: string
+          module_number?: number | null
           updated_at?: string
           updated_by?: string | null
         }

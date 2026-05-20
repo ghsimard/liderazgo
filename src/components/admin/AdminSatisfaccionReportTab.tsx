@@ -31,7 +31,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Loader2, FileDown, Upload, X, Save, Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, BarChart3, FileText, List, Table as TableIcon, MessageSquare, Image as ImageIcon, GripVertical, Eye, Sparkles } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { FORM_TYPE_LABELS, SATISFACCION_FORMS } from "@/data/satisfaccionData";
+import { FORM_TYPE_LABELS, SATISFACCION_FORMS, loadFormDefinition } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion } from "@/data/satisfaccionData";
 import { generateSatisfaccionReport } from "@/utils/satisfaccionPdfGenerator";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
@@ -125,9 +125,8 @@ function generateId() {
   return `s_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
-/** Build default report sections based on form type */
-function buildDefaultSections(formType: string): ReportSection[] {
-  const formDef = SATISFACCION_FORMS[formType] as SatisfaccionFormDef | undefined;
+/** Build default report sections from a resolved form definition */
+function buildDefaultSectionsFromDef(formDef: SatisfaccionFormDef | undefined): ReportSection[] {
   if (!formDef) return [];
 
   const sections: ReportSection[] = [
@@ -162,6 +161,11 @@ function buildDefaultSections(formType: string): ReportSection[] {
   return sections;
 }
 
+/** Build default report sections based on form type (static fallback for initial bootstrap) */
+function buildDefaultSections(formType: string): ReportSection[] {
+  return buildDefaultSectionsFromDef(SATISFACCION_FORMS[formType] as SatisfaccionFormDef | undefined);
+}
+
 export default function AdminSatisfaccionReportTab({ regions }: { regions: string[] }) {
   const { toast } = useToast();
   const [filterType, setFilterType] = useState<string>("intensivo");
@@ -174,6 +178,19 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
   const [generatingAI, setGeneratingAI] = useState(false);
   const [responses, setResponses] = useState<ResponseRow[]>([]);
   const [regionData, setRegionData] = useState<RegionRow[]>([]);
+  const [activeFormDef, setActiveFormDef] = useState<SatisfaccionFormDef | undefined>(
+    SATISFACCION_FORMS["intensivo"] as SatisfaccionFormDef
+  );
+
+  // Load module-specific form definition (cascade: specific → global → static default)
+  useEffect(() => {
+    const modForLookup = filterType === "asistencia"
+      ? null
+      : (filterModule === "all" ? null : parseInt(filterModule, 10));
+    loadFormDefinition(filterType, modForLookup, supabase)
+      .then(setActiveFormDef)
+      .catch(() => setActiveFormDef(SATISFACCION_FORMS[filterType] as SatisfaccionFormDef));
+  }, [filterType, filterModule]);
 
   // Report content
   const [reportContent, setReportContent] = useState<ReportContent>({
@@ -254,7 +271,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
 
   // Compute stats for PDF
   const stats = useMemo(() => {
-    const formDef = SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined;
+    const formDef = activeFormDef;
     if (!formDef || responses.length === 0) return null;
     const totalResponses = responses.length;
     const sections: { title: string; type: string; questionKey: string; data: { label: string; value: number; count: number }[] }[] = [];
@@ -362,7 +379,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
     }
 
     return { sections: merged, generalSatisfaction, overallSatisfaction, totalResponses, comments };
-  }, [responses, filterType]);
+  }, [responses, filterType, activeFormDef]);
 
   // Logo flags
   const getLogoFlags = () => {
@@ -1411,14 +1428,16 @@ function ChartPreview({ data, chartType }: { data: { label: string; value: numbe
 // ── Question Picker for chart_analysis sections ──
 function QuestionPicker({
   filterType,
+  formDef: providedFormDef,
   selectedKeys,
   onChange,
 }: {
   filterType: string;
+  formDef?: SatisfaccionFormDef;
   selectedKeys: string[];
   onChange: (keys: string[]) => void;
 }) {
-  const formDef = SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined;
+  const formDef = providedFormDef || (SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined);
   if (!formDef) return null;
 
   const chartableTypes = new Set(["radio", "likert4", "checkbox-max3", "grid-sino", "grid-frequency", "grid-logistic"]);

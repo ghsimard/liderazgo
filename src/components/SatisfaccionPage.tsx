@@ -11,7 +11,7 @@ import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import SatisfaccionForm from "@/components/SatisfaccionForm";
-import { SATISFACCION_FORMS, FORM_TYPE_LABELS } from "@/data/satisfaccionData";
+import { SATISFACCION_FORMS, FORM_TYPE_LABELS, loadFormDefinition, type SatisfaccionFormDef } from "@/data/satisfaccionData";
 
 interface SatisfaccionPageProps {
   formType: "asistencia" | "interludio" | "intensivo";
@@ -35,7 +35,15 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const formDef = SATISFACCION_FORMS[formType];
+  const [formDef, setFormDef] = useState<SatisfaccionFormDef>(SATISFACCION_FORMS[formType]);
+
+  // Load module-specific definition (cascade: specific → global → default)
+  useEffect(() => {
+    if (!moduleNumber || moduleNumber < 1 || moduleNumber > 4) return;
+    // Asistencia is module-agnostic — pass null so it never picks a per-module override
+    const modForLookup = formType === "asistencia" ? null : moduleNumber;
+    loadFormDefinition(formType, modForLookup, supabase).then(setFormDef).catch(() => {});
+  }, [formType, moduleNumber]);
 
   useEffect(() => {
     if (!cedula) {

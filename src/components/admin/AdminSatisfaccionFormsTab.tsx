@@ -45,61 +45,139 @@ const QUESTION_TYPES: { value: QuestionType; label: string }[] = [
 export default function AdminSatisfaccionFormsTab() {
   const { toast } = useToast();
   const [selectedType, setSelectedType] = useState<string>("asistencia");
+  const [selectedModule, setSelectedModule] = useState<number>(1);
   const [formDef, setFormDef] = useState<SatisfaccionFormDef>(structuredClone(DEFAULT_FORMS.asistencia));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<"preview" | "edit">("preview");
-  const [isFromDb, setIsFromDb] = useState(false);
+  const [source, setSource] = useState<"specific" | "global" | "default">("default");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [copyFromModule, setCopyFromModule] = useState<string>("");
 
-  const loadFormDef = useCallback(async (formType: string) => {
+  // Asistencia ignores module_number (single definition for all modules)
+  const isModular = selectedType !== "asistencia";
+  const moduleForLookup = isModular ? selectedModule : null;
+
+  const loadFormDef = useCallback(async (formType: string, moduleNumber: number | null) => {
     setLoading(true);
-    const { data } = await supabase
-      .from("satisfaccion_form_definitions")
-      .select("*")
-      .eq("form_type", formType)
-      .maybeSingle();
 
-    if (data?.definition) {
-      setFormDef(data.definition as unknown as SatisfaccionFormDef);
-      setIsFromDb(true);
-    } else {
-      setFormDef(structuredClone(DEFAULT_FORMS[formType]));
-      setIsFromDb(false);
+    // 1) Try module-specific
+    if (moduleNumber != null) {
+      const { data: specific } = await supabase
+        .from("satisfaccion_form_definitions")
+        .select("definition")
+        .eq("form_type", formType)
+        .eq("module_number", moduleNumber)
+        .maybeSingle();
+      if (specific?.definition) {
+        setFormDef(specific.definition as unknown as SatisfaccionFormDef);
+        setSource("specific");
+        setLoading(false);
+        return;
+      }
     }
+
+    // 2) Try global (module_number IS NULL)
+    const { data: global } = await supabase
+      .from("satisfaccion_form_definitions")
+      .select("definition")
+      .eq("form_type", formType)
+      .is("module_number", null)
+      .maybeSingle();
+    if (global?.definition) {
+      setFormDef(global.definition as unknown as SatisfaccionFormDef);
+      setSource("global");
+      setLoading(false);
+      return;
+    }
+
+    // 3) Default
+    setFormDef(structuredClone(DEFAULT_FORMS[formType]));
+    setSource("default");
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    loadFormDef(selectedType);
+    loadFormDef(selectedType, moduleForLookup);
     setMode("preview");
-  }, [selectedType, loadFormDef]);
+  }, [selectedType, moduleForLookup, loadFormDef]);
 
   const handleSave = async () => {
     setSaving(true);
+    // Delete existing row for this (form_type, module_number) combo, then insert.
+    // The unique index uses COALESCE(module_number, -1) so we filter accordingly.
+    let delQuery = supabase.from("satisfaccion_form_definitions").delete().eq("form_type", selectedType);
+    if (moduleForLookup == null) {
+      delQuery = delQuery.is("module_number", null);
+    } else {
+      delQuery = delQuery.eq("module_number", moduleForLookup);
+    }
+    await delQuery;
+
     const { error } = await supabase
       .from("satisfaccion_form_definitions")
-      .upsert({
+      .insert({
         form_type: selectedType,
+        module_number: moduleForLookup,
         definition: formDef as any,
         updated_at: new Date().toISOString(),
-      } as any, { onConflict: "form_type" });
+      } as any);
 
     if (error) {
       toast({ title: "Error guardando", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Formulario guardado exitosamente" });
-      setIsFromDb(true);
+      toast({
+        title: isModular
+          ? `Formulario guardado para Módulo ${selectedModule}`
+          : "Formulario guardado",
+      });
+      setSource("specific");
     }
     setSaving(false);
   };
 
   const handleReset = async () => {
-    // Delete from DB and revert to default
-    await supabase.from("satisfaccion_form_definitions").delete().eq("form_type", selectedType);
-    setFormDef(structuredClone(DEFAULT_FORMS[selectedType]));
-    setIsFromDb(false);
+    // Delete only this module's row (or the global row for asistencia)
+    let delQuery = supabase.from("satisfaccion_form_definitions").delete().eq("form_type", selectedType);
+    if (moduleForLookup == null) {
+      delQuery = delQuery.is("module_number", null);
+    } else {
+      delQuery = delQuery.eq("module_number", moduleForLookup);
+    }
+    await delQuery;
+    await loadFormDef(selectedType, moduleForLookup);
     toast({ title: "Formulario restablecido a valores por defecto" });
+  };
+
+  const handleCopyFrom = async () => {
+    if (!copyFromModule || !isModular) return;
+    const srcModule = parseInt(copyFromModule, 10);
+    if (srcModule === selectedModule) {
+      toast({ title: "Seleccione un módulo diferente", variant: "destructive" });
+      return;
+    }
+    // Load source module def (cascade)
+    const { data: specific } = await supabase
+      .from("satisfaccion_form_definitions")
+      .select("definition")
+      .eq("form_type", selectedType)
+      .eq("module_number", srcModule)
+      .maybeSingle();
+    let srcDef: SatisfaccionFormDef | null = null;
+    if (specific?.definition) {
+      srcDef = specific.definition as unknown as SatisfaccionFormDef;
+    } else {
+      const { data: global } = await supabase
+        .from("satisfaccion_form_definitions")
+        .select("definition")
+        .eq("form_type", selectedType)
+        .is("module_number", null)
+        .maybeSingle();
+      srcDef = (global?.definition as unknown as SatisfaccionFormDef) || structuredClone(DEFAULT_FORMS[selectedType]);
+    }
+    setFormDef(structuredClone(srcDef));
+    setCopyFromModule("");
+    toast({ title: `Copiado desde Módulo ${srcModule}`, description: "Recuerde guardar para aplicar." });
   };
 
   // ── Section/Question editing helpers ──
@@ -223,11 +301,17 @@ export default function AdminSatisfaccionFormsTab() {
     return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>;
   }
 
+  const sourceBadge = source === "specific"
+    ? (isModular ? `Personalizado · Módulo ${selectedModule}` : "Personalizado")
+    : source === "global"
+      ? "Heredado (global)"
+      : "Por defecto";
+
   return (
     <div className="space-y-4">
       {/* Form type selector + mode toggle */}
       <div className="flex flex-wrap gap-3 items-center justify-between">
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           <Label className="text-sm font-medium">Formulario:</Label>
           <Tabs value={selectedType} onValueChange={setSelectedType}>
             <TabsList>
@@ -236,7 +320,24 @@ export default function AdminSatisfaccionFormsTab() {
               ))}
             </TabsList>
           </Tabs>
-          {isFromDb && <Badge variant="secondary" className="text-xs">Personalizado</Badge>}
+          {isModular && (
+            <>
+              <Label className="text-sm font-medium ml-2">Módulo:</Label>
+              <Tabs value={String(selectedModule)} onValueChange={(v) => setSelectedModule(parseInt(v, 10))}>
+                <TabsList>
+                  {[1, 2, 3, 4].map(m => (
+                    <TabsTrigger key={m} value={String(m)}>{m}</TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </>
+          )}
+          <Badge
+            variant={source === "specific" ? "default" : "secondary"}
+            className="text-xs"
+          >
+            {sourceBadge}
+          </Badge>
         </div>
         <div className="flex gap-2">
           <Button
@@ -264,7 +365,7 @@ export default function AdminSatisfaccionFormsTab() {
           <CardContent className="pt-6">
             <SatisfaccionForm
               formDef={formDef}
-              moduleNumber={1}
+              moduleNumber={isModular ? selectedModule : 1}
               region="(Vista previa)"
               onSubmit={async () => {}}
               readOnly
@@ -354,10 +455,10 @@ export default function AdminSatisfaccionFormsTab() {
           </Button>
 
           {/* Actions */}
-          <div className="flex gap-3 justify-center pt-2">
+          <div className="flex flex-wrap gap-3 justify-center pt-2 items-center">
             <Button onClick={handleSave} disabled={saving} className="gap-2 min-w-[160px]">
               {saving ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="w-4 h-4" />}
-              {saving ? "Guardando…" : "Guardar formulario"}
+              {saving ? "Guardando…" : isModular ? `Guardar Módulo ${selectedModule}` : "Guardar formulario"}
             </Button>
             <Button variant="outline" onClick={handleReset} className="gap-2">
               <RotateCcw className="w-4 h-4" /> Restablecer
@@ -365,6 +466,24 @@ export default function AdminSatisfaccionFormsTab() {
             <Button variant="secondary" onClick={() => setPreviewOpen(true)} className="gap-2">
               <Eye className="w-4 h-4" /> Vista previa
             </Button>
+            {isModular && (
+              <div className="flex gap-2 items-center border-l pl-3 ml-1">
+                <Label className="text-xs text-muted-foreground">Copiar desde:</Label>
+                <Select value={copyFromModule} onValueChange={setCopyFromModule}>
+                  <SelectTrigger className="w-[120px] h-8 text-xs">
+                    <SelectValue placeholder="Módulo…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4].filter(m => m !== selectedModule).map(m => (
+                      <SelectItem key={m} value={String(m)}>Módulo {m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" disabled={!copyFromModule} onClick={handleCopyFrom}>
+                  Copiar
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -373,11 +492,14 @@ export default function AdminSatisfaccionFormsTab() {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Vista previa — {FORM_TYPE_LABELS[selectedType]}</DialogTitle>
+            <DialogTitle>
+              Vista previa — {FORM_TYPE_LABELS[selectedType]}
+              {isModular && ` · Módulo ${selectedModule}`}
+            </DialogTitle>
           </DialogHeader>
           <SatisfaccionForm
             formDef={formDef}
-            moduleNumber={1}
+            moduleNumber={isModular ? selectedModule : 1}
             region="(Vista previa)"
             onSubmit={async () => {}}
             readOnly
