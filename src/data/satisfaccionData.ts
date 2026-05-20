@@ -395,19 +395,34 @@ export const FORM_TYPE_LABELS: Record<string, string> = {
 
 /**
  * Load a form definition from DB (custom) or fall back to static default.
- * Used by public-facing satisfaction pages.
+ * Cascade: specific (form_type + module_number) → global (module_number IS NULL) → static default.
+ * Used by public-facing satisfaction pages and the admin previews.
  */
 export async function loadFormDefinition(
   formType: string,
+  moduleNumber: number | null,
   supabaseClient: { from: (table: string) => any }
 ): Promise<SatisfaccionFormDef> {
   try {
-    const { data } = await supabaseClient
+    // 1) Try module-specific definition
+    if (moduleNumber != null) {
+      const { data } = await supabaseClient
+        .from("satisfaccion_form_definitions")
+        .select("definition")
+        .eq("form_type", formType)
+        .eq("module_number", moduleNumber)
+        .maybeSingle();
+      if (data?.definition) return data.definition as SatisfaccionFormDef;
+    }
+
+    // 2) Fall back to global definition (module_number IS NULL)
+    const { data: globalData } = await supabaseClient
       .from("satisfaccion_form_definitions")
       .select("definition")
       .eq("form_type", formType)
+      .is("module_number", null)
       .maybeSingle();
-    if (data?.definition) return data.definition as SatisfaccionFormDef;
+    if (globalData?.definition) return globalData.definition as SatisfaccionFormDef;
   } catch {
     // fallback to static
   }
