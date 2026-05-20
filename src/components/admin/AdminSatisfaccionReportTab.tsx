@@ -125,7 +125,11 @@ function generateId() {
   return `s_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
-/** Build default report sections based on form type */
+/** Build default report sections based on a resolved form definition */
+function buildDefaultSectionsFromDef(formDef: SatisfaccionFormDef | undefined): ReportSection[] {
+  if (!formDef) return [];
+
+/** Build default report sections based on form type (uses static def — used only for initial bootstrap) */
 function buildDefaultSections(formType: string): ReportSection[] {
   const formDef = SATISFACCION_FORMS[formType] as SatisfaccionFormDef | undefined;
   if (!formDef) return [];
