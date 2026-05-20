@@ -271,7 +271,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
 
   // Compute stats for PDF
   const stats = useMemo(() => {
-    const formDef = SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined;
+    const formDef = activeFormDef;
     if (!formDef || responses.length === 0) return null;
     const totalResponses = responses.length;
     const sections: { title: string; type: string; questionKey: string; data: { label: string; value: number; count: number }[] }[] = [];
