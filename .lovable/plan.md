@@ -1,36 +1,36 @@
-# Ampliación de cargos directivos en la Ficha de Información Básica
+# Ajout de cargos directifs dans la Fiche d'Information de Base
 
-## Objetivo
+## Objectif
 
-Añadir dos cargos nuevos al selector "Cargo actual" de la Ficha, además de los actuales:
+Ajouter deux nouveaux cargos au sélecteur « Cargo actual » de la Fiche, en plus des actuels :
 
-- Rector/a (existente)
-- Coordinador/a (existente)
-- **Director/a rural** (nuevo)
-- **Director/a de núcleo** (nuevo)
+- Rector/a (existant)
+- Coordinador/a (existant)
+- **Director/a rural** (nouveau)
+- **Director/a de núcleo** (nouveau)
 
-Los cuatro cargos se consideran **directivos plenos**: deben participar en todos los módulos (Encuestas 360, Asistencia, Informe, MEL, Reportes, Dashboard, Rúbricas, etc.) exactamente como Rector/a y Coordinador/a hoy.
+Les quatre cargos sont considérés comme **directifs à part entière** : ils doivent participer à tous les modules (Encuestas 360, Asistencia, Informe, MEL, Reportes, Dashboard, Rúbricas, etc.) exactement comme Rector/a et Coordinador/a aujourd'hui.
 
-## Alcance funcional
+## Portée fonctionnelle
 
-- Disponibles en **todas las regiones** del selector de la Ficha pública y de la edición Admin.
-- Excepción mantenida: la región "Quibdó 2026" sigue forzando "Rector/a" (no cambia).
-- Etiquetas con flexión de género en la UI vía `genderizeRole` ("Director rural" / "Directora rural", "Director de núcleo" / "Directora de núcleo"). El valor almacenado en BD permanece neutro ("Director/a rural", "Director/a de núcleo").
+- Disponibles dans **toutes les régions** du sélecteur de la Fiche publique et de l'édition Admin.
+- Exception maintenue : la région « Quibdó 2026 » continue de forcer « Rector/a » (inchangé).
+- Étiquettes avec flexion de genre dans l'UI via `genderizeRole` (« Director rural » / « Directora rural », « Director de núcleo » / « Directora de núcleo »). La valeur stockée en BDD reste neutre (« Director/a rural », « Director/a de núcleo »).
 
-## Cambios necesarios
+## Changements nécessaires
 
 ### 🖥️ Site statique (Frontend)
 
-1. **Selector de cargo en la Ficha pública** — `src/pages/FichaRLT.tsx`
-   - Añadir las dos opciones nuevas al `FormSelect` de `cargo_actual`.
+1. **Sélecteur de cargo dans la Fiche publique** — `src/pages/FichaRLT.tsx`
+   - Ajouter les deux nouvelles options au `FormSelect` de `cargo_actual`.
 
-2. **Edición Admin de la Ficha** — `src/pages/AdminEditFicha.tsx`
-   - Replicar las dos opciones nuevas en el mismo selector.
+2. **Édition Admin de la Fiche** — `src/pages/AdminEditFicha.tsx`
+   - Répliquer les deux nouvelles options dans le même sélecteur.
 
-3. **Flexión de género** — `src/utils/genderizeRole.ts`
-   - Añadir reglas: `Director\/a rural` → "Director rural" / "Directora rural", `Director\/a de núcleo` → "Director de núcleo" / "Directora de núcleo". (Las reglas existentes para "Director/a" ya cubren parcialmente, pero conviene asegurar la coincidencia exacta de las nuevas etiquetas compuestas.)
+3. **Flexion de genre** — `src/utils/genderizeRole.ts`
+   - Ajouter les règles : `Director\/a rural` → « Director rural » / « Directora rural », `Director\/a de núcleo` → « Director de núcleo » / « Directora de núcleo ». (Les règles existantes pour « Director/a » couvrent partiellement, mais il faut assurer la correspondance exacte des nouvelles étiquettes composées.)
 
-4. **Listas de filtros "directivos"** — actualizar todos los `.in("cargo_actual", [...])` para incluir los 4 cargos. Archivos afectados:
+4. **Listes de filtres « directivos »** — mettre à jour tous les `.in("cargo_actual", [...])` pour inclure les 4 cargos. Fichiers affectés :
    - `src/data/encuesta360Data.ts`
    - `src/utils/melRubricaCalculator.ts`
    - `src/components/admin/AdminEvalIndividualTab.tsx`
@@ -44,22 +44,22 @@ Los cuatro cargos se consideran **directivos plenos**: deben participar en todos
    - `src/components/admin/AdminAsistenciaStats.tsx`
    - `src/components/admin/AdminMelTab.tsx`
    - `src/components/admin/AdminInformeModuloForm.tsx`
-   - Para evitar mantener la lista en 13 lugares, centralizar la constante en `src/utils/genderizeRole.ts` (o un nuevo `src/utils/directivoRoles.ts`) exportando `DIRECTIVO_CARGOS = ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]` e importarla en todos los puntos anteriores.
+   - Pour éviter de maintenir la liste à 13 endroits, centraliser la constante dans `src/utils/genderizeRole.ts` (ou un nouveau `src/utils/directivoRoles.ts`) en exportant `DIRECTIVO_CARGOS = ["Rector/a", "Coordinador/a", "Director/a rural", "Director/a de núcleo"]` et l'importer dans tous les points ci-dessus.
 
 ### ⚙️ Web Service (Backend Express)
 
-1. **Filtros server-side en proxy RPC** — `server/routes/rpc.ts` (3 ocurrencias en líneas ~41, ~159, ~203):
-   - Reemplazar `IN ('Rector/a', 'Coordinador/a')` por `IN ('Rector/a', 'Coordinador/a', 'Director/a rural', 'Director/a de núcleo')`.
-   - Afecta funciones: `get_directivos_por_institucion`, validación de cédula de directivo, etc.
+1. **Filtres côté serveur dans le proxy RPC** — `server/routes/rpc.ts` (3 occurrences aux lignes ~41, ~159, ~203) :
+   - Remplacer `IN ('Rector/a', 'Coordinador/a')` par `IN ('Rector/a', 'Coordinador/a', 'Director/a rural', 'Director/a de núcleo')`.
+   - Affecte les fonctions : `get_directivos_por_institucion`, validation de la cédula du directif, etc.
 
-2. **Esquema documental** — `server/schema.sql` (2 ocurrencias en líneas ~357, ~652):
-   - Actualizar los `IN (...)` en las funciones SQL versionadas para que el archivo refleje la realidad de producción.
+2. **Schéma documentaire** — `server/schema.sql` (2 occurrences aux lignes ~357, ~652) :
+   - Mettre à jour les `IN (...)` dans les fonctions SQL versionnées pour que le fichier reflète la réalité de la production.
 
-### 🗄️ Base de datos (Manual SQL en Render)
+### 🗄️ Base de données (SQL manuel sur Render)
 
-No hay cambio de esquema (la columna `cargo_actual` es `text` libre).
+Pas de changement de schéma (la colonne `cargo_actual` est `text` libre).
 
-Sin embargo, las funciones SQL `get_directivos_por_institucion(p_nombre_ie)` y `check_cedula_role(p_cedula)` están desplegadas en la BD productiva con la lista cerrada de dos cargos. Para que reconozcan los nuevos cargos hay que ejecutar **manualmente** en el Editor SQL de la base:
+Cependant, les fonctions SQL `get_directivos_por_institucion(p_nombre_ie)` et `check_cedula_role(p_cedula)` sont déployées dans la BDD de production avec la liste fermée de deux cargos. Pour qu'elles reconnaissent les nouveaux cargos, exécuter **manuellement** dans l'éditeur SQL de la base :
 
 ```sql
 CREATE OR REPLACE FUNCTION public.get_directivos_por_institucion(p_nombre_ie text)
@@ -94,19 +94,19 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $
 $$;
 ```
 
-## Impacto en módulos existentes
+## Impact sur les modules existants
 
-Una vez aplicado, los nuevos cargos:
+Une fois appliqué, les nouveaux cargos :
 
-- Pueden iniciar sesión como directivos vía cédula.
-- Aparecen en Encuestas 360 (Autoevaluación, evaluadores, monitor, reportes).
-- Aparecen en Asistencia, Informe, MEL, Rúbricas, Dashboard, Reporte 360.
-- Son reconocidos por el flujo de verificación de la Ficha y por "Mi Panel".
+- Peuvent se connecter en tant que directifs via la cédula.
+- Apparaissent dans les Encuestas 360 (Auto-évaluation, évaluateurs, monitor, rapports).
+- Apparaissent dans Asistencia, Informe, MEL, Rúbricas, Dashboard, Reporte 360.
+- Sont reconnus par le flux de vérification de la Fiche et par « Mi Panel ».
 
-No se requiere migración de datos: las fichas existentes con "Rector/a" o "Coordinador/a" no se ven afectadas.
+Aucune migration de données requise : les fiches existantes avec « Rector/a » ou « Coordinador/a » ne sont pas affectées.
 
-## Detalles técnicos
+## Détails techniques
 
-- Mantener los valores almacenados con el sufijo `/a` para coherencia con el esquema de género actual (`genderizeRole` los flexiona en la UI).
-- La centralización de `DIRECTIVO_CARGOS` reduce el riesgo de olvidar un punto cuando se vuelvan a añadir cargos en el futuro.
-- No se tocan archivos auto-generados (`src/integrations/supabase/types.ts`, `.env`).
+- Maintenir les valeurs stockées avec le suffixe `/a` pour la cohérence avec le schéma de genre actuel (`genderizeRole` les fléchit dans l'UI).
+- La centralisation de `DIRECTIVO_CARGOS` réduit le risque d'oublier un point lors d'ajouts futurs.
+- Aucun fichier auto-généré n'est touché (`src/integrations/supabase/types.ts`, `.env`).
