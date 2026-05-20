@@ -51,6 +51,12 @@ export default function AdminSatisfaccionFormsTab() {
   const [mode, setMode] = useState<"preview" | "edit">("preview");
   const [isFromDb, setIsFromDb] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewModule, setPreviewModule] = useState<number>(1);
+
+  const openRealForm = () => {
+    const url = `/satisfaccion-${selectedType}?module=${previewModule}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   const loadFormDef = useCallback(async (formType: string) => {
     setLoading(true);
