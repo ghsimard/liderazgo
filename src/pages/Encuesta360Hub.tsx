@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ShareEncuestaDialog from "@/components/ShareEncuestaDialog";
 import AutoevalViewerDialog from "@/components/AutoevalViewerDialog";
+import { isCentroEducativo } from "@/utils/institutionType";
 import {
   ArrowLeft,
   Bell,
@@ -280,6 +281,10 @@ export default function Encuesta360Hub() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {formsBase.map((form) => {
+                  // Ocultar "Estudiante" para Centros Educativos
+                  if (form.tipo === "estudiante" && isCentroEducativo(directivoInfo?.institucion)) {
+                    return null;
+                  }
                   const count = formCounts[form.tipo] || 0;
                   const quota = FORM_QUOTAS[form.tipo] || 1;
                   const quotaMet = count >= quota;
