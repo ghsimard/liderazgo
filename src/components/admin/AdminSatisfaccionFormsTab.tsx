@@ -455,10 +455,10 @@ export default function AdminSatisfaccionFormsTab() {
           </Button>
 
           {/* Actions */}
-          <div className="flex gap-3 justify-center pt-2">
+          <div className="flex flex-wrap gap-3 justify-center pt-2 items-center">
             <Button onClick={handleSave} disabled={saving} className="gap-2 min-w-[160px]">
               {saving ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="w-4 h-4" />}
-              {saving ? "Guardando…" : "Guardar formulario"}
+              {saving ? "Guardando…" : isModular ? `Guardar Módulo ${selectedModule}` : "Guardar formulario"}
             </Button>
             <Button variant="outline" onClick={handleReset} className="gap-2">
               <RotateCcw className="w-4 h-4" /> Restablecer
@@ -466,6 +466,24 @@ export default function AdminSatisfaccionFormsTab() {
             <Button variant="secondary" onClick={() => setPreviewOpen(true)} className="gap-2">
               <Eye className="w-4 h-4" /> Vista previa
             </Button>
+            {isModular && (
+              <div className="flex gap-2 items-center border-l pl-3 ml-1">
+                <Label className="text-xs text-muted-foreground">Copiar desde:</Label>
+                <Select value={copyFromModule} onValueChange={setCopyFromModule}>
+                  <SelectTrigger className="w-[120px] h-8 text-xs">
+                    <SelectValue placeholder="Módulo…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4].filter(m => m !== selectedModule).map(m => (
+                      <SelectItem key={m} value={String(m)}>Módulo {m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" disabled={!copyFromModule} onClick={handleCopyFrom}>
+                  Copiar
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -474,11 +492,14 @@ export default function AdminSatisfaccionFormsTab() {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Vista previa — {FORM_TYPE_LABELS[selectedType]}</DialogTitle>
+            <DialogTitle>
+              Vista previa — {FORM_TYPE_LABELS[selectedType]}
+              {isModular && ` · Módulo ${selectedModule}`}
+            </DialogTitle>
           </DialogHeader>
           <SatisfaccionForm
             formDef={formDef}
-            moduleNumber={1}
+            moduleNumber={isModular ? selectedModule : 1}
             region="(Vista previa)"
             onSubmit={async () => {}}
             readOnly
