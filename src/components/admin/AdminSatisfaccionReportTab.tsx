@@ -379,7 +379,7 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
     }
 
     return { sections: merged, generalSatisfaction, overallSatisfaction, totalResponses, comments };
-  }, [responses, filterType]);
+  }, [responses, filterType, activeFormDef]);
 
   // Logo flags
   const getLogoFlags = () => {
