@@ -373,7 +373,7 @@ export default function MiPanel() {
                 <div className="text-left">
                   <div className="font-semibold">Como {genderizeRole("Directivo", roleInfo.genero)}</div>
                   <div className="text-xs text-muted-foreground">
-                    {genderizeRole(roleInfo.cargo_actual, roleInfo.genero) || "Rector/a o Coordinador/a"}
+                    {genderizeRole(roleInfo.cargo_actual, roleInfo.genero) || "Directivo/a"}
                   </div>
                 </div>
               </Button>

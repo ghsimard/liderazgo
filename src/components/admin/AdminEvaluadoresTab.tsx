@@ -537,7 +537,7 @@ export default function AdminEvaluadoresTab() {
               </p>
             </div>
             <div>
-              <Label>Directivos disponibles (Rector/a o Coordinador/a)</Label>
+              <Label>Directivos disponibles (Rector/a, Coordinador/a, Director/a rural, Director/a de núcleo)</Label>
               <div className="flex gap-2 mt-1 mb-2">
                 <Select value={assignRegion} onValueChange={(v) => { setAssignRegion(v); setSelectedCedulas([]); }}>
                   <SelectTrigger className="w-[180px]">

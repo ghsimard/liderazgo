@@ -391,7 +391,7 @@ export function PrdFormulariosSection() {
                     {[
                       { n: 26, label: "Región", req: true, val: "Lista dinámica desde BD" },
                       { n: 27, label: "Institución educativa", req: true, val: "Lista filtrada par región → entidad → municipio" },
-                      { n: 28, label: "Cargo actual", req: true, val: "Rector/a · Director/a · Coordinador/a" },
+                      { n: 28, label: "Cargo actual", req: true, val: "Rector/a · Coordinador/a · Director/a rural · Director/a de núcleo" },
                       { n: 29, label: "Tipo de vinculación", req: true, val: "Propiedad · Encargo · Provisionalidad" },
                       { n: 30, label: "Fecha vinculación al servicio", req: false, val: "Fecha" },
                       { n: 31, label: "Fecha nombramiento en cargo", req: false, val: "Fecha" },
