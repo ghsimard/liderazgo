@@ -35,7 +35,15 @@ export default function SatisfaccionPage({ formType }: SatisfaccionPageProps) {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const formDef = SATISFACCION_FORMS[formType];
+  const [formDef, setFormDef] = useState<SatisfaccionFormDef>(SATISFACCION_FORMS[formType]);
+
+  // Load module-specific definition (cascade: specific → global → default)
+  useEffect(() => {
+    if (!moduleNumber || moduleNumber < 1 || moduleNumber > 4) return;
+    // Asistencia is module-agnostic — pass null so it never picks a per-module override
+    const modForLookup = formType === "asistencia" ? null : moduleNumber;
+    loadFormDefinition(formType, modForLookup, supabase).then(setFormDef).catch(() => {});
+  }, [formType, moduleNumber]);
 
   useEffect(() => {
     if (!cedula) {
