@@ -31,7 +31,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Loader2, FileDown, Upload, X, Save, Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, BarChart3, FileText, List, Table as TableIcon, MessageSquare, Image as ImageIcon, GripVertical, Eye, Sparkles } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { FORM_TYPE_LABELS, SATISFACCION_FORMS } from "@/data/satisfaccionData";
+import { FORM_TYPE_LABELS, SATISFACCION_FORMS, loadFormDefinition } from "@/data/satisfaccionData";
 import type { SatisfaccionFormDef, SatisfaccionQuestion } from "@/data/satisfaccionData";
 import { generateSatisfaccionReport } from "@/utils/satisfaccionPdfGenerator";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
