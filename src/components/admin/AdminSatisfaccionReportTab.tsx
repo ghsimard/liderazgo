@@ -178,6 +178,19 @@ export default function AdminSatisfaccionReportTab({ regions }: { regions: strin
   const [generatingAI, setGeneratingAI] = useState(false);
   const [responses, setResponses] = useState<ResponseRow[]>([]);
   const [regionData, setRegionData] = useState<RegionRow[]>([]);
+  const [activeFormDef, setActiveFormDef] = useState<SatisfaccionFormDef | undefined>(
+    SATISFACCION_FORMS["intensivo"] as SatisfaccionFormDef
+  );
+
+  // Load module-specific form definition (cascade: specific → global → static default)
+  useEffect(() => {
+    const modForLookup = filterType === "asistencia"
+      ? null
+      : (filterModule === "all" ? null : parseInt(filterModule, 10));
+    loadFormDefinition(filterType, modForLookup, supabase)
+      .then(setActiveFormDef)
+      .catch(() => setActiveFormDef(SATISFACCION_FORMS[filterType] as SatisfaccionFormDef));
+  }, [filterType, filterModule]);
 
   // Report content
   const [reportContent, setReportContent] = useState<ReportContent>({
