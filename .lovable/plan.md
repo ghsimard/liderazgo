@@ -1,36 +1,33 @@
-# Ajout du descripteur de niveau dans le PDF des Rúbricas
+# Vista previa por módulo + acceso directo al formulario real
 
-## Problème
+## Objetivo
 
-Dans le PDF d'un module de rúbrica (`Informe_Rubrica_Mx_xxx.pdf`), chaque ítem affiche actuellement, pour chaque colonne (Autoevaluación, Evaluación Equipo, Nivel Acordado, Seguimiento) :
+Permitir al administrador previsualizar los formularios de Satisfacción (Asistencia, Interludio, Intensivo) para cualquiera de los 4 módulos sin depender de su activación en la configuración, y abrir el formulario real en una nueva pestaña para validar el flujo completo.
 
-- le **nom du niveau** (ex. « Avanzado »)
-- le **commentaire** du rector / équipe
+## Cambios
 
-Mais il manque la **définition du niveau** : c'est-à-dire le texte de la rúbrica qui décrit ce que signifie « Avanzado » pour cet ítem (le `desc_avanzado` / `desc_intermedio` / `desc_basico` / `desc_sin_evidencia` correspondant).
+### 1. Selector de Módulo en la Vista Previa
 
-L'utilisateur ne peut donc pas savoir, en lisant le PDF seul, à quoi correspond le niveau choisi.
+En **Admin → Satisfacciones → Formularios**, añadir un selector compacto **Módulo 1 / 2 / 3 / 4** junto a los botones "Vista previa" / "Editar".
 
-## Solution
+- Estado local `previewModule: number` (default `1`).
+- Pasar este valor a los dos puntos donde se instancia `<SatisfaccionForm moduleNumber={…} />` (modo preview inline y diálogo de preview).
+- El encabezado del formulario mostrará dinámicamente "Módulo N — (Vista previa)" como ya lo hace hoy.
 
-Dans `src/utils/rubricaModulePdfGenerator.ts`, ajouter sous le nom du niveau (entre le badge « Avanzado » et le commentaire) le **texte descriptif du niveau choisi**, extrait de `descAvanzado` / `descIntermedio` / `descBasico` / `descSinEvidencia` de l'ítem courant.
+### 2. Botón "Abrir formulario real"
 
-Si la colonne n'a pas de niveau (« — »), aucun descripteur n'est affiché.
+Añadir, junto al selector de módulo, un botón secundario **"Abrir formulario real"** que abre en una nueva pestaña la URL pública:
 
-## Détails techniques
+```
+/satisfaccion-{tipo}?module={N}
+```
 
-Fichier : `src/utils/rubricaModulePdfGenerator.ts`
+Esto permite probar el flujo de envío completo (autenticación por cédula, guardado en `satisfaccion_responses`).
 
-1. Supprimer la ligne actuelle qui imprime `Objetivo: ${item.descAvanzado}` sous le titre de l'ítem (elle est trompeuse : ce n'est pas un objectif, c'est la définition du niveau Avanzado).
-2. Ajouter une petite fonction utilitaire `getDescForNivel(item, nivel)` qui renvoie la chaîne descriptive selon la clé (`avanzado` → `descAvanzado`, etc.).
-3. Dans la boucle des 4 colonnes, après l'impression du badge `nivelText` et avant le commentaire, imprimer en italique gris (fontSize 7) le descripteur correspondant, wrappé à `colW - 4`.
-4. Recalculer `colY` et `maxH` pour inclure la hauteur de ce nouveau bloc (et donc allonger la cellule si nécessaire).
-5. Pour la colonne « Seguimiento », ne pas afficher de descripteur (la rúbrica de seguimiento utilise les mêmes niveaux ; on garde la cohérence visuelle en affichant le descripteur du niveau choisi).
+> Nota: si el módulo/región no está activado en `satisfaccion_config`, el formulario público mostrará su mensaje de indisponibilidad estándar. El admin lo sabe — es comportamiento esperado para validar la configuración.
 
-Aucun changement requis pour : base de données, Express Render, `blankRubricaPdfGenerator.ts` (déjà OK car il liste tous les niveaux), ou autres composants.
+## Acciones de despliegue Render
 
-## Actions par environnement
-
-- 🖥️ **Site statique (Frontend)** : modifier `src/utils/rubricaModulePdfGenerator.ts` uniquement. Merge GitHub → déploiement automatique.
-- ⚙️ **Web Service (Backend Express)** : aucune action.
-- 🗄️ **Base de données** : aucune action.
+- 🖥️ **Site statique (Frontend)** : redeploy de `AdminSatisfaccionFormsTab.tsx` (único archivo modificado).
+- ⚙️ **Web Service (Backend Express)** : ninguna acción.
+- 🗄️ **Base de datos (SQL Manual)** : ninguna acción.
