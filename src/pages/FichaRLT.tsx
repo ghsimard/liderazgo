@@ -548,6 +548,7 @@ export default function FichaRLTForm() {
           estudiantes_basica_secundaria: data.estudiantes_basica_secundaria != null ? String(data.estudiantes_basica_secundaria) : "",
           estudiantes_media: data.estudiantes_media != null ? String(data.estudiantes_media) : "",
           estudiantes_ciclo_complementario: data.estudiantes_ciclo_complementario != null ? String(data.estudiantes_ciclo_complementario) : "",
+          estudiantes_jornada_nocturna: data.estudiantes_jornada_nocturna != null ? String(data.estudiantes_jornada_nocturna) : "",
         };
 
         reset(formData as any);
