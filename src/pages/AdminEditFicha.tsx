@@ -612,6 +612,7 @@ export default function AdminEditFicha() {
       estudiantes_basica_secundaria: toInt(data.estudiantes_basica_secundaria),
       estudiantes_media: toInt(data.estudiantes_media),
       estudiantes_ciclo_complementario: toInt(data.estudiantes_ciclo_complementario),
+      estudiantes_jornada_nocturna: toInt(data.estudiantes_jornada_nocturna),
     };
 
     if (isCreateMode) {
