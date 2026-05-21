@@ -117,6 +117,7 @@ const schema = z.object({
   estudiantes_basica_secundaria: z.string().optional(),
   estudiantes_media: z.string().optional(),
   estudiantes_ciclo_complementario: z.string().optional(),
+  estudiantes_jornada_nocturna: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
