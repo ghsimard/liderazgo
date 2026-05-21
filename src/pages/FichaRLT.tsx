@@ -1670,6 +1670,7 @@ export default function FichaRLTForm() {
                   { nivel: "Básica secundaria", label: "Básica secundaria", field: "estudiantes_basica_secundaria" },
                   { nivel: "Media", label: "Media", field: "estudiantes_media" },
                   { nivel: "Ciclo complementario", label: "Ciclo complementario", field: "estudiantes_ciclo_complementario" },
+                  { nivel: "Jornada Nocturna", label: "Jornada Nocturna", field: "estudiantes_jornada_nocturna" },
                 ].map(({ nivel, label, field }) => {
                   const count = parseInt(watch(field as any) || "0") || 0;
                   return (
