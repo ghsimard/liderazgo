@@ -151,15 +151,16 @@ export default function AdminCaracterizacionTab() {
   }, [filtered]);
 
   const estudiantesTotal = useMemo(() => {
-    let pre = 0, pri = 0, sec = 0, med = 0, comp = 0;
+    let pre = 0, pri = 0, sec = 0, med = 0, comp = 0, noc = 0;
     filtered.forEach((f) => {
       pre += f.estudiantes_preescolar || 0;
       pri += f.estudiantes_primaria || 0;
       sec += f.estudiantes_basica_secundaria || 0;
       med += f.estudiantes_media || 0;
       comp += f.estudiantes_ciclo_complementario || 0;
+      noc += f.estudiantes_jornada_nocturna || 0;
     });
-    return { preescolar: pre, primaria: pri, secundaria: sec, media: med, complementario: comp, total: pre + pri + sec + med + comp };
+    return { preescolar: pre, primaria: pri, secundaria: sec, media: med, complementario: comp, nocturna: noc, total: pre + pri + sec + med + comp + noc };
   }, [filtered]);
 
   if (loading || geo.loading) {
