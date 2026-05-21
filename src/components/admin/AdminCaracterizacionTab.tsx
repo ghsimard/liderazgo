@@ -312,6 +312,7 @@ export default function AdminCaracterizacionTab() {
             <StatRow label="Básica Secundaria" value={estudiantesTotal.secundaria} />
             <StatRow label="Media" value={estudiantesTotal.media} />
             <StatRow label="Ciclo Complementario" value={estudiantesTotal.complementario} />
+            <StatRow label="Jornada Nocturna" value={estudiantesTotal.nocturna} />
             <div className="border-t pt-1 mt-1">
               <StatRow label="Total" value={estudiantesTotal.total} bold />
             </div>
