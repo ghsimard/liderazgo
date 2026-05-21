@@ -79,7 +79,7 @@ export default function AdminCaracterizacionTab() {
       setLoading(true);
       const { data } = await supabase
         .from("fichas_rlt")
-        .select("region, genero, fecha_nacimiento, enfermedad_base, discapacidad, tipo_formacion, titulo_especializacion, titulo_maestria, titulo_doctorado, cargo_actual, tipo_vinculacion, estatuto, zona_sede, jornadas, grupos_etnicos, num_docentes, num_coordinadores, num_orientadores, num_administrativos, estudiantes_preescolar, estudiantes_primaria, estudiantes_basica_secundaria, estudiantes_media, estudiantes_ciclo_complementario, nombre_ie, entidad_territorial");
+        .select("region, genero, fecha_nacimiento, enfermedad_base, discapacidad, tipo_formacion, titulo_especializacion, titulo_maestria, titulo_doctorado, cargo_actual, tipo_vinculacion, estatuto, zona_sede, jornadas, grupos_etnicos, num_docentes, num_coordinadores, num_orientadores, num_administrativos, estudiantes_preescolar, estudiantes_primaria, estudiantes_basica_secundaria, estudiantes_media, estudiantes_ciclo_complementario, estudiantes_jornada_nocturna, nombre_ie, entidad_territorial");
       setFichas(data ?? []);
       setLoading(false);
     })();
