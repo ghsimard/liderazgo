@@ -1190,6 +1190,7 @@ export default function AdminEditFicha() {
                     { value: "Mañana", label: "Mañana" },
                     { value: "Tarde", label: "Tarde" },
                     { value: "Nocturna", label: "Nocturna" },
+                    { value: "Sabatina", label: "Sabatina" },
                     { value: "Única", label: "Única" },
                   ]}
                   value={jornadas}
