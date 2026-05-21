@@ -87,6 +87,7 @@ const fields: FieldRow[] = [
   { section: "Estudiantes por nivel educativo", campo: "Básica secundaria", obligatorio: "No", reglas: "Número entero >= 0 o vacío" },
   { section: "Estudiantes por nivel educativo", campo: "Media", obligatorio: "No", reglas: "Número entero >= 0 o vacío" },
   { section: "Estudiantes por nivel educativo", campo: "Ciclo complementario", obligatorio: "No", reglas: "Número entero >= 0 o vacío" },
+  { section: "Estudiantes por nivel educativo", campo: "Jornada Nocturna", obligatorio: "No", reglas: "Número entero >= 0 o vacío" },
 ];
 
 export function generateFichaFieldsPdf() {
