@@ -67,7 +67,7 @@ const fields: FieldRow[] = [
   { section: "Datos de la IE", campo: "Zona de la sede principal de la IE", obligatorio: "Sí", reglas: "Selección obligatoria (Urbana / Rural)" },
   { section: "Datos de la IE", campo: "Número de sedes en zona rural", obligatorio: "Sí", reglas: "Número entero >= 0, obligatorio" },
   { section: "Datos de la IE", campo: "Número de sedes en zona urbana", obligatorio: "Sí", reglas: "Número entero >= 0, obligatorio" },
-  { section: "Datos de la IE", campo: "Jornadas de la IE", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (Mañana / Tarde / Nocturna / Unica)" },
+  { section: "Datos de la IE", campo: "Jornadas de la IE", obligatorio: "Sí", reglas: "Al menos 1 opción seleccionada (Mañana / Tarde / Nocturna / Sabatina / Única)" },
   { section: "Datos de la IE", campo: "Grupos étnicos en la IE", obligatorio: "No", reglas: "Selección múltiple opcional (Afrocolombianos-NARP / Indígenas / Rrom-Pueblo Gitano)" },
   { section: "Datos de la IE", campo: "Proyectos transversales de la IE", obligatorio: "No", reglas: "Texto libre, opcional" },
   { section: "Datos de la IE", campo: "¿Hay estudiantes o familias en condición de desplazamiento?", obligatorio: "No", reglas: "Selección opcional (Sí / No)" },
