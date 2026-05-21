@@ -93,6 +93,7 @@ const schema = z.object({
   estudiantes_basica_secundaria: z.string().optional(),
   estudiantes_media: z.string().optional(),
   estudiantes_ciclo_complementario: z.string().optional(),
+  estudiantes_jornada_nocturna: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -303,6 +304,7 @@ function fichaToFormData(f: Ficha): FormData {
     estudiantes_basica_secundaria: s((f as any).estudiantes_basica_secundaria),
     estudiantes_media: s((f as any).estudiantes_media),
     estudiantes_ciclo_complementario: s(f.estudiantes_ciclo_complementario),
+    estudiantes_jornada_nocturna: s((f as any).estudiantes_jornada_nocturna),
   };
 }
 
@@ -610,6 +612,7 @@ export default function AdminEditFicha() {
       estudiantes_basica_secundaria: toInt(data.estudiantes_basica_secundaria),
       estudiantes_media: toInt(data.estudiantes_media),
       estudiantes_ciclo_complementario: toInt(data.estudiantes_ciclo_complementario),
+      estudiantes_jornada_nocturna: toInt(data.estudiantes_jornada_nocturna),
     };
 
     if (isCreateMode) {
@@ -1274,6 +1277,7 @@ export default function AdminEditFicha() {
                   { nivel: "Básica secundaria", label: "Básica secundaria", field: "estudiantes_basica_secundaria" },
                   { nivel: "Media", label: "Media", field: "estudiantes_media" },
                   { nivel: "Ciclo complementario", label: "Ciclo complementario", field: "estudiantes_ciclo_complementario" },
+                  { nivel: "Jornada Nocturna", label: "Jornada Nocturna", field: "estudiantes_jornada_nocturna" },
                 ].map(({ nivel, label, field }) => {
                   const count = parseInt(watch(field as any) || "0") || 0;
                   return (
@@ -1311,7 +1315,7 @@ export default function AdminEditFicha() {
                 <div className="flex items-center justify-between pt-2 border-t mt-2">
                   <span className="font-semibold text-sm">Total estudiantes</span>
                   <span className="font-bold text-base w-20 text-center">
-                    {["estudiantes_preescolar","estudiantes_primaria","estudiantes_basica_secundaria","estudiantes_media","estudiantes_ciclo_complementario"]
+                    {["estudiantes_preescolar","estudiantes_primaria","estudiantes_basica_secundaria","estudiantes_media","estudiantes_ciclo_complementario","estudiantes_jornada_nocturna"]
                       .reduce((s, f) => s + (parseInt(watch(f as any)) || 0), 0)}
                   </span>
                 </div>

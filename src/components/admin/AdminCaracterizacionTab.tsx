@@ -79,7 +79,7 @@ export default function AdminCaracterizacionTab() {
       setLoading(true);
       const { data } = await supabase
         .from("fichas_rlt")
-        .select("region, genero, fecha_nacimiento, enfermedad_base, discapacidad, tipo_formacion, titulo_especializacion, titulo_maestria, titulo_doctorado, cargo_actual, tipo_vinculacion, estatuto, zona_sede, jornadas, grupos_etnicos, num_docentes, num_coordinadores, num_orientadores, num_administrativos, estudiantes_preescolar, estudiantes_primaria, estudiantes_basica_secundaria, estudiantes_media, estudiantes_ciclo_complementario, nombre_ie, entidad_territorial");
+        .select("region, genero, fecha_nacimiento, enfermedad_base, discapacidad, tipo_formacion, titulo_especializacion, titulo_maestria, titulo_doctorado, cargo_actual, tipo_vinculacion, estatuto, zona_sede, jornadas, grupos_etnicos, num_docentes, num_coordinadores, num_orientadores, num_administrativos, estudiantes_preescolar, estudiantes_primaria, estudiantes_basica_secundaria, estudiantes_media, estudiantes_ciclo_complementario, estudiantes_jornada_nocturna, nombre_ie, entidad_territorial");
       setFichas(data ?? []);
       setLoading(false);
     })();
@@ -151,15 +151,16 @@ export default function AdminCaracterizacionTab() {
   }, [filtered]);
 
   const estudiantesTotal = useMemo(() => {
-    let pre = 0, pri = 0, sec = 0, med = 0, comp = 0;
+    let pre = 0, pri = 0, sec = 0, med = 0, comp = 0, noc = 0;
     filtered.forEach((f) => {
       pre += f.estudiantes_preescolar || 0;
       pri += f.estudiantes_primaria || 0;
       sec += f.estudiantes_basica_secundaria || 0;
       med += f.estudiantes_media || 0;
       comp += f.estudiantes_ciclo_complementario || 0;
+      noc += f.estudiantes_jornada_nocturna || 0;
     });
-    return { preescolar: pre, primaria: pri, secundaria: sec, media: med, complementario: comp, total: pre + pri + sec + med + comp };
+    return { preescolar: pre, primaria: pri, secundaria: sec, media: med, complementario: comp, nocturna: noc, total: pre + pri + sec + med + comp + noc };
   }, [filtered]);
 
   if (loading || geo.loading) {
@@ -311,6 +312,7 @@ export default function AdminCaracterizacionTab() {
             <StatRow label="Básica Secundaria" value={estudiantesTotal.secundaria} />
             <StatRow label="Media" value={estudiantesTotal.media} />
             <StatRow label="Ciclo Complementario" value={estudiantesTotal.complementario} />
+            <StatRow label="Jornada Nocturna" value={estudiantesTotal.nocturna} />
             <div className="border-t pt-1 mt-1">
               <StatRow label="Total" value={estudiantesTotal.total} bold />
             </div>

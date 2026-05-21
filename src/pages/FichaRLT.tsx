@@ -117,6 +117,7 @@ const schema = z.object({
   estudiantes_basica_secundaria: z.string().optional(),
   estudiantes_media: z.string().optional(),
   estudiantes_ciclo_complementario: z.string().optional(),
+  estudiantes_jornada_nocturna: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -547,6 +548,7 @@ export default function FichaRLTForm() {
           estudiantes_basica_secundaria: data.estudiantes_basica_secundaria != null ? String(data.estudiantes_basica_secundaria) : "",
           estudiantes_media: data.estudiantes_media != null ? String(data.estudiantes_media) : "",
           estudiantes_ciclo_complementario: data.estudiantes_ciclo_complementario != null ? String(data.estudiantes_ciclo_complementario) : "",
+          estudiantes_jornada_nocturna: data.estudiantes_jornada_nocturna != null ? String(data.estudiantes_jornada_nocturna) : "",
         };
 
         reset(formData as any);
@@ -740,6 +742,7 @@ export default function FichaRLTForm() {
       estudiantes_basica_secundaria: toInt(data.estudiantes_basica_secundaria),
       estudiantes_media: toInt(data.estudiantes_media),
       estudiantes_ciclo_complementario: toInt(data.estudiantes_ciclo_complementario),
+      estudiantes_jornada_nocturna: toInt(data.estudiantes_jornada_nocturna),
     };
 
     // Update or insert based on mode
@@ -1667,6 +1670,7 @@ export default function FichaRLTForm() {
                   { nivel: "Básica secundaria", label: "Básica secundaria", field: "estudiantes_basica_secundaria" },
                   { nivel: "Media", label: "Media", field: "estudiantes_media" },
                   { nivel: "Ciclo complementario", label: "Ciclo complementario", field: "estudiantes_ciclo_complementario" },
+                  { nivel: "Jornada Nocturna", label: "Jornada Nocturna", field: "estudiantes_jornada_nocturna" },
                 ].map(({ nivel, label, field }) => {
                   const count = parseInt(watch(field as any) || "0") || 0;
                   return (

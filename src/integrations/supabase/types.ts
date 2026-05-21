@@ -1158,6 +1158,7 @@ export type Database = {
           estatuto: string | null
           estudiantes_basica_secundaria: number | null
           estudiantes_ciclo_complementario: number | null
+          estudiantes_jornada_nocturna: number | null
           estudiantes_media: number | null
           estudiantes_preescolar: number | null
           estudiantes_primaria: number | null
@@ -1226,6 +1227,7 @@ export type Database = {
           estatuto?: string | null
           estudiantes_basica_secundaria?: number | null
           estudiantes_ciclo_complementario?: number | null
+          estudiantes_jornada_nocturna?: number | null
           estudiantes_media?: number | null
           estudiantes_preescolar?: number | null
           estudiantes_primaria?: number | null
@@ -1294,6 +1296,7 @@ export type Database = {
           estatuto?: string | null
           estudiantes_basica_secundaria?: number | null
           estudiantes_ciclo_complementario?: number | null
+          estudiantes_jornada_nocturna?: number | null
           estudiantes_media?: number | null
           estudiantes_preescolar?: number | null
           estudiantes_primaria?: number | null

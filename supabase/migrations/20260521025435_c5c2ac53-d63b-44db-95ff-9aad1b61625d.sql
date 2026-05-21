@@ -1,0 +1,1 @@
+ALTER TABLE public.fichas_rlt ADD COLUMN IF NOT EXISTS estudiantes_jornada_nocturna integer DEFAULT 0;

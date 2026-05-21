@@ -235,7 +235,7 @@ export async function generarPDFFichaEnBlanco(
   doc.setFont("helvetica", "bold");
   doc.text("Número de estudiantes en:", margin + 2, y);
   y += 5;
-  const niveles = ["Preescolar", "Básica primaria", "Básica secundaria", "Media", "Ciclo complementario"];
+  const niveles = ["Preescolar", "Básica primaria", "Básica secundaria", "Media", "Ciclo complementario", "Jornada Nocturna"];
   const colW = contentW / niveles.length;
   doc.setFontSize(7);
   niveles.forEach((n, i) => {
