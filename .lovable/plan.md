@@ -1,35 +1,35 @@
-# Cosa 3 — Añadir jornada "Sabatina" a la Ficha RLT
+# Cosa 3 — Ajouter la jornada « Sabatina » à la Ficha RLT
 
 ## Constat
 
-Las opciones actuales de **Jornadas de la IE** en la ficha son: Mañana, Tarde, **Nocturna**, Única.
-→ "Nocturna" ya existe. Solo falta agregar **Sabatina**.
+Les options actuelles de **Jornadas de la IE** dans la ficha sont : Mañana, Tarde, **Nocturna**, Única.
+→ « Nocturna » existe déjà. Il ne reste qu'à ajouter **Sabatina**.
 
-## Cambios
+## Changements
 
-1. **Formulario directivo** — `src/pages/FichaRLT.tsx` (línea 1579)
-   Añadir opción `{ value: "Sabatina", label: "Sabatina" }`.
+1. **Formulaire directivo** — `src/pages/FichaRLT.tsx` (ligne 1579)
+   Ajouter l'option `{ value: "Sabatina", label: "Sabatina" }`.
 
-2. **Formulario admin** — `src/pages/AdminEditFicha.tsx` (línea 1193)
-   Añadir la misma opción.
+2. **Formulaire admin** — `src/pages/AdminEditFicha.tsx` (ligne 1193)
+   Ajouter la même option.
 
-3. **PDF lleno (Reporte ficha)** — `src/utils/pdfGenerator.ts`
-   No requiere cambios: ya imprime el array `jornadas` unido con coma. Sabatina aparecerá automáticamente.
+3. **PDF rempli (Rapport ficha)** — `src/utils/pdfGenerator.ts`
+   Aucun changement nécessaire : il imprime déjà le tableau `jornadas` joint par des virgules. « Sabatina » apparaîtra automatiquement.
 
-4. **PDF en blanco** — `src/utils/blankFichaPdfGenerator.ts`
-   Verificar si lista las opciones; si solo deja casilla vacía, no requiere cambios. (A confirmar al editar.)
+4. **PDF vierge** — `src/utils/blankFichaPdfGenerator.ts`
+   Vérifier si les options sont listées ; si seule une case vide est laissée, aucun changement n'est nécessaire. (À confirmer lors de l'édition.)
 
-5. **Documentación de campos** — `src/utils/fichaFieldsPdfGenerator.ts` (línea 70)
-   Actualizar regla: `Mañana / Tarde / Nocturna / Sabatina / Única`.
+5. **Documentation des champs** — `src/utils/fichaFieldsPdfGenerator.ts` (ligne 70)
+   Mettre à jour la règle : `Mañana / Tarde / Nocturna / Sabatina / Única`.
 
 ## Hors-scope
 
-- BDD: el campo `jornadas` es `text[]`, no hay enum a migrar. 🗄️ Ningún cambio SQL.
-- ⚙️ Backend Express: ningún cambio.
-- 🖥️ Frontend: los 5 ajustes listados arriba.
+- BDD : le champ `jornadas` est de type `text[]`, il n'y a pas d'enum à migrer. 🗄️ Aucun changement SQL.
+- ⚙️ Backend Express : aucun changement.
+- 🖥️ Frontend : les 5 ajustements listés ci-dessus.
 
-## Acciones Render
+## Actions Render
 
-- 🖥️ **Site statique (Frontend)**: redeploy automático tras merge.
-- ⚙️ **Web Service (Backend Express)**: ningún cambio.
-- 🗄️ **Base de datos (SQL manual)**: ninguno.
+- 🖥️ **Site statique (Frontend)** : redeploy automatique après merge.
+- ⚙️ **Web Service (Backend Express)** : aucun changement.
+- 🗄️ **Base de données (SQL manuel)** : aucun.
