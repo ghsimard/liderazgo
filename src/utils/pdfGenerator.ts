@@ -279,8 +279,8 @@ export async function generarPDFFicha(
   const estudLabel = "Número de estudiantes en:";
   doc.text(estudLabel, margin + 2, y);
   const estudLabelW = doc.getTextWidth(estudLabel) + 2;
-  const niveles = ["Preescolar", "Básica primaria", "Básica secundaria", "Media", "Ciclo complementario"];
-  const nivelesKeys = ["estudiantes_preescolar", "estudiantes_primaria", "estudiantes_basica_secundaria", "estudiantes_media", "estudiantes_ciclo_complementario"];
+  const niveles = ["Preescolar", "Básica primaria", "Básica secundaria", "Media", "Ciclo complementario", "Jornada Nocturna"];
+  const nivelesKeys = ["estudiantes_preescolar", "estudiantes_primaria", "estudiantes_basica_secundaria", "estudiantes_media", "estudiantes_ciclo_complementario", "estudiantes_jornada_nocturna"];
   // Calculate column widths based on text + padding
   doc.setFontSize(6.5);
   const colPad = 3;
