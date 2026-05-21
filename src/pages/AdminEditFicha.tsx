@@ -304,6 +304,7 @@ function fichaToFormData(f: Ficha): FormData {
     estudiantes_basica_secundaria: s((f as any).estudiantes_basica_secundaria),
     estudiantes_media: s((f as any).estudiantes_media),
     estudiantes_ciclo_complementario: s(f.estudiantes_ciclo_complementario),
+    estudiantes_jornada_nocturna: s((f as any).estudiantes_jornada_nocturna),
   };
 }
 
