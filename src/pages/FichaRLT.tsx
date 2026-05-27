@@ -1440,12 +1440,15 @@ export default function FichaRLTForm() {
                     className="form-input floating-input opacity-75 cursor-not-allowed"
                   />
                 ) : regionSeleccionada === "Quibdó 2026" ? (
-                  <input
+                  <FormSelect
                     id="cargo_actual"
-                    value={genderizeRole("Rector/a", watch("genero"))}
-                    readOnly
-                    disabled
-                    className="form-input floating-input opacity-75 cursor-not-allowed"
+                    {...register("cargo_actual")}
+                    hasError={!!err("cargo_actual")}
+                    options={[
+                      { value: "Rector/a", label: genderizeRole("Rector/a", watch("genero")) },
+                      { value: "Director/a rural", label: genderizeRole("Director/a rural", watch("genero")) },
+                      { value: "Director/a de núcleo", label: genderizeRole("Director/a de núcleo", watch("genero")) },
+                    ]}
                   />
                 ) : (
                   <FormSelect
