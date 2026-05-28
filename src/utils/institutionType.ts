@@ -11,3 +11,17 @@ export function isCentroEducativo(nombreIe: string | null | undefined): boolean 
   const n = nombreIe.trim().toLowerCase();
   return n.startsWith("ce ") || n.startsWith("centro educativo");
 }
+
+/**
+ * Devuelve true solo si la institución es un Centro Educativo
+ * Y pertenece a la región/entidad territorial de Quibdó.
+ * Usado para excluir el formulario "Estudiante" únicamente en CE de Quibdó.
+ */
+export function isQuibdoCentroEducativo(
+  nombreIe: string | null | undefined,
+  regionOrEntidad: string | null | undefined,
+): boolean {
+  if (!isCentroEducativo(nombreIe)) return false;
+  const r = (regionOrEntidad ?? "").toLowerCase();
+  return r.includes("quibdó") || r.includes("quibdo");
+}
