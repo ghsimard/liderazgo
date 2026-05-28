@@ -378,7 +378,7 @@ export async function generarReporte360PDF(
   const legendItems = [
     { color: COLOR_DIRECTIVO, label: genderizeRole("Directivo Par", g) },
     { color: COLOR_INTERNOS, label: genderizeRole("Administrativo(a), coordinador(a) y docente", g) },
-    { color: COLOR_EXTERNOS, label: "Acudiente y estudiante" },
+    { color: COLOR_EXTERNOS, label: isCE ? "Acudiente" : "Acudiente y estudiante" },
   ];
   // Calculate total legend width first
   let totalLegendW = 0;
@@ -545,7 +545,7 @@ export async function generarReporte360PDF(
   doc.setFont("helvetica", "normal");
   const obsLegendItems = [
     { color: [30, 30, 30] as [number, number, number], label: genderizeRole("Administrativo(a), coordinador(a) y docente", g) },
-    { color: [128, 128, 128] as [number, number, number], label: "Acudiente y estudiante" },
+    { color: [128, 128, 128] as [number, number, number], label: isCE ? "Acudiente" : "Acudiente y estudiante" },
   ];
   let totalObsLegW = 0;
   obsLegendItems.forEach((item, i) => {
