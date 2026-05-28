@@ -8,6 +8,7 @@ import {
   COMPETENCY_DOMAIN_MARK,
 } from "@/data/reporte360Phrases";
 import { loadImageAsBase64, getImageNaturalSize, logoDims, COVER_LOGO_H, FOOTER_COSMO_H } from "@/utils/pdfLogoHelper";
+import { isCentroEducativo } from "@/utils/institutionType";
 
 // ── Color constants (grayscale for black-ink-only printing) ──
 const COLOR_DIRECTIVO: [number, number, number] = [30, 30, 30];       // near-black
