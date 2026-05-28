@@ -19,7 +19,7 @@ import {
   type LoadedLogos,
 } from "@/utils/pdfLogoHelper";
 import { useAppImages } from "@/hooks/useAppImages";
-import { isCentroEducativo } from "@/utils/institutionType";
+import { isQuibdoCentroEducativo } from "@/utils/institutionType";
 
 
 /** Required counts per tipo_formulario */
@@ -34,9 +34,9 @@ const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> =
 
 const ROLE_KEYS = Object.keys(ROLE_LIMITS);
 
-/** Para Centros Educativos los estudiantes son demasiado jóvenes: se excluye "estudiante". */
-const roleKeysFor = (institucion: string): string[] =>
-  isCentroEducativo(institucion) ? ROLE_KEYS.filter((k) => k !== "estudiante") : ROLE_KEYS;
+/** Para Centros Educativos de Quibdó los estudiantes son demasiado jóvenes: se excluye "estudiante". */
+const roleKeysFor = (institucion: string, region: string): string[] =>
+  isQuibdoCentroEducativo(institucion, region) ? ROLE_KEYS.filter((k) => k !== "estudiante") : ROLE_KEYS;
 
 interface DirectivoRow {
   nombre: string;
@@ -107,7 +107,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
         }
       });
 
-      const keysForRow = roleKeysFor(d.institucion);
+      const keysForRow = roleKeysFor(d.institucion, d.region);
       const incomplete = keysForRow.some((k) => counts[k] < ROLE_LIMITS[k].min);
       return { ...d, counts, incomplete };
     });
@@ -300,7 +300,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
 
         let xPos = margin + colName + colInst;
         const midY = y + actualRowH / 2 + 1.5;
-        const rowKeys = roleKeysFor(r.institucion);
+        const rowKeys = roleKeysFor(r.institucion, r.region);
         ROLE_KEYS.forEach((k) => {
           if (!rowKeys.includes(k)) {
             doc.setTextColor(150, 150, 150);
@@ -454,7 +454,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                     <TableCell className="font-medium text-sm">{r.nombre}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{r.institucion}</TableCell>
                     {ROLE_KEYS.map((k) => {
-                      const allowed = roleKeysFor(r.institucion).includes(k);
+                      const allowed = roleKeysFor(r.institucion, r.region).includes(k);
                       if (!allowed) {
                         return (
                           <TableCell key={k} className="text-center">

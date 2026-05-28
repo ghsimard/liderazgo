@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ShareEncuestaDialog from "@/components/ShareEncuestaDialog";
 import AutoevalViewerDialog from "@/components/AutoevalViewerDialog";
-import { isCentroEducativo } from "@/utils/institutionType";
+import { isQuibdoCentroEducativo } from "@/utils/institutionType";
 import {
   ArrowLeft,
   Bell,
@@ -34,6 +34,7 @@ interface DirectivoInfo {
   email: string;
   cargo: string;
   cedula: string;
+  region: string;
 }
 
 interface Invitation {
@@ -121,6 +122,7 @@ export default function Encuesta360Hub() {
               : ficha.correo_personal || "",
             cargo: ficha.cargo_actual || "",
             cedula,
+            region: ficha.region || "",
           });
           await loadInvitations(cedula);
 
@@ -281,8 +283,8 @@ export default function Encuesta360Hub() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {formsBase.map((form) => {
-                  // Ocultar "Estudiante" para Centros Educativos
-                  if (form.tipo === "estudiante" && isCentroEducativo(directivoInfo?.institucion)) {
+                  // Ocultar "Estudiante" solo para Centros Educativos de Quibdó
+                  if (form.tipo === "estudiante" && isQuibdoCentroEducativo(directivoInfo?.institucion, directivoInfo?.region)) {
                     return null;
                   }
                   const count = formCounts[form.tipo] || 0;

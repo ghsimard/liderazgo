@@ -8,7 +8,7 @@ import {
   COMPETENCY_DOMAIN_MARK,
 } from "@/data/reporte360Phrases";
 import { loadImageAsBase64, getImageNaturalSize, logoDims, COVER_LOGO_H, FOOTER_COSMO_H } from "@/utils/pdfLogoHelper";
-import { isCentroEducativo } from "@/utils/institutionType";
+import { isQuibdoCentroEducativo } from "@/utils/institutionType";
 
 // ── Color constants (grayscale for black-ink-only printing) ──
 const COLOR_DIRECTIVO: [number, number, number] = [30, 30, 30];       // near-black
@@ -166,7 +166,7 @@ export async function generarReporte360PDF(
   y += 8;
 
   // Intro text — para Centros Educativos no se aplica formulario "estudiante"
-  const isCE = isCentroEducativo(data.directivo.institucion);
+  const isCE = isQuibdoCentroEducativo(data.directivo.institucion, data.directivo.entidadTerritorial);
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   const introTextForDoc = isCE
