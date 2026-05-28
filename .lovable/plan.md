@@ -1,51 +1,46 @@
+## 🗄️ Base de données — Merge staging → prod via pgAdmin
 
-## 🗄️ Base de données (Manual SQL via pgAdmin) — Import `_stg_einv`
+**Vérifié** : Les 12 colonnes de `encuesta_invitaciones` correspondent exactement à `_stg_einv`. Counts actuels : `stg_e360=13`, `stg_einv=2`, `prod_e360=554`, `prod_einv=148`.
 
-Le problème : `\copy` est une méta-commande **psql uniquement**, elle ne fonctionne pas dans l'éditeur SQL de pgAdmin (d'où `syntax error at or near "\"`). L'assistant Import/Export graphique de pgAdmin, lui, supporte l'option `NULL string`.
-
-### Étapes
-
-**1. Vider la table de staging** (onglet Query) :
-```sql
-TRUNCATE public._stg_einv;
-```
-
-**2. Lancer l'assistant Import** :
-- Dans l'arbre de gauche : `Databases` → `cosmo_rlt` → `Schemas` → `public` → `Tables` → clic droit sur **`_stg_einv`** → **Import/Export Data...**
-
-**3. Onglet "General"** :
-- **Import/Export** : `Import` (toggle)
-- **Filename** : `/Users/ghsimard/Desktop/einv_estudiante_CE.csv`
-- **Format** : `csv`
-- **Encoding** : `UTF8`
-
-**4. Onglet "Options"** :
-- **Header** : ✅ ON
-- **Delimiter** : `,`
-- **Quote** : `"`
-- **Escape** : `"`
-- **NULL String** : taper exactement `NULL` ← **clé du fix**
-
-**5. Onglet "Columns"** :
-- Sélectionner uniquement les 12 colonnes dans cet ordre (sans `created_at`) :
-  `id, token, directivo_cedula, directivo_nombre, institucion, email_destinatario, tipo_formulario, fase, sent_at, last_reminder_at, responded_at, access_count`
-
-**6. Cliquer "OK"** → l'import doit passer (lignes attendues = nombre de lignes du CSV - 1).
-
-### Vérification
+### SQL à exécuter dans pgAdmin (COSMO_RLT_Prod)
 
 ```sql
-SELECT COUNT(*) AS stg_einv FROM public._stg_einv;
-SELECT COUNT(*) FILTER (WHERE last_reminder_at IS NULL) AS nulls_reminder,
-       COUNT(*) FILTER (WHERE responded_at IS NULL)     AS nulls_responded
-FROM public._stg_einv;
+BEGIN;
+
+-- 1) Merge encuestas_360 (13 lignes staging)
+INSERT INTO public.encuestas_360
+SELECT * FROM public._stg_e360
+ON CONFLICT (id) DO NOTHING;
+
+-- 2) Merge encuesta_invitaciones (2 lignes staging)
+INSERT INTO public.encuesta_invitaciones (
+  id, token, directivo_cedula, directivo_nombre, institucion,
+  email_destinatario, tipo_formulario, fase, sent_at,
+  last_reminder_at, responded_at, access_count
+)
+SELECT
+  id, token, directivo_cedula, directivo_nombre, institucion,
+  email_destinatario, tipo_formulario, fase, sent_at,
+  last_reminder_at, responded_at, access_count
+FROM public._stg_einv
+ON CONFLICT (id) DO NOTHING;
+
+-- 3) Vérification post-merge (attendu : 567 et 150 si aucun doublon)
+SELECT 'prod_e360' AS t, COUNT(*) FROM public.encuestas_360
+UNION ALL SELECT 'prod_einv', COUNT(*) FROM public.encuesta_invitaciones;
+
+COMMIT;
 ```
 
-### Étape suivante (après succès des deux staging)
+**Note** : `ON CONFLICT (id) DO NOTHING` n'ajoute que les `id` manquants, ne remplace rien. Si tu préfères revoir les counts avant de valider, remplace `COMMIT;` par `ROLLBACK;` au premier essai.
 
-Merge des deux `_stg_*` vers les tables prod `encuestas_360` et `encuesta_invitaciones` avec `INSERT ... ON CONFLICT DO NOTHING` — je te fournirai le script une fois `_stg_einv` rempli.
+### Après validation (optionnel)
 
-### Note
+```sql
+-- Nettoyer les tables staging une fois confirmé
+DROP TABLE public._stg_e360;
+DROP TABLE public._stg_einv;
+```
 
-🖥️ Site statique (Frontend) : aucune modification.
-⚙️ Web Service (Backend Express) : aucune modification.
+### 🖥️ Site statique (Frontend) / ⚙️ Web Service (Backend Express)
+Aucun changement.
