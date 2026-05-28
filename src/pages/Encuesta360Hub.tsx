@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ShareEncuestaDialog from "@/components/ShareEncuestaDialog";
 import AutoevalViewerDialog from "@/components/AutoevalViewerDialog";
-import { isCentroEducativo } from "@/utils/institutionType";
+import { isQuibdoCentroEducativo } from "@/utils/institutionType";
 import {
   ArrowLeft,
   Bell,
