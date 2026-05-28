@@ -166,7 +166,7 @@ export async function generarReporte360PDF(
   y += 8;
 
   // Intro text — para Centros Educativos no se aplica formulario "estudiante"
-  const isCE = isCentroEducativo(data.directivo.institucion);
+  const isCE = isQuibdoCentroEducativo(data.directivo.institucion, data.directivo.entidadTerritorial);
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   const introTextForDoc = isCE
