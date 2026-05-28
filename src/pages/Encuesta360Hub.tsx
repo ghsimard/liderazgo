@@ -113,7 +113,6 @@ export default function Encuesta360Hub() {
       try {
         const { data } = await supabase.rpc("get_ficha_by_cedula", { p_cedula: cedula });
         if (data) {
-          const ficha = data as any;
           setDirectivoInfo({
             nombre: ficha.nombres_apellidos || "",
             institucion: ficha.nombre_ie || "",
@@ -122,6 +121,8 @@ export default function Encuesta360Hub() {
               : ficha.correo_personal || "",
             cargo: ficha.cargo_actual || "",
             cedula,
+            region: ficha.region || "",
+          });
           });
           await loadInvitations(cedula);
 
