@@ -19,7 +19,7 @@ import {
   type LoadedLogos,
 } from "@/utils/pdfLogoHelper";
 import { useAppImages } from "@/hooks/useAppImages";
-import { isCentroEducativo } from "@/utils/institutionType";
+import { isQuibdoCentroEducativo } from "@/utils/institutionType";
 
 
 /** Required counts per tipo_formulario */
@@ -34,9 +34,9 @@ const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> =
 
 const ROLE_KEYS = Object.keys(ROLE_LIMITS);
 
-/** Para Centros Educativos los estudiantes son demasiado jóvenes: se excluye "estudiante". */
-const roleKeysFor = (institucion: string): string[] =>
-  isCentroEducativo(institucion) ? ROLE_KEYS.filter((k) => k !== "estudiante") : ROLE_KEYS;
+/** Para Centros Educativos de Quibdó los estudiantes son demasiado jóvenes: se excluye "estudiante". */
+const roleKeysFor = (institucion: string, region: string): string[] =>
+  isQuibdoCentroEducativo(institucion, region) ? ROLE_KEYS.filter((k) => k !== "estudiante") : ROLE_KEYS;
 
 interface DirectivoRow {
   nombre: string;
