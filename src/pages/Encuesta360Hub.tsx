@@ -34,6 +34,7 @@ interface DirectivoInfo {
   email: string;
   cargo: string;
   cedula: string;
+  region: string;
 }
 
 interface Invitation {
