@@ -283,8 +283,8 @@ export default function Encuesta360Hub() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {formsBase.map((form) => {
-                  // Ocultar "Estudiante" para Centros Educativos
-                  if (form.tipo === "estudiante" && isCentroEducativo(directivoInfo?.institucion)) {
+                  // Ocultar "Estudiante" solo para Centros Educativos de Quibdó
+                  if (form.tipo === "estudiante" && isQuibdoCentroEducativo(directivoInfo?.institucion, directivoInfo?.region)) {
                     return null;
                   }
                   const count = formCounts[form.tipo] || 0;
