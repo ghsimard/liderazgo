@@ -165,10 +165,17 @@ export async function generarReporte360PDF(
   doc.text("ENCUESTA 360° PONDERADA", pageW / 2, y, { align: "center" });
   y += 8;
 
-  // Intro text
+  // Intro text — para Centros Educativos no se aplica formulario "estudiante"
+  const isCE = isCentroEducativo(data.directivo.institucion);
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  const introLines = doc.splitTextToSize(INTRO_TEXT, contentW);
+  const introTextForDoc = isCE
+    ? INTRO_TEXT.replace(
+        'docentes, estudiantes, administrativos, directivos docentes y acudientes',
+        'docentes, administrativos, directivos docentes y acudientes',
+      )
+    : INTRO_TEXT;
+  const introLines = doc.splitTextToSize(introTextForDoc, contentW);
   doc.text(introLines, margin, y, { align: "left", maxWidth: contentW });
   y += introLines.length * 4.5 + 4;
 
