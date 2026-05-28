@@ -8,6 +8,7 @@ import {
   COMPETENCY_DOMAIN_MARK,
 } from "@/data/reporte360Phrases";
 import { loadImageAsBase64, getImageNaturalSize, logoDims, COVER_LOGO_H, FOOTER_COSMO_H } from "@/utils/pdfLogoHelper";
+import { isCentroEducativo } from "@/utils/institutionType";
 
 // ── Color constants (grayscale for black-ink-only printing) ──
 const COLOR_DIRECTIVO: [number, number, number] = [30, 30, 30];       // near-black
@@ -164,10 +165,17 @@ export async function generarReporte360PDF(
   doc.text("ENCUESTA 360° PONDERADA", pageW / 2, y, { align: "center" });
   y += 8;
 
-  // Intro text
+  // Intro text — para Centros Educativos no se aplica formulario "estudiante"
+  const isCE = isCentroEducativo(data.directivo.institucion);
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  const introLines = doc.splitTextToSize(INTRO_TEXT, contentW);
+  const introTextForDoc = isCE
+    ? INTRO_TEXT.replace(
+        'docentes, estudiantes, administrativos, directivos docentes y acudientes',
+        'docentes, administrativos, directivos docentes y acudientes',
+      )
+    : INTRO_TEXT;
+  const introLines = doc.splitTextToSize(introTextForDoc, contentW);
   doc.text(introLines, margin, y, { align: "left", maxWidth: contentW });
   y += introLines.length * 4.5 + 4;
 
@@ -370,7 +378,7 @@ export async function generarReporte360PDF(
   const legendItems = [
     { color: COLOR_DIRECTIVO, label: genderizeRole("Directivo Par", g) },
     { color: COLOR_INTERNOS, label: genderizeRole("Administrativo(a), coordinador(a) y docente", g) },
-    { color: COLOR_EXTERNOS, label: "Acudiente y estudiante" },
+    { color: COLOR_EXTERNOS, label: isCE ? "Acudiente" : "Acudiente y estudiante" },
   ];
   // Calculate total legend width first
   let totalLegendW = 0;
@@ -537,7 +545,7 @@ export async function generarReporte360PDF(
   doc.setFont("helvetica", "normal");
   const obsLegendItems = [
     { color: [30, 30, 30] as [number, number, number], label: genderizeRole("Administrativo(a), coordinador(a) y docente", g) },
-    { color: [128, 128, 128] as [number, number, number], label: "Acudiente y estudiante" },
+    { color: [128, 128, 128] as [number, number, number], label: isCE ? "Acudiente" : "Acudiente y estudiante" },
   ];
   let totalObsLegW = 0;
   obsLegendItems.forEach((item, i) => {

@@ -1,39 +1,108 @@
+# Plan: excluir "Estudiante" 360° para Centros Educativos
+
 ## Objectif
 
-Pour Quibdó 2026, autoriser trois rôles dans le champ "Cargo actual" au lieu de forcer "Rector/a" :
-- Rector/a
-- Director/a rural
-- Director/a de núcleo
+Pour les institutions de type **Centro Educativo (CE)** (élèves trop jeunes), le formulaire `estudiante` (Entrada et Salida) ne doit jamais être :
+- proposé au directeur,
+- comptabilisé comme attendu / manquant dans le suivi admin,
+- affiché comme groupe d'observateurs dans les rapports 360°.
 
-## Modification
+Détection CE via `isCentroEducativo(nombre_ie)` existant (préfixes "CE " ou "Centro Educativo", insensible à la casse).
 
-**Fichier :** `src/pages/FichaRLT.tsx` (lignes 1442-1462)
+En complément, purge des éventuelles réponses/invitations "estudiante" déjà saisies pour un CE sur la **DB de production Render**.
 
-Remplacer la branche `regionSeleccionada === "Quibdó 2026"` (input désactivé forçant Rector/a) par un `FormSelect` limité à ces trois options. La branche "autres régions" garde ses 4 options (incluant Coordinador/a).
+---
 
-```tsx
-) : regionSeleccionada === "Quibdó 2026" ? (
-  <FormSelect
-    id="cargo_actual"
-    {...register("cargo_actual")}
-    hasError={!!err("cargo_actual")}
-    options={[
-      { value: "Rector/a", label: genderizeRole("Rector/a", watch("genero")) },
-      { value: "Director/a rural", label: genderizeRole("Director/a rural", watch("genero")) },
-      { value: "Director/a de núcleo", label: genderizeRole("Director/a de núcleo", watch("genero")) },
-    ]}
-  />
-) : (
-  // ... 4 options existantes inchangées
-)
+### 🖥️ Site statique (Frontend)
+
+1. **`src/pages/Encuesta360Hub.tsx`** — ✅ déjà fait (bouton Estudiante masqué pour les CE).
+
+2. **`src/components/admin/AdminEncuestaMonitor.tsx`**
+   - Construire dynamiquement `roleKeysFor(nombreIe)` qui retire `"estudiante"` de `ROLE_KEYS` quand `isCentroEducativo(nombreIe)` est vrai.
+   - Utiliser ce tableau dans :
+     - le calcul `incomplete` (~ligne 104) — un CE sans réponse "estudiante" n'est plus marqué Pendiente.
+     - l'affichage de la table HTML.
+     - la génération PDF (~lignes 298–309) — la cellule Estudiante affiche `"—"` (n/a) pour les CE au lieu de `"Pend."`.
+
+3. **`src/utils/reporte360PdfGenerator.ts`**
+   - Détecter CE via `nombre_ie` du rapport.
+   - Texte d'intro (~ligne 26) : pour un CE, mention "acudientes" uniquement (sans "estudiantes").
+   - Légendes des deux graphiques (lignes 373 et 540) : `"Acudiente y estudiante"` → `"Acudiente"` quand CE.
+
+4. **`src/utils/reporte360Calculator.ts`** — aucun changement requis. `externosScore` ignore déjà gracieusement un rôle sans réponses.
+
+### Hors portée (laissé tel quel)
+
+- `AdminEncuestas360Tab.tsx`, `AdminInvitacionesTab.tsx`, `AdminReviewsTab.tsx` : libellés d'affichage des réponses existantes — pas de perte d'information.
+- `ShareEncuestaDialog.tsx` : ne peut plus s'ouvrir pour "estudiante" sur un CE (bouton masqué dans le Hub).
+- `EvaluadorEncuestasView.tsx` : ne référence pas `estudiante`.
+
+### ⚙️ Web Service (Backend Express)
+
+Aucune modification.
+
+### 🗄️ Base de données — **DB Render (production)** — SQL manuel
+
+À exécuter directement sur la base Postgres de Render (les données ne sont pas sur la DB Supabase Lovable, qui est vide).
+
+**Étape 1 — Audit (lecture, à exécuter avant suppression) :**
+
+```sql
+-- Combien de réponses "estudiante" pour des CE ?
+SELECT institucion_educativa, fase, COUNT(*) AS n
+FROM public.encuestas_360
+WHERE tipo_formulario = 'estudiante'
+  AND (
+    LOWER(TRIM(institucion_educativa)) LIKE 'ce %'
+    OR LOWER(TRIM(institucion_educativa)) LIKE 'centro educativo%'
+  )
+GROUP BY institucion_educativa, fase
+ORDER BY institucion_educativa, fase;
+
+-- Combien d'invitations "estudiante" pour des CE ?
+SELECT institucion, fase, COUNT(*) AS n
+FROM public.encuesta_invitaciones
+WHERE tipo_formulario = 'estudiante'
+  AND (
+    LOWER(TRIM(institucion)) LIKE 'ce %'
+    OR LOWER(TRIM(institucion)) LIKE 'centro educativo%'
+  )
+GROUP BY institucion, fase
+ORDER BY institucion, fase;
 ```
 
-## Actions de déploiement
+**Étape 2 — Suppression (dans une transaction, après validation des comptes) :**
 
-- 🖥️ **Site statique (Frontend)** : déploiement auto via Lovable. Aucune action manuelle.
-- ⚙️ **Web Service (Backend Express)** : aucune action.
-- 🗄️ **Base de données** : aucune action (le champ `cargo_actual` accepte déjà ces valeurs).
+```sql
+BEGIN;
 
-## Vérifier également ?
+DELETE FROM public.encuestas_360
+WHERE tipo_formulario = 'estudiante'
+  AND (
+    LOWER(TRIM(institucion_educativa)) LIKE 'ce %'
+    OR LOWER(TRIM(institucion_educativa)) LIKE 'centro educativo%'
+  );
 
-Souhaites-tu que j'applique la même restriction (3 options au lieu de 4, donc retrait de "Coordinador/a") dans `src/pages/AdminEditFicha.tsx` pour les fiches Quibdó éditées côté admin ? Sinon je touche uniquement `FichaRLT.tsx`.
+DELETE FROM public.encuesta_invitaciones
+WHERE tipo_formulario = 'estudiante'
+  AND (
+    LOWER(TRIM(institucion)) LIKE 'ce %'
+    OR LOWER(TRIM(institucion)) LIKE 'centro educativo%'
+  );
+
+-- Vérifier les compteurs renvoyés par psql avant de valider
+COMMIT;
+-- (ROLLBACK; si les comptes ne correspondent pas à l'audit)
+```
+
+Requête idempotente : ré-exécutable sans risque (supprimera 0 ligne après le premier passage).
+
+---
+
+## Validation
+
+- **Directeur CE** sur le Hub 360° → bouton Estudiante absent (déjà OK).
+- **Admin → Encuestas 360 → Monitor** : un CE sans réponse "estudiante" n'apparaît plus en "Pendiente" ; cellule "—". PDF cohérent.
+- **PDF Reporte 360° d'un CE** : légendes affichent "Acudiente" (sans "y estudiante") ; intro sans "estudiantes".
+- **PDF d'une IE classique** : comportement inchangé.
+- **DB Render** : les deux requêtes d'audit renvoient 0 ligne après la purge.
