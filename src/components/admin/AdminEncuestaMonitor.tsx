@@ -19,6 +19,8 @@ import {
   type LoadedLogos,
 } from "@/utils/pdfLogoHelper";
 import { useAppImages } from "@/hooks/useAppImages";
+import { isCentroEducativo } from "@/utils/institutionType";
+
 
 /** Required counts per tipo_formulario */
 const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> = {
@@ -31,6 +33,10 @@ const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> =
 };
 
 const ROLE_KEYS = Object.keys(ROLE_LIMITS);
+
+/** Para Centros Educativos los estudiantes son demasiado jóvenes: se excluye "estudiante". */
+const roleKeysFor = (institucion: string): string[] =>
+  isCentroEducativo(institucion) ? ROLE_KEYS.filter((k) => k !== "estudiante") : ROLE_KEYS;
 
 interface DirectivoRow {
   nombre: string;
@@ -101,7 +107,8 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
         }
       });
 
-      const incomplete = ROLE_KEYS.some((k) => counts[k] < ROLE_LIMITS[k].min);
+      const keysForRow = roleKeysFor(d.institucion);
+      const incomplete = keysForRow.some((k) => counts[k] < ROLE_LIMITS[k].min);
       return { ...d, counts, incomplete };
     });
 
