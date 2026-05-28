@@ -300,7 +300,16 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
 
         let xPos = margin + colName + colInst;
         const midY = y + actualRowH / 2 + 1.5;
+        const rowKeys = roleKeysFor(r.institucion);
         ROLE_KEYS.forEach((k) => {
+          if (!rowKeys.includes(k)) {
+            doc.setTextColor(150, 150, 150);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(6.5);
+            doc.text("—", xPos + colRole / 2, midY, { align: "center" });
+            xPos += colRole;
+            return;
+          }
           const count = r.counts[k] || 0;
           const min = ROLE_LIMITS[k].min;
           const ok = count >= min;
@@ -445,6 +454,16 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                     <TableCell className="font-medium text-sm">{r.nombre}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{r.institucion}</TableCell>
                     {ROLE_KEYS.map((k) => {
+                      const allowed = roleKeysFor(r.institucion).includes(k);
+                      if (!allowed) {
+                        return (
+                          <TableCell key={k} className="text-center">
+                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold bg-muted text-muted-foreground" title="No aplica para Centros Educativos">
+                              —
+                            </span>
+                          </TableCell>
+                        );
+                      }
                       const count = r.counts[k] || 0;
                       const min = ROLE_LIMITS[k].min;
                       const ok = count >= min;
