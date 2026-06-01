@@ -81,6 +81,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
         const { data } = await supabase
           .from("encuestas_ambiente_escolar")
           .select("institucion_educativa, tipo_formulario, cohorte_id, fase")
+          .order("id")
           .range(from, from + PAGE_SIZE - 1);
         if (data && data.length > 0) {
           allSubmissions.push(...(data as Submission[]));

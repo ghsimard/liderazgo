@@ -359,6 +359,10 @@ router.get("/:table", async (req: Request, res: Response) => {
         return `${sanitizeIdentifier(col)} ${dir === "desc" ? "DESC" : "ASC"}`;
       });
       orderClause = ` ORDER BY ${orderParts.join(", ")}`;
+    } else if (req.query.from || req.query.limit) {
+      // Stable order fallback : sans ORDER BY, OFFSET/LIMIT en pagination peut sauter/dupliquer
+      // des lignes (ordre PostgreSQL non garanti). ctid existe sur toutes les tables.
+      orderClause = ` ORDER BY ctid`;
     }
 
     // Limit & Range — apply a hard cap to prevent OOM on accidental full-table scans
