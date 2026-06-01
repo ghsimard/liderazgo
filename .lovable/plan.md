@@ -1,59 +1,44 @@
-# Restreindre l'exclusion « Estudiante » aux CE de Quibdó
+## Problème
 
-Actuellement, le formulaire **Estudiante** (Encuesta 360°) est masqué pour **tous** les Centros Educativos (CE), peu importe la région. La règle correcte : exclure uniquement les CE de la région **Quibdó**. Les CE d'Oriente (ex. « Centro Educativo Rural Monseñor… ») doivent à nouveau voir/recevoir le formulaire Estudiante.
+Dans **Admin → Ambiente Escolar → Monitoreo**, seules les cohortes de **Quibdó 2026** et **Oriente 2026** apparaissent. Les cohortes **Rionegro 2025, Itagüí 2025 et Medellín 2025** sont absentes alors que la base de données contient bien leurs réponses :
 
-## 🖥️ Site statique (Frontend) — seuls changements requis
+| Cohorte | Docentes | Estudiantes | Acudientes |
+|---|---|---|---|
+| Rionegro 2025 | 456 | 1 087 | 970 |
+| Itagüí 2025 | 255 | 668 | 1 500 |
+| Medellín 2025 | 1 967 | 5 285 | 5 427 |
 
-### 1. `src/utils/institutionType.ts` — nouvelle fonction
-Ajouter un helper qui combine le test CE + région :
+## Cause
+
+`src/components/admin/AdminAmbienteMonitorTab.tsx` charge les cohortes avec un filtre `.gte("year", 2026)`, ce qui exclut explicitement toutes les cohortes 2025.
+
 ```ts
-export function isQuibdoCentroEducativo(
-  nombreIe: string | null | undefined,
-  regionOrEntidad: string | null | undefined
-): boolean {
-  if (!isCentroEducativo(nombreIe)) return false;
-  const r = (regionOrEntidad ?? "").toLowerCase();
-  return r.includes("quibdó") || r.includes("quibdo");
-}
+supabase.from("ae_cohortes")
+  .select("...")
+  .gte("year", 2026)   // ← exclut 2025
 ```
-On garde `isCentroEducativo` inchangé (utilisé ailleurs pour des libellés/rôles).
 
-### 2. `src/pages/Encuesta360Hub.tsx` — hub directivo
-- Étendre `DirectivoInfo` avec `region: string`.
-- Lire `ficha.region` lors du `setDirectivoInfo` (ligne ~116).
-- Remplacer la condition d'exclusion (ligne 285) :
-  ```ts
-  if (form.tipo === "estudiante"
-      && isQuibdoCentroEducativo(directivoInfo?.institucion, directivoInfo?.region)) {
-    return null;
-  }
-  ```
+## Correctif (frontend uniquement)
 
-### 3. `src/components/admin/AdminEncuestaMonitor.tsx` — monitoring admin
-La ligne 39 utilise déjà `institucion` ; la `region` est déjà chargée par ligne dans `rows`. Modifier :
-```ts
-const roleKeysFor = (institucion: string, region: string): string[] =>
-  isQuibdoCentroEducativo(institucion, region)
-    ? ROLE_KEYS.filter((k) => k !== "estudiante")
-    : ROLE_KEYS;
-```
-Et adapter les 2 appels (`roleKeysFor(d.institucion, d.region)` ligne 110, `roleKeysFor(r.institucion, r.region)` ligne 303).
+1. **`AdminAmbienteMonitorTab.tsx`** — retirer le filtre `.gte("year", 2026)` pour charger toutes les cohortes (tri déjà fait par `year DESC` puis `nombre`, donc 2026 apparaîtra en haut du sélecteur).
+2. **Mapping région → entidad territorial** (`etMap`) — étendre pour que les opérateurs régionaux 2025 voient leurs cohortes :
+   ```ts
+   const etMap: Record<string, string> = {
+     "Oriente 2026": "Antioquia",
+     "Quibdó 2026": "Quibdó",
+     "Rionegro 2025": "Rionegro",
+     "Itagüí 2025": "Itagüí",
+     "Medellín 2025": "Medellín",
+   };
+   ```
+3. **Aucun changement SQL / backend.** Les données sont déjà présentes dans `ae_cohortes`, `ae_cohorte_instituciones` et `encuestas_ambiente_escolar`.
 
-### 4. `src/utils/reporte360PdfGenerator.ts` — texte d'intro du PDF
-Ligne 169 : remplacer `isCentroEducativo(data.directivo.institucion)` par
-```ts
-isQuibdoCentroEducativo(data.directivo.institucion, data.directivo.entidadTerritorial)
-```
-(et mettre à jour l'import). `entidadTerritorial` vaut « Quibdó » pour cette région.
+## Vérification
 
-## ⚙️ Web Service (Backend Express)
-Aucun changement — la logique est 100 % côté frontend (pas de filtre serveur sur le tipo « estudiante »).
+Après le correctif, le sélecteur "Cohorte" doit lister les 5 cohortes et afficher les compteurs correspondants (≈ 1 500 / 2 400 / 12 700 réponses pour Rionegro / Itagüí / Medellín).
 
-## 🗄️ Base de données
-Aucun changement — pas de migration, pas de SQL manuel. Les données existantes (réponses Estudiante déjà saisies pour des CE d'Oriente, s'il y en a) restent valides.
+## Actions par environnement
 
-## Vérification après implémentation
-1. Connecté comme directif d'un CE d'**Oriente** → l'option « Estudiante » doit **réapparaître** dans le hub.
-2. Connecté comme directif d'un CE de **Quibdó** → l'option « Estudiante » reste masquée.
-3. Monitor admin filtré par région : les CE d'Oriente doivent à nouveau compter la ligne Estudiante dans les quotas ; ceux de Quibdó non.
-4. PDF Reporte 360° d'un CE d'Oriente : le paragraphe d'intro mentionne à nouveau « estudiantes ».
+- 🖥️ **Site statique (Frontend)** : modifier `AdminAmbienteMonitorTab.tsx` (filtre + `etMap`).
+- ⚙️ **Web Service (Backend Express)** : aucune action.
+- 🗄️ **Base de données (SQL manuel)** : aucune action — les cohortes et réponses 2025 existent déjà.

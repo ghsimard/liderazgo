@@ -67,7 +67,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
 
       // Fetch cohortes, cohorte institutions, fichas in parallel
       const [cohortesRes, instRes, fichasRes] = await Promise.all([
-        supabase.from("ae_cohortes").select("id, nombre, entidad_territorial, year").gte("year", 2026).order("year", { ascending: false }).order("nombre"),
+        supabase.from("ae_cohortes").select("id, nombre, entidad_territorial, year").order("year", { ascending: false }).order("nombre"),
         supabase.from("ae_cohorte_instituciones").select("cohorte_id, institucion_educativa"),
         supabase.from("fichas_rlt").select("nombre_ie, nombres_apellidos, correo_personal, correo_institucional, celular_personal, telefono_ie, prefiere_correo, cargo_actual, region"),
       ]);
@@ -109,7 +109,13 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
   const visibleCohortes = useMemo(() => {
     if (!allowedRegions?.length) return cohortes;
     // Map region names to entidad_territorial for filtering
-    const etMap: Record<string, string> = { "Oriente 2026": "Antioquia", "Quibdó 2026": "Quibdó" };
+    const etMap: Record<string, string> = {
+      "Oriente 2026": "Antioquia",
+      "Quibdó 2026": "Quibdó",
+      "Rionegro 2025": "Rionegro",
+      "Itagüí 2025": "Itagüí",
+      "Medellín 2025": "Medellín",
+    };
     const allowedETs = allowedRegions.map(r => etMap[r] || r);
     return cohortes.filter(c => allowedETs.includes(c.entidad_territorial));
   }, [cohortes, allowedRegions]);
