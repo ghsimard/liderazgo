@@ -49,8 +49,20 @@ export default function AdminSatisfaccionStats({ regions, allowedRegions }: { re
   const [filterType, setFilterType] = useState<string>("intensivo");
   const [filterModule, setFilterModule] = useState<string>("all");
   const [filterRegion, setFilterRegion] = useState<string>(allowedRegions?.length === 1 ? allowedRegions[0] : "all");
+  const [formDef, setFormDef] = useState<SatisfaccionFormDef | undefined>(
+    SATISFACCION_FORMS["intensivo"] as SatisfaccionFormDef
+  );
 
   const isAsistencia = filterType === "asistencia";
+
+  // Load module-specific form definition (cascade: specific → global → static default)
+  useEffect(() => {
+    if (isAsistencia) return;
+    const modForLookup = filterModule === "all" ? null : parseInt(filterModule, 10);
+    loadFormDefinition(filterType, modForLookup, supabase)
+      .then((def) => setFormDef(def))
+      .catch(() => setFormDef(SATISFACCION_FORMS[filterType] as SatisfaccionFormDef));
+  }, [filterType, filterModule, isAsistencia]);
 
   const fetchResponses = async () => {
     if (isAsistencia) { setLoading(false); return; }
@@ -66,7 +78,6 @@ export default function AdminSatisfaccionStats({ regions, allowedRegions }: { re
 
   useEffect(() => { fetchResponses(); }, [filterType, filterModule, filterRegion]);
 
-  const formDef = SATISFACCION_FORMS[filterType] as SatisfaccionFormDef | undefined;
   const totalResponses = responses.length;
 
   // ── Compute statistics ──
