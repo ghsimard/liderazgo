@@ -51,10 +51,30 @@ function extractCteNames(sql: string): Set<string> {
   return out;
 }
 
+function stripFromInsideFunctions(sql: string): string {
+  // Remove SQL constructs where FROM is a keyword inside a function call, not a table source.
+  // EXTRACT(field FROM source), SUBSTRING(str FROM n FOR m), TRIM([leading|trailing|both] [chars] FROM str),
+  // OVERLAY(str PLACING ... FROM n FOR m), POSITION(sub IN str).
+  // Strategy: iteratively replace the inner contents of these function calls with a placeholder.
+  let out = sql;
+  // EXTRACT(... FROM ...)
+  out = out.replace(/\bEXTRACT\s*\([^()]*\)/gi, " __FUNC__ ");
+  // SUBSTRING(... FROM ... [FOR ...])
+  out = out.replace(/\bSUBSTRING\s*\([^()]*\)/gi, " __FUNC__ ");
+  // TRIM(... FROM ...)
+  out = out.replace(/\bTRIM\s*\([^()]*\)/gi, " __FUNC__ ");
+  // OVERLAY(... FROM ... [FOR ...])
+  out = out.replace(/\bOVERLAY\s*\([^()]*\)/gi, " __FUNC__ ");
+  // POSITION(... IN ...)
+  out = out.replace(/\bPOSITION\s*\([^()]*\)/gi, " __FUNC__ ");
+  return out;
+}
+
 function extractTableIdentifiers(sql: string): string[] {
+  const cleaned = stripFromInsideFunctions(sql);
   // Match FROM/JOIN <identifier> but NOT when the identifier is immediately followed by '(',
-  // which means it's a function call (e.g. EXTRACT(YEAR FROM age(...)), FROM date_trunc(...)).
-  const matches = sql.matchAll(/\b(?:FROM|JOIN)\s+"?([a-zA-Z_][a-zA-Z0-9_]*)"?(\s*\()?/gi);
+  // which means it's a function call (e.g. FROM date_trunc(...)).
+  const matches = cleaned.matchAll(/\b(?:FROM|JOIN)\s+"?([a-zA-Z_][a-zA-Z0-9_]*)"?(\s*\()?/gi);
   const out = new Set<string>();
   for (const m of matches) {
     if (m[2]) continue; // followed by '(' → function call, not a table
