@@ -367,6 +367,21 @@ export default function AdminAdHocReportTab() {
                 >
                   <FileDown className="w-3.5 h-3.5" /> PDF
                 </Button>
+                <Button
+                  variant={suggestZip ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleExportZip}
+                  disabled={!canExport}
+                  className="gap-1.5"
+                  title={suggestZip ? "Recomendado para volúmenes grandes" : "Descargar CSV + SQL + metadatos en un ZIP"}
+                >
+                  <FileArchive className="w-3.5 h-3.5" /> ZIP
+                  {suggestZip && (
+                    <Badge variant="secondary" className="ml-1 text-[9px] px-1 py-0 h-4">
+                      Recomendado
+                    </Badge>
+                  )}
+                </Button>
               </div>
             </div>
 
