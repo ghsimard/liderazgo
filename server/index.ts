@@ -37,6 +37,7 @@ import rubricaAnalysisRoutes from "./routes/rubrica-analysis";
 import githubRoutes from "./routes/github";
 import emailRoutes from "./routes/email";
 import generateSectionTextRoutes from "./routes/generate-section-text";
+import adhocReportRoutes from "./routes/adhoc-report";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3001", 10);
@@ -106,6 +107,7 @@ app.use("/api/rubrica-analysis", rubricaAnalysisRoutes);
 app.use("/api/github", githubRoutes);
 app.use("/api/email", emailRoutes);
 app.use("/api/generate-section-text", generateSectionTextRoutes);
+app.use("/api/adhoc-report", adhocReportRoutes);
 
 // ─── Public form submission (no auth required) ───────
 import { query as dbQuery } from "./db";

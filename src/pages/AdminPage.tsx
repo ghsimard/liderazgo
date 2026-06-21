@@ -53,6 +53,7 @@ import AdminAmbienteCampanasTab from "@/components/admin/AdminAmbienteCampanasTa
 import AdminAmbienteDeltaTab from "@/components/admin/AdminAmbienteDeltaTab";
 import AdminDashboardTab from "@/components/admin/AdminDashboardTab";
 import AdminCaracterizacionTab from "@/components/admin/AdminCaracterizacionTab";
+import AdminAdHocReportTab from "@/components/admin/AdminAdHocReportTab";
 
 
 interface FormItem {
@@ -223,6 +224,7 @@ function getHubTitle(activeTab: string): string {
   const titleMap: Record<string, string> = {
     dashboard: "Tablero de Control",
     formularios: "Enlaces",
+    "reportes-adhoc": "Reportes Ad Hoc",
     encuesta360: "Encuesta 360°", enlaces360: "Encuesta 360°", ponderaciones: "Encuesta 360°",
     encuestas360: "Encuesta 360°", encuestas360final: "Encuesta 360°",
     reportes360: "Encuesta 360°", reportes360final: "Encuesta 360°",
@@ -465,6 +467,8 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
 
     case "rubricas":
       return <AdminRubricasTab />;
+    case "reportes-adhoc":
+      return <AdminAdHocReportTab />;
     case "informe-modulo":
       return <AdminInformeModuloTab isViewer={!can("informe-modulo", "update")} />;
     case "blancos-ambiente":

@@ -29,6 +29,7 @@ import {
   Printer,
   ThumbsUp,
   Award,
+  Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
@@ -71,6 +72,7 @@ interface SidebarSection {
 const topLevelItems: SidebarItem[] = [
   { tab: "dashboard", label: "Tablero de Control", icon: LayoutDashboard },
   { tab: "formularios", label: "Enlaces", icon: Link2 },
+  { tab: "reportes-adhoc", label: "Reportes Ad Hoc", icon: Sparkles },
 ];
 
 const sections: SidebarSection[] = [
