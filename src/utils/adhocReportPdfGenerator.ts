@@ -17,8 +17,25 @@ interface AdhocPdfOptions {
   generatedBy?: string;
 }
 
+function formatDateValue(s: string): string | null {
+  const mDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (mDate) return `${mDate[3]}/${mDate[2]}/${mDate[1]}`;
+  const mDt = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/.exec(s);
+  if (mDt) {
+    const [, y, mo, d, hh, mi, ss] = mDt;
+    if (hh === "00" && mi === "00" && ss === "00") return `${d}/${mo}/${y}`;
+    return `${d}/${mo}/${y} ${hh}:${mi}`;
+  }
+  return null;
+}
+
 function formatCellValue(v: unknown): string {
   if (v == null) return "";
+  if (v instanceof Date) return formatDateValue(v.toISOString()) ?? v.toISOString();
+  if (typeof v === "string") {
+    const d = formatDateValue(v);
+    if (d) return d;
+  }
   if (typeof v === "object") {
     try {
       return JSON.stringify(v);
