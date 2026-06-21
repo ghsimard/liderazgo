@@ -37,9 +37,14 @@ const COMMENT_RE = /--|\/\*|\*\//;
 const MULTI_STMT_RE = /;\s*\S/;
 
 function extractTableIdentifiers(sql: string): string[] {
-  const matches = sql.matchAll(/\b(?:FROM|JOIN)\s+"?([a-zA-Z_][a-zA-Z0-9_]*)"?/gi);
+  // Match FROM/JOIN <identifier> but NOT when the identifier is immediately followed by '(',
+  // which means it's a function call (e.g. EXTRACT(YEAR FROM age(...)), FROM date_trunc(...)).
+  const matches = sql.matchAll(/\b(?:FROM|JOIN)\s+"?([a-zA-Z_][a-zA-Z0-9_]*)"?(\s*\()?/gi);
   const out = new Set<string>();
-  for (const m of matches) out.add(m[1].toLowerCase());
+  for (const m of matches) {
+    if (m[2]) continue; // followed by '(' → function call, not a table
+    out.add(m[1].toLowerCase());
+  }
   return [...out];
 }
 
