@@ -6,10 +6,26 @@
 
 import JSZip from "jszip";
 
+function formatDateValue(s: string): string | null {
+  const mDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (mDate) return `${mDate[3]}/${mDate[2]}/${mDate[1]}`;
+  const mDt = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/.exec(s);
+  if (mDt) {
+    const [, y, mo, d, hh, mi, ss] = mDt;
+    if (hh === "00" && mi === "00" && ss === "00") return `${d}/${mo}/${y}`;
+    return `${d}/${mo}/${y} ${hh}:${mi}`;
+  }
+  return null;
+}
+
 function escapeCell(v: unknown): string {
   if (v == null) return "";
   let s: string;
-  if (typeof v === "object") {
+  if (v instanceof Date) {
+    s = formatDateValue(v.toISOString()) ?? v.toISOString();
+  } else if (typeof v === "string") {
+    s = formatDateValue(v) ?? v;
+  } else if (typeof v === "object") {
     try {
       s = JSON.stringify(v);
     } catch {
