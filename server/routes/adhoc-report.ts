@@ -101,10 +101,17 @@ function validateSql(rawSql: string): ValidationResult {
   if (tables.length === 0) {
     return { ok: false, reason: "No se detectó tabla en la consulta." };
   }
+  const cteNames = extractCteNames(sql);
+  let hasRealTable = false;
   for (const t of tables) {
+    if (cteNames.has(t)) continue; // CTE reference, allowed
     if (!ALLOWED_TABLES_SET.has(t)) {
       return { ok: false, reason: `Tabla no permitida: ${t}` };
     }
+    hasRealTable = true;
+  }
+  if (!hasRealTable) {
+    return { ok: false, reason: "La consulta no referencia ninguna tabla permitida." };
   }
 
   return { ok: true, sql: ensureLimit(sql) };
