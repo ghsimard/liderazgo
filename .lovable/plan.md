@@ -1,60 +1,113 @@
-## Diagnostic confirmé
+# Rapports ad hoc en langage naturel
 
-Les deux captures confirment la cause :
+Nouvel onglet admin **"Reportes Ad Hoc"** où Admin/Superadmin écrivent une question en espagnol. Grok-3 reçoit le **schéma annoté** des tables autorisées (introspecté dynamiquement), déduit lui-même les colonnes pertinentes, génère un `SELECT` validé, Express l'exécute en lecture seule. Le frontend affiche **tableau interactif + export CSV + PDF**.
 
-- **Formulaire M2 en prod** (1ʳᵉ image) : options = *Socialización RLT y CLT, Trabajo colaborativo en la IE, El valor de ser…, Conversaciones transformadoras, Buzón del afecto, Intercambio entre pares, Sesión de coaching grupal*.
-- **Stats M2** (2ᵉ image) : graphique basé sur les options M1 hard-codées (*Buzón del afecto, Construcción de acuerdos, Dimensiones del ser humano, Propósito de vida, Creencias limitantes, Actos lingüísticos, Modelo de responsabilidad personal, …, La evaluación en RLT y CLT*).
+## Principe clé : zéro hardcoding sémantique
 
-Seule l'option « Buzón del afecto » existe dans les deux listes → c'est la **seule barre non nulle** (10,64 %). Les 47 réponses sont bien lues, mais 12 des 13 libellés affichés ne correspondent à aucune valeur stockée.
+Aucune liste métier (synonymes, mappings champs) dans le code. Toute la connaissance vient de deux sources dynamiques injectées dans chaque prompt :
 
-### Cause technique
+1. **Introspection live PostgreSQL** (cache mémoire 10 min) :
+   - `information_schema.columns` → nom, type, nullable.
+   - `pg_description` → `COMMENT ON COLUMN` métier.
+   - `pg_enum` → valeurs des types énum.
+   - Colonnes texte faible cardinalité : `SELECT DISTINCT col LIMIT 20` si `COUNT(DISTINCT) < 50` (permet au LLM de voir *"Quibdó"*, *"Rector/a"*, *"Ninguna"*, etc.).
+2. **3 lignes-échantillon par table** avec cédulas et emails masqués.
 
-Dans `src/components/admin/AdminSatisfaccionStats.tsx` (ligne 69) :
+Conséquences : *"directivos enfermos de Quibdó"* → le LLM trouve seul `enfermedades`, `municipio`, `cargo_actual`. *"Nombre de directivos pour Quibdó"* → `COUNT(*) WHERE municipio ILIKE 'quibd%' AND cargo_actual IN (...)`. Si la base évolue, l'introspection capture le changement à la prochaine requête — **rien à modifier dans le code**.
 
-```ts
-const formDef = SATISFACCION_FORMS[filterType]; // statique = formulaire M1
-```
+## Portée des données (phase 1)
 
-Le formulaire rempli par les directivos passe par `loadFormDefinition(formType, moduleNumber, supabase)` qui suit la cascade : `(form_type, module_number)` → `(form_type, NULL)` → statique. En production, un override **M2-spécifique** existe dans `satisfaccion_form_definitions` avec d'autres `value` pour `top3_actividades`. Les stats ignorent cet override.
+**Whitelist** : `fichas_rlt`, `rubrica_*`, `encuestas_360`, `competencies_360`, `items_360`, `domains_360`, `competency_weights`, `mel_kpi_*`, `satisfaccion_responses`, `satisfaccion_config`, `satisfaccion_form_definitions`, `informe_modulo`, `informe_modulo_equipo`, `informe_directivo`, `informe_asistencia`, `encuestas_ambiente_escolar`, `ae_*_submissions_2025`, `ae_rectores_2025`, `ae_cohortes`, `ae_campanas`, `regiones`, `entidades_territoriales`, `municipios`, `instituciones`, `region_*`.
 
-## Correction
+**Interdites** : `admin_cedulas`, `custom_roles`, `user_custom_roles`, `role_permissions`, `operator_permissions`, `contact_messages`, `user_activity_log`, `app_settings`, `deleted_records`, `_backup_*`.
+
+## Actions par composant (déploiement Render)
 
 ### 🖥️ Site statique (Frontend)
 
-**`src/components/admin/AdminSatisfaccionStats.tsx`**
-1. Importer `loadFormDefinition` depuis `@/data/satisfaccionData`.
-2. Remplacer la lecture statique par un état `formDef` chargé via `useEffect` à chaque changement de `filterType` / `filterModule` :
-   - `filterModule === "all"` → charger la définition globale (`moduleNumber = null`).
-   - Sinon → charger la définition spécifique au module (cascade).
-3. Ajouter `formDef` aux dépendances du `useMemo(stats, …)`.
-4. Mini-loader pendant la résolution du `formDef` pour éviter un flash de graphique vide.
-
-**Audit des écrans frères** (appliquer le même fix si la même lecture statique est présente) :
-- `src/components/admin/AdminSatisfaccionReportTab.tsx`
-- `src/components/admin/AdminSatisfaccionCommentsTab.tsx`
-- Tablero de Control (si agrégation Likert satisfaction par module).
-
-La page publique (`SatisfaccionPage`) utilise déjà `loadFormDefinition` → pas de changement.
+1. Nouvel onglet `AdminAdHocReportTab.tsx` dans `AdminPage.tsx` (visible Admin/Superadmin).
+2. UI :
+   - `Textarea` pour la question + chips d'exemples cliquables.
+   - Bouton **"Generar reporte"** → POST `/api/adhoc-report` via `apiFetch`.
+   - Bloc pliable **"SQL generado"** + `explanation` du LLM (audit visuel).
+   - Tableau shadcn avec tri/recherche/pagination.
+   - Boutons **Exportar CSV** (blob client) et **Exportar PDF** (jsPDF + autoTable : logo, date DD/MM/YYYY, question, SQL, nombre de lignes).
+   - Erreurs : SQL rejeté, 0 résultat, timeout 15s — toasts en espagnol.
+3. Log fire-and-forget dans `user_activity_log` (action `adhoc_report`).
 
 ### ⚙️ Web Service (Backend Express)
-Aucun changement. La table `satisfaccion_form_definitions` est déjà servie par le proxy `/api/db/:table`.
+
+1. Nouvelle route `server/routes/adhoc-report.ts` sous `requireAuth + requireAdmin`, montée dans `server/index.ts`.
+2. Nouveau helper `server/utils/schemaIntrospection.ts` (cache 10 min en mémoire).
+3. Pipeline `POST /api/adhoc-report` :
+   - **Validation Zod** : `question: string(5..500)`.
+   - **Schema discovery** depuis cache ou refresh.
+   - **Appel Grok-3** (`XAI_API_KEY` déjà présent, même client que `rubrica-analysis.ts`) — system prompt :
+     - "Générateur de SQL PostgreSQL **lecture seule**."
+     - Schéma annoté + échantillons.
+     - Règles : SELECT uniquement ; tables ∈ whitelist fournie ; pas de DML/DDL/`pg_*`/`information_schema`/`;` multiples/commentaires/`COPY`/`dblink` ; toujours `LIMIT 1000` ; agrégats (`COUNT`, `GROUP BY`, `AVG`) autorisés.
+     - Si la question est ambiguë → renvoyer `{ needs_clarification: true, question: "..." }` au lieu de SQL.
+     - Sortie JSON : `{ sql, explanation, columns_human_labels }`.
+   - **Validation SQL serveur** (défense en profondeur) :
+     - Regex blocklist : `INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|GRANT|REVOKE|CREATE|COPY|;\s*\S`.
+     - Extraction `FROM`/`JOIN` → chaque identifiant vérifié contre la whitelist.
+     - `EXPLAIN <sql>` dry-run ; rejet si erreur syntaxe.
+     - Injection `LIMIT 1000` si absent.
+   - **Exécution** via `pool.query` (le `statement_timeout` 15s du pool protège).
+   - **Réponse** : `{ sql, explanation, columns, rows, row_count, truncated }`.
 
 ### 🗄️ Base de données (Manual SQL)
-Aucune migration. Les overrides M2 (et probablement M3/M4) sont déjà la source de vérité.
 
-## Vérification post-déploiement
+**Aucune migration obligatoire.** Tout en lecture seule sur tables existantes.
 
-SQL pour confirmer la présence des overrides par module :
+**Optionnel** (à ajouter au fil de l'eau pour améliorer la qualité des SQL générés sans toucher au code) :
 
 ```sql
-SELECT form_type, module_number,
-       jsonb_path_query_array(
-         definition,
-         '$.sections[*].questions[*] ? (@.key == "top3_actividades").options[*].value'
-       ) AS top3_values
-FROM satisfaccion_form_definitions
-WHERE form_type = 'intensivo'
-ORDER BY module_number NULLS FIRST;
+COMMENT ON COLUMN fichas_rlt.enfermedades IS 'Texto libre. "Ninguna"/"N/A"/vacío = sin enfermedad.';
+COMMENT ON COLUMN fichas_rlt.cargo_actual IS 'Cargo: Rector/a, Coordinador/a, Docente, etc.';
+COMMENT ON COLUMN fichas_rlt.municipio IS 'Municipio de la IE (ej. Quibdó).';
+COMMENT ON COLUMN fichas_rlt.edad IS 'Edad en años del directivo.';
 ```
 
-Après déploiement, ouvrir `Admin → Satisfacciones → Estadísticas`, Intensivo, Módulo 2 : les 7 actividades du formulaire M2 (Socialización RLT y CLT, Trabajo colaborativo en la IE, etc.) doivent apparaître avec leurs vrais pourcentages, et la somme par directivo (max 3 sélections / 47 répondants) doit être cohérente.
+Ces commentaires sont lus automatiquement par l'introspection. Seul "tuning" possible — et il vit dans la DB, pas dans le code.
+
+## Sécurité — couches
+
+1. Auth Express (`requireAuth + requireAdmin`).
+2. Whitelist tables revalidée serveur.
+3. Regex blocklist mots-clés dangereux.
+4. `EXPLAIN` dry-run avant exécution.
+5. `LIMIT 1000` forcé.
+6. `statement_timeout` 15s du pool PG existant.
+7. Cédulas/emails masqués dans les échantillons LLM.
+8. SQL affiché à l'admin pour audit visuel.
+9. Activity log de chaque requête.
+
+## Limitations annoncées dans l'UI
+
+- Lecture seule, max 1000 lignes, timeout 15s.
+- Le LLM peut se tromper → **toujours vérifier le bloc "SQL generado"** avant de citer les chiffres.
+
+## Exemples couverts (validation par anticipation)
+
+| Question | Mécanisme |
+|---|---|
+| "Directivos de 40+ años" | `WHERE edad >= 40` |
+| "Directivos con enfermedades" | LLM voit colonne `enfermedades` + valeurs distinctes → filtre approprié |
+| "Directivos de 45+ de Quibdó 2026 enfermos" | Combinaison `edad >= 45 AND municipio ILIKE 'quibd%' AND enfermedades ...` |
+| "Número de directivos de Quibdó" | `SELECT COUNT(*) ... WHERE municipio ILIKE 'quibd%' AND cargo_actual IN (...)` |
+| "Evaluaciones rúbrica módulo 2 por región" | JOIN `rubrica_evaluaciones` × `fichas_rlt` × `region_instituciones` + `GROUP BY` |
+
+## Fichiers
+
+**Créer**
+- `server/routes/adhoc-report.ts`
+- `server/utils/schemaIntrospection.ts`
+- `src/components/admin/AdminAdHocReportTab.tsx`
+- `src/utils/adhocReportPdfGenerator.ts`
+- `src/utils/adhocReportCsvExporter.ts`
+
+**Modifier**
+- `server/index.ts` (monter la route)
+- `src/pages/AdminPage.tsx` (nouvel onglet)
+- `src/components/admin/AdminSidebar.tsx` (entrée menu Admin/Superadmin)
