@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   FileDown,
   FileSpreadsheet,
+  FileArchive,
   ChevronDown,
   Search,
   RefreshCw,
@@ -34,6 +35,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { exportAdhocReportCsv } from "@/utils/adhocReportCsvExporter";
 import { generateAdhocReportPdf } from "@/utils/adhocReportPdfGenerator";
+import { exportAdhocReportZip } from "@/utils/adhocReportZipExporter";
 import { logActivity } from "@/utils/activityLogger";
 
 interface AdhocResponse {
@@ -171,6 +173,24 @@ export default function AdminAdHocReportTab() {
       toast({ title: "Error al generar PDF", description: err.message, variant: "destructive" });
     }
   };
+
+  const handleExportZip = async () => {
+    if (!result?.columns || !result?.rows || !result?.sql) return;
+    try {
+      await exportAdhocReportZip({
+        question,
+        sql: result.sql,
+        explanation: result.explanation,
+        columns: result.columns,
+        rows: result.rows,
+        generatedBy: userName,
+      });
+    } catch (err: any) {
+      toast({ title: "Error al generar ZIP", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const suggestZip = !!result?.rows && result.rows.length > 500;
 
   return (
     <div className="space-y-4">
@@ -346,6 +366,21 @@ export default function AdminAdHocReportTab() {
                   className="gap-1.5"
                 >
                   <FileDown className="w-3.5 h-3.5" /> PDF
+                </Button>
+                <Button
+                  variant={suggestZip ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleExportZip}
+                  disabled={!canExport}
+                  className="gap-1.5"
+                  title={suggestZip ? "Recomendado para volúmenes grandes" : "Descargar CSV + SQL + metadatos en un ZIP"}
+                >
+                  <FileArchive className="w-3.5 h-3.5" /> ZIP
+                  {suggestZip && (
+                    <Badge variant="secondary" className="ml-1 text-[9px] px-1 py-0 h-4">
+                      Recomendado
+                    </Badge>
+                  )}
                 </Button>
               </div>
             </div>
