@@ -174,6 +174,24 @@ export default function AdminAdHocReportTab() {
     }
   };
 
+  const handleExportZip = async () => {
+    if (!result?.columns || !result?.rows || !result?.sql) return;
+    try {
+      await exportAdhocReportZip({
+        question,
+        sql: result.sql,
+        explanation: result.explanation,
+        columns: result.columns,
+        rows: result.rows,
+        generatedBy: userName,
+      });
+    } catch (err: any) {
+      toast({ title: "Error al generar ZIP", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const suggestZip = !!result?.rows && result.rows.length > 500;
+
   return (
     <div className="space-y-4">
       {/* Intro card */}
