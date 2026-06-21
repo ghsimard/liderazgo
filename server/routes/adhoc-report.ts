@@ -36,6 +36,21 @@ const FORBIDDEN_SCHEMAS_RE = /\b(pg_catalog|information_schema|pg_temp|pg_toast)
 const COMMENT_RE = /--|\/\*|\*\//;
 const MULTI_STMT_RE = /;\s*\S/;
 
+function extractCteNames(sql: string): Set<string> {
+  // Match CTE names in: WITH name AS (...), name2 AS (...) [RECURSIVE allowed]
+  // After WITH or after a comma at CTE level, an identifier followed by optional (cols) then AS (
+  const out = new Set<string>();
+  const withMatch = sql.match(/\bWITH\s+(?:RECURSIVE\s+)?([\s\S]+?)\bSELECT\b/i);
+  if (!withMatch) return out;
+  const cteBlock = withMatch[1];
+  const re = /(?:^|,)\s*"?([a-zA-Z_][a-zA-Z0-9_]*)"?\s*(?:\([^)]*\)\s*)?AS\s*\(/gi;
+  let m;
+  while ((m = re.exec(cteBlock)) !== null) {
+    out.add(m[1].toLowerCase());
+  }
+  return out;
+}
+
 function extractTableIdentifiers(sql: string): string[] {
   // Match FROM/JOIN <identifier> but NOT when the identifier is immediately followed by '(',
   // which means it's a function call (e.g. EXTRACT(YEAR FROM age(...)), FROM date_trunc(...)).
