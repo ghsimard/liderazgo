@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   FileDown,
   FileSpreadsheet,
+  FileArchive,
   ChevronDown,
   Search,
   RefreshCw,
