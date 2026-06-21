@@ -35,6 +35,7 @@ import { useAppImages } from "@/hooks/useAppImages";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { exportAdhocReportCsv } from "@/utils/adhocReportCsvExporter";
 import { generateAdhocReportPdf } from "@/utils/adhocReportPdfGenerator";
+import { exportAdhocReportZip } from "@/utils/adhocReportZipExporter";
 import { logActivity } from "@/utils/activityLogger";
 
 interface AdhocResponse {
