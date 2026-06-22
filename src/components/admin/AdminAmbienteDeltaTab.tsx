@@ -74,7 +74,7 @@ export default function AdminAmbienteDeltaTab() {
       while (true) {
         const { data } = await supabase
           .from("encuestas_ambiente_escolar")
-          .select("campana_id, tipo_formulario, respuestas")
+          .select("campana_id, tipo_formulario, respuestas, institucion_educativa")
           .not("campana_id", "is", null)
           .range(from, from + PAGE - 1);
         if (!data || data.length === 0) break;
