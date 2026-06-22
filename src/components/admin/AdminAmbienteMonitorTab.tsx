@@ -6,8 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Mail, Phone, Eye, Search, X } from "lucide-react";
+import { RefreshCw, Mail, Phone, Eye, Search, X, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAppImages } from "@/hooks/useAppImages";
+import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
+import { generarPDFAmbienteMonitor } from "@/utils/ambienteMonitorPdfGenerator";
+import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
 
 interface Cohorte {
   id: string;
@@ -60,6 +64,9 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterFase, setFilterFase] = useState<string>("all");
   const [searchText, setSearchText] = useState("");
+  const [pdfPickerOpen, setPdfPickerOpen] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const { images } = useAppImages();
 
   useEffect(() => {
     async function load() {
@@ -225,6 +232,50 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
 
   const hasFilters = filterCohorte !== "all" || filterStatus !== "all" || filterFase !== "all" || searchText !== "";
 
+  const handleExportPdf = async (flags: { showLogoRlt: boolean; showLogoClt: boolean }) => {
+    setPdfLoading(true);
+    try {
+      const sources = getPdfLogoSources(images);
+      const faseLabel = filterFase === "all" ? "Todas" : FASE_LABEL[filterFase] || filterFase;
+      const estadoLabel =
+        filterStatus === "sin" ? "Sin respuestas" :
+        filterStatus === "pocas" ? "Pocas (<75)" :
+        filterStatus === "suficientes" ? "Suficientes (75+)" :
+        "Todos";
+      const cohorteNombre = filterCohorte === "all"
+        ? "Todas las cohortes"
+        : cohortes.find(c => c.id === filterCohorte)?.nombre || "—";
+
+      await generarPDFAmbienteMonitor(
+        {
+          cohorteNombre,
+          faseLabel,
+          estadoLabel,
+          busqueda: searchText,
+          rows: filteredRows.map(r => ({
+            ie: r.ie,
+            docentes: r.docentes,
+            estudiantes: r.estudiantes,
+            acudientes: r.acudientes,
+          })),
+          totals: filteredTotals,
+        },
+        {
+          logoRLT: sources.logoRLT,
+          logoCLT: sources.logoCLT,
+          logoCosmo: sources.logoCosmo,
+          showLogoRLT: flags.showLogoRlt,
+          showLogoCLT: flags.showLogoClt,
+        }
+      );
+      setPdfPickerOpen(false);
+    } catch (e: any) {
+      toast({ title: "Error al generar PDF", description: e?.message || "Intente nuevamente", variant: "destructive" });
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -284,6 +335,16 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
             <X className="w-3 h-3 mr-1" /> Limpiar filtros
           </Button>
         )}
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto"
+          onClick={() => setPdfPickerOpen(true)}
+          disabled={filteredRows.length === 0}
+        >
+          <FileDown className="w-4 h-4 mr-1" /> Exportar PDF
+        </Button>
       </div>
 
       {/* Summary */}
@@ -373,6 +434,13 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
           )}
         </DialogContent>
       </Dialog>
+
+      <RegionPdfPicker
+        open={pdfPickerOpen}
+        onOpenChange={setPdfPickerOpen}
+        onConfirm={handleExportPdf}
+        loading={pdfLoading}
+      />
     </div>
   );
 }
