@@ -397,7 +397,58 @@ export default function AdminAmbienteDeltaTab() {
               <ScoreBar label="Evolución (promedio)" value={cohortEvo} color="bg-primary" />
             </div>
             <p className="text-[11px] text-muted-foreground italic">
-              Promedio no ponderado de las medias por sección de los 3 grupos (Docentes, Estudiantes, Acudientes).
+              Calculado únicamente sobre las <strong>{analysis.iesConEvolucionCount}</strong> institución(es) con respuestas en la fase Evolución (de {analysis.iesTotalCohorteCount} en la cohorte). Promedio no ponderado de las medias por sección de los 3 grupos.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Δ por institución */}
+      {analysis && analysis.institucionesDeltas.length > 0 && (
+        <Card>
+          <CardContent className="p-5 space-y-3">
+            <div className="flex justify-between items-baseline flex-wrap gap-2">
+              <h3 className="text-lg font-bold">Δ por institución</h3>
+              <span className="text-xs text-muted-foreground">
+                {analysis.institucionesDeltas.length} con Evolución / {analysis.iesTotalCohorteCount} en la cohorte
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="text-muted-foreground border-b">
+                  <tr>
+                    <th className="text-left py-2 pr-2 font-semibold">Institución</th>
+                    <th className="text-right py-2 px-2 font-semibold whitespace-nowrap">n Ini</th>
+                    <th className="text-right py-2 px-2 font-semibold whitespace-nowrap">n Evo</th>
+                    <th className="text-right py-2 px-2 font-semibold">Inicial</th>
+                    <th className="text-right py-2 px-2 font-semibold">Evolución</th>
+                    <th className="text-right py-2 pl-2 font-semibold">Δ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analysis.institucionesDeltas.map((r) => {
+                    const dCol = r.delta === null
+                      ? "text-muted-foreground"
+                      : r.delta > 0.05 ? "text-green-600" : r.delta < -0.05 ? "text-destructive" : "text-muted-foreground";
+                    const sign = r.delta === null ? "—" : r.delta > 0.05 ? "▲" : r.delta < -0.05 ? "▼" : "=";
+                    return (
+                      <tr key={r.institucion} className="border-b last:border-0">
+                        <td className="py-2 pr-2">{r.institucion}</td>
+                        <td className="text-right py-2 px-2 text-muted-foreground">{r.countIni}</td>
+                        <td className="text-right py-2 px-2 text-muted-foreground">{r.countEvo}</td>
+                        <td className="text-right py-2 px-2">{r.ini !== null ? r.ini.toFixed(2) : "—"}</td>
+                        <td className="text-right py-2 px-2">{r.evo !== null ? r.evo.toFixed(2) : "—"}</td>
+                        <td className={`text-right py-2 pl-2 font-semibold ${dCol}`}>
+                          {sign} {r.delta !== null ? `${r.delta > 0 ? "+" : ""}${r.delta.toFixed(2)}` : ""}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[11px] text-muted-foreground italic">
+              Δ por IE = media no ponderada de los promedios de sus 3 grupos (Docentes, Estudiantes, Acudientes). Solo se listan instituciones con respuestas en la fase Evolución.
             </p>
           </CardContent>
         </Card>
