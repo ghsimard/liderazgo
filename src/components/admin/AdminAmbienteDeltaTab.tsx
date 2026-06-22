@@ -403,7 +403,9 @@ export default function AdminAmbienteDeltaTab() {
               <ScoreBar label="Evolución (promedio)" value={cohortEvo} color="bg-primary" />
             </div>
             <p className="text-[11px] text-muted-foreground italic">
-              Calculado únicamente sobre las <strong>{analysis.iesConEvolucionCount}</strong> institución(es) con respuestas en la fase Evolución (de {analysis.iesTotalCohorteCount} en la cohorte). Promedio no ponderado de las medias por sección de los 3 grupos.
+              {analysis.iesConEvolucionCount === 0
+                ? <>Aún no hay respuestas en la fase Evolución para esta cohorte. Se muestran los valores Inicial sobre <strong>{analysis.iesTotalCohorteCount}</strong> institución(es). El Δ se calculará cuando inicien las respuestas de Evolución.</>
+                : <>Calculado únicamente sobre las <strong>{analysis.iesConEvolucionCount}</strong> institución(es) con respuestas en la fase Evolución (de {analysis.iesTotalCohorteCount} en la cohorte). Promedio no ponderado de las medias por sección de los 3 grupos.</>}
             </p>
           </CardContent>
         </Card>
