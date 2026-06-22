@@ -232,6 +232,50 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
 
   const hasFilters = filterCohorte !== "all" || filterStatus !== "all" || filterFase !== "all" || searchText !== "";
 
+  const handleExportPdf = async (flags: { showLogoRlt: boolean; showLogoClt: boolean }) => {
+    setPdfLoading(true);
+    try {
+      const sources = getPdfLogoSources(images);
+      const faseLabel = filterFase === "all" ? "Todas" : FASE_LABEL[filterFase] || filterFase;
+      const estadoLabel =
+        filterStatus === "sin" ? "Sin respuestas" :
+        filterStatus === "pocas" ? "Pocas (<75)" :
+        filterStatus === "suficientes" ? "Suficientes (75+)" :
+        "Todos";
+      const cohorteNombre = filterCohorte === "all"
+        ? "Todas las cohortes"
+        : cohortes.find(c => c.id === filterCohorte)?.nombre || "—";
+
+      await generarPDFAmbienteMonitor(
+        {
+          cohorteNombre,
+          faseLabel,
+          estadoLabel,
+          busqueda: searchText,
+          rows: filteredRows.map(r => ({
+            ie: r.ie,
+            docentes: r.docentes,
+            estudiantes: r.estudiantes,
+            acudientes: r.acudientes,
+          })),
+          totals: filteredTotals,
+        },
+        {
+          logoRLT: sources.logoRLT,
+          logoCLT: sources.logoCLT,
+          logoCosmo: sources.logoCosmo,
+          showLogoRLT: flags.showLogoRlt,
+          showLogoCLT: flags.showLogoClt,
+        }
+      );
+      setPdfPickerOpen(false);
+    } catch (e: any) {
+      toast({ title: "Error al generar PDF", description: e?.message || "Intente nuevamente", variant: "destructive" });
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Filters */}
