@@ -103,6 +103,15 @@ export default function AdminAmbienteDeltaTab() {
     setAnalysisHtml("");
   }, [selectedCohorte]);
 
+  // Institutions that have at least 1 evolution submission (any group) for this cohort
+  const institucionesConEvolucion = useMemo(() => {
+    if (!selectedCohorte) return new Set<string>();
+    const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
+    const evo = campanasCohorte.find((c) => c.fase === "cierre");
+    if (!evo) return new Set<string>();
+    return new Set(submissions.filter((s) => s.campana_id === evo.id).map((s) => s.institucion_educativa));
+  }, [selectedCohorte, campanas, submissions]);
+
   const analysis = useMemo(() => {
     if (!selectedCohorte) return null;
     const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
@@ -111,7 +120,7 @@ export default function AdminAmbienteDeltaTab() {
 
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const result = groups.map((g) => {
-      const subsIni = inicial ? submissions.filter((s) => s.campana_id === inicial.id && s.tipo_formulario === g) : [];
+      const subsIni = inicial ? submissions.filter((s) => s.campana_id === inicial.id && s.tipo_formulario === g && institucionesConEvolucion.has(s.institucion_educativa)) : [];
       const subsEvo = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id && s.tipo_formulario === g) : [];
       const sections = SECTIONS_BY_FORM[g].map((sec) => {
         const ini = avgScore(subsIni, sec.itemIds);
@@ -122,7 +131,43 @@ export default function AdminAmbienteDeltaTab() {
       return { grupo: g, countIni: subsIni.length, countEvo: subsEvo.length, sections };
     });
     return { inicial, evolucion, groups: result };
-  }, [selectedCohorte, campanas, submissions]);
+  }, [selectedCohorte, campanas, submissions, institucionesConEvolucion]);
+
+  // Per-institution deltas (only those with evolution data)
+  const institucionDeltas = useMemo(() => {
+    if (!selectedCohorte) return [];
+    const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
+    const inicial = campanasCohorte.find((c) => c.fase === "linea_base");
+    const evolucion = campanasCohorte.find((c) => c.fase === "cierre");
+    if (!inicial || !evolucion) return [];
+
+    const groups = ["docentes", "estudiantes", "acudientes"] as const;
+    const rows = Array.from(institucionesConEvolucion).map((inst) => {
+      const allItemIds = groups.flatMap((g) => SECTIONS_BY_FORM[g].flatMap((s) => s.itemIds));
+      const subsIni = submissions.filter((s) => s.campana_id === inicial.id && s.institucion_educativa === inst);
+      const subsEvo = submissions.filter((s) => s.campana_id === evolucion.id && s.institucion_educativa === inst);
+      // Average across groups: per group, compute avg of section avgs, then average groups
+      const perGroup = groups.map((g) => {
+        const sIni = subsIni.filter((s) => s.tipo_formulario === g);
+        const sEvo = subsEvo.filter((s) => s.tipo_formulario === g);
+        const secAvgIni = SECTIONS_BY_FORM[g].map((sec) => avgScore(sIni, sec.itemIds)).filter((v): v is number => v !== null);
+        const secAvgEvo = SECTIONS_BY_FORM[g].map((sec) => avgScore(sEvo, sec.itemIds)).filter((v): v is number => v !== null);
+        return {
+          ini: secAvgIni.length ? secAvgIni.reduce((a, b) => a + b, 0) / secAvgIni.length : null,
+          evo: secAvgEvo.length ? secAvgEvo.reduce((a, b) => a + b, 0) / secAvgEvo.length : null,
+        };
+      });
+      const iniVals = perGroup.map((p) => p.ini).filter((v): v is number => v !== null);
+      const evoVals = perGroup.map((p) => p.evo).filter((v): v is number => v !== null);
+      const ini = iniVals.length ? iniVals.reduce((a, b) => a + b, 0) / iniVals.length : null;
+      const evo = evoVals.length ? evoVals.reduce((a, b) => a + b, 0) / evoVals.length : null;
+      const delta = ini !== null && evo !== null ? evo - ini : null;
+      return { institucion: inst, countIni: subsIni.length, countEvo: subsEvo.length, ini, evo, delta };
+    });
+    return rows
+      .filter((r) => r.delta !== null)
+      .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
+  }, [selectedCohorte, campanas, submissions, institucionesConEvolucion]);
 
   // Compute group-level and cohort-level aggregates
   const groupAggregates = useMemo(() => {
