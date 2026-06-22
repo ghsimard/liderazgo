@@ -64,6 +64,9 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterFase, setFilterFase] = useState<string>("all");
   const [searchText, setSearchText] = useState("");
+  const [pdfPickerOpen, setPdfPickerOpen] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const { images } = useAppImages();
 
   useEffect(() => {
     async function load() {
