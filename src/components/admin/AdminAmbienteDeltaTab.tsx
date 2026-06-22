@@ -130,9 +130,15 @@ export default function AdminAmbienteDeltaTab() {
     for (const s of subsIniAll) if (s.institucion_educativa) iesTotal.add(s.institucion_educativa);
     for (const s of subsEvoAll) if (s.institucion_educativa) iesTotal.add(s.institucion_educativa);
 
-    // Filtrer pour ne garder que les IEs avec Evolución
-    const subsIni = subsIniAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa));
-    const subsEvo = subsEvoAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa));
+    // Filtrer pour ne garder que les IEs avec Evolución — SAUF si aucune Evolución n'existe encore
+    // (sinon on masquerait toutes les Inicial alors que la phase Evolución n'a pas démarré).
+    const applyEvoFilter = iesAvecEvolucion.size > 0;
+    const subsIni = applyEvoFilter
+      ? subsIniAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa))
+      : subsIniAll;
+    const subsEvo = applyEvoFilter
+      ? subsEvoAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa))
+      : subsEvoAll;
 
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const result = groups.map((g) => {
