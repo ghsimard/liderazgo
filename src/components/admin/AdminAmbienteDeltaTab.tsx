@@ -108,7 +108,7 @@ export default function AdminAmbienteDeltaTab() {
     const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
     const evo = campanasCohorte.find((c) => c.fase === "cierre");
     if (!evo) return new Set<string>();
-    return new Set(submissions.filter((s) => s.campana_id === evo.id).map((s) => s.institucion_educativa));
+    return new Set(submissions.filter((s) => s.campana_id === evo.id && s.fase === "cierre").map((s) => s.institucion_educativa));
   }, [selectedCohorte, campanas, submissions]);
 
   const analysis = useMemo(() => {
@@ -123,7 +123,7 @@ export default function AdminAmbienteDeltaTab() {
       const subsIni = submissions.filter(
         (s) => s.fase === "linea_base" && s.tipo_formulario === g && institucionesConEvolucion.has(s.institucion_educativa),
       );
-      const subsEvo = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id && s.tipo_formulario === g) : [];
+      const subsEvo = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id && s.fase === "cierre" && s.tipo_formulario === g) : [];
       const sections = SECTIONS_BY_FORM[g].map((sec) => {
         const ini = avgScore(subsIni, sec.itemIds);
         const evo = avgScore(subsEvo, sec.itemIds);
@@ -146,7 +146,7 @@ export default function AdminAmbienteDeltaTab() {
     const rows = Array.from(institucionesConEvolucion).map((inst) => {
       // Inicial: by fase + institution (ignore campana_id)
       const subsIni = submissions.filter((s) => s.fase === "linea_base" && s.institucion_educativa === inst);
-      const subsEvo = submissions.filter((s) => s.campana_id === evolucion.id && s.institucion_educativa === inst);
+      const subsEvo = submissions.filter((s) => s.campana_id === evolucion.id && s.fase === "cierre" && s.institucion_educativa === inst);
       // Average across groups: per group, compute avg of section avgs, then average groups
       const perGroup = groups.map((g) => {
         const sIni = subsIni.filter((s) => s.tipo_formulario === g);
