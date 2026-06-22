@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 interface Cohorte { id: string; nombre: string; }
 interface Campana { id: string; cohorte_id: string; fase: string; nombre: string; fecha_inicio?: string; fecha_fin?: string; }
-interface Submission { campana_id: string | null; tipo_formulario: string; respuestas: any; }
+interface Submission { campana_id: string | null; tipo_formulario: string; respuestas: any; institucion_educativa: string; }
 
 const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
@@ -74,7 +74,7 @@ export default function AdminAmbienteDeltaTab() {
       while (true) {
         const { data } = await supabase
           .from("encuestas_ambiente_escolar")
-          .select("campana_id, tipo_formulario, respuestas")
+          .select("campana_id, tipo_formulario, respuestas, institucion_educativa")
           .not("campana_id", "is", null)
           .range(from, from + PAGE - 1);
         if (!data || data.length === 0) break;
@@ -103,6 +103,15 @@ export default function AdminAmbienteDeltaTab() {
     setAnalysisHtml("");
   }, [selectedCohorte]);
 
+  // Institutions that have at least 1 evolution submission (any group) for this cohort
+  const institucionesConEvolucion = useMemo(() => {
+    if (!selectedCohorte) return new Set<string>();
+    const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
+    const evo = campanasCohorte.find((c) => c.fase === "cierre");
+    if (!evo) return new Set<string>();
+    return new Set(submissions.filter((s) => s.campana_id === evo.id).map((s) => s.institucion_educativa));
+  }, [selectedCohorte, campanas, submissions]);
+
   const analysis = useMemo(() => {
     if (!selectedCohorte) return null;
     const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
@@ -111,7 +120,7 @@ export default function AdminAmbienteDeltaTab() {
 
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const result = groups.map((g) => {
-      const subsIni = inicial ? submissions.filter((s) => s.campana_id === inicial.id && s.tipo_formulario === g) : [];
+      const subsIni = inicial ? submissions.filter((s) => s.campana_id === inicial.id && s.tipo_formulario === g && institucionesConEvolucion.has(s.institucion_educativa)) : [];
       const subsEvo = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id && s.tipo_formulario === g) : [];
       const sections = SECTIONS_BY_FORM[g].map((sec) => {
         const ini = avgScore(subsIni, sec.itemIds);
@@ -122,7 +131,43 @@ export default function AdminAmbienteDeltaTab() {
       return { grupo: g, countIni: subsIni.length, countEvo: subsEvo.length, sections };
     });
     return { inicial, evolucion, groups: result };
-  }, [selectedCohorte, campanas, submissions]);
+  }, [selectedCohorte, campanas, submissions, institucionesConEvolucion]);
+
+  // Per-institution deltas (only those with evolution data)
+  const institucionDeltas = useMemo(() => {
+    if (!selectedCohorte) return [];
+    const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
+    const inicial = campanasCohorte.find((c) => c.fase === "linea_base");
+    const evolucion = campanasCohorte.find((c) => c.fase === "cierre");
+    if (!inicial || !evolucion) return [];
+
+    const groups = ["docentes", "estudiantes", "acudientes"] as const;
+    const rows = Array.from(institucionesConEvolucion).map((inst) => {
+      const allItemIds = groups.flatMap((g) => SECTIONS_BY_FORM[g].flatMap((s) => s.itemIds));
+      const subsIni = submissions.filter((s) => s.campana_id === inicial.id && s.institucion_educativa === inst);
+      const subsEvo = submissions.filter((s) => s.campana_id === evolucion.id && s.institucion_educativa === inst);
+      // Average across groups: per group, compute avg of section avgs, then average groups
+      const perGroup = groups.map((g) => {
+        const sIni = subsIni.filter((s) => s.tipo_formulario === g);
+        const sEvo = subsEvo.filter((s) => s.tipo_formulario === g);
+        const secAvgIni = SECTIONS_BY_FORM[g].map((sec) => avgScore(sIni, sec.itemIds)).filter((v): v is number => v !== null);
+        const secAvgEvo = SECTIONS_BY_FORM[g].map((sec) => avgScore(sEvo, sec.itemIds)).filter((v): v is number => v !== null);
+        return {
+          ini: secAvgIni.length ? secAvgIni.reduce((a, b) => a + b, 0) / secAvgIni.length : null,
+          evo: secAvgEvo.length ? secAvgEvo.reduce((a, b) => a + b, 0) / secAvgEvo.length : null,
+        };
+      });
+      const iniVals = perGroup.map((p) => p.ini).filter((v): v is number => v !== null);
+      const evoVals = perGroup.map((p) => p.evo).filter((v): v is number => v !== null);
+      const ini = iniVals.length ? iniVals.reduce((a, b) => a + b, 0) / iniVals.length : null;
+      const evo = evoVals.length ? evoVals.reduce((a, b) => a + b, 0) / evoVals.length : null;
+      const delta = ini !== null && evo !== null ? evo - ini : null;
+      return { institucion: inst, countIni: subsIni.length, countEvo: subsEvo.length, ini, evo, delta };
+    });
+    return rows
+      .filter((r) => r.delta !== null)
+      .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
+  }, [selectedCohorte, campanas, submissions, institucionesConEvolucion]);
 
   // Compute group-level and cohort-level aggregates
   const groupAggregates = useMemo(() => {
@@ -333,7 +378,51 @@ export default function AdminAmbienteDeltaTab() {
             </div>
             <p className="text-[11px] text-muted-foreground italic">
               Promedio no ponderado de las medias por sección de los 3 grupos (Docentes, Estudiantes, Acudientes).
+              <br />
+              <strong>Solo se incluyen las {institucionesConEvolucion.size} institución(es) con datos de Evolución</strong> — la línea Inicial se filtra a esas mismas instituciones para comparar lo comparable.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Per-institution delta breakdown */}
+      {institucionDeltas.length > 0 && (
+        <Card>
+          <CardContent className="p-5 space-y-3">
+            <h3 className="text-base font-bold">Δ por institución ({institucionDeltas.length})</h3>
+            <p className="text-xs text-muted-foreground">Instituciones con respuestas tanto en Inicial como en Evolución. Ordenadas por Δ descendente.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="border-b">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="py-2 pr-3">Institución</th>
+                    <th className="py-2 px-2 text-right">N ini</th>
+                    <th className="py-2 px-2 text-right">N evo</th>
+                    <th className="py-2 px-2 text-right">Inicial</th>
+                    <th className="py-2 px-2 text-right">Evolución</th>
+                    <th className="py-2 pl-2 text-right">Δ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {institucionDeltas.map((r) => {
+                    const d = r.delta ?? 0;
+                    const color = d > 0.05 ? "text-green-600" : d < -0.05 ? "text-destructive" : "text-muted-foreground";
+                    return (
+                      <tr key={r.institucion} className="border-b last:border-0">
+                        <td className="py-2 pr-3">{r.institucion}</td>
+                        <td className="py-2 px-2 text-right tabular-nums">{r.countIni}</td>
+                        <td className="py-2 px-2 text-right tabular-nums">{r.countEvo}</td>
+                        <td className="py-2 px-2 text-right tabular-nums">{r.ini !== null ? r.ini.toFixed(2) : "—"}</td>
+                        <td className="py-2 px-2 text-right tabular-nums">{r.evo !== null ? r.evo.toFixed(2) : "—"}</td>
+                        <td className={`py-2 pl-2 text-right tabular-nums font-semibold ${color}`}>
+                          {d > 0 ? "+" : ""}{d.toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}
