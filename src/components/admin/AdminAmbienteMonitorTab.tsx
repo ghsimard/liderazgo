@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
 import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 import { generarPDFAmbienteMonitor } from "@/utils/ambienteMonitorPdfGenerator";
-import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
+import CohortePdfPicker from "@/components/admin/CohortePdfPicker";
 
 interface Cohorte {
   id: string;
