@@ -139,14 +139,13 @@ export default function AdminAmbienteDeltaTab() {
   const institucionDeltas = useMemo(() => {
     if (!selectedCohorte) return [];
     const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
-    const inicial = campanasCohorte.find((c) => c.fase === "linea_base");
     const evolucion = campanasCohorte.find((c) => c.fase === "cierre");
-    if (!inicial || !evolucion) return [];
+    if (!evolucion) return [];
 
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const rows = Array.from(institucionesConEvolucion).map((inst) => {
-      const allItemIds = groups.flatMap((g) => SECTIONS_BY_FORM[g].flatMap((s) => s.itemIds));
-      const subsIni = submissions.filter((s) => s.campana_id === inicial.id && s.institucion_educativa === inst);
+      // Inicial: by fase + institution (ignore campana_id)
+      const subsIni = submissions.filter((s) => s.fase === "linea_base" && s.institucion_educativa === inst);
       const subsEvo = submissions.filter((s) => s.campana_id === evolucion.id && s.institucion_educativa === inst);
       // Average across groups: per group, compute avg of section avgs, then average groups
       const perGroup = groups.map((g) => {
