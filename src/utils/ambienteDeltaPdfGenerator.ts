@@ -26,6 +26,15 @@ export interface DeltaGroup {
   sections: DeltaSection[];
 }
 
+export interface InstitucionDeltaRow {
+  institucion: string;
+  countIni: number;
+  countEvo: number;
+  ini: number | null;
+  evo: number | null;
+  delta: number | null;
+}
+
 export interface AmbienteDeltaReportData {
   cohorteNombre: string;
   fechaInicial?: string | null;
@@ -35,6 +44,9 @@ export interface AmbienteDeltaReportData {
   cohortEvo: number | null;
   cohortDelta: number | null;
   groups: DeltaGroup[];
+  institucionesDeltas?: InstitucionDeltaRow[];
+  iesConEvolucionCount?: number;
+  iesTotalCohorteCount?: number;
   analysisHtml?: string;
 }
 
