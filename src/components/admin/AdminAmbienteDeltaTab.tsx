@@ -108,7 +108,7 @@ export default function AdminAmbienteDeltaTab() {
     const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
     const evo = campanasCohorte.find((c) => c.fase === "cierre");
     if (!evo) return new Set<string>();
-    return new Set(submissions.filter((s) => s.campana_id === evo.id).map((s) => s.institucion_educativa));
+    return new Set(submissions.filter((s) => s.campana_id === evo.id && s.fase === "cierre").map((s) => s.institucion_educativa));
   }, [selectedCohorte, campanas, submissions]);
 
   const analysis = useMemo(() => {
