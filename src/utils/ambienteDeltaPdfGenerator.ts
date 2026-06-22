@@ -26,6 +26,15 @@ export interface DeltaGroup {
   sections: DeltaSection[];
 }
 
+export interface InstitucionDeltaRow {
+  institucion: string;
+  countIni: number;
+  countEvo: number;
+  ini: number | null;
+  evo: number | null;
+  delta: number | null;
+}
+
 export interface AmbienteDeltaReportData {
   cohorteNombre: string;
   fechaInicial?: string | null;
@@ -35,6 +44,9 @@ export interface AmbienteDeltaReportData {
   cohortEvo: number | null;
   cohortDelta: number | null;
   groups: DeltaGroup[];
+  institucionesDeltas?: InstitucionDeltaRow[];
+  iesConEvolucionCount?: number;
+  iesTotalCohorteCount?: number;
   analysisHtml?: string;
 }
 
@@ -175,6 +187,16 @@ export async function generarPDFAmbienteDelta(
     ? "Sin datos comparables"
     : `${deltaSign(data.cohortDelta)}  ${data.cohortDelta > 0 ? "+" : ""}${data.cohortDelta.toFixed(2)} pt`;
   doc.text(deltaLabel, pageW / 2, y + 25, { align: "center" });
+  y += 36;
+
+  if (data.iesConEvolucionCount !== undefined && data.iesTotalCohorteCount !== undefined) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(90, 90, 90);
+    const note = `Δ calculado únicamente sobre ${data.iesConEvolucionCount} de ${data.iesTotalCohorteCount} instituciones con respuestas en la fase Evolución.`;
+    const lines = doc.splitTextToSize(note, contentW - 20);
+    doc.text(lines, pageW / 2, y, { align: "center" });
+  }
 
   addFooter(1);
 
@@ -274,6 +296,72 @@ export async function generarPDFAmbienteDelta(
       y += 6;
     }
     y += 6;
+  }
+
+  // ─── DETALLE POR INSTITUCIÓN ───
+  if (data.institucionesDeltas && data.institucionesDeltas.length > 0) {
+    doc.addPage();
+    drawPageHeaderLogos(doc, logos, { margin, pageW });
+    y = CONTENT_START_Y;
+
+    doc.setFontSize(15);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text("Detalle por institución", margin, y);
+    y += 6;
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(100, 100, 100);
+    const subtitle = `${data.institucionesDeltas.length} institución(es) con respuestas en la fase Evolución${data.iesTotalCohorteCount ? ` (de ${data.iesTotalCohorteCount} en la cohorte)` : ""}. Ordenado por Δ descendente.`;
+    const subLines = doc.splitTextToSize(subtitle, contentW);
+    doc.text(subLines, margin, y + 4);
+    y += subLines.length * 4 + 6;
+
+    // Columns: institucion (52%), n Ini (10%), n Evo (10%), Ini (10%), Evo (10%), Δ (8%)
+    const cw = [contentW * 0.46, contentW * 0.09, contentW * 0.09, contentW * 0.12, contentW * 0.12, contentW * 0.12];
+    const xCols = [margin];
+    for (let i = 0; i < cw.length - 1; i++) xCols.push(xCols[i] + cw[i]);
+
+    // Header
+    doc.setFillColor(235, 240, 248);
+    doc.rect(margin, y, contentW, 7, "F");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(60, 60, 60);
+    doc.text("Institución", xCols[0] + 1, y + 5);
+    doc.text("n Ini", xCols[1] + cw[1] - 1, y + 5, { align: "right" });
+    doc.text("n Evo", xCols[2] + cw[2] - 1, y + 5, { align: "right" });
+    doc.text("Inicial", xCols[3] + cw[3] - 1, y + 5, { align: "right" });
+    doc.text("Evolución", xCols[4] + cw[4] - 1, y + 5, { align: "right" });
+    doc.text("Δ", xCols[5] + cw[5] - 1, y + 5, { align: "right" });
+    y += 7;
+
+    doc.setFont("helvetica", "normal");
+    for (const row of data.institucionesDeltas) {
+      const ieLines = doc.splitTextToSize(row.institucion, cw[0] - 2);
+      const rowH = Math.max(5, ieLines.length * 4) + 2;
+      ensureSpace(rowH);
+      doc.setFontSize(8);
+      doc.setTextColor(50, 50, 50);
+      doc.text(ieLines, xCols[0] + 1, y + 4);
+      doc.setTextColor(80, 80, 80);
+      doc.text(String(row.countIni), xCols[1] + cw[1] - 1, y + 4, { align: "right" });
+      doc.text(String(row.countEvo), xCols[2] + cw[2] - 1, y + 4, { align: "right" });
+      doc.text(fmt(row.ini), xCols[3] + cw[3] - 1, y + 4, { align: "right" });
+      doc.text(fmt(row.evo), xCols[4] + cw[4] - 1, y + 4, { align: "right" });
+      const dcr = deltaColor(row.delta);
+      doc.setTextColor(dcr[0], dcr[1], dcr[2]);
+      doc.setFont("helvetica", "bold");
+      const dTxt = row.delta === null
+        ? "—"
+        : `${deltaSign(row.delta)} ${row.delta > 0 ? "+" : ""}${row.delta.toFixed(2)}`;
+      doc.text(dTxt, xCols[5] + cw[5] - 1, y + 4, { align: "right" });
+      doc.setFont("helvetica", "normal");
+      y += rowH;
+      doc.setDrawColor(235, 235, 235);
+      doc.line(margin, y, margin + contentW, y);
+    }
   }
 
   // ─── ANÁLISIS AUTOMATIZADO ───
