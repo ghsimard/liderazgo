@@ -13,16 +13,7 @@ import { toast } from "sonner";
 
 interface Cohorte { id: string; nombre: string; }
 interface Campana { id: string; cohorte_id: string; fase: string; nombre: string; fecha_inicio?: string; fecha_fin?: string; }
-interface Submission { campana_id: string | null; tipo_formulario: string; respuestas: any; institucion_educativa: string | null; }
-
-export interface InstitucionDelta {
-  institucion: string;
-  countIni: number;
-  countEvo: number;
-  ini: number | null;
-  evo: number | null;
-  delta: number | null;
-}
+interface Submission { campana_id: string | null; tipo_formulario: string; respuestas: any; }
 
 const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
@@ -83,7 +74,7 @@ export default function AdminAmbienteDeltaTab() {
       while (true) {
         const { data } = await supabase
           .from("encuestas_ambiente_escolar")
-          .select("campana_id, tipo_formulario, respuestas, institucion_educativa")
+          .select("campana_id, tipo_formulario, respuestas")
           .not("campana_id", "is", null)
           .range(from, from + PAGE - 1);
         if (!data || data.length === 0) break;
@@ -118,72 +109,19 @@ export default function AdminAmbienteDeltaTab() {
     const inicial = campanasCohorte.find((c) => c.fase === "linea_base");
     const evolucion = campanasCohorte.find((c) => c.fase === "cierre");
 
-    const subsIniAll = inicial ? submissions.filter((s) => s.campana_id === inicial.id) : [];
-    const subsEvoAll = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id) : [];
-
-    // IEs ayant au moins une réponse en Evolución
-    const iesAvecEvolucion = new Set<string>();
-    for (const s of subsEvoAll) if (s.institucion_educativa) iesAvecEvolucion.add(s.institucion_educativa);
-
-    // Total des IEs de la cohorte (toutes phases confondues)
-    const iesTotal = new Set<string>();
-    for (const s of subsIniAll) if (s.institucion_educativa) iesTotal.add(s.institucion_educativa);
-    for (const s of subsEvoAll) if (s.institucion_educativa) iesTotal.add(s.institucion_educativa);
-
-    // Filtrer pour ne garder que les IEs avec Evolución
-    const subsIni = subsIniAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa));
-    const subsEvo = subsEvoAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa));
-
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const result = groups.map((g) => {
-      const sI = subsIni.filter((s) => s.tipo_formulario === g);
-      const sE = subsEvo.filter((s) => s.tipo_formulario === g);
+      const subsIni = inicial ? submissions.filter((s) => s.campana_id === inicial.id && s.tipo_formulario === g) : [];
+      const subsEvo = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id && s.tipo_formulario === g) : [];
       const sections = SECTIONS_BY_FORM[g].map((sec) => {
-        const ini = avgScore(sI, sec.itemIds);
-        const evo = avgScore(sE, sec.itemIds);
+        const ini = avgScore(subsIni, sec.itemIds);
+        const evo = avgScore(subsEvo, sec.itemIds);
         const delta = ini !== null && evo !== null ? evo - ini : null;
         return { title: sec.title, ini, evo, delta };
       });
-      return { grupo: g, countIni: sI.length, countEvo: sE.length, sections };
+      return { grupo: g, countIni: subsIni.length, countEvo: subsEvo.length, sections };
     });
-
-    // Δ par institution
-    const institucionesDeltas: InstitucionDelta[] = [];
-    for (const ie of Array.from(iesAvecEvolucion).sort()) {
-      const ieIni = subsIni.filter((s) => s.institucion_educativa === ie);
-      const ieEvo = subsEvo.filter((s) => s.institucion_educativa === ie);
-      const groupAvgs = groups.map((g) => {
-        const gIni = ieIni.filter((s) => s.tipo_formulario === g);
-        const gEvo = ieEvo.filter((s) => s.tipo_formulario === g);
-        const secsIni = SECTIONS_BY_FORM[g].map((sec) => avgScore(gIni, sec.itemIds)).filter((v): v is number => v !== null);
-        const secsEvo = SECTIONS_BY_FORM[g].map((sec) => avgScore(gEvo, sec.itemIds)).filter((v): v is number => v !== null);
-        const ini = secsIni.length ? secsIni.reduce((a, b) => a + b, 0) / secsIni.length : null;
-        const evo = secsEvo.length ? secsEvo.reduce((a, b) => a + b, 0) / secsEvo.length : null;
-        return { ini, evo };
-      });
-      const inis = groupAvgs.map((x) => x.ini).filter((v): v is number => v !== null);
-      const evos = groupAvgs.map((x) => x.evo).filter((v): v is number => v !== null);
-      const ini = inis.length ? inis.reduce((a, b) => a + b, 0) / inis.length : null;
-      const evo = evos.length ? evos.reduce((a, b) => a + b, 0) / evos.length : null;
-      const delta = ini !== null && evo !== null ? evo - ini : null;
-      institucionesDeltas.push({ institucion: ie, countIni: ieIni.length, countEvo: ieEvo.length, ini, evo, delta });
-    }
-    // Trier par Δ décroissant, les sans-delta à la fin
-    institucionesDeltas.sort((a, b) => {
-      if (a.delta === null && b.delta === null) return a.institucion.localeCompare(b.institucion);
-      if (a.delta === null) return 1;
-      if (b.delta === null) return -1;
-      return b.delta - a.delta;
-    });
-
-    return {
-      inicial,
-      evolucion,
-      groups: result,
-      institucionesDeltas,
-      iesConEvolucionCount: iesAvecEvolucion.size,
-      iesTotalCohorteCount: iesTotal.size,
-    };
+    return { inicial, evolucion, groups: result };
   }, [selectedCohorte, campanas, submissions]);
 
   // Compute group-level and cohort-level aggregates
@@ -295,9 +233,6 @@ export default function AdminAmbienteDeltaTab() {
           cohortEvo,
           cohortDelta,
           groups: buildDeltasPayload(),
-          institucionesDeltas: analysis.institucionesDeltas,
-          iesConEvolucionCount: analysis.iesConEvolucionCount,
-          iesTotalCohorteCount: analysis.iesTotalCohorteCount,
           analysisHtml,
         },
         {
@@ -397,58 +332,7 @@ export default function AdminAmbienteDeltaTab() {
               <ScoreBar label="Evolución (promedio)" value={cohortEvo} color="bg-primary" />
             </div>
             <p className="text-[11px] text-muted-foreground italic">
-              Calculado únicamente sobre las <strong>{analysis.iesConEvolucionCount}</strong> institución(es) con respuestas en la fase Evolución (de {analysis.iesTotalCohorteCount} en la cohorte). Promedio no ponderado de las medias por sección de los 3 grupos.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Δ por institución */}
-      {analysis && analysis.institucionesDeltas.length > 0 && (
-        <Card>
-          <CardContent className="p-5 space-y-3">
-            <div className="flex justify-between items-baseline flex-wrap gap-2">
-              <h3 className="text-lg font-bold">Δ por institución</h3>
-              <span className="text-xs text-muted-foreground">
-                {analysis.institucionesDeltas.length} con Evolución / {analysis.iesTotalCohorteCount} en la cohorte
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="text-muted-foreground border-b">
-                  <tr>
-                    <th className="text-left py-2 pr-2 font-semibold">Institución</th>
-                    <th className="text-right py-2 px-2 font-semibold whitespace-nowrap">n Ini</th>
-                    <th className="text-right py-2 px-2 font-semibold whitespace-nowrap">n Evo</th>
-                    <th className="text-right py-2 px-2 font-semibold">Inicial</th>
-                    <th className="text-right py-2 px-2 font-semibold">Evolución</th>
-                    <th className="text-right py-2 pl-2 font-semibold">Δ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {analysis.institucionesDeltas.map((r) => {
-                    const dCol = r.delta === null
-                      ? "text-muted-foreground"
-                      : r.delta > 0.05 ? "text-green-600" : r.delta < -0.05 ? "text-destructive" : "text-muted-foreground";
-                    const sign = r.delta === null ? "—" : r.delta > 0.05 ? "▲" : r.delta < -0.05 ? "▼" : "=";
-                    return (
-                      <tr key={r.institucion} className="border-b last:border-0">
-                        <td className="py-2 pr-2">{r.institucion}</td>
-                        <td className="text-right py-2 px-2 text-muted-foreground">{r.countIni}</td>
-                        <td className="text-right py-2 px-2 text-muted-foreground">{r.countEvo}</td>
-                        <td className="text-right py-2 px-2">{r.ini !== null ? r.ini.toFixed(2) : "—"}</td>
-                        <td className="text-right py-2 px-2">{r.evo !== null ? r.evo.toFixed(2) : "—"}</td>
-                        <td className={`text-right py-2 pl-2 font-semibold ${dCol}`}>
-                          {sign} {r.delta !== null ? `${r.delta > 0 ? "+" : ""}${r.delta.toFixed(2)}` : ""}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-[11px] text-muted-foreground italic">
-              Δ por IE = media no ponderada de los promedios de sus 3 grupos (Docentes, Estudiantes, Acudientes). Solo se listan instituciones con respuestas en la fase Evolución.
+              Promedio no ponderado de las medias por sección de los 3 grupos (Docentes, Estudiantes, Acudientes).
             </p>
           </CardContent>
         </Card>
