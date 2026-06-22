@@ -187,6 +187,16 @@ export async function generarPDFAmbienteDelta(
     ? "Sin datos comparables"
     : `${deltaSign(data.cohortDelta)}  ${data.cohortDelta > 0 ? "+" : ""}${data.cohortDelta.toFixed(2)} pt`;
   doc.text(deltaLabel, pageW / 2, y + 25, { align: "center" });
+  y += 36;
+
+  if (data.iesConEvolucionCount !== undefined && data.iesTotalCohorteCount !== undefined) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(90, 90, 90);
+    const note = `Δ calculado únicamente sobre ${data.iesConEvolucionCount} de ${data.iesTotalCohorteCount} instituciones con respuestas en la fase Evolución.`;
+    const lines = doc.splitTextToSize(note, contentW - 20);
+    doc.text(lines, pageW / 2, y, { align: "center" });
+  }
 
   addFooter(1);
 
