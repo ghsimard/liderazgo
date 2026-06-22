@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 interface Cohorte { id: string; nombre: string; }
 interface Campana { id: string; cohorte_id: string; fase: string; nombre: string; fecha_inicio?: string; fecha_fin?: string; }
-interface Submission { campana_id: string | null; tipo_formulario: string; respuestas: any; institucion_educativa: string; fase: string; }
+interface Submission { campana_id: string | null; cohorte_id: string | null; tipo_formulario: string; respuestas: any; institucion_educativa: string; fase: string | null; }
 
 const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
@@ -74,7 +74,7 @@ export default function AdminAmbienteDeltaTab() {
       while (true) {
         const { data } = await supabase
           .from("encuestas_ambiente_escolar")
-          .select("campana_id, tipo_formulario, respuestas, institucion_educativa, fase")
+          .select("campana_id, cohorte_id, tipo_formulario, respuestas, institucion_educativa, fase")
           .range(from, from + PAGE - 1);
         if (!data || data.length === 0) break;
         all.push(...(data as Submission[]));
@@ -102,28 +102,54 @@ export default function AdminAmbienteDeltaTab() {
     setAnalysisHtml("");
   }, [selectedCohorte]);
 
-  // Institutions that have at least 1 evolution submission (any group) for this cohort
-  const institucionesConEvolucion = useMemo(() => {
-    if (!selectedCohorte) return new Set<string>();
+  // Split submissions for the selected cohort into two strictly separated sets:
+  // Inicial = phase 'linea_base', Evolución = phase 'cierre'.
+  // Phase resolution: prefer the submission's own `fase`; fallback to the campaign's `fase`.
+  // Cohort filter: prefer `cohorte_id`; fallback to membership in this cohort's campaigns.
+  const phaseSplit = useMemo(() => {
+    const empty = { inicial: [] as Submission[], evolucion: [] as Submission[], iniCamp: undefined as Campana | undefined, evoCamp: undefined as Campana | undefined };
+    if (!selectedCohorte) return empty;
     const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
-    const evo = campanasCohorte.find((c) => c.fase === "cierre");
-    if (!evo) return new Set<string>();
-    return new Set(submissions.filter((s) => s.campana_id === evo.id && s.fase === "cierre").map((s) => s.institucion_educativa));
+    const campIds = new Set(campanasCohorte.map((c) => c.id));
+    const campFaseById = new Map(campanasCohorte.map((c) => [c.id, c.fase]));
+
+    const inicial: Submission[] = [];
+    const evolucion: Submission[] = [];
+    for (const s of submissions) {
+      // Cohort gate
+      const inCohort = s.cohorte_id
+        ? s.cohorte_id === selectedCohorte
+        : s.campana_id != null && campIds.has(s.campana_id);
+      if (!inCohort) continue;
+      // Resolve actual phase (submission wins; fallback to campaign)
+      const fase = s.fase || (s.campana_id ? campFaseById.get(s.campana_id) ?? null : null);
+      if (fase === "linea_base") inicial.push(s);
+      else if (fase === "cierre") evolucion.push(s);
+    }
+    return {
+      inicial,
+      evolucion,
+      iniCamp: campanasCohorte.find((c) => c.fase === "linea_base"),
+      evoCamp: campanasCohorte.find((c) => c.fase === "cierre"),
+    };
   }, [selectedCohorte, campanas, submissions]);
+
+  // Institutions present in BOTH phases → comparable set
+  const institucionesConEvolucion = useMemo(() => {
+    const iniSet = new Set(phaseSplit.inicial.map((s) => s.institucion_educativa));
+    const evoSet = new Set(phaseSplit.evolucion.map((s) => s.institucion_educativa));
+    return new Set([...evoSet].filter((i) => iniSet.has(i)));
+  }, [phaseSplit]);
 
   const analysis = useMemo(() => {
     if (!selectedCohorte) return null;
-    const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
-    const inicial = campanasCohorte.find((c) => c.fase === "linea_base");
-    const evolucion = campanasCohorte.find((c) => c.fase === "cierre");
+    const { inicial: iniAll, evolucion: evoAll, iniCamp, evoCamp } = phaseSplit;
+    const comparable = institucionesConEvolucion;
 
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const result = groups.map((g) => {
-      // Inicial: select by fase='linea_base' + institution (ignore campana_id, which is inconsistent on old 2025 data)
-      const subsIni = submissions.filter(
-        (s) => s.fase === "linea_base" && s.tipo_formulario === g && institucionesConEvolucion.has(s.institucion_educativa),
-      );
-      const subsEvo = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id && s.fase === "cierre" && s.tipo_formulario === g) : [];
+      const subsIni = iniAll.filter((s) => s.tipo_formulario === g && comparable.has(s.institucion_educativa));
+      const subsEvo = evoAll.filter((s) => s.tipo_formulario === g && comparable.has(s.institucion_educativa));
       const sections = SECTIONS_BY_FORM[g].map((sec) => {
         const ini = avgScore(subsIni, sec.itemIds);
         const evo = avgScore(subsEvo, sec.itemIds);
@@ -132,22 +158,17 @@ export default function AdminAmbienteDeltaTab() {
       });
       return { grupo: g, countIni: subsIni.length, countEvo: subsEvo.length, sections };
     });
-    return { inicial, evolucion, groups: result };
-  }, [selectedCohorte, campanas, submissions, institucionesConEvolucion]);
+    return { inicial: iniCamp, evolucion: evoCamp, groups: result };
+  }, [selectedCohorte, phaseSplit, institucionesConEvolucion]);
 
-  // Per-institution deltas (only those with evolution data)
+  // Per-institution deltas (only those with responses in BOTH phases)
   const institucionDeltas = useMemo(() => {
     if (!selectedCohorte) return [];
-    const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
-    const evolucion = campanasCohorte.find((c) => c.fase === "cierre");
-    if (!evolucion) return [];
-
+    const { inicial: iniAll, evolucion: evoAll } = phaseSplit;
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const rows = Array.from(institucionesConEvolucion).map((inst) => {
-      // Inicial: by fase + institution (ignore campana_id)
-      const subsIni = submissions.filter((s) => s.fase === "linea_base" && s.institucion_educativa === inst);
-      const subsEvo = submissions.filter((s) => s.campana_id === evolucion.id && s.fase === "cierre" && s.institucion_educativa === inst);
-      // Average across groups: per group, compute avg of section avgs, then average groups
+      const subsIni = iniAll.filter((s) => s.institucion_educativa === inst);
+      const subsEvo = evoAll.filter((s) => s.institucion_educativa === inst);
       const perGroup = groups.map((g) => {
         const sIni = subsIni.filter((s) => s.tipo_formulario === g);
         const sEvo = subsEvo.filter((s) => s.tipo_formulario === g);
@@ -168,7 +189,7 @@ export default function AdminAmbienteDeltaTab() {
     return rows
       .filter((r) => r.delta !== null)
       .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
-  }, [selectedCohorte, campanas, submissions, institucionesConEvolucion]);
+  }, [selectedCohorte, phaseSplit, institucionesConEvolucion]);
 
   // Compute group-level and cohort-level aggregates
   const groupAggregates = useMemo(() => {
@@ -345,7 +366,7 @@ export default function AdminAmbienteDeltaTab() {
           </Select>
           {analysis && (
             <div className="text-sm text-muted-foreground">
-              {analysis.groups.some((g) => g.countIni > 0) ? "✓ Inicial" : "— Inicial"} | {analysis.groups.some((g) => g.countEvo > 0) ? "✓ Evolución" : "— Evolución"}
+              Inicial: {phaseSplit.inicial.length} resp · Evolución: {phaseSplit.evolucion.length} resp · Comparables: {institucionesConEvolucion.size} institución(es)
             </div>
           )}
         </div>
@@ -365,8 +386,20 @@ export default function AdminAmbienteDeltaTab() {
       {/* Sistema de calificación (statique, toujours visible) */}
       {ratingCard}
 
-      {/* Cohort-level summary card */}
-      {analysis && (
+      {/* Empty state when no Evolución data exists for this cohort */}
+      {analysis && phaseSplit.evolucion.length === 0 && (
+        <Card className="border-amber-500/40 bg-amber-500/5">
+          <CardContent className="p-5 text-sm space-y-1">
+            <h3 className="text-base font-bold">Sin datos de Evolución</h3>
+            <p className="text-muted-foreground">
+              Esta cohorte aún no tiene respuestas en la fase <strong>cierre</strong>. El Δ no se puede calcular hasta que se registren respuestas de Evolución para al menos una institución que también tenga datos de Inicial.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cohort-level summary card — only when comparable data exists */}
+      {analysis && institucionesConEvolucion.size > 0 && (
         <Card className="border-primary/40 bg-primary/5">
           <CardContent className="p-5 space-y-3">
             <div className="flex justify-between items-baseline flex-wrap gap-2">
@@ -380,7 +413,7 @@ export default function AdminAmbienteDeltaTab() {
             <p className="text-[11px] text-muted-foreground italic">
               Promedio no ponderado de las medias por sección de los 3 grupos (Docentes, Estudiantes, Acudientes).
               <br />
-              <strong>Solo se incluyen las {institucionesConEvolucion.size} institución(es) con datos de Evolución</strong> — la línea Inicial se filtra a esas mismas instituciones para comparar lo comparable.
+              <strong>Solo se incluyen las {institucionesConEvolucion.size} institución(es) con datos en ambas fases</strong> — la línea Inicial se filtra a esas mismas instituciones para comparar lo comparable.
             </p>
           </CardContent>
         </Card>
@@ -454,7 +487,7 @@ export default function AdminAmbienteDeltaTab() {
         </CardContent>
       </Card>
 
-      {analysis && analysis.groups.map((g, idx) => {
+      {analysis && institucionesConEvolucion.size > 0 && analysis.groups.map((g, idx) => {
         const agg = groupAggregates[idx];
         return (
           <Card key={g.grupo}>
