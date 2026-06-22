@@ -118,19 +118,72 @@ export default function AdminAmbienteDeltaTab() {
     const inicial = campanasCohorte.find((c) => c.fase === "linea_base");
     const evolucion = campanasCohorte.find((c) => c.fase === "cierre");
 
+    const subsIniAll = inicial ? submissions.filter((s) => s.campana_id === inicial.id) : [];
+    const subsEvoAll = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id) : [];
+
+    // IEs ayant au moins une réponse en Evolución
+    const iesAvecEvolucion = new Set<string>();
+    for (const s of subsEvoAll) if (s.institucion_educativa) iesAvecEvolucion.add(s.institucion_educativa);
+
+    // Total des IEs de la cohorte (toutes phases confondues)
+    const iesTotal = new Set<string>();
+    for (const s of subsIniAll) if (s.institucion_educativa) iesTotal.add(s.institucion_educativa);
+    for (const s of subsEvoAll) if (s.institucion_educativa) iesTotal.add(s.institucion_educativa);
+
+    // Filtrer pour ne garder que les IEs avec Evolución
+    const subsIni = subsIniAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa));
+    const subsEvo = subsEvoAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa));
+
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const result = groups.map((g) => {
-      const subsIni = inicial ? submissions.filter((s) => s.campana_id === inicial.id && s.tipo_formulario === g) : [];
-      const subsEvo = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id && s.tipo_formulario === g) : [];
+      const sI = subsIni.filter((s) => s.tipo_formulario === g);
+      const sE = subsEvo.filter((s) => s.tipo_formulario === g);
       const sections = SECTIONS_BY_FORM[g].map((sec) => {
-        const ini = avgScore(subsIni, sec.itemIds);
-        const evo = avgScore(subsEvo, sec.itemIds);
+        const ini = avgScore(sI, sec.itemIds);
+        const evo = avgScore(sE, sec.itemIds);
         const delta = ini !== null && evo !== null ? evo - ini : null;
         return { title: sec.title, ini, evo, delta };
       });
-      return { grupo: g, countIni: subsIni.length, countEvo: subsEvo.length, sections };
+      return { grupo: g, countIni: sI.length, countEvo: sE.length, sections };
     });
-    return { inicial, evolucion, groups: result };
+
+    // Δ par institution
+    const institucionesDeltas: InstitucionDelta[] = [];
+    for (const ie of Array.from(iesAvecEvolucion).sort()) {
+      const ieIni = subsIni.filter((s) => s.institucion_educativa === ie);
+      const ieEvo = subsEvo.filter((s) => s.institucion_educativa === ie);
+      const groupAvgs = groups.map((g) => {
+        const gIni = ieIni.filter((s) => s.tipo_formulario === g);
+        const gEvo = ieEvo.filter((s) => s.tipo_formulario === g);
+        const secsIni = SECTIONS_BY_FORM[g].map((sec) => avgScore(gIni, sec.itemIds)).filter((v): v is number => v !== null);
+        const secsEvo = SECTIONS_BY_FORM[g].map((sec) => avgScore(gEvo, sec.itemIds)).filter((v): v is number => v !== null);
+        const ini = secsIni.length ? secsIni.reduce((a, b) => a + b, 0) / secsIni.length : null;
+        const evo = secsEvo.length ? secsEvo.reduce((a, b) => a + b, 0) / secsEvo.length : null;
+        return { ini, evo };
+      });
+      const inis = groupAvgs.map((x) => x.ini).filter((v): v is number => v !== null);
+      const evos = groupAvgs.map((x) => x.evo).filter((v): v is number => v !== null);
+      const ini = inis.length ? inis.reduce((a, b) => a + b, 0) / inis.length : null;
+      const evo = evos.length ? evos.reduce((a, b) => a + b, 0) / evos.length : null;
+      const delta = ini !== null && evo !== null ? evo - ini : null;
+      institucionesDeltas.push({ institucion: ie, countIni: ieIni.length, countEvo: ieEvo.length, ini, evo, delta });
+    }
+    // Trier par Δ décroissant, les sans-delta à la fin
+    institucionesDeltas.sort((a, b) => {
+      if (a.delta === null && b.delta === null) return a.institucion.localeCompare(b.institucion);
+      if (a.delta === null) return 1;
+      if (b.delta === null) return -1;
+      return b.delta - a.delta;
+    });
+
+    return {
+      inicial,
+      evolucion,
+      groups: result,
+      institucionesDeltas,
+      iesConEvolucionCount: iesAvecEvolucion.size,
+      iesTotalCohorteCount: iesTotal.size,
+    };
   }, [selectedCohorte, campanas, submissions]);
 
   // Compute group-level and cohort-level aggregates
