@@ -435,11 +435,12 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
         </DialogContent>
       </Dialog>
 
-      <RegionPdfPicker
+      <CohortePdfPicker
         open={pdfPickerOpen}
         onOpenChange={setPdfPickerOpen}
         onConfirm={handleExportPdf}
         loading={pdfLoading}
+        initialCohorteId={filterCohorte !== "all" ? filterCohorte : undefined}
       />
     </div>
   );
