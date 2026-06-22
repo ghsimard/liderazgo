@@ -378,7 +378,51 @@ export default function AdminAmbienteDeltaTab() {
             </div>
             <p className="text-[11px] text-muted-foreground italic">
               Promedio no ponderado de las medias por sección de los 3 grupos (Docentes, Estudiantes, Acudientes).
+              <br />
+              <strong>Solo se incluyen las {institucionesConEvolucion.size} institución(es) con datos de Evolución</strong> — la línea Inicial se filtra a esas mismas instituciones para comparar lo comparable.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Per-institution delta breakdown */}
+      {institucionDeltas.length > 0 && (
+        <Card>
+          <CardContent className="p-5 space-y-3">
+            <h3 className="text-base font-bold">Δ por institución ({institucionDeltas.length})</h3>
+            <p className="text-xs text-muted-foreground">Instituciones con respuestas tanto en Inicial como en Evolución. Ordenadas por Δ descendente.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="border-b">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="py-2 pr-3">Institución</th>
+                    <th className="py-2 px-2 text-right">N ini</th>
+                    <th className="py-2 px-2 text-right">N evo</th>
+                    <th className="py-2 px-2 text-right">Inicial</th>
+                    <th className="py-2 px-2 text-right">Evolución</th>
+                    <th className="py-2 pl-2 text-right">Δ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {institucionDeltas.map((r) => {
+                    const d = r.delta ?? 0;
+                    const color = d > 0.05 ? "text-green-600" : d < -0.05 ? "text-destructive" : "text-muted-foreground";
+                    return (
+                      <tr key={r.institucion} className="border-b last:border-0">
+                        <td className="py-2 pr-3">{r.institucion}</td>
+                        <td className="py-2 px-2 text-right tabular-nums">{r.countIni}</td>
+                        <td className="py-2 px-2 text-right tabular-nums">{r.countEvo}</td>
+                        <td className="py-2 px-2 text-right tabular-nums">{r.ini !== null ? r.ini.toFixed(2) : "—"}</td>
+                        <td className="py-2 px-2 text-right tabular-nums">{r.evo !== null ? r.evo.toFixed(2) : "—"}</td>
+                        <td className={`py-2 pl-2 text-right tabular-nums font-semibold ${color}`}>
+                          {d > 0 ? "+" : ""}{d.toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}
