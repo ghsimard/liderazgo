@@ -130,15 +130,9 @@ export default function AdminAmbienteDeltaTab() {
     for (const s of subsIniAll) if (s.institucion_educativa) iesTotal.add(s.institucion_educativa);
     for (const s of subsEvoAll) if (s.institucion_educativa) iesTotal.add(s.institucion_educativa);
 
-    // Filtrer pour ne garder que les IEs avec Evolución — SAUF si aucune Evolución n'existe encore
-    // (sinon on masquerait toutes les Inicial alors que la phase Evolución n'a pas démarré).
-    const applyEvoFilter = iesAvecEvolucion.size > 0;
-    const subsIni = applyEvoFilter
-      ? subsIniAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa))
-      : subsIniAll;
-    const subsEvo = applyEvoFilter
-      ? subsEvoAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa))
-      : subsEvoAll;
+    // Filtrer pour ne garder que les IEs avec Evolución
+    const subsIni = subsIniAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa));
+    const subsEvo = subsEvoAll.filter((s) => s.institucion_educativa && iesAvecEvolucion.has(s.institucion_educativa));
 
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const result = groups.map((g) => {
@@ -403,9 +397,7 @@ export default function AdminAmbienteDeltaTab() {
               <ScoreBar label="Evolución (promedio)" value={cohortEvo} color="bg-primary" />
             </div>
             <p className="text-[11px] text-muted-foreground italic">
-              {analysis.iesConEvolucionCount === 0
-                ? <>Aún no hay respuestas en la fase Evolución para esta cohorte. Se muestran los valores Inicial sobre <strong>{analysis.iesTotalCohorteCount}</strong> institución(es). El Δ se calculará cuando inicien las respuestas de Evolución.</>
-                : <>Calculado únicamente sobre las <strong>{analysis.iesConEvolucionCount}</strong> institución(es) con respuestas en la fase Evolución (de {analysis.iesTotalCohorteCount} en la cohorte). Promedio no ponderado de las medias por sección de los 3 grupos.</>}
+              Calculado únicamente sobre las <strong>{analysis.iesConEvolucionCount}</strong> institución(es) con respuestas en la fase Evolución (de {analysis.iesTotalCohorteCount} en la cohorte). Promedio no ponderado de las medias por sección de los 3 grupos.
             </p>
           </CardContent>
         </Card>
