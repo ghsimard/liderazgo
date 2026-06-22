@@ -335,6 +335,16 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
             <X className="w-3 h-3 mr-1" /> Limpiar filtros
           </Button>
         )}
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto"
+          onClick={() => setPdfPickerOpen(true)}
+          disabled={filteredRows.length === 0}
+        >
+          <FileDown className="w-4 h-4 mr-1" /> Exportar PDF
+        </Button>
       </div>
 
       {/* Summary */}
