@@ -295,6 +295,9 @@ export default function AdminAmbienteDeltaTab() {
           cohortEvo,
           cohortDelta,
           groups: buildDeltasPayload(),
+          institucionesDeltas: analysis.institucionesDeltas,
+          iesConEvolucionCount: analysis.iesConEvolucionCount,
+          iesTotalCohorteCount: analysis.iesTotalCohorteCount,
           analysisHtml,
         },
         {
