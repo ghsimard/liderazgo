@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 interface Cohorte { id: string; nombre: string; }
 interface Campana { id: string; cohorte_id: string; fase: string; nombre: string; fecha_inicio?: string; fecha_fin?: string; }
-interface Submission { campana_id: string | null; tipo_formulario: string; respuestas: any; institucion_educativa: string; }
+interface Submission { campana_id: string | null; tipo_formulario: string; respuestas: any; institucion_educativa: string; fase: string; }
 
 const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
@@ -74,8 +74,7 @@ export default function AdminAmbienteDeltaTab() {
       while (true) {
         const { data } = await supabase
           .from("encuestas_ambiente_escolar")
-          .select("campana_id, tipo_formulario, respuestas, institucion_educativa")
-          .not("campana_id", "is", null)
+          .select("campana_id, tipo_formulario, respuestas, institucion_educativa, fase")
           .range(from, from + PAGE - 1);
         if (!data || data.length === 0) break;
         all.push(...(data as Submission[]));
@@ -120,7 +119,10 @@ export default function AdminAmbienteDeltaTab() {
 
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const result = groups.map((g) => {
-      const subsIni = inicial ? submissions.filter((s) => s.campana_id === inicial.id && s.tipo_formulario === g && institucionesConEvolucion.has(s.institucion_educativa)) : [];
+      // Inicial: select by fase='linea_base' + institution (ignore campana_id, which is inconsistent on old 2025 data)
+      const subsIni = submissions.filter(
+        (s) => s.fase === "linea_base" && s.tipo_formulario === g && institucionesConEvolucion.has(s.institucion_educativa),
+      );
       const subsEvo = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id && s.tipo_formulario === g) : [];
       const sections = SECTIONS_BY_FORM[g].map((sec) => {
         const ini = avgScore(subsIni, sec.itemIds);
@@ -137,14 +139,13 @@ export default function AdminAmbienteDeltaTab() {
   const institucionDeltas = useMemo(() => {
     if (!selectedCohorte) return [];
     const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
-    const inicial = campanasCohorte.find((c) => c.fase === "linea_base");
     const evolucion = campanasCohorte.find((c) => c.fase === "cierre");
-    if (!inicial || !evolucion) return [];
+    if (!evolucion) return [];
 
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const rows = Array.from(institucionesConEvolucion).map((inst) => {
-      const allItemIds = groups.flatMap((g) => SECTIONS_BY_FORM[g].flatMap((s) => s.itemIds));
-      const subsIni = submissions.filter((s) => s.campana_id === inicial.id && s.institucion_educativa === inst);
+      // Inicial: by fase + institution (ignore campana_id)
+      const subsIni = submissions.filter((s) => s.fase === "linea_base" && s.institucion_educativa === inst);
       const subsEvo = submissions.filter((s) => s.campana_id === evolucion.id && s.institucion_educativa === inst);
       // Average across groups: per group, compute avg of section avgs, then average groups
       const perGroup = groups.map((g) => {
@@ -344,7 +345,7 @@ export default function AdminAmbienteDeltaTab() {
           </Select>
           {analysis && (
             <div className="text-sm text-muted-foreground">
-              {analysis.inicial ? "✓ Inicial" : "— Inicial"} | {analysis.evolucion ? "✓ Evolución" : "— Evolución"}
+              {analysis.groups.some((g) => g.countIni > 0) ? "✓ Inicial" : "— Inicial"} | {analysis.groups.some((g) => g.countEvo > 0) ? "✓ Evolución" : "— Evolución"}
             </div>
           )}
         </div>
