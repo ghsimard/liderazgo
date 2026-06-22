@@ -419,6 +419,42 @@ export default function AdminAmbienteDeltaTab() {
         </Card>
       )}
 
+      {/* Group-level detail cards */}
+      {analysis && institucionesConEvolucion.size > 0 && analysis.groups.map((g, idx) => {
+        const agg = groupAggregates[idx];
+        return (
+          <Card key={g.grupo}>
+            <CardContent className="p-5 space-y-4">
+              <div className="flex justify-between items-baseline flex-wrap gap-2">
+                <h3 className="text-lg font-bold capitalize">{g.grupo}</h3>
+                <div className="flex items-center gap-3">
+                  <DeltaIndicator delta={agg.delta} ini={agg.ini} evo={agg.evo} />
+                  <span className="text-xs text-muted-foreground">
+                    Inicial: {g.countIni} · Evolución: {g.countEvo}
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs pb-2 border-b">
+                <ScoreBar label={`${g.grupo} — Inicial global`} value={agg.ini} color="bg-muted-foreground" />
+                <ScoreBar label={`${g.grupo} — Evolución global`} value={agg.evo} color="bg-primary" />
+              </div>
+              {g.sections.map((sec) => (
+                <div key={sec.title} className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">{sec.title}</span>
+                    <DeltaIndicator delta={sec.delta} ini={sec.ini} evo={sec.evo} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <ScoreBar label="Inicial" value={sec.ini} color="bg-muted-foreground" />
+                    <ScoreBar label="Evolución" value={sec.evo} color="bg-primary" />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })}
+
       {/* Per-institution delta breakdown */}
       {institucionDeltas.length > 0 && (
         <Card>
@@ -486,41 +522,6 @@ export default function AdminAmbienteDeltaTab() {
           )}
         </CardContent>
       </Card>
-
-      {analysis && institucionesConEvolucion.size > 0 && analysis.groups.map((g, idx) => {
-        const agg = groupAggregates[idx];
-        return (
-          <Card key={g.grupo}>
-            <CardContent className="p-5 space-y-4">
-              <div className="flex justify-between items-baseline flex-wrap gap-2">
-                <h3 className="text-lg font-bold capitalize">{g.grupo}</h3>
-                <div className="flex items-center gap-3">
-                  <DeltaIndicator delta={agg.delta} ini={agg.ini} evo={agg.evo} />
-                  <span className="text-xs text-muted-foreground">
-                    Inicial: {g.countIni} · Evolución: {g.countEvo}
-                  </span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs pb-2 border-b">
-                <ScoreBar label={`${g.grupo} — Inicial global`} value={agg.ini} color="bg-muted-foreground" />
-                <ScoreBar label={`${g.grupo} — Evolución global`} value={agg.evo} color="bg-primary" />
-              </div>
-              {g.sections.map((sec) => (
-                <div key={sec.title} className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">{sec.title}</span>
-                    <DeltaIndicator delta={sec.delta} ini={sec.ini} evo={sec.evo} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <ScoreBar label="Inicial" value={sec.ini} color="bg-muted-foreground" />
-                    <ScoreBar label="Evolución" value={sec.evo} color="bg-primary" />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        );
-      })}
     </div>
   );
 }
