@@ -386,8 +386,20 @@ export default function AdminAmbienteDeltaTab() {
       {/* Sistema de calificación (statique, toujours visible) */}
       {ratingCard}
 
-      {/* Cohort-level summary card */}
-      {analysis && (
+      {/* Empty state when no Evolución data exists for this cohort */}
+      {analysis && phaseSplit.evolucion.length === 0 && (
+        <Card className="border-amber-500/40 bg-amber-500/5">
+          <CardContent className="p-5 text-sm space-y-1">
+            <h3 className="text-base font-bold">Sin datos de Evolución</h3>
+            <p className="text-muted-foreground">
+              Esta cohorte aún no tiene respuestas en la fase <strong>cierre</strong>. El Δ no se puede calcular hasta que se registren respuestas de Evolución para al menos una institución que también tenga datos de Inicial.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cohort-level summary card — only when comparable data exists */}
+      {analysis && institucionesConEvolucion.size > 0 && (
         <Card className="border-primary/40 bg-primary/5">
           <CardContent className="p-5 space-y-3">
             <div className="flex justify-between items-baseline flex-wrap gap-2">
@@ -401,7 +413,7 @@ export default function AdminAmbienteDeltaTab() {
             <p className="text-[11px] text-muted-foreground italic">
               Promedio no ponderado de las medias por sección de los 3 grupos (Docentes, Estudiantes, Acudientes).
               <br />
-              <strong>Solo se incluyen las {institucionesConEvolucion.size} institución(es) con datos de Evolución</strong> — la línea Inicial se filtra a esas mismas instituciones para comparar lo comparable.
+              <strong>Solo se incluyen las {institucionesConEvolucion.size} institución(es) con datos en ambas fases</strong> — la línea Inicial se filtra a esas mismas instituciones para comparar lo comparable.
             </p>
           </CardContent>
         </Card>
