@@ -434,6 +434,13 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
           )}
         </DialogContent>
       </Dialog>
+
+      <RegionPdfPicker
+        open={pdfPickerOpen}
+        onOpenChange={setPdfPickerOpen}
+        onConfirm={handleExportPdf}
+        loading={pdfLoading}
+      />
     </div>
   );
 }
