@@ -1,24 +1,31 @@
-## Option B — Correction frontend de l'onglet Δ Delta (Ambiente Escolar)
+## Bug — Inicial = Evolución sur le Δ par institution
 
-### Modifications dans `src/components/admin/AdminAmbienteDeltaTab.tsx`
+### Cause
 
-1. **Interface `Submission`** : ajouter le champ `fase: string`.
-2. **Requête `encuestas_ambiente_escolar`** :
-   - Ajouter `fase` à la liste `select(...)`.
-   - Retirer le filtre `.not("campana_id", "is", null)` (les Inicial orphelines doivent être incluses).
-3. **`institucionesConEvolucion`** : inchangé (basé sur la campagne `cierre`).
-4. **`analysis`** (memo principal) — pour chaque groupe :
-   - `subsIni = submissions.filter(s => s.fase === 'linea_base' && s.tipo_formulario === g && institucionesConEvolucion.has(s.institucion_educativa))`
-   - `subsEvo` : inchangé (`campana_id === evolucion.id`).
-5. **`institucionDeltas`** (memo per-institution) : appliquer la même logique — `subsIni` filtré par `fase === 'linea_base'` + institution, sans contrainte de `campana_id`.
-6. **Indicateur d'état** : remplacer `analysis.inicial ? "✓ Inicial" : "— Inicial"` par un test basé sur la présence effective de réponses Inicial (`countIni > 0` cumulé).
-7. **`handleDownloadPdf`** : `fechaInicial` n'est plus dérivé de la campagne `linea_base` (qui peut ne pas exister). Le passer à `null` ou utiliser la `fecha_inicio` de la première réponse Inicial si on veut l'afficher.
+Dans `src/components/admin/AdminAmbienteDeltaTab.tsx`, le filtre Evolución sélectionne par `campana_id` uniquement :
 
-### Comportement attendu
+```ts
+subsEvo = submissions.filter(s => s.campana_id === evolucion.id && s.tipo_formulario === g)
+```
 
-- Les 3 cohortes 2025 (Rionegro, Itagüí, Medellín) affichent enfin leur Inicial (réponses `linea_base` filtrées aux institutions qui ont aussi de l'Evolución).
-- Le Δ Global, les Δ par section, et le tableau Δ par institution se calculent correctement.
-- Aucune migration ni modification de données nécessaire.
+Or, pour les cohortes 2025, des lignes `fase = 'linea_base'` ont un `campana_id` pointant vers la campagne **cierre** (12 679 lignes `linea_base` rattachées au `campana_id` `8ab45db7…` de fase cierre). Ces lignes sont donc comptées :
+- comme **Inicial** (filtre `s.fase === 'linea_base'`)
+- **ET** comme **Evolución** (filtre `s.campana_id === evolucion.id`, sans vérifier la fase)
+
+→ mêmes lignes des deux côtés → mêmes moyennes → Δ = 0.
+
+### Correction
+
+Ajouter `s.fase === 'cierre'` au filtre Evolución dans :
+1. Le memo `analysis` (la sélection `subsEvo` par groupe).
+2. Le memo `institucionDeltas` (la sélection `subsEvo` par institution).
+
+### Effet attendu
+
+- Les comptes Evolución revenant aux vraies réponses `fase = 'cierre'` (environ 1 324 au total au lieu de l'inflation actuelle).
+- Caracas, La Salle, Mazo, etc. : Δ réel basé sur leurs vraies réponses cierre.
+- Les institutions sans aucune vraie réponse `fase = 'cierre'` disparaissent du tableau (correct).
+- Pas de changement sur Inicial.
 
 ### Déploiement
 

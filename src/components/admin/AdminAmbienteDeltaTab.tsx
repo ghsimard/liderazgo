@@ -123,7 +123,7 @@ export default function AdminAmbienteDeltaTab() {
       const subsIni = submissions.filter(
         (s) => s.fase === "linea_base" && s.tipo_formulario === g && institucionesConEvolucion.has(s.institucion_educativa),
       );
-      const subsEvo = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id && s.tipo_formulario === g) : [];
+      const subsEvo = evolucion ? submissions.filter((s) => s.campana_id === evolucion.id && s.fase === "cierre" && s.tipo_formulario === g) : [];
       const sections = SECTIONS_BY_FORM[g].map((sec) => {
         const ini = avgScore(subsIni, sec.itemIds);
         const evo = avgScore(subsEvo, sec.itemIds);
