@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 interface Cohorte { id: string; nombre: string; }
 interface Campana { id: string; cohorte_id: string; fase: string; nombre: string; fecha_inicio?: string; fecha_fin?: string; }
-interface Submission { campana_id: string | null; tipo_formulario: string; respuestas: any; }
+interface Submission { campana_id: string | null; tipo_formulario: string; respuestas: any; institucion_educativa: string; }
 
 const USE_EXPRESS = !!import.meta.env.VITE_API_URL;
 
