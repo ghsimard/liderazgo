@@ -345,7 +345,7 @@ export default function AdminAmbienteDeltaTab() {
           </Select>
           {analysis && (
             <div className="text-sm text-muted-foreground">
-              {analysis.inicial ? "✓ Inicial" : "— Inicial"} | {analysis.evolucion ? "✓ Evolución" : "— Evolución"}
+              {analysis.groups.some((g) => g.countIni > 0) ? "✓ Inicial" : "— Inicial"} | {analysis.groups.some((g) => g.countEvo > 0) ? "✓ Evolución" : "— Evolución"}
             </div>
           )}
         </div>
