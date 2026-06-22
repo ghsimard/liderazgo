@@ -487,7 +487,7 @@ export default function AdminAmbienteDeltaTab() {
         </CardContent>
       </Card>
 
-      {analysis && analysis.groups.map((g, idx) => {
+      {analysis && institucionesConEvolucion.size > 0 && analysis.groups.map((g, idx) => {
         const agg = groupAggregates[idx];
         return (
           <Card key={g.grupo}>
