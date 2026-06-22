@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
 import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 import { generarPDFAmbienteMonitor } from "@/utils/ambienteMonitorPdfGenerator";
-import RegionPdfPicker from "@/components/admin/RegionPdfPicker";
+import CohortePdfPicker from "@/components/admin/CohortePdfPicker";
 
 interface Cohorte {
   id: string;
@@ -232,7 +232,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
 
   const hasFilters = filterCohorte !== "all" || filterStatus !== "all" || filterFase !== "all" || searchText !== "";
 
-  const handleExportPdf = async (flags: { showLogoRlt: boolean; showLogoClt: boolean }) => {
+  const handleExportPdf = async (sel: { cohorteId: string; cohorteNombre: string; showLogoRlt: boolean; showLogoClt: boolean }) => {
     setPdfLoading(true);
     try {
       const sources = getPdfLogoSources(images);
@@ -242,30 +242,33 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
         filterStatus === "pocas" ? "Pocas (<75)" :
         filterStatus === "suficientes" ? "Suficientes (75+)" :
         "Todos";
-      const cohorteNombre = filterCohorte === "all"
-        ? "Todas las cohortes"
-        : cohortes.find(c => c.id === filterCohorte)?.nombre || "—";
+
+      // Always scope PDF to the chosen cohorte (not the table's current filter)
+      const pdfRows = rows.filter(r => r.cohorte_ids.has(sel.cohorteId));
+      const tD = pdfRows.reduce((a, r) => a + r.docentes, 0);
+      const tE = pdfRows.reduce((a, r) => a + r.estudiantes, 0);
+      const tA = pdfRows.reduce((a, r) => a + r.acudientes, 0);
 
       await generarPDFAmbienteMonitor(
         {
-          cohorteNombre,
+          cohorteNombre: sel.cohorteNombre,
           faseLabel,
           estadoLabel,
           busqueda: searchText,
-          rows: filteredRows.map(r => ({
+          rows: pdfRows.map(r => ({
             ie: r.ie,
             docentes: r.docentes,
             estudiantes: r.estudiantes,
             acudientes: r.acudientes,
           })),
-          totals: filteredTotals,
+          totals: { docentes: tD, estudiantes: tE, acudientes: tA, total: tD + tE + tA },
         },
         {
           logoRLT: sources.logoRLT,
           logoCLT: sources.logoCLT,
           logoCosmo: sources.logoCosmo,
-          showLogoRLT: flags.showLogoRlt,
-          showLogoCLT: flags.showLogoClt,
+          showLogoRLT: sel.showLogoRlt,
+          showLogoCLT: sel.showLogoClt,
         }
       );
       setPdfPickerOpen(false);
@@ -435,11 +438,12 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
         </DialogContent>
       </Dialog>
 
-      <RegionPdfPicker
+      <CohortePdfPicker
         open={pdfPickerOpen}
         onOpenChange={setPdfPickerOpen}
         onConfirm={handleExportPdf}
         loading={pdfLoading}
+        initialCohorteId={filterCohorte !== "all" ? filterCohorte : undefined}
       />
     </div>
   );
