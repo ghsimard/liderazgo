@@ -94,8 +94,8 @@ export async function generarPDFAmbienteInstitucion(
   // ─── COVER ─────────────────────────────────────────────────
   drawCoverBand(doc, {
     pageW,
-    title: "Informe Δ por Institución",
-    subtitle: "Ambiente Escolar — Inicial vs. Evolución",
+    title: "Informe por Institución",
+    subtitle: "Ambiente Escolar - Inicial vs. Evolución",
   });
 
   y = 80;
@@ -103,7 +103,7 @@ export async function generarPDFAmbienteInstitucion(
 
   setFill(doc, PALETTE.surface);
   setDraw(doc, PALETTE.border);
-  doc.roundedRect(margin + 4, y, contentW - 8, 60, 3, 3, "FD");
+  doc.roundedRect(margin + 4, y, contentW - 8, 46, 3, 3, "FD");
 
   setText(doc, PALETTE.accent);
   doc.setFont("helvetica", "bold");
@@ -117,16 +117,14 @@ export async function generarPDFAmbienteInstitucion(
   doc.text(instLines, pageW / 2, y + 16, { align: "center" });
 
   setDraw(doc, PALETTE.border);
-  doc.line(margin + 14, y + 30, pageW - margin - 14, y + 30);
+  doc.line(margin + 14, y + 32, pageW - margin - 14, y + 32);
 
   setText(doc, PALETTE.textMuted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(`Cohorte:  ${data.cohorteNombre}`, pageW / 2, y + 37, { align: "center" });
-  doc.text(`Fase Inicial:  ${fmtDate(data.fechaInicial)}`, pageW / 2, y + 44, { align: "center" });
-  doc.text(`Fase Evolución:  ${fmtDate(data.fechaEvolucion)}`, pageW / 2, y + 51, { align: "center" });
+  doc.text(`Cohorte:  ${data.cohorteNombre}`, pageW / 2, y + 40, { align: "center" });
 
-  y += 75;
+  y += 61;
 
   const dc = deltaColor(data.instDelta);
   setText(doc, dc);
@@ -140,7 +138,8 @@ export async function generarPDFAmbienteInstitucion(
   setText(doc, PALETTE.textMuted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Δ de la institución (Evolución − Inicial)", pageW / 2, y, { align: "center" });
+  doc.text("Variación de la institución (Evolución vs Inicial)", pageW / 2, y, { align: "center" });
+
 
   addFooter(1);
 
@@ -157,7 +156,7 @@ export async function generarPDFAmbienteInstitucion(
     value: fmtNum(data.instIni), sublabel: `/ ${data.maxScore}`, valueColor: PALETTE.neutral });
   drawKpiCard(doc, { x: margin + kpiW + gap, y, w: kpiW, h: kpiH, label: "Evolución",
     value: fmtNum(data.instEvo), sublabel: `/ ${data.maxScore}`, valueColor: PALETTE.primary });
-  drawKpiCard(doc, { x: margin + (kpiW + gap) * 2, y, w: kpiW, h: kpiH, label: "Δ Institución",
+  drawKpiCard(doc, { x: margin + (kpiW + gap) * 2, y, w: kpiW, h: kpiH, label: "Variación",
     value: data.instDelta === null ? "—" : `${data.instDelta > 0 ? "+" : ""}${data.instDelta.toFixed(2)}`,
     sublabel: "puntos", valueColor: deltaColor(data.instDelta) });
   y += kpiH + 8;
@@ -174,7 +173,7 @@ export async function generarPDFAmbienteInstitucion(
     { label: "N Evo", width: contentW * 0.10, align: "right" as const },
     { label: "Inicial", width: contentW * 0.14, align: "right" as const },
     { label: "Evolución", width: contentW * 0.14, align: "right" as const },
-    { label: "Δ", width: contentW * 0.24, align: "right" as const },
+    { label: "Var.", width: contentW * 0.24, align: "right" as const },
   ];
   y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: colCfg });
   for (let i = 0; i < data.groups.length; i++) {
