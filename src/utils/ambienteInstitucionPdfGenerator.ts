@@ -287,7 +287,7 @@ export async function generarPDFAmbienteInstitucion(
       doc.text("Evo", margin, by + 3);
       drawLikertBar(doc, { x: margin + 8, y: by, w: barW, h: barH, counts: item.countsEvo, showLabels: true });
       const nEvo = item.countsEvo.reduce((a, b) => a + b, 0);
-      const dLabel = item.delta === null ? "" : `Δ ${item.delta > 0 ? "+" : ""}${item.delta.toFixed(2)}`;
+      const dLabel = item.delta === null ? "" : `Var. ${item.delta > 0 ? "+" : ""}${item.delta.toFixed(2)}`;
       setText(doc, deltaColor(item.delta));
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
