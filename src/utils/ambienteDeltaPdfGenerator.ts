@@ -337,23 +337,17 @@ export async function generarPDFAmbienteDelta(
     }
   }
 
-  // ─── ANÁLISIS AUTOMATIZADO ─────────────────────────────────
-  doc.addPage();
-  drawPageHeaderLogos(doc, logos, { margin, pageW });
-  y = CONTENT_START_Y;
-  y = drawSectionTitle(doc, { margin, pageW, y, title: "Análisis automatizado", eyebrow: "Interpretación" });
+  // ─── ANÁLISIS AUTOMATIZADO (only if present) ───────────────
+  if (data.analysisHtml && data.analysisHtml.trim()) {
+    doc.addPage();
+    drawPageHeaderLogos(doc, logos, { margin, pageW });
+    y = CONTENT_START_Y;
+    y = drawSectionTitle(doc, { margin, pageW, y, title: "Análisis automatizado", eyebrow: "Interpretación" });
 
-  setText(doc, PALETTE.text);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+    setText(doc, PALETTE.text);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
 
-  if (!data.analysisHtml || !data.analysisHtml.trim()) {
-    setText(doc, PALETTE.textMuted);
-    doc.setFont("helvetica", "italic");
-    const placeholder = "— Genere el análisis automatizado en la interfaz antes de exportar este informe para incluir la interpretación de los resultados. —";
-    const lines = doc.splitTextToSize(placeholder, contentW);
-    doc.text(lines, margin, y);
-  } else {
     const text = stripHtml(data.analysisHtml);
     for (const p of text.split(/\n\n+/)) {
       if (!p.trim()) continue;
