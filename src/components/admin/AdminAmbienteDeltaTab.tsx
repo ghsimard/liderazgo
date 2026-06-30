@@ -156,8 +156,9 @@ export default function AdminAmbienteDeltaTab() {
       const subsIni = iniAll.filter((s) => s.tipo_formulario === g && comparable.has(s.institucion_educativa));
       const subsEvo = evoAll.filter((s) => s.tipo_formulario === g && comparable.has(s.institucion_educativa));
       const sections = SECTIONS_BY_FORM[g].map((sec) => {
-        const ini = avgScore(subsIni, sec.itemIds);
-        const evo = avgScore(subsEvo, sec.itemIds);
+        const ids = sec.items.map((i) => i.id);
+        const ini = avgScore(subsIni, ids);
+        const evo = avgScore(subsEvo, ids);
         const delta = ini !== null && evo !== null ? evo - ini : null;
         return { title: sec.title, ini, evo, delta };
       });
