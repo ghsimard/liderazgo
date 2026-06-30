@@ -262,7 +262,7 @@ export function drawLikertBar(
     setText(doc, PALETTE.textMuted);
     doc.setFont("helvetica", "italic");
     doc.setFontSize(7);
-    doc.text("Sin respuestas", opts.x + opts.w / 2, opts.y + opts.h / 2 + 1.5, { align: "center" });
+    doc.text("Sin respuestas", opts.x + opts.w / 2, opts.y + opts.h / 2, { align: "center", baseline: "middle" });
     return;
   }
   let cx = opts.x;
@@ -275,7 +275,7 @@ export function drawLikertBar(
       setText(doc, PALETTE.white);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.text(String(opts.counts[i]), cx + seg / 2, opts.y + opts.h / 2 + 2, { align: "center" });
+      doc.text(String(opts.counts[i]), cx + seg / 2, opts.y + opts.h / 2, { align: "center", baseline: "middle" });
     }
     cx += seg;
   }
