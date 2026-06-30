@@ -47,10 +47,11 @@ export function deltaColor(d: number | null): [number, number, number] {
 }
 export function deltaSign(d: number | null): string {
   if (d === null) return "—";
-  if (d > 0.05) return "▲";
-  if (d < -0.05) return "▼";
+  if (d > 0.05) return "(+)";
+  if (d < -0.05) return "(-)";
   return "=";
 }
+
 export function fmtNum(n: number | null, digits = 2): string {
   return n === null ? "—" : n.toFixed(digits);
 }
