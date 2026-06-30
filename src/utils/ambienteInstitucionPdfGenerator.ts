@@ -156,7 +156,7 @@ export async function generarPDFAmbienteInstitucion(
     value: fmtNum(data.instIni), sublabel: `/ ${data.maxScore}`, valueColor: PALETTE.neutral });
   drawKpiCard(doc, { x: margin + kpiW + gap, y, w: kpiW, h: kpiH, label: "Evolución",
     value: fmtNum(data.instEvo), sublabel: `/ ${data.maxScore}`, valueColor: PALETTE.primary });
-  drawKpiCard(doc, { x: margin + (kpiW + gap) * 2, y, w: kpiW, h: kpiH, label: "Δ Institución",
+  drawKpiCard(doc, { x: margin + (kpiW + gap) * 2, y, w: kpiW, h: kpiH, label: "Variación",
     value: data.instDelta === null ? "—" : `${data.instDelta > 0 ? "+" : ""}${data.instDelta.toFixed(2)}`,
     sublabel: "puntos", valueColor: deltaColor(data.instDelta) });
   y += kpiH + 8;
