@@ -172,7 +172,7 @@ export async function generarPDFAmbienteDelta(
   });
   drawKpiCard(doc, {
     x: margin + (kpiW + gap) * 2, y, w: kpiW, h: kpiH,
-    label: "Δ Global",
+    label: "Variación",
     value: data.cohortDelta === null ? "—" : `${data.cohortDelta > 0 ? "+" : ""}${data.cohortDelta.toFixed(2)}`,
     sublabel: "puntos",
     valueColor: deltaColor(data.cohortDelta),
