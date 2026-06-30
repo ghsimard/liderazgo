@@ -265,7 +265,7 @@ export async function generarPDFAmbienteDelta(
       { label: "Sección", width: contentW * 0.46 },
       { label: "Inicial", width: contentW * 0.16, align: "right" as const },
       { label: "Evolución", width: contentW * 0.18, align: "right" as const },
-      { label: "Δ", width: contentW * 0.20, align: "right" as const },
+      { label: "Var.", width: contentW * 0.20, align: "right" as const },
     ];
     y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: secCols });
     for (let i = 0; i < g.sections.length; i++) {
