@@ -96,8 +96,8 @@ export async function generarPDFAmbienteDelta(
   // ─── COVER ─────────────────────────────────────────────────
   drawCoverBand(doc, {
     pageW,
-    title: "Informe Comparativo Δ",
-    subtitle: "Ambiente Escolar — Inicial vs. Evolución",
+    title: "Informe Comparativo",
+    subtitle: "Ambiente Escolar - Inicial vs. Evolución",
   });
 
   y = 80;
@@ -106,7 +106,7 @@ export async function generarPDFAmbienteDelta(
   // Cohorte block
   setFill(doc, PALETTE.surface);
   setDraw(doc, PALETTE.border);
-  doc.roundedRect(margin + 6, y, contentW - 12, 50, 3, 3, "FD");
+  doc.roundedRect(margin + 6, y, contentW - 12, 36, 3, 3, "FD");
 
   setText(doc, PALETTE.accent);
   doc.setFont("helvetica", "bold");
@@ -124,13 +124,11 @@ export async function generarPDFAmbienteDelta(
   setText(doc, PALETTE.textMuted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(`Fase Inicial:  ${fmtDate(data.fechaInicial)}`, pageW / 2, y + 30, { align: "center" });
-  doc.text(`Fase Evolución:  ${fmtDate(data.fechaEvolucion)}`, pageW / 2, y + 37, { align: "center" });
-  doc.text(`Generado:  ${fmtDate(new Date().toISOString())}`, pageW / 2, y + 44, { align: "center" });
+  doc.text(`Generado:  ${fmtDate(new Date().toISOString())}`, pageW / 2, y + 30, { align: "center" });
 
-  y += 65;
+  y += 51;
 
-  // Cohort Δ headline
+  // Cohort headline
   const dc = deltaColor(data.cohortDelta);
   setText(doc, dc);
   doc.setFont("helvetica", "bold");
@@ -143,7 +141,8 @@ export async function generarPDFAmbienteDelta(
   setText(doc, PALETTE.textMuted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Δ global de la cohorte (Evolución − Inicial)", pageW / 2, y, { align: "center" });
+  doc.text("Variación global de la cohorte (Evolución vs Inicial)", pageW / 2, y, { align: "center" });
+
 
   addFooter(1);
 
