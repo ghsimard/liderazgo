@@ -192,7 +192,7 @@ export async function generarPDFAmbienteDelta(
     { label: "N Evo", width: contentW * 0.10, align: "right" as const },
     { label: "Inicial", width: contentW * 0.14, align: "right" as const },
     { label: "Evolución", width: contentW * 0.14, align: "right" as const },
-    { label: "Δ", width: contentW * 0.24, align: "right" as const },
+    { label: "Var.", width: contentW * 0.24, align: "right" as const },
   ];
   y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: colCfg });
   for (let i = 0; i < data.groups.length; i++) {
