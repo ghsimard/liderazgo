@@ -222,7 +222,7 @@ export async function generarPDFAmbienteInstitucion(
       { label: "Sección", width: contentW * 0.46 },
       { label: "Inicial", width: contentW * 0.16, align: "right" as const },
       { label: "Evolución", width: contentW * 0.18, align: "right" as const },
-      { label: "Δ", width: contentW * 0.20, align: "right" as const },
+      { label: "Var.", width: contentW * 0.20, align: "right" as const },
     ];
     y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: secCols });
     for (let i = 0; i < g.sections.length; i++) {
@@ -287,7 +287,7 @@ export async function generarPDFAmbienteInstitucion(
       doc.text("Evo", margin, by + 3);
       drawLikertBar(doc, { x: margin + 8, y: by, w: barW, h: barH, counts: item.countsEvo, showLabels: true });
       const nEvo = item.countsEvo.reduce((a, b) => a + b, 0);
-      const dLabel = item.delta === null ? "" : `Δ ${item.delta > 0 ? "+" : ""}${item.delta.toFixed(2)}`;
+      const dLabel = item.delta === null ? "" : `Var. ${item.delta > 0 ? "+" : ""}${item.delta.toFixed(2)}`;
       setText(doc, deltaColor(item.delta));
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);

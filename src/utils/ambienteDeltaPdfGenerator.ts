@@ -96,8 +96,8 @@ export async function generarPDFAmbienteDelta(
   // ─── COVER ─────────────────────────────────────────────────
   drawCoverBand(doc, {
     pageW,
-    title: "Informe Comparativo Δ",
-    subtitle: "Ambiente Escolar — Inicial vs. Evolución",
+    title: "Informe Comparativo",
+    subtitle: "Ambiente Escolar - Inicial vs. Evolución",
   });
 
   y = 80;
@@ -106,7 +106,7 @@ export async function generarPDFAmbienteDelta(
   // Cohorte block
   setFill(doc, PALETTE.surface);
   setDraw(doc, PALETTE.border);
-  doc.roundedRect(margin + 6, y, contentW - 12, 50, 3, 3, "FD");
+  doc.roundedRect(margin + 6, y, contentW - 12, 36, 3, 3, "FD");
 
   setText(doc, PALETTE.accent);
   doc.setFont("helvetica", "bold");
@@ -124,13 +124,11 @@ export async function generarPDFAmbienteDelta(
   setText(doc, PALETTE.textMuted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(`Fase Inicial:  ${fmtDate(data.fechaInicial)}`, pageW / 2, y + 30, { align: "center" });
-  doc.text(`Fase Evolución:  ${fmtDate(data.fechaEvolucion)}`, pageW / 2, y + 37, { align: "center" });
-  doc.text(`Generado:  ${fmtDate(new Date().toISOString())}`, pageW / 2, y + 44, { align: "center" });
+  doc.text(`Generado:  ${fmtDate(new Date().toISOString())}`, pageW / 2, y + 30, { align: "center" });
 
-  y += 65;
+  y += 51;
 
-  // Cohort Δ headline
+  // Cohort headline
   const dc = deltaColor(data.cohortDelta);
   setText(doc, dc);
   doc.setFont("helvetica", "bold");
@@ -143,7 +141,8 @@ export async function generarPDFAmbienteDelta(
   setText(doc, PALETTE.textMuted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Δ global de la cohorte (Evolución − Inicial)", pageW / 2, y, { align: "center" });
+  doc.text("Variación global de la cohorte (Evolución vs Inicial)", pageW / 2, y, { align: "center" });
+
 
   addFooter(1);
 
@@ -173,7 +172,7 @@ export async function generarPDFAmbienteDelta(
   });
   drawKpiCard(doc, {
     x: margin + (kpiW + gap) * 2, y, w: kpiW, h: kpiH,
-    label: "Δ Global",
+    label: "Variación",
     value: data.cohortDelta === null ? "—" : `${data.cohortDelta > 0 ? "+" : ""}${data.cohortDelta.toFixed(2)}`,
     sublabel: "puntos",
     valueColor: deltaColor(data.cohortDelta),
@@ -193,7 +192,7 @@ export async function generarPDFAmbienteDelta(
     { label: "N Evo", width: contentW * 0.10, align: "right" as const },
     { label: "Inicial", width: contentW * 0.14, align: "right" as const },
     { label: "Evolución", width: contentW * 0.14, align: "right" as const },
-    { label: "Δ", width: contentW * 0.24, align: "right" as const },
+    { label: "Var.", width: contentW * 0.24, align: "right" as const },
   ];
   y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: colCfg });
   for (let i = 0; i < data.groups.length; i++) {
@@ -266,7 +265,7 @@ export async function generarPDFAmbienteDelta(
       { label: "Sección", width: contentW * 0.46 },
       { label: "Inicial", width: contentW * 0.16, align: "right" as const },
       { label: "Evolución", width: contentW * 0.18, align: "right" as const },
-      { label: "Δ", width: contentW * 0.20, align: "right" as const },
+      { label: "Var.", width: contentW * 0.20, align: "right" as const },
     ];
     y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: secCols });
     for (let i = 0; i < g.sections.length; i++) {
@@ -289,21 +288,21 @@ export async function generarPDFAmbienteDelta(
     }
   }
 
-  // ─── Δ POR INSTITUCIÓN ─────────────────────────────────────
+  // ─── VARIACIÓN POR INSTITUCIÓN ─────────────────────────────
   if (data.institucionDeltas.length > 0) {
     doc.addPage();
     drawPageHeaderLogos(doc, logos, { margin, pageW });
     y = CONTENT_START_Y;
     y = drawSectionTitle(doc, {
       margin, pageW, y,
-      title: `Δ por institución (${data.institucionDeltas.length})`,
+      title: `Variación por institución (${data.institucionDeltas.length})`,
       eyebrow: "Comparativa institucional",
     });
 
     setText(doc, PALETTE.textMuted);
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
-    doc.text("Instituciones con respuestas en ambas fases. Ordenadas por Δ descendente.", margin, y);
+    doc.text("Instituciones con respuestas en ambas fases. Ordenadas por variación descendente.", margin, y);
     y += 6;
 
     const instCols = [
@@ -312,8 +311,9 @@ export async function generarPDFAmbienteDelta(
       { label: "N Evo", width: contentW * 0.08, align: "right" as const },
       { label: "Inicial", width: contentW * 0.13, align: "right" as const },
       { label: "Evolución", width: contentW * 0.15, align: "right" as const },
-      { label: "Δ", width: contentW * 0.16, align: "right" as const },
+      { label: "Var.", width: contentW * 0.16, align: "right" as const },
     ];
+
     y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: instCols });
     for (let i = 0; i < data.institucionDeltas.length; i++) {
       ensureSpace(8);
