@@ -291,6 +291,85 @@ export default function AdminAmbienteDeltaTab() {
     }
   };
 
+  // ─── Per-institution payload builder (sections + Likert distribution) ───
+  const countLikert = (subs: Submission[], itemId: string): number[] => {
+    const counts = [0, 0, 0, 0, 0]; // Nunca → Siempre
+    for (const s of subs) {
+      const r = typeof s.respuestas === "string" ? JSON.parse(s.respuestas) : s.respuestas;
+      if (!r) continue;
+      const v = r[itemId];
+      const idx = LIKERT_ORDER.indexOf(v);
+      if (idx >= 0) counts[idx]++;
+    }
+    return counts;
+  };
+
+  const buildInstitucionGroups = (institucion: string): InstGroupData[] => {
+    const { inicial: iniAll, evolucion: evoAll } = phaseSplit;
+    const groups = ["docentes", "estudiantes", "acudientes"] as const;
+    return groups.map((g) => {
+      const subsIni = iniAll.filter((s) => s.tipo_formulario === g && s.institucion_educativa === institucion);
+      const subsEvo = evoAll.filter((s) => s.tipo_formulario === g && s.institucion_educativa === institucion);
+      const sections = SECTIONS_BY_FORM[g].map((sec) => {
+        const ids = sec.items.map((i) => i.id);
+        const ini = avgScore(subsIni, ids);
+        const evo = avgScore(subsEvo, ids);
+        const delta = ini !== null && evo !== null ? evo - ini : null;
+        return {
+          title: sec.title,
+          ini: ini !== null ? Number(ini.toFixed(2)) : null,
+          evo: evo !== null ? Number(evo.toFixed(2)) : null,
+          delta: delta !== null ? Number(delta.toFixed(2)) : null,
+        };
+      });
+      const iniVals = sections.map((s) => s.ini).filter((v): v is number => v !== null);
+      const evoVals = sections.map((s) => s.evo).filter((v): v is number => v !== null);
+      const iniGlobal = iniVals.length ? iniVals.reduce((a, b) => a + b, 0) / iniVals.length : null;
+      const evoGlobal = evoVals.length ? evoVals.reduce((a, b) => a + b, 0) / evoVals.length : null;
+      const deltaGlobal = iniGlobal !== null && evoGlobal !== null ? evoGlobal - iniGlobal : null;
+
+      const likertItems = SECTIONS_BY_FORM[g].flatMap((sec) =>
+        sec.items.map((it) => {
+          const countsIni = countLikert(subsIni, it.id);
+          const countsEvo = countLikert(subsEvo, it.id);
+          const avgIni = avgScore(subsIni, [it.id]);
+          const avgEvo = avgScore(subsEvo, [it.id]);
+          const delta = avgIni !== null && avgEvo !== null ? avgEvo - avgIni : null;
+          return {
+            id: it.id,
+            text: it.text,
+            countsIni,
+            countsEvo,
+            avgIni: avgIni !== null ? Number(avgIni.toFixed(2)) : null,
+            avgEvo: avgEvo !== null ? Number(avgEvo.toFixed(2)) : null,
+            delta: delta !== null ? Number(delta.toFixed(2)) : null,
+          };
+        })
+      );
+
+      return {
+        grupo: g,
+        countIni: subsIni.length,
+        countEvo: subsEvo.length,
+        iniGlobal: iniGlobal !== null ? Number(iniGlobal.toFixed(2)) : null,
+        evoGlobal: evoGlobal !== null ? Number(evoGlobal.toFixed(2)) : null,
+        deltaGlobal: deltaGlobal !== null ? Number(deltaGlobal.toFixed(2)) : null,
+        sections,
+        likertItems,
+      };
+    });
+  };
+
+  const buildInstitucionDeltasPayload = (): InstitucionDeltaRow[] =>
+    institucionDeltas.map((r) => ({
+      institucion: r.institucion,
+      countIni: r.countIni,
+      countEvo: r.countEvo,
+      ini: r.ini !== null ? Number(r.ini.toFixed(2)) : null,
+      evo: r.evo !== null ? Number(r.evo.toFixed(2)) : null,
+      delta: r.delta !== null ? Number(r.delta.toFixed(2)) : null,
+    }));
+
   const handleDownloadPdf = async () => {
     if (!analysis || !selectedCohorte) return;
     setDownloading(true);
@@ -306,6 +385,7 @@ export default function AdminAmbienteDeltaTab() {
           cohortEvo,
           cohortDelta,
           groups: buildDeltasPayload(),
+          institucionDeltas: buildInstitucionDeltasPayload(),
           analysisHtml,
         },
         {
@@ -323,6 +403,96 @@ export default function AdminAmbienteDeltaTab() {
       setDownloading(false);
     }
   };
+
+  const [downloadingInst, setDownloadingInst] = useState<string | null>(null);
+  const [zipping, setZipping] = useState<{ done: number; total: number } | null>(null);
+
+  const handleDownloadInstitucionPdf = async (institucion: string) => {
+    if (!analysis || !selectedCohorte) return;
+    setDownloadingInst(institucion);
+    try {
+      const sources = getPdfLogoSources(images);
+      const row = institucionDeltas.find((r) => r.institucion === institucion);
+      const groups = buildInstitucionGroups(institucion);
+      await generarPDFAmbienteInstitucion(
+        {
+          cohorteNombre,
+          institucionNombre: institucion,
+          fechaInicial: analysis.inicial?.fecha_inicio || null,
+          fechaEvolucion: analysis.evolucion?.fecha_inicio || null,
+          maxScore: MAX_SCORE,
+          instIni: row?.ini ?? null,
+          instEvo: row?.evo ?? null,
+          instDelta: row?.delta ?? null,
+          groups,
+        },
+        {
+          logoRLT: sources.logoRLT,
+          logoCLT: sources.logoCLT,
+          logoCosmo: sources.logoCosmo,
+          showLogoRLT: true,
+          showLogoCLT: true,
+        },
+      );
+      toast.success(`PDF generado: ${institucion}`);
+    } catch (e: any) {
+      toast.error(e.message || "Error al generar el PDF de la institución");
+    } finally {
+      setDownloadingInst(null);
+    }
+  };
+
+  const handleDownloadZip = async () => {
+    if (!analysis || !selectedCohorte || institucionDeltas.length === 0) return;
+    const sources = getPdfLogoSources(images);
+    const zip = new JSZip();
+    const total = institucionDeltas.length;
+    setZipping({ done: 0, total });
+    try {
+      for (let i = 0; i < institucionDeltas.length; i++) {
+        const r = institucionDeltas[i];
+        const groups = buildInstitucionGroups(r.institucion);
+        const blob = (await generarPDFAmbienteInstitucion(
+          {
+            cohorteNombre,
+            institucionNombre: r.institucion,
+            fechaInicial: analysis.inicial?.fecha_inicio || null,
+            fechaEvolucion: analysis.evolucion?.fecha_inicio || null,
+            maxScore: MAX_SCORE,
+            instIni: r.ini,
+            instEvo: r.evo,
+            instDelta: r.delta,
+            groups,
+          },
+          {
+            logoRLT: sources.logoRLT,
+            logoCLT: sources.logoCLT,
+            logoCosmo: sources.logoCosmo,
+            showLogoRLT: true,
+            showLogoCLT: true,
+          },
+          { returnBlob: true },
+        )) as Blob;
+        const safe = r.institucion.replace(/[^a-zA-Z0-9-_]+/g, "_").slice(0, 60);
+        zip.file(`Informe_Delta_${safe}.pdf`, blob);
+        setZipping({ done: i + 1, total });
+      }
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      const safeCoh = cohorteNombre.replace(/[^a-zA-Z0-9-_]+/g, "_");
+      a.href = url;
+      a.download = `Informes_Delta_PorInstitucion_${safeCoh}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`ZIP generado (${total} PDFs)`);
+    } catch (e: any) {
+      toast.error(e.message || "Error al generar el ZIP");
+    } finally {
+      setZipping(null);
+    }
+  };
+
 
   if (loading) {
     return (
