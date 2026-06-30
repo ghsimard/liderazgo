@@ -4,11 +4,13 @@ import { supabase } from "@/utils/dbClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2 } from "lucide-react";
-import { FREQUENCY_OPTIONS, ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT } from "@/data/ambienteEscolarData";
+import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2, FileDown, Archive } from "lucide-react";
+import { FREQUENCY_OPTIONS, ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, type LikertSection } from "@/data/ambienteEscolarData";
 import { useAppImages } from "@/hooks/useAppImages";
 import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
-import { generarPDFAmbienteDelta, type DeltaGroup } from "@/utils/ambienteDeltaPdfGenerator";
+import { generarPDFAmbienteDelta, type DeltaGroup, type InstitucionDeltaRow } from "@/utils/ambienteDeltaPdfGenerator";
+import { generarPDFAmbienteInstitucion, type InstGroupData } from "@/utils/ambienteInstitucionPdfGenerator";
+import JSZip from "jszip";
 import { toast } from "sonner";
 
 interface Cohorte { id: string; nombre: string; }
