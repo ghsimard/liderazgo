@@ -178,8 +178,8 @@ export default function AdminAmbienteDeltaTab() {
       const perGroup = groups.map((g) => {
         const sIni = subsIni.filter((s) => s.tipo_formulario === g);
         const sEvo = subsEvo.filter((s) => s.tipo_formulario === g);
-        const secAvgIni = SECTIONS_BY_FORM[g].map((sec) => avgScore(sIni, sec.itemIds)).filter((v): v is number => v !== null);
-        const secAvgEvo = SECTIONS_BY_FORM[g].map((sec) => avgScore(sEvo, sec.itemIds)).filter((v): v is number => v !== null);
+        const secAvgIni = SECTIONS_BY_FORM[g].map((sec) => avgScore(sIni, sec.items.map((i) => i.id))).filter((v): v is number => v !== null);
+        const secAvgEvo = SECTIONS_BY_FORM[g].map((sec) => avgScore(sEvo, sec.items.map((i) => i.id))).filter((v): v is number => v !== null);
         return {
           ini: secAvgIni.length ? secAvgIni.reduce((a, b) => a + b, 0) / secAvgIni.length : null,
           evo: secAvgEvo.length ? secAvgEvo.reduce((a, b) => a + b, 0) / secAvgEvo.length : null,
