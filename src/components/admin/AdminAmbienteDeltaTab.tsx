@@ -25,11 +25,14 @@ const FREQ_SCORE: Record<string, number> = Object.fromEntries(
 );
 const MAX_SCORE = FREQUENCY_OPTIONS.length;
 
-const SECTIONS_BY_FORM: Record<string, { title: string; itemIds: string[] }[]> = {
-  acudientes: ACUDIENTES_LIKERT.map((s) => ({ title: s.title, itemIds: s.items.map((i) => i.id) })),
-  estudiantes: ESTUDIANTES_LIKERT.map((s) => ({ title: s.title, itemIds: s.items.map((i) => i.id) })),
-  docentes: DOCENTES_LIKERT.map((s) => ({ title: s.title, itemIds: s.items.map((i) => i.id) })),
+const SECTIONS_BY_FORM: Record<string, LikertSection[]> = {
+  acudientes: ACUDIENTES_LIKERT,
+  estudiantes: ESTUDIANTES_LIKERT,
+  docentes: DOCENTES_LIKERT,
 };
+
+// Likert option order for PDF (Nunca → Siempre)
+const LIKERT_ORDER = ["Nunca", "Casi nunca", "A veces", "Casi siempre", "Siempre"] as const;
 
 function avgScore(subs: Submission[], itemIds: string[]): number | null {
   let sum = 0;
