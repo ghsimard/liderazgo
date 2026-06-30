@@ -1,129 +1,78 @@
-# Plan — Réplique indépendante "Encuesta 360" (app autonome)
+## Objectif
 
-## 1. Objectif
-Créer une nouvelle application Lovable **totalement séparée** de RLT, dédiée uniquement à la Encuesta 360, déployée sur Render (Static Site + Web Service Express), avec sa propre base Supabase. Données initiales seedées depuis RLT, puis sync **bidirectionnelle avec confirmation** sur les tables de référence.
+1. Refonte visuelle complète du PDF cohorte (`Informe Δ Ambiente Escolar`).
+2. Nouveau PDF par institución (synthèse Δ + distribution Likert par ítem).
+3. Deux déclencheurs: bouton « PDF » sur chaque ligne du tableau « Δ por institución » + bouton global « Descargar PDFs por institución (ZIP) ».
 
-## 2. Périmètre fonctionnel
+## Périmètre
 
-### Conservé depuis RLT
-- Hub Encuesta 360 (Entrada / Salida)
-- 6 formularios : Acudiente, Administrativo, Autoevaluación, Directivo, Docente, Estudiante
-- Structure pédagogique : Dominios → Competencias → Items → Item texts → Ponderaciones
-- Génération PDF (Reporte 360, blank, etc.)
-- Partage par token UUID
-- Monitoreo 360 (cohorte par institution)
-- Gestion comptes admin + RBAC
-- Fichas de Información (vidées, mais structure conservée)
+- Frontend uniquement (jsPDF + jszip déjà présent). Pas de changement DB ni backend.
+- Réutilisation de `pdfLogoHelper` (cover/header/footer) et des données déjà chargées dans `AdminAmbienteDeltaTab`.
 
-### Supprimé
-- Concept de **Région** (tables `regiones`, `region_*`)
-- Modules RLT non liés : Rúbricas, Satisfacciones, Ambiente Escolar, MEL, Informe Módulo, Asistencia, Tablero de Control, Contact, Reviews, Operator Permissions régionales
-- Tous les `_backup_*`
+## 1. Refonte du PDF cohorte (`ambienteDeltaPdfGenerator.ts`)
 
-### Hiérarchie géographique simplifiée
-`Entidad Territorial → Municipio → Institución` (3 niveaux, plus de Région)
+Charte visuelle:
+- Palette: primaire `#1E3A8A` (bleu profond), accent `#0EA5E9`, vert `#16A34A`, rouge `#DC2626`, gris `#64748B`, fond clair `#F8FAFC`.
+- Typo: Helvetica (jsPDF natif) — titres bold + tracking, corps regular, italique pour métadonnées.
 
-## 3. Architecture cible
+Structure refondue:
+1. **Cover** — Bandeau couleur pleine largeur en haut (60mm) avec titre blanc « Informe Comparativo Δ » + sous-titre « Ambiente Escolar — Inicial vs Evolución ». Logos centrés sous le bandeau. Bloc d'identification (cohorte, dates Inicial/Evolución, fecha generación) dans une carte arrondie. Footer cover sans pagination.
+2. **Résumé exécutif** (nouvelle page) — 3 KPI cards horizontales (Inicial, Evolución, Δ global) avec gros chiffres et badge coloré. Sous-cartes par grupo (Docentes/Estudiantes/Acudientes) avec mini-jauge horizontale (barre Inicial grise + barre Evolución colorée).
+3. **Tabla de contenido** (intégrée au résumé si tient sur 1 page).
+4. **Sistema de calificación** — Encadré stylisé, paragraphes courts, légende colorée ▲ ▼ =.
+5. **Detalle por grupo** — Pour chaque grupo: en-tête coloré pleine largeur (bandeau 10mm), sous-bandeau avec compteurs respuestas + Δ global du grupo en badge à droite, tableau zébré (lignes alternées `#F8FAFC`) avec colonnes Sección / Inicial / Evolución / Δ pt / Δ %; cellule Δ avec pastille colorée (▲ vert / ▼ rouge / = gris).
+6. **Δ por institución** (nouvelle page) — Tableau zébré listant chaque institución comparable: nom, n Ini, n Evo, Inicial, Evolución, Δ, badge coloré.
+7. **Análisis automatizado** — Mise en forme paragraphes justifiés, drop cap optionnel sur première lettre, indentation propre.
 
-```text
-┌─────────────────────────┐     ┌─────────────────────────┐
-│   App RLT (actuelle)    │     │   App 360 (nouvelle)    │
-│   rltficha.lovable.app  │     │   <domaine à définir>   │
-│   Render Static + WS    │     │   Render Static + WS    │
-│   Supabase #1           │     │   Supabase #2 (neuf)    │
-└──────────┬──────────────┘     └─────────┬───────────────┘
-           │                              │
-           │  POST /api/sync/from-360 ←───┤  (modale confirm)
-           ├───→ POST /api/sync/from-rlt  │  (modale confirm)
-           │                              │
-           └──── Tables synchronisées ────┘
-                 (par cedula/code/id stable)
-```
+Détails techniques:
+- Helpers ajoutés: `drawColoredHeaderBar(doc, y, color, title, subtitle?)`, `drawKpiCard(doc, x, y, w, h, label, value, deltaBadge?)`, `drawDeltaBadge(doc, x, y, delta)`, `drawZebraRow(doc, ...)`.
+- Tous les `setTextColor`/`setFillColor` extraits dans un objet `PALETTE` en haut de fichier.
+- `ensureSpace` conservé; ajout d'un helper `addContentPage(title)` qui dessine header logos + titre de section coloré.
+- Type `AmbienteDeltaReportData` étendu avec `institucionDeltas: { institucion: string; countIni: number; countEvo: number; ini: number|null; evo: number|null; delta: number|null }[]`.
 
-## 4. Base de données nouvelle app
+## 2. Nouveau PDF par institución (`ambienteInstitucionPdfGenerator.ts`)
 
-### Tables conservées (structure identique RLT, seedées)
-- `domains_360`, `competencies_360`, `items_360`, `item_texts_360`, `competency_weights`
-- `entidades_territoriales`, `municipios`, `instituciones`
-- `admin_cedulas`, `custom_roles`, `role_permissions`, `user_custom_roles`
-- `app_settings`, `app_images`
+Nouveau fichier qui réutilise la même charte/helpers (extraits dans `pdfLogoHelper` ou `ambienteDeltaPdfStyles.ts` partagé).
 
-### Tables conservées mais **vidées**
-- `fichas_rlt` (structure complète, 0 lignes)
-- `encuestas_360`, `encuesta_invitaciones`, `encuesta_360_visibility`
-- `user_activity_log`
+Structure:
+1. **Cover** — Même bandeau coloré. Titre « Informe Δ por Institución ». Bloc identification: cohorte, **nombre institución**, dates Ini/Evo, n respuestas par grupo (Ini → Evo).
+2. **Síntesis Δ** — 3 KPI cards (Inicial / Evolución / Δ) pour l'institución. Tableau récapitulatif par grupo.
+3. **Detalle por grupo y sección** — Même mise en forme que le PDF cohorte mais restreint à l'institución (avg par sección Ini/Evo/Δ).
+4. **Distribución Likert por ítem** — Pour chaque grupo présent: pour chaque ítem Likert, un mini-bloc:
+   - Énoncé de l'ítem (texte court, wrap).
+   - Deux barres horizontales empilées segmentées (Nunca → Siempre) avec couleurs graduées; ligne « Inicial » au-dessus, « Evolución » en-dessous.
+   - À droite, n total Ini/Evo + Δ moyenne en badge.
+   - Légende des couleurs Likert affichée une fois par grupo.
 
-### Tables supprimées
-- `regiones`, `region_entidades`, `region_municipios`, `region_instituciones`
-- Toutes les tables non-360 listées au point 2
+Détails techniques:
+- Nouveau fichier `src/utils/ambienteInstitucionPdfGenerator.ts` exportant `generarPDFAmbienteInstitucion(data, logos)`.
+- Calcul de la distribution Likert: nouvelle fonction `countLikertDistribution(subs, itemId): Record<option, number>` ajoutée dans le composant (ou util séparé `ambienteDeltaStats.ts`) et appelée pour bâtir le payload PDF.
+- Récupération des libellés d'ítems: `ACUDIENTES_LIKERT / ESTUDIANTES_LIKERT / DOCENTES_LIKERT` exposent déjà `{ id, label }` par ítem; passer la liste complète au PDF.
 
-## 5. Seed initial RLT → Nouvelle App
+## 3. Intégration UI (`AdminAmbienteDeltaTab.tsx`)
 
-Script one-shot (à lancer manuellement) qui copie depuis RLT vers la nouvelle DB :
-1. `entidades_territoriales`, `municipios`, `instituciones`
-2. `domains_360`, `competencies_360`, `items_360`, `item_texts_360`, `competency_weights`
-3. `admin_cedulas` + `custom_roles` + `role_permissions`
-4. `app_settings` (clés 360 uniquement) + `app_images` (logos référencés)
+- Dans le tableau « Δ por institución »: ajouter une colonne « Acciones » avec bouton `PDF` (icône `FileDown`) par ligne → appelle `handleDownloadInstitucionPdf(institucion)`.
+- Au-dessus du tableau (ou à côté du bouton « Descargar informe PDF »), ajouter `Descargar PDFs por institución (ZIP)` qui:
+  - Génère chaque PDF en mémoire (`doc.output("blob")`), les ajoute à un `JSZip`, télécharge `Informe_Delta_PorInstitucion_<cohorte>.zip`.
+  - État `zipping` avec spinner + progression (« 3/12 »).
+- Construire `institucionDeltas` enrichi avec sections par grupo (réutilise le calcul existant `institucionDeltas` + étend avec `sectionsPorGrupo` et `distribucionLikert`).
+- Passer `institucionDeltas` au PDF cohorte refondu pour alimenter la section « Δ por institución ».
 
-Aucune donnée transactionnelle (réponses, invitaciones, fichas) n'est copiée.
+## Fichiers touchés
 
-## 6. Synchronisation bidirectionnelle avec confirmation
+- ✏️ `src/utils/ambienteDeltaPdfGenerator.ts` — refonte complète.
+- ➕ `src/utils/ambienteInstitucionPdfGenerator.ts` — nouveau.
+- ➕ `src/utils/ambienteDeltaPdfStyles.ts` — palette + helpers partagés (KPI card, header bar, badge Δ, zebra row, Likert bar).
+- ✏️ `src/components/admin/AdminAmbienteDeltaTab.tsx` — calcul distribution Likert + sections par instituci ón, 2 nouveaux boutons, état zipping.
 
-### Tables synchronisées
-`entidades_territoriales`, `municipios`, `instituciones`, `domains_360`, `competencies_360`, `items_360`, `item_texts_360`, `competency_weights`
+## Déploiement
 
-### Mécanisme
-- Toute opération **Create / Update / Delete** sur ces tables côté UI ouvre une **modale** :
-  > "Cette modification doit-elle aussi être appliquée dans l'app [RLT|360] ?"
-  > [Seulement ici] [Répliquer dans l'autre app]
-- Si confirmé : appel HTTP authentifié vers l'autre app
-  - Nouvelle app → RLT : `POST https://<rlt-ws>/api/sync/from-360`
-  - RLT → Nouvelle app : `POST https://<new-ws>/api/sync/from-rlt`
-- Payload : `{ table, operation, identifier, payload, source_app }`
-- Auth : header `X-Sync-Token` (secret partagé `SYNC_SHARED_TOKEN`)
-- Idempotence : champ `sync_origin_id` (uuid) pour éviter les boucles
+- 🖥️ **Site statique (Frontend)**: tous les changements ci-dessus. Redeploy nécessaire.
+- ⚙️ **Web Service**: aucun changement.
+- 🗄️ **Base de données**: aucun changement.
 
-### Identifiants stables (pas d'UUID croisé)
-- `instituciones.codigo_dane` (12 chiffres)
-- `municipios.codigo_dane` (5 chiffres)
-- `entidades_territoriales.nombre`
-- `domains_360.code`, `competencies_360.code`, `items_360.code`
+## Vérifications
 
-## 7. Authentification
-- **Admins** : cédula + mot de passe (Express JWT) — identique RLT
-- **Directivos** : cédula uniquement, validation contre `fichas_rlt`
-- **Évaluateurs externes** (Acudiente/Docente/Estudiante/Administrativo) : token UUID sans login
-
-## 8. Déploiement Render
-
-### 🖥️ Site statique (nouveau)
-- Repo Git séparé
-- Build : `bun install && bun run build`
-- Variables : `VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-
-### ⚙️ Web Service Express (nouveau)
-- Routes : `/api/db/*`, `/api/auth/*`, `/api/sync/from-rlt`, `/api/sync/to-rlt`, `/api/grok/*` (si analyse 360 conservée)
-- Variables : `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `SYNC_SHARED_TOKEN`, `RLT_WS_URL`, `XAI_API_KEY`
-
-### 🖥️⚙️ Modifications app RLT (existante)
-- Ajouter route `POST /api/sync/from-360` sur Express RLT
-- Ajouter modale de confirmation côté UI dans les écrans qui éditent les 7 tables partagées
-- Ajouter `SYNC_SHARED_TOKEN` + `NEW_360_WS_URL` dans variables Render RLT
-
-### 🗄️ Base de données
-- **Nouvelle Supabase** : appliquer toutes les migrations 360 (extraites des migrations RLT)
-- **RLT existante** : ajouter colonne `sync_origin_id uuid` sur les 7 tables synchronisées + index unique
-
-## 9. Phases de livraison
-
-1. **Phase 1 — Bootstrap** : nouveau projet Lovable, structure de base, auth admin/directivo, schéma DB
-2. **Phase 2 — Encuesta 360** : copier hub + 6 formularios + Config 360 + Reporte
-3. **Phase 3 — Seed** : script de copie RLT → nouvelle DB
-4. **Phase 4 — Sync** : endpoints `/api/sync/*` des 2 côtés + modale UI
-5. **Phase 5 — Render** : déploiement Static + WS + domaine
-6. **Phase 6 — Recette** : tests bout-en-bout sur les 6 formularios + sync bidirectionnelle
-
-## 10. Points à confirmer plus tard (non bloquants)
-- Nom de domaine final
-- Faut-il sync les `admin_cedulas` et rôles ? (pour l'instant **non**, chaque app a ses propres admins)
-- Faut-il sync les `fichas_rlt` ? (pour l'instant **non**, la nouvelle app aura ses propres directivos)
+- Générer le PDF cohorte pour Itagüí 2025 → contrôler couverture, KPI, tableaux zébrés, section Δ por institución, análisis.
+- Générer 1 PDF institución (ex: Los Gómez) → vérifier distribution Likert lisible et alignée.
+- Générer le ZIP → vérifier nombre de fichiers = nombre d'institutions comparables, nommage `Informe_Delta_<institucion>.pdf`.
