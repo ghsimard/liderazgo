@@ -8,6 +8,13 @@ import {
   CONTENT_BOTTOM_MARGIN,
   type LoadedLogos,
 } from "@/utils/pdfLogoHelper";
+import {
+  PALETTE, setFill, setText, setDraw,
+  deltaColor, fmtNum, fmtDate, stripHtml,
+  drawCoverBand, drawSectionTitle, drawKpiCard, drawDeltaBadge,
+  drawTableHeader, drawTableRow,
+  NOTACION_PARAGRAPHS,
+} from "@/utils/ambienteDeltaPdfStyles";
 
 export interface DeltaSection {
   title: string;
@@ -17,13 +24,22 @@ export interface DeltaSection {
 }
 
 export interface DeltaGroup {
-  grupo: string; // docentes | estudiantes | acudientes
+  grupo: string;
   countIni: number;
   countEvo: number;
   iniGlobal: number | null;
   evoGlobal: number | null;
   deltaGlobal: number | null;
   sections: DeltaSection[];
+}
+
+export interface InstitucionDeltaRow {
+  institucion: string;
+  countIni: number;
+  countEvo: number;
+  ini: number | null;
+  evo: number | null;
+  delta: number | null;
 }
 
 export interface AmbienteDeltaReportData {
@@ -35,6 +51,7 @@ export interface AmbienteDeltaReportData {
   cohortEvo: number | null;
   cohortDelta: number | null;
   groups: DeltaGroup[];
+  institucionDeltas: InstitucionDeltaRow[];
   analysisHtml?: string;
 }
 
@@ -46,60 +63,11 @@ export interface AmbienteDeltaPdfLogos {
   showLogoCLT: boolean;
 }
 
-// ── Helpers ─────────────────────────────────────────────────────
-function fmt(n: number | null): string {
-  return n === null ? "—" : n.toFixed(2);
-}
-function deltaSign(d: number | null): string {
-  if (d === null) return "—";
-  if (d > 0.05) return "▲";
-  if (d < -0.05) return "▼";
-  return "=";
-}
-function deltaColor(d: number | null): [number, number, number] {
-  if (d === null) return [120, 120, 120];
-  if (d > 0.05) return [22, 163, 74]; // green
-  if (d < -0.05) return [220, 38, 38]; // red
-  return [120, 120, 120];
-}
-function stripHtml(html: string): string {
-  return html
-    .replace(/<\s*br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|li|h\d)>/gi, "\n\n")
-    .replace(/<li[^>]*>/gi, "• ")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-function fmtDate(iso?: string | null): string {
-  if (!iso) return "—";
-  // Accept YYYY-MM-DD or full ISO; output DD/MM/YYYY
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yy = d.getFullYear();
-  return `${dd}/${mm}/${yy}`;
-}
-
-const STATIC_NOTACION_PARAGRAPHS: string[] = [
-  "El análisis comparativo (Δ) se calcula entre dos campañas de medición de la misma cohorte: la fase Inicial (línea base) y la fase de Evolución (cierre).",
-  "Cada respuesta se codifica en una escala Likert de frecuencia de 1 a 5 puntos, donde 1 = Nunca y 5 = Siempre. Las opciones intermedias (Casi nunca, A veces, Casi siempre) reciben los valores 2, 3 y 4 respectivamente.",
-  "Por cada sección y grupo (Docentes, Estudiantes, Acudientes) se obtiene el promedio aritmético de todos los ítems Likert respondidos. El Δ corresponde a la diferencia: Promedio Evolución − Promedio Inicial.",
-  "Umbral de significatividad pedagógica: ΔP ≥ 0.5 puntos se considera una mejora notable; ΔP ≤ −0.5 puntos indica un retroceso a atender. Variaciones inferiores a |0.05| se consideran estables.",
-  "Convención visual: ▲ (verde) indica mejora, ▼ (rojo) indica retroceso, = (gris) indica estabilidad. El porcentaje entre paréntesis expresa la variación relativa respecto al valor inicial.",
-  "El promedio global de la cohorte corresponde a la media no ponderada de los promedios obtenidos por los tres grupos encuestados.",
-];
-
 export async function generarPDFAmbienteDelta(
   data: AmbienteDeltaReportData,
   logoSources: AmbienteDeltaPdfLogos,
-): Promise<void> {
+  options?: { returnBlob?: boolean; filename?: string }
+): Promise<Blob | void> {
   const logos: LoadedLogos = await loadPdfLogos(
     { logoRLT: logoSources.logoRLT, logoCLT: logoSources.logoCLT, logoCosmo: logoSources.logoCosmo },
     logoSources.showLogoRLT,
@@ -109,14 +77,13 @@ export async function generarPDFAmbienteDelta(
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const margin = 20;
+  const margin = 18;
   const contentW = pageW - margin * 2;
   let y = 0;
 
   const addFooter = (pageNum: number) => {
     drawFooterCosmo(doc, logos, { margin, pageW, pageH, pageNum });
   };
-
   const ensureSpace = (needed: number) => {
     if (y + needed > pageH - CONTENT_BOTTOM_MARGIN) {
       addFooter(doc.getNumberOfPages());
@@ -126,181 +93,269 @@ export async function generarPDFAmbienteDelta(
     }
   };
 
-  // ─── PAGE 1 — COVER ───
-  y = 30;
-  y = drawCoverLogos(doc, logos, { y, pageW, targetH: 28 }) + 22;
+  // ─── COVER ─────────────────────────────────────────────────
+  drawCoverBand(doc, {
+    pageW,
+    title: "Informe Comparativo Δ",
+    subtitle: "Ambiente Escolar — Inicial vs. Evolución",
+  });
 
-  doc.setFontSize(20);
+  y = 80;
+  y = drawCoverLogos(doc, logos, { y, pageW, targetH: 24 }) + 18;
+
+  // Cohorte block
+  setFill(doc, PALETTE.surface);
+  setDraw(doc, PALETTE.border);
+  doc.roundedRect(margin + 6, y, contentW - 12, 50, 3, 3, "FD");
+
+  setText(doc, PALETTE.accent);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
-  doc.text("INFORME COMPARATIVO Δ", pageW / 2, y, { align: "center" });
-  y += 9;
-  doc.setFontSize(15);
-  doc.setTextColor(80, 80, 80);
-  doc.text("Ambiente Escolar — Inicial vs. Evolución", pageW / 2, y, { align: "center" });
-  y += 16;
+  doc.setFontSize(8);
+  doc.text("COHORTE", pageW / 2, y + 8, { align: "center" });
 
-  doc.setFontSize(13);
+  setText(doc, PALETTE.primary);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
-  doc.text(`Cohorte: ${data.cohorteNombre}`, pageW / 2, y, { align: "center" });
-  y += 12;
+  doc.setFontSize(16);
+  doc.text(data.cohorteNombre, pageW / 2, y + 17, { align: "center" });
 
-  doc.setFontSize(11);
+  setDraw(doc, PALETTE.border);
+  doc.line(margin + 16, y + 22, pageW - margin - 16, y + 22);
+
+  setText(doc, PALETTE.textMuted);
   doc.setFont("helvetica", "normal");
-  doc.text(`Fecha de generación: ${fmtDate(new Date().toISOString())}`, pageW / 2, y, { align: "center" });
-  y += 7;
-  doc.text(`Campaña Inicial: ${fmtDate(data.fechaInicial)}`, pageW / 2, y, { align: "center" });
-  y += 6;
-  doc.text(`Campaña Evolución: ${fmtDate(data.fechaEvolucion)}`, pageW / 2, y, { align: "center" });
-  y += 12;
-
-  // Cohort summary box
-  doc.setDrawColor(200, 200, 200);
-  doc.setFillColor(245, 247, 250);
-  doc.roundedRect(margin + 20, y, contentW - 40, 30, 2, 2, "FD");
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(60, 60, 60);
-  doc.text("Δ GLOBAL DE LA COHORTE", pageW / 2, y + 7, { align: "center" });
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Inicial: ${fmt(data.cohortIni)} / ${data.maxScore}    ·    Evolución: ${fmt(data.cohortEvo)} / ${data.maxScore}`,
-    pageW / 2, y + 15, { align: "center" });
+  doc.text(`Fase Inicial:  ${fmtDate(data.fechaInicial)}`, pageW / 2, y + 30, { align: "center" });
+  doc.text(`Fase Evolución:  ${fmtDate(data.fechaEvolucion)}`, pageW / 2, y + 37, { align: "center" });
+  doc.text(`Generado:  ${fmtDate(new Date().toISOString())}`, pageW / 2, y + 44, { align: "center" });
+
+  y += 65;
+
+  // Cohort Δ headline
   const dc = deltaColor(data.cohortDelta);
-  doc.setTextColor(dc[0], dc[1], dc[2]);
-  doc.setFontSize(13);
+  setText(doc, dc);
   doc.setFont("helvetica", "bold");
-  const deltaLabel = data.cohortDelta === null
-    ? "Sin datos comparables"
-    : `${deltaSign(data.cohortDelta)}  ${data.cohortDelta > 0 ? "+" : ""}${data.cohortDelta.toFixed(2)} pt`;
-  doc.text(deltaLabel, pageW / 2, y + 25, { align: "center" });
+  doc.setFontSize(28);
+  const headline = data.cohortDelta === null
+    ? "Sin datos"
+    : `${data.cohortDelta > 0 ? "+" : ""}${data.cohortDelta.toFixed(2)} pt`;
+  doc.text(headline, pageW / 2, y, { align: "center" });
+  y += 7;
+  setText(doc, PALETTE.textMuted);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text("Δ global de la cohorte (Evolución − Inicial)", pageW / 2, y, { align: "center" });
 
   addFooter(1);
 
-  // ─── PAGE 2 — SISTEMA DE CALIFICACIÓN ───
+  // ─── RESUMEN EJECUTIVO ─────────────────────────────────────
   doc.addPage();
   drawPageHeaderLogos(doc, logos, { margin, pageW });
   y = CONTENT_START_Y;
+  y = drawSectionTitle(doc, { margin, pageW, y, title: "Resumen ejecutivo", eyebrow: "Visión general" });
 
-  doc.setFontSize(15);
+  // 3 KPI cards
+  const gap = 4;
+  const kpiW = (contentW - gap * 2) / 3;
+  const kpiH = 28;
+  drawKpiCard(doc, {
+    x: margin, y, w: kpiW, h: kpiH,
+    label: "Inicial",
+    value: fmtNum(data.cohortIni),
+    sublabel: `/ ${data.maxScore}`,
+    valueColor: PALETTE.neutral,
+  });
+  drawKpiCard(doc, {
+    x: margin + kpiW + gap, y, w: kpiW, h: kpiH,
+    label: "Evolución",
+    value: fmtNum(data.cohortEvo),
+    sublabel: `/ ${data.maxScore}`,
+    valueColor: PALETTE.primary,
+  });
+  drawKpiCard(doc, {
+    x: margin + (kpiW + gap) * 2, y, w: kpiW, h: kpiH,
+    label: "Δ Global",
+    value: data.cohortDelta === null ? "—" : `${data.cohortDelta > 0 ? "+" : ""}${data.cohortDelta.toFixed(2)}`,
+    sublabel: "puntos",
+    valueColor: deltaColor(data.cohortDelta),
+  });
+  y += kpiH + 8;
+
+  // Per-grupo mini-summary
+  setText(doc, PALETTE.text);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
-  doc.text("Sistema de calificación", margin, y);
-  y += 8;
-
   doc.setFontSize(10);
+  doc.text("Promedios por grupo encuestado", margin, y);
+  y += 5;
+
+  const colCfg = [
+    { label: "Grupo", width: contentW * 0.28 },
+    { label: "N Ini", width: contentW * 0.10, align: "right" as const },
+    { label: "N Evo", width: contentW * 0.10, align: "right" as const },
+    { label: "Inicial", width: contentW * 0.14, align: "right" as const },
+    { label: "Evolución", width: contentW * 0.14, align: "right" as const },
+    { label: "Δ", width: contentW * 0.24, align: "right" as const },
+  ];
+  y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: colCfg });
+  for (let i = 0; i < data.groups.length; i++) {
+    const g = data.groups[i];
+    const grupoLabel = g.grupo.charAt(0).toUpperCase() + g.grupo.slice(1);
+    const dLabel = g.deltaGlobal === null
+      ? "—"
+      : `${g.deltaGlobal > 0 ? "+" : ""}${g.deltaGlobal.toFixed(2)} pt`;
+    y = drawTableRow(doc, {
+      x: margin, y, w: contentW,
+      cols: colCfg,
+      zebra: i % 2 === 0,
+      cells: [
+        { text: grupoLabel, bold: true },
+        { text: String(g.countIni), align: "right" },
+        { text: String(g.countEvo), align: "right" },
+        { text: `${fmtNum(g.iniGlobal)} / ${data.maxScore}`, align: "right", color: PALETTE.textMuted },
+        { text: `${fmtNum(g.evoGlobal)} / ${data.maxScore}`, align: "right", color: PALETTE.primary, bold: true },
+        { text: dLabel, align: "right", color: deltaColor(g.deltaGlobal), bold: true },
+      ],
+    });
+  }
+
+  // ─── SISTEMA DE CALIFICACIÓN ───────────────────────────────
+  doc.addPage();
+  drawPageHeaderLogos(doc, logos, { margin, pageW });
+  y = CONTENT_START_Y;
+  y = drawSectionTitle(doc, { margin, pageW, y, title: "Sistema de calificación", eyebrow: "Metodología" });
+
+  setText(doc, PALETTE.text);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(50, 50, 50);
-  for (const p of STATIC_NOTACION_PARAGRAPHS) {
+  doc.setFontSize(10);
+  for (const p of NOTACION_PARAGRAPHS) {
     const lines = doc.splitTextToSize(p, contentW);
     ensureSpace(lines.length * 5 + 4);
     doc.text(lines, margin, y);
     y += lines.length * 5 + 4;
   }
 
-  // ─── PAGE 3+ — DELTAS POR GRUPO ───
-  doc.addPage();
-  drawPageHeaderLogos(doc, logos, { margin, pageW });
-  y = CONTENT_START_Y;
-
-  doc.setFontSize(15);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
-  doc.text("Detalle por grupo", margin, y);
-  y += 8;
-
+  // ─── DETALLE POR GRUPO ─────────────────────────────────────
   for (const g of data.groups) {
-    ensureSpace(28);
+    doc.addPage();
+    drawPageHeaderLogos(doc, logos, { margin, pageW });
+    y = CONTENT_START_Y;
+    const grupoLabel = g.grupo.charAt(0).toUpperCase() + g.grupo.slice(1);
+    y = drawSectionTitle(doc, { margin, pageW, y, title: `Detalle — ${grupoLabel}`, eyebrow: "Grupo encuestado" });
 
-    // Group header
-    doc.setFillColor(235, 240, 248);
-    doc.rect(margin, y, contentW, 9, "F");
-    doc.setFontSize(11);
+    // Group header bar
+    setFill(doc, PALETTE.primary);
+    doc.rect(margin, y, contentW, 11, "F");
+    setText(doc, PALETTE.white);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 30, 30);
-    const groupLabel = g.grupo.charAt(0).toUpperCase() + g.grupo.slice(1);
-    doc.text(groupLabel, margin + 2, y + 6);
+    doc.setFontSize(10);
+    doc.text(`${grupoLabel}  ·  ${g.countIni} resp. Ini · ${g.countEvo} resp. Evo`, margin + 3, y + 7);
+    drawDeltaBadge(doc, { x: margin + contentW - 3, y: y + 7, delta: g.deltaGlobal, align: "right" });
+    y += 14;
 
-    const dc2 = deltaColor(g.deltaGlobal);
-    doc.setTextColor(dc2[0], dc2[1], dc2[2]);
-    const dGlobal = g.deltaGlobal === null
-      ? "—"
-      : `${deltaSign(g.deltaGlobal)} ${g.deltaGlobal > 0 ? "+" : ""}${g.deltaGlobal.toFixed(2)} pt`;
-    doc.text(dGlobal, pageW - margin - 2, y + 6, { align: "right" });
-    y += 9;
-
-    doc.setFontSize(8);
+    // Promedios globales du grupo
+    setText(doc, PALETTE.textMuted);
     doc.setFont("helvetica", "italic");
-    doc.setTextColor(100, 100, 100);
-    doc.text(
-      `Inicial: ${g.countIni} respuestas  ·  Evolución: ${g.countEvo} respuestas  ·  Promedios globales: ${fmt(g.iniGlobal)} → ${fmt(g.evoGlobal)} / ${data.maxScore}`,
-      margin + 2, y + 4
-    );
-    y += 8;
-
-    // Section rows
-    const colW = [contentW * 0.5, contentW * 0.15, contentW * 0.15, contentW * 0.2];
     doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(80, 80, 80);
-    doc.text("Sección", margin + 1, y + 4);
-    doc.text("Inicial", margin + colW[0] + colW[1], y + 4, { align: "right" });
-    doc.text("Evolución", margin + colW[0] + colW[1] + colW[2], y + 4, { align: "right" });
-    doc.text("Δ", margin + contentW - 1, y + 4, { align: "right" });
-    y += 5;
-    doc.setDrawColor(220, 220, 220);
-    doc.line(margin, y, margin + contentW, y);
-    y += 1;
-
-    doc.setFont("helvetica", "normal");
-    for (const sec of g.sections) {
-      ensureSpace(7);
-      doc.setFontSize(8);
-      doc.setTextColor(50, 50, 50);
-      const titleLines = doc.splitTextToSize(sec.title, colW[0] - 2);
-      doc.text(titleLines[0], margin + 1, y + 4);
-      doc.setTextColor(70, 70, 70);
-      doc.text(`${fmt(sec.ini)} / ${data.maxScore}`, margin + colW[0] + colW[1], y + 4, { align: "right" });
-      doc.text(`${fmt(sec.evo)} / ${data.maxScore}`, margin + colW[0] + colW[1] + colW[2], y + 4, { align: "right" });
-      const dc3 = deltaColor(sec.delta);
-      doc.setTextColor(dc3[0], dc3[1], dc3[2]);
-      doc.setFont("helvetica", "bold");
-      const dTxt = sec.delta === null
-        ? "—"
-        : `${deltaSign(sec.delta)} ${sec.delta > 0 ? "+" : ""}${sec.delta.toFixed(2)}`;
-      doc.text(dTxt, margin + contentW - 1, y + 4, { align: "right" });
-      doc.setFont("helvetica", "normal");
-      y += 6;
-    }
+    doc.text(
+      `Promedios globales del grupo: Inicial ${fmtNum(g.iniGlobal)} / ${data.maxScore}  →  Evolución ${fmtNum(g.evoGlobal)} / ${data.maxScore}`,
+      margin, y
+    );
     y += 6;
+
+    // Sections table
+    const secCols = [
+      { label: "Sección", width: contentW * 0.46 },
+      { label: "Inicial", width: contentW * 0.16, align: "right" as const },
+      { label: "Evolución", width: contentW * 0.18, align: "right" as const },
+      { label: "Δ", width: contentW * 0.20, align: "right" as const },
+    ];
+    y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: secCols });
+    for (let i = 0; i < g.sections.length; i++) {
+      ensureSpace(8);
+      const sec = g.sections[i];
+      const dLabel = sec.delta === null
+        ? "—"
+        : `${sec.delta > 0 ? "+" : ""}${sec.delta.toFixed(2)} pt`;
+      y = drawTableRow(doc, {
+        x: margin, y, w: contentW,
+        cols: secCols,
+        zebra: i % 2 === 0,
+        cells: [
+          { text: sec.title, bold: true },
+          { text: `${fmtNum(sec.ini)} / ${data.maxScore}`, align: "right", color: PALETTE.textMuted },
+          { text: `${fmtNum(sec.evo)} / ${data.maxScore}`, align: "right", color: PALETTE.primary, bold: true },
+          { text: dLabel, align: "right", color: deltaColor(sec.delta), bold: true },
+        ],
+      });
+    }
   }
 
-  // ─── ANÁLISIS AUTOMATIZADO ───
+  // ─── Δ POR INSTITUCIÓN ─────────────────────────────────────
+  if (data.institucionDeltas.length > 0) {
+    doc.addPage();
+    drawPageHeaderLogos(doc, logos, { margin, pageW });
+    y = CONTENT_START_Y;
+    y = drawSectionTitle(doc, {
+      margin, pageW, y,
+      title: `Δ por institución (${data.institucionDeltas.length})`,
+      eyebrow: "Comparativa institucional",
+    });
+
+    setText(doc, PALETTE.textMuted);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.text("Instituciones con respuestas en ambas fases. Ordenadas por Δ descendente.", margin, y);
+    y += 6;
+
+    const instCols = [
+      { label: "Institución", width: contentW * 0.40 },
+      { label: "N Ini", width: contentW * 0.08, align: "right" as const },
+      { label: "N Evo", width: contentW * 0.08, align: "right" as const },
+      { label: "Inicial", width: contentW * 0.13, align: "right" as const },
+      { label: "Evolución", width: contentW * 0.15, align: "right" as const },
+      { label: "Δ", width: contentW * 0.16, align: "right" as const },
+    ];
+    y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: instCols });
+    for (let i = 0; i < data.institucionDeltas.length; i++) {
+      ensureSpace(8);
+      const r = data.institucionDeltas[i];
+      const dLabel = r.delta === null
+        ? "—"
+        : `${r.delta > 0 ? "+" : ""}${r.delta.toFixed(2)}`;
+      y = drawTableRow(doc, {
+        x: margin, y, w: contentW,
+        cols: instCols,
+        zebra: i % 2 === 0,
+        cells: [
+          { text: r.institucion, bold: true },
+          { text: String(r.countIni), align: "right" },
+          { text: String(r.countEvo), align: "right" },
+          { text: fmtNum(r.ini), align: "right", color: PALETTE.textMuted },
+          { text: fmtNum(r.evo), align: "right", color: PALETTE.primary, bold: true },
+          { text: dLabel, align: "right", color: deltaColor(r.delta), bold: true },
+        ],
+      });
+    }
+  }
+
+  // ─── ANÁLISIS AUTOMATIZADO ─────────────────────────────────
   doc.addPage();
   drawPageHeaderLogos(doc, logos, { margin, pageW });
   y = CONTENT_START_Y;
+  y = drawSectionTitle(doc, { margin, pageW, y, title: "Análisis automatizado", eyebrow: "Interpretación" });
 
-  doc.setFontSize(15);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
-  doc.text("Análisis automatizado", margin, y);
-  y += 8;
-
-  doc.setFontSize(10);
+  setText(doc, PALETTE.text);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(50, 50, 50);
+  doc.setFontSize(10);
 
-  if (!data.analysisHtml || data.analysisHtml.trim().length === 0) {
+  if (!data.analysisHtml || !data.analysisHtml.trim()) {
+    setText(doc, PALETTE.textMuted);
     doc.setFont("helvetica", "italic");
-    doc.setTextColor(120, 120, 120);
-    const placeholder = "— Genere el análisis automatizado en la interfaz antes de exportar este informe para incluir la interpretación interpretativa de los resultados. —";
+    const placeholder = "— Genere el análisis automatizado en la interfaz antes de exportar este informe para incluir la interpretación de los resultados. —";
     const lines = doc.splitTextToSize(placeholder, contentW);
     doc.text(lines, margin, y);
   } else {
     const text = stripHtml(data.analysisHtml);
-    const paragraphs = text.split(/\n\n+/);
-    for (const p of paragraphs) {
+    for (const p of text.split(/\n\n+/)) {
       if (!p.trim()) continue;
       const lines = doc.splitTextToSize(p.trim(), contentW);
       ensureSpace(lines.length * 5 + 4);
@@ -309,7 +364,7 @@ export async function generarPDFAmbienteDelta(
     }
   }
 
-  // Footers on all pages
+  // ─── Footers ───
   const totalPages = doc.getNumberOfPages();
   for (let i = 2; i <= totalPages; i++) {
     doc.setPage(i);
@@ -317,5 +372,9 @@ export async function generarPDFAmbienteDelta(
   }
 
   const safeCohorte = data.cohorteNombre.replace(/[^a-zA-Z0-9-_]+/g, "_");
-  doc.save(`Informe_Delta_AmbienteEscolar_${safeCohorte}.pdf`);
+  const filename = options?.filename || `Informe_Delta_AmbienteEscolar_${safeCohorte}.pdf`;
+  if (options?.returnBlob) {
+    return doc.output("blob");
+  }
+  doc.save(filename);
 }

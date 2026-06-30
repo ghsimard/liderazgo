@@ -4,11 +4,13 @@ import { supabase } from "@/utils/dbClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2 } from "lucide-react";
-import { FREQUENCY_OPTIONS, ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT } from "@/data/ambienteEscolarData";
+import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2, FileDown, Archive } from "lucide-react";
+import { FREQUENCY_OPTIONS, ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, type LikertSection } from "@/data/ambienteEscolarData";
 import { useAppImages } from "@/hooks/useAppImages";
 import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
-import { generarPDFAmbienteDelta, type DeltaGroup } from "@/utils/ambienteDeltaPdfGenerator";
+import { generarPDFAmbienteDelta, type DeltaGroup, type InstitucionDeltaRow } from "@/utils/ambienteDeltaPdfGenerator";
+import { generarPDFAmbienteInstitucion, type InstGroupData } from "@/utils/ambienteInstitucionPdfGenerator";
+import JSZip from "jszip";
 import { toast } from "sonner";
 
 interface Cohorte { id: string; nombre: string; }
@@ -23,11 +25,14 @@ const FREQ_SCORE: Record<string, number> = Object.fromEntries(
 );
 const MAX_SCORE = FREQUENCY_OPTIONS.length;
 
-const SECTIONS_BY_FORM: Record<string, { title: string; itemIds: string[] }[]> = {
-  acudientes: ACUDIENTES_LIKERT.map((s) => ({ title: s.title, itemIds: s.items.map((i) => i.id) })),
-  estudiantes: ESTUDIANTES_LIKERT.map((s) => ({ title: s.title, itemIds: s.items.map((i) => i.id) })),
-  docentes: DOCENTES_LIKERT.map((s) => ({ title: s.title, itemIds: s.items.map((i) => i.id) })),
+const SECTIONS_BY_FORM: Record<string, LikertSection[]> = {
+  acudientes: ACUDIENTES_LIKERT,
+  estudiantes: ESTUDIANTES_LIKERT,
+  docentes: DOCENTES_LIKERT,
 };
+
+// Likert option order for PDF (Nunca → Siempre)
+const LIKERT_ORDER = ["Nunca", "Casi nunca", "A veces", "Casi siempre", "Siempre"] as const;
 
 function avgScore(subs: Submission[], itemIds: string[]): number | null {
   let sum = 0;
@@ -151,8 +156,9 @@ export default function AdminAmbienteDeltaTab() {
       const subsIni = iniAll.filter((s) => s.tipo_formulario === g && comparable.has(s.institucion_educativa));
       const subsEvo = evoAll.filter((s) => s.tipo_formulario === g && comparable.has(s.institucion_educativa));
       const sections = SECTIONS_BY_FORM[g].map((sec) => {
-        const ini = avgScore(subsIni, sec.itemIds);
-        const evo = avgScore(subsEvo, sec.itemIds);
+        const ids = sec.items.map((i) => i.id);
+        const ini = avgScore(subsIni, ids);
+        const evo = avgScore(subsEvo, ids);
         const delta = ini !== null && evo !== null ? evo - ini : null;
         return { title: sec.title, ini, evo, delta };
       });
@@ -172,8 +178,8 @@ export default function AdminAmbienteDeltaTab() {
       const perGroup = groups.map((g) => {
         const sIni = subsIni.filter((s) => s.tipo_formulario === g);
         const sEvo = subsEvo.filter((s) => s.tipo_formulario === g);
-        const secAvgIni = SECTIONS_BY_FORM[g].map((sec) => avgScore(sIni, sec.itemIds)).filter((v): v is number => v !== null);
-        const secAvgEvo = SECTIONS_BY_FORM[g].map((sec) => avgScore(sEvo, sec.itemIds)).filter((v): v is number => v !== null);
+        const secAvgIni = SECTIONS_BY_FORM[g].map((sec) => avgScore(sIni, sec.items.map((i) => i.id))).filter((v): v is number => v !== null);
+        const secAvgEvo = SECTIONS_BY_FORM[g].map((sec) => avgScore(sEvo, sec.items.map((i) => i.id))).filter((v): v is number => v !== null);
         return {
           ini: secAvgIni.length ? secAvgIni.reduce((a, b) => a + b, 0) / secAvgIni.length : null,
           evo: secAvgEvo.length ? secAvgEvo.reduce((a, b) => a + b, 0) / secAvgEvo.length : null,
@@ -285,6 +291,85 @@ export default function AdminAmbienteDeltaTab() {
     }
   };
 
+  // ─── Per-institution payload builder (sections + Likert distribution) ───
+  const countLikert = (subs: Submission[], itemId: string): number[] => {
+    const counts = [0, 0, 0, 0, 0]; // Nunca → Siempre
+    for (const s of subs) {
+      const r = typeof s.respuestas === "string" ? JSON.parse(s.respuestas) : s.respuestas;
+      if (!r) continue;
+      const v = r[itemId];
+      const idx = LIKERT_ORDER.indexOf(v);
+      if (idx >= 0) counts[idx]++;
+    }
+    return counts;
+  };
+
+  const buildInstitucionGroups = (institucion: string): InstGroupData[] => {
+    const { inicial: iniAll, evolucion: evoAll } = phaseSplit;
+    const groups = ["docentes", "estudiantes", "acudientes"] as const;
+    return groups.map((g) => {
+      const subsIni = iniAll.filter((s) => s.tipo_formulario === g && s.institucion_educativa === institucion);
+      const subsEvo = evoAll.filter((s) => s.tipo_formulario === g && s.institucion_educativa === institucion);
+      const sections = SECTIONS_BY_FORM[g].map((sec) => {
+        const ids = sec.items.map((i) => i.id);
+        const ini = avgScore(subsIni, ids);
+        const evo = avgScore(subsEvo, ids);
+        const delta = ini !== null && evo !== null ? evo - ini : null;
+        return {
+          title: sec.title,
+          ini: ini !== null ? Number(ini.toFixed(2)) : null,
+          evo: evo !== null ? Number(evo.toFixed(2)) : null,
+          delta: delta !== null ? Number(delta.toFixed(2)) : null,
+        };
+      });
+      const iniVals = sections.map((s) => s.ini).filter((v): v is number => v !== null);
+      const evoVals = sections.map((s) => s.evo).filter((v): v is number => v !== null);
+      const iniGlobal = iniVals.length ? iniVals.reduce((a, b) => a + b, 0) / iniVals.length : null;
+      const evoGlobal = evoVals.length ? evoVals.reduce((a, b) => a + b, 0) / evoVals.length : null;
+      const deltaGlobal = iniGlobal !== null && evoGlobal !== null ? evoGlobal - iniGlobal : null;
+
+      const likertItems = SECTIONS_BY_FORM[g].flatMap((sec) =>
+        sec.items.map((it) => {
+          const countsIni = countLikert(subsIni, it.id);
+          const countsEvo = countLikert(subsEvo, it.id);
+          const avgIni = avgScore(subsIni, [it.id]);
+          const avgEvo = avgScore(subsEvo, [it.id]);
+          const delta = avgIni !== null && avgEvo !== null ? avgEvo - avgIni : null;
+          return {
+            id: it.id,
+            text: it.text,
+            countsIni,
+            countsEvo,
+            avgIni: avgIni !== null ? Number(avgIni.toFixed(2)) : null,
+            avgEvo: avgEvo !== null ? Number(avgEvo.toFixed(2)) : null,
+            delta: delta !== null ? Number(delta.toFixed(2)) : null,
+          };
+        })
+      );
+
+      return {
+        grupo: g,
+        countIni: subsIni.length,
+        countEvo: subsEvo.length,
+        iniGlobal: iniGlobal !== null ? Number(iniGlobal.toFixed(2)) : null,
+        evoGlobal: evoGlobal !== null ? Number(evoGlobal.toFixed(2)) : null,
+        deltaGlobal: deltaGlobal !== null ? Number(deltaGlobal.toFixed(2)) : null,
+        sections,
+        likertItems,
+      };
+    });
+  };
+
+  const buildInstitucionDeltasPayload = (): InstitucionDeltaRow[] =>
+    institucionDeltas.map((r) => ({
+      institucion: r.institucion,
+      countIni: r.countIni,
+      countEvo: r.countEvo,
+      ini: r.ini !== null ? Number(r.ini.toFixed(2)) : null,
+      evo: r.evo !== null ? Number(r.evo.toFixed(2)) : null,
+      delta: r.delta !== null ? Number(r.delta.toFixed(2)) : null,
+    }));
+
   const handleDownloadPdf = async () => {
     if (!analysis || !selectedCohorte) return;
     setDownloading(true);
@@ -300,6 +385,7 @@ export default function AdminAmbienteDeltaTab() {
           cohortEvo,
           cohortDelta,
           groups: buildDeltasPayload(),
+          institucionDeltas: buildInstitucionDeltasPayload(),
           analysisHtml,
         },
         {
@@ -317,6 +403,96 @@ export default function AdminAmbienteDeltaTab() {
       setDownloading(false);
     }
   };
+
+  const [downloadingInst, setDownloadingInst] = useState<string | null>(null);
+  const [zipping, setZipping] = useState<{ done: number; total: number } | null>(null);
+
+  const handleDownloadInstitucionPdf = async (institucion: string) => {
+    if (!analysis || !selectedCohorte) return;
+    setDownloadingInst(institucion);
+    try {
+      const sources = getPdfLogoSources(images);
+      const row = institucionDeltas.find((r) => r.institucion === institucion);
+      const groups = buildInstitucionGroups(institucion);
+      await generarPDFAmbienteInstitucion(
+        {
+          cohorteNombre,
+          institucionNombre: institucion,
+          fechaInicial: analysis.inicial?.fecha_inicio || null,
+          fechaEvolucion: analysis.evolucion?.fecha_inicio || null,
+          maxScore: MAX_SCORE,
+          instIni: row?.ini ?? null,
+          instEvo: row?.evo ?? null,
+          instDelta: row?.delta ?? null,
+          groups,
+        },
+        {
+          logoRLT: sources.logoRLT,
+          logoCLT: sources.logoCLT,
+          logoCosmo: sources.logoCosmo,
+          showLogoRLT: true,
+          showLogoCLT: true,
+        },
+      );
+      toast.success(`PDF generado: ${institucion}`);
+    } catch (e: any) {
+      toast.error(e.message || "Error al generar el PDF de la institución");
+    } finally {
+      setDownloadingInst(null);
+    }
+  };
+
+  const handleDownloadZip = async () => {
+    if (!analysis || !selectedCohorte || institucionDeltas.length === 0) return;
+    const sources = getPdfLogoSources(images);
+    const zip = new JSZip();
+    const total = institucionDeltas.length;
+    setZipping({ done: 0, total });
+    try {
+      for (let i = 0; i < institucionDeltas.length; i++) {
+        const r = institucionDeltas[i];
+        const groups = buildInstitucionGroups(r.institucion);
+        const blob = (await generarPDFAmbienteInstitucion(
+          {
+            cohorteNombre,
+            institucionNombre: r.institucion,
+            fechaInicial: analysis.inicial?.fecha_inicio || null,
+            fechaEvolucion: analysis.evolucion?.fecha_inicio || null,
+            maxScore: MAX_SCORE,
+            instIni: r.ini,
+            instEvo: r.evo,
+            instDelta: r.delta,
+            groups,
+          },
+          {
+            logoRLT: sources.logoRLT,
+            logoCLT: sources.logoCLT,
+            logoCosmo: sources.logoCosmo,
+            showLogoRLT: true,
+            showLogoCLT: true,
+          },
+          { returnBlob: true },
+        )) as Blob;
+        const safe = r.institucion.replace(/[^a-zA-Z0-9-_]+/g, "_").slice(0, 60);
+        zip.file(`Informe_Delta_${safe}.pdf`, blob);
+        setZipping({ done: i + 1, total });
+      }
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      const safeCoh = cohorteNombre.replace(/[^a-zA-Z0-9-_]+/g, "_");
+      a.href = url;
+      a.download = `Informes_Delta_PorInstitucion_${safeCoh}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`ZIP generado (${total} PDFs)`);
+    } catch (e: any) {
+      toast.error(e.message || "Error al generar el ZIP");
+    } finally {
+      setZipping(null);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -459,8 +635,19 @@ export default function AdminAmbienteDeltaTab() {
       {institucionDeltas.length > 0 && (
         <Card>
           <CardContent className="p-5 space-y-3">
-            <h3 className="text-base font-bold">Δ por institución ({institucionDeltas.length})</h3>
-            <p className="text-xs text-muted-foreground">Instituciones con respuestas tanto en Inicial como en Evolución. Ordenadas por Δ descendente.</p>
+            <div className="flex justify-between items-start flex-wrap gap-2">
+              <div>
+                <h3 className="text-base font-bold">Δ por institución ({institucionDeltas.length})</h3>
+                <p className="text-xs text-muted-foreground">Instituciones con respuestas tanto en Inicial como en Evolución. Ordenadas por Δ descendente.</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={handleDownloadZip} disabled={!!zipping}>
+                {zipping ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generando {zipping.done}/{zipping.total}…</>
+                ) : (
+                  <><Archive className="w-4 h-4 mr-2" />Descargar PDFs por institución (ZIP)</>
+                )}
+              </Button>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead className="border-b">
@@ -470,13 +657,15 @@ export default function AdminAmbienteDeltaTab() {
                     <th className="py-2 px-2 text-right">N evo</th>
                     <th className="py-2 px-2 text-right">Inicial</th>
                     <th className="py-2 px-2 text-right">Evolución</th>
-                    <th className="py-2 pl-2 text-right">Δ</th>
+                    <th className="py-2 px-2 text-right">Δ</th>
+                    <th className="py-2 pl-2 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {institucionDeltas.map((r) => {
                     const d = r.delta ?? 0;
                     const color = d > 0.05 ? "text-green-600" : d < -0.05 ? "text-destructive" : "text-muted-foreground";
+                    const isDl = downloadingInst === r.institucion;
                     return (
                       <tr key={r.institucion} className="border-b last:border-0">
                         <td className="py-2 pr-3">{r.institucion}</td>
@@ -484,8 +673,19 @@ export default function AdminAmbienteDeltaTab() {
                         <td className="py-2 px-2 text-right tabular-nums">{r.countEvo}</td>
                         <td className="py-2 px-2 text-right tabular-nums">{r.ini !== null ? r.ini.toFixed(2) : "—"}</td>
                         <td className="py-2 px-2 text-right tabular-nums">{r.evo !== null ? r.evo.toFixed(2) : "—"}</td>
-                        <td className={`py-2 pl-2 text-right tabular-nums font-semibold ${color}`}>
+                        <td className={`py-2 px-2 text-right tabular-nums font-semibold ${color}`}>
                           {d > 0 ? "+" : ""}{d.toFixed(2)}
+                        </td>
+                        <td className="py-2 pl-2 text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDownloadInstitucionPdf(r.institucion)}
+                            disabled={isDl || !!zipping}
+                            title="Descargar informe PDF de esta institución"
+                          >
+                            {isDl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                          </Button>
                         </td>
                       </tr>
                     );
@@ -496,6 +696,7 @@ export default function AdminAmbienteDeltaTab() {
           </CardContent>
         </Card>
       )}
+
 
       {/* Análisis automatizado (UI) */}
       <Card className="border-accent/40">
