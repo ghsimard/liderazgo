@@ -635,8 +635,19 @@ export default function AdminAmbienteDeltaTab() {
       {institucionDeltas.length > 0 && (
         <Card>
           <CardContent className="p-5 space-y-3">
-            <h3 className="text-base font-bold">Δ por institución ({institucionDeltas.length})</h3>
-            <p className="text-xs text-muted-foreground">Instituciones con respuestas tanto en Inicial como en Evolución. Ordenadas por Δ descendente.</p>
+            <div className="flex justify-between items-start flex-wrap gap-2">
+              <div>
+                <h3 className="text-base font-bold">Δ por institución ({institucionDeltas.length})</h3>
+                <p className="text-xs text-muted-foreground">Instituciones con respuestas tanto en Inicial como en Evolución. Ordenadas por Δ descendente.</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={handleDownloadZip} disabled={!!zipping}>
+                {zipping ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generando {zipping.done}/{zipping.total}…</>
+                ) : (
+                  <><Archive className="w-4 h-4 mr-2" />Descargar PDFs por institución (ZIP)</>
+                )}
+              </Button>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead className="border-b">
@@ -646,13 +657,15 @@ export default function AdminAmbienteDeltaTab() {
                     <th className="py-2 px-2 text-right">N evo</th>
                     <th className="py-2 px-2 text-right">Inicial</th>
                     <th className="py-2 px-2 text-right">Evolución</th>
-                    <th className="py-2 pl-2 text-right">Δ</th>
+                    <th className="py-2 px-2 text-right">Δ</th>
+                    <th className="py-2 pl-2 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {institucionDeltas.map((r) => {
                     const d = r.delta ?? 0;
                     const color = d > 0.05 ? "text-green-600" : d < -0.05 ? "text-destructive" : "text-muted-foreground";
+                    const isDl = downloadingInst === r.institucion;
                     return (
                       <tr key={r.institucion} className="border-b last:border-0">
                         <td className="py-2 pr-3">{r.institucion}</td>
@@ -660,8 +673,19 @@ export default function AdminAmbienteDeltaTab() {
                         <td className="py-2 px-2 text-right tabular-nums">{r.countEvo}</td>
                         <td className="py-2 px-2 text-right tabular-nums">{r.ini !== null ? r.ini.toFixed(2) : "—"}</td>
                         <td className="py-2 px-2 text-right tabular-nums">{r.evo !== null ? r.evo.toFixed(2) : "—"}</td>
-                        <td className={`py-2 pl-2 text-right tabular-nums font-semibold ${color}`}>
+                        <td className={`py-2 px-2 text-right tabular-nums font-semibold ${color}`}>
                           {d > 0 ? "+" : ""}{d.toFixed(2)}
+                        </td>
+                        <td className="py-2 pl-2 text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDownloadInstitucionPdf(r.institucion)}
+                            disabled={isDl || !!zipping}
+                            title="Descargar informe PDF de esta institución"
+                          >
+                            {isDl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                          </Button>
                         </td>
                       </tr>
                     );
@@ -672,6 +696,7 @@ export default function AdminAmbienteDeltaTab() {
           </CardContent>
         </Card>
       )}
+
 
       {/* Análisis automatizado (UI) */}
       <Card className="border-accent/40">
