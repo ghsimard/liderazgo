@@ -299,10 +299,11 @@ export function drawLikertLegend(
 }
 
 export const NOTACION_PARAGRAPHS: string[] = [
-  "El análisis comparativo (Δ) se calcula entre dos campañas de medición de la misma cohorte: la fase Inicial (línea base) y la fase de Evolución (cierre).",
+  "El análisis comparativo (Variación) se calcula entre dos campañas de medición de la misma cohorte: la fase Inicial (línea base) y la fase de Evolución (cierre).",
   "Cada respuesta se codifica en una escala Likert de frecuencia de 1 a 5 puntos, donde 1 = Nunca y 5 = Siempre. Las opciones intermedias (Casi nunca, A veces, Casi siempre) reciben los valores 2, 3 y 4 respectivamente.",
-  "Por cada sección y grupo (Docentes, Estudiantes, Acudientes) se obtiene el promedio aritmético de todos los ítems Likert respondidos. El Δ corresponde a la diferencia: Promedio Evolución − Promedio Inicial.",
-  "Umbral de significatividad pedagógica: ΔP ≥ 0.5 puntos se considera una mejora notable; ΔP ≤ −0.5 puntos indica un retroceso a atender. Variaciones inferiores a |0.05| se consideran estables.",
-  "Convención visual: ▲ (verde) indica mejora, ▼ (rojo) indica retroceso, = (gris) indica estabilidad.",
+  "Por cada sección y grupo (Docentes, Estudiantes, Acudientes) se obtiene el promedio aritmético de todos los ítems Likert respondidos. La Variación corresponde a la diferencia: Promedio Evolución - Promedio Inicial.",
+  "Umbral de significatividad pedagógica: Variación >= 0.5 puntos se considera una mejora notable; Variación <= -0.5 puntos indica un retroceso a atender. Variaciones inferiores a 0.05 (en valor absoluto) se consideran estables.",
+  "Convención visual: (+) en verde indica mejora, (-) en rojo indica retroceso, = en gris indica estabilidad.",
   "El promedio global de la cohorte corresponde a la media no ponderada de los promedios obtenidos por los tres grupos encuestados.",
 ];
+
