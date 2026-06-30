@@ -288,21 +288,21 @@ export async function generarPDFAmbienteDelta(
     }
   }
 
-  // ─── Δ POR INSTITUCIÓN ─────────────────────────────────────
+  // ─── VARIACIÓN POR INSTITUCIÓN ─────────────────────────────
   if (data.institucionDeltas.length > 0) {
     doc.addPage();
     drawPageHeaderLogos(doc, logos, { margin, pageW });
     y = CONTENT_START_Y;
     y = drawSectionTitle(doc, {
       margin, pageW, y,
-      title: `Δ por institución (${data.institucionDeltas.length})`,
+      title: `Variación por institución (${data.institucionDeltas.length})`,
       eyebrow: "Comparativa institucional",
     });
 
     setText(doc, PALETTE.textMuted);
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
-    doc.text("Instituciones con respuestas en ambas fases. Ordenadas por Δ descendente.", margin, y);
+    doc.text("Instituciones con respuestas en ambas fases. Ordenadas por variación descendente.", margin, y);
     y += 6;
 
     const instCols = [
@@ -311,8 +311,9 @@ export async function generarPDFAmbienteDelta(
       { label: "N Evo", width: contentW * 0.08, align: "right" as const },
       { label: "Inicial", width: contentW * 0.13, align: "right" as const },
       { label: "Evolución", width: contentW * 0.15, align: "right" as const },
-      { label: "Δ", width: contentW * 0.16, align: "right" as const },
+      { label: "Var.", width: contentW * 0.16, align: "right" as const },
     ];
+
     y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: instCols });
     for (let i = 0; i < data.institucionDeltas.length; i++) {
       ensureSpace(8);
