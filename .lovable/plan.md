@@ -1,89 +1,129 @@
-Do I know what the issue is? Oui.
+# Plan — Réplique indépendante "Encuesta 360" (app autonome)
 
-Ce que le Delta doit être
+## 1. Objectif
+Créer une nouvelle application Lovable **totalement séparée** de RLT, dédiée uniquement à la Encuesta 360, déployée sur Render (Static Site + Web Service Express), avec sa propre base Supabase. Données initiales seedées depuis RLT, puis sync **bidirectionnelle avec confirmation** sur les tables de référence.
 
-Le Delta doit être strictement :
+## 2. Périmètre fonctionnel
 
-```text
-Δ = moyenne Evolución - moyenne Inicial
-```
+### Conservé depuis RLT
+- Hub Encuesta 360 (Entrada / Salida)
+- 6 formularios : Acudiente, Administrativo, Autoevaluación, Directivo, Docente, Estudiante
+- Structure pédagogique : Dominios → Competencias → Items → Item texts → Ponderaciones
+- Génération PDF (Reporte 360, blank, etc.)
+- Partage par token UUID
+- Monitoreo 360 (cohorte par institution)
+- Gestion comptes admin + RBAC
+- Fichas de Información (vidées, mais structure conservée)
 
-Mais les deux moyennes doivent venir de deux ensembles de réponses différents :
+### Supprimé
+- Concept de **Région** (tables `regiones`, `region_*`)
+- Modules RLT non liés : Rúbricas, Satisfacciones, Ambiente Escolar, MEL, Informe Módulo, Asistencia, Tablero de Control, Contact, Reviews, Operator Permissions régionales
+- Tous les `_backup_*`
 
-- Inicial : réponses de la même cohorte, de la même institution, avec phase réelle `linea_base`.
-- Evolución : réponses de la même cohorte, de la même institution, avec phase réelle `cierre`.
-- Même groupe de formulaire : docentes avec docentes, estudiantes avec estudiantes, acudientes avec acudientes.
-- Même structure d’items/sections.
-- On compare seulement les institutions qui ont au moins une réponse dans les deux phases.
+### Hiérarchie géographique simplifiée
+`Entidad Territorial → Municipio → Institución` (3 niveaux, plus de Région)
 
-Donc pour Institución Educativa Caracas, le calcul attendu est :
-
-```text
-promedio_cierre(Caracas) - promedio_linea_base(Caracas)
-```
-
-Pas `linea_base(Caracas) - linea_base(Caracas)`. Si N Inicial = N Evolución et que les moyennes sont exactement identiques sur toutes les institutions, cela signifie presque certainement que les mêmes lignes sont utilisées deux fois.
-
-Pourquoi c’est devenu pire
-
-Le problème vient de deux faiblesses dans la logique actuelle :
-
-1. La sélection Inicial n’est pas suffisamment limitée à la cohorte choisie. Elle utilise surtout `fase = linea_base` + institution, ce qui peut mélanger des réponses d’autres cohortes si l’institution porte le même nom.
-2. La sélection Evolución a été corrigée vers `fase = cierre`, mais les données disponibles montrent une incohérence importante : plusieurs campagnes 2025 ont des réponses `linea_base`, et aucune vraie réponse `cierre` visible dans la base interrogée ici. Dans ce cas, l’interface ne devrait jamais fabriquer une Evolución ni afficher les mêmes valeurs que Inicial.
-
-Ce qu’il faut corriger
-
-1. Filtrer les réponses par cohorte avant tout calcul
-   - Ajouter `cohorte_id` dans les données chargées depuis `encuestas_ambiente_escolar`.
-   - Pour Inicial et Evolución, garder seulement les réponses de `selectedCohorte`.
-   - Si `cohorte_id` manque sur une ancienne ligne, utiliser la campagne comme secours, mais jamais au point de transformer une ligne `linea_base` en `cierre`.
-
-2. Définir une phase réelle unique pour chaque réponse
-   - Si la réponse contient `fase = linea_base`, elle est Inicial.
-   - Si la réponse contient `fase = cierre`, elle est Evolución.
-   - Si `fase` est vide seulement, utiliser la phase de la campagne comme fallback.
-   - Si la réponse dit explicitement `linea_base`, elle ne doit jamais être comptée comme Evolución même si `campana_id` pointe vers une campagne de cierre.
-
-3. Construire deux jeux séparés
+## 3. Architecture cible
 
 ```text
-respuestasIniciales = cohorte sélectionnée + phase réelle linea_base
-respuestasEvolucion = cohorte sélectionnée + phase réelle cierre
+┌─────────────────────────┐     ┌─────────────────────────┐
+│   App RLT (actuelle)    │     │   App 360 (nouvelle)    │
+│   rltficha.lovable.app  │     │   <domaine à définir>   │
+│   Render Static + WS    │     │   Render Static + WS    │
+│   Supabase #1           │     │   Supabase #2 (neuf)    │
+└──────────┬──────────────┘     └─────────┬───────────────┘
+           │                              │
+           │  POST /api/sync/from-360 ←───┤  (modale confirm)
+           ├───→ POST /api/sync/from-rlt  │  (modale confirm)
+           │                              │
+           └──── Tables synchronisées ────┘
+                 (par cedula/code/id stable)
 ```
 
-Puis :
+## 4. Base de données nouvelle app
 
-```text
-institucionesComparables = institutions présentes dans Inicial ET Evolución
-```
+### Tables conservées (structure identique RLT, seedées)
+- `domains_360`, `competencies_360`, `items_360`, `item_texts_360`, `competency_weights`
+- `entidades_territoriales`, `municipios`, `instituciones`
+- `admin_cedulas`, `custom_roles`, `role_permissions`, `user_custom_roles`
+- `app_settings`, `app_images`
 
-4. Calculer tous les niveaux depuis ces deux jeux séparés
-   - Global cohorte.
-   - Par groupe : docentes, estudiantes, acudientes.
-   - Par institution.
-   - Par section.
+### Tables conservées mais **vidées**
+- `fichas_rlt` (structure complète, 0 lignes)
+- `encuestas_360`, `encuesta_invitaciones`, `encuesta_360_visibility`
+- `user_activity_log`
 
-5. Empêcher l’affichage trompeur
-   - Si aucune vraie réponse Evolución n’existe, afficher `— Evolución` et ne pas montrer un Delta égal à 0.
-   - Le tableau doit afficher uniquement les institutions réellement comparables.
-   - Option utile : afficher un petit diagnostic des volumes : `Inicial: X respuestas · Evolución: Y respuestas · Comparables: Z instituciones`.
+### Tables supprimées
+- `regiones`, `region_entidades`, `region_municipios`, `region_instituciones`
+- Toutes les tables non-360 listées au point 2
 
-Actions nécessaires
+## 5. Seed initial RLT → Nouvelle App
 
-🖥️ Site statique (Frontend)
-- Corriger `AdminAmbienteDeltaTab.tsx` pour charger `cohorte_id` et appliquer les nouveaux filtres.
-- Remplacer la logique actuelle par une fonction unique de résolution de phase.
-- Corriger les compteurs et l’affichage quand Evolución est absente.
+Script one-shot (à lancer manuellement) qui copie depuis RLT vers la nouvelle DB :
+1. `entidades_territoriales`, `municipios`, `instituciones`
+2. `domains_360`, `competencies_360`, `items_360`, `item_texts_360`, `competency_weights`
+3. `admin_cedulas` + `custom_roles` + `role_permissions`
+4. `app_settings` (clés 360 uniquement) + `app_images` (logos référencés)
 
-⚙️ Web Service (Backend Express)
-- A priori rien à modifier si le proxy retourne déjà `cohorte_id`.
-- Vérifier seulement que la colonne `cohorte_id` est bien autorisée dans les lectures de `encuestas_ambiente_escolar`.
+Aucune donnée transactionnelle (réponses, invitaciones, fichas) n'est copiée.
 
-🗄️ Base de données (Manual SQL)
-- Pas de modification automatique dans ce plan.
-- Si les réponses Evolución existent ailleurs mais ne sont pas marquées `fase = cierre`, il faudra ensuite un contrôle manuel des données pour identifier les lignes à corriger.
-- Si aucune réponse `cierre` n’existe réellement, l’interface doit l’assumer et ne pas afficher de Delta.
+## 6. Synchronisation bidirectionnelle avec confirmation
 
-Résultat attendu
+### Tables synchronisées
+`entidades_territoriales`, `municipios`, `instituciones`, `domains_360`, `competencies_360`, `items_360`, `item_texts_360`, `competency_weights`
 
-Après correction, Caracas ne pourra plus afficher Inicial = Evolución à cause d’un recyclage des mêmes lignes. Soit elle aura un vrai Delta basé sur des réponses `cierre`, soit elle disparaîtra du tableau comparatif / affichera absence de données Evolución.
+### Mécanisme
+- Toute opération **Create / Update / Delete** sur ces tables côté UI ouvre une **modale** :
+  > "Cette modification doit-elle aussi être appliquée dans l'app [RLT|360] ?"
+  > [Seulement ici] [Répliquer dans l'autre app]
+- Si confirmé : appel HTTP authentifié vers l'autre app
+  - Nouvelle app → RLT : `POST https://<rlt-ws>/api/sync/from-360`
+  - RLT → Nouvelle app : `POST https://<new-ws>/api/sync/from-rlt`
+- Payload : `{ table, operation, identifier, payload, source_app }`
+- Auth : header `X-Sync-Token` (secret partagé `SYNC_SHARED_TOKEN`)
+- Idempotence : champ `sync_origin_id` (uuid) pour éviter les boucles
+
+### Identifiants stables (pas d'UUID croisé)
+- `instituciones.codigo_dane` (12 chiffres)
+- `municipios.codigo_dane` (5 chiffres)
+- `entidades_territoriales.nombre`
+- `domains_360.code`, `competencies_360.code`, `items_360.code`
+
+## 7. Authentification
+- **Admins** : cédula + mot de passe (Express JWT) — identique RLT
+- **Directivos** : cédula uniquement, validation contre `fichas_rlt`
+- **Évaluateurs externes** (Acudiente/Docente/Estudiante/Administrativo) : token UUID sans login
+
+## 8. Déploiement Render
+
+### 🖥️ Site statique (nouveau)
+- Repo Git séparé
+- Build : `bun install && bun run build`
+- Variables : `VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+
+### ⚙️ Web Service Express (nouveau)
+- Routes : `/api/db/*`, `/api/auth/*`, `/api/sync/from-rlt`, `/api/sync/to-rlt`, `/api/grok/*` (si analyse 360 conservée)
+- Variables : `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `SYNC_SHARED_TOKEN`, `RLT_WS_URL`, `XAI_API_KEY`
+
+### 🖥️⚙️ Modifications app RLT (existante)
+- Ajouter route `POST /api/sync/from-360` sur Express RLT
+- Ajouter modale de confirmation côté UI dans les écrans qui éditent les 7 tables partagées
+- Ajouter `SYNC_SHARED_TOKEN` + `NEW_360_WS_URL` dans variables Render RLT
+
+### 🗄️ Base de données
+- **Nouvelle Supabase** : appliquer toutes les migrations 360 (extraites des migrations RLT)
+- **RLT existante** : ajouter colonne `sync_origin_id uuid` sur les 7 tables synchronisées + index unique
+
+## 9. Phases de livraison
+
+1. **Phase 1 — Bootstrap** : nouveau projet Lovable, structure de base, auth admin/directivo, schéma DB
+2. **Phase 2 — Encuesta 360** : copier hub + 6 formularios + Config 360 + Reporte
+3. **Phase 3 — Seed** : script de copie RLT → nouvelle DB
+4. **Phase 4 — Sync** : endpoints `/api/sync/*` des 2 côtés + modale UI
+5. **Phase 5 — Render** : déploiement Static + WS + domaine
+6. **Phase 6 — Recette** : tests bout-en-bout sur les 6 formularios + sync bidirectionnelle
+
+## 10. Points à confirmer plus tard (non bloquants)
+- Nom de domaine final
+- Faut-il sync les `admin_cedulas` et rôles ? (pour l'instant **non**, chaque app a ses propres admins)
+- Faut-il sync les `fichas_rlt` ? (pour l'instant **non**, la nouvelle app aura ses propres directivos)
