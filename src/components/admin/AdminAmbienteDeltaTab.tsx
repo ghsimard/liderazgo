@@ -622,7 +622,7 @@ export default function AdminAmbienteDeltaTab() {
               <Button variant="outline" size="sm" className="gap-2">
                 <MapPin className="w-4 h-4" />
                 {selectedRegions.length === 0
-                  ? "Regiones: Todas"
+                  ? "Regiones"
                   : selectedRegions.length === 1
                     ? `Regiones: ${selectedRegions[0]}`
                     : `Regiones: ${selectedRegions.length} seleccionadas`}
