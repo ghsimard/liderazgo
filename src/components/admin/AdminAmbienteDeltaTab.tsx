@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2, FileDown, Archive } from "lucide-react";
+import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2, FileDown, Archive, MapPin } from "lucide-react";
 import { FREQUENCY_OPTIONS, ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, type LikertSection } from "@/data/ambienteEscolarData";
 import { useAppImages } from "@/hooks/useAppImages";
 import { useGeographicData } from "@/hooks/useGeographicData";
@@ -621,6 +621,56 @@ export default function AdminAmbienteDeltaTab() {
             </PopoverContent>
           </Popover>
 
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <MapPin className="w-4 h-4" />
+                {selectedRegions.length === 0
+                  ? "Regiones: Todas"
+                  : selectedRegions.length === 1
+                    ? `Regiones: ${selectedRegions[0]}`
+                    : `Regiones: ${selectedRegions.length} seleccionadas`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="start">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-muted-foreground">Filtrar por región</span>
+                {selectedRegions.length > 0 && (
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => setSelectedRegions([])}
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={selectedRegions.length === 0}
+                    onCheckedChange={() => setSelectedRegions([])}
+                  />
+                  <span>Todas</span>
+                </label>
+                {regionNames.map((r) => {
+                  const checked = selectedRegions.includes(r);
+                  return (
+                    <label key={r} className="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => {
+                          setSelectedRegions((prev) =>
+                            v ? [...prev, r] : prev.filter((x) => x !== r)
+                          );
+                        }}
+                      />
+                      <span>{r}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {analysis && (
             <div className="text-sm text-muted-foreground">
