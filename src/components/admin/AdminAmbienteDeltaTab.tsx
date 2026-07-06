@@ -411,6 +411,8 @@ export default function AdminAmbienteDeltaTab() {
           groups: buildDeltasPayload(),
           institucionDeltas: buildInstitucionDeltasPayload(),
           analysisHtml,
+          regionesLabel,
+
         },
         {
           logoRLT: sources.logoRLT,
