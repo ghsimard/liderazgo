@@ -103,11 +103,6 @@ export default function AdminAmbienteDeltaTab() {
     return cohortes.filter((c) => ids.has(c.id));
   }, [cohortes, campanas]);
 
-  useEffect(() => {
-    if (selectedCohortes.length === 0 && cohortesConCampanas.length > 0) {
-      setSelectedCohortes([cohortesConCampanas[0].id]);
-    }
-  }, [cohortesConCampanas, selectedCohortes]);
 
   // Reset analysis when cohort or region filter changes
   useEffect(() => {
