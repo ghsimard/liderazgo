@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2, FileDown, Archive, MapPin } from "lucide-react";
+import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2, FileDown, Archive } from "lucide-react";
 import { FREQUENCY_OPTIONS, ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, type LikertSection } from "@/data/ambienteEscolarData";
 import { useAppImages } from "@/hooks/useAppImages";
 import { useGeographicData } from "@/hooks/useGeographicData";
