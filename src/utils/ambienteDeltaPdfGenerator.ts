@@ -105,30 +105,106 @@ export async function generarPDFAmbienteDelta(
   y = 80;
   y = drawCoverLogos(doc, logos, { y, pageW, targetH: 24 }) + 18;
 
-  // Cohorte block
-  setFill(doc, PALETTE.surface);
-  setDraw(doc, PALETTE.border);
-  doc.roundedRect(margin + 6, y, contentW - 12, 36, 3, 3, "FD");
+  // Dynamic cohorte block: font size and box height adapt to the name length
+  const drawCoverCohorteBlock = (
+    startY: number,
+    opts: { label: string; mainText: string; footerText: string; boxWidth: number }
+  ): number => {
+    const boxX = margin + 6;
+    const boxW = opts.boxWidth;
+    const innerPadY = 4;
+    const labelSize = 8;
+    const footerSize = 9;
+    // Single cohorte keeps the original 16 pt look; multiple cohortes are scaled down
+    const isMultiple = opts.mainText.includes(",");
+    const mainMaxSize = isMultiple ? 14 : 16;
+    const mainMinSize = 10;
+    const maxTextWidth = boxW - 24; // 6 mm left + 6 mm right inner padding
+    const lineHeight = (size: number) => size * 0.4; // mm
 
-  setText(doc, PALETTE.accent);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.text("COHORTE", pageW / 2, y + 8, { align: "center" });
+    // Choose the largest font size that keeps the cohorte name readable and compact.
+    // For multiple cohortes we prefer 1 line; for a single cohorte we also prefer 1 line.
+    // If 1 line cannot be achieved at the minimum size, we allow up to 2 lines.
+    let mainSize = mainMaxSize;
+    let mainLines: string[] = [];
+    for (let targetLines = 1; targetLines <= 2; targetLines++) {
+      for (let size = mainMaxSize; size >= mainMinSize; size--) {
+        doc.setFontSize(size);
+        const lines = doc.splitTextToSize(opts.mainText, maxTextWidth);
+        if (lines.length <= targetLines) {
+          mainSize = size;
+          mainLines = lines;
+          break;
+        }
+      }
+      if (mainLines.length > 0) break;
+    }
+    if (mainLines.length === 0) {
+      doc.setFontSize(mainMinSize);
+      mainLines = doc.splitTextToSize(opts.mainText, maxTextWidth).slice(0, 2);
+      mainSize = mainMinSize;
+    }
+    if (mainLines.length > 2) mainLines = mainLines.slice(0, 2);
 
-  setText(doc, PALETTE.primary);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text(data.cohorteNombre, pageW / 2, y + 17, { align: "center" });
+    const mainLineHeight = lineHeight(mainSize);
+    const labelMainGap = 3;
+    const mainFooterGap = 4;
 
-  setDraw(doc, PALETTE.border);
-  doc.line(margin + 16, y + 22, pageW - margin - 16, y + 22);
+    // Block height computed from baselines, adding half-line descender padding
+    const blockHeight =
+      innerPadY * 2 +
+      labelSize * 0.5 +
+      labelMainGap +
+      mainSize * 0.2 +
+      mainLines.length * mainLineHeight +
+      mainFooterGap +
+      lineHeight(footerSize);
 
-  setText(doc, PALETTE.textMuted);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text(`Generado:  ${fmtDate(new Date().toISOString())}`, pageW / 2, y + 30, { align: "center" });
+    // Draw box
+    setFill(doc, PALETTE.surface);
+    setDraw(doc, PALETTE.border);
+    doc.roundedRect(boxX, startY, boxW, blockHeight, 3, 3, "FD");
 
-  y += 51;
+    // Label
+    setText(doc, PALETTE.accent);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(labelSize);
+    const labelBaseline = startY + innerPadY + labelSize * 0.3;
+    doc.text(opts.label, pageW / 2, labelBaseline, { align: "center" });
+
+    // Main text (centered, wrapped)
+    setText(doc, PALETTE.primary);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(mainSize);
+    const mainBaseline = startY + innerPadY + labelSize * 0.5 + labelMainGap + mainSize * 0.2;
+    mainLines.forEach((line, i) => {
+      doc.text(line, pageW / 2, mainBaseline + i * mainLineHeight, { align: "center" });
+    });
+
+    // Separator line
+    const separatorY = mainBaseline + mainLines.length * mainLineHeight + mainFooterGap / 2;
+    setDraw(doc, PALETTE.border);
+    doc.line(margin + 16, separatorY, pageW - margin - 16, separatorY);
+
+    // Footer line
+    setText(doc, PALETTE.textMuted);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(footerSize);
+    doc.text(opts.footerText, pageW / 2, separatorY + mainFooterGap, { align: "center" });
+
+    return startY + blockHeight;
+  };
+
+  const cohorteLabel = data.cohorteNombre.split(",").length > 1 ? "COHORTES INSCRITAS" : "COHORTE";
+
+  y = drawCoverCohorteBlock(y, {
+    label: cohorteLabel,
+    mainText: data.cohorteNombre,
+    footerText: `Generado:  ${fmtDate(new Date().toISOString())}`,
+    boxWidth: contentW - 12,
+  });
+
+  y += 15;
 
   // Regiones scope label (only when a specific subset is selected)
   if (data.regionesLabel && data.regionesLabel.trim()) {
