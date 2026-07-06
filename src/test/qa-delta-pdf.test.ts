@@ -54,9 +54,14 @@ async function writePdf(cohorteNombre: string, path: string) {
     },
     { returnBlob: true }
   );
-  const arrayBuffer = await (blob as Blob).arrayBuffer();
   const fs = await import("fs");
-  fs.writeFileSync(path, Buffer.from(arrayBuffer));
+  const reader = new FileReader();
+  const dataUrl = await new Promise<string>((resolve) => {
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(blob as Blob);
+  });
+  const base64 = dataUrl.split(",")[1];
+  fs.writeFileSync(path, Buffer.from(base64, "base64"));
 }
 
 describe("QA - PDF cover", () => {
