@@ -566,6 +566,57 @@ export default function AdminAmbienteDeltaTab() {
               ))}
             </SelectContent>
           </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <MapPin className="w-4 h-4" />
+                {selectedRegions.length === 0
+                  ? "Regiones: Todas"
+                  : selectedRegions.length === 1
+                    ? `Regiones: ${selectedRegions[0]}`
+                    : `Regiones: ${selectedRegions.length} seleccionadas`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="start">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-muted-foreground">Filtrar por región</span>
+                {selectedRegions.length > 0 && (
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => setSelectedRegions([])}
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={selectedRegions.length === 0}
+                    onCheckedChange={() => setSelectedRegions([])}
+                  />
+                  <span>Todas</span>
+                </label>
+                {regionNames.map((r) => {
+                  const checked = selectedRegions.includes(r);
+                  return (
+                    <label key={r} className="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => {
+                          setSelectedRegions((prev) =>
+                            v ? [...prev, r] : prev.filter((x) => x !== r)
+                          );
+                        }}
+                      />
+                      <span>{r}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+
           {analysis && (
             <div className="text-sm text-muted-foreground">
               Inicial: {phaseSplit.inicial.length} resp · Evolución: {phaseSplit.evolucion.length} resp · Comparables: {institucionesConEvolucion.size} institución(es)
