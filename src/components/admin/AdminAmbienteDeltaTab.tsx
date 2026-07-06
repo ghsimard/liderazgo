@@ -596,7 +596,9 @@ export default function AdminAmbienteDeltaTab() {
                 </div>
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {cohortesConCampanas.map((c) => {
+                {cohortes.map((c) => {
+                  const hasCampanas = cohortesConCampanas.some((cc) => cc.id === c.id);
+
                   const checked = selectedCohortes.includes(c.id);
                   return (
                     <label key={c.id} className="flex items-center gap-2 cursor-pointer text-sm">
