@@ -110,6 +110,7 @@ export default function AdminAmbienteDeltaTab() {
   }, [selectedCohortes, selectedRegions]);
 
 
+
   // Institutions allowed by region filter (null = no filter)
   const allowedInstitutionsSet = useMemo<Set<string> | null>(() => {
     if (selectedRegions.length === 0) return null;
@@ -316,6 +317,20 @@ export default function AdminAmbienteDeltaTab() {
       setGenerating(false);
     }
   };
+
+  // Auto-generar el análisis cuando haya cohortes seleccionadas y datos comparables
+  useEffect(() => {
+    if (
+      selectedCohortes.length > 0 &&
+      analysis &&
+      institucionesConEvolucion.size > 0 &&
+      !analysisHtml &&
+      !generating
+    ) {
+      handleGenerateAnalysis();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCohortes, selectedRegions, analysis, institucionesConEvolucion]);
 
   // ─── Per-institution payload builder (sections + Likert distribution) ───
   const countLikert = (subs: Submission[], itemId: string): number[] => {
