@@ -80,4 +80,27 @@ describe("Ambiente Delta PDF cover", () => {
     expect(blob).toBeInstanceOf(Blob);
     expect((blob as Blob).size).toBeGreaterThan(0);
   });
+
+  it("generates a PDF with formatted analysis HTML without throwing", async () => {
+    const data: any = makeData("Rionegro 2025");
+    data.analysisHtml =
+      `<p>La cohorte presenta un <strong>avance general positivo</strong> de <em>+0.40 puntos</em> entre la fase Inicial y la de Evolución.</p>` +
+      `<p>Entre las fortalezas destacadas se encuentran:</p>` +
+      `<ul><li><strong>Ambiente de aprendizaje:</strong> mejora de 0.40 pt, reflejo de mayores oportunidades de participación.</li>` +
+      `<li><strong>Relaciones interpersonales:</strong> estancamiento menor a 0.2 pt, requiere atención.</li></ul>` +
+      `<p>Se recomienda <em>reforzar los espacios de diálogo</em> en el corto plazo.</p>`;
+    const blob = await generarPDFAmbienteDelta(
+      data,
+      {
+        logoRLT: tinyPng,
+        logoCLT: tinyPng,
+        logoCosmo: tinyPng,
+        showLogoRLT: true,
+        showLogoCLT: true,
+      },
+      { returnBlob: true }
+    );
+    expect(blob).toBeInstanceOf(Blob);
+    expect((blob as Blob).size).toBeGreaterThan(0);
+  });
 });
