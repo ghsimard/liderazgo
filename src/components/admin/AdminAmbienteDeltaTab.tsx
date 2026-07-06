@@ -225,6 +225,55 @@ export default function AdminAmbienteDeltaTab() {
       .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
   }, [selectedCohortes, phaseSplit, institucionesConEvolucion]);
 
+  // Institution → region lookup (from geographic data)
+  const instToRegion = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const rn of regionNames) {
+      for (const ie of getInstitucionesForRegion(rn)) m.set(ie, rn);
+    }
+    return m;
+  }, [regionNames, getInstitucionesForRegion]);
+
+  // Filtered + sorted rows for the per-institution table
+  const institucionDeltasView = useMemo(() => {
+    const q = instSearch.trim().toLowerCase();
+    const filtered = q
+      ? institucionDeltas.filter((r) => r.institucion.toLowerCase().includes(q))
+      : institucionDeltas.slice();
+    const dir = instSortDir === "asc" ? 1 : -1;
+    filtered.sort((a, b) => {
+      if (instSortKey === "institucion") {
+        return a.institucion.localeCompare(b.institucion) * dir;
+      }
+      const va = a[instSortKey];
+      const vb = b[instSortKey];
+      const na = va === null || va === undefined ? -Infinity : (va as number);
+      const nb = vb === null || vb === undefined ? -Infinity : (vb as number);
+      return (na - nb) * dir;
+    });
+    return filtered;
+  }, [institucionDeltas, instSearch, instSortKey, instSortDir]);
+
+  // Grouped variant: Map<region, rows[]> preserving sort order within each region
+  const institucionDeltasGrouped = useMemo(() => {
+    const groups = new Map<string, typeof institucionDeltasView>();
+    for (const r of institucionDeltasView) {
+      const region = instToRegion.get(r.institucion) || "Sin región";
+      if (!groups.has(region)) groups.set(region, [] as typeof institucionDeltasView);
+      groups.get(region)!.push(r);
+    }
+    return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [institucionDeltasView, instToRegion]);
+
+  const toggleInstSort = (key: typeof instSortKey) => {
+    if (instSortKey === key) {
+      setInstSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setInstSortKey(key);
+      setInstSortDir(key === "institucion" ? "asc" : "desc");
+    }
+  };
+
   // Compute group-level and cohort-level aggregates
   const groupAggregates = useMemo(() => {
     if (!analysis) return [];
