@@ -565,14 +565,57 @@ export default function AdminAmbienteDeltaTab() {
     <div className="space-y-6">
       <div className="flex flex-wrap gap-3 items-center justify-between">
         <div className="flex flex-wrap gap-3 items-center">
-          <Select value={selectedCohortes} onValueChange={setSelectedCohorte}>
-            <SelectTrigger className="w-64"><SelectValue placeholder="Cohorte" /></SelectTrigger>
-            <SelectContent>
-              {cohortesConCampanas.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 min-w-[16rem] justify-start">
+                {selectedCohortes.length === 0
+                  ? "Seleccionar cohorte(s)…"
+                  : selectedCohortes.length === 1
+                    ? cohorteNombre
+                    : `${selectedCohortes.length} cohortes seleccionadas`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="start">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-muted-foreground">Cohortes</span>
+                <div className="flex gap-2">
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => setSelectedCohortes(cohortesConCampanas.map((c) => c.id))}
+                  >
+                    Todas
+                  </button>
+                  {selectedCohortes.length > 0 && (
+                    <button
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => setSelectedCohortes([])}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {cohortesConCampanas.map((c) => {
+                  const checked = selectedCohortes.includes(c.id);
+                  return (
+                    <label key={c.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => {
+                          setSelectedCohortes((prev) =>
+                            v ? [...prev, c.id] : prev.filter((x) => x !== c.id)
+                          );
+                        }}
+                      />
+                      <span>{c.nombre}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
