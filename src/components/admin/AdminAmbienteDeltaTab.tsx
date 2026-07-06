@@ -109,10 +109,21 @@ export default function AdminAmbienteDeltaTab() {
     }
   }, [cohortesConCampanas, selectedCohorte]);
 
-  // Reset analysis when cohort changes
+  // Reset analysis when cohort or region filter changes
   useEffect(() => {
     setAnalysisHtml("");
-  }, [selectedCohorte]);
+  }, [selectedCohorte, selectedRegions]);
+
+  // Institutions allowed by region filter (null = no filter)
+  const allowedInstitutionsSet = useMemo<Set<string> | null>(() => {
+    if (selectedRegions.length === 0) return null;
+    const s = new Set<string>();
+    for (const r of selectedRegions) {
+      for (const inst of getInstitucionesForRegion(r)) s.add(inst);
+    }
+    return s;
+  }, [selectedRegions, getInstitucionesForRegion]);
+
 
   // Split submissions for the selected cohort into two strictly separated sets:
   // Inicial = phase 'linea_base', Evolución = phase 'cierre'.
