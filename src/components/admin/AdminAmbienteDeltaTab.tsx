@@ -770,7 +770,7 @@ export default function AdminAmbienteDeltaTab() {
             <div className="flex justify-between items-start flex-wrap gap-2">
               <div>
                 <h3 className="text-base font-bold">Δ por institución ({institucionDeltas.length})</h3>
-                <p className="text-xs text-muted-foreground">Instituciones con respuestas tanto en Inicial como en Evolución. Ordenadas por Δ descendente.</p>
+                <p className="text-xs text-muted-foreground">Instituciones con respuestas tanto en Inicial como en Evolución. Ordene una columna o agrupe por región.</p>
               </div>
               <Button size="sm" variant="outline" onClick={handleDownloadZip} disabled={!!zipping}>
                 {zipping ? (
@@ -780,48 +780,93 @@ export default function AdminAmbienteDeltaTab() {
                 )}
               </Button>
             </div>
+
+            {/* Controls: search + group toggle */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[220px] max-w-md">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={instSearch}
+                  onChange={(e) => setInstSearch(e.target.value)}
+                  placeholder="Buscar institución…"
+                  className="h-8 pl-8 text-xs"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                <Checkbox
+                  checked={instGroupByRegion}
+                  onCheckedChange={(v) => setInstGroupByRegion(v === true)}
+                />
+                Agrupar por región
+              </label>
+              <span className="text-xs text-muted-foreground ml-auto">
+                {institucionDeltasView.length} / {institucionDeltas.length}
+              </span>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead className="border-b">
                   <tr className="text-left text-muted-foreground">
-                    <th className="py-2 pr-3">Institución</th>
-                    <th className="py-2 px-2 text-right">N ini</th>
-                    <th className="py-2 px-2 text-right">N evo</th>
-                    <th className="py-2 px-2 text-right">Inicial</th>
-                    <th className="py-2 px-2 text-right">Evolución</th>
-                    <th className="py-2 px-2 text-right">Δ</th>
+                    <SortableTh label="Institución" active={instSortKey === "institucion"} dir={instSortDir} onClick={() => toggleInstSort("institucion")} className="py-2 pr-3" />
+                    <SortableTh label="N ini" active={instSortKey === "countIni"} dir={instSortDir} onClick={() => toggleInstSort("countIni")} className="py-2 px-2" align="right" />
+                    <SortableTh label="N evo" active={instSortKey === "countEvo"} dir={instSortDir} onClick={() => toggleInstSort("countEvo")} className="py-2 px-2" align="right" />
+                    <SortableTh label="Inicial" active={instSortKey === "ini"} dir={instSortDir} onClick={() => toggleInstSort("ini")} className="py-2 px-2" align="right" />
+                    <SortableTh label="Evolución" active={instSortKey === "evo"} dir={instSortDir} onClick={() => toggleInstSort("evo")} className="py-2 px-2" align="right" />
+                    <SortableTh label="Δ" active={instSortKey === "delta"} dir={instSortDir} onClick={() => toggleInstSort("delta")} className="py-2 px-2" align="right" />
                     <th className="py-2 pl-2 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {institucionDeltas.map((r) => {
-                    const d = r.delta ?? 0;
-                    const color = d > 0.05 ? "text-green-600" : d < -0.05 ? "text-destructive" : "text-muted-foreground";
-                    const isDl = downloadingInst === r.institucion;
-                    return (
-                      <tr key={r.institucion} className="border-b last:border-0">
-                        <td className="py-2 pr-3">{r.institucion}</td>
-                        <td className="py-2 px-2 text-right tabular-nums">{r.countIni}</td>
-                        <td className="py-2 px-2 text-right tabular-nums">{r.countEvo}</td>
-                        <td className="py-2 px-2 text-right tabular-nums">{r.ini !== null ? r.ini.toFixed(2) : "—"}</td>
-                        <td className="py-2 px-2 text-right tabular-nums">{r.evo !== null ? r.evo.toFixed(2) : "—"}</td>
-                        <td className={`py-2 px-2 text-right tabular-nums font-semibold ${color}`}>
-                          {d > 0 ? "+" : ""}{d.toFixed(2)}
+                  {(() => {
+                    const renderRow = (r: typeof institucionDeltasView[number]) => {
+                      const d = r.delta ?? 0;
+                      const color = d > 0.05 ? "text-green-600" : d < -0.05 ? "text-destructive" : "text-muted-foreground";
+                      const isDl = downloadingInst === r.institucion;
+                      return (
+                        <tr key={r.institucion} className="border-b last:border-0">
+                          <td className="py-2 pr-3">{r.institucion}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{r.countIni}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{r.countEvo}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{r.ini !== null ? r.ini.toFixed(2) : "—"}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{r.evo !== null ? r.evo.toFixed(2) : "—"}</td>
+                          <td className={`py-2 px-2 text-right tabular-nums font-semibold ${color}`}>
+                            {d > 0 ? "+" : ""}{d.toFixed(2)}
+                          </td>
+                          <td className="py-2 pl-2 text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDownloadInstitucionPdf(r.institucion)}
+                              disabled={isDl || !!zipping}
+                              title="Descargar informe PDF de esta institución"
+                            >
+                              {isDl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    };
+
+                    if (institucionDeltasView.length === 0) {
+                      return (
+                        <tr><td colSpan={7} className="py-6 text-center text-muted-foreground italic">Sin resultados para «{instSearch}».</td></tr>
+                      );
+                    }
+
+                    if (!instGroupByRegion) {
+                      return institucionDeltasView.map(renderRow);
+                    }
+
+                    return institucionDeltasGrouped.flatMap(([region, rows]) => [
+                      <tr key={`grp-${region}`} className="bg-muted/40">
+                        <td colSpan={7} className="py-1.5 px-2 text-xs font-semibold text-foreground">
+                          {region} <span className="text-muted-foreground font-normal">· {rows.length}</span>
                         </td>
-                        <td className="py-2 pl-2 text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDownloadInstitucionPdf(r.institucion)}
-                            disabled={isDl || !!zipping}
-                            title="Descargar informe PDF de esta institución"
-                          >
-                            {isDl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      </tr>,
+                      ...rows.map(renderRow),
+                    ]);
+                  })()}
                 </tbody>
               </table>
             </div>
