@@ -550,17 +550,70 @@ export async function generarPDFAmbienteDelta(
     y = CONTENT_START_Y;
     y = drawSectionTitle(doc, { margin, pageW, y, title: "Análisis automatizado", eyebrow: "Interpretación" });
 
+    const blocks = parseSimpleHtml(data.analysisHtml);
+    const lineHeight = 5.5;
+    const paragraphGap = 4;
+    const bulletIndent = 6;
+
     setText(doc, PALETTE.text);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
+    const spaceWidth = doc.getTextWidth(" ");
 
-    const text = stripHtml(data.analysisHtml);
-    for (const p of text.split(/\n\n+/)) {
-      if (!p.trim()) continue;
-      const lines = doc.splitTextToSize(p.trim(), contentW);
-      ensureSpace(lines.length * 5 + 4);
-      doc.text(lines, margin, y);
-      y += lines.length * 5 + 4;
+    for (const block of blocks) {
+      const availableW = block.type === "li" ? contentW - bulletIndent : contentW;
+
+      // Tokenize words with their style and measured width
+      const tokens: { text: string; style: string; width: number }[] = [];
+      for (const seg of block.segments) {
+        const words = seg.text.trim().split(/\s+/).filter((w) => w !== "");
+        const style = styleName(seg);
+        for (const word of words) {
+          doc.setFont("helvetica", style);
+          tokens.push({ text: word, style, width: doc.getTextWidth(word) });
+        }
+      }
+      if (tokens.length === 0) continue;
+
+      // Build wrapped lines
+      const lines: typeof tokens[] = [];
+      let currentLine: typeof tokens = [];
+      let currentWidth = 0;
+      for (const token of tokens) {
+        const extra = currentLine.length > 0 ? spaceWidth : 0;
+        if (currentLine.length > 0 && currentWidth + extra + token.width > availableW) {
+          lines.push(currentLine);
+          currentLine = [token];
+          currentWidth = token.width;
+        } else {
+          currentLine.push(token);
+          currentWidth += extra + token.width;
+        }
+      }
+      if (currentLine.length > 0) lines.push(currentLine);
+
+      // Draw each line
+      for (let i = 0; i < lines.length; i++) {
+        ensureSpace(lineHeight);
+        const line = lines[i];
+        let cx = margin;
+        if (block.type === "li") {
+          if (i === 0) {
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(PALETTE.primary[0], PALETTE.primary[1], PALETTE.primary[2]);
+            doc.text("•", margin + 2, y);
+          }
+          cx = margin + bulletIndent;
+        }
+        for (const token of line) {
+          doc.setFont("helvetica", token.style);
+          doc.setTextColor(PALETTE.text[0], PALETTE.text[1], PALETTE.text[2]);
+          doc.text(token.text, cx, y);
+          cx += token.width + spaceWidth;
+        }
+        y += lineHeight;
+      }
+      y += paragraphGap;
     }
   }
 
