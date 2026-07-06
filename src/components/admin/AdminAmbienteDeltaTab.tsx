@@ -247,7 +247,11 @@ export default function AdminAmbienteDeltaTab() {
   }, [groupAggregates]);
   const cohortDelta = cohortIni !== null && cohortEvo !== null ? cohortEvo - cohortIni : null;
 
-  const cohorteNombre = cohortes.find((c) => c.id === selectedCohortes)?.nombre || "";
+  const cohorteNombre = selectedCohortes
+    .map((id) => cohortes.find((c) => c.id === id)?.nombre)
+    .filter(Boolean)
+    .join(", ") || "";
+
 
   // Build payload for API + PDF
   const buildDeltasPayload = (): DeltaGroup[] => {
