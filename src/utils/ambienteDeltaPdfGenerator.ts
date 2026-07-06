@@ -112,19 +112,13 @@ export async function generarPDFAmbienteDelta(
   ): number => {
     const boxX = margin + 6;
     const boxW = opts.boxWidth;
-    const innerPadX = 6;
     const innerPadY = 5;
     const labelSize = 8;
     const footerSize = 9;
     const mainMaxSize = 16;
     const mainMinSize = 10;
-    const maxTextWidth = boxW - innerPadX * 2;
+    const maxTextWidth = boxW - 24; // 6 mm left + 6 mm right inner padding
     const lineHeight = (size: number) => size * 0.4; // mm
-
-    // Label (for sizing reference)
-    setText(doc, PALETTE.accent);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(labelSize);
 
     // Choose the largest font size that keeps the cohorte name within 3 lines
     let mainSize = mainMaxSize;
@@ -138,13 +132,15 @@ export async function generarPDFAmbienteDelta(
     if (mainLines.length > 3) mainLines = mainLines.slice(0, 3);
 
     const mainLineHeight = lineHeight(mainSize);
-    const labelMainGap = 3;
+    const labelMainGap = 3; // visual gap between label and main text blocks
     const mainFooterGap = 5;
 
+    // Block height computed from baselines, adding half-line descender padding
     const blockHeight =
       innerPadY * 2 +
-      lineHeight(labelSize) +
+      labelSize * 0.5 + // label occupies ~0.5 of its line height above/below baseline
       labelMainGap +
+      mainSize * 0.2 + // main ascender allowance
       mainLines.length * mainLineHeight +
       mainFooterGap +
       lineHeight(footerSize);
@@ -158,19 +154,20 @@ export async function generarPDFAmbienteDelta(
     setText(doc, PALETTE.accent);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(labelSize);
-    doc.text(opts.label, pageW / 2, startY + innerPadY + labelSize * 0.3, { align: "center" });
+    const labelBaseline = startY + innerPadY + labelSize * 0.3;
+    doc.text(opts.label, pageW / 2, labelBaseline, { align: "center" });
 
     // Main text (centered, wrapped)
     setText(doc, PALETTE.primary);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(mainSize);
-    const mainY = startY + innerPadY + lineHeight(labelSize) + labelMainGap;
+    const mainBaseline = startY + innerPadY + labelSize * 0.5 + labelMainGap + mainSize * 0.2;
     mainLines.forEach((line, i) => {
-      doc.text(line, pageW / 2, mainY + i * mainLineHeight, { align: "center" });
+      doc.text(line, pageW / 2, mainBaseline + i * mainLineHeight, { align: "center" });
     });
 
     // Separator line
-    const separatorY = mainY + mainLines.length * mainLineHeight + mainFooterGap / 2;
+    const separatorY = mainBaseline + mainLines.length * mainLineHeight + mainFooterGap / 2;
     setDraw(doc, PALETTE.border);
     doc.line(margin + 16, separatorY, pageW - margin - 16, separatorY);
 
