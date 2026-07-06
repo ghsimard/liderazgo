@@ -610,7 +610,10 @@ export default function AdminAmbienteDeltaTab() {
                           );
                         }}
                       />
-                      <span>{c.nombre}</span>
+                      <span className={hasCampanas ? "" : "text-muted-foreground italic"}>
+                        {c.nombre}{!hasCampanas && " (sin campañas)"}
+                      </span>
+
                     </label>
                   );
                 })}
