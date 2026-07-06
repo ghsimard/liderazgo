@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2, FileDown, Archive } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2, FileDown, Archive, Search, ArrowUpDown } from "lucide-react";
 import { FREQUENCY_OPTIONS, ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, type LikertSection } from "@/data/ambienteEscolarData";
 import { useAppImages } from "@/hooks/useAppImages";
 import { useGeographicData } from "@/hooks/useGeographicData";
@@ -68,6 +69,10 @@ export default function AdminAmbienteDeltaTab() {
   const [analysisHtml, setAnalysisHtml] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [instSearch, setInstSearch] = useState("");
+  const [instGroupByRegion, setInstGroupByRegion] = useState(false);
+  const [instSortKey, setInstSortKey] = useState<"institucion" | "countIni" | "countEvo" | "ini" | "evo" | "delta">("delta");
+  const [instSortDir, setInstSortDir] = useState<"asc" | "desc">("desc");
 
 
   useEffect(() => {
@@ -219,6 +224,55 @@ export default function AdminAmbienteDeltaTab() {
       .filter((r) => r.delta !== null)
       .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
   }, [selectedCohortes, phaseSplit, institucionesConEvolucion]);
+
+  // Institution → region lookup (from geographic data)
+  const instToRegion = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const rn of regionNames) {
+      for (const ie of getInstitucionesForRegion(rn)) m.set(ie, rn);
+    }
+    return m;
+  }, [regionNames, getInstitucionesForRegion]);
+
+  // Filtered + sorted rows for the per-institution table
+  const institucionDeltasView = useMemo(() => {
+    const q = instSearch.trim().toLowerCase();
+    const filtered = q
+      ? institucionDeltas.filter((r) => r.institucion.toLowerCase().includes(q))
+      : institucionDeltas.slice();
+    const dir = instSortDir === "asc" ? 1 : -1;
+    filtered.sort((a, b) => {
+      if (instSortKey === "institucion") {
+        return a.institucion.localeCompare(b.institucion) * dir;
+      }
+      const va = a[instSortKey];
+      const vb = b[instSortKey];
+      const na = va === null || va === undefined ? -Infinity : (va as number);
+      const nb = vb === null || vb === undefined ? -Infinity : (vb as number);
+      return (na - nb) * dir;
+    });
+    return filtered;
+  }, [institucionDeltas, instSearch, instSortKey, instSortDir]);
+
+  // Grouped variant: Map<region, rows[]> preserving sort order within each region
+  const institucionDeltasGrouped = useMemo(() => {
+    const groups = new Map<string, typeof institucionDeltasView>();
+    for (const r of institucionDeltasView) {
+      const region = instToRegion.get(r.institucion) || "Sin región";
+      if (!groups.has(region)) groups.set(region, [] as typeof institucionDeltasView);
+      groups.get(region)!.push(r);
+    }
+    return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [institucionDeltasView, instToRegion]);
+
+  const toggleInstSort = (key: typeof instSortKey) => {
+    if (instSortKey === key) {
+      setInstSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setInstSortKey(key);
+      setInstSortDir(key === "institucion" ? "asc" : "desc");
+    }
+  };
 
   // Compute group-level and cohort-level aggregates
   const groupAggregates = useMemo(() => {
@@ -716,7 +770,7 @@ export default function AdminAmbienteDeltaTab() {
             <div className="flex justify-between items-start flex-wrap gap-2">
               <div>
                 <h3 className="text-base font-bold">Δ por institución ({institucionDeltas.length})</h3>
-                <p className="text-xs text-muted-foreground">Instituciones con respuestas tanto en Inicial como en Evolución. Ordenadas por Δ descendente.</p>
+                <p className="text-xs text-muted-foreground">Instituciones con respuestas tanto en Inicial como en Evolución. Ordene una columna o agrupe por región.</p>
               </div>
               <Button size="sm" variant="outline" onClick={handleDownloadZip} disabled={!!zipping}>
                 {zipping ? (
@@ -726,48 +780,93 @@ export default function AdminAmbienteDeltaTab() {
                 )}
               </Button>
             </div>
+
+            {/* Controls: search + group toggle */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[220px] max-w-md">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={instSearch}
+                  onChange={(e) => setInstSearch(e.target.value)}
+                  placeholder="Buscar institución…"
+                  className="h-8 pl-8 text-xs"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                <Checkbox
+                  checked={instGroupByRegion}
+                  onCheckedChange={(v) => setInstGroupByRegion(v === true)}
+                />
+                Agrupar por región
+              </label>
+              <span className="text-xs text-muted-foreground ml-auto">
+                {institucionDeltasView.length} / {institucionDeltas.length}
+              </span>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead className="border-b">
                   <tr className="text-left text-muted-foreground">
-                    <th className="py-2 pr-3">Institución</th>
-                    <th className="py-2 px-2 text-right">N ini</th>
-                    <th className="py-2 px-2 text-right">N evo</th>
-                    <th className="py-2 px-2 text-right">Inicial</th>
-                    <th className="py-2 px-2 text-right">Evolución</th>
-                    <th className="py-2 px-2 text-right">Δ</th>
+                    <SortableTh label="Institución" active={instSortKey === "institucion"} dir={instSortDir} onClick={() => toggleInstSort("institucion")} className="py-2 pr-3" />
+                    <SortableTh label="N ini" active={instSortKey === "countIni"} dir={instSortDir} onClick={() => toggleInstSort("countIni")} className="py-2 px-2" align="right" />
+                    <SortableTh label="N evo" active={instSortKey === "countEvo"} dir={instSortDir} onClick={() => toggleInstSort("countEvo")} className="py-2 px-2" align="right" />
+                    <SortableTh label="Inicial" active={instSortKey === "ini"} dir={instSortDir} onClick={() => toggleInstSort("ini")} className="py-2 px-2" align="right" />
+                    <SortableTh label="Evolución" active={instSortKey === "evo"} dir={instSortDir} onClick={() => toggleInstSort("evo")} className="py-2 px-2" align="right" />
+                    <SortableTh label="Δ" active={instSortKey === "delta"} dir={instSortDir} onClick={() => toggleInstSort("delta")} className="py-2 px-2" align="right" />
                     <th className="py-2 pl-2 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {institucionDeltas.map((r) => {
-                    const d = r.delta ?? 0;
-                    const color = d > 0.05 ? "text-green-600" : d < -0.05 ? "text-destructive" : "text-muted-foreground";
-                    const isDl = downloadingInst === r.institucion;
-                    return (
-                      <tr key={r.institucion} className="border-b last:border-0">
-                        <td className="py-2 pr-3">{r.institucion}</td>
-                        <td className="py-2 px-2 text-right tabular-nums">{r.countIni}</td>
-                        <td className="py-2 px-2 text-right tabular-nums">{r.countEvo}</td>
-                        <td className="py-2 px-2 text-right tabular-nums">{r.ini !== null ? r.ini.toFixed(2) : "—"}</td>
-                        <td className="py-2 px-2 text-right tabular-nums">{r.evo !== null ? r.evo.toFixed(2) : "—"}</td>
-                        <td className={`py-2 px-2 text-right tabular-nums font-semibold ${color}`}>
-                          {d > 0 ? "+" : ""}{d.toFixed(2)}
+                  {(() => {
+                    const renderRow = (r: typeof institucionDeltasView[number]) => {
+                      const d = r.delta ?? 0;
+                      const color = d > 0.05 ? "text-green-600" : d < -0.05 ? "text-destructive" : "text-muted-foreground";
+                      const isDl = downloadingInst === r.institucion;
+                      return (
+                        <tr key={r.institucion} className="border-b last:border-0">
+                          <td className="py-2 pr-3">{r.institucion}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{r.countIni}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{r.countEvo}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{r.ini !== null ? r.ini.toFixed(2) : "—"}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{r.evo !== null ? r.evo.toFixed(2) : "—"}</td>
+                          <td className={`py-2 px-2 text-right tabular-nums font-semibold ${color}`}>
+                            {d > 0 ? "+" : ""}{d.toFixed(2)}
+                          </td>
+                          <td className="py-2 pl-2 text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDownloadInstitucionPdf(r.institucion)}
+                              disabled={isDl || !!zipping}
+                              title="Descargar informe PDF de esta institución"
+                            >
+                              {isDl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    };
+
+                    if (institucionDeltasView.length === 0) {
+                      return (
+                        <tr><td colSpan={7} className="py-6 text-center text-muted-foreground italic">Sin resultados para «{instSearch}».</td></tr>
+                      );
+                    }
+
+                    if (!instGroupByRegion) {
+                      return institucionDeltasView.map(renderRow);
+                    }
+
+                    return institucionDeltasGrouped.flatMap(([region, rows]) => [
+                      <tr key={`grp-${region}`} className="bg-muted/40">
+                        <td colSpan={7} className="py-1.5 px-2 text-xs font-semibold text-foreground">
+                          {region} <span className="text-muted-foreground font-normal">· {rows.length}</span>
                         </td>
-                        <td className="py-2 pl-2 text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDownloadInstitucionPdf(r.institucion)}
-                            disabled={isDl || !!zipping}
-                            title="Descargar informe PDF de esta institución"
-                          >
-                            {isDl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      </tr>,
+                      ...rows.map(renderRow),
+                    ]);
+                  })()}
                 </tbody>
               </table>
             </div>
@@ -802,6 +901,22 @@ export default function AdminAmbienteDeltaTab() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function SortableTh({ label, active, dir, onClick, className = "", align = "left" }: { label: string; active: boolean; dir: "asc" | "desc"; onClick: () => void; className?: string; align?: "left" | "right" }) {
+  const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th className={`${className} ${align === "right" ? "text-right" : "text-left"} select-none`}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${active ? "text-foreground font-semibold" : ""} ${align === "right" ? "flex-row-reverse" : ""}`}
+      >
+        <Icon className="w-3 h-3 opacity-70" />
+        {label}
+      </button>
+    </th>
   );
 }
 
