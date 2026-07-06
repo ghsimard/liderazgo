@@ -53,7 +53,9 @@ export interface AmbienteDeltaReportData {
   groups: DeltaGroup[];
   institucionDeltas: InstitucionDeltaRow[];
   analysisHtml?: string;
+  regionesLabel?: string;
 }
+
 
 export interface AmbienteDeltaPdfLogos {
   logoRLT: string;
