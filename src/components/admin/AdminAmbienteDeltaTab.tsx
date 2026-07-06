@@ -4,14 +4,18 @@ import { supabase } from "@/utils/dbClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2, FileDown, Archive } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RefreshCw, ArrowUp, ArrowDown, Minus, Sparkles, Download, Loader2, FileDown, Archive, MapPin } from "lucide-react";
 import { FREQUENCY_OPTIONS, ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKERT, type LikertSection } from "@/data/ambienteEscolarData";
 import { useAppImages } from "@/hooks/useAppImages";
+import { useGeographicData } from "@/hooks/useGeographicData";
 import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
 import { generarPDFAmbienteDelta, type DeltaGroup, type InstitucionDeltaRow } from "@/utils/ambienteDeltaPdfGenerator";
 import { generarPDFAmbienteInstitucion, type InstGroupData } from "@/utils/ambienteInstitucionPdfGenerator";
 import JSZip from "jszip";
 import { toast } from "sonner";
+
 
 interface Cohorte { id: string; nombre: string; }
 interface Campana { id: string; cohorte_id: string; fase: string; nombre: string; fecha_inicio?: string; fecha_fin?: string; }
@@ -54,14 +58,17 @@ function avgScore(subs: Submission[], itemIds: string[]): number | null {
 
 export default function AdminAmbienteDeltaTab() {
   const { images } = useAppImages();
+  const { regionNames, getInstitucionesForRegion } = useGeographicData();
   const [cohortes, setCohortes] = useState<Cohorte[]>([]);
   const [campanas, setCampanas] = useState<Campana[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCohorte, setSelectedCohorte] = useState<string>("");
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [analysisHtml, setAnalysisHtml] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
+
 
   useEffect(() => {
     (async () => {
@@ -102,10 +109,21 @@ export default function AdminAmbienteDeltaTab() {
     }
   }, [cohortesConCampanas, selectedCohorte]);
 
-  // Reset analysis when cohort changes
+  // Reset analysis when cohort or region filter changes
   useEffect(() => {
     setAnalysisHtml("");
-  }, [selectedCohorte]);
+  }, [selectedCohorte, selectedRegions]);
+
+  // Institutions allowed by region filter (null = no filter)
+  const allowedInstitutionsSet = useMemo<Set<string> | null>(() => {
+    if (selectedRegions.length === 0) return null;
+    const s = new Set<string>();
+    for (const r of selectedRegions) {
+      for (const inst of getInstitucionesForRegion(r)) s.add(inst);
+    }
+    return s;
+  }, [selectedRegions, getInstitucionesForRegion]);
+
 
   // Split submissions for the selected cohort into two strictly separated sets:
   // Inicial = phase 'linea_base', Evolución = phase 'cierre'.
@@ -126,18 +144,24 @@ export default function AdminAmbienteDeltaTab() {
         ? s.cohorte_id === selectedCohorte
         : s.campana_id != null && campIds.has(s.campana_id);
       if (!inCohort) continue;
+      // Region gate (via institution)
+      if (allowedInstitutionsSet && !allowedInstitutionsSet.has(s.institucion_educativa)) continue;
       // Resolve actual phase (submission wins; fallback to campaign)
       const fase = s.fase || (s.campana_id ? campFaseById.get(s.campana_id) ?? null : null);
       if (fase === "linea_base") inicial.push(s);
       else if (fase === "cierre") evolucion.push(s);
     }
+
     return {
       inicial,
       evolucion,
       iniCamp: campanasCohorte.find((c) => c.fase === "linea_base"),
       evoCamp: campanasCohorte.find((c) => c.fase === "cierre"),
     };
-  }, [selectedCohorte, campanas, submissions]);
+  }, [selectedCohorte, campanas, submissions, allowedInstitutionsSet]);
+
+  const regionesLabel = selectedRegions.length === 0 ? "Todas" : selectedRegions.join(", ");
+
 
   // Institutions present in BOTH phases → comparable set
   const institucionesConEvolucion = useMemo(() => {
@@ -387,6 +411,8 @@ export default function AdminAmbienteDeltaTab() {
           groups: buildDeltasPayload(),
           institucionDeltas: buildInstitucionDeltasPayload(),
           analysisHtml,
+          regionesLabel,
+
         },
         {
           logoRLT: sources.logoRLT,
@@ -540,6 +566,57 @@ export default function AdminAmbienteDeltaTab() {
               ))}
             </SelectContent>
           </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <MapPin className="w-4 h-4" />
+                {selectedRegions.length === 0
+                  ? "Regiones: Todas"
+                  : selectedRegions.length === 1
+                    ? `Regiones: ${selectedRegions[0]}`
+                    : `Regiones: ${selectedRegions.length} seleccionadas`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="start">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-muted-foreground">Filtrar por región</span>
+                {selectedRegions.length > 0 && (
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => setSelectedRegions([])}
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={selectedRegions.length === 0}
+                    onCheckedChange={() => setSelectedRegions([])}
+                  />
+                  <span>Todas</span>
+                </label>
+                {regionNames.map((r) => {
+                  const checked = selectedRegions.includes(r);
+                  return (
+                    <label key={r} className="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => {
+                          setSelectedRegions((prev) =>
+                            v ? [...prev, r] : prev.filter((x) => x !== r)
+                          );
+                        }}
+                      />
+                      <span>{r}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+
           {analysis && (
             <div className="text-sm text-muted-foreground">
               Inicial: {phaseSplit.inicial.length} resp · Evolución: {phaseSplit.evolucion.length} resp · Comparables: {institucionesConEvolucion.size} institución(es)

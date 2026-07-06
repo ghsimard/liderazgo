@@ -53,7 +53,9 @@ export interface AmbienteDeltaReportData {
   groups: DeltaGroup[];
   institucionDeltas: InstitucionDeltaRow[];
   analysisHtml?: string;
+  regionesLabel?: string;
 }
+
 
 export interface AmbienteDeltaPdfLogos {
   logoRLT: string;
@@ -127,6 +129,17 @@ export async function generarPDFAmbienteDelta(
   doc.text(`Generado:  ${fmtDate(new Date().toISOString())}`, pageW / 2, y + 30, { align: "center" });
 
   y += 51;
+
+  // Regiones scope label (only when a specific subset is selected)
+  if (data.regionesLabel && data.regionesLabel.trim()) {
+    setText(doc, PALETTE.textMuted);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    const lines = doc.splitTextToSize(`Regiones: ${data.regionesLabel}`, contentW - 20);
+    doc.text(lines, pageW / 2, y, { align: "center" });
+    y += lines.length * 4 + 4;
+  }
+
 
   // Cohort headline
   const dc = deltaColor(data.cohortDelta);
