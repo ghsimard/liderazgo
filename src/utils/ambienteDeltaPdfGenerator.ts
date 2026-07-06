@@ -457,3 +457,264 @@ export async function generarPDFAmbienteDelta(
   }
   doc.save(filename);
 }
+
+// ─── HTML → PDF renderer for the "Análisis automatizado" section ───
+// Supports: h1/h2/h3, p, ul/ol/li, strong/b, em/i, br, hr.
+// Falls back to a plain-text paragraph rendering when the input is not HTML.
+type InlineRun = { text: string; bold: boolean; italic: boolean };
+
+function parseInlineRuns(html: string): InlineRun[] {
+  // Normalise inline tags and entities, keep bold/italic state per run.
+  const tokens = html
+    .replace(/<\s*br\s*\/?>/gi, "\n")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .split(/(<\/?(?:strong|b|em|i)>)/gi);
+
+  const runs: InlineRun[] = [];
+  let bold = false;
+  let italic = false;
+  for (const t of tokens) {
+    if (!t) continue;
+    const m = t.match(/^<(\/?)(strong|b|em|i)>$/i);
+    if (m) {
+      const close = m[1] === "/";
+      const tag = m[2].toLowerCase();
+      if (tag === "strong" || tag === "b") bold = !close;
+      else italic = !close;
+      continue;
+    }
+    // Strip any remaining unknown tags
+    const clean = t.replace(/<[^>]+>/g, "");
+    if (!clean) continue;
+    runs.push({ text: clean, bold, italic });
+  }
+  return runs;
+}
+
+function fontStyleFor(bold: boolean, italic: boolean): "normal" | "bold" | "italic" | "bolditalic" {
+  if (bold && italic) return "bolditalic";
+  if (bold) return "bold";
+  if (italic) return "italic";
+  return "normal";
+}
+
+function drawInlineRuns(
+  doc: jsPDF,
+  runs: InlineRun[],
+  opts: {
+    x: number; maxWidth: number; fontSize: number; lineHeight: number;
+    getY: () => number; setY: (y: number) => void;
+    ensureSpace: (need: number) => void;
+    color: [number, number, number];
+  }
+) {
+  doc.setFontSize(opts.fontSize);
+  setText(doc, opts.color);
+  let cx = opts.x;
+  const startX = opts.x;
+  const spaceWidth = (bold: boolean, italic: boolean) => {
+    doc.setFont("helvetica", fontStyleFor(bold, italic));
+    return doc.getTextWidth(" ");
+  };
+
+  // Break each run into words while preserving explicit "\n"
+  type Word = { text: string; bold: boolean; italic: boolean; forceBreak: boolean };
+  const words: Word[] = [];
+  for (const r of runs) {
+    const parts = r.text.split(/(\n)/);
+    for (const part of parts) {
+      if (part === "\n") {
+        words.push({ text: "", bold: r.bold, italic: r.italic, forceBreak: true });
+        continue;
+      }
+      const chunks = part.split(/(\s+)/);
+      for (const c of chunks) {
+        if (!c) continue;
+        if (/^\s+$/.test(c)) {
+          if (words.length && !words[words.length - 1].forceBreak) {
+            words.push({ text: " ", bold: r.bold, italic: r.italic, forceBreak: false });
+          }
+        } else {
+          words.push({ text: c, bold: r.bold, italic: r.italic, forceBreak: false });
+        }
+      }
+    }
+  }
+
+  const newLine = () => {
+    opts.setY(opts.getY() + opts.lineHeight);
+    opts.ensureSpace(opts.lineHeight);
+    cx = startX;
+  };
+
+  opts.ensureSpace(opts.lineHeight);
+
+  for (const w of words) {
+    if (w.forceBreak) { newLine(); continue; }
+    if (w.text === " ") {
+      if (cx === startX) continue; // no leading space
+      cx += spaceWidth(w.bold, w.italic);
+      continue;
+    }
+    doc.setFont("helvetica", fontStyleFor(w.bold, w.italic));
+    const wWidth = doc.getTextWidth(w.text);
+    if (cx + wWidth > startX + opts.maxWidth && cx > startX) {
+      newLine();
+    }
+    // Word longer than line: hard-wrap character by character
+    if (wWidth > opts.maxWidth) {
+      let buf = "";
+      for (const ch of w.text) {
+        const nextW = doc.getTextWidth(buf + ch);
+        if (cx + nextW > startX + opts.maxWidth) {
+          doc.text(buf, cx, opts.getY());
+          newLine();
+          buf = ch;
+        } else {
+          buf += ch;
+        }
+      }
+      if (buf) {
+        doc.text(buf, cx, opts.getY());
+        cx += doc.getTextWidth(buf);
+      }
+    } else {
+      doc.text(w.text, cx, opts.getY());
+      cx += wWidth;
+    }
+  }
+}
+
+function renderAnalysisHtml(
+  doc: jsPDF,
+  html: string,
+  opts: {
+    margin: number; contentW: number;
+    getY: () => number; setY: (y: number) => void;
+    ensureSpace: (need: number) => void;
+  }
+) {
+  const looksLikeHtml = /<\/?(p|h[1-6]|ul|ol|li|strong|b|em|i|br|hr|div)\b/i.test(html);
+
+  // Fallback: plain text with double-newline paragraphs
+  if (!looksLikeHtml) {
+    const text = stripHtml(html);
+    setText(doc, PALETTE.text);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    for (const p of text.split(/\n\n+/)) {
+      if (!p.trim()) continue;
+      const lines = doc.splitTextToSize(p.trim(), opts.contentW);
+      opts.ensureSpace(lines.length * 5 + 4);
+      doc.text(lines, opts.margin, opts.getY());
+      opts.setY(opts.getY() + lines.length * 5 + 4);
+    }
+    return;
+  }
+
+  // Extract block-level elements in document order.
+  const blockRe = /<(h[1-3]|p|ul|ol|hr)(\s[^>]*)?>([\s\S]*?)<\/\1>|<hr\s*\/?>/gi;
+  let m: RegExpExecArray | null;
+  let lastIndex = 0;
+  const blocks: { tag: string; inner: string }[] = [];
+  while ((m = blockRe.exec(html)) !== null) {
+    if (m.index > lastIndex) {
+      const stray = html.slice(lastIndex, m.index).trim();
+      if (stray) blocks.push({ tag: "p", inner: stray });
+    }
+    const tag = (m[1] || "hr").toLowerCase();
+    blocks.push({ tag, inner: m[3] ?? "" });
+    lastIndex = blockRe.lastIndex;
+  }
+  if (lastIndex < html.length) {
+    const stray = html.slice(lastIndex).trim();
+    if (stray) blocks.push({ tag: "p", inner: stray });
+  }
+  if (blocks.length === 0) blocks.push({ tag: "p", inner: html });
+
+  for (const b of blocks) {
+    if (b.tag === "hr") {
+      opts.ensureSpace(6);
+      setDraw(doc, PALETTE.border);
+      doc.setLineWidth(0.3);
+      doc.line(opts.margin, opts.getY(), opts.margin + opts.contentW, opts.getY());
+      doc.setLineWidth(0.2);
+      opts.setY(opts.getY() + 4);
+      continue;
+    }
+
+    if (b.tag === "h1" || b.tag === "h2" || b.tag === "h3") {
+      const sizes: Record<string, number> = { h1: 14, h2: 12, h3: 11 };
+      const size = sizes[b.tag];
+      const runs = parseInlineRuns(b.inner).map(r => ({ ...r, bold: true }));
+      opts.setY(opts.getY() + (b.tag === "h1" ? 4 : 3));
+      opts.ensureSpace(size * 0.5 + 4);
+      drawInlineRuns(doc, runs, {
+        x: opts.margin,
+        maxWidth: opts.contentW,
+        fontSize: size,
+        lineHeight: size * 0.5,
+        getY: opts.getY,
+        setY: opts.setY,
+        ensureSpace: opts.ensureSpace,
+        color: PALETTE.primary,
+      });
+      opts.setY(opts.getY() + 3);
+      continue;
+    }
+
+    if (b.tag === "ul" || b.tag === "ol") {
+      const itemRe = /<li(?:\s[^>]*)?>([\s\S]*?)<\/li>/gi;
+      let li: RegExpExecArray | null;
+      let index = 1;
+      const bulletIndent = 5;
+      const textIndent = opts.margin + bulletIndent;
+      const bulletW = opts.contentW - bulletIndent;
+      while ((li = itemRe.exec(b.inner)) !== null) {
+        const runs = parseInlineRuns(li[1]);
+        opts.ensureSpace(6);
+        // Bullet / number
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        setText(doc, PALETTE.accent);
+        const marker = b.tag === "ol" ? `${index}.` : "•";
+        doc.text(marker, opts.margin + 1, opts.getY());
+        // Item text
+        drawInlineRuns(doc, runs, {
+          x: textIndent,
+          maxWidth: bulletW,
+          fontSize: 10,
+          lineHeight: 5,
+          getY: opts.getY,
+          setY: opts.setY,
+          ensureSpace: opts.ensureSpace,
+          color: PALETTE.text,
+        });
+        opts.setY(opts.getY() + 3);
+        index++;
+      }
+      opts.setY(opts.getY() + 1);
+      continue;
+    }
+
+    // Default: paragraph
+    const runs = parseInlineRuns(b.inner);
+    if (runs.length === 0) continue;
+    drawInlineRuns(doc, runs, {
+      x: opts.margin,
+      maxWidth: opts.contentW,
+      fontSize: 10,
+      lineHeight: 5,
+      getY: opts.getY,
+      setY: opts.setY,
+      ensureSpace: opts.ensureSpace,
+      color: PALETTE.text,
+    });
+    opts.setY(opts.getY() + 4);
+  }
+}
