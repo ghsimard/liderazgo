@@ -904,6 +904,22 @@ export default function AdminAmbienteDeltaTab() {
   );
 }
 
+function SortableTh({ label, active, dir, onClick, className = "", align = "left" }: { label: string; active: boolean; dir: "asc" | "desc"; onClick: () => void; className?: string; align?: "left" | "right" }) {
+  const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th className={`${className} ${align === "right" ? "text-right" : "text-left"} select-none`}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${active ? "text-foreground font-semibold" : ""} ${align === "right" ? "flex-row-reverse" : ""}`}
+      >
+        <Icon className="w-3 h-3 opacity-70" />
+        {label}
+      </button>
+    </th>
+  );
+}
+
 function ScoreBar({ label, value, color }: { label: string; value: number | null; color: string }) {
   const pct = value !== null ? (value / MAX_SCORE) * 100 : 0;
   return (
