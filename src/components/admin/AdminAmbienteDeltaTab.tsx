@@ -581,7 +581,7 @@ export default function AdminAmbienteDeltaTab() {
                 <div className="flex gap-2">
                   <button
                     className="text-xs text-primary hover:underline"
-                    onClick={() => setSelectedCohortes(cohortesConCampanas.map((c) => c.id))}
+                    onClick={() => setSelectedCohortes(cohortes.map((c) => c.id))}
                   >
                     Todas
                   </button>
@@ -596,7 +596,9 @@ export default function AdminAmbienteDeltaTab() {
                 </div>
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {cohortesConCampanas.map((c) => {
+                {cohortes.map((c) => {
+                  const hasCampanas = cohortesConCampanas.some((cc) => cc.id === c.id);
+
                   const checked = selectedCohortes.includes(c.id);
                   return (
                     <label key={c.id} className="flex items-center gap-2 cursor-pointer text-sm">
@@ -608,7 +610,10 @@ export default function AdminAmbienteDeltaTab() {
                           );
                         }}
                       />
-                      <span>{c.nombre}</span>
+                      <span className={hasCampanas ? "" : "text-muted-foreground italic"}>
+                        {c.nombre}{!hasCampanas && " (sin campañas)"}
+                      </span>
+
                     </label>
                   );
                 })}
