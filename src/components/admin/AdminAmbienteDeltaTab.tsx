@@ -158,7 +158,10 @@ export default function AdminAmbienteDeltaTab() {
       iniCamp: campanasCohorte.find((c) => c.fase === "linea_base"),
       evoCamp: campanasCohorte.find((c) => c.fase === "cierre"),
     };
-  }, [selectedCohorte, campanas, submissions]);
+  }, [selectedCohorte, campanas, submissions, allowedInstitutionsSet]);
+
+  const regionesLabel = selectedRegions.length === 0 ? "Todas" : selectedRegions.join(", ");
+
 
   // Institutions present in BOTH phases → comparable set
   const institucionesConEvolucion = useMemo(() => {
