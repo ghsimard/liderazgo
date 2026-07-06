@@ -103,11 +103,7 @@ export default function AdminAmbienteDeltaTab() {
     return cohortes.filter((c) => ids.has(c.id));
   }, [cohortes, campanas]);
 
-  useEffect(() => {
-    if (selectedCohortes.length === 0 && cohortesConCampanas.length > 0) {
-      setSelectedCohortes([cohortesConCampanas[0].id]);
-    }
-  }, [cohortesConCampanas, selectedCohortes]);
+  // No cohort is selected by default; the user must explicitly choose one or more.
 
   // Reset analysis when cohort or region filter changes
   useEffect(() => {
@@ -626,7 +622,7 @@ export default function AdminAmbienteDeltaTab() {
               <Button variant="outline" size="sm" className="gap-2">
                 <MapPin className="w-4 h-4" />
                 {selectedRegions.length === 0
-                  ? "Regiones: Todas"
+                  ? "Regiones"
                   : selectedRegions.length === 1
                     ? `Regiones: ${selectedRegions[0]}`
                     : `Regiones: ${selectedRegions.length} seleccionadas`}
@@ -645,13 +641,6 @@ export default function AdminAmbienteDeltaTab() {
                 )}
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                <label className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox
-                    checked={selectedRegions.length === 0}
-                    onCheckedChange={() => setSelectedRegions([])}
-                  />
-                  <span>Todas</span>
-                </label>
                 {regionNames.map((r) => {
                   const checked = selectedRegions.includes(r);
                   return (
