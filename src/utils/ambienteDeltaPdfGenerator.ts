@@ -432,19 +432,15 @@ export async function generarPDFAmbienteDelta(
     drawPageHeaderLogos(doc, logos, { margin, pageW });
     y = CONTENT_START_Y;
     y = drawSectionTitle(doc, { margin, pageW, y, title: "Análisis automatizado", eyebrow: "Interpretación" });
+    y += 2;
 
-    setText(doc, PALETTE.text);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-
-    const text = stripHtml(data.analysisHtml);
-    for (const p of text.split(/\n\n+/)) {
-      if (!p.trim()) continue;
-      const lines = doc.splitTextToSize(p.trim(), contentW);
-      ensureSpace(lines.length * 5 + 4);
-      doc.text(lines, margin, y);
-      y += lines.length * 5 + 4;
-    }
+    renderAnalysisHtml(doc, data.analysisHtml, {
+      margin,
+      contentW,
+      getY: () => y,
+      setY: (v) => { y = v; },
+      ensureSpace,
+    });
   }
 
   // ─── Footers ───
