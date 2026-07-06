@@ -174,7 +174,7 @@ export default function AdminAmbienteDeltaTab() {
   }, [phaseSplit]);
 
   const analysis = useMemo(() => {
-    if (!selectedCohorte) return null;
+    if (selectedCohortes.length === 0) return null;
     const { inicial: iniAll, evolucion: evoAll, iniCamp, evoCamp } = phaseSplit;
     const comparable = institucionesConEvolucion;
 
@@ -192,11 +192,11 @@ export default function AdminAmbienteDeltaTab() {
       return { grupo: g, countIni: subsIni.length, countEvo: subsEvo.length, sections };
     });
     return { inicial: iniCamp, evolucion: evoCamp, groups: result };
-  }, [selectedCohorte, phaseSplit, institucionesConEvolucion]);
+  }, [selectedCohortes, phaseSplit, institucionesConEvolucion]);
 
   // Per-institution deltas (only those with responses in BOTH phases)
   const institucionDeltas = useMemo(() => {
-    if (!selectedCohorte) return [];
+    if (selectedCohortes.length === 0) return [];
     const { inicial: iniAll, evolucion: evoAll } = phaseSplit;
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const rows = Array.from(institucionesConEvolucion).map((inst) => {
@@ -222,7 +222,7 @@ export default function AdminAmbienteDeltaTab() {
     return rows
       .filter((r) => r.delta !== null)
       .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
-  }, [selectedCohorte, phaseSplit, institucionesConEvolucion]);
+  }, [selectedCohortes, phaseSplit, institucionesConEvolucion]);
 
   // Compute group-level and cohort-level aggregates
   const groupAggregates = useMemo(() => {
@@ -247,7 +247,7 @@ export default function AdminAmbienteDeltaTab() {
   }, [groupAggregates]);
   const cohortDelta = cohortIni !== null && cohortEvo !== null ? cohortEvo - cohortIni : null;
 
-  const cohorteNombre = cohortes.find((c) => c.id === selectedCohorte)?.nombre || "";
+  const cohorteNombre = cohortes.find((c) => c.id === selectedCohortes)?.nombre || "";
 
   // Build payload for API + PDF
   const buildDeltasPayload = (): DeltaGroup[] => {
@@ -272,7 +272,7 @@ export default function AdminAmbienteDeltaTab() {
   };
 
   const handleGenerateAnalysis = async () => {
-    if (!analysis || !selectedCohorte) return;
+    if (!analysis || selectedCohortes.length === 0) return;
     setGenerating(true);
     setAnalysisHtml("");
     try {
@@ -398,7 +398,7 @@ export default function AdminAmbienteDeltaTab() {
     }));
 
   const handleDownloadPdf = async () => {
-    if (!analysis || !selectedCohorte) return;
+    if (!analysis || selectedCohortes.length === 0) return;
     setDownloading(true);
     try {
       const sources = getPdfLogoSources(images);
@@ -437,7 +437,7 @@ export default function AdminAmbienteDeltaTab() {
   const [zipping, setZipping] = useState<{ done: number; total: number } | null>(null);
 
   const handleDownloadInstitucionPdf = async (institucion: string) => {
-    if (!analysis || !selectedCohorte) return;
+    if (!analysis || selectedCohortes.length === 0) return;
     setDownloadingInst(institucion);
     try {
       const sources = getPdfLogoSources(images);
@@ -472,7 +472,7 @@ export default function AdminAmbienteDeltaTab() {
   };
 
   const handleDownloadZip = async () => {
-    if (!analysis || !selectedCohorte || institucionDeltas.length === 0) return;
+    if (!analysis || selectedCohortes.length === 0 || institucionDeltas.length === 0) return;
     const sources = getPdfLogoSources(images);
     const zip = new JSZip();
     const total = institucionDeltas.length;
@@ -561,7 +561,7 @@ export default function AdminAmbienteDeltaTab() {
     <div className="space-y-6">
       <div className="flex flex-wrap gap-3 items-center justify-between">
         <div className="flex flex-wrap gap-3 items-center">
-          <Select value={selectedCohorte} onValueChange={setSelectedCohorte}>
+          <Select value={selectedCohortes} onValueChange={setSelectedCohorte}>
             <SelectTrigger className="w-64"><SelectValue placeholder="Cohorte" /></SelectTrigger>
             <SelectContent>
               {cohortesConCampanas.map((c) => (
