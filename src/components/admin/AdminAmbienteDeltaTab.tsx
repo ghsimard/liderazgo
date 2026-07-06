@@ -104,15 +104,16 @@ export default function AdminAmbienteDeltaTab() {
   }, [cohortes, campanas]);
 
   useEffect(() => {
-    if (!selectedCohorte && cohortesConCampanas.length > 0) {
-      setSelectedCohorte(cohortesConCampanas[0].id);
+    if (selectedCohortes.length === 0 && cohortesConCampanas.length > 0) {
+      setSelectedCohortes([cohortesConCampanas[0].id]);
     }
-  }, [cohortesConCampanas, selectedCohorte]);
+  }, [cohortesConCampanas, selectedCohortes]);
 
   // Reset analysis when cohort or region filter changes
   useEffect(() => {
     setAnalysisHtml("");
-  }, [selectedCohorte, selectedRegions]);
+  }, [selectedCohortes, selectedRegions]);
+
 
   // Institutions allowed by region filter (null = no filter)
   const allowedInstitutionsSet = useMemo<Set<string> | null>(() => {
