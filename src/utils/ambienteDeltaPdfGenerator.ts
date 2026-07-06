@@ -122,17 +122,29 @@ export async function generarPDFAmbienteDelta(
     const maxTextWidth = boxW - 24; // 6 mm left + 6 mm right inner padding
     const lineHeight = (size: number) => size * 0.4; // mm
 
-    // Choose the largest font size that fits the cohorte name in at most 2 lines
-    // (3 lines are allowed only if the text cannot fit in 2 lines even at min size)
+    // Choose the largest font size that keeps the cohorte name readable and compact.
+    // For multiple cohortes we prefer 1 line; for a single cohorte we also prefer 1 line.
+    // If 1 line cannot be achieved at the minimum size, we allow up to 2 lines.
     let mainSize = mainMaxSize;
     let mainLines: string[] = [];
-    for (let size = mainMaxSize; size >= mainMinSize; size--) {
-      doc.setFontSize(size);
-      mainLines = doc.splitTextToSize(opts.mainText, maxTextWidth);
-      mainSize = size;
-      if (mainLines.length <= 2) break;
+    for (let targetLines = 1; targetLines <= 2; targetLines++) {
+      for (let size = mainMaxSize; size >= mainMinSize; size--) {
+        doc.setFontSize(size);
+        const lines = doc.splitTextToSize(opts.mainText, maxTextWidth);
+        if (lines.length <= targetLines) {
+          mainSize = size;
+          mainLines = lines;
+          break;
+        }
+      }
+      if (mainLines.length > 0) break;
     }
-    if (mainLines.length > 3) mainLines = mainLines.slice(0, 3);
+    if (mainLines.length === 0) {
+      doc.setFontSize(mainMinSize);
+      mainLines = doc.splitTextToSize(opts.mainText, maxTextWidth).slice(0, 2);
+      mainSize = mainMinSize;
+    }
+    if (mainLines.length > 2) mainLines = mainLines.slice(0, 2);
 
     const mainLineHeight = lineHeight(mainSize);
     const labelMainGap = 3;
