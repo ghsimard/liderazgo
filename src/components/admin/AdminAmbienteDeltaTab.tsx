@@ -58,14 +58,17 @@ function avgScore(subs: Submission[], itemIds: string[]): number | null {
 
 export default function AdminAmbienteDeltaTab() {
   const { images } = useAppImages();
+  const { regionNames, getInstitucionesForRegion } = useGeographicData();
   const [cohortes, setCohortes] = useState<Cohorte[]>([]);
   const [campanas, setCampanas] = useState<Campana[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCohorte, setSelectedCohorte] = useState<string>("");
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [analysisHtml, setAnalysisHtml] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
+
 
   useEffect(() => {
     (async () => {
