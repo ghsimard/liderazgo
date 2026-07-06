@@ -641,13 +641,6 @@ export default function AdminAmbienteDeltaTab() {
                 )}
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                <label className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox
-                    checked={selectedRegions.length === 0}
-                    onCheckedChange={() => setSelectedRegions([])}
-                  />
-                  <span>Todas</span>
-                </label>
                 {regionNames.map((r) => {
                   const checked = selectedRegions.includes(r);
                   return (
