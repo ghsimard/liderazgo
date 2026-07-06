@@ -63,7 +63,7 @@ export default function AdminAmbienteDeltaTab() {
   const [campanas, setCampanas] = useState<Campana[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCohorte, setSelectedCohorte] = useState<string>("");
+  const [selectedCohortes, setSelectedCohortes] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [analysisHtml, setAnalysisHtml] = useState<string>("");
   const [generating, setGenerating] = useState(false);
@@ -104,15 +104,16 @@ export default function AdminAmbienteDeltaTab() {
   }, [cohortes, campanas]);
 
   useEffect(() => {
-    if (!selectedCohorte && cohortesConCampanas.length > 0) {
-      setSelectedCohorte(cohortesConCampanas[0].id);
+    if (selectedCohortes.length === 0 && cohortesConCampanas.length > 0) {
+      setSelectedCohortes([cohortesConCampanas[0].id]);
     }
-  }, [cohortesConCampanas, selectedCohorte]);
+  }, [cohortesConCampanas, selectedCohortes]);
 
   // Reset analysis when cohort or region filter changes
   useEffect(() => {
     setAnalysisHtml("");
-  }, [selectedCohorte, selectedRegions]);
+  }, [selectedCohortes, selectedRegions]);
+
 
   // Institutions allowed by region filter (null = no filter)
   const allowedInstitutionsSet = useMemo<Set<string> | null>(() => {
@@ -131,8 +132,9 @@ export default function AdminAmbienteDeltaTab() {
   // Cohort filter: prefer `cohorte_id`; fallback to membership in this cohort's campaigns.
   const phaseSplit = useMemo(() => {
     const empty = { inicial: [] as Submission[], evolucion: [] as Submission[], iniCamp: undefined as Campana | undefined, evoCamp: undefined as Campana | undefined };
-    if (!selectedCohorte) return empty;
-    const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
+    if (selectedCohortes.length === 0) return empty;
+    const cohorteSet = new Set(selectedCohortes);
+    const campanasCohorte = campanas.filter((c) => cohorteSet.has(c.cohorte_id));
     const campIds = new Set(campanasCohorte.map((c) => c.id));
     const campFaseById = new Map(campanasCohorte.map((c) => [c.id, c.fase]));
 
@@ -141,7 +143,7 @@ export default function AdminAmbienteDeltaTab() {
     for (const s of submissions) {
       // Cohort gate
       const inCohort = s.cohorte_id
-        ? s.cohorte_id === selectedCohorte
+        ? cohorteSet.has(s.cohorte_id)
         : s.campana_id != null && campIds.has(s.campana_id);
       if (!inCohort) continue;
       // Region gate (via institution)
@@ -158,7 +160,8 @@ export default function AdminAmbienteDeltaTab() {
       iniCamp: campanasCohorte.find((c) => c.fase === "linea_base"),
       evoCamp: campanasCohorte.find((c) => c.fase === "cierre"),
     };
-  }, [selectedCohorte, campanas, submissions, allowedInstitutionsSet]);
+  }, [selectedCohortes, campanas, submissions, allowedInstitutionsSet]);
+
 
   const regionesLabel = selectedRegions.length === 0 ? "Todas" : selectedRegions.join(", ");
 
@@ -171,7 +174,7 @@ export default function AdminAmbienteDeltaTab() {
   }, [phaseSplit]);
 
   const analysis = useMemo(() => {
-    if (!selectedCohorte) return null;
+    if (selectedCohortes.length === 0) return null;
     const { inicial: iniAll, evolucion: evoAll, iniCamp, evoCamp } = phaseSplit;
     const comparable = institucionesConEvolucion;
 
@@ -189,11 +192,11 @@ export default function AdminAmbienteDeltaTab() {
       return { grupo: g, countIni: subsIni.length, countEvo: subsEvo.length, sections };
     });
     return { inicial: iniCamp, evolucion: evoCamp, groups: result };
-  }, [selectedCohorte, phaseSplit, institucionesConEvolucion]);
+  }, [selectedCohortes, phaseSplit, institucionesConEvolucion]);
 
   // Per-institution deltas (only those with responses in BOTH phases)
   const institucionDeltas = useMemo(() => {
-    if (!selectedCohorte) return [];
+    if (selectedCohortes.length === 0) return [];
     const { inicial: iniAll, evolucion: evoAll } = phaseSplit;
     const groups = ["docentes", "estudiantes", "acudientes"] as const;
     const rows = Array.from(institucionesConEvolucion).map((inst) => {
@@ -219,7 +222,7 @@ export default function AdminAmbienteDeltaTab() {
     return rows
       .filter((r) => r.delta !== null)
       .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
-  }, [selectedCohorte, phaseSplit, institucionesConEvolucion]);
+  }, [selectedCohortes, phaseSplit, institucionesConEvolucion]);
 
   // Compute group-level and cohort-level aggregates
   const groupAggregates = useMemo(() => {
@@ -244,7 +247,11 @@ export default function AdminAmbienteDeltaTab() {
   }, [groupAggregates]);
   const cohortDelta = cohortIni !== null && cohortEvo !== null ? cohortEvo - cohortIni : null;
 
-  const cohorteNombre = cohortes.find((c) => c.id === selectedCohorte)?.nombre || "";
+  const cohorteNombre = selectedCohortes
+    .map((id) => cohortes.find((c) => c.id === id)?.nombre)
+    .filter(Boolean)
+    .join(", ") || "";
+
 
   // Build payload for API + PDF
   const buildDeltasPayload = (): DeltaGroup[] => {
@@ -269,7 +276,7 @@ export default function AdminAmbienteDeltaTab() {
   };
 
   const handleGenerateAnalysis = async () => {
-    if (!analysis || !selectedCohorte) return;
+    if (!analysis || selectedCohortes.length === 0) return;
     setGenerating(true);
     setAnalysisHtml("");
     try {
@@ -395,7 +402,7 @@ export default function AdminAmbienteDeltaTab() {
     }));
 
   const handleDownloadPdf = async () => {
-    if (!analysis || !selectedCohorte) return;
+    if (!analysis || selectedCohortes.length === 0) return;
     setDownloading(true);
     try {
       const sources = getPdfLogoSources(images);
@@ -434,7 +441,7 @@ export default function AdminAmbienteDeltaTab() {
   const [zipping, setZipping] = useState<{ done: number; total: number } | null>(null);
 
   const handleDownloadInstitucionPdf = async (institucion: string) => {
-    if (!analysis || !selectedCohorte) return;
+    if (!analysis || selectedCohortes.length === 0) return;
     setDownloadingInst(institucion);
     try {
       const sources = getPdfLogoSources(images);
@@ -469,7 +476,7 @@ export default function AdminAmbienteDeltaTab() {
   };
 
   const handleDownloadZip = async () => {
-    if (!analysis || !selectedCohorte || institucionDeltas.length === 0) return;
+    if (!analysis || selectedCohortes.length === 0 || institucionDeltas.length === 0) return;
     const sources = getPdfLogoSources(images);
     const zip = new JSZip();
     const total = institucionDeltas.length;
@@ -558,14 +565,57 @@ export default function AdminAmbienteDeltaTab() {
     <div className="space-y-6">
       <div className="flex flex-wrap gap-3 items-center justify-between">
         <div className="flex flex-wrap gap-3 items-center">
-          <Select value={selectedCohorte} onValueChange={setSelectedCohorte}>
-            <SelectTrigger className="w-64"><SelectValue placeholder="Cohorte" /></SelectTrigger>
-            <SelectContent>
-              {cohortesConCampanas.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 min-w-[16rem] justify-start">
+                {selectedCohortes.length === 0
+                  ? "Seleccionar cohorte(s)…"
+                  : selectedCohortes.length === 1
+                    ? cohorteNombre
+                    : `${selectedCohortes.length} cohortes seleccionadas`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="start">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-muted-foreground">Cohortes</span>
+                <div className="flex gap-2">
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => setSelectedCohortes(cohortesConCampanas.map((c) => c.id))}
+                  >
+                    Todas
+                  </button>
+                  {selectedCohortes.length > 0 && (
+                    <button
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => setSelectedCohortes([])}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {cohortesConCampanas.map((c) => {
+                  const checked = selectedCohortes.includes(c.id);
+                  return (
+                    <label key={c.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => {
+                          setSelectedCohortes((prev) =>
+                            v ? [...prev, c.id] : prev.filter((x) => x !== c.id)
+                          );
+                        }}
+                      />
+                      <span>{c.nombre}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
