@@ -130,6 +130,17 @@ export async function generarPDFAmbienteDelta(
 
   y += 51;
 
+  // Regiones scope label (only when a specific subset is selected)
+  if (data.regionesLabel && data.regionesLabel.trim()) {
+    setText(doc, PALETTE.textMuted);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    const lines = doc.splitTextToSize(`Regiones: ${data.regionesLabel}`, contentW - 20);
+    doc.text(lines, pageW / 2, y, { align: "center" });
+    y += lines.length * 4 + 4;
+  }
+
+
   // Cohort headline
   const dc = deltaColor(data.cohortDelta);
   setText(doc, dc);
