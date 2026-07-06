@@ -16,6 +16,123 @@ import {
   NOTACION_PARAGRAPHS,
 } from "@/utils/ambienteDeltaPdfStyles";
 
+interface AnalysisSegment {
+  text: string;
+  bold: boolean;
+  italic: boolean;
+}
+
+interface AnalysisBlock {
+  type: "p" | "li";
+  segments: AnalysisSegment[];
+}
+
+function styleName(seg: AnalysisSegment): string {
+  if (seg.bold && seg.italic) return "bolditalic";
+  if (seg.bold) return "bold";
+  if (seg.italic) return "italic";
+  return "normal";
+}
+
+function parseSimpleHtml(html: string): AnalysisBlock[] {
+  const decoded = html
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/<\s*br\s*\/?>/gi, "\n");
+
+  const tagRe = /<\/?([a-zA-Z][a-zA-Z0-9]*)(?:\s+[^>]*)?>/gi;
+  const blocks: AnalysisBlock[] = [];
+  let currentSegments: AnalysisSegment[] = [];
+  let currentType: "p" | "li" = "p";
+  let bold = false;
+  let italic = false;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  const pushBlock = () => {
+    if (currentSegments.length > 0) {
+      blocks.push({ type: currentType, segments: currentSegments });
+      currentSegments = [];
+    }
+  };
+
+  while ((match = tagRe.exec(decoded)) !== null) {
+    const textBefore = decoded.slice(lastIndex, match.index);
+    if (textBefore) {
+      currentSegments.push({ text: textBefore, bold, italic });
+    }
+    const tagRaw = match[0].toLowerCase();
+    const isClosing = tagRaw[1] === "/";
+    const tagName = tagRaw.replace(/<\/?|\s.*|>/g, "");
+
+    if (tagName === "p") {
+      if (!isClosing) pushBlock();
+      else pushBlock();
+      currentType = "p";
+    } else if (tagName === "ul" || tagName === "ol") {
+      if (!isClosing) pushBlock();
+      else pushBlock();
+      currentType = isClosing ? "p" : "li";
+    } else if (tagName === "li") {
+      if (!isClosing) pushBlock();
+      else pushBlock();
+      currentType = "li";
+    } else if (tagName === "strong" || tagName === "b") {
+      bold = !isClosing;
+    } else if (tagName === "em" || tagName === "i") {
+      italic = !isClosing;
+    }
+
+    lastIndex = tagRe.lastIndex;
+  }
+
+  const tail = decoded.slice(lastIndex);
+  if (tail) currentSegments.push({ text: tail, bold, italic });
+  pushBlock();
+
+  // Merge adjacent segments with the same style and split on newlines
+  const normalized: AnalysisBlock[] = [];
+  for (const block of blocks) {
+    const merged: AnalysisSegment[] = [];
+    for (const seg of block.segments) {
+      if (!seg.text) continue;
+      if (
+        merged.length > 0 &&
+        merged[merged.length - 1].bold === seg.bold &&
+        merged[merged.length - 1].italic === seg.italic
+      ) {
+        merged[merged.length - 1].text += seg.text;
+      } else {
+        merged.push({ ...seg });
+      }
+    }
+    if (merged.length === 0) continue;
+
+    let current: AnalysisSegment[] = [];
+    for (const seg of merged) {
+      const parts = seg.text.split("\n");
+      for (let i = 0; i < parts.length; i++) {
+        if (i > 0 && current.length > 0) {
+          normalized.push({ type: block.type, segments: current });
+          current = [];
+        }
+        if (parts[i]) {
+          current.push({ text: parts[i], bold: seg.bold, italic: seg.italic });
+        }
+      }
+    }
+    if (current.length > 0) {
+      normalized.push({ type: block.type, segments: current });
+    }
+  }
+
+  return normalized;
+}
+
 export interface DeltaSection {
   title: string;
   ini: number | null;
