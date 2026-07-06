@@ -68,6 +68,10 @@ export default function AdminAmbienteDeltaTab() {
   const [analysisHtml, setAnalysisHtml] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [instSearch, setInstSearch] = useState("");
+  const [instGroupByRegion, setInstGroupByRegion] = useState(false);
+  const [instSortKey, setInstSortKey] = useState<"institucion" | "countIni" | "countEvo" | "ini" | "evo" | "delta">("delta");
+  const [instSortDir, setInstSortDir] = useState<"asc" | "desc">("desc");
 
 
   useEffect(() => {
