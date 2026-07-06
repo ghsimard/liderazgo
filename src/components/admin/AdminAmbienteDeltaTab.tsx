@@ -103,12 +103,16 @@ export default function AdminAmbienteDeltaTab() {
     return cohortes.filter((c) => ids.has(c.id));
   }, [cohortes, campanas]);
 
+  useEffect(() => {
+    if (selectedCohortes.length === 0 && cohortesConCampanas.length > 0) {
+      setSelectedCohortes([cohortesConCampanas[0].id]);
+    }
+  }, [cohortesConCampanas, selectedCohortes]);
 
   // Reset analysis when cohort or region filter changes
   useEffect(() => {
     setAnalysisHtml("");
   }, [selectedCohortes, selectedRegions]);
-
 
 
   // Institutions allowed by region filter (null = no filter)
@@ -317,20 +321,6 @@ export default function AdminAmbienteDeltaTab() {
       setGenerating(false);
     }
   };
-
-  // Auto-generar el análisis cuando haya cohortes seleccionadas y datos comparables
-  useEffect(() => {
-    if (
-      selectedCohortes.length > 0 &&
-      analysis &&
-      institucionesConEvolucion.size > 0 &&
-      !analysisHtml &&
-      !generating
-    ) {
-      handleGenerateAnalysis();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCohortes, selectedRegions, analysis, institucionesConEvolucion]);
 
   // ─── Per-institution payload builder (sections + Likert distribution) ───
   const countLikert = (subs: Submission[], itemId: string): number[] => {
@@ -665,19 +655,6 @@ export default function AdminAmbienteDeltaTab() {
           </CardContent>
         </Card>
       )}
-
-      {/* Empty state: hay respuestas en ambas fases pero ninguna institución en común */}
-      {analysis && phaseSplit.inicial.length > 0 && phaseSplit.evolucion.length > 0 && institucionesConEvolucion.size === 0 && (
-        <Card className="border-amber-500/40 bg-amber-500/5">
-          <CardContent className="p-5 text-sm space-y-1">
-            <h3 className="text-base font-bold">Sin instituciones comparables</h3>
-            <p className="text-muted-foreground">
-              Hay <strong>{phaseSplit.inicial.length}</strong> respuesta(s) Inicial y <strong>{phaseSplit.evolucion.length}</strong> respuesta(s) Evolución en la(s) cohorte(s) seleccionada(s), pero <strong>ninguna institución</strong> aparece en ambas fases. El Δ requiere que la misma institución tenga datos en Inicial y en Evolución. Verifique que las cohortes seleccionadas cubran instituciones comunes, o seleccione una sola cohorte.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
 
       {/* Cohort-level summary card — only when comparable data exists */}
       {analysis && institucionesConEvolucion.size > 0 && (
