@@ -581,7 +581,7 @@ export default function AdminAmbienteDeltaTab() {
                 <div className="flex gap-2">
                   <button
                     className="text-xs text-primary hover:underline"
-                    onClick={() => setSelectedCohortes(cohortesConCampanas.map((c) => c.id))}
+                    onClick={() => setSelectedCohortes(cohortes.map((c) => c.id))}
                   >
                     Todas
                   </button>
