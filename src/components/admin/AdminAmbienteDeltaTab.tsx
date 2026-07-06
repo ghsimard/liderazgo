@@ -666,6 +666,19 @@ export default function AdminAmbienteDeltaTab() {
         </Card>
       )}
 
+      {/* Empty state: hay respuestas en ambas fases pero ninguna institución en común */}
+      {analysis && phaseSplit.inicial.length > 0 && phaseSplit.evolucion.length > 0 && institucionesConEvolucion.size === 0 && (
+        <Card className="border-amber-500/40 bg-amber-500/5">
+          <CardContent className="p-5 text-sm space-y-1">
+            <h3 className="text-base font-bold">Sin instituciones comparables</h3>
+            <p className="text-muted-foreground">
+              Hay <strong>{phaseSplit.inicial.length}</strong> respuesta(s) Inicial y <strong>{phaseSplit.evolucion.length}</strong> respuesta(s) Evolución en la(s) cohorte(s) seleccionada(s), pero <strong>ninguna institución</strong> aparece en ambas fases. El Δ requiere que la misma institución tenga datos en Inicial y en Evolución. Verifique que las cohortes seleccionadas cubran instituciones comunes, o seleccione una sola cohorte.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+
       {/* Cohort-level summary card — only when comparable data exists */}
       {analysis && institucionesConEvolucion.size > 0 && (
         <Card className="border-primary/40 bg-primary/5">
