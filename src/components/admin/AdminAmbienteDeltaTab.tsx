@@ -109,19 +109,6 @@ export default function AdminAmbienteDeltaTab() {
     setAnalysisHtml("");
   }, [selectedCohortes, selectedRegions]);
 
-  // Auto-generar el análisis en cuanto haya cohortes seleccionadas y datos comparables
-  useEffect(() => {
-    if (
-      selectedCohortes.length > 0 &&
-      analysis &&
-      institucionesConEvolucion.size > 0 &&
-      !analysisHtml &&
-      !generating
-    ) {
-      handleGenerateAnalysis();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCohortes, selectedRegions, analysis, institucionesConEvolucion]);
 
 
   // Institutions allowed by region filter (null = no filter)
