@@ -132,8 +132,9 @@ export default function AdminAmbienteDeltaTab() {
   // Cohort filter: prefer `cohorte_id`; fallback to membership in this cohort's campaigns.
   const phaseSplit = useMemo(() => {
     const empty = { inicial: [] as Submission[], evolucion: [] as Submission[], iniCamp: undefined as Campana | undefined, evoCamp: undefined as Campana | undefined };
-    if (!selectedCohorte) return empty;
-    const campanasCohorte = campanas.filter((c) => c.cohorte_id === selectedCohorte);
+    if (selectedCohortes.length === 0) return empty;
+    const cohorteSet = new Set(selectedCohortes);
+    const campanasCohorte = campanas.filter((c) => cohorteSet.has(c.cohorte_id));
     const campIds = new Set(campanasCohorte.map((c) => c.id));
     const campFaseById = new Map(campanasCohorte.map((c) => [c.id, c.fase]));
 
@@ -142,7 +143,7 @@ export default function AdminAmbienteDeltaTab() {
     for (const s of submissions) {
       // Cohort gate
       const inCohort = s.cohorte_id
-        ? s.cohorte_id === selectedCohorte
+        ? cohorteSet.has(s.cohorte_id)
         : s.campana_id != null && campIds.has(s.campana_id);
       if (!inCohort) continue;
       // Region gate (via institution)
@@ -159,7 +160,8 @@ export default function AdminAmbienteDeltaTab() {
       iniCamp: campanasCohorte.find((c) => c.fase === "linea_base"),
       evoCamp: campanasCohorte.find((c) => c.fase === "cierre"),
     };
-  }, [selectedCohorte, campanas, submissions, allowedInstitutionsSet]);
+  }, [selectedCohortes, campanas, submissions, allowedInstitutionsSet]);
+
 
   const regionesLabel = selectedRegions.length === 0 ? "Todas" : selectedRegions.join(", ");
 
