@@ -105,42 +105,45 @@ export async function generarPDFAmbienteDelta(
   y = 80;
   y = drawCoverLogos(doc, logos, { y, pageW, targetH: 24 }) + 18;
 
-  // Dynamic cohorte block: font size and height adapt to the name length
+  // Dynamic cohorte block: font size and box height adapt to the name length
   const drawCoverCohorteBlock = (
     startY: number,
     opts: { label: string; mainText: string; footerText: string; boxWidth: number }
   ): number => {
     const boxX = margin + 6;
     const boxW = opts.boxWidth;
-    const innerPadY = 5;
+    const innerPadY = 4;
     const labelSize = 8;
     const footerSize = 9;
-    const mainMaxSize = 16;
+    // Single cohorte keeps the original 16 pt look; multiple cohortes are scaled down
+    const isMultiple = opts.mainText.includes(",");
+    const mainMaxSize = isMultiple ? 14 : 16;
     const mainMinSize = 10;
     const maxTextWidth = boxW - 24; // 6 mm left + 6 mm right inner padding
     const lineHeight = (size: number) => size * 0.4; // mm
 
-    // Choose the largest font size that keeps the cohorte name within 3 lines
+    // Choose the largest font size that fits the cohorte name in at most 2 lines
+    // (3 lines are allowed only if the text cannot fit in 2 lines even at min size)
     let mainSize = mainMaxSize;
     let mainLines: string[] = [];
     for (let size = mainMaxSize; size >= mainMinSize; size--) {
       doc.setFontSize(size);
       mainLines = doc.splitTextToSize(opts.mainText, maxTextWidth);
       mainSize = size;
-      if (mainLines.length <= 3) break;
+      if (mainLines.length <= 2) break;
     }
     if (mainLines.length > 3) mainLines = mainLines.slice(0, 3);
 
     const mainLineHeight = lineHeight(mainSize);
-    const labelMainGap = 3; // visual gap between label and main text blocks
-    const mainFooterGap = 5;
+    const labelMainGap = 3;
+    const mainFooterGap = 4;
 
     // Block height computed from baselines, adding half-line descender padding
     const blockHeight =
       innerPadY * 2 +
-      labelSize * 0.5 + // label occupies ~0.5 of its line height above/below baseline
+      labelSize * 0.5 +
       labelMainGap +
-      mainSize * 0.2 + // main ascender allowance
+      mainSize * 0.2 +
       mainLines.length * mainLineHeight +
       mainFooterGap +
       lineHeight(footerSize);
