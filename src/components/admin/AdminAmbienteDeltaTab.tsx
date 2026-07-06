@@ -144,11 +144,14 @@ export default function AdminAmbienteDeltaTab() {
         ? s.cohorte_id === selectedCohorte
         : s.campana_id != null && campIds.has(s.campana_id);
       if (!inCohort) continue;
+      // Region gate (via institution)
+      if (allowedInstitutionsSet && !allowedInstitutionsSet.has(s.institucion_educativa)) continue;
       // Resolve actual phase (submission wins; fallback to campaign)
       const fase = s.fase || (s.campana_id ? campFaseById.get(s.campana_id) ?? null : null);
       if (fase === "linea_base") inicial.push(s);
       else if (fase === "cierre") evolucion.push(s);
     }
+
     return {
       inicial,
       evolucion,
