@@ -572,7 +572,7 @@ export default function AdminAmbienteStatsTab() {
               </SelectTrigger>
               <SelectContent>
                 {cohortes.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>Cohorte {c.year}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
