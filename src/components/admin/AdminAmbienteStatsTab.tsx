@@ -438,7 +438,7 @@ export default function AdminAmbienteStatsTab() {
       }
       const uniqueIEs = new Set(cohorteSubs.map((s) => s.institucion_educativa).filter(Boolean));
       const nIE = uniqueIEs.size;
-      const header = `Cohorte ${cohorte.year} (${nIE} institucion${nIE === 1 ? "" : "es"})`;
+      const header = `${cohorte.nombre} (${nIE} institucion${nIE === 1 ? "" : "es"})`;
       await generarAmbienteEscolarReportPDF(
         {
           institucion: header,
