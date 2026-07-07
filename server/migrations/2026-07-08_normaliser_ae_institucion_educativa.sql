@@ -1,35 +1,15 @@
-## Objectif
+-- =============================================================
+-- Migration Render — 2026-07-08
+-- Normaliser institucion_educativa dans les tables
+-- ae_*_submissions_2025 : retirer le suffixe « - Municipio »
+-- lorsque la version courte existe dans fichas_rlt.nombre_ie.
+-- À exécuter manuellement sur la base Render (psql) ET sur Lovable Cloud.
+-- Idempotent, sûr, ne modifie que les lignes résolvables.
+-- =============================================================
 
-Réconcilier les encuestas Ambiente Escolar déjà remplies avec le nom canonique des IE dans `fichas_rlt`, en retirant le suffixe « - Municipio » ajouté historiquement par le combobox codé en dur.
-
-Exemple : `Centro Educativo Rural Guamito - San Luis` → `Centro Educativo Rural Guamito`.
-
-## Principe de la mise à jour
-
-Pour chaque valeur `institucion_educativa` présente dans une table `ae_*_submissions_2025` qui **contient un ` - `** :
-- Si la partie avant ` - ` existe **telle quelle** dans `fichas_rlt.nombre_ie` → on remplace par cette version courte.
-- Sinon → on laisse tel quel (aucune correspondance sûre, on ne casse rien).
-
-Cette règle est sûre car :
-- Elle ne rapproche que les IE dont le nom court existe déjà dans `fichas_rlt`.
-- Elle ne touche jamais les encuestas dont le nom ne contient pas ` - ` (déjà propres).
-- Elle est idempotente (rejouable sans effet supplémentaire).
-
-## Actions par plateforme
-
-### 🗄️ Base de données (SQL manuel — Render + Lovable Cloud)
-
-Un seul script, à exécuter **à l'identique sur les deux bases** (Render via `psql` et Lovable Cloud via l'outil de migration).
-
-Trois tables concernées :
-- `ae_docentes_submissions_2025`
-- `ae_estudiantes_submissions_2025`
-- `ae_acudientes_submissions_2025`
-
-```sql
 BEGIN;
 
--- Aperçu avant exécution : lister ce qui va être modifié
+-- Aperçu (à consulter avant COMMIT si exécuté interactivement)
 SELECT 'docentes' src, s.institucion_educativa AS avant,
        split_part(s.institucion_educativa, ' - ', 1) AS apres,
        count(*) AS n
@@ -87,7 +67,7 @@ WHERE s.institucion_educativa LIKE '% - %'
     WHERE f.nombre_ie = split_part(s.institucion_educativa, ' - ', 1)
   );
 
--- Vérification : plus aucune ligne avec suffixe résolvable
+-- Vérification finale
 SELECT 'reste_docentes' src, count(*) FROM public.ae_docentes_submissions_2025
 WHERE institucion_educativa LIKE '% - %'
 UNION ALL SELECT 'reste_estudiantes', count(*) FROM public.ae_estudiantes_submissions_2025
@@ -96,22 +76,3 @@ UNION ALL SELECT 'reste_acudientes', count(*) FROM public.ae_acudientes_submissi
 WHERE institucion_educativa LIKE '% - %';
 
 COMMIT;
-```
-
-Le fichier sera aussi versionné dans `server/migrations/2026-07-08_normaliser_ae_institucion_educativa.sql` pour trace.
-
-### ⚙️ Web Service (Backend Express)
-
-Aucun changement.
-
-### 🖥️ Site statique (Frontend)
-
-Aucun changement fonctionnel. Le combobox `AmbienteEscolarForm` lit déjà `fichas_rlt` via la nouvelle vue, donc les nouvelles encuestas seront enregistrées avec le nom canonique. La liste codée en dur `src/data/instituciones.ts` n'est plus utilisée pour ce combobox (à supprimer plus tard si personne d'autre ne la référence — hors périmètre ici).
-
-## Résumé actions par plateforme
-
-| Plateforme | Action |
-|---|---|
-| 🗄️ Base de données | Exécuter le script SQL ci-dessus sur Render (psql) **et** sur Lovable Cloud (migration) |
-| ⚙️ Web Service | — |
-| 🖥️ Site statique | — |
