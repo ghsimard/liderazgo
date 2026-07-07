@@ -64,7 +64,7 @@ const InstitutionCombobox = forwardRef<HTMLDivElement, {
       try {
         const [{ data: institutionRows, error: institutionsError }, { data: cohortRows, error: cohortesError }] = await Promise.all([
           supabase
-            .from("ae_cohorte_instituciones" as any)
+            .from("v_ae_instituciones_por_cohorte" as any)
             .select("institucion_educativa, cohorte_id" as any),
           supabase
             .from("ae_cohortes" as any)
