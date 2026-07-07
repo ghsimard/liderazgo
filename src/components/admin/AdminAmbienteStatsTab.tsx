@@ -560,6 +560,31 @@ export default function AdminAmbienteStatsTab() {
               Demo PDF
             </Button>
           </div>
+
+          {/* Consolidated by Cohorte */}
+          <div className="flex items-center gap-3 flex-wrap pt-2 border-t">
+            <Layers className="w-5 h-5 text-primary" />
+            <span className="text-sm font-medium">Informe consolidado por Cohorte</span>
+            <Select value={selCohorte} onValueChange={setSelCohorte}>
+              <SelectTrigger className="w-[200px] h-9">
+                <SelectValue placeholder="Seleccionar cohorte" />
+              </SelectTrigger>
+              <SelectContent>
+                {cohortes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>Cohorte {c.year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              onClick={handleCohorteConsolidatedPDF}
+              disabled={generating || !selCohorte}
+              className="gap-1.5"
+            >
+              {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Generar Informe Consolidado
+            </Button>
+          </div>
           {batchGenerating && (
             <Progress value={batchProgress} className="h-2" />
           )}
