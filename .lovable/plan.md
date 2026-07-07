@@ -1,49 +1,67 @@
-## Objectif
 
-Créer, à côté du bouton *Demo PDF*, un nouveau bouton qui génère un **Informe consolidé par Cohorte** utilisant le même gabarit PDF que le Demo (`generarAmbienteEscolarReportPDF`), mais alimenté par les **réponses réelles** de toutes les institutions de la cohorte sélectionnée.
+# Une seule source de vérité : `fichas_rlt`
 
-## Où
+## Principe retenu
 
-Onglet Admin → Ambiente Escolar → **Estadísticas** (`src/components/admin/AdminAmbienteStatsTab.tsx`).
+- **Seule `fichas_rlt` définit** quelles IE existent dans quel cohorte.
+- L'appartenance ficha ↔ cohorte est déterminée par la correspondance `fichas_rlt.region = ae_cohortes.nombre` (déjà utilisée aujourd'hui).
+- La table `ae_cohorte_instituciones` **cesse d'alimenter** le combobox et les monitoreos (elle reste en base comme historique, non touchée).
 
-## Fonctionnement
+## Impact attendu
 
-1. Ajout d'un **sélecteur « Cohorte »** dans la barre de filtres (à côté de Región / ET / IE), alimenté par la table `ae_cohortes` (year ≥ 2026) déjà chargée dans le composant.
-2. Ajout d'un bouton **« Informe consolidado por Cohorte »** dans la carte *Informes PDF*, désactivé tant qu'aucune cohorte n'est sélectionnée.
-3. Au clic :
-   - Filtrer les submissions réelles (`encuestas_ambiente_escolar`) par `cohorte_id` de la cohorte choisie.
-   - Compter le nombre distinct d'IE (`institucion_educativa`) qui ont au moins une réponse dans cette cohorte.
-   - Construire un `AmbienteReportData` unique agrégeant **toutes** les réponses docentes + estudiantes + acudientes de la cohorte.
-   - En-tête PDF :
-     - `institucion` = `"Cohorte {year} ({N instituciones})"` — ex. « Cohorte 2026 (23 instituciones) »
-     - `entidadTerritorial` = vide (rapport transversal)
-   - Logos : par défaut RLT + CLT visibles (rapport transversal, pas rattaché à une región).
-4. Toast de succès / erreur identiques aux autres exports.
+Pour Oriente 2026 : le combobox listera **22 IE** (celles réellement présentes dans `fichas_rlt`), plus les 16 canoniques ne s'ajoutent plus. Résultat identique en pratique puisque les 16 canoniques sont toutes déjà dans les 22 fichas.
 
-## En-tête du PDF
+Pour Quibdó 2026, Rionegro 2025, Itagüí 2025, Medellín 2025 : seuls les IE avec au moins une Ficha RLT apparaîtront.
 
-Comme demandé : `Cohorte {year} ({N} instituciones)` remplace le nom d'IE dans le titre du rapport. Le reste du gabarit (fréquences Likert, graphiques empilés, sections docentes/estudiantes/acudientes) reste **strictement identique** au Demo PDF.
+## Modifications
 
-## Bouton Demo PDF
+### 🗄️ Base de données (Manual SQL — Render + Lovable Cloud)
 
-Conservé tel quel pour l'instant (utile pour tests visuels). Peut être retiré séparément plus tard si souhaité.
+Redéfinir la vue en supprimant le `UNION` avec `ae_cohorte_instituciones` :
 
-## Détails techniques
+```sql
+CREATE OR REPLACE VIEW public.v_ae_instituciones_por_cohorte AS
+SELECT c.id AS cohorte_id, f.nombre_ie AS institucion_educativa
+FROM public.ae_cohortes c
+JOIN public.fichas_rlt f ON f.region = c.nombre
+GROUP BY c.id, f.nombre_ie;
 
-- **Fichier modifié** : `src/components/admin/AdminAmbienteStatsTab.tsx` uniquement.
-- Nouveaux états : `selCohorte: string`, `cohortes: {id, year}[]`.
-- Nouvelle fonction : `handleCohorteConsolidatedPDF()` — pattern calqué sur `handleDemoPDF` mais utilisant les vraies submissions filtrées par `cohorte_id`.
-- Aucun changement au générateur PDF (`ambienteEscolarReportPdfGenerator.ts`) — les champs `institucion` / `entidadTerritorial` acceptent déjà du texte libre.
-- Aucun changement backend, aucune requête nouvelle (tout est déjà chargé dans `submissions` + `ae_cohortes`).
+GRANT SELECT ON public.v_ae_instituciones_por_cohorte TO PUBLIC;
+```
 
-## Actions requises sur Render
+À exécuter :
+- **Render** : ajouter un fichier `server/migrations/2026-XX-XX_v_ae_instituciones_solo_fichas.sql` et l'appliquer manuellement via `psql` sur la base Render.
+- **Lovable Cloud** : appliquer la même redéfinition via l'outil de migration Supabase.
 
-- 🖥️ **Site statique (Frontend)** : redéploiement automatique du frontend après merge de la modification de `AdminAmbienteStatsTab.tsx`.
-- ⚙️ **Web Service (Backend Express)** : aucune action.
-- 🗄️ **Base de données (Manual SQL)** : aucune action.
+Aucune donnée n'est supprimée. `ae_cohorte_instituciones` reste en place (historique), mais n'alimente plus rien.
 
-## Hors périmètre
+### ⚙️ Web Service (Backend Express)
 
-- Suppression / restriction du bouton Demo PDF.
-- Consolidation par Región / ET / filtre global (non demandé).
-- Modification du gabarit visuel du PDF.
+Aucun changement. Le proxy `dbClient` lit la vue telle quelle.
+
+### 🖥️ Site statique (Frontend)
+
+Aucun changement fonctionnel obligatoire. Nettoyages recommandés :
+
+1. **`src/components/admin/AdminAmbienteMonitorTab.tsx`** ligne 174 : supprimer le commentaire et la logique de fallback « IE Name - Municipio » qui existait uniquement à cause de `ae_cohorte_instituciones` :
+   ```text
+   Remplacer findDirectivo() par un simple match exact sur nombre_ie
+   (puisque les IE viennent désormais toutes de fichas_rlt et sont
+   forcément identiques à fichas_rlt.nombre_ie).
+   ```
+
+2. **`src/components/AmbienteEscolarForm.tsx`** : aucun changement, la logique de dédoublonnage par nom fonctionne toujours.
+
+3. Documentation : mettre à jour l'en-tête de `server/schema.sql` (ligne 1014) et de `server/migrations/2026-07-07_v_ae_instituciones_por_cohorte.sql` pour retirer la mention « legacy ae_cohorte_instituciones ».
+
+## Contrôle qualité en amont
+
+Puisque `fichas_rlt` devient la seule source, la qualité du champ `region` devient critique. Les 6 IE parasites d'Oriente 2026 seront **conservées** (elles viennent de fichas réelles avec `region='Oriente 2026'`). Si l'équipe terrain confirme qu'elles sont hors périmètre, il faudra corriger leur `region` en SQL manuel — mais c'est une décision séparée à prendre au cas par cas.
+
+## Résumé actions par plateforme
+
+| Plateforme | Action |
+|---|---|
+| 🗄️ Base de données | Redéfinir la vue (SQL manuel sur Render + Lovable Cloud) |
+| ⚙️ Web Service | — |
+| 🖥️ Site statique | Nettoyage du fallback `findDirectivo` + commentaires |

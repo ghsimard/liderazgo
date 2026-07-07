@@ -353,6 +353,13 @@ export type Database = {
             referencedRelation: "ae_cohortes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ae_campanas_cohorte_id_fkey"
+            columns: ["cohorte_id"]
+            isOneToOne: false
+            referencedRelation: "v_ae_instituciones_por_cohorte"
+            referencedColumns: ["cohorte_id"]
+          },
         ]
       }
       ae_cohorte_instituciones: {
@@ -378,6 +385,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ae_cohortes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ae_cohorte_instituciones_cohorte_id_fkey"
+            columns: ["cohorte_id"]
+            isOneToOne: false
+            referencedRelation: "v_ae_instituciones_por_cohorte"
+            referencedColumns: ["cohorte_id"]
           },
         ]
       }
@@ -1112,6 +1126,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ae_cohortes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuestas_ambiente_escolar_cohorte_id_fkey"
+            columns: ["cohorte_id"]
+            isOneToOne: false
+            referencedRelation: "v_ae_instituciones_por_cohorte"
+            referencedColumns: ["cohorte_id"]
           },
         ]
       }
