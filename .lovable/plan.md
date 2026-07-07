@@ -1,57 +1,62 @@
-## Suppression de « Institución Educativa Rural Chaparral »
+## Corriger le municipio de 3 instituciones (Oriente 2026)
 
 ### Constat (vérifié en prod)
-Après scan de toutes les tables contenant un nom d'institution, cette IE n'existe qu'à **un seul endroit** :
 
-| Table | Occurrences |
-|---|---|
-| `ae_cohorte_instituciones` | **1** |
-| `fichas_rlt` | 0 |
-| `ae_acudientes_submissions_2025` | 0 |
-| `ae_docentes_submissions_2025` | 0 |
-| `ae_estudiantes_submissions_2025` | 0 |
-| `ae_rectores_2025` | 0 |
-| `encuestas_360` | 0 |
-| `encuestas_ambiente_escolar` | 0 |
-| `encuesta_invitaciones` | 0 |
-| `operator_permissions` | 0 |
-| `rubrica_asignaciones` | 0 |
+| Institución | Municipio actuel (faux) | Municipio correct |
+|---|---|---|
+| Centro Educativo Rural Guamito | San Luis | **El Peñol** |
+| Institución Educativa Rural La Josefina | San Carlos | **San Luis** |
+| Institución Educativa Rural Santa Ana | El Peñol | **Granada** |
 
-Aucune donnée opérationnelle (encuestas, fichas, rúbricas, invitations, permissions) n'est rattachée à cette IE. La suppression est **sans effet de bord**.
+Le municipio est stocké uniquement dans `instituciones.municipio_id` (FK vers `municipios`). Aucune autre table ne dénormalise ce champ — donc **une seule table à mettre à jour**.
+
+IDs cibles (branche liée à la région « Oriente 2026 » dans `region_municipios`, pour éviter les doublons de `municipios`) :
+- El Peñol → `52b59959-0449-461f-90f8-93c174fb2f9d`
+- San Luis → `94fbe7d9-bb9a-4ac2-844e-3c5770149866`
+- Granada → `809f0ce9-9bf7-4266-92d8-4c485ce0f04d`
 
 ### Action
 
-🗄️ **Base de données (SQL manuel via pgAdmin4 sur Render)** — une seule requête :
+🗄️ **Base de données (SQL manuel via pgAdmin4 sur Render)** :
 
 ```sql
 BEGIN;
 
--- Vérification avant
-SELECT c.nombre AS cohorte, ci.institucion_educativa
-FROM ae_cohorte_instituciones ci
-JOIN ae_cohortes c ON c.id = ci.cohorte_id
-WHERE ci.institucion_educativa ILIKE '%Chaparral%';
+-- Avant : contrôle
+SELECT i.nombre, m.nombre AS municipio_actual
+FROM instituciones i JOIN municipios m ON m.id = i.municipio_id
+WHERE i.id IN (
+  '7fcc711a-aace-4f23-8bfe-3d73a502786f',  -- Guamito
+  '671ef66a-1173-4e1f-a661-a806cf31987c',  -- La Josefina
+  '15daa903-fcaa-4957-b5c9-899fed85973b'   -- Santa Ana
+);
 
--- Suppression
-DELETE FROM ae_cohorte_instituciones
-WHERE institucion_educativa ILIKE '%Chaparral%';
+-- Corrections
+UPDATE instituciones SET municipio_id = '52b59959-0449-461f-90f8-93c174fb2f9d'
+ WHERE id = '7fcc711a-aace-4f23-8bfe-3d73a502786f';  -- Guamito -> El Peñol
 
--- Vérification après (doit retourner 0 lignes)
-SELECT count(*) FROM ae_cohorte_instituciones
-WHERE institucion_educativa ILIKE '%Chaparral%';
+UPDATE instituciones SET municipio_id = '94fbe7d9-bb9a-4ac2-844e-3c5770149866'
+ WHERE id = '671ef66a-1173-4e1f-a661-a806cf31987c';  -- La Josefina -> San Luis
 
--- Vérification vue unifiée (doit aussi retourner 0)
-SELECT count(*) FROM v_ae_instituciones_por_cohorte
-WHERE institucion_educativa ILIKE '%Chaparral%';
+UPDATE instituciones SET municipio_id = '809f0ce9-9bf7-4266-92d8-4c485ce0f04d'
+ WHERE id = '15daa903-fcaa-4957-b5c9-899fed85973b';  -- Santa Ana -> Granada
+
+-- Après : vérification (doit afficher les 3 nouveaux municipios)
+SELECT i.nombre, m.nombre AS municipio_nuevo
+FROM instituciones i JOIN municipios m ON m.id = i.municipio_id
+WHERE i.id IN (
+  '7fcc711a-aace-4f23-8bfe-3d73a502786f',
+  '671ef66a-1173-4e1f-a661-a806cf31987c',
+  '15daa903-fcaa-4957-b5c9-899fed85973b'
+);
 
 COMMIT;
 ```
 
-Exécuter le bloc, contrôler que les deux `count(*)` finaux valent **0**, puis `COMMIT`. En cas de doute, `ROLLBACK`.
+Si le contrôle final montre bien El Peñol / San Luis / Granada → `COMMIT`. Sinon → `ROLLBACK`.
 
 🖥️ **Frontend** : rien à faire.
 ⚙️ **Backend Express** : rien à faire.
 
-### Notes
-- La vue `v_ae_instituciones_por_cohorte` étant dérivée de `ae_cohorte_instituciones` (branche legacy) + `fichas_rlt`, elle se met à jour automatiquement dès que la ligne est supprimée.
-- Si un jour cette IE réapparaît via une ficha RLT, il faudra plutôt supprimer la ficha correspondante.
+### Note
+Il existe des doublons de municipios (`El Peñol`, `San Luis`, `Granada`, `San Carlos`) sans lien vers une région — non traités ici. À nettoyer dans un ticket dédié si besoin.
