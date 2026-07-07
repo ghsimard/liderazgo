@@ -2513,7 +2513,13 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_ae_instituciones_por_cohorte: {
+        Row: {
+          cohorte_id: string | null
+          institucion_educativa: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_cedula_exists: { Args: { p_cedula: string }; Returns: boolean }
