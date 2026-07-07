@@ -186,11 +186,13 @@ export default function AdminAmbienteStatsTab() {
         supabase.from("ae_cohortes").select("id, year").gte("year", 2026),
       ]);
       // Only keep submissions belonging to current cohortes (2026+)
-      const currentCohorteIds = new Set((cohortesRes.data || []).map((c: any) => c.id));
+      const currentCohortes = (cohortesRes.data || []) as { id: string; year: number }[];
+      const currentCohorteIds = new Set(currentCohortes.map((c) => c.id));
       const filteredSubs = subData.filter(s => s.cohorte_id && currentCohorteIds.has(s.cohorte_id));
       setSubmissions(filteredSubs);
       setFichas(fichaData);
       setRegions((regRes.data || []) as RegionInfo[]);
+      setCohortes(currentCohortes.sort((a, b) => b.year - a.year));
       setLoading(false);
     }
     load();
