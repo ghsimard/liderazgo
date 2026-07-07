@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Progress } from "@/components/ui/progress";
-import { RefreshCw, Users, BookOpen, GraduationCap, Filter, Download, FileText, FlaskConical } from "lucide-react";
+import { RefreshCw, Users, BookOpen, GraduationCap, Filter, Download, FileText, FlaskConical, Layers } from "lucide-react";
 
 async function fetchAllRows<T = any>(table: string, columns: string): Promise<T[]> {
   const PAGE = 1000;
@@ -162,12 +162,14 @@ export default function AdminAmbienteStatsTab() {
   const [submissions, setSubmissions] = useState<RawSubmission[]>([]);
   const [fichas, setFichas] = useState<FichaInfo[]>([]);
   const [regions, setRegions] = useState<RegionInfo[]>([]);
+  const [cohortes, setCohortes] = useState<{ id: string; year: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
   const [selEntidades, setSelEntidades] = useState<string[]>([]);
   const [selectedIE, setSelectedIE] = useState("__all__");
+  const [selCohorte, setSelCohorte] = useState<string>("");
 
   // PDF state
   const [generating, setGenerating] = useState(false);
@@ -184,11 +186,13 @@ export default function AdminAmbienteStatsTab() {
         supabase.from("ae_cohortes").select("id, year").gte("year", 2026),
       ]);
       // Only keep submissions belonging to current cohortes (2026+)
-      const currentCohorteIds = new Set((cohortesRes.data || []).map((c: any) => c.id));
+      const currentCohortes = (cohortesRes.data || []) as { id: string; year: number }[];
+      const currentCohorteIds = new Set(currentCohortes.map((c) => c.id));
       const filteredSubs = subData.filter(s => s.cohorte_id && currentCohorteIds.has(s.cohorte_id));
       setSubmissions(filteredSubs);
       setFichas(fichaData);
       setRegions((regRes.data || []) as RegionInfo[]);
+      setCohortes(currentCohortes.sort((a, b) => b.year - a.year));
       setLoading(false);
     }
     load();
@@ -418,6 +422,40 @@ export default function AdminAmbienteStatsTab() {
     setGenerating(false);
   };
 
+  // ── Consolidated PDF by Cohorte (real data) ──
+  const handleCohorteConsolidatedPDF = async () => {
+    if (!selCohorte) return;
+    const cohorte = cohortes.find((c) => c.id === selCohorte);
+    if (!cohorte) return;
+    setGenerating(true);
+    try {
+      const cohorteSubs = submissions.filter((s) => s.cohorte_id === selCohorte);
+      if (cohorteSubs.length === 0) {
+        toast({ title: "Sin datos", description: "Esta cohorte no tiene respuestas registradas.", variant: "destructive" });
+        setGenerating(false);
+        return;
+      }
+      const uniqueIEs = new Set(cohorteSubs.map((s) => s.institucion_educativa).filter(Boolean));
+      const nIE = uniqueIEs.size;
+      const header = `Cohorte ${cohorte.year} (${nIE} institucion${nIE === 1 ? "" : "es"})`;
+      await generarAmbienteEscolarReportPDF(
+        {
+          institucion: header,
+          entidadTerritorial: "",
+          submissions: cohorteSubs.map((s) => ({ tipo_formulario: s.tipo_formulario, respuestas: s.respuestas })),
+        },
+        getPdfLogoSources(images),
+        { showLogoRlt: true, showLogoClt: true }
+      );
+      toast({ title: "PDF generado", description: `Informe consolidado descargado — ${header}` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setGenerating(false);
+  };
+
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -520,6 +558,31 @@ export default function AdminAmbienteStatsTab() {
             >
               {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
               Demo PDF
+            </Button>
+          </div>
+
+          {/* Consolidated by Cohorte */}
+          <div className="flex items-center gap-3 flex-wrap pt-2 border-t">
+            <Layers className="w-5 h-5 text-primary" />
+            <span className="text-sm font-medium">Informe consolidado por Cohorte</span>
+            <Select value={selCohorte} onValueChange={setSelCohorte}>
+              <SelectTrigger className="w-[200px] h-9">
+                <SelectValue placeholder="Seleccionar cohorte" />
+              </SelectTrigger>
+              <SelectContent>
+                {cohortes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>Cohorte {c.year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              onClick={handleCohorteConsolidatedPDF}
+              disabled={generating || !selCohorte}
+              className="gap-1.5"
+            >
+              {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Generar Informe Consolidado
             </Button>
           </div>
           {batchGenerating && (

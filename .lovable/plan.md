@@ -1,62 +1,49 @@
-## Corriger le municipio de 3 instituciones (Oriente 2026)
+## Objectif
 
-### Constat (vérifié en prod)
+Créer, à côté du bouton *Demo PDF*, un nouveau bouton qui génère un **Informe consolidé par Cohorte** utilisant le même gabarit PDF que le Demo (`generarAmbienteEscolarReportPDF`), mais alimenté par les **réponses réelles** de toutes les institutions de la cohorte sélectionnée.
 
-| Institución | Municipio actuel (faux) | Municipio correct |
-|---|---|---|
-| Centro Educativo Rural Guamito | San Luis | **El Peñol** |
-| Institución Educativa Rural La Josefina | San Carlos | **San Luis** |
-| Institución Educativa Rural Santa Ana | El Peñol | **Granada** |
+## Où
 
-Le municipio est stocké uniquement dans `instituciones.municipio_id` (FK vers `municipios`). Aucune autre table ne dénormalise ce champ — donc **une seule table à mettre à jour**.
+Onglet Admin → Ambiente Escolar → **Estadísticas** (`src/components/admin/AdminAmbienteStatsTab.tsx`).
 
-IDs cibles (branche liée à la région « Oriente 2026 » dans `region_municipios`, pour éviter les doublons de `municipios`) :
-- El Peñol → `52b59959-0449-461f-90f8-93c174fb2f9d`
-- San Luis → `94fbe7d9-bb9a-4ac2-844e-3c5770149866`
-- Granada → `809f0ce9-9bf7-4266-92d8-4c485ce0f04d`
+## Fonctionnement
 
-### Action
+1. Ajout d'un **sélecteur « Cohorte »** dans la barre de filtres (à côté de Región / ET / IE), alimenté par la table `ae_cohortes` (year ≥ 2026) déjà chargée dans le composant.
+2. Ajout d'un bouton **« Informe consolidado por Cohorte »** dans la carte *Informes PDF*, désactivé tant qu'aucune cohorte n'est sélectionnée.
+3. Au clic :
+   - Filtrer les submissions réelles (`encuestas_ambiente_escolar`) par `cohorte_id` de la cohorte choisie.
+   - Compter le nombre distinct d'IE (`institucion_educativa`) qui ont au moins une réponse dans cette cohorte.
+   - Construire un `AmbienteReportData` unique agrégeant **toutes** les réponses docentes + estudiantes + acudientes de la cohorte.
+   - En-tête PDF :
+     - `institucion` = `"Cohorte {year} ({N instituciones})"` — ex. « Cohorte 2026 (23 instituciones) »
+     - `entidadTerritorial` = vide (rapport transversal)
+   - Logos : par défaut RLT + CLT visibles (rapport transversal, pas rattaché à une región).
+4. Toast de succès / erreur identiques aux autres exports.
 
-🗄️ **Base de données (SQL manuel via pgAdmin4 sur Render)** :
+## En-tête du PDF
 
-```sql
-BEGIN;
+Comme demandé : `Cohorte {year} ({N} instituciones)` remplace le nom d'IE dans le titre du rapport. Le reste du gabarit (fréquences Likert, graphiques empilés, sections docentes/estudiantes/acudientes) reste **strictement identique** au Demo PDF.
 
--- Avant : contrôle
-SELECT i.nombre, m.nombre AS municipio_actual
-FROM instituciones i JOIN municipios m ON m.id = i.municipio_id
-WHERE i.id IN (
-  '7fcc711a-aace-4f23-8bfe-3d73a502786f',  -- Guamito
-  '671ef66a-1173-4e1f-a661-a806cf31987c',  -- La Josefina
-  '15daa903-fcaa-4957-b5c9-899fed85973b'   -- Santa Ana
-);
+## Bouton Demo PDF
 
--- Corrections
-UPDATE instituciones SET municipio_id = '52b59959-0449-461f-90f8-93c174fb2f9d'
- WHERE id = '7fcc711a-aace-4f23-8bfe-3d73a502786f';  -- Guamito -> El Peñol
+Conservé tel quel pour l'instant (utile pour tests visuels). Peut être retiré séparément plus tard si souhaité.
 
-UPDATE instituciones SET municipio_id = '94fbe7d9-bb9a-4ac2-844e-3c5770149866'
- WHERE id = '671ef66a-1173-4e1f-a661-a806cf31987c';  -- La Josefina -> San Luis
+## Détails techniques
 
-UPDATE instituciones SET municipio_id = '809f0ce9-9bf7-4266-92d8-4c485ce0f04d'
- WHERE id = '15daa903-fcaa-4957-b5c9-899fed85973b';  -- Santa Ana -> Granada
+- **Fichier modifié** : `src/components/admin/AdminAmbienteStatsTab.tsx` uniquement.
+- Nouveaux états : `selCohorte: string`, `cohortes: {id, year}[]`.
+- Nouvelle fonction : `handleCohorteConsolidatedPDF()` — pattern calqué sur `handleDemoPDF` mais utilisant les vraies submissions filtrées par `cohorte_id`.
+- Aucun changement au générateur PDF (`ambienteEscolarReportPdfGenerator.ts`) — les champs `institucion` / `entidadTerritorial` acceptent déjà du texte libre.
+- Aucun changement backend, aucune requête nouvelle (tout est déjà chargé dans `submissions` + `ae_cohortes`).
 
--- Après : vérification (doit afficher les 3 nouveaux municipios)
-SELECT i.nombre, m.nombre AS municipio_nuevo
-FROM instituciones i JOIN municipios m ON m.id = i.municipio_id
-WHERE i.id IN (
-  '7fcc711a-aace-4f23-8bfe-3d73a502786f',
-  '671ef66a-1173-4e1f-a661-a806cf31987c',
-  '15daa903-fcaa-4957-b5c9-899fed85973b'
-);
+## Actions requises sur Render
 
-COMMIT;
-```
+- 🖥️ **Site statique (Frontend)** : redéploiement automatique du frontend après merge de la modification de `AdminAmbienteStatsTab.tsx`.
+- ⚙️ **Web Service (Backend Express)** : aucune action.
+- 🗄️ **Base de données (Manual SQL)** : aucune action.
 
-Si le contrôle final montre bien El Peñol / San Luis / Granada → `COMMIT`. Sinon → `ROLLBACK`.
+## Hors périmètre
 
-🖥️ **Frontend** : rien à faire.
-⚙️ **Backend Express** : rien à faire.
-
-### Note
-Il existe des doublons de municipios (`El Peñol`, `San Luis`, `Granada`, `San Carlos`) sans lien vers une région — non traités ici. À nettoyer dans un ticket dédié si besoin.
+- Suppression / restriction du bouton Demo PDF.
+- Consolidation par Región / ET / filtre global (non demandé).
+- Modification du gabarit visuel du PDF.
