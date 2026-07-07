@@ -183,10 +183,11 @@ export default function AdminAmbienteStatsTab() {
         fetchAllRows<RawSubmission>("encuestas_ambiente_escolar", "institucion_educativa, tipo_formulario, respuestas, cohorte_id"),
         fetchAllRows<FichaInfo>("fichas_rlt", "nombre_ie, region, entidad_territorial"),
         supabase.from("regiones").select("nombre, mostrar_logo_rlt, mostrar_logo_clt"),
-        supabase.from("ae_cohortes").select("id, year").gte("year", 2026),
+        supabase.from("ae_cohortes").select("id, year, nombre").gte("year", 2026),
       ]);
+
       // Only keep submissions belonging to current cohortes (2026+)
-      const currentCohortes = (cohortesRes.data || []) as { id: string; year: number }[];
+      const currentCohortes = (cohortesRes.data || []) as { id: string; year: number; nombre: string }[];
       const currentCohorteIds = new Set(currentCohortes.map((c) => c.id));
       const filteredSubs = subData.filter(s => s.cohorte_id && currentCohorteIds.has(s.cohorte_id));
       setSubmissions(filteredSubs);
