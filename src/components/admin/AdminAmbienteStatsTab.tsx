@@ -422,6 +422,40 @@ export default function AdminAmbienteStatsTab() {
     setGenerating(false);
   };
 
+  // ── Consolidated PDF by Cohorte (real data) ──
+  const handleCohorteConsolidatedPDF = async () => {
+    if (!selCohorte) return;
+    const cohorte = cohortes.find((c) => c.id === selCohorte);
+    if (!cohorte) return;
+    setGenerating(true);
+    try {
+      const cohorteSubs = submissions.filter((s) => s.cohorte_id === selCohorte);
+      if (cohorteSubs.length === 0) {
+        toast({ title: "Sin datos", description: "Esta cohorte no tiene respuestas registradas.", variant: "destructive" });
+        setGenerating(false);
+        return;
+      }
+      const uniqueIEs = new Set(cohorteSubs.map((s) => s.institucion_educativa).filter(Boolean));
+      const nIE = uniqueIEs.size;
+      const header = `Cohorte ${cohorte.year} (${nIE} institucion${nIE === 1 ? "" : "es"})`;
+      await generarAmbienteEscolarReportPDF(
+        {
+          institucion: header,
+          entidadTerritorial: "",
+          submissions: cohorteSubs.map((s) => ({ tipo_formulario: s.tipo_formulario, respuestas: s.respuestas })),
+        },
+        getPdfLogoSources(images),
+        { showLogoRlt: true, showLogoClt: true }
+      );
+      toast({ title: "PDF generado", description: `Informe consolidado descargado — ${header}` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setGenerating(false);
+  };
+
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
