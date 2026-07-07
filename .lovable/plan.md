@@ -1,50 +1,94 @@
-## Objectif
 
-Dans l'onglet **Admin → Ambiente Escolar → Delta**, permettre à l'utilisateur de choisir **une, plusieurs, ou toutes les régions** à inclure dans le rapport (affichage à l'écran + PDF cohorte + PDFs par institution + ZIP). Par défaut : toutes les régions (comportement actuel).
+# Plan — Option 2 : Unification des IE via vue SQL
 
-## UX
+Objectif : supprimer la double source de vérité entre `ae_cohorte_instituciones` (liste figée saisie manuellement) et `fichas_rlt` (liste réelle des IE ayant un directivo). À terme, une seule source : **`fichas_rlt`**, exposée via une vue SQL par cohorte, avec `ae_cohorte_instituciones` déprécié.
 
-Ajouter à côté du sélecteur de cohorte un **sélecteur multi-régions** (popover avec cases à cocher) :
+## Principe
+
+Aujourd'hui la jointure fichas ↔ cohorte se fait par un mapping en dur `region → entidad_territorial` dans le frontend (`Oriente 2026 → Antioquia`, etc.). Ce n'est pas robuste. On corrige d'abord ce lien, puis on crée la vue.
 
 ```text
-[Cohorte ▾]  [Regiones: Todas ▾]   Inicial: 120 · Evolución: 98 · Comparables: 14 IE
-                                     ────────────────
-                                     [x] Todas
-                                     [x] Oriente 2026
-                                     [ ] Quibdó 2026
+fichas_rlt (region, nombre_ie)
+        │
+        │  join sur region
+        ▼
+ae_cohortes (region, entidad_territorial, year, ...)
+        │
+        │  cohorte_id
+        ▼
+v_ae_instituciones_por_cohorte (cohorte_id, institucion_educativa)
 ```
 
-- Chip "Todas" quand rien n'est coché (ou tout coché).
-- Sinon afficher le nombre : "Regiones: 2 seleccionadas".
-- Bouton **Limpiar** pour revenir à Todas.
+## Étapes
 
-Le filtre s'applique **avant** tous les calculs (splits par phase, agrégats, deltas par institution) donc toutes les cartes, la table Δ par institution, le PDF cohorte et les PDFs par institution reflètent uniquement les IE des régions sélectionnées.
+### 1. 🗄️ Base de données (Manual SQL – Lovable Cloud + Render)
 
-Le nom des régions sélectionnées apparaît discrètement dans le PDF cohorte sous le titre (ex. `Regiones: Oriente 2026, Quibdó 2026` ou `Regiones: Todas`) pour tracer le périmètre.
+**a)** Ajouter une colonne `region` (TEXT) à `ae_cohortes` et la remplir depuis `entidad_territorial` via le mapping actuel (Antioquia→Oriente 2026, Quibdó→Quibdó 2026, Rionegro/Itagüí/Medellín 2025→identique). Rendre `region` NOT NULL après backfill.
 
-## Implémentation technique
+**b)** Créer la vue :
 
-### `src/components/admin/AdminAmbienteDeltaTab.tsx`
-1. Importer `useGeographicData` pour obtenir `regionNames` et `getInstitucionesForRegion`.
-2. Nouveau state `selectedRegions: string[]` (vide = toutes).
-3. Calculer `allowedInstitutionsSet: Set<string> | null` :
-   - `null` si `selectedRegions` est vide → aucun filtre.
-   - sinon union des `getInstitucionesForRegion(r)` pour chaque région sélectionnée.
-4. Dans `phaseSplit`, après le filtre cohorte/phase, appliquer aussi `!allowedInstitutionsSet || allowedInstitutionsSet.has(s.institucion_educativa)`.
-5. Reset `analysisHtml` quand `selectedRegions` change (comme pour la cohorte).
-6. Ajouter le composant multi-select (Popover + Checkbox shadcn déjà dispo) à côté du Select cohorte.
-7. Passer `regionesLabel` (string) au générateur PDF cohorte.
+```sql
+CREATE OR REPLACE VIEW public.v_ae_instituciones_por_cohorte AS
+SELECT c.id AS cohorte_id,
+       f.nombre_ie AS institucion_educativa
+FROM public.ae_cohortes c
+JOIN public.fichas_rlt f ON f.region = c.region
+GROUP BY c.id, f.nombre_ie;
 
-### `src/utils/ambienteDeltaPdfGenerator.ts`
-- Ajouter champ optionnel `regionesLabel?: string` au type d'entrée.
-- L'afficher sous le sous-titre de la page de couverture s'il est présent.
+GRANT SELECT ON public.v_ae_instituciones_por_cohorte TO authenticated, anon, service_role;
+```
 
-### Pas de changements
-- Backend / DB / Express : rien.
-- Autres onglets, autres PDFs (rapport par institution reste identique ; le filtre change juste la liste des IE incluses dans le ZIP).
+**c)** Ne PAS toucher `ae_cohorte_instituciones` pour l'instant (compat descendante pendant la migration frontend).
 
-## Détails techniques (résumé)
+### 2. ⚙️ Web Service (Backend Express — Render)
 
-- Fichiers modifiés : `AdminAmbienteDeltaTab.tsx`, `ambienteDeltaPdfGenerator.ts`.
-- Aucune dépendance ajoutée.
-- Comportement rétro-compatible : sans sélection = toutes les régions = résultat identique à aujourd'hui.
+Le shim `dbClient` / `server/routes/db.ts` liste les tables autorisées via whitelist. Ajouter `v_ae_instituciones_por_cohorte` à la liste des ressources lisibles (GET seulement, pas d'écriture).
+
+### 3. 🖥️ Site statique (Frontend)
+
+Remplacer les 4 lectures actuelles de `ae_cohorte_instituciones` par la vue :
+
+- `src/components/AmbienteEscolarForm.tsx` (combobox de sélection IE — c'est le fix principal pour Oriente 2026 : 16 → 21 IE).
+- `src/components/admin/AdminAmbienteMonitorTab.tsx` (tableau de suivi de collecte).
+- `src/components/admin/AdminAmbienteDeltaTab.tsx` (comparaison Entrada/Salida).
+- `src/components/admin/AdminAmbienteStatsTab.tsx` (statistiques).
+
+Aucune modification de la logique métier : la vue a exactement le même contrat de colonnes (`cohorte_id`, `institucion_educativa`) que la table remplacée. Le mapping "IE - Municipio" côté monitor devient inutile puisque `fichas_rlt.nombre_ie` est la version canonique — on peut retirer le `findDirectivo` de secours (chunk `prefix` ligne 174-179).
+
+### 4. Admin AE Cohortes — nettoyage UI
+
+Dans `AdminAmbienteCampanasTab` et écran de gestion des cohortes : retirer l'ajout/suppression manuel d'IE à une cohorte (devenu automatique). Afficher la liste en **lecture seule** depuis la vue, avec le compteur "X IE avec ficha".
+
+### 5. 🗄️ Dépréciation (après validation en prod)
+
+Une fois toutes les lectures migrées et validées sur 1-2 semaines :
+
+```sql
+ALTER TABLE public.ae_cohorte_instituciones RENAME TO _deprecated_ae_cohorte_instituciones_YYYYMMDD;
+```
+
+Puis suppression définitive au tour suivant. Migration réversible tant que la table est renommée.
+
+## Détails techniques
+
+- **Mapping region↔ET actuel** (à figer en SQL pour le backfill) : `Antioquia→Oriente 2026`, `Quibdó→Quibdó 2026`, `Rionegro→Rionegro 2025`, `Itagüí→Itagüí 2025`, `Medellín→Medellín 2025`. Toute nouvelle cohorte devra fournir `region` explicitement.
+- **Nom d'IE canonique** = `fichas_rlt.nombre_ie` (Title case, sans suffixe municipio). Cohérence garantie côté saisie par les règles de mémoire projet.
+- **Perf** : la vue est simple (join + distinct), acceptable pour <100 IE par cohorte. Pas besoin de MATERIALIZED VIEW.
+- **Compat proxy PostgREST** : le shim `dbClient` sait lire une vue comme une table. Les filtres `.eq("cohorte_id", ...)`, `.select("institucion_educativa, cohorte_id")` fonctionnent identiquement.
+- **Multi-cohortes par IE** : une IE peut apparaître dans plusieurs cohortes (Entrada + Salida différentes années). La vue le supporte nativement via le `GROUP BY c.id, f.nombre_ie`.
+- **Rendu Render** : nécessitera l'exécution manuelle du SQL sur la base Render (constraint mémoire projet : pas de RLS Render, SQL manuel).
+
+## Impact utilisateur
+
+- Oriente 2026 affichera immédiatement **21 IE** au lieu de 16 dans le combobox Ambiente Escolar et dans les tableaux de suivi admin.
+- Toute nouvelle IE ajoutée via une Ficha RLT apparaît automatiquement dans sa cohorte, sans intervention admin.
+- Plus de risque d'incohérence entre les deux listes.
+
+## Livrables
+
+1. Migration SQL Lovable Cloud (ajout colonne `region`, backfill, vue, GRANT).
+2. SQL manuel équivalent pour Render (fourni dans un fichier `.sql` pour copier-coller).
+3. Ajout de la vue à la whitelist Express.
+4. Refactor des 4 composants frontend (retrait aussi du mapping en dur `etMap`).
+5. Nettoyage UI admin cohortes (lecture seule).
+6. Note de dépréciation dans `SPECIFICATIONS.md`.
