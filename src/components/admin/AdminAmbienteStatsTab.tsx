@@ -162,12 +162,14 @@ export default function AdminAmbienteStatsTab() {
   const [submissions, setSubmissions] = useState<RawSubmission[]>([]);
   const [fichas, setFichas] = useState<FichaInfo[]>([]);
   const [regions, setRegions] = useState<RegionInfo[]>([]);
+  const [cohortes, setCohortes] = useState<{ id: string; year: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
   const [selEntidades, setSelEntidades] = useState<string[]>([]);
   const [selectedIE, setSelectedIE] = useState("__all__");
+  const [selCohorte, setSelCohorte] = useState<string>("");
 
   // PDF state
   const [generating, setGenerating] = useState(false);
