@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Progress } from "@/components/ui/progress";
-import { RefreshCw, Users, BookOpen, GraduationCap, Filter, Download, FileText, FlaskConical } from "lucide-react";
+import { RefreshCw, Users, BookOpen, GraduationCap, Filter, Download, FileText, FlaskConical, Layers } from "lucide-react";
 
 async function fetchAllRows<T = any>(table: string, columns: string): Promise<T[]> {
   const PAGE = 1000;
