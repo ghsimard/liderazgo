@@ -63,6 +63,7 @@ export default function AdminAmbienteDeltaTab() {
   const [cohortes, setCohortes] = useState<Cohorte[]>([]);
   const [campanas, setCampanas] = useState<Campana[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [cohorteInst, setCohorteInst] = useState<{ cohorte_id: string; institucion_educativa: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCohortes, setSelectedCohortes] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
