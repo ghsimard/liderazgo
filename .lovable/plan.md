@@ -1,53 +1,54 @@
+# Icône œil manquante dans Ambiente Escolar / Monitoreo / Contacto
+
 ## Diagnostic
 
-Sur le Monitor, la ligne s'affiche en **minuscule** `institución Educativa Manuel Uribe Ángel` avec 0/0/0. Or les vraies encuestas sont stockées en **majuscule** `Institución Educativa Manuel Uribe Ángel` (29/40/33 historiques + 2 acudientes ajoutés par la dernière migration). Le Monitor construit sa liste depuis `ae_cohorte_instituciones` et joint sur `institucion_educativa` égal — le match échoue à cause de la casse du premier caractère.
+Dans `src/components/admin/AdminAmbienteMonitorTab.tsx` (ligne 384), l'œil ne s'affiche que si `r.directivo` est trouvé :
 
-Correction : normaliser `ae_cohorte_instituciones` vers la variante majuscule (celle utilisée par les données historiques + les tables source `ae_*_submissions_2025`).
-
-## Correction — 🗄️ Base de données Render uniquement
-
-### Étape 1 — Vérifier le libellé actuel
-
-```sql
-SELECT institucion_educativa, length(institucion_educativa)
-FROM public.ae_cohorte_instituciones
-WHERE cohorte_id = 'c25708c1-54f7-4044-96bc-7d15bf449d4f'
-  AND institucion_educativa ILIKE '%manuel uribe%';
+```ts
+const findDirectivo = (ie: string) => directivos.find(d => d.nombre_ie === ie);
 ```
 
-Attendu : 1 ligne avec `i` minuscule.
+Match **strictement exact** (`===`) entre `ae_cohorte_instituciones.institucion_educativa` et `fichas_rlt.nombre_ie`. Deux causes possibles :
 
-### Étape 2 — Normaliser vers la majuscule
+1. **Aucune ficha remplie** par le directivo → aucun contact en base.
+2. **Mismatch de casse/accents** entre les deux tables (comme Manuel Uribe Ángel).
+
+Le nombre d'encuestas (0, faible ou suffisant) n'a **aucun impact** sur l'affichage de l'œil.
+
+## Plan
+
+### 🖥️ Site statique (Frontend)
+
+Modifier `src/components/admin/AdminAmbienteMonitorTab.tsx` :
+
+1. Rendre `findDirectivo` **tolérant à casse + accents** via normalisation JS (`.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()`) pour attraper les mismatch de casse/accents.
+2. Quand aucun directivo n'est trouvé, remplacer le tiret `—` par une **icône œil grisée + tooltip** « Sin ficha diligenciada » (au lieu de rien afficher) pour distinguer clairement le cas « pas encore de fiche ».
+
+Ctrl+Shift+R après déploiement.
+
+### ⚙️ Web Service (Backend Express)
+
+Aucun changement.
+
+### 🗄️ Base de données (SQL manuel)
+
+Aucun changement structurel. Requête de diagnostic optionnelle (sans `unaccent` qui n'est pas installé sur Render) pour lister les institutions du monitoring sans ficha :
 
 ```sql
-UPDATE public.ae_cohorte_instituciones
-SET institucion_educativa = 'Institución Educativa Manuel Uribe Ángel'
-WHERE cohorte_id = 'c25708c1-54f7-4044-96bc-7d15bf449d4f'
-  AND institucion_educativa ILIKE '%manuel uribe%'
-  AND substring(institucion_educativa FROM 1 FOR 1) = 'i';
+SELECT DISTINCT ci.institucion_educativa
+FROM public.v_ae_instituciones_por_cohorte ci
+LEFT JOIN public.fichas_rlt f
+  ON lower(f.nombre_ie) = lower(ci.institucion_educativa)
+WHERE f.id IS NULL
+ORDER BY 1;
 ```
 
-Attendu : **1 ligne** modifiée.
+Note : la normalisation d'accents se fait côté frontend (JS `NFD`) puisque l'extension `unaccent` n'est pas disponible sur la base Render.
 
-### Étape 3 — Vérification côté Monitor
+## Question ouverte
 
-Ctrl+Shift+R sur le Monitor. La ligne `Institución Educativa Manuel Uribe Ángel` doit afficher **29 / 40 / 35** au lieu de 0/0/0.
+Pour les institutions sans ficha diligenciada, préférez-vous :
+- **(A)** Garder le tiret `—` (comportement actuel).
+- **(B)** Afficher une icône œil grisée + tooltip « Sin ficha diligenciada » (recommandé).
 
-## Fallback si le compteur reste à 0
-
-Il existe peut-être une seconde source (table `instituciones` globale) à normaliser aussi :
-
-```sql
-UPDATE public.instituciones
-SET nombre = 'Institución Educativa Manuel Uribe Ángel'
-WHERE nombre ILIKE '%manuel uribe%'
-  AND substring(nombre FROM 1 FOR 1) = 'i';
-```
-
-À exécuter uniquement si l'étape 3 ne suffit pas.
-
-## Actions requises
-
-- 🗄️ **Base de données Render** : Étape 1 → 2 → 3 (Étape fallback seulement si nécessaire).
-- ⚙️ **Web Service Express** : rien.
-- 🖥️ **Site statique** : Ctrl+Shift+R sur le Monitor.
+Par défaut je pars sur **(B)** + normalisation casse/accents du matching.
