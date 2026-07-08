@@ -1,117 +1,72 @@
-## Objectif
 
-Réconcilier les encuestas Ambiente Escolar déjà remplies avec le nom canonique des IE dans `fichas_rlt`, en retirant le suffixe « - Municipio » ajouté historiquement par le combobox codé en dur.
+# Plan — Toutes les encuestas comptabilisées dans les bonnes cohortes
 
-Exemple : `Centro Educativo Rural Guamito - San Luis` → `Centro Educativo Rural Guamito`.
+## Diagnostic (audit terminé)
 
-## Principe de la mise à jour
+- **86 IE** dans les submissions sont déjà correctement rattachées.
+- **4 anomalies** empêchent le comptage complet :
 
-Pour chaque valeur `institucion_educativa` présente dans une table `ae_*_submissions_2025` qui **contient un ` - `** :
-- Si la partie avant ` - ` existe **telle quelle** dans `fichas_rlt.nombre_ie` → on remplace par cette version courte.
-- Sinon → on laisse tel quel (aucune correspondance sûre, on ne casse rien).
+| IE (submissions) | Encuestas | Problème | Cible |
+|---|---|---|---|
+| Institución Educativa Bello Horizonte | 232 | Absente de `ae_cohorte_instituciones` et de `ae_rectores_2025` | Medellín 2025 |
+| Institución Educativa El Diamante | 94 | Absente de `ae_cohorte_instituciones` (existe dans rectores mais ET=NULL) | Medellín 2025 |
+| Institución Educativa Ciudad Don Bosco | 1 | Absente partout | Medellín 2025 |
+| `institución Educativa Manuel Uribe Angel` (sans tilde) | 2 | Typo — la vraie IE `…Ángel` existe déjà | Fusion vers la forme correcte |
 
-Cette règle est sûre car :
-- Elle ne rapproche que les IE dont le nom court existe déjà dans `fichas_rlt`.
-- Elle ne touche jamais les encuestas dont le nom ne contient pas ` - ` (déjà propres).
-- Elle est idempotente (rejouable sans effet supplémentaire).
+Séparément : `Medellín/Itagüí/Rionegro 2025` n'ont aucune `fichas_rlt` → le monitor doit lire aussi `ae_cohorte_instituciones` pour les afficher.
 
-## Actions par plateforme
+## 🗄️ Base de données (Manual SQL sur Cloud)
 
-### 🗄️ Base de données (SQL manuel — Render + Lovable Cloud)
+**Migration unique** avec 4 blocs :
 
-Un seul script, à exécuter **à l'identique sur les deux bases** (Render via `psql` et Lovable Cloud via l'outil de migration).
+### Bloc 1 — Compléter `ae_cohorte_instituciones` (Medellín 2025)
+Insérer 3 lignes pour la cohorte Medellín 2025 (`c25708c1-…`) si absentes :
+- Bello Horizonte
+- El Diamante
+- Ciudad Don Bosco
 
-Trois tables concernées :
+### Bloc 2 — Corriger `ae_rectores_2025`
+- Mettre `entidad_territorial = 'Medellín'` pour la ligne `El Diamante` (actuellement NULL).
+
+### Bloc 3 — Corriger le typo dans les submissions
+Remap `institución Educativa Manuel Uribe Angel` → `institución Educativa Manuel Uribe Ángel` dans les 3 tables :
 - `ae_docentes_submissions_2025`
 - `ae_estudiantes_submissions_2025`
 - `ae_acudientes_submissions_2025`
 
+Supprimer aussi la ligne aberrante `institucion_educativa = 'César Fernando Trujillo Múnera'` (1 docente, nom d'une personne dans un champ IE).
+
+### Bloc 4 — Rétablir la vue hybride
+Recréer `v_ae_instituciones_por_cohorte` en UNION :
+- IE issues de `fichas_rlt` (cohortes 2026 : Oriente, Quibdó)
+- IE issues de `ae_cohorte_instituciones` (cohortes 2025 : Medellín, Itagüí, Rionegro)
+
+`GRANT SELECT` à `PUBLIC`.
+
+### Vérification post-migration
 ```sql
-BEGIN;
+-- Doit renvoyer 65 IE (64 + Bello Horizonte + El Diamante + Ciudad Don Bosco = 67 - doublons)
+SELECT COUNT(*) FROM v_ae_instituciones_por_cohorte
+WHERE cohorte_nombre = 'Medellín 2025';
 
--- Aperçu avant exécution : lister ce qui va être modifié
-SELECT 'docentes' src, s.institucion_educativa AS avant,
-       split_part(s.institucion_educativa, ' - ', 1) AS apres,
-       count(*) AS n
-FROM public.ae_docentes_submissions_2025 s
-WHERE s.institucion_educativa LIKE '% - %'
-  AND EXISTS (
-    SELECT 1 FROM public.fichas_rlt f
-    WHERE f.nombre_ie = split_part(s.institucion_educativa, ' - ', 1)
-  )
-GROUP BY s.institucion_educativa
-UNION ALL
-SELECT 'estudiantes', s.institucion_educativa,
-       split_part(s.institucion_educativa, ' - ', 1), count(*)
-FROM public.ae_estudiantes_submissions_2025 s
-WHERE s.institucion_educativa LIKE '% - %'
-  AND EXISTS (
-    SELECT 1 FROM public.fichas_rlt f
-    WHERE f.nombre_ie = split_part(s.institucion_educativa, ' - ', 1)
-  )
-GROUP BY s.institucion_educativa
-UNION ALL
-SELECT 'acudientes', s.institucion_educativa,
-       split_part(s.institucion_educativa, ' - ', 1), count(*)
-FROM public.ae_acudientes_submissions_2025 s
-WHERE s.institucion_educativa LIKE '% - %'
-  AND EXISTS (
-    SELECT 1 FROM public.fichas_rlt f
-    WHERE f.nombre_ie = split_part(s.institucion_educativa, ' - ', 1)
-  )
-GROUP BY s.institucion_educativa
-ORDER BY src, avant;
-
--- Application
-UPDATE public.ae_docentes_submissions_2025 s
-SET institucion_educativa = split_part(s.institucion_educativa, ' - ', 1)
-WHERE s.institucion_educativa LIKE '% - %'
-  AND EXISTS (
-    SELECT 1 FROM public.fichas_rlt f
-    WHERE f.nombre_ie = split_part(s.institucion_educativa, ' - ', 1)
-  );
-
-UPDATE public.ae_estudiantes_submissions_2025 s
-SET institucion_educativa = split_part(s.institucion_educativa, ' - ', 1)
-WHERE s.institucion_educativa LIKE '% - %'
-  AND EXISTS (
-    SELECT 1 FROM public.fichas_rlt f
-    WHERE f.nombre_ie = split_part(s.institucion_educativa, ' - ', 1)
-  );
-
-UPDATE public.ae_acudientes_submissions_2025 s
-SET institucion_educativa = split_part(s.institucion_educativa, ' - ', 1)
-WHERE s.institucion_educativa LIKE '% - %'
-  AND EXISTS (
-    SELECT 1 FROM public.fichas_rlt f
-    WHERE f.nombre_ie = split_part(s.institucion_educativa, ' - ', 1)
-  );
-
--- Vérification : plus aucune ligne avec suffixe résolvable
-SELECT 'reste_docentes' src, count(*) FROM public.ae_docentes_submissions_2025
-WHERE institucion_educativa LIKE '% - %'
-UNION ALL SELECT 'reste_estudiantes', count(*) FROM public.ae_estudiantes_submissions_2025
-WHERE institucion_educativa LIKE '% - %'
-UNION ALL SELECT 'reste_acudientes', count(*) FROM public.ae_acudientes_submissions_2025
-WHERE institucion_educativa LIKE '% - %';
-
-COMMIT;
+-- Doit renvoyer 0 orpheline
+SELECT DISTINCT s.institucion_educativa FROM ae_docentes_submissions_2025 s
+LEFT JOIN ae_cohorte_instituciones c ON c.institucion_educativa = s.institucion_educativa
+WHERE c.cohorte_id IS NULL;
 ```
 
-Le fichier sera aussi versionné dans `server/migrations/2026-07-08_normaliser_ae_institucion_educativa.sql` pour trace.
+## ⚙️ Web Service (Backend Express Render)
 
-### ⚙️ Web Service (Backend Express)
+**Aucune modification de code**. Le fichier SQL de la vue hybride doit être appliqué manuellement sur la DB Render (fichier existant `server/migrations/2026-07-07_v_ae_instituciones_por_cohorte.sql` — à ré-exécuter tel quel après ce plan).
 
-Aucun changement.
+## 🖥️ Site statique (Frontend)
 
-### 🖥️ Site statique (Frontend)
+**Aucune modification de code**. Le composant `AdminAmbiente2025Tab` lit déjà via `cloudClient` et détectera automatiquement les 3 IE ajoutées et les submissions remappées.
 
-Aucun changement fonctionnel. Le combobox `AmbienteEscolarForm` lit déjà `fichas_rlt` via la nouvelle vue, donc les nouvelles encuestas seront enregistrées avec le nom canonique. La liste codée en dur `src/data/instituciones.ts` n'est plus utilisée pour ce combobox (à supprimer plus tard si personne d'autre ne la référence — hors périmètre ici).
+Après déploiement, un simple **Ctrl+Shift+R** dans le monitor suffit.
 
-## Résumé actions par plateforme
+## Hors périmètre
 
-| Plateforme | Action |
-|---|---|
-| 🗄️ Base de données | Exécuter le script SQL ci-dessus sur Render (psql) **et** sur Lovable Cloud (migration) |
-| ⚙️ Web Service | — |
-| 🖥️ Site statique | — |
+- N'ajoute PAS de `fichas_rlt` placeholder pour les IE 2025 (rejeté précédemment).
+- N'importe PAS de table externe supplémentaire depuis prod (la rectores actuelle suffit pour l'analyse).
+- N'ajoute PAS de rectores pour Bello Horizonte / Ciudad Don Bosco (aucune donnée disponible ; l'IE apparaîtra dans le monitor sans rector inscrit, ce qui est factuel).
