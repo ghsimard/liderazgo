@@ -75,11 +75,27 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       setLoading(true);
 
       // Fetch cohortes, cohorte institutions, fichas in parallel
-      const [cohortesRes, instRes, fichasRes] = await Promise.all([
+      const [cohortesRes, instRes, fichasRes, rectoresRes] = await Promise.all([
         supabase.from("ae_cohortes").select("id, nombre, entidad_territorial, year").order("year", { ascending: false }).order("nombre"),
         supabase.from("v_ae_instituciones_por_cohorte").select("cohorte_id, institucion_educativa"),
         supabase.from("fichas_rlt").select("nombre_ie, nombres_apellidos, correo_personal, correo_institucional, celular_personal, telefono_ie, prefiere_correo, cargo_actual, region"),
+        supabase.from("ae_rectores_2025").select("nombre_de_la_institucion_educativa_en_la_actualmente_desempena_, nombre_s_y_apellido_s_completo_s, correo_electronico_personal, correo_electronico_institucional_el_que_usted_usa_en_su_rol_com, numero_de_celular_personal, telefono_de_contacto_de_la_ie, prefiere_recibir_comunicaciones_en_el_correo, cargo_actual, entidad_territorial"),
       ]);
+
+      // Map ae_rectores_2025 rows into the Directivo shape (Medellín/Itagüí/Rionegro 2025)
+      const rectores2025: Directivo[] = ((rectoresRes.data as any[]) || [])
+        .filter((r) => r?.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_)
+        .map((r) => ({
+          nombre_ie: r.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_,
+          nombres_apellidos: r.nombre_s_y_apellido_s_completo_s || "",
+          correo_personal: r.correo_electronico_personal || "",
+          correo_institucional: r.correo_electronico_institucional_el_que_usted_usa_en_su_rol_com || null,
+          celular_personal: r.numero_de_celular_personal || "",
+          telefono_ie: r.telefono_de_contacto_de_la_ie || null,
+          prefiere_correo: r.prefiere_recibir_comunicaciones_en_el_correo || "personal",
+          cargo_actual: r.cargo_actual || "Rector/a",
+          region: r.entidad_territorial || "",
+        }));
 
       // Fetch ALL submissions with pagination
       const allSubmissions: Submission[] = [];
@@ -108,7 +124,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
 
       setCohortes(currentCohortes);
       setCohorteInstitutions(filteredInst);
-      setDirectivos((fichasRes.data as Directivo[]) || []);
+      setDirectivos([...(fichasRes.data as Directivo[] || []), ...rectores2025]);
       setSubmissions(filteredSubmissions);
       setLoading(false);
     }
