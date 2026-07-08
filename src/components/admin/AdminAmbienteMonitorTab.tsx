@@ -4,6 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw, Mail, Phone, Eye, Search, X, FileDown } from "lucide-react";
@@ -167,8 +169,14 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       }
     }
 
-    // Source unique = fichas_rlt : match exact sur nombre_ie
-    const findDirectivo = (ie: string) => directivos.find(d => d.nombre_ie === ie);
+    // Source unique = fichas_rlt : match tolérant à casse + accents
+    const normalize = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const directivoMap = new Map<string, Directivo>();
+    for (const d of directivos) {
+      if (d.nombre_ie) directivoMap.set(normalize(d.nombre_ie), d);
+    }
+    const findDirectivo = (ie: string) => directivoMap.get(normalize(ie));
+
 
     const sorted = Array.from(allInstitutions).sort();
     const allRows = sorted.map(ie => ({
@@ -386,9 +394,19 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
                     <Eye className="w-4 h-4" />
                   </Button>
                 ) : (
-                  <span className="text-xs text-muted-foreground">—</span>
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex h-8 w-8 items-center justify-center opacity-40 cursor-help">
+                          <Eye className="w-4 h-4" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>Sin ficha diligenciada</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </TableCell>
+
             </TableRow>
           ))}
         </TableBody>
