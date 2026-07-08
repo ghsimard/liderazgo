@@ -1,40 +1,58 @@
 ## Diagnostic
 
-Sur prod Render, la contrainte `encuestas_ambiente_escolar_campana_id_fkey` refuse `b0baca1f-…` car cette `campana_id` n'existe pas dans `ae_campanas` sur prod (elle vient de Cloud). La colonne est **nullable**, donc on peut soit :
+Deux libellés coexistent pour la même IE sur prod :
 
-- **Option A (recommandée)** : chercher la vraie `campana_id` prod correspondant à la cohorte Medellín 2025 et l'utiliser.
-- **Option B (fallback simple)** : insérer avec `campana_id = NULL`. Le Monitor filtre par `cohorte_id`, pas par `campana_id`, donc les compteurs s'afficheront correctement.
+- **Existant historiquement** : `institución Educativa Manuel Uribe Ángel` (i minuscule) — 29 docentes / 40 estudiantes / 33 acudientes
+- **Dans les tables `ae_*_submissions_2025`** : `Institución Educativa Manuel Uribe Ángel` (I majuscule) — 29 / 40 / 35
 
-## SQL à exécuter sur Render — 🗄️ Base de données uniquement
+L'INSERT précédent a copié le libellé source tel quel, et le `NOT EXISTS` comparait uppercase vs uppercase seulement → doublon.
 
-### Étape 0 — Trouver la campana_id prod (à exécuter d'abord)
+## Correction — 🗄️ Base de données Render uniquement
 
-```sql
-SELECT id, nombre, cohorte_id
-FROM public.ae_campanas
-WHERE cohorte_id = 'c25708c1-54f7-4044-96bc-7d15bf449d4f';
-```
-
-- Si **une ligne** est retournée → copier son `id` et remplacer `<CAMPANA_PROD>` ci-dessous.
-- Si **aucune ligne** → laisser `NULL` (remplacer `'<CAMPANA_PROD>'::uuid` par `NULL::uuid` dans les 3 blocs).
-
-### Étape 1 — Insertion corrigée (idempotente)
-
-Identique au SQL précédent, à un seul détail près : la valeur `campana_id` dans le `WITH cfg AS (...)` de chaque bloc devient :
+### Étape A — Supprimer les lignes fraîchement insérées (uppercase, campana_id NULL)
 
 ```sql
-'<CAMPANA_PROD>'::uuid AS campana_id
+DELETE FROM public.encuestas_ambiente_escolar
+WHERE cohorte_id = 'c25708c1-54f7-4044-96bc-7d15bf449d4f'
+  AND campana_id IS NULL
+  AND institucion_educativa = 'Institución Educativa Manuel Uribe Ángel';
 ```
 
-ou
+Attendu : **104 lignes supprimées** (29 + 40 + 35).
+
+### Étape B — Ré-insérer seulement les 2 acudientes manquants avec le libellé lowercase
 
 ```sql
-NULL::uuid AS campana_id
+WITH cfg AS (
+  SELECT
+    'c25708c1-54f7-4044-96bc-7d15bf449d4f'::uuid AS cohorte_id,
+    'institución Educativa Manuel Uribe Ángel'::text AS ie_target
+)
+INSERT INTO public.encuestas_ambiente_escolar
+  (created_at, tipo_formulario, institucion_educativa, respuestas,
+   cohorte_id, entidad_territorial, fase, campana_id)
+SELECT s.created_at, 'acudientes', cfg.ie_target,
+  jsonb_build_object(
+    'grados_estudiantes',   s.grados_estudiantes,
+    'comunicacion',         s.comunicacion,
+    'practicas_pedagogicas',s.practicas_pedagogicas,
+    'convivencia',          s.convivencia
+  ),
+  cfg.cohorte_id, 'Medellín', 'linea_base', NULL::uuid
+FROM public.ae_acudientes_submissions_2025 s, cfg
+WHERE s.institucion_educativa ILIKE '%manuel uribe%'
+  AND NOT EXISTS (
+    SELECT 1 FROM public.encuestas_ambiente_escolar e
+    WHERE e.tipo_formulario = 'acudientes'
+      AND e.cohorte_id = cfg.cohorte_id
+      AND lower(e.institucion_educativa) = lower(cfg.ie_target)
+      AND e.created_at = s.created_at
+  );
 ```
 
-Tout le reste (docentes / estudiantes / acudientes, `NOT EXISTS`, patterns ILIKE) reste **inchangé**.
+Attendu : **2 lignes insérées**. Docentes et estudiantes sont déjà identiques (29/40) → aucun ré-insertion nécessaire pour eux.
 
-### Étape 2 — Vérification
+### Étape C — Vérification
 
 ```sql
 SELECT tipo_formulario, institucion_educativa, count(*)
@@ -45,14 +63,10 @@ WHERE cohorte_id='c25708c1-54f7-4044-96bc-7d15bf449d4f'
 GROUP BY 1,2 ORDER BY 2,1;
 ```
 
-Attendu : 23/128/81 (Bello Horizonte), 13/33/48 (El Diamante), 0/0/1 (Ciudad Don Bosco), 29/40/35 (Manuel Uribe Ángel).
+Résultat attendu : **10 lignes**, une seule variante de Manuel Uribe Ángel (lowercase), avec acudientes = 35.
 
 ## Actions requises
 
-- 🗄️ **Base de données Render** : exécuter étapes 0 → 1 → 2 ci-dessus.
+- 🗄️ **Base de données Render** : Étape A → B → C.
 - ⚙️ **Web Service Express** : rien.
-- 🖥️ **Site statique** : rien (Ctrl+Shift+R sur le Monitor).
-
-## Question
-
-Voulez-vous que je rédige le SQL complet **avec `campana_id = NULL`** tout de suite (safe, fonctionne dans tous les cas), ou préférez-vous d'abord me communiquer le résultat de l'étape 0 pour utiliser la vraie `campana_id` prod ?
+- 🖥️ **Site statique** : Ctrl+Shift+R sur le Monitor.
