@@ -1,43 +1,69 @@
 ## Diagnostic
 
-En **production (Render)**, la vue `v_ae_instituciones_por_cohorte` contient encore l'ancienne définition qui fait un `UNION` avec la table héritée `ae_cohorte_instituciones`. Cette table contient des variantes suffixées type `"Centro Educativo Rural Guamito - San Luis"`, tandis que `fichas_rlt.nombre_ie` a la version courte `"Centro Educativo Rural Guamito"`. Résultat : deux lignes pour la même institution dans le tableau Monitoreo.
+Erreur de ma part hier : j'ai supprimé le `UNION` avec `ae_cohorte_instituciones` en pensant qu'il ne servait qu'à créer des doublons. En réalité c'est la **seule source** pour rattacher les IE de Medellín 2025, Itagüí 2025 et Rionegro 2025 à leur cohorte (leur `fichas_rlt.region` ne contient pas d'année, donc la jointure `f.region = c.nombre` retourne 0).
 
-Sur Lovable Cloud (staging), les données sont propres — une seule ligne par institution. Le problème est **strictement côté Render** : les deux migrations SQL de 2026-07-08 n'ont pas encore été exécutées sur la base de production.
+Le vrai problème initial des doublons était que `ae_cohorte_instituciones` contenait des noms suffixés (`"Guamito - San Luis"`) alors que `fichas_rlt.nombre_ie` a la version courte (`"Guamito"`) — donc le `UNION` les voyait comme distincts.
+
+## Solution
+
+Restaurer le `UNION` avec `ae_cohorte_instituciones`, mais normaliser les noms suffixés côté `ae_cohorte_instituciones` pour qu'ils s'alignent avec `fichas_rlt.nombre_ie`. Le `UNION` dédupliquera ensuite naturellement. **`fichas_rlt` n'est jamais modifiée.**
 
 ## Actions
 
 ### 🖥️ Site statique (Frontend)
-Aucun changement. `AdminAmbienteMonitorTab.tsx` est déjà correct (déduplication via `Set` sur la vue). Le doublon vient de la vue elle-même.
+Aucun changement.
 
 ### ⚙️ Web Service (Backend Express)
 Aucun changement.
 
 ### 🗄️ Base de données (Manual SQL sur Render)
-Exécuter dans l'ordre, en psql sur la base Render :
 
-1. **`server/migrations/2026-07-08_normaliser_ae_institucion_educativa.sql`**  
-   Retire le suffixe `" - Municipio"` dans `ae_docentes_submissions_2025`, `ae_estudiantes_submissions_2025`, `ae_acudientes_submissions_2025` quand la version courte existe dans `fichas_rlt.nombre_ie`. Transaction sûre et idempotente.
+**Étape 1 — Normaliser `ae_cohorte_instituciones` (DATA, pas schéma) :**
+Retirer le suffixe `" - Municipio"` lorsqu'une version courte identique existe déjà dans `fichas_rlt.nombre_ie` :
+```sql
+BEGIN;
+UPDATE ae_cohorte_instituciones aci
+SET institucion_educativa = regexp_replace(aci.institucion_educativa, '\s+-\s+[^-]+$', '')
+WHERE EXISTS (
+  SELECT 1 FROM fichas_rlt f
+  WHERE f.nombre_ie = regexp_replace(aci.institucion_educativa, '\s+-\s+[^-]+$', '')
+);
+COMMIT;
+```
 
-2. **`server/migrations/2026-07-08_v_ae_instituciones_solo_fichas.sql`**  
-   Recrée `v_ae_instituciones_por_cohorte` avec `fichas_rlt` comme source unique (suppression du `UNION` avec la table legacy). C'est ce qui fait disparaître les doublons dans Monitoreo.
+**Étape 2 — Recréer la vue avec `UNION` restauré :**
+```sql
+CREATE OR REPLACE VIEW public.v_ae_instituciones_por_cohorte AS
+SELECT c.id AS cohorte_id, f.nombre_ie AS institucion_educativa
+FROM public.ae_cohortes c
+JOIN public.fichas_rlt f ON f.region = c.nombre
+UNION
+SELECT cohorte_id, institucion_educativa
+FROM public.ae_cohorte_instituciones;
 
-3. Vérification (avec GROUP BY, contrairement à la requête ayant échoué) :
-   ```sql
-   SELECT institucion_educativa, count(*)
-   FROM v_ae_instituciones_por_cohorte
-   WHERE institucion_educativa ILIKE '%guamito%'
-   GROUP BY institucion_educativa;
-   ```
-   → doit retourner une seule ligne par institution.
+GRANT SELECT ON public.v_ae_instituciones_por_cohorte TO PUBLIC;
+```
 
-Puis **Ctrl+Shift+R** dans le navigateur pour recharger.
+**Étape 3 — Vérifications :**
+```sql
+-- Doit afficher un nombre plausible pour chaque cohorte
+SELECT c.nombre, count(*) AS n
+FROM v_ae_instituciones_por_cohorte v
+JOIN ae_cohortes c ON c.id = v.cohorte_id
+GROUP BY c.nombre ORDER BY c.nombre;
+
+-- Doit retourner 0 ligne (aucun doublon Guamito)
+SELECT institucion_educativa, count(*)
+FROM v_ae_instituciones_por_cohorte
+WHERE institucion_educativa ILIKE '%guamito%'
+GROUP BY institucion_educativa HAVING count(*) > 1;
+```
+
+Puis **Ctrl+Shift+R** dans le navigateur.
 
 ## Détails techniques
 
-Vue actuelle en prod (fautive) :
-```sql
-SELECT c.id, f.nombre_ie FROM ae_cohortes c JOIN fichas_rlt f ON f.region = c.nombre
-UNION
-SELECT cohorte_id, institucion_educativa FROM ae_cohorte_instituciones;
-```
-La table `ae_cohorte_instituciones` reste en base (legacy) mais n'est plus référencée par la nouvelle vue.
+- `regexp_replace(..., '\s+-\s+[^-]+$', '')` retire uniquement le dernier segment ` - X` en fin de nom.
+- Le `WHERE EXISTS` garantit qu'on ne strippe le suffixe **que si** une IE identique existe déjà dans `fichas_rlt` — évite de casser des noms légitimes qui contiendraient un tiret.
+- Le `UNION` (pas `UNION ALL`) déduplique automatiquement les paires `(cohorte_id, institucion_educativa)` identiques.
+- `fichas_rlt` reste intacte.
