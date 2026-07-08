@@ -124,7 +124,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
 
       setCohortes(currentCohortes);
       setCohorteInstitutions(filteredInst);
-      setDirectivos((fichasRes.data as Directivo[]) || []);
+      setDirectivos([...(fichasRes.data as Directivo[] || []), ...rectores2025]);
       setSubmissions(filteredSubmissions);
       setLoading(false);
     }
