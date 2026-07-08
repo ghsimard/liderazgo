@@ -179,19 +179,45 @@ export default function AdminAmbienteStatsTab() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [subData, fichaData, regRes, cohortesRes] = await Promise.all([
+      const [subData, fichaData, regRes, cohortesRes, cohorteInstRes, rectores2025Res] = await Promise.all([
         fetchAllRows<RawSubmission>("encuestas_ambiente_escolar", "institucion_educativa, tipo_formulario, respuestas, cohorte_id"),
         fetchAllRows<FichaInfo>("fichas_rlt", "nombre_ie, region, entidad_territorial"),
         supabase.from("regiones").select("nombre, mostrar_logo_rlt, mostrar_logo_clt"),
-        supabase.from("ae_cohortes").select("id, year, nombre"),
+        supabase.from("ae_cohortes").select("id, year, nombre, entidad_territorial"),
+        supabase.from("v_ae_instituciones_por_cohorte").select("cohorte_id, institucion_educativa"),
+        supabase.from("ae_rectores_2025").select("nombre_de_la_institucion_educativa_en_la_actualmente_desempena_, entidad_territorial"),
       ]);
 
       // Only keep submissions belonging to any known cohorte
-      const currentCohortes = (cohortesRes.data || []) as { id: string; year: number; nombre: string }[];
+      const currentCohortes = (cohortesRes.data || []) as { id: string; year: number; nombre: string; entidad_territorial: string | null }[];
       const currentCohorteIds = new Set(currentCohortes.map((c) => c.id));
       const filteredSubs = subData.filter(s => s.cohorte_id && currentCohorteIds.has(s.cohorte_id));
+
+      // Enrich fichas with synthetic entries for 2025 cohortes (Medellín/Itagüí/Rionegro)
+      // whose directivos live in ae_rectores_2025, not fichas_rlt.
+      const fichaMap = new Map<string, FichaInfo>();
+      for (const f of fichaData) fichaMap.set(f.nombre_ie, f);
+
+      const cohorteById = new Map(currentCohortes.map((c) => [c.id, c]));
+      const cohorteInst = (cohorteInstRes.data || []) as { cohorte_id: string; institucion_educativa: string }[];
+      const etByIe2025 = new Map<string, string>();
+      for (const r of (rectores2025Res.data || []) as any[]) {
+        const ie = r?.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_;
+        if (ie && r?.entidad_territorial) etByIe2025.set(ie, r.entidad_territorial);
+      }
+      for (const ci of cohorteInst) {
+        if (fichaMap.has(ci.institucion_educativa)) continue;
+        const co = cohorteById.get(ci.cohorte_id);
+        if (!co) continue;
+        fichaMap.set(ci.institucion_educativa, {
+          nombre_ie: ci.institucion_educativa,
+          region: co.nombre, // ex: "Medellín 2025"
+          entidad_territorial: etByIe2025.get(ci.institucion_educativa) || co.entidad_territorial,
+        });
+      }
+
       setSubmissions(filteredSubs);
-      setFichas(fichaData);
+      setFichas(Array.from(fichaMap.values()));
       setRegions((regRes.data || []) as RegionInfo[]);
       setCohortes(currentCohortes.sort((a, b) => b.year - a.year));
       setLoading(false);
