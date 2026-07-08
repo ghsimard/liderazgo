@@ -398,7 +398,9 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
                 No se encontraron instituciones con los filtros seleccionados.
               </TableCell>
             </TableRow>
-          ) : filteredRows.map((r) => (
+          ) : filteredRows.map((r) => {
+            const needsFollowUp = r.docentes < 25 || r.estudiantes < 25 || r.acudientes < 25;
+            return (
             <TableRow key={r.ie}>
               <TableCell className="font-medium text-sm">{r.ie}</TableCell>
               <TableCell className="text-center"><CountBadge count={r.docentes} /></TableCell>
@@ -406,9 +408,23 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
               <TableCell className="text-center"><CountBadge count={r.acudientes} /></TableCell>
               <TableCell className="text-center">
                 {r.directivo ? (
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setContactDialog(r.directivo!)}>
-                    <Eye className="w-4 h-4" />
-                  </Button>
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={needsFollowUp ? "default" : "ghost"}
+                          size="icon"
+                          className={`h-8 w-8 ${needsFollowUp ? "bg-amber-500 hover:bg-amber-600 text-white ring-2 ring-amber-300 animate-pulse" : ""}`}
+                          onClick={() => setContactDialog(r.directivo!)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {needsFollowUp ? "Contactar: no alcanza 25 respuestas en alguna categoría" : "Ver contacto del directivo"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 ) : (
                   <TooltipProvider delayDuration={150}>
                     <Tooltip>
@@ -424,7 +440,8 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
               </TableCell>
 
             </TableRow>
-          ))}
+            );
+          })}
         </TableBody>
       </Table>
 
