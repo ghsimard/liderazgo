@@ -63,6 +63,7 @@ export default function AdminAmbienteDeltaTab() {
   const [cohortes, setCohortes] = useState<Cohorte[]>([]);
   const [campanas, setCampanas] = useState<Campana[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [cohorteInst, setCohorteInst] = useState<{ cohorte_id: string; institucion_educativa: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCohortes, setSelectedCohortes] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
@@ -78,12 +79,14 @@ export default function AdminAmbienteDeltaTab() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [cohortesRes, campanasRes] = await Promise.all([
+      const [cohortesRes, campanasRes, cohorteInstRes] = await Promise.all([
         supabase.from("ae_cohortes").select("id, nombre").order("nombre"),
         supabase.from("ae_campanas" as any).select("id, cohorte_id, fase, nombre, fecha_inicio, fecha_fin"),
+        supabase.from("v_ae_instituciones_por_cohorte").select("cohorte_id, institucion_educativa"),
       ]);
       setCohortes((cohortesRes.data as Cohorte[]) || []);
       setCampanas((campanasRes.data as any as Campana[]) || []);
+      setCohorteInst((cohorteInstRes.data as any) || []);
 
       const all: Submission[] = [];
       const PAGE = 1000;
@@ -225,14 +228,21 @@ export default function AdminAmbienteDeltaTab() {
       .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
   }, [selectedCohortes, phaseSplit, institucionesConEvolucion]);
 
-  // Institution → region lookup (from geographic data)
+  // Institution → region lookup (geographic data first; fallback: cohorte name for
+  // 2025 institutions not present in regiones/region_instituciones)
   const instToRegion = useMemo(() => {
     const m = new Map<string, string>();
     for (const rn of regionNames) {
       for (const ie of getInstitucionesForRegion(rn)) m.set(ie, rn);
     }
+    const cohorteNameById = new Map(cohortes.map((c) => [c.id, c.nombre]));
+    for (const ci of cohorteInst) {
+      if (m.has(ci.institucion_educativa)) continue;
+      const nom = cohorteNameById.get(ci.cohorte_id);
+      if (nom) m.set(ci.institucion_educativa, nom);
+    }
     return m;
-  }, [regionNames, getInstitucionesForRegion]);
+  }, [regionNames, getInstitucionesForRegion, cohorteInst, cohortes]);
 
   // Filtered + sorted rows for the per-institution table
   const institucionDeltasView = useMemo(() => {

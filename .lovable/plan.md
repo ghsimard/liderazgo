@@ -1,41 +1,58 @@
-## Cause
+## Contexte confirmé par vous
 
-`src/components/admin/AdminAmbienteStatsTab.tsx` ligne 186 charge les cohortes avec un filtre explicite `.gte("year", 2026)`. Les cohortes **Medellín 2025**, **Itagüí 2025** et **Rionegro 2025** ont `year = 2025` et sont donc écartées, ainsi que toutes leurs respuestas (ligne 192, qui ne garde que les submissions rattachées aux cohortes chargées).
+Les cohortes Medellín/Itagüí/Rionegro 2025 ont déjà des données **Evolución** → les deltas sont calculables et doivent s'afficher correctement dans Delta. Option **C** (correction locale ciblée, alignée sur Stats) est la bonne.
 
-À noter : le Monitor (`AdminAmbienteMonitorTab.tsx`), lui, ne filtre pas par année — c'est pourquoi les 2025 y apparaissent bien. C'est un oubli localisé à l'onglet Estadísticas.
+## Résultats d'audit
 
-## Correction
+- **Campañas** (`AdminAmbienteCampanasTab.tsx`) : aucun filtre `year >= 2026`. Aucune modification nécessaire.
+- **Delta** (`AdminAmbienteDeltaTab.tsx`) : le sélecteur de cohorte est OK, mais le filtre « Región » et le regroupement par région passent par `useGeographicData()` qui lit `regiones` + `region_instituciones`. La table `regiones` ne contient que « Oriente 2026 » et « Quibdó 2026 » → pour les IE 2025, le regroupement retombe sur « Sin región » et le filtre Región ne les propose pas.
 
-### 🖥️ Site statique (Frontend) — une seule ligne
+## Correction proposée
 
-`src/components/admin/AdminAmbienteStatsTab.tsx` ligne 186 : retirer le `.gte("year", 2026)`.
+### 🖥️ Site statique — `AdminAmbienteDeltaTab.tsx`
 
-Avant :
+Enrichir localement `instToRegion` (et la liste des régions proposées au filtre) avec les données 2025 dérivées de `ae_cohortes` + `v_ae_instituciones_por_cohorte`, exactement comme on l'a fait dans Stats.
+
+Étapes :
+
+1. Ajouter en début du `useEffect` de chargement (à côté de la requête `ae_cohortes` existante ligne 82) :
+
 ```ts
-supabase.from("ae_cohortes").select("id, year, nombre").gte("year", 2026),
+supabase.from("ae_cohortes").select("id, nombre").order("nombre"),
+supabase.from("v_ae_instituciones_por_cohorte").select("cohorte_id, institucion_educativa"),
 ```
 
-Après :
-```ts
-supabase.from("ae_cohortes").select("id, year, nombre"),
-```
+2. Construire un `extraInstToRegion: Map<string, string>` :
+   - pour chaque `(cohorte_id, institucion_educativa)` de la vue,
+   - si l'IE n'est **pas** déjà présente dans `instToRegion` (issue de `useGeographicData`),
+   - lui attribuer comme « région » le `nombre` de la cohorte (ex. « Medellín 2025 »).
 
-Le tri existant (`.sort((a, b) => b.year - a.year)` ligne 196) place déjà 2026 avant 2025 dans le dropdown, donc l'ordre reste cohérent.
+3. Fusionner `extraInstToRegion` dans `instToRegion` (memo ligne 228-235) — l'existant garde la priorité (une IE déjà rattachée à Oriente 2026 ne bascule pas en pseudo-région 2025).
 
-Mettre à jour le commentaire ligne 189 (« Only keep submissions belonging to current cohortes (2026+) » → « ... belonging to any known cohorte »).
+4. Étendre la liste des régions proposées au filtre :
+   - la source actuelle est `regionNames` de `useGeographicData`,
+   - ajouter les `nombres` de cohortes 2025 pour lesquelles au moins une IE apparaît dans `institucionDeltasView` (évite de polluer le filtre avec des régions vides).
+
+Aucune modification à la logique de calcul de delta (ΔP ≥ 0,5 pts, memo mémoire) : elle est agnostique de la région.
 
 ### ⚙️ Web Service — aucune action
 
 ### 🗄️ Base de données — aucune action
 
-Les données 2025 sont déjà présentes (`ae_cohortes`, `encuestas_ambiente_escolar.cohorte_id`, `ae_rectores_2025`, `ae_docentes_submissions_2025`, etc.). Le Monitor le prouve.
+## Note d'évolutivité (future Oriente/Quibdó Evolución)
+
+Aucune action à prévoir : Oriente 2026 et Quibdó 2026 sont **déjà** dans `regiones` et `region_instituciones` (utilisés par `useGeographicData`). Quand leurs données Evolución arriveront, Delta les prendra en charge sans changement de code.
+
+Le pattern « pseudo-région = nombre de cohorte » ajouté par cette correction reste utile pour toute future cohorte importée via `ae_cohorte_instituciones` sans passer par la hiérarchie géographique (comme les 2025).
 
 ## Vérification
 
-Après la modif : ouvrir `/admin?tab=ambiente-escolar` → sous-onglet **Estadísticas** → le sélecteur de cohorte doit lister Medellín 2025, Itagüí 2025 et Rionegro 2025 en plus des cohortes 2026.
+Après la modif + Ctrl+Shift+R :
+1. Delta → sélectionner « Medellín 2025 » : le tableau affiche les IE regroupées sous « Medellín 2025 » (au lieu de « Sin región »).
+2. Filtre Región : « Medellín 2025 » / « Itagüí 2025 » / « Rionegro 2025 » apparaissent bien.
+3. Les colonnes Δ affichent des valeurs (puisque Inicial + Evolución existent).
+4. Le PDF Delta reflète le même regroupement.
 
-## Point d'attention
+## Question
 
-Vérifier rapidement que les autres sous-onglets Ambiente (Delta, Campañas, 2025) n'ont pas non plus un filtre `year >= 2026` involontaire. `AdminAmbiente2025Tab` est logiquement dédié à 2025 (pas de filtre à ajouter), mais `AdminAmbienteDeltaTab` mérite un coup d'œil dans la même passe si vous le souhaitez.
-
-Voulez-vous que je limite la correction à Estadísticas uniquement, ou que j'audite aussi Delta et Campañas dans la foulée ?
+Puis-je appliquer cette correction ?
