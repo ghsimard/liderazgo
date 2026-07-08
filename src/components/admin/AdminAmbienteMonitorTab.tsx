@@ -167,8 +167,14 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       }
     }
 
-    // Source unique = fichas_rlt : match exact sur nombre_ie
-    const findDirectivo = (ie: string) => directivos.find(d => d.nombre_ie === ie);
+    // Source unique = fichas_rlt : match tolérant à casse + accents
+    const normalize = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const directivoMap = new Map<string, Directivo>();
+    for (const d of directivos) {
+      if (d.nombre_ie) directivoMap.set(normalize(d.nombre_ie), d);
+    }
+    const findDirectivo = (ie: string) => directivoMap.get(normalize(ie));
+
 
     const sorted = Array.from(allInstitutions).sort();
     const allRows = sorted.map(ie => ({
