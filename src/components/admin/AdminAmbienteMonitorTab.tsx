@@ -407,22 +407,21 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
               <TableCell className="text-center"><CountBadge count={r.estudiantes} /></TableCell>
               <TableCell className="text-center"><CountBadge count={r.acudientes} /></TableCell>
               <TableCell className="text-center">
-                {r.directivo ? (
+                {!needsFollowUp ? (
+                  <span className="text-muted-foreground">—</span>
+                ) : r.directivo ? (
                   <TooltipProvider delayDuration={150}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant={needsFollowUp ? "default" : "ghost"}
                           size="icon"
-                          className={`h-8 w-8 ${needsFollowUp ? "bg-amber-500 hover:bg-amber-600 text-white ring-2 ring-amber-300 animate-pulse" : ""}`}
+                          className="h-8 w-8 bg-amber-500 hover:bg-amber-600 text-white ring-2 ring-amber-300 animate-pulse"
                           onClick={() => setContactDialog(r.directivo!)}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        {needsFollowUp ? "Contactar: no alcanza 25 respuestas en alguna categoría" : "Ver contacto del directivo"}
-                      </TooltipContent>
+                      <TooltipContent>Contactar: no alcanza 25 respuestas en alguna categoría</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 ) : (
