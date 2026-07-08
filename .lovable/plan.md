@@ -1,54 +1,43 @@
-# Icône œil manquante dans Ambiente Escolar / Monitoreo / Contacto
-
 ## Diagnostic
 
-Dans `src/components/admin/AdminAmbienteMonitorTab.tsx` (ligne 384), l'œil ne s'affiche que si `r.directivo` est trouvé :
+En **production (Render)**, la vue `v_ae_instituciones_por_cohorte` contient encore l'ancienne définition qui fait un `UNION` avec la table héritée `ae_cohorte_instituciones`. Cette table contient des variantes suffixées type `"Centro Educativo Rural Guamito - San Luis"`, tandis que `fichas_rlt.nombre_ie` a la version courte `"Centro Educativo Rural Guamito"`. Résultat : deux lignes pour la même institution dans le tableau Monitoreo.
 
-```ts
-const findDirectivo = (ie: string) => directivos.find(d => d.nombre_ie === ie);
-```
+Sur Lovable Cloud (staging), les données sont propres — une seule ligne par institution. Le problème est **strictement côté Render** : les deux migrations SQL de 2026-07-08 n'ont pas encore été exécutées sur la base de production.
 
-Match **strictement exact** (`===`) entre `ae_cohorte_instituciones.institucion_educativa` et `fichas_rlt.nombre_ie`. Deux causes possibles :
-
-1. **Aucune ficha remplie** par le directivo → aucun contact en base.
-2. **Mismatch de casse/accents** entre les deux tables (comme Manuel Uribe Ángel).
-
-Le nombre d'encuestas (0, faible ou suffisant) n'a **aucun impact** sur l'affichage de l'œil.
-
-## Plan
+## Actions
 
 ### 🖥️ Site statique (Frontend)
-
-Modifier `src/components/admin/AdminAmbienteMonitorTab.tsx` :
-
-1. Rendre `findDirectivo` **tolérant à casse + accents** via normalisation JS (`.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()`) pour attraper les mismatch de casse/accents.
-2. Quand aucun directivo n'est trouvé, remplacer le tiret `—` par une **icône œil grisée + tooltip** « Sin ficha diligenciada » (au lieu de rien afficher) pour distinguer clairement le cas « pas encore de fiche ».
-
-Ctrl+Shift+R après déploiement.
+Aucun changement. `AdminAmbienteMonitorTab.tsx` est déjà correct (déduplication via `Set` sur la vue). Le doublon vient de la vue elle-même.
 
 ### ⚙️ Web Service (Backend Express)
-
 Aucun changement.
 
-### 🗄️ Base de données (SQL manuel)
+### 🗄️ Base de données (Manual SQL sur Render)
+Exécuter dans l'ordre, en psql sur la base Render :
 
-Aucun changement structurel. Requête de diagnostic optionnelle (sans `unaccent` qui n'est pas installé sur Render) pour lister les institutions du monitoring sans ficha :
+1. **`server/migrations/2026-07-08_normaliser_ae_institucion_educativa.sql`**  
+   Retire le suffixe `" - Municipio"` dans `ae_docentes_submissions_2025`, `ae_estudiantes_submissions_2025`, `ae_acudientes_submissions_2025` quand la version courte existe dans `fichas_rlt.nombre_ie`. Transaction sûre et idempotente.
 
+2. **`server/migrations/2026-07-08_v_ae_instituciones_solo_fichas.sql`**  
+   Recrée `v_ae_instituciones_por_cohorte` avec `fichas_rlt` comme source unique (suppression du `UNION` avec la table legacy). C'est ce qui fait disparaître les doublons dans Monitoreo.
+
+3. Vérification (avec GROUP BY, contrairement à la requête ayant échoué) :
+   ```sql
+   SELECT institucion_educativa, count(*)
+   FROM v_ae_instituciones_por_cohorte
+   WHERE institucion_educativa ILIKE '%guamito%'
+   GROUP BY institucion_educativa;
+   ```
+   → doit retourner une seule ligne par institution.
+
+Puis **Ctrl+Shift+R** dans le navigateur pour recharger.
+
+## Détails techniques
+
+Vue actuelle en prod (fautive) :
 ```sql
-SELECT DISTINCT ci.institucion_educativa
-FROM public.v_ae_instituciones_por_cohorte ci
-LEFT JOIN public.fichas_rlt f
-  ON lower(f.nombre_ie) = lower(ci.institucion_educativa)
-WHERE f.id IS NULL
-ORDER BY 1;
+SELECT c.id, f.nombre_ie FROM ae_cohortes c JOIN fichas_rlt f ON f.region = c.nombre
+UNION
+SELECT cohorte_id, institucion_educativa FROM ae_cohorte_instituciones;
 ```
-
-Note : la normalisation d'accents se fait côté frontend (JS `NFD`) puisque l'extension `unaccent` n'est pas disponible sur la base Render.
-
-## Question ouverte
-
-Pour les institutions sans ficha diligenciada, préférez-vous :
-- **(A)** Garder le tiret `—` (comportement actuel).
-- **(B)** Afficher une icône œil grisée + tooltip « Sin ficha diligenciada » (recommandé).
-
-Par défaut je pars sur **(B)** + normalisation casse/accents du matching.
+La table `ae_cohorte_instituciones` reste en base (legacy) mais n'est plus référencée par la nouvelle vue.
