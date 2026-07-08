@@ -394,9 +394,19 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
                     <Eye className="w-4 h-4" />
                   </Button>
                 ) : (
-                  <span className="text-xs text-muted-foreground">—</span>
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex h-8 w-8 items-center justify-center opacity-40 cursor-help">
+                          <Eye className="w-4 h-4" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>Sin ficha diligenciada</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </TableCell>
+
             </TableRow>
           ))}
         </TableBody>
