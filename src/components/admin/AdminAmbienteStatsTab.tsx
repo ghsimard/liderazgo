@@ -49,7 +49,19 @@ interface RawSubmission {
   tipo_formulario: string;
   respuestas: Record<string, string>;
   cohorte_id: string | null;
+  fase: string | null;
 }
+
+type FaseKey = "inicial" | "evolucion" | "ambas";
+const FASE_DB: Record<Exclude<FaseKey, "ambas">, string> = {
+  inicial: "linea_base",
+  evolucion: "cierre",
+};
+const FASE_LABEL: Record<Exclude<FaseKey, "ambas">, string> = {
+  inicial: "Inicial",
+  evolucion: "Evolución",
+};
+
 
 interface FichaInfo {
   nombre_ie: string;
@@ -168,7 +180,9 @@ export default function AdminAmbienteStatsTab() {
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
   const [selEntidades, setSelEntidades] = useState<string[]>([]);
-  const [selectedIE, setSelectedIE] = useState("__all__");
+  const [selCohortes, setSelCohortes] = useState<string[]>([]);
+  const [selectedIEs, setSelectedIEs] = useState<string[]>([]);
+  const [selFase, setSelFase] = useState<FaseKey>("ambas");
   const [selCohorte, setSelCohorte] = useState<string>("");
 
   // PDF state
@@ -180,7 +194,8 @@ export default function AdminAmbienteStatsTab() {
     async function load() {
       setLoading(true);
       const [subData, fichaData, regRes, cohortesRes, cohorteInstRes, rectores2025Res] = await Promise.all([
-        fetchAllRows<RawSubmission>("encuestas_ambiente_escolar", "institucion_educativa, tipo_formulario, respuestas, cohorte_id"),
+        fetchAllRows<RawSubmission>("encuestas_ambiente_escolar", "institucion_educativa, tipo_formulario, respuestas, cohorte_id, fase"),
+
         fetchAllRows<FichaInfo>("fichas_rlt", "nombre_ie, region, entidad_territorial"),
         supabase.from("regiones").select("nombre, mostrar_logo_rlt, mostrar_logo_clt"),
         supabase.from("ae_cohortes").select("id, year, nombre, entidad_territorial"),
@@ -226,19 +241,20 @@ export default function AdminAmbienteStatsTab() {
   }, []);
 
   // Clear downstream filters
-  useEffect(() => { setSelEntidades([]); setSelectedIE("__all__"); }, [selRegions]);
-  useEffect(() => { setSelectedIE("__all__"); }, [selEntidades]);
+  useEffect(() => { setSelEntidades([]); setSelectedIEs([]); }, [selRegions]);
+  useEffect(() => { setSelectedIEs([]); }, [selEntidades]);
+  useEffect(() => { setSelectedIEs([]); }, [selCohortes]);
 
-  // Build institution list from submissions + fichas, filtered by region/entidad
+  // Build institution list from submissions + fichas, filtered by region/entidad/cohortes
   const institutionOptions = useMemo(() => {
-    // All institutions that have submissions
-    const ieFromSubs = new Set(submissions.map((s) => s.institucion_educativa));
-
-    // Map IE → region/entidad from fichas
-    const ieInfo = new Map<string, FichaInfo>();
-    for (const f of fichas) {
-      ieInfo.set(f.nombre_ie, f);
+    let subsPool = submissions;
+    if (selCohortes.length > 0) {
+      subsPool = subsPool.filter((s) => s.cohorte_id && selCohortes.includes(s.cohorte_id));
     }
+    const ieFromSubs = new Set(subsPool.map((s) => s.institucion_educativa));
+
+    const ieInfo = new Map<string, FichaInfo>();
+    for (const f of fichas) ieInfo.set(f.nombre_ie, f);
 
     let ieList = Array.from(ieFromSubs);
 
@@ -256,7 +272,7 @@ export default function AdminAmbienteStatsTab() {
     }
 
     return ieList.sort();
-  }, [submissions, fichas, selRegions, selEntidades]);
+  }, [submissions, fichas, selRegions, selEntidades, selCohortes]);
 
   const regionOptions = useMemo(() => {
     const vals = [...new Set(fichas.map((f) => f.region).filter(Boolean))].sort();
@@ -270,16 +286,68 @@ export default function AdminAmbienteStatsTab() {
     return vals.map((v) => ({ value: v, label: v }));
   }, [fichas, selRegions]);
 
-  const filtered = useMemo(() => {
-    if (selectedIE === "__all__") {
-      // Filter by region/entidad via institutionOptions
-      if (selRegions.length === 0 && selEntidades.length === 0) return submissions;
-      return submissions.filter((s) => institutionOptions.includes(s.institucion_educativa));
-    }
-    return submissions.filter((s) => s.institucion_educativa === selectedIE);
-  }, [submissions, selectedIE, institutionOptions, selRegions, selEntidades]);
+  const cohorteOptions = useMemo(
+    () => cohortes.map((c) => ({ value: c.id, label: c.nombre })),
+    [cohortes]
+  );
 
-  const hasFilters = selRegions.length > 0 || selEntidades.length > 0;
+  const ieOptions = useMemo(
+    () => institutionOptions.map((ie) => ({ value: ie, label: ie })),
+    [institutionOptions]
+  );
+
+  // Base filtered (region/entidad/cohortes/IE) — WITHOUT fase filter, used to compute per-fase views.
+  const baseFiltered = useMemo(() => {
+    let out = submissions;
+    if (selCohortes.length > 0) {
+      out = out.filter((s) => s.cohorte_id && selCohortes.includes(s.cohorte_id));
+    }
+    if (selectedIEs.length > 0) {
+      out = out.filter((s) => selectedIEs.includes(s.institucion_educativa));
+    } else {
+      // Restrict to institutionOptions if any region/entidad filter is applied
+      if (selRegions.length > 0 || selEntidades.length > 0) {
+        out = out.filter((s) => institutionOptions.includes(s.institucion_educativa));
+      }
+    }
+    return out;
+  }, [submissions, selCohortes, selectedIEs, selRegions, selEntidades, institutionOptions]);
+
+  const filteredInicial = useMemo(
+    () => baseFiltered.filter((s) => s.fase === FASE_DB.inicial),
+    [baseFiltered]
+  );
+  const filteredEvolucion = useMemo(
+    () => baseFiltered.filter((s) => s.fase === FASE_DB.evolucion),
+    [baseFiltered]
+  );
+
+  const hasFilters = selRegions.length > 0 || selEntidades.length > 0 || selCohortes.length > 0 || selectedIEs.length > 0;
+
+  // Institutions selected for export (empty = all in current filter)
+  const targetIEs = useMemo(
+    () => (selectedIEs.length > 0 ? selectedIEs : institutionOptions),
+    [selectedIEs, institutionOptions]
+  );
+
+  const fasesRequested: Array<Exclude<FaseKey, "ambas">> = useMemo(
+    () => (selFase === "ambas" ? ["inicial", "evolucion"] : [selFase]),
+    [selFase]
+  );
+
+  // Count PDFs that will actually be generated (skip empty)
+  const pdfPlan = useMemo(() => {
+    const plan: Array<{ ie: string; fase: Exclude<FaseKey, "ambas"> }> = [];
+    for (const ie of targetIEs) {
+      for (const fase of fasesRequested) {
+        const hasData = baseFiltered.some(
+          (s) => s.institucion_educativa === ie && s.fase === FASE_DB[fase]
+        );
+        if (hasData) plan.push({ ie, fase });
+      }
+    }
+    return plan;
+  }, [targetIEs, fasesRequested, baseFiltered]);
 
   // ── PDF generation ──
   const getLogoFlags = (ie: string) => {
@@ -290,51 +358,49 @@ export default function AdminAmbienteStatsTab() {
     return { showLogoRlt: regionInfo.mostrar_logo_rlt, showLogoClt: regionInfo.mostrar_logo_clt };
   };
 
-  const buildReportData = (ie: string): AmbienteReportData => {
+  const buildReportData = (ie: string, fase: Exclude<FaseKey, "ambas">): AmbienteReportData => {
     const fichaInfo = fichas.find((f) => f.nombre_ie === ie);
     return {
-      institucion: ie,
+      institucion: `${ie} — ${FASE_LABEL[fase]}`,
       entidadTerritorial: fichaInfo?.entidad_territorial || "",
-      submissions: submissions
-        .filter((s) => s.institucion_educativa === ie)
+      submissions: baseFiltered
+        .filter((s) => s.institucion_educativa === ie && s.fase === FASE_DB[fase])
         .map((s) => ({ tipo_formulario: s.tipo_formulario, respuestas: s.respuestas })),
     };
   };
 
+  const safeName = (s: string) =>
+    s.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, "").replace(/\s+/g, "_");
+
   const handleGeneratePDF = async () => {
-    if (selectedIE === "__all__") {
-      // Generate ZIP with all institutions in the current filter
-      await handleBatchExport();
+    if (pdfPlan.length === 0) {
+      toast({ title: "Sin informes", description: "No hay datos para la selección actual.", variant: "destructive" });
       return;
     }
-    setGenerating(true);
-    try {
-      const reportData = buildReportData(selectedIE);
-      const flags = getLogoFlags(selectedIE);
-      await generarAmbienteEscolarReportPDF(
-        reportData,
-        getPdfLogoSources(images),
-        flags
-      );
-      toast({ title: "PDF generado", description: `Informe descargado para ${selectedIE}` });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    if (pdfPlan.length === 1) {
+      setGenerating(true);
+      try {
+        const { ie, fase } = pdfPlan[0];
+        const reportData = buildReportData(ie, fase);
+        const flags = getLogoFlags(ie);
+        await generarAmbienteEscolarReportPDF(reportData, getPdfLogoSources(images), flags);
+        toast({ title: "PDF generado", description: `Informe descargado — ${ie} (${FASE_LABEL[fase]})` });
+      } catch (err: any) {
+        toast({ title: "Error", description: err.message, variant: "destructive" });
+      }
+      setGenerating(false);
+      return;
     }
-    setGenerating(false);
-  };
-
-  const handleBatchExport = async () => {
-    if (institutionOptions.length === 0) return;
+    // Multiple PDFs → ZIP with subfolders
     setBatchGenerating(true);
     setBatchProgress(0);
     try {
       const zip = new JSZip();
       let count = 0;
-      for (let i = 0; i < institutionOptions.length; i++) {
-        const ie = institutionOptions[i];
+      for (let i = 0; i < pdfPlan.length; i++) {
+        const { ie, fase } = pdfPlan[i];
         try {
-          const reportData = buildReportData(ie);
-          if (reportData.submissions.length === 0) continue;
+          const reportData = buildReportData(ie, fase);
           const flags = getLogoFlags(ie);
           const blob = await generarAmbienteEscolarReportPDF(
             reportData,
@@ -343,18 +409,19 @@ export default function AdminAmbienteStatsTab() {
             { returnBlob: true }
           );
           if (blob) {
-            const safeName = ie.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, "").replace(/\s+/g, "_");
-            zip.file(`Informe_Ambiente_${safeName}.pdf`, blob);
+            const folder = fase === "inicial" ? "Inicial" : "Evolucion";
+            zip.file(`${folder}/Informe_Ambiente_${FASE_LABEL[fase]}_${safeName(ie)}.pdf`, blob);
             count++;
           }
         } catch {
           // skip failed
         }
-        setBatchProgress(Math.round(((i + 1) / institutionOptions.length) * 100));
+        setBatchProgress(Math.round(((i + 1) / pdfPlan.length) * 100));
       }
       if (count === 0) {
         toast({ title: "Sin informes", description: "No se pudo generar ningún informe", variant: "destructive" });
         setBatchGenerating(false);
+        setBatchProgress(0);
         return;
       }
       const zipBlob = await zip.generateAsync({ type: "blob" });
@@ -371,6 +438,8 @@ export default function AdminAmbienteStatsTab() {
     setBatchGenerating(false);
     setBatchProgress(0);
   };
+
+
 
   // ── Demo PDF with fictitious data ──
   const handleDemoPDF = async () => {
@@ -491,6 +560,64 @@ export default function AdminAmbienteStatsTab() {
     );
   }
 
+  const renderReportBlock = (subs: RawSubmission[], label: string) => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <h3 className="text-base font-semibold">{label}</h3>
+        <span className="text-xs text-muted-foreground">{subs.length} respuestas</span>
+      </div>
+      {subs.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-8">Sin datos para esta selección.</p>
+      ) : (
+        <Tabs defaultValue="docentes">
+          <TabsList className="flex-wrap h-auto gap-1">
+            {FORM_TYPES.map((ft) => {
+              const Icon = ft.icon;
+              const count = subs.filter((s) => s.tipo_formulario === ft.key).length;
+              return (
+                <TabsTrigger key={ft.key} value={ft.key} className="gap-1.5">
+                  <Icon className="w-4 h-4" /> {ft.label} ({count})
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+          {FORM_TYPES.map((ft) => {
+            const typeSubs = subs.filter((s) => s.tipo_formulario === ft.key);
+            const freqData = computeFrequencies(typeSubs, ft.likert);
+            return (
+              <TabsContent key={ft.key} value={ft.key} className="space-y-6">
+                {typeSubs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No hay respuestas para este tipo.</p>
+                ) : (
+                  <>
+                    <FrequencyChart data={freqData} />
+                    <FrequencyTable data={freqData} />
+                  </>
+                )}
+              </TabsContent>
+            );
+          })}
+        </Tabs>
+      )}
+    </div>
+  );
+
+  const summaryHeader = (() => {
+    const ieLabel =
+      selectedIEs.length === 1
+        ? selectedIEs[0]
+        : selectedIEs.length > 1
+          ? `${selectedIEs.length} instituciones seleccionadas`
+          : `Todas las instituciones (${institutionOptions.length})`;
+    const cohorteLabel =
+      selCohortes.length === 1
+        ? cohortes.find((c) => c.id === selCohortes[0])?.nombre
+        : selCohortes.length > 1
+          ? `${selCohortes.length} cohortes`
+          : "Todas las cohortes";
+    return { ieLabel, cohorteLabel };
+  })();
+
   return (
     <div className="space-y-4">
       {/* Cascade filters */}
@@ -501,14 +628,20 @@ export default function AdminAmbienteStatsTab() {
             <span className="text-sm font-medium">Filtros</span>
             {hasFilters && (
               <button
-                onClick={() => { setSelRegions([]); setSelEntidades([]); setSelectedIE("__all__"); }}
+                onClick={() => {
+                  setSelRegions([]);
+                  setSelEntidades([]);
+                  setSelCohortes([]);
+                  setSelectedIEs([]);
+                  setSelFase("ambas");
+                }}
                 className="text-xs text-muted-foreground hover:text-foreground underline ml-auto"
               >
                 Limpiar filtros
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Región</label>
               <MultiSelect
@@ -530,16 +663,35 @@ export default function AdminAmbienteStatsTab() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Institución</label>
-              <Select value={selectedIE} onValueChange={setSelectedIE}>
+              <label className="text-xs text-muted-foreground mb-1 block">Cohorte(s)</label>
+              <MultiSelect
+                options={cohorteOptions}
+                selected={selCohortes}
+                onChange={setSelCohortes}
+                placeholder="Todas las cohortes"
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Institución(es)</label>
+              <MultiSelect
+                options={ieOptions}
+                selected={selectedIEs}
+                onChange={setSelectedIEs}
+                placeholder="Todas las instituciones"
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Fase</label>
+              <Select value={selFase} onValueChange={(v) => setSelFase(v as FaseKey)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Todas las instituciones" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__all__">Todas las instituciones</SelectItem>
-                  {institutionOptions.map((ie) => (
-                    <SelectItem key={ie} value={ie}>{ie}</SelectItem>
-                  ))}
+                  <SelectItem value="ambas">Ambas</SelectItem>
+                  <SelectItem value="inicial">Inicial</SelectItem>
+                  <SelectItem value="evolucion">Evolución</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -556,25 +708,13 @@ export default function AdminAmbienteStatsTab() {
             <Button
               size="sm"
               onClick={handleGeneratePDF}
-              disabled={generating || batchGenerating || institutionOptions.length === 0}
+              disabled={generating || batchGenerating || pdfPlan.length === 0}
               className="gap-1.5"
             >
-              {(generating || (selectedIE === "__all__" && batchGenerating)) ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {(generating || (selectedIE === "__all__" && batchGenerating))
+              {(generating || batchGenerating) ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {(generating || batchGenerating)
                 ? "Generando…"
-                : selectedIE === "__all__"
-                  ? `Generar Informe ZIP (${institutionOptions.length})`
-                  : "Generar Informe"}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleBatchExport}
-              disabled={institutionOptions.length === 0 || batchGenerating}
-              className="gap-1.5"
-            >
-              {batchGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {batchGenerating ? "Generando ZIP…" : `Exportar ZIP (${institutionOptions.length})`}
+                : `Generar Informe(s) (${pdfPlan.length} PDF)`}
             </Button>
             <Button
               size="sm"
@@ -615,47 +755,37 @@ export default function AdminAmbienteStatsTab() {
           {batchGenerating && (
             <Progress value={batchProgress} className="h-2" />
           )}
-          {selectedIE === "__all__" && !batchGenerating && (
-            <p className="text-xs text-muted-foreground">Con "Todas las instituciones", se generará un ZIP con todos los informes de la selección actual.</p>
+          {pdfPlan.length > 1 && !batchGenerating && (
+            <p className="text-xs text-muted-foreground">
+              Se generará un ZIP con {pdfPlan.length} informes (sub-carpetas <strong>Inicial/</strong> y <strong>Evolucion/</strong> según la fase).
+            </p>
           )}
         </CardContent>
       </Card>
 
-      {/* Stats */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-xs text-muted-foreground ml-auto">{filtered.length} respuestas</span>
-      </div>
+      {/* Online report */}
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <FileText className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Rapport en línea</span>
+            <span className="text-xs text-muted-foreground">
+              {summaryHeader.ieLabel} · {summaryHeader.cohorteLabel}
+            </span>
+          </div>
 
-      <Tabs defaultValue="docentes">
-        <TabsList className="flex-wrap h-auto gap-1">
-          {FORM_TYPES.map((ft) => {
-            const Icon = ft.icon;
-            const count = filtered.filter((s) => s.tipo_formulario === ft.key).length;
-            return (
-              <TabsTrigger key={ft.key} value={ft.key} className="gap-1.5">
-                <Icon className="w-4 h-4" /> {ft.label} ({count})
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-
-        {FORM_TYPES.map((ft) => {
-          const typeSubs = filtered.filter((s) => s.tipo_formulario === ft.key);
-          const freqData = computeFrequencies(typeSubs, ft.likert);
-          return (
-            <TabsContent key={ft.key} value={ft.key} className="space-y-6">
-              {typeSubs.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No hay respuestas para este tipo.</p>
-              ) : (
-                <>
-                  <FrequencyChart data={freqData} />
-                  <FrequencyTable data={freqData} />
-                </>
-              )}
-            </TabsContent>
-          );
-        })}
-      </Tabs>
+          {selFase === "inicial" && renderReportBlock(filteredInicial, "Inicial")}
+          {selFase === "evolucion" && renderReportBlock(filteredEvolucion, "Evolución")}
+          {selFase === "ambas" && (
+            <div className="space-y-6">
+              {renderReportBlock(filteredInicial, "Inicial")}
+              <div className="border-t pt-4">
+                {renderReportBlock(filteredEvolucion, "Evolución")}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
