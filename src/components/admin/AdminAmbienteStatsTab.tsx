@@ -180,7 +180,9 @@ export default function AdminAmbienteStatsTab() {
   // Filters
   const [selRegions, setSelRegions] = useState<string[]>([]);
   const [selEntidades, setSelEntidades] = useState<string[]>([]);
-  const [selectedIE, setSelectedIE] = useState("__all__");
+  const [selCohortes, setSelCohortes] = useState<string[]>([]);
+  const [selectedIEs, setSelectedIEs] = useState<string[]>([]);
+  const [selFase, setSelFase] = useState<FaseKey>("ambas");
   const [selCohorte, setSelCohorte] = useState<string>("");
 
   // PDF state
@@ -192,7 +194,8 @@ export default function AdminAmbienteStatsTab() {
     async function load() {
       setLoading(true);
       const [subData, fichaData, regRes, cohortesRes, cohorteInstRes, rectores2025Res] = await Promise.all([
-        fetchAllRows<RawSubmission>("encuestas_ambiente_escolar", "institucion_educativa, tipo_formulario, respuestas, cohorte_id"),
+        fetchAllRows<RawSubmission>("encuestas_ambiente_escolar", "institucion_educativa, tipo_formulario, respuestas, cohorte_id, fase"),
+
         fetchAllRows<FichaInfo>("fichas_rlt", "nombre_ie, region, entidad_territorial"),
         supabase.from("regiones").select("nombre, mostrar_logo_rlt, mostrar_logo_clt"),
         supabase.from("ae_cohortes").select("id, year, nombre, entidad_territorial"),
