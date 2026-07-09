@@ -49,7 +49,19 @@ interface RawSubmission {
   tipo_formulario: string;
   respuestas: Record<string, string>;
   cohorte_id: string | null;
+  fase: string | null;
 }
+
+type FaseKey = "inicial" | "evolucion" | "ambas";
+const FASE_DB: Record<Exclude<FaseKey, "ambas">, string> = {
+  inicial: "linea_base",
+  evolucion: "cierre",
+};
+const FASE_LABEL: Record<Exclude<FaseKey, "ambas">, string> = {
+  inicial: "Inicial",
+  evolucion: "Evolución",
+};
+
 
 interface FichaInfo {
   nombre_ie: string;
