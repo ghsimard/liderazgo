@@ -241,19 +241,20 @@ export default function AdminAmbienteStatsTab() {
   }, []);
 
   // Clear downstream filters
-  useEffect(() => { setSelEntidades([]); setSelectedIE("__all__"); }, [selRegions]);
-  useEffect(() => { setSelectedIE("__all__"); }, [selEntidades]);
+  useEffect(() => { setSelEntidades([]); setSelectedIEs([]); }, [selRegions]);
+  useEffect(() => { setSelectedIEs([]); }, [selEntidades]);
+  useEffect(() => { setSelectedIEs([]); }, [selCohortes]);
 
-  // Build institution list from submissions + fichas, filtered by region/entidad
+  // Build institution list from submissions + fichas, filtered by region/entidad/cohortes
   const institutionOptions = useMemo(() => {
-    // All institutions that have submissions
-    const ieFromSubs = new Set(submissions.map((s) => s.institucion_educativa));
-
-    // Map IE → region/entidad from fichas
-    const ieInfo = new Map<string, FichaInfo>();
-    for (const f of fichas) {
-      ieInfo.set(f.nombre_ie, f);
+    let subsPool = submissions;
+    if (selCohortes.length > 0) {
+      subsPool = subsPool.filter((s) => s.cohorte_id && selCohortes.includes(s.cohorte_id));
     }
+    const ieFromSubs = new Set(subsPool.map((s) => s.institucion_educativa));
+
+    const ieInfo = new Map<string, FichaInfo>();
+    for (const f of fichas) ieInfo.set(f.nombre_ie, f);
 
     let ieList = Array.from(ieFromSubs);
 
@@ -271,7 +272,7 @@ export default function AdminAmbienteStatsTab() {
     }
 
     return ieList.sort();
-  }, [submissions, fichas, selRegions, selEntidades]);
+  }, [submissions, fichas, selRegions, selEntidades, selCohortes]);
 
   const regionOptions = useMemo(() => {
     const vals = [...new Set(fichas.map((f) => f.region).filter(Boolean))].sort();
@@ -285,16 +286,68 @@ export default function AdminAmbienteStatsTab() {
     return vals.map((v) => ({ value: v, label: v }));
   }, [fichas, selRegions]);
 
-  const filtered = useMemo(() => {
-    if (selectedIE === "__all__") {
-      // Filter by region/entidad via institutionOptions
-      if (selRegions.length === 0 && selEntidades.length === 0) return submissions;
-      return submissions.filter((s) => institutionOptions.includes(s.institucion_educativa));
-    }
-    return submissions.filter((s) => s.institucion_educativa === selectedIE);
-  }, [submissions, selectedIE, institutionOptions, selRegions, selEntidades]);
+  const cohorteOptions = useMemo(
+    () => cohortes.map((c) => ({ value: c.id, label: c.nombre })),
+    [cohortes]
+  );
 
-  const hasFilters = selRegions.length > 0 || selEntidades.length > 0;
+  const ieOptions = useMemo(
+    () => institutionOptions.map((ie) => ({ value: ie, label: ie })),
+    [institutionOptions]
+  );
+
+  // Base filtered (region/entidad/cohortes/IE) — WITHOUT fase filter, used to compute per-fase views.
+  const baseFiltered = useMemo(() => {
+    let out = submissions;
+    if (selCohortes.length > 0) {
+      out = out.filter((s) => s.cohorte_id && selCohortes.includes(s.cohorte_id));
+    }
+    if (selectedIEs.length > 0) {
+      out = out.filter((s) => selectedIEs.includes(s.institucion_educativa));
+    } else {
+      // Restrict to institutionOptions if any region/entidad filter is applied
+      if (selRegions.length > 0 || selEntidades.length > 0) {
+        out = out.filter((s) => institutionOptions.includes(s.institucion_educativa));
+      }
+    }
+    return out;
+  }, [submissions, selCohortes, selectedIEs, selRegions, selEntidades, institutionOptions]);
+
+  const filteredInicial = useMemo(
+    () => baseFiltered.filter((s) => s.fase === FASE_DB.inicial),
+    [baseFiltered]
+  );
+  const filteredEvolucion = useMemo(
+    () => baseFiltered.filter((s) => s.fase === FASE_DB.evolucion),
+    [baseFiltered]
+  );
+
+  const hasFilters = selRegions.length > 0 || selEntidades.length > 0 || selCohortes.length > 0 || selectedIEs.length > 0;
+
+  // Institutions selected for export (empty = all in current filter)
+  const targetIEs = useMemo(
+    () => (selectedIEs.length > 0 ? selectedIEs : institutionOptions),
+    [selectedIEs, institutionOptions]
+  );
+
+  const fasesRequested: Array<Exclude<FaseKey, "ambas">> = useMemo(
+    () => (selFase === "ambas" ? ["inicial", "evolucion"] : [selFase]),
+    [selFase]
+  );
+
+  // Count PDFs that will actually be generated (skip empty)
+  const pdfPlan = useMemo(() => {
+    const plan: Array<{ ie: string; fase: Exclude<FaseKey, "ambas"> }> = [];
+    for (const ie of targetIEs) {
+      for (const fase of fasesRequested) {
+        const hasData = baseFiltered.some(
+          (s) => s.institucion_educativa === ie && s.fase === FASE_DB[fase]
+        );
+        if (hasData) plan.push({ ie, fase });
+      }
+    }
+    return plan;
+  }, [targetIEs, fasesRequested, baseFiltered]);
 
   // ── PDF generation ──
   const getLogoFlags = (ie: string) => {
@@ -305,51 +358,49 @@ export default function AdminAmbienteStatsTab() {
     return { showLogoRlt: regionInfo.mostrar_logo_rlt, showLogoClt: regionInfo.mostrar_logo_clt };
   };
 
-  const buildReportData = (ie: string): AmbienteReportData => {
+  const buildReportData = (ie: string, fase: Exclude<FaseKey, "ambas">): AmbienteReportData => {
     const fichaInfo = fichas.find((f) => f.nombre_ie === ie);
     return {
-      institucion: ie,
+      institucion: `${ie} — ${FASE_LABEL[fase]}`,
       entidadTerritorial: fichaInfo?.entidad_territorial || "",
-      submissions: submissions
-        .filter((s) => s.institucion_educativa === ie)
+      submissions: baseFiltered
+        .filter((s) => s.institucion_educativa === ie && s.fase === FASE_DB[fase])
         .map((s) => ({ tipo_formulario: s.tipo_formulario, respuestas: s.respuestas })),
     };
   };
 
+  const safeName = (s: string) =>
+    s.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, "").replace(/\s+/g, "_");
+
   const handleGeneratePDF = async () => {
-    if (selectedIE === "__all__") {
-      // Generate ZIP with all institutions in the current filter
-      await handleBatchExport();
+    if (pdfPlan.length === 0) {
+      toast({ title: "Sin informes", description: "No hay datos para la selección actual.", variant: "destructive" });
       return;
     }
-    setGenerating(true);
-    try {
-      const reportData = buildReportData(selectedIE);
-      const flags = getLogoFlags(selectedIE);
-      await generarAmbienteEscolarReportPDF(
-        reportData,
-        getPdfLogoSources(images),
-        flags
-      );
-      toast({ title: "PDF generado", description: `Informe descargado para ${selectedIE}` });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    if (pdfPlan.length === 1) {
+      setGenerating(true);
+      try {
+        const { ie, fase } = pdfPlan[0];
+        const reportData = buildReportData(ie, fase);
+        const flags = getLogoFlags(ie);
+        await generarAmbienteEscolarReportPDF(reportData, getPdfLogoSources(images), flags);
+        toast({ title: "PDF generado", description: `Informe descargado — ${ie} (${FASE_LABEL[fase]})` });
+      } catch (err: any) {
+        toast({ title: "Error", description: err.message, variant: "destructive" });
+      }
+      setGenerating(false);
+      return;
     }
-    setGenerating(false);
-  };
-
-  const handleBatchExport = async () => {
-    if (institutionOptions.length === 0) return;
+    // Multiple PDFs → ZIP with subfolders
     setBatchGenerating(true);
     setBatchProgress(0);
     try {
       const zip = new JSZip();
       let count = 0;
-      for (let i = 0; i < institutionOptions.length; i++) {
-        const ie = institutionOptions[i];
+      for (let i = 0; i < pdfPlan.length; i++) {
+        const { ie, fase } = pdfPlan[i];
         try {
-          const reportData = buildReportData(ie);
-          if (reportData.submissions.length === 0) continue;
+          const reportData = buildReportData(ie, fase);
           const flags = getLogoFlags(ie);
           const blob = await generarAmbienteEscolarReportPDF(
             reportData,
@@ -358,18 +409,19 @@ export default function AdminAmbienteStatsTab() {
             { returnBlob: true }
           );
           if (blob) {
-            const safeName = ie.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, "").replace(/\s+/g, "_");
-            zip.file(`Informe_Ambiente_${safeName}.pdf`, blob);
+            const folder = fase === "inicial" ? "Inicial" : "Evolucion";
+            zip.file(`${folder}/Informe_Ambiente_${FASE_LABEL[fase]}_${safeName(ie)}.pdf`, blob);
             count++;
           }
         } catch {
           // skip failed
         }
-        setBatchProgress(Math.round(((i + 1) / institutionOptions.length) * 100));
+        setBatchProgress(Math.round(((i + 1) / pdfPlan.length) * 100));
       }
       if (count === 0) {
         toast({ title: "Sin informes", description: "No se pudo generar ningún informe", variant: "destructive" });
         setBatchGenerating(false);
+        setBatchProgress(0);
         return;
       }
       const zipBlob = await zip.generateAsync({ type: "blob" });
@@ -386,6 +438,8 @@ export default function AdminAmbienteStatsTab() {
     setBatchGenerating(false);
     setBatchProgress(0);
   };
+
+
 
   // ── Demo PDF with fictitious data ──
   const handleDemoPDF = async () => {
