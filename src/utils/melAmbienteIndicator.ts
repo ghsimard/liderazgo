@@ -50,6 +50,8 @@ export interface ComponentResult {
 
 export const THRESHOLD_S_PP = 5;
 export const THRESHOLD_N_PP = -5;
+export const DEFAULT_VARIACION_MAX_PCT = 10;
+export const DEFAULT_N_MIN_POR_FASE = 10;
 
 export function evaluateComponent(
   title: string,
