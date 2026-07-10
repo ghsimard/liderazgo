@@ -154,37 +154,122 @@ export default function AdminAmbienteDeltaTab() {
 
   // Split submissions for the selected cohort into two strictly separated sets:
   // Inicial = phase 'linea_base', Evolución = phase 'cierre'.
-  // Phase resolution: prefer the submission's own `fase`; fallback to the campaign's `fase`.
-  // Cohort filter: prefer `cohorte_id`; fallback to membership in this cohort's campaigns.
+  // Phase resolution priority:
+  //   1) submission's own `fase`
+  //   2) linked campaign's `fase` (via `campana_id`)
+  //   3) unambiguous cohort-level phase (via `cohorte_id`): if the cohort has
+  //      campaigns of only ONE phase, orphan submissions inherit it. Prevents
+  //      silent data loss for records inserted without a campaign link.
+  // Institution names are also normalized across phases so that spelling/accent/
+  // whitespace variants ("I.E. José" vs "IE Jose ") are treated as the same
+  // school. The base-phase spelling is kept as the canonical display name.
   const phaseSplit = useMemo(() => {
-    const empty = { inicial: [] as Submission[], evolucion: [] as Submission[], iniCamp: undefined as Campana | undefined, evoCamp: undefined as Campana | undefined };
+    const empty = {
+      inicial: [] as Submission[],
+      evolucion: [] as Submission[],
+      iniCamp: undefined as Campana | undefined,
+      evoCamp: undefined as Campana | undefined,
+      diagnostics: {
+        orphanCount: 0,
+        orphanSamples: [] as { cohorte_id: string | null; institucion: string; tipo: string }[],
+        remapped: [] as { from: string; to: string; phase: "linea_base" | "cierre" }[],
+        onlyIni: [] as string[],
+        onlyEvo: [] as string[],
+      },
+    };
     if (selectedCohortes.length === 0) return empty;
     const cohorteSet = new Set(selectedCohortes);
     const campanasCohorte = campanas.filter((c) => cohorteSet.has(c.cohorte_id));
     const campIds = new Set(campanasCohorte.map((c) => c.id));
     const campFaseById = new Map(campanasCohorte.map((c) => [c.id, c.fase]));
 
-    const inicial: Submission[] = [];
-    const evolucion: Submission[] = [];
+    // Cohort-level unambiguous phase fallback
+    const cohortePhases = new Map<string, Set<string>>();
+    for (const c of campanasCohorte) {
+      if (!cohortePhases.has(c.cohorte_id)) cohortePhases.set(c.cohorte_id, new Set());
+      cohortePhases.get(c.cohorte_id)!.add(c.fase);
+    }
+    const cohorteUnambiguousFase = new Map<string, string>();
+    for (const [cid, phases] of cohortePhases.entries()) {
+      if (phases.size === 1) cohorteUnambiguousFase.set(cid, [...phases][0]);
+    }
+
+    const iniRaw: Submission[] = [];
+    const evoRaw: Submission[] = [];
+    const orphans: { cohorte_id: string | null; institucion: string; tipo: string }[] = [];
+
     for (const s of submissions) {
-      // Cohort gate
       const inCohort = s.cohorte_id
         ? cohorteSet.has(s.cohorte_id)
         : s.campana_id != null && campIds.has(s.campana_id);
       if (!inCohort) continue;
-      // Region gate (via institution)
       if (allowedInstitutionsSet && !allowedInstitutionsSet.has(s.institucion_educativa)) continue;
-      // Resolve actual phase (submission wins; fallback to campaign)
-      const fase = s.fase || (s.campana_id ? campFaseById.get(s.campana_id) ?? null : null);
-      if (fase === "linea_base") inicial.push(s);
-      else if (fase === "cierre") evolucion.push(s);
+      let fase = s.fase || (s.campana_id ? campFaseById.get(s.campana_id) ?? null : null);
+      if (!fase && s.cohorte_id) {
+        const inferred = cohorteUnambiguousFase.get(s.cohorte_id);
+        if (inferred) fase = inferred;
+      }
+      if (fase === "linea_base") iniRaw.push(s);
+      else if (fase === "cierre") evoRaw.push(s);
+      else {
+        orphans.push({
+          cohorte_id: s.cohorte_id,
+          institucion: s.institucion_educativa,
+          tipo: s.tipo_formulario,
+        });
+      }
     }
+
+    // Institution-name normalization: base-phase spelling wins as canonical.
+    const canonicalByNorm = new Map<string, string>();
+    for (const s of iniRaw) {
+      const key = normalizeInst(s.institucion_educativa);
+      if (!canonicalByNorm.has(key)) canonicalByNorm.set(key, s.institucion_educativa);
+    }
+    for (const s of evoRaw) {
+      const key = normalizeInst(s.institucion_educativa);
+      if (!canonicalByNorm.has(key)) canonicalByNorm.set(key, s.institucion_educativa);
+    }
+
+    const remapped: { from: string; to: string; phase: "linea_base" | "cierre" }[] = [];
+    const remap = (subs: Submission[], phase: "linea_base" | "cierre"): Submission[] =>
+      subs.map((s) => {
+        const canon = canonicalByNorm.get(normalizeInst(s.institucion_educativa));
+        if (canon && canon !== s.institucion_educativa) {
+          remapped.push({ from: s.institucion_educativa, to: canon, phase });
+          return { ...s, institucion_educativa: canon };
+        }
+        return s;
+      });
+
+    const inicial = remap(iniRaw, "linea_base");
+    const evolucion = remap(evoRaw, "cierre");
+
+    const iniNames = new Set(inicial.map((s) => s.institucion_educativa));
+    const evoNames = new Set(evolucion.map((s) => s.institucion_educativa));
+    const onlyIni = [...iniNames].filter((n) => !evoNames.has(n)).sort();
+    const onlyEvo = [...evoNames].filter((n) => !iniNames.has(n)).sort();
+
+    const remappedKey = new Set<string>();
+    const remappedUnique = remapped.filter((r) => {
+      const k = `${r.phase}|${r.from}|${r.to}`;
+      if (remappedKey.has(k)) return false;
+      remappedKey.add(k);
+      return true;
+    });
 
     return {
       inicial,
       evolucion,
       iniCamp: campanasCohorte.find((c) => c.fase === "linea_base"),
       evoCamp: campanasCohorte.find((c) => c.fase === "cierre"),
+      diagnostics: {
+        orphanCount: orphans.length,
+        orphanSamples: orphans.slice(0, 50),
+        remapped: remappedUnique,
+        onlyIni,
+        onlyEvo,
+      },
     };
   }, [selectedCohortes, campanas, submissions, allowedInstitutionsSet]);
 
