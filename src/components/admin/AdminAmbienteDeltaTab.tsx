@@ -12,8 +12,17 @@ import { FREQUENCY_OPTIONS, ACUDIENTES_LIKERT, ESTUDIANTES_LIKERT, DOCENTES_LIKE
 import { useAppImages } from "@/hooks/useAppImages";
 import { useGeographicData } from "@/hooks/useGeographicData";
 import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
-import { generarPDFAmbienteDelta, type DeltaGroup, type InstitucionDeltaRow } from "@/utils/ambienteDeltaPdfGenerator";
+import { generarPDFAmbienteDelta, type DeltaGroup, type InstitucionDeltaRow, type MelIndicadorPdf } from "@/utils/ambienteDeltaPdfGenerator";
 import { generarPDFAmbienteInstitucion, type InstGroupData } from "@/utils/ambienteInstitucionPdfGenerator";
+import {
+  buildItemIdsByComponent,
+  computeInstitucionesMel,
+  aggregateMel,
+  META_PCT,
+  THRESHOLD_S_PP,
+  THRESHOLD_N_PP,
+  type InstitucionMel,
+} from "@/utils/melAmbienteIndicator";
 import JSZip from "jszip";
 import { toast } from "sonner";
 
