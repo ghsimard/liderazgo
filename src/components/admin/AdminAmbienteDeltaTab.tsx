@@ -910,17 +910,15 @@ export default function AdminAmbienteDeltaTab() {
                           const sOk = c.deltaS !== null && c.deltaS >= THRESHOLD_S_PP;
                           const nOk = c.deltaN !== null && c.deltaN <= THRESHOLD_N_PP;
                           const compOk = c.cumple;
-                          return (
-                            <>
-                              <td key={`${c.title}-s`} className={`py-2 px-2 text-right tabular-nums ${sOk ? "text-green-700 font-semibold" : ""}`}>
-                                {c.deltaS === null ? "—" : `${c.deltaS > 0 ? "+" : ""}${c.deltaS.toFixed(1)}`}
-                              </td>
-                              <td key={`${c.title}-n`} className={`py-2 px-2 text-right tabular-nums ${nOk ? "text-green-700 font-semibold" : ""}`}>
-                                {c.deltaN === null ? "—" : `${c.deltaN > 0 ? "+" : ""}${c.deltaN.toFixed(1)}`}
-                                {compOk && <span className="ml-1 text-green-700">✓</span>}
-                              </td>
-                            </>
-                          );
+                          return [
+                            <td key={`${c.title}-s`} className={`py-2 px-2 text-right tabular-nums ${sOk ? "text-green-700 font-semibold" : ""}`}>
+                              {c.deltaS === null ? "—" : `${c.deltaS > 0 ? "+" : ""}${c.deltaS.toFixed(1)}`}
+                            </td>,
+                            <td key={`${c.title}-n`} className={`py-2 px-2 text-right tabular-nums ${nOk ? "text-green-700 font-semibold" : ""}`}>
+                              {c.deltaN === null ? "—" : `${c.deltaN > 0 ? "+" : ""}${c.deltaN.toFixed(1)}`}
+                              {compOk && <span className="ml-1 text-green-700">✓</span>}
+                            </td>,
+                          ];
                         })}
                         <td className="py-2 pl-2 text-center">
                           {r.cumple ? (
