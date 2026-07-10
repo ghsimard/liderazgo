@@ -42,6 +42,38 @@ export interface InstitucionDeltaRow {
   delta: number | null;
 }
 
+export interface MelIndicadorComponentPdf {
+  title: string;
+  deltaS: number | null;
+  deltaN: number | null;
+  cumple: boolean;
+  evaluable: boolean;
+}
+
+export interface MelIndicadorRowPdf {
+  institucion: string;
+  nBase: number;
+  nPost: number;
+  variacionMuestralPct: number;
+  comparable: boolean;
+  componentsCumplen: number;
+  cumple: boolean;
+  components: MelIndicadorComponentPdf[];
+}
+
+export interface MelIndicadorPdf {
+  meta: number;
+  pctInstitucionesCumplen: number;
+  nCumplen: number;
+  nInstituciones: number;
+  metaAlcanzada: boolean;
+  nExcluidasMuestra: number;
+  nNoEvaluables: number;
+  ignorarComparabilidad: boolean;
+  componentes: string[];
+  porInstitucion: MelIndicadorRowPdf[];
+}
+
 export interface AmbienteDeltaReportData {
   cohorteNombre: string;
   fechaInicial?: string | null;
@@ -54,6 +86,7 @@ export interface AmbienteDeltaReportData {
   institucionDeltas: InstitucionDeltaRow[];
   analysisHtml?: string;
   regionesLabel?: string;
+  melIndicator?: MelIndicadorPdf;
 }
 
 
