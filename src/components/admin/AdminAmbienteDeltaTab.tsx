@@ -316,11 +316,12 @@ export default function AdminAmbienteDeltaTab() {
       const perGroup = groups.map((g) => {
         const sIni = subsIni.filter((s) => s.tipo_formulario === g);
         const sEvo = subsEvo.filter((s) => s.tipo_formulario === g);
-        const secAvgIni = SECTIONS_BY_FORM[g].map((sec) => avgScore(sIni, sec.items.map((i) => i.id))).filter((v): v is number => v !== null);
-        const secAvgEvo = SECTIONS_BY_FORM[g].map((sec) => avgScore(sEvo, sec.items.map((i) => i.id))).filter((v): v is number => v !== null);
+        // Flat mean across ALL items of the form (not mean-of-section-means),
+        // so sections with more items are not under-weighted.
+        const allIds = SECTIONS_BY_FORM[g].flatMap((sec) => sec.items.map((i) => i.id));
         return {
-          ini: secAvgIni.length ? secAvgIni.reduce((a, b) => a + b, 0) / secAvgIni.length : null,
-          evo: secAvgEvo.length ? secAvgEvo.reduce((a, b) => a + b, 0) / secAvgEvo.length : null,
+          ini: avgScore(sIni, allIds),
+          evo: avgScore(sEvo, allIds),
         };
       });
       const iniVals = perGroup.map((p) => p.ini).filter((v): v is number => v !== null);
