@@ -1031,6 +1031,78 @@ export default function AdminAmbienteDeltaTab() {
                 </tbody>
               </table>
             </div>
+
+            {/* ─── Diagnóstico de datos ─── */}
+            {(() => {
+              const d = phaseSplit.diagnostics;
+              const anything = d.orphanCount > 0 || d.remapped.length > 0 || d.onlyIni.length > 0 || d.onlyEvo.length > 0;
+              if (!anything) {
+                return (
+                  <p className="text-[11px] text-green-700 pt-2 border-t">
+                    ✓ Diagnóstico de datos: todas las respuestas tienen fase identificada y todas las instituciones están apareadas base ↔ post.
+                  </p>
+                );
+              }
+              return (
+                <details className="pt-2 border-t text-[11px]">
+                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground select-none">
+                    Diagnóstico de datos — {d.orphanCount > 0 && <span className="text-amber-700 font-semibold">{d.orphanCount} sin fase · </span>}
+                    {d.remapped.length > 0 && <span>{d.remapped.length} apareada(s) por normalización · </span>}
+                    {d.onlyIni.length > 0 && <span>{d.onlyIni.length} solo en base · </span>}
+                    {d.onlyEvo.length > 0 && <span>{d.onlyEvo.length} solo en post</span>}
+                  </summary>
+                  <div className="mt-3 space-y-3 pl-2">
+                    {d.orphanCount > 0 && (
+                      <div>
+                        <div className="font-semibold text-amber-700">Sin fase identificada ({d.orphanCount})</div>
+                        <div className="text-muted-foreground">
+                          Respuestas cuya cohorte tiene campañas de línea base y de cierre — no se pudo inferir a cuál pertenecen. Requiere actualizar la columna <code>fase</code> o vincular la <code>campana_id</code> en la BD.
+                        </div>
+                        <ul className="mt-1 max-h-40 overflow-y-auto space-y-0.5">
+                          {d.orphanSamples.map((o, i) => (
+                            <li key={i} className="tabular-nums">
+                              · {o.tipo} — {o.institucion} <span className="text-muted-foreground">(cohorte {o.cohorte_id?.slice(0, 8) ?? "—"})</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {d.remapped.length > 0 && (
+                      <div>
+                        <div className="font-semibold">Instituciones apareadas por normalización ({d.remapped.length})</div>
+                        <div className="text-muted-foreground">Diferencias de mayúsculas/acentos/espacios — se agruparon bajo la ortografía de la línea base.</div>
+                        <ul className="mt-1 max-h-40 overflow-y-auto space-y-0.5">
+                          {d.remapped.slice(0, 30).map((r, i) => (
+                            <li key={i}>· <span className="opacity-70">{r.phase === "linea_base" ? "base" : "post"}</span> «{r.from}» → «{r.to}»</li>
+                          ))}
+                          {d.remapped.length > 30 && <li className="text-muted-foreground italic">… y {d.remapped.length - 30} más</li>}
+                        </ul>
+                      </div>
+                    )}
+                    {d.onlyIni.length > 0 && (
+                      <div>
+                        <div className="font-semibold">Solo con datos de línea base ({d.onlyIni.length})</div>
+                        <div className="text-muted-foreground">Estas instituciones aún no tienen respuestas de cierre — excluidas del delta hasta recibirlas.</div>
+                        <ul className="mt-1 max-h-32 overflow-y-auto space-y-0.5">
+                          {d.onlyIni.slice(0, 40).map((n) => <li key={n}>· {n}</li>)}
+                          {d.onlyIni.length > 40 && <li className="text-muted-foreground italic">… y {d.onlyIni.length - 40} más</li>}
+                        </ul>
+                      </div>
+                    )}
+                    {d.onlyEvo.length > 0 && (
+                      <div>
+                        <div className="font-semibold">Solo con datos de cierre ({d.onlyEvo.length})</div>
+                        <div className="text-muted-foreground">Falta la línea base — posiblemente ortografía distinta que la normalización no capturó.</div>
+                        <ul className="mt-1 max-h-32 overflow-y-auto space-y-0.5">
+                          {d.onlyEvo.slice(0, 40).map((n) => <li key={n}>· {n}</li>)}
+                          {d.onlyEvo.length > 40 && <li className="text-muted-foreground italic">… y {d.onlyEvo.length - 40} más</li>}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </details>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
