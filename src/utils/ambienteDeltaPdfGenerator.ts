@@ -42,6 +42,38 @@ export interface InstitucionDeltaRow {
   delta: number | null;
 }
 
+export interface MelIndicadorComponentPdf {
+  title: string;
+  deltaS: number | null;
+  deltaN: number | null;
+  cumple: boolean;
+  evaluable: boolean;
+}
+
+export interface MelIndicadorRowPdf {
+  institucion: string;
+  nBase: number;
+  nPost: number;
+  variacionMuestralPct: number;
+  comparable: boolean;
+  componentsCumplen: number;
+  cumple: boolean;
+  components: MelIndicadorComponentPdf[];
+}
+
+export interface MelIndicadorPdf {
+  meta: number;
+  pctInstitucionesCumplen: number;
+  nCumplen: number;
+  nInstituciones: number;
+  metaAlcanzada: boolean;
+  nExcluidasMuestra: number;
+  nNoEvaluables: number;
+  ignorarComparabilidad: boolean;
+  componentes: string[];
+  porInstitucion: MelIndicadorRowPdf[];
+}
+
 export interface AmbienteDeltaReportData {
   cohorteNombre: string;
   fechaInicial?: string | null;
@@ -54,6 +86,7 @@ export interface AmbienteDeltaReportData {
   institucionDeltas: InstitucionDeltaRow[];
   analysisHtml?: string;
   regionesLabel?: string;
+  melIndicator?: MelIndicadorPdf;
 }
 
 
@@ -304,6 +337,117 @@ export async function generarPDFAmbienteDelta(
       ],
     });
   }
+
+  const abbrev = (s: string) => {
+    if (s.length <= 4) return s;
+    const map: Record<string, string> = {
+      "Comunicación": "Com.",
+      "Prácticas Pedagógicas": "Ped.",
+      "Convivencia": "Conv.",
+    };
+    return map[s] || s.slice(0, 4) + ".";
+  };
+
+
+  if (data.melIndicator && data.melIndicator.porInstitucion.length > 0) {
+    const mel = data.melIndicator;
+    doc.addPage();
+    drawPageHeaderLogos(doc, logos, { margin, pageW });
+    y = CONTENT_START_Y;
+    y = drawSectionTitle(doc, {
+      margin, pageW, y,
+      title: "Indicador MEL — Ambiente Escolar",
+      eyebrow: "Resultado oficial",
+    });
+
+    // 3 KPI cards
+    const melGap = 4;
+    const melKpiW = (contentW - melGap * 2) / 3;
+    const melKpiH = 28;
+    drawKpiCard(doc, {
+      x: margin, y, w: melKpiW, h: melKpiH,
+      label: "Instituciones que cumplen",
+      value: `${mel.pctInstitucionesCumplen.toFixed(1)}%`,
+      sublabel: `${mel.nCumplen} / ${mel.nInstituciones}`,
+      valueColor: PALETTE.primary,
+    });
+    drawKpiCard(doc, {
+      x: margin + melKpiW + melGap, y, w: melKpiW, h: melKpiH,
+      label: "Meta",
+      value: `${mel.meta}%`,
+      sublabel: mel.metaAlcanzada ? "Alcanzada" : `Falta ${(mel.meta - mel.pctInstitucionesCumplen).toFixed(1)} pp`,
+      valueColor: mel.metaAlcanzada ? PALETTE.primary : PALETTE.neutral,
+    });
+    drawKpiCard(doc, {
+      x: margin + (melKpiW + melGap) * 2, y, w: melKpiW, h: melKpiH,
+      label: "Excluidas",
+      value: `${mel.nExcluidasMuestra + mel.nNoEvaluables}`,
+      sublabel: `${mel.nExcluidasMuestra} muestra · ${mel.nNoEvaluables} sin datos`,
+      valueColor: PALETTE.neutral,
+    });
+    y += melKpiH + 8;
+
+    // Methodology note
+    setText(doc, PALETTE.text);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    const notaLines = doc.splitTextToSize(
+      "Metodología: para cada institución y componente, se calcula ΔS = %(Siempre + Casi siempre)_post − _base y ΔN = %(Nunca + Casi nunca)_post − _base. Una componente cumple si ΔS ≥ +5 pp o ΔN ≤ −5 pp. Una institución cumple si al menos 2 de las 3 componentes cumplen. Se exige comparabilidad muestral (variación entre base y post ≤ 10 %).",
+      contentW,
+    );
+    ensureSpace(notaLines.length * 4 + 4);
+    doc.text(notaLines, margin, y);
+    y += notaLines.length * 4 + 4;
+
+    // Table: 1 title col + N base + N post + Var + (ΔS + ΔN per componente) + Cumple
+    const compTitles = mel.componentes;
+    const melCols = [
+      { label: "Institución", width: contentW * 0.28 },
+      { label: "N base", width: contentW * 0.07, align: "right" as const },
+      { label: "N post", width: contentW * 0.07, align: "right" as const },
+      { label: "Var. %", width: contentW * 0.07, align: "right" as const },
+      ...compTitles.flatMap((c) => [
+        { label: `${abbrev(c)} ΔS`, width: (contentW * 0.42) / (compTitles.length * 2), align: "right" as const },
+        { label: `${abbrev(c)} ΔN`, width: (contentW * 0.42) / (compTitles.length * 2), align: "right" as const },
+      ]),
+      { label: "Cumple", width: contentW * 0.09, align: "right" as const },
+    ];
+    y = drawTableHeader(doc, { x: margin, y, w: contentW, cols: melCols });
+    for (let i = 0; i < mel.porInstitucion.length; i++) {
+      const r = mel.porInstitucion[i];
+      ensureSpace(8);
+      const cells: any[] = [
+        { text: r.institucion, bold: true, color: r.comparable ? PALETTE.text : PALETTE.textMuted },
+        { text: String(r.nBase), align: "right" },
+        { text: String(r.nPost), align: "right" },
+        { text: `${r.variacionMuestralPct.toFixed(1)}`, align: "right", color: r.comparable ? PALETTE.text : PALETTE.neutral },
+      ];
+      for (const c of r.components) {
+        const sOk = c.deltaS !== null && c.deltaS >= 5;
+        const nOk = c.deltaN !== null && c.deltaN <= -5;
+        cells.push({
+          text: c.deltaS === null ? "—" : `${c.deltaS > 0 ? "+" : ""}${c.deltaS.toFixed(1)}`,
+          align: "right",
+          color: sOk ? PALETTE.primary : PALETTE.textMuted,
+          bold: sOk,
+        });
+        cells.push({
+          text: c.deltaN === null ? "—" : `${c.deltaN > 0 ? "+" : ""}${c.deltaN.toFixed(1)}`,
+          align: "right",
+          color: nOk ? PALETTE.primary : PALETTE.textMuted,
+          bold: nOk,
+        });
+      }
+      cells.push({
+        text: r.cumple ? `✓ ${r.componentsCumplen}/3` : `✗ ${r.componentsCumplen}/3`,
+        align: "right",
+        color: r.cumple ? PALETTE.primary : PALETTE.neutral,
+        bold: true,
+      });
+      y = drawTableRow(doc, { x: margin, y, w: contentW, cols: melCols, zebra: i % 2 === 0, cells });
+    }
+  }
+
 
   // ─── SISTEMA DE CALIFICACIÓN ───────────────────────────────
   doc.addPage();
