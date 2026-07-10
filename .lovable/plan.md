@@ -1,55 +1,91 @@
+## Contexte
+
+Le tableau MEL joint définit l'indicateur intermédiaire d'ambiente escolar de façon très précise :
+
+- Pour chaque institution et chaque **composante** (Comunicación, Prácticas pedagógicas, Convivencia) :
+  - **ΔS = %S_post − %S_base** (proportion de "Siempre" + "Casi siempre")
+  - **ΔN = %N_post − %N_base** (proportion de "Nunca" + "Casi nunca")
+  - La composante **cumple** si `ΔS ≥ +5 pp` **OU** `ΔN ≤ −5 pp`.
+- L'**institution cumple** l'indicateur si **≥ 2 des 3 composantes** cumplen.
+- L'indicateur global = **% d'instituciones qui cumplen** / total d'instituciones avec données comparables (base ET post).
+- **Meta : 80 %**. Ligne de base : 0 %.
+- Exigence de comparabilité : variation d'échantillon ≤ 10 % entre base et post.
+
+Aujourd'hui, l'onglet **Ambiente Escolar → Delta** calcule une **moyenne Likert 1-5** et affiche un `Δ moyen` par composante et par grupo. Ce n'est **pas** l'indicateur MEL : il ne dit pas si une institution *cumple*, ni combien d'instituciones cumplen, ni si la Meta 80 % est atteinte.
+
 ## Objectif
 
-Dans **Ambiente Escolar → Estadísticas**, permettre de consulter le rapport par institution **en ligne** (rendu web dans l'onglet) **et** en **PDF téléchargeable**, séparément pour **Inicial** (fase `linea_base`) et **Evolución** (fase `cierre`), avec sélection multi-cohorte et multi-institution (une, plusieurs ou toutes).
-
-Aujourd'hui : les stats affichées en bas mélangent toutes les fases et un seul PDF par institution est possible sans distinction Inicial/Evolución.
+Ajouter dans l'onglet **Delta** une **vue "Indicador MEL"** qui applique exactement la formule du tableau, en gardant la vue actuelle (moyennes Likert) comme lecture complémentaire.
 
 ## Portée
 
-- **Frontend uniquement** : `src/components/admin/AdminAmbienteStatsTab.tsx`.
-- Aucune modification backend, SQL, ni générateur PDF (`ambienteEscolarReportPdfGenerator.ts`) : on lui passe déjà `submissions[]` filtrées.
+- **🖥️ Site statique (Frontend)** — `src/components/admin/AdminAmbienteDeltaTab.tsx` + un nouvel utilitaire de calcul + adaptation du PDF Delta.
+- **⚙️ Web Service (Backend Express)** — aucune action.
+- **🗄️ Base de données (SQL manuel)** — aucune action.
 
 ## Modifications
 
-### 🖥️ Site statique — `AdminAmbienteStatsTab.tsx`
+### 🖥️ Site statique
 
-**1. Filtres (carte Filtros)** — ajouter/étendre :
-- **Cohorte(s)** : nouveau `MultiSelect` sur `cohortes`. Placeholder « Todas las cohortes ». State `selCohortes: string[]`.
-- **Institución(es)** : remplacer le `Select` actuel par un `MultiSelect`. State `selectedIEs: string[]` (vide = toutes du filtre courant).
-- **Fase** : nouveau `Select` — « Inicial », « Evolución », « Ambas ». State `selFase: "inicial" | "evolucion" | "ambas"`, défaut `"ambas"`.
-- Mapping : Inicial → `fase === "linea_base"`, Evolución → `fase === "cierre"`.
-- Cascade : reset `selectedIEs` quand région / entidad / cohortes change ; `institutionOptions` filtre aussi par `selCohortes`.
+**1. Nouveau util `src/utils/melAmbienteIndicator.ts`**
 
-**2. Rapport en ligne (visualisation)**
-- Le bloc Tabs Docentes/Estudiantes/Acudientes en bas devient le **rapport en ligne**.
-- Refléter tous les filtres actifs (`selCohortes`, `selectedIEs`, `selFase`) sur `filtered`.
-- Ajouter un en-tête récapitulatif au-dessus des Tabs :
-  - Titre : nom de l'IE si une seule sélectionnée, sinon « N instituciones » ; nom de la cohorte si une seule ; badge de fase (« Inicial », « Evolución », ou « Ambas » — si Ambas, afficher deux sous-sections empilées Inicial puis Evolución avec leur propre `FrequencyChart` + `FrequencyTable`).
-  - Compteur de réponses par fase.
-- Si `selFase === "ambas"` et qu'une seule IE est sélectionnée : rendre **deux blocs successifs** (Inicial puis Evolución) au lieu d'un seul mélangé, pour permettre la comparaison visuelle en ligne.
-- Si aucune donnée pour la fase choisie → message « Sin datos para esta selección ».
+Fonctions pures, testables :
 
-**3. Export PDF**
-- Un bouton principal « Generar Informe(s) » dont le libellé indique le total : `Generar (N PDF)` où N = `#institutions_sélectionnées × #fases_avec_données`.
-- Pour chaque institution × chaque fase demandée :
-  - filtrer `submissions` par IE + fase (skip si 0 réponses),
-  - `AmbienteReportData.institucion = "<IE> — Inicial|Evolución"`,
-  - générer PDF.
-- 1 seul PDF → téléchargement direct.
-- Plusieurs PDF → ZIP `Informes_Ambiente_<AAAA-MM-JJ>.zip` avec sous-dossiers `Inicial/` et `Evolucion/`, fichiers `Informe_Ambiente_<Fase>_<IE>.pdf`.
-- Conserver « Demo PDF » et « Informe consolidado por Cohorte » tels quels.
+- `computePctSN(subs, itemIds)` → `{ pctS, pctN, n }` où
+  - `pctS` = part des réponses ∈ {Siempre, Casi siempre} sur l'ensemble `subs × itemIds`,
+  - `pctN` = part des réponses ∈ {Nunca, Casi nunca}.
+- `componentCumple(base, post)` → `{ deltaS, deltaN, cumple: boolean }` avec règle `ΔS ≥ 5 || ΔN ≤ -5` (en points de pourcentage).
+- `institucionCumple(componentsResults)` → `{ componentsCumplen, cumple: componentsCumplen >= 2 }`.
+- `computeSampleComparability(nBase, nPost)` → variation en % ; flag `comparable` si ≤ 10 %.
+- `computeMelIndicator(rows)` → agrégat cohort/global : `{ nInstituciones, nCumplen, pct, metaAlcanzada: pct >= 80 }`.
 
-### ⚙️ Web Service — aucune action
+Les 3 composantes sont récupérées depuis `SECTIONS_BY_FORM` (déjà les 3 titres Comunicación / Prácticas Pedagógicas / Convivencia).
 
-### 🗄️ Base de données — aucune action
+**Choix méthodologique** (à confirmer dans "Vérification" ci-dessous) :
 
-## Note de données
+- L'indicateur MEL est défini au niveau **institution**. Il faut décider quel jeu de réponses utiliser par composante :
+  - **Option A (recommandée) :** union de tous les répondants (docentes + estudiantes + acudientes) pour chaque composante — le tableau ne distingue pas les grupos.
+  - Option B : calculer un ΔS/ΔN par grupo × composante puis "cumple" si ≥ 2/3 composantes cumplen pour au moins un grupo.
 
-`fase='cierre'` n'a actuellement aucune réponse en base ; le rapport en ligne Evolución affichera « Sin datos para esta selección » et l'export skip les PDF Evolución vides tant que les données ne sont pas enregistrées. Aucune action requise — dès que les réponses Evolución arriveront, tout s'active automatiquement.
+**2. `AdminAmbienteDeltaTab.tsx` — ajout d'un bloc "Indicador MEL"** au-dessus des tableaux actuels
+
+- Encadré résultat global :
+  - `X / Y instituciones cumplen (Z %)` — Meta 80 % : ✓ Alcanzada / ✗ Falta …
+  - `Z − 0 = Z pp` vs línea base.
+  - Note de comparabilité muestral (nombre d'IE écartées si variation > 10 %).
+- Tableau par institution (remplace/enrichit `institucionDeltas`) avec colonnes :
+  - Institución • n base • n post • Var. muestral %
+  - Comunicación : ΔS pp / ΔN pp / ✓ ou ✗
+  - Prácticas Pedagógicas : ΔS pp / ΔN pp / ✓ ou ✗
+  - Convivencia : ΔS pp / ΔN pp / ✓ ou ✗
+  - **Cumple institución** (badge ✓ si ≥ 2/3)
+- Conserver le tableau "moyenne Likert" existant en dessous, sous un titre clair « Lectura complementaria — promedios Likert 1-5 » pour éviter la confusion avec l'indicateur officiel.
+
+**3. `ambienteDeltaPdfGenerator.ts`**
+
+- Ajouter une nouvelle section PDF « Indicador MEL — Ambiente Escolar » avant la section actuelle, avec :
+  - le résumé global (% de instituciones que cumplen, Meta 80 %),
+  - le tableau institution × composante (mêmes colonnes que l'UI),
+  - une note méthodologique (règle ≥5 pp, ≥2/3, exigence de comparabilité).
+- La section « promedios Likert » actuelle reste inchangée en aval.
+
+**4. Analyse assistée (`generate-section-text`)**
+
+- Étendre le payload envoyé à l'endpoint avec `melIndicator: { pctInstitucionesCumplen, meta: 80, porInstitucion: [...] }` pour que la narrative auto commente aussi l'indicateur MEL (pas de changement backend nécessaire, l'endpoint reçoit déjà un JSON libre).
+
+## Détails techniques
+
+- Points de pourcentage = valeurs 0-100 (pas 0-1) pour rester lisibles à l'écran comme dans le tableau MEL.
+- Ignorer les réponses vides / hors nomenclature dans le dénominateur de `pctS` et `pctN`.
+- Une institution sans données dans une composante (base ou post) → composante = `no evaluable` → ne compte pas comme cumple.
+- Une institution avec < 2 composantes évaluables → exclue de l'agrégat MEL, mentionnée dans la note.
+- Variation muestral = `|nPost − nBase| / max(nBase, nPost)`. Si > 10 %, l'IE reste affichée mais un badge "muestra no comparable" apparaît et elle est exclue du % global (configurable via une case à cocher "Ignorar comparabilidad muestral" par défaut décochée).
 
 ## Vérification
 
-1. Filtre Cohorte = Medellín 2025 + Fase = Inicial + 1 IE → rapport en ligne affiche 1 bloc Inicial ; bouton = « Generar (1 PDF) » → téléchargement direct.
-2. Fase = Ambas + 1 IE avec seulement Inicial → rapport en ligne affiche bloc Inicial + « Sin datos » pour Evolución ; export = 1 PDF Inicial.
-3. Fase = Ambas + 3 IE → ZIP avec sous-dossiers, 1 PDF par IE × fase disponible.
-4. Toutes IE + toutes cohortes + Ambas → rapport en ligne agrégé, ZIP complet.
+1. Sélectionner une cohorte avec base + post → vérifier que le bloc "Indicador MEL" apparaît, avec `X/Y` cohérent.
+2. Institution avec ΔS = +6 pp en Comunicación seulement → composante Comunicación ✓, autres ✗, institution ✗ (1/3 < 2).
+3. Institution avec ΔN = −5 pp exact dans 2 composantes → cumple ✓.
+4. Cohorte sans post → message clair "Sin datos de línea de salida" et pas de faux 0 %.
+5. PDF téléchargé contient la section MEL + tableau + note ; la section Likert historique est toujours présente en dessous.
+6. Question à confirmer avec le PO : Option A vs B pour l'agrégation multi-grupos (par défaut le plan implémente A).
