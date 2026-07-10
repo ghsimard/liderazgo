@@ -1077,13 +1077,22 @@ export default function AdminAmbienteDeltaTab() {
                     <tr><td colSpan={99} className="py-6 text-center text-muted-foreground italic">Sin instituciones comparables.</td></tr>
                   )}
                   {melInstituciones.map((r) => {
-                    const excluded = !r.comparable && !ignorarComparabilidad;
+                    const excluded = modo === "oficial" && (r.recoleccionEnCurso || (!r.comparable && !ignorarComparabilidad));
                     return (
                       <tr key={r.institucion} className={`border-b last:border-0 ${excluded ? "opacity-50" : ""}`}>
                         <td className="py-2 pr-3">
                           {r.institucion}
-                          {!r.comparable && (
-                            <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800">muestra no comparable</span>
+                          {r.recoleccionEnCurso && (
+                            <span
+                              className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-800"
+                              title={`N insuficiente en al menos una fase (mínimo configurado: ${nMinPorFase}). Entrada: ${r.nBase}, Salida: ${r.nPost}.`}
+                            >recolección en curso</span>
+                          )}
+                          {!r.comparable && !r.recoleccionEnCurso && (
+                            <span
+                              className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800"
+                              title={`La cantidad de respuestas varió ${r.variacionMuestralPct.toFixed(1)}% entre Entrada (N=${r.nBase}) y Salida (N=${r.nPost}). Umbral configurado: ${variacionMaxPct === Infinity ? "∞" : `${variacionMaxPct}%`}.`}
+                            >muestra no comparable</span>
                           )}
                         </td>
                         <td className="py-2 px-2 text-right tabular-nums">{r.nBase}</td>
