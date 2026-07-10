@@ -263,6 +263,10 @@ export default function AdminAmbienteDeltaTab() {
     () => aggregateMel(melInstituciones, { ignorarComparabilidad }),
     [melInstituciones, ignorarComparabilidad],
   );
+
+  // Institution → region lookup (geographic data first; fallback: cohorte name for
+  // 2025 institutions not present in regiones/region_instituciones)
+  const instToRegion = useMemo(() => {
     const m = new Map<string, string>();
     for (const rn of regionNames) {
       for (const ie of getInstitucionesForRegion(rn)) m.set(ie, rn);
