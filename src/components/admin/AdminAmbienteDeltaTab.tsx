@@ -238,9 +238,31 @@ export default function AdminAmbienteDeltaTab() {
       .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
   }, [selectedCohortes, phaseSplit, institucionesConEvolucion]);
 
-  // Institution → region lookup (geographic data first; fallback: cohorte name for
-  // 2025 institutions not present in regiones/region_instituciones)
-  const instToRegion = useMemo(() => {
+  // ─── Indicador MEL (tabla oficial) ───
+  // Componente cumple si ΔS ≥ +5 pp o ΔN ≤ −5 pp; institución cumple si ≥2/3.
+  const melItemsByComponent = useMemo(
+    () => buildItemIdsByComponent(SECTIONS_BY_FORM),
+    [],
+  );
+
+  const melInstituciones = useMemo<InstitucionMel[]>(() => {
+    if (selectedCohortes.length === 0) return [];
+    const { inicial: iniAll, evolucion: evoAll } = phaseSplit;
+    return Array.from(institucionesConEvolucion).map((inst) => {
+      const subsIni = iniAll.filter((s) => s.institucion_educativa === inst);
+      const subsEvo = evoAll.filter((s) => s.institucion_educativa === inst);
+      return computeInstitucionesMel(inst, subsIni, subsEvo, melItemsByComponent);
+    }).sort((a, b) =>
+      Number(b.cumple) - Number(a.cumple) ||
+      b.componentsCumplen - a.componentsCumplen ||
+      a.institucion.localeCompare(b.institucion),
+    );
+  }, [selectedCohortes, phaseSplit, institucionesConEvolucion, melItemsByComponent]);
+
+  const melGlobal = useMemo(
+    () => aggregateMel(melInstituciones, { ignorarComparabilidad }),
+    [melInstituciones, ignorarComparabilidad],
+  );
     const m = new Map<string, string>();
     for (const rn of regionNames) {
       for (const ie of getInstitucionesForRegion(rn)) m.set(ie, rn);
