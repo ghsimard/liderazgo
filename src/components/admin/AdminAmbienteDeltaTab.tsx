@@ -97,6 +97,33 @@ export default function AdminAmbienteDeltaTab() {
   const [instSortDir, setInstSortDir] = useState<"asc" | "desc">("desc");
   const [ignorarComparabilidad, setIgnorarComparabilidad] = useState(false);
 
+  // MEL display preferences (persisted in localStorage)
+  const PREFS_KEY = "mel-ambiente-prefs";
+  type MelPrefs = { variacionMaxPct: number; nMinPorFase: number; modo: "oficial" | "preliminar" };
+  const loadPrefs = (): MelPrefs => {
+    try {
+      const raw = localStorage.getItem(PREFS_KEY);
+      if (raw) {
+        const p = JSON.parse(raw);
+        return {
+          variacionMaxPct: typeof p.variacionMaxPct === "number" ? p.variacionMaxPct : 10,
+          nMinPorFase: typeof p.nMinPorFase === "number" ? p.nMinPorFase : 10,
+          modo: p.modo === "preliminar" ? "preliminar" : "oficial",
+        };
+      }
+    } catch {}
+    return { variacionMaxPct: 10, nMinPorFase: 10, modo: "oficial" };
+  };
+  const initialPrefs = loadPrefs();
+  const [variacionMaxPct, setVariacionMaxPct] = useState<number>(initialPrefs.variacionMaxPct);
+  const [nMinPorFase, setNMinPorFase] = useState<number>(initialPrefs.nMinPorFase);
+  const [modo, setModo] = useState<"oficial" | "preliminar">(initialPrefs.modo);
+  useEffect(() => {
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({ variacionMaxPct, nMinPorFase, modo }));
+    } catch {}
+  }, [variacionMaxPct, nMinPorFase, modo]);
+
 
   useEffect(() => {
     (async () => {
@@ -349,17 +376,20 @@ export default function AdminAmbienteDeltaTab() {
     return Array.from(institucionesConEvolucion).map((inst) => {
       const subsIni = iniAll.filter((s) => s.institucion_educativa === inst);
       const subsEvo = evoAll.filter((s) => s.institucion_educativa === inst);
-      return computeInstitucionesMel(inst, subsIni, subsEvo, melItemsByComponent);
+      return computeInstitucionesMel(inst, subsIni, subsEvo, melItemsByComponent, {
+        variacionMaxPct,
+        nMinPorFase,
+      });
     }).sort((a, b) =>
       Number(b.cumple) - Number(a.cumple) ||
       b.componentsCumplen - a.componentsCumplen ||
       a.institucion.localeCompare(b.institucion),
     );
-  }, [selectedCohortes, phaseSplit, institucionesConEvolucion, melItemsByComponent]);
+  }, [selectedCohortes, phaseSplit, institucionesConEvolucion, melItemsByComponent, variacionMaxPct, nMinPorFase]);
 
   const melGlobal = useMemo(
-    () => aggregateMel(melInstituciones, { ignorarComparabilidad }),
-    [melInstituciones, ignorarComparabilidad],
+    () => aggregateMel(melInstituciones, { ignorarComparabilidad, modo }),
+    [melInstituciones, ignorarComparabilidad, modo],
   );
 
   // Institution → region lookup (geographic data first; fallback: cohorte name for
@@ -923,26 +953,82 @@ export default function AdminAmbienteDeltaTab() {
         <Card className="border-primary/60">
           <CardContent className="p-5 space-y-4">
             <div className="flex justify-between items-start flex-wrap gap-3">
-              <div>
+              <div className="flex-1 min-w-[280px]">
                 <h3 className="text-lg font-bold">Indicador MEL — Ambiente Escolar</h3>
                 <p className="text-xs text-muted-foreground">
                   Regla oficial: una componente <strong>cumple</strong> si ΔS ≥ +{THRESHOLD_S_PP} pp
                   <em> o</em> ΔN ≤ {THRESHOLD_N_PP} pp. Una institución cumple si <strong>≥ 2 de 3 componentes</strong> cumplen. Meta: <strong>{META_PCT}%</strong>.
                 </p>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  <em>Requisitos de validez:</em> comparabilidad muestral (variación ≤ <strong>{variacionMaxPct === Infinity ? "∞" : `${variacionMaxPct}%`}</strong> entre fases) y N mínimo por fase (≥ <strong>{nMinPorFase}</strong> respuestas). Las instituciones que aún no cumplen estos requisitos aparecen como <em>recolección en curso</em> o <em>muestra no comparable</em> y no penalizan el indicador.
+                </p>
               </div>
-              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-                <Checkbox
-                  checked={ignorarComparabilidad}
-                  onCheckedChange={(v) => setIgnorarComparabilidad(v === true)}
-                />
-                Ignorar comparabilidad muestral (&gt; 10 %)
-              </label>
+              <div className="flex flex-col gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Modo:</span>
+                  <div className="inline-flex rounded-md border overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setModo("oficial")}
+                      className={`px-2 py-1 ${modo === "oficial" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                    >Oficial</button>
+                    <button
+                      type="button"
+                      onClick={() => setModo("preliminar")}
+                      className={`px-2 py-1 border-l ${modo === "preliminar" ? "bg-amber-500 text-white" : "bg-background hover:bg-muted"}`}
+                    >Preliminar</button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Tolerancia muestral:</span>
+                  <div className="inline-flex rounded-md border overflow-hidden">
+                    {[10, 25, 50, Infinity].map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setVariacionMaxPct(v)}
+                        disabled={modo === "preliminar"}
+                        className={`px-2 py-1 border-l first:border-l-0 ${variacionMaxPct === v ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"} disabled:opacity-40 disabled:cursor-not-allowed`}
+                      >{v === Infinity ? "∞" : `${v}%`}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">N mínimo / fase:</span>
+                  <div className="inline-flex rounded-md border overflow-hidden">
+                    {[5, 10, 20, 30].map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setNMinPorFase(v)}
+                        disabled={modo === "preliminar"}
+                        className={`px-2 py-1 border-l first:border-l-0 ${nMinPorFase === v ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"} disabled:opacity-40 disabled:cursor-not-allowed`}
+                      >{v}</button>
+                    ))}
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-muted-foreground cursor-pointer">
+                  <Checkbox
+                    checked={ignorarComparabilidad}
+                    disabled={modo === "preliminar"}
+                    onCheckedChange={(v) => setIgnorarComparabilidad(v === true)}
+                  />
+                  Ignorar comparabilidad muestral
+                </label>
+              </div>
             </div>
+
+            {modo === "preliminar" && (
+              <div className="rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-900">
+                ⚠️ <strong>Modo Preliminar</strong> — resultados provisorios mientras la fase Salida está en curso. Se ignoran los requisitos de comparabilidad y N mínimo. <strong>No usar como indicador oficial MEL.</strong>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="rounded-md border p-3 text-center">
                 <div className="text-3xl font-bold tabular-nums text-primary">
                   {melGlobal.pct.toFixed(1)}%
+                  {melGlobal.esPreliminar && <span className="text-xs text-amber-700 ml-1">(preliminar)</span>}
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-1">
                   {melGlobal.nCumplen} / {melGlobal.nInstituciones} institución(es) cumplen
@@ -954,11 +1040,12 @@ export default function AdminAmbienteDeltaTab() {
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-1">Meta: {META_PCT}% · Línea base: 0%</div>
               </div>
-              <div className="rounded-md border p-3 text-center">
-                <div className="text-xs text-muted-foreground">Excluidas</div>
-                <div className="text-sm">
-                  <div>{melGlobal.nExcluidasMuestra} por muestra no comparable</div>
-                  <div>{melGlobal.nNoEvaluables} sin datos suficientes</div>
+              <div className="rounded-md border p-3">
+                <div className="text-xs text-muted-foreground text-center mb-1">Excluidas del cálculo</div>
+                <div className="text-[11px] space-y-0.5">
+                  <div className="flex justify-between gap-2"><span className="text-muted-foreground">↳ recolección en curso</span><span className="tabular-nums font-semibold">{melGlobal.nRecoleccionEnCurso}</span></div>
+                  <div className="flex justify-between gap-2"><span className="text-muted-foreground">↳ muestra no comparable</span><span className="tabular-nums font-semibold">{melGlobal.nExcluidasMuestra}</span></div>
+                  <div className="flex justify-between gap-2"><span className="text-muted-foreground">↳ sin datos suficientes</span><span className="tabular-nums font-semibold">{melGlobal.nNoEvaluables}</span></div>
                 </div>
               </div>
             </div>
@@ -990,13 +1077,22 @@ export default function AdminAmbienteDeltaTab() {
                     <tr><td colSpan={99} className="py-6 text-center text-muted-foreground italic">Sin instituciones comparables.</td></tr>
                   )}
                   {melInstituciones.map((r) => {
-                    const excluded = !r.comparable && !ignorarComparabilidad;
+                    const excluded = modo === "oficial" && (r.recoleccionEnCurso || (!r.comparable && !ignorarComparabilidad));
                     return (
                       <tr key={r.institucion} className={`border-b last:border-0 ${excluded ? "opacity-50" : ""}`}>
                         <td className="py-2 pr-3">
                           {r.institucion}
-                          {!r.comparable && (
-                            <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800">muestra no comparable</span>
+                          {r.recoleccionEnCurso && (
+                            <span
+                              className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-800"
+                              title={`N insuficiente en al menos una fase (mínimo configurado: ${nMinPorFase}). Entrada: ${r.nBase}, Salida: ${r.nPost}.`}
+                            >recolección en curso</span>
+                          )}
+                          {!r.comparable && !r.recoleccionEnCurso && (
+                            <span
+                              className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800"
+                              title={`La cantidad de respuestas varió ${r.variacionMuestralPct.toFixed(1)}% entre Entrada (N=${r.nBase}) y Salida (N=${r.nPost}). Umbral configurado: ${variacionMaxPct === Infinity ? "∞" : `${variacionMaxPct}%`}.`}
+                            >muestra no comparable</span>
                           )}
                         </td>
                         <td className="py-2 px-2 text-right tabular-nums">{r.nBase}</td>

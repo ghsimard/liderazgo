@@ -50,6 +50,8 @@ export interface ComponentResult {
 
 export const THRESHOLD_S_PP = 5;
 export const THRESHOLD_N_PP = -5;
+export const DEFAULT_VARIACION_MAX_PCT = 10;
+export const DEFAULT_N_MIN_POR_FASE = 10;
 
 export function evaluateComponent(
   title: string,
@@ -98,8 +100,9 @@ export interface InstitucionMel {
   nBase: number;                       // # submissions totales (todos formularios)
   nPost: number;
   variacionMuestralPct: number;        // % variación entre base y post
-  comparable: boolean;                 // ≤ 10 %
-  incluido: boolean;                   // evaluable + comparable
+  comparable: boolean;                 // variación ≤ variacionMaxPct
+  recoleccionEnCurso: boolean;         // nBase < nMinPorFase o nPost < nMinPorFase
+  incluido: boolean;                   // evaluable + comparable + no en recolección
 }
 
 export function computeVariacionMuestral(nBase: number, nPost: number): number {
@@ -114,23 +117,34 @@ export interface MelGlobal {
   pct: number;                         // 0-100
   meta: number;                        // 80
   metaAlcanzada: boolean;
-  nExcluidasMuestra: number;           // instituciones evaluables pero descartadas por comparabilidad
+  nExcluidasMuestra: number;           // evaluables pero variación > umbral
+  nRecoleccionEnCurso: number;         // evaluables pero N < mínimo en al menos una fase
   nNoEvaluables: number;               // instituciones con < 2 componentes evaluables
+  esPreliminar: boolean;               // modo "preliminar" activo
 }
 
 export const META_PCT = 80;
 
 export function aggregateMel(
   rows: InstitucionMel[],
-  opts: { ignorarComparabilidad?: boolean } = {}
+  opts: { ignorarComparabilidad?: boolean; modo?: "oficial" | "preliminar" } = {}
 ): MelGlobal {
-  const ignorar = !!opts.ignorarComparabilidad;
-  const included = rows.filter((r) =>
-    r.componentsEvaluable >= 2 && (ignorar || r.comparable)
-  );
+  const modo = opts.modo ?? "oficial";
+  const esPreliminar = modo === "preliminar";
+  const ignorar = esPreliminar || !!opts.ignorarComparabilidad;
+  const included = rows.filter((r) => {
+    if (r.componentsEvaluable < 2) return false;
+    if (esPreliminar) return true; // ignora comparabilidad y N mínimo
+    if (!ignorar && !r.comparable) return false;
+    if (r.recoleccionEnCurso) return false;
+    return true;
+  });
   const noEval = rows.filter((r) => r.componentsEvaluable < 2).length;
   const excMuestra = rows.filter(
-    (r) => r.componentsEvaluable >= 2 && !r.comparable
+    (r) => r.componentsEvaluable >= 2 && !r.recoleccionEnCurso && !r.comparable
+  ).length;
+  const enCurso = rows.filter(
+    (r) => r.componentsEvaluable >= 2 && r.recoleccionEnCurso
   ).length;
   const nCumplen = included.filter((r) => r.cumple).length;
   const pct = included.length > 0 ? (nCumplen / included.length) * 100 : 0;
@@ -141,7 +155,9 @@ export function aggregateMel(
     meta: META_PCT,
     metaAlcanzada: pct >= META_PCT,
     nExcluidasMuestra: excMuestra,
+    nRecoleccionEnCurso: enCurso,
     nNoEvaluables: noEval,
+    esPreliminar,
   };
 }
 
@@ -152,8 +168,11 @@ export function computeInstitucionesMel(
   institucion: string,
   subsBase: Submission[],
   subsPost: Submission[],
-  itemIdsByComponent: Record<string, string[]>
+  itemIdsByComponent: Record<string, string[]>,
+  opts: { variacionMaxPct?: number; nMinPorFase?: number } = {}
 ): InstitucionMel {
+  const variacionMaxPct = opts.variacionMaxPct ?? DEFAULT_VARIACION_MAX_PCT;
+  const nMinPorFase = opts.nMinPorFase ?? DEFAULT_N_MIN_POR_FASE;
   const components: ComponentResult[] = Object.entries(itemIdsByComponent).map(
     ([title, ids]) => {
       const b = computePctSN(subsBase, ids);
@@ -166,7 +185,8 @@ export function computeInstitucionesMel(
   const nBase = subsBase.length;
   const nPost = subsPost.length;
   const variacion = computeVariacionMuestral(nBase, nPost);
-  const comparable = variacion <= 10;
+  const comparable = variacion <= variacionMaxPct;
+  const recoleccionEnCurso = nBase < nMinPorFase || nPost < nMinPorFase;
   return {
     institucion,
     components,
@@ -177,7 +197,8 @@ export function computeInstitucionesMel(
     nPost,
     variacionMuestralPct: variacion,
     comparable,
-    incluido: componentsEvaluable >= 2 && comparable,
+    recoleccionEnCurso,
+    incluido: componentsEvaluable >= 2 && comparable && !recoleccionEnCurso,
   };
 }
 
