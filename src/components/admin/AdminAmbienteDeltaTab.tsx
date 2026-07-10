@@ -384,6 +384,27 @@ export default function AdminAmbienteDeltaTab() {
         cohortEvo: cohortEvo !== null ? Number(cohortEvo.toFixed(2)) : null,
         cohortDelta: cohortDelta !== null ? Number(cohortDelta.toFixed(2)) : null,
         deltasPorGrupo: buildDeltasPayload(),
+        melIndicator: {
+          meta: META_PCT,
+          pctInstitucionesCumplen: Number(melGlobal.pct.toFixed(1)),
+          nCumplen: melGlobal.nCumplen,
+          nInstituciones: melGlobal.nInstituciones,
+          metaAlcanzada: melGlobal.metaAlcanzada,
+          nExcluidasMuestra: melGlobal.nExcluidasMuestra,
+          nNoEvaluables: melGlobal.nNoEvaluables,
+          porInstitucion: melInstituciones.map((r) => ({
+            institucion: r.institucion,
+            cumple: r.cumple,
+            componentsCumplen: r.componentsCumplen,
+            variacionMuestralPct: Number(r.variacionMuestralPct.toFixed(1)),
+            components: r.components.map((c) => ({
+              componente: c.title,
+              deltaS: c.deltaS !== null ? Number(c.deltaS.toFixed(1)) : null,
+              deltaN: c.deltaN !== null ? Number(c.deltaN.toFixed(1)) : null,
+              cumple: c.cumple,
+            })),
+          })),
+        },
       };
 
       let text = "";
