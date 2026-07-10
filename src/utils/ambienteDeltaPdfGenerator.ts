@@ -338,7 +338,17 @@ export async function generarPDFAmbienteDelta(
     });
   }
 
-  // ─── INDICADOR MEL ─────────────────────────────────────────
+  const abbrev = (s: string) => {
+    if (s.length <= 4) return s;
+    const map: Record<string, string> = {
+      "Comunicación": "Com.",
+      "Prácticas Pedagógicas": "Ped.",
+      "Convivencia": "Conv.",
+    };
+    return map[s] || s.slice(0, 4) + ".";
+  };
+
+
   if (data.melIndicator && data.melIndicator.porInstitucion.length > 0) {
     const mel = data.melIndicator;
     doc.addPage();
