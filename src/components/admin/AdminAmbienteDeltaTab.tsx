@@ -48,6 +48,18 @@ const SECTIONS_BY_FORM: Record<string, LikertSection[]> = {
 // Likert option order for PDF (Nunca → Siempre)
 const LIKERT_ORDER = ["Nunca", "Casi nunca", "A veces", "Casi siempre", "Siempre"] as const;
 
+// Normalize institution names for cross-phase matching: trim, lowercase,
+// strip diacritics, collapse whitespace. Purely a matching key — original
+// display name is preserved separately.
+function normalizeInst(name: string): string {
+  return (name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function avgScore(subs: Submission[], itemIds: string[]): number | null {
   let sum = 0;
   let count = 0;
@@ -142,37 +154,122 @@ export default function AdminAmbienteDeltaTab() {
 
   // Split submissions for the selected cohort into two strictly separated sets:
   // Inicial = phase 'linea_base', Evolución = phase 'cierre'.
-  // Phase resolution: prefer the submission's own `fase`; fallback to the campaign's `fase`.
-  // Cohort filter: prefer `cohorte_id`; fallback to membership in this cohort's campaigns.
+  // Phase resolution priority:
+  //   1) submission's own `fase`
+  //   2) linked campaign's `fase` (via `campana_id`)
+  //   3) unambiguous cohort-level phase (via `cohorte_id`): if the cohort has
+  //      campaigns of only ONE phase, orphan submissions inherit it. Prevents
+  //      silent data loss for records inserted without a campaign link.
+  // Institution names are also normalized across phases so that spelling/accent/
+  // whitespace variants ("I.E. José" vs "IE Jose ") are treated as the same
+  // school. The base-phase spelling is kept as the canonical display name.
   const phaseSplit = useMemo(() => {
-    const empty = { inicial: [] as Submission[], evolucion: [] as Submission[], iniCamp: undefined as Campana | undefined, evoCamp: undefined as Campana | undefined };
+    const empty = {
+      inicial: [] as Submission[],
+      evolucion: [] as Submission[],
+      iniCamp: undefined as Campana | undefined,
+      evoCamp: undefined as Campana | undefined,
+      diagnostics: {
+        orphanCount: 0,
+        orphanSamples: [] as { cohorte_id: string | null; institucion: string; tipo: string }[],
+        remapped: [] as { from: string; to: string; phase: "linea_base" | "cierre" }[],
+        onlyIni: [] as string[],
+        onlyEvo: [] as string[],
+      },
+    };
     if (selectedCohortes.length === 0) return empty;
     const cohorteSet = new Set(selectedCohortes);
     const campanasCohorte = campanas.filter((c) => cohorteSet.has(c.cohorte_id));
     const campIds = new Set(campanasCohorte.map((c) => c.id));
     const campFaseById = new Map(campanasCohorte.map((c) => [c.id, c.fase]));
 
-    const inicial: Submission[] = [];
-    const evolucion: Submission[] = [];
+    // Cohort-level unambiguous phase fallback
+    const cohortePhases = new Map<string, Set<string>>();
+    for (const c of campanasCohorte) {
+      if (!cohortePhases.has(c.cohorte_id)) cohortePhases.set(c.cohorte_id, new Set());
+      cohortePhases.get(c.cohorte_id)!.add(c.fase);
+    }
+    const cohorteUnambiguousFase = new Map<string, string>();
+    for (const [cid, phases] of cohortePhases.entries()) {
+      if (phases.size === 1) cohorteUnambiguousFase.set(cid, [...phases][0]);
+    }
+
+    const iniRaw: Submission[] = [];
+    const evoRaw: Submission[] = [];
+    const orphans: { cohorte_id: string | null; institucion: string; tipo: string }[] = [];
+
     for (const s of submissions) {
-      // Cohort gate
       const inCohort = s.cohorte_id
         ? cohorteSet.has(s.cohorte_id)
         : s.campana_id != null && campIds.has(s.campana_id);
       if (!inCohort) continue;
-      // Region gate (via institution)
       if (allowedInstitutionsSet && !allowedInstitutionsSet.has(s.institucion_educativa)) continue;
-      // Resolve actual phase (submission wins; fallback to campaign)
-      const fase = s.fase || (s.campana_id ? campFaseById.get(s.campana_id) ?? null : null);
-      if (fase === "linea_base") inicial.push(s);
-      else if (fase === "cierre") evolucion.push(s);
+      let fase = s.fase || (s.campana_id ? campFaseById.get(s.campana_id) ?? null : null);
+      if (!fase && s.cohorte_id) {
+        const inferred = cohorteUnambiguousFase.get(s.cohorte_id);
+        if (inferred) fase = inferred;
+      }
+      if (fase === "linea_base") iniRaw.push(s);
+      else if (fase === "cierre") evoRaw.push(s);
+      else {
+        orphans.push({
+          cohorte_id: s.cohorte_id,
+          institucion: s.institucion_educativa,
+          tipo: s.tipo_formulario,
+        });
+      }
     }
+
+    // Institution-name normalization: base-phase spelling wins as canonical.
+    const canonicalByNorm = new Map<string, string>();
+    for (const s of iniRaw) {
+      const key = normalizeInst(s.institucion_educativa);
+      if (!canonicalByNorm.has(key)) canonicalByNorm.set(key, s.institucion_educativa);
+    }
+    for (const s of evoRaw) {
+      const key = normalizeInst(s.institucion_educativa);
+      if (!canonicalByNorm.has(key)) canonicalByNorm.set(key, s.institucion_educativa);
+    }
+
+    const remapped: { from: string; to: string; phase: "linea_base" | "cierre" }[] = [];
+    const remap = (subs: Submission[], phase: "linea_base" | "cierre"): Submission[] =>
+      subs.map((s) => {
+        const canon = canonicalByNorm.get(normalizeInst(s.institucion_educativa));
+        if (canon && canon !== s.institucion_educativa) {
+          remapped.push({ from: s.institucion_educativa, to: canon, phase });
+          return { ...s, institucion_educativa: canon };
+        }
+        return s;
+      });
+
+    const inicial = remap(iniRaw, "linea_base");
+    const evolucion = remap(evoRaw, "cierre");
+
+    const iniNames = new Set(inicial.map((s) => s.institucion_educativa));
+    const evoNames = new Set(evolucion.map((s) => s.institucion_educativa));
+    const onlyIni = [...iniNames].filter((n) => !evoNames.has(n)).sort();
+    const onlyEvo = [...evoNames].filter((n) => !iniNames.has(n)).sort();
+
+    const remappedKey = new Set<string>();
+    const remappedUnique = remapped.filter((r) => {
+      const k = `${r.phase}|${r.from}|${r.to}`;
+      if (remappedKey.has(k)) return false;
+      remappedKey.add(k);
+      return true;
+    });
 
     return {
       inicial,
       evolucion,
       iniCamp: campanasCohorte.find((c) => c.fase === "linea_base"),
       evoCamp: campanasCohorte.find((c) => c.fase === "cierre"),
+      diagnostics: {
+        orphanCount: orphans.length,
+        orphanSamples: orphans.slice(0, 50),
+        remapped: remappedUnique,
+        onlyIni,
+        onlyEvo,
+      },
     };
   }, [selectedCohortes, campanas, submissions, allowedInstitutionsSet]);
 
@@ -219,11 +316,12 @@ export default function AdminAmbienteDeltaTab() {
       const perGroup = groups.map((g) => {
         const sIni = subsIni.filter((s) => s.tipo_formulario === g);
         const sEvo = subsEvo.filter((s) => s.tipo_formulario === g);
-        const secAvgIni = SECTIONS_BY_FORM[g].map((sec) => avgScore(sIni, sec.items.map((i) => i.id))).filter((v): v is number => v !== null);
-        const secAvgEvo = SECTIONS_BY_FORM[g].map((sec) => avgScore(sEvo, sec.items.map((i) => i.id))).filter((v): v is number => v !== null);
+        // Flat mean across ALL items of the form (not mean-of-section-means),
+        // so sections with more items are not under-weighted.
+        const allIds = SECTIONS_BY_FORM[g].flatMap((sec) => sec.items.map((i) => i.id));
         return {
-          ini: secAvgIni.length ? secAvgIni.reduce((a, b) => a + b, 0) / secAvgIni.length : null,
-          evo: secAvgEvo.length ? secAvgEvo.reduce((a, b) => a + b, 0) / secAvgEvo.length : null,
+          ini: avgScore(sIni, allIds),
+          evo: avgScore(sEvo, allIds),
         };
       });
       const iniVals = perGroup.map((p) => p.ini).filter((v): v is number => v !== null);
@@ -933,6 +1031,78 @@ export default function AdminAmbienteDeltaTab() {
                 </tbody>
               </table>
             </div>
+
+            {/* ─── Diagnóstico de datos ─── */}
+            {(() => {
+              const d = phaseSplit.diagnostics;
+              const anything = d.orphanCount > 0 || d.remapped.length > 0 || d.onlyIni.length > 0 || d.onlyEvo.length > 0;
+              if (!anything) {
+                return (
+                  <p className="text-[11px] text-green-700 pt-2 border-t">
+                    ✓ Diagnóstico de datos: todas las respuestas tienen fase identificada y todas las instituciones están apareadas base ↔ post.
+                  </p>
+                );
+              }
+              return (
+                <details className="pt-2 border-t text-[11px]">
+                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground select-none">
+                    Diagnóstico de datos — {d.orphanCount > 0 && <span className="text-amber-700 font-semibold">{d.orphanCount} sin fase · </span>}
+                    {d.remapped.length > 0 && <span>{d.remapped.length} apareada(s) por normalización · </span>}
+                    {d.onlyIni.length > 0 && <span>{d.onlyIni.length} solo en base · </span>}
+                    {d.onlyEvo.length > 0 && <span>{d.onlyEvo.length} solo en post</span>}
+                  </summary>
+                  <div className="mt-3 space-y-3 pl-2">
+                    {d.orphanCount > 0 && (
+                      <div>
+                        <div className="font-semibold text-amber-700">Sin fase identificada ({d.orphanCount})</div>
+                        <div className="text-muted-foreground">
+                          Respuestas cuya cohorte tiene campañas de línea base y de cierre — no se pudo inferir a cuál pertenecen. Requiere actualizar la columna <code>fase</code> o vincular la <code>campana_id</code> en la BD.
+                        </div>
+                        <ul className="mt-1 max-h-40 overflow-y-auto space-y-0.5">
+                          {d.orphanSamples.map((o, i) => (
+                            <li key={i} className="tabular-nums">
+                              · {o.tipo} — {o.institucion} <span className="text-muted-foreground">(cohorte {o.cohorte_id?.slice(0, 8) ?? "—"})</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {d.remapped.length > 0 && (
+                      <div>
+                        <div className="font-semibold">Instituciones apareadas por normalización ({d.remapped.length})</div>
+                        <div className="text-muted-foreground">Diferencias de mayúsculas/acentos/espacios — se agruparon bajo la ortografía de la línea base.</div>
+                        <ul className="mt-1 max-h-40 overflow-y-auto space-y-0.5">
+                          {d.remapped.slice(0, 30).map((r, i) => (
+                            <li key={i}>· <span className="opacity-70">{r.phase === "linea_base" ? "base" : "post"}</span> «{r.from}» → «{r.to}»</li>
+                          ))}
+                          {d.remapped.length > 30 && <li className="text-muted-foreground italic">… y {d.remapped.length - 30} más</li>}
+                        </ul>
+                      </div>
+                    )}
+                    {d.onlyIni.length > 0 && (
+                      <div>
+                        <div className="font-semibold">Solo con datos de línea base ({d.onlyIni.length})</div>
+                        <div className="text-muted-foreground">Estas instituciones aún no tienen respuestas de cierre — excluidas del delta hasta recibirlas.</div>
+                        <ul className="mt-1 max-h-32 overflow-y-auto space-y-0.5">
+                          {d.onlyIni.slice(0, 40).map((n) => <li key={n}>· {n}</li>)}
+                          {d.onlyIni.length > 40 && <li className="text-muted-foreground italic">… y {d.onlyIni.length - 40} más</li>}
+                        </ul>
+                      </div>
+                    )}
+                    {d.onlyEvo.length > 0 && (
+                      <div>
+                        <div className="font-semibold">Solo con datos de cierre ({d.onlyEvo.length})</div>
+                        <div className="text-muted-foreground">Falta la línea base — posiblemente ortografía distinta que la normalización no capturó.</div>
+                        <ul className="mt-1 max-h-32 overflow-y-auto space-y-0.5">
+                          {d.onlyEvo.slice(0, 40).map((n) => <li key={n}>· {n}</li>)}
+                          {d.onlyEvo.length > 40 && <li className="text-muted-foreground italic">… y {d.onlyEvo.length - 40} más</li>}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </details>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
