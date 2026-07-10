@@ -48,6 +48,18 @@ const SECTIONS_BY_FORM: Record<string, LikertSection[]> = {
 // Likert option order for PDF (Nunca → Siempre)
 const LIKERT_ORDER = ["Nunca", "Casi nunca", "A veces", "Casi siempre", "Siempre"] as const;
 
+// Normalize institution names for cross-phase matching: trim, lowercase,
+// strip diacritics, collapse whitespace. Purely a matching key — original
+// display name is preserved separately.
+function normalizeInst(name: string): string {
+  return (name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function avgScore(subs: Submission[], itemIds: string[]): number | null {
   let sum = 0;
   let count = 0;
