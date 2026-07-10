@@ -376,17 +376,20 @@ export default function AdminAmbienteDeltaTab() {
     return Array.from(institucionesConEvolucion).map((inst) => {
       const subsIni = iniAll.filter((s) => s.institucion_educativa === inst);
       const subsEvo = evoAll.filter((s) => s.institucion_educativa === inst);
-      return computeInstitucionesMel(inst, subsIni, subsEvo, melItemsByComponent);
+      return computeInstitucionesMel(inst, subsIni, subsEvo, melItemsByComponent, {
+        variacionMaxPct,
+        nMinPorFase,
+      });
     }).sort((a, b) =>
       Number(b.cumple) - Number(a.cumple) ||
       b.componentsCumplen - a.componentsCumplen ||
       a.institucion.localeCompare(b.institucion),
     );
-  }, [selectedCohortes, phaseSplit, institucionesConEvolucion, melItemsByComponent]);
+  }, [selectedCohortes, phaseSplit, institucionesConEvolucion, melItemsByComponent, variacionMaxPct, nMinPorFase]);
 
   const melGlobal = useMemo(
-    () => aggregateMel(melInstituciones, { ignorarComparabilidad }),
-    [melInstituciones, ignorarComparabilidad],
+    () => aggregateMel(melInstituciones, { ignorarComparabilidad, modo }),
+    [melInstituciones, ignorarComparabilidad, modo],
   );
 
   // Institution → region lookup (geographic data first; fallback: cohorte name for
