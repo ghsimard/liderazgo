@@ -820,6 +820,132 @@ export default function AdminAmbienteDeltaTab() {
         </Card>
       )}
 
+      {/* ─── INDICADOR MEL — Ambiente Escolar (tabla oficial) ─── */}
+      {analysis && institucionesConEvolucion.size > 0 && (
+        <Card className="border-primary/60">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex justify-between items-start flex-wrap gap-3">
+              <div>
+                <h3 className="text-lg font-bold">Indicador MEL — Ambiente Escolar</h3>
+                <p className="text-xs text-muted-foreground">
+                  Regla oficial: una componente <strong>cumple</strong> si ΔS ≥ +{THRESHOLD_S_PP} pp
+                  <em> o</em> ΔN ≤ {THRESHOLD_N_PP} pp. Una institución cumple si <strong>≥ 2 de 3 componentes</strong> cumplen. Meta: <strong>{META_PCT}%</strong>.
+                </p>
+              </div>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                <Checkbox
+                  checked={ignorarComparabilidad}
+                  onCheckedChange={(v) => setIgnorarComparabilidad(v === true)}
+                />
+                Ignorar comparabilidad muestral (&gt; 10 %)
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-md border p-3 text-center">
+                <div className="text-3xl font-bold tabular-nums text-primary">
+                  {melGlobal.pct.toFixed(1)}%
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  {melGlobal.nCumplen} / {melGlobal.nInstituciones} institución(es) cumplen
+                </div>
+              </div>
+              <div className={`rounded-md border p-3 text-center ${melGlobal.metaAlcanzada ? "border-green-500/50 bg-green-500/5" : "border-amber-500/50 bg-amber-500/5"}`}>
+                <div className={`text-lg font-bold ${melGlobal.metaAlcanzada ? "text-green-700" : "text-amber-700"}`}>
+                  {melGlobal.metaAlcanzada ? "✓ Meta alcanzada" : `✗ Falta ${(META_PCT - melGlobal.pct).toFixed(1)} pp`}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1">Meta: {META_PCT}% · Línea base: 0%</div>
+              </div>
+              <div className="rounded-md border p-3 text-center">
+                <div className="text-xs text-muted-foreground">Excluidas</div>
+                <div className="text-sm">
+                  <div>{melGlobal.nExcluidasMuestra} por muestra no comparable</div>
+                  <div>{melGlobal.nNoEvaluables} sin datos suficientes</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="border-b">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="py-2 pr-3">Institución</th>
+                    <th className="py-2 px-2 text-right">N base</th>
+                    <th className="py-2 px-2 text-right">N post</th>
+                    <th className="py-2 px-2 text-right">Var. muestral</th>
+                    {Object.keys(melItemsByComponent).map((c) => (
+                      <th key={c} className="py-2 px-2 text-center" colSpan={2}>{c}</th>
+                    ))}
+                    <th className="py-2 pl-2 text-center">Cumple</th>
+                  </tr>
+                  <tr className="text-[10px] text-muted-foreground border-b">
+                    <th></th><th></th><th></th><th></th>
+                    {Object.keys(melItemsByComponent).flatMap((c) => [
+                      <th key={`${c}-s`} className="py-1 px-2 text-right">ΔS pp</th>,
+                      <th key={`${c}-n`} className="py-1 px-2 text-right">ΔN pp</th>,
+                    ])}
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {melInstituciones.length === 0 && (
+                    <tr><td colSpan={99} className="py-6 text-center text-muted-foreground italic">Sin instituciones comparables.</td></tr>
+                  )}
+                  {melInstituciones.map((r) => {
+                    const excluded = !r.comparable && !ignorarComparabilidad;
+                    return (
+                      <tr key={r.institucion} className={`border-b last:border-0 ${excluded ? "opacity-50" : ""}`}>
+                        <td className="py-2 pr-3">
+                          {r.institucion}
+                          {!r.comparable && (
+                            <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800">muestra no comparable</span>
+                          )}
+                        </td>
+                        <td className="py-2 px-2 text-right tabular-nums">{r.nBase}</td>
+                        <td className="py-2 px-2 text-right tabular-nums">{r.nPost}</td>
+                        <td className={`py-2 px-2 text-right tabular-nums ${r.comparable ? "" : "text-amber-700 font-semibold"}`}>
+                          {r.variacionMuestralPct.toFixed(1)}%
+                        </td>
+                        {r.components.map((c) => {
+                          const sOk = c.deltaS !== null && c.deltaS >= THRESHOLD_S_PP;
+                          const nOk = c.deltaN !== null && c.deltaN <= THRESHOLD_N_PP;
+                          const compOk = c.cumple;
+                          return (
+                            <>
+                              <td key={`${c.title}-s`} className={`py-2 px-2 text-right tabular-nums ${sOk ? "text-green-700 font-semibold" : ""}`}>
+                                {c.deltaS === null ? "—" : `${c.deltaS > 0 ? "+" : ""}${c.deltaS.toFixed(1)}`}
+                              </td>
+                              <td key={`${c.title}-n`} className={`py-2 px-2 text-right tabular-nums ${nOk ? "text-green-700 font-semibold" : ""}`}>
+                                {c.deltaN === null ? "—" : `${c.deltaN > 0 ? "+" : ""}${c.deltaN.toFixed(1)}`}
+                                {compOk && <span className="ml-1 text-green-700">✓</span>}
+                              </td>
+                            </>
+                          );
+                        })}
+                        <td className="py-2 pl-2 text-center">
+                          {r.cumple ? (
+                            <span className="inline-block px-2 py-0.5 rounded bg-green-500/20 text-green-800 font-semibold">✓ {r.componentsCumplen}/3</span>
+                          ) : (
+                            <span className="inline-block px-2 py-0.5 rounded bg-muted text-muted-foreground">✗ {r.componentsCumplen}/3</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Lectura complementaria — promedios Likert 1-5 */}
+      {analysis && institucionesConEvolucion.size > 0 && (
+        <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold pt-2 border-t">
+          Lectura complementaria — promedios Likert 1-5
+        </div>
+      )}
+
       {/* Group-level detail cards */}
       {analysis && institucionesConEvolucion.size > 0 && analysis.groups.map((g, idx) => {
         const agg = groupAggregates[idx];
