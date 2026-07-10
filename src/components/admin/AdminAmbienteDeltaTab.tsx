@@ -97,6 +97,33 @@ export default function AdminAmbienteDeltaTab() {
   const [instSortDir, setInstSortDir] = useState<"asc" | "desc">("desc");
   const [ignorarComparabilidad, setIgnorarComparabilidad] = useState(false);
 
+  // MEL display preferences (persisted in localStorage)
+  const PREFS_KEY = "mel-ambiente-prefs";
+  type MelPrefs = { variacionMaxPct: number; nMinPorFase: number; modo: "oficial" | "preliminar" };
+  const loadPrefs = (): MelPrefs => {
+    try {
+      const raw = localStorage.getItem(PREFS_KEY);
+      if (raw) {
+        const p = JSON.parse(raw);
+        return {
+          variacionMaxPct: typeof p.variacionMaxPct === "number" ? p.variacionMaxPct : 10,
+          nMinPorFase: typeof p.nMinPorFase === "number" ? p.nMinPorFase : 10,
+          modo: p.modo === "preliminar" ? "preliminar" : "oficial",
+        };
+      }
+    } catch {}
+    return { variacionMaxPct: 10, nMinPorFase: 10, modo: "oficial" };
+  };
+  const initialPrefs = loadPrefs();
+  const [variacionMaxPct, setVariacionMaxPct] = useState<number>(initialPrefs.variacionMaxPct);
+  const [nMinPorFase, setNMinPorFase] = useState<number>(initialPrefs.nMinPorFase);
+  const [modo, setModo] = useState<"oficial" | "preliminar">(initialPrefs.modo);
+  useEffect(() => {
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({ variacionMaxPct, nMinPorFase, modo }));
+    } catch {}
+  }, [variacionMaxPct, nMinPorFase, modo]);
+
 
   useEffect(() => {
     (async () => {
