@@ -1557,21 +1557,41 @@ export default function FichaRLTForm() {
                   <label htmlFor="sedes_rural" className="text-sm font-medium whitespace-nowrap">
                     Número de sedes en zona rural<span className="required-star ml-0.5">*</span>
                   </label>
-                  <input id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0" className="form-input w-20 text-center shrink-0" />
+                  <input
+                    id="sedes_rural"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={4}
+                    {...register("sedes_rural")}
+                    onInput={(e) => { const t = e.currentTarget; t.value = t.value.replace(/\D/g, "").slice(0, 4); }}
+                    placeholder="0"
+                    className="h-9 w-24 rounded-md border border-input bg-background px-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
+                  />
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
                   <label htmlFor="sedes_urbana" className="text-sm font-medium whitespace-nowrap">
                     Número de sedes en zona urbana<span className="required-star ml-0.5">*</span>
                   </label>
-                  <input id="sedes_urbana" type="number" min={0} max={999} {...register("sedes_urbana")} placeholder="0" className="form-input w-20 text-center shrink-0" />
+                  <input
+                    id="sedes_urbana"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={4}
+                    {...register("sedes_urbana")}
+                    onInput={(e) => { const t = e.currentTarget; t.value = t.value.replace(/\D/g, "").slice(0, 4); }}
+                    placeholder="0"
+                    className="h-9 w-24 rounded-md border border-input bg-background px-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
+                  />
                 </div>
 
                 <div className="flex items-center justify-between gap-3 pt-1 border-t border-border">
                   <span className="text-sm font-semibold text-muted-foreground whitespace-nowrap">
                     Número total de sedes <span className="text-xs font-normal text-muted-foreground/70">(incluye la sede principal)</span>
                   </span>
-                  <span className="w-20 text-center font-semibold text-sm shrink-0">{totalSedes}</span>
+                  <span className="w-24 text-center font-semibold text-sm shrink-0">{totalSedes}</span>
                 </div>
               </div>
 
@@ -1643,21 +1663,36 @@ export default function FichaRLTForm() {
 
             {/* SECCIÓN 6: Personal */}
             <FormSection number={6} title="Personal de la IE">
-              <FormFieldWrapper name="num_docentes" label="Número de docentes" required>
-                <FormInput id="num_docentes" type="number" min={0} {...register("num_docentes")} placeholder="0" />
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="num_coordinadores" label="Número de coordinadores/as" required>
-                <FormInput id="num_coordinadores" type="number" min={0} {...register("num_coordinadores")} placeholder="0" />
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="num_administrativos" label="Número de administrativos" required>
-                <FormInput id="num_administrativos" type="number" min={0} {...register("num_administrativos")} placeholder="0" />
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="num_orientadores" label="Número de orientadores/as" required>
-                <FormInput id="num_orientadores" type="number" min={0} {...register("num_orientadores")} placeholder="0" />
-              </FormFieldWrapper>
+              <div className="md:col-span-2 flex flex-col gap-3 max-w-[420px]">
+                {[
+                  { id: "num_docentes", label: "Número de docentes" },
+                  { id: "num_coordinadores", label: "Número de coordinadores/as" },
+                  { id: "num_administrativos", label: "Número de administrativos" },
+                  { id: "num_orientadores", label: "Número de orientadores/as" },
+                ].map(({ id, label }) => (
+                  <div key={id} className="flex items-center justify-between gap-3">
+                    <label htmlFor={id} className="text-sm font-medium whitespace-nowrap">
+                      {label}<span className="required-star ml-0.5">*</span>
+                    </label>
+                    <input
+                      id={id}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={4}
+                      {...register(id as any)}
+                      onInput={(e) => { const t = e.currentTarget; t.value = t.value.replace(/\D/g, "").slice(0, 4); }}
+                      placeholder="0"
+                      className="h-9 w-24 rounded-md border border-input bg-background px-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
+                    />
+                  </div>
+                ))}
+                {(errors.num_docentes || errors.num_coordinadores || errors.num_administrativos || errors.num_orientadores) && (
+                  <p className="field-error">
+                    {(errors.num_docentes?.message || errors.num_coordinadores?.message || errors.num_administrativos?.message || errors.num_orientadores?.message) as string}
+                  </p>
+                )}
+              </div>
             </FormSection>
 
             {/* SECCIÓN 7: Estudiantes por nivel educativo */}
@@ -1678,16 +1713,17 @@ export default function FichaRLTForm() {
                   const count = parseInt(watch(field as any) || "0") || 0;
                   return (
                     <div key={nivel} className={cn(
-                      "static-field flex items-center justify-between gap-4 py-2 px-3 rounded-md border bg-background transition-colors",
+                      "flex items-center justify-between gap-4 py-2 px-3 rounded-md border bg-background transition-colors",
                       count > 0 ? "border-primary/50 bg-primary/5" : "border-input"
                     )}>
                       <span className="text-sm flex-1 min-w-0 truncate">{label}</span>
                       <input
-                        type="number"
-                        min={0}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={4}
                         {...register(field as any, {
                           onChange: () => {
-                            // Auto-sync niveles_educativos based on all counts
                             setTimeout(() => {
                               const fields = [
                                 { nivel: "Preescolar", field: "estudiantes_preescolar" },
@@ -1703,8 +1739,9 @@ export default function FichaRLTForm() {
                             }, 0);
                           }
                         })}
+                        onInput={(e) => { const t = e.currentTarget; t.value = t.value.replace(/\D/g, "").slice(0, 4); }}
                         placeholder="0"
-                        className="form-input w-20 text-center shrink-0"
+                        className="h-9 w-24 rounded-md border border-input bg-background px-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
                       />
                     </div>
                   );

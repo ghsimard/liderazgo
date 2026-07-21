@@ -1,24 +1,34 @@
-# Correction : chiffres mal centrés — Section 7 (Estudiantes por nivel educativo)
+## Objectif
 
-## Diagnostic confirmé
+Dans `src/pages/FichaRLT.tsx`, transformer tous les champs numériques des sections 5 (sedes rural/urbana), 6 (personal) et 7 (estudiantes por nivel) en **inputs simples** (sans label flottant, sans conteneur `static-field` custom), avec **maximum 4 chiffres**.
 
-Les compteurs d'élèves de la section 7 utilisent `<input className="form-input w-20 text-center">` sans wrapper `FormFieldWrapper` / floating-label. Or `.form-input` (dans `src/index.css`) applique `padding-top: 1.5rem; padding-bottom: 0.4rem` pour laisser la place au label flottant. Sans label, le chiffre "0" apparaît collé en bas du champ au lieu d'être centré verticalement.
+## Actions
 
-Un correctif similaire existe déjà pour les champs avec `staticLabel` (`.static-field .form-input { padding-top: 0.5rem; padding-bottom: 0.5rem }`), mais il n'est pas appliqué ici parce que l'input n'est pas dans un `FormFieldWrapper`.
+🖥️ **Site statique (Frontend) uniquement**
 
-## Modification
+Fichier : `src/pages/FichaRLT.tsx`
 
-Ajouter à la section 7 la classe utilitaire Tailwind `!py-2` (ou l'ajout d'un wrapper `static-field`) sur les 6 inputs numériques pour rétablir un padding vertical symétrique et centrer le chiffre.
+1. **Section 5 — Sedes rural / urbana (lignes 1560, 1567)**
+   - `max={999}` → `max={9999}`
+   - Ajouter `maxLength={4}`, `inputMode="numeric"`, `pattern="[0-9]*"`
+   - Ajouter un `onInput` qui tronque à 4 chiffres (car `maxLength` n'agit pas sur `type="number"`)
 
-Approche retenue : ajouter la classe `static-field` sur le conteneur `div` de chaque ligne — c'est déjà le mécanisme utilisé ailleurs dans le projet pour neutraliser le padding floating-label, ça reste cohérent et sans nouveau CSS.
+2. **Section 6 — Personal (lignes 1646-1660)**
+   - Remplacer les 4 `FormFieldWrapper` + `FormInput` (qui utilisent label flottant) par une structure simple label-à-gauche / input-à-droite identique à la Section 5, avec input natif `<input>` sans classes de floating label.
+   - `max={9999}`, `maxLength=4`, troncature onInput.
 
-### Fichier modifié
-- `src/pages/FichaRLT.tsx` — ligne ~1680 : ajouter `"static-field"` dans le `cn(...)` du `div` qui entoure chaque input numérique.
+3. **Section 7 — Estudiantes por nivel (lignes 1685-1708)**
+   - Retirer la classe `static-field` du conteneur parent (ligne 1681) pour supprimer le padding vertical asymétrique hérité.
+   - Ajouter `max={9999}`, `maxLength=4`, troncature onInput sur l'input.
+   - Garder la logique de sync `niveles_educativos`.
 
-## Non modifié
-- `.form-input` global (les autres formulaires continuent de fonctionner).
-- Aucun changement de logique métier ni de schéma.
-- Le PDF vierge et les autres sections restent inchangés.
+## Détails techniques
+
+- Utiliser un handler local `handleMax4 = (e) => { if (e.target.value.length > 4) e.target.value = e.target.value.slice(0,4); }` combiné à l'`onChange` de `register` via `setValueAs` ou l'option `onChange` de RHF.
+- Style commun : `className="h-9 w-24 rounded-md border border-input bg-background px-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring"` (input simple, centré, hauteur réduite, pas de floating label).
+- Aucun changement backend, aucune migration DB, aucun changement de schéma Zod (les champs restent des strings numériques).
 
 ## Vérification
-Recharger `/admin/ficha/...`, scroller à la section 7, confirmer que le chiffre "0" (ou la valeur saisie) est centré verticalement dans la case, comme avant.
+
+- Ouvrir la Ficha RLT sur Safari desktop + mobile, sections 5/6/7.
+- Confirmer : valeur centrée verticalement, saisie limitée à 4 chiffres, aucun chevauchement de label.
