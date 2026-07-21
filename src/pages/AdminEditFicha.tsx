@@ -1171,14 +1171,34 @@ export default function AdminEditFicha() {
                   <label htmlFor="sedes_rural" className="text-sm font-medium whitespace-nowrap">
                     Número de sedes en zona rural<span className="required-star ml-0.5">*</span>
                   </label>
-                  <input id="sedes_rural" type="number" min={0} max={999} {...register("sedes_rural")} placeholder="0" className="form-input w-20 text-center shrink-0 !min-h-0 !py-1.5 !pt-1.5" />
+                  <input
+                    id="sedes_rural"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={4}
+                    {...register("sedes_rural")}
+                    onInput={(e) => { const t = e.currentTarget; t.value = t.value.replace(/\D/g, "").slice(0, 4); }}
+                    placeholder="0"
+                    className="h-9 w-24 rounded-md border border-input bg-background px-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
+                  />
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
                   <label htmlFor="sedes_urbana" className="text-sm font-medium whitespace-nowrap">
                     Número de sedes en zona urbana<span className="required-star ml-0.5">*</span>
                   </label>
-                  <input id="sedes_urbana" type="number" min={0} max={999} {...register("sedes_urbana")} placeholder="0" className="form-input w-20 text-center shrink-0 !min-h-0 !py-1.5 !pt-1.5" />
+                  <input
+                    id="sedes_urbana"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={4}
+                    {...register("sedes_urbana")}
+                    onInput={(e) => { const t = e.currentTarget; t.value = t.value.replace(/\D/g, "").slice(0, 4); }}
+                    placeholder="0"
+                    className="h-9 w-24 rounded-md border border-input bg-background px-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
+                  />
                 </div>
 
                 <div className="flex items-end justify-between gap-3 pt-1 border-t border-border">
@@ -1254,21 +1274,31 @@ export default function AdminEditFicha() {
 
             {/* SECCIÓN 6: Personal */}
             <FormSection number={6} title="Personal de la IE">
-              <FormFieldWrapper name="num_docentes" label="Número de docentes" required>
-                <FormInput id="num_docentes" type="number" min={0} {...register("num_docentes")} placeholder="0" />
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="num_coordinadores" label="Número de coordinadores/as" required>
-                <FormInput id="num_coordinadores" type="number" min={0} {...register("num_coordinadores")} placeholder="0" />
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="num_administrativos" label="Número de administrativos" required>
-                <FormInput id="num_administrativos" type="number" min={0} {...register("num_administrativos")} placeholder="0" />
-              </FormFieldWrapper>
-
-              <FormFieldWrapper name="num_orientadores" label="Número de orientadores/as" required>
-                <FormInput id="num_orientadores" type="number" min={0} {...register("num_orientadores")} placeholder="0" />
-              </FormFieldWrapper>
+              <div className="md:col-span-2 flex flex-col gap-3 max-w-[420px]">
+                {[
+                  { id: "num_docentes", label: "Número de docentes" },
+                  { id: "num_coordinadores", label: "Número de coordinadores/as" },
+                  { id: "num_administrativos", label: "Número de administrativos" },
+                  { id: "num_orientadores", label: "Número de orientadores/as" },
+                ].map(({ id, label }) => (
+                  <div key={id} className="flex items-center justify-between gap-3">
+                    <label htmlFor={id} className="text-sm font-medium whitespace-nowrap">
+                      {label}<span className="required-star ml-0.5">*</span>
+                    </label>
+                    <input
+                      id={id}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={4}
+                      {...register(id as any)}
+                      onInput={(e) => { const t = e.currentTarget; t.value = t.value.replace(/\D/g, "").slice(0, 4); }}
+                      placeholder="0"
+                      className="h-9 w-24 rounded-md border border-input bg-background px-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
+                    />
+                  </div>
+                ))}
+              </div>
             </FormSection>
 
             {/* SECCIÓN 7: Estudiantes por nivel educativo */}
@@ -1290,8 +1320,10 @@ export default function AdminEditFicha() {
                     )}>
                       <span className="text-sm flex-1 min-w-0 truncate">{label}</span>
                       <input
-                        type="number"
-                        min={0}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={4}
                         {...register(field as any, {
                           onChange: () => {
                             setTimeout(() => {
@@ -1309,8 +1341,9 @@ export default function AdminEditFicha() {
                             }, 0);
                           }
                         })}
+                        onInput={(e) => { const t = e.currentTarget; t.value = t.value.replace(/\D/g, "").slice(0, 4); }}
                         placeholder="0"
-                        className="form-input w-20 text-center shrink-0"
+                        className="h-9 w-24 rounded-md border border-input bg-background px-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
                       />
                     </div>
                   );
