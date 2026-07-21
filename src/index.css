@@ -167,6 +167,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: calc(100% - 1.5rem);
   }
 
   /* Pour textarea */
@@ -177,39 +178,43 @@
 
   /* Label monte au focus (CSS) */
   .floating-input:focus ~ .floating-label {
-    top: 0.45rem;
+    top: 0.4rem;
     transform: none;
-    font-size: 0.68rem;
+    font-size: 0.7rem;
     font-weight: 600;
     color: hsl(var(--primary));
+    padding-right: 0.5rem;
   }
 
   /* Label monte quand React détecte une valeur (classe ajoutée par JS) */
   .field-has-value .floating-label {
-    top: 0.45rem !important;
+    top: 0.4rem !important;
     transform: none !important;
-    font-size: 0.68rem !important;
+    font-size: 0.7rem !important;
     font-weight: 600 !important;
     color: hsl(var(--muted-foreground));
+    padding-right: 0.5rem;
   }
 
   /* Textarea avec valeur */
   textarea.floating-input:focus ~ .floating-label,
   .field-has-value textarea ~ .floating-label {
-    top: 0.35rem;
+    top: 0.4rem;
     transform: none;
-    font-size: 0.68rem;
+    font-size: 0.7rem;
     font-weight: 600;
   }
 
   /* Select floating-input : focus → label monte */
   select.floating-input:focus ~ .floating-label {
-    top: 0.45rem;
+    top: 0.4rem;
     transform: none;
-    font-size: 0.68rem;
+    font-size: 0.7rem;
     font-weight: 600;
     color: hsl(var(--primary));
+    padding-right: 0.5rem;
   }
+
 
   .floating-label .required-star {
     color: hsl(var(--destructive));
