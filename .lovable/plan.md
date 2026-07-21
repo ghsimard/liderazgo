@@ -1,48 +1,31 @@
-## Problème
+## Plan révisé
 
-Dans les formulaires Ficha (`AdminEditFicha.tsx` et `FichaRLT.tsx`), les champs à **label flottant** (`FormFieldWrapper` non-`staticLabel`) affichent la valeur qui « écrase » le titre. Le phénomène se voit surtout sur les `<select>` (Lengua materna, Región, Cargo actual) mais s'applique à tous les champs flottants.
+1. **Conserver les labels flottants**
+   - Ne pas convertir `Lengua materna`, `Región`, `Cargo actual` ni les autres champs en labels fixes.
+   - Garder le comportement actuel : label centré quand le champ est vide, label réduit en haut quand il y a une valeur ou le focus.
 
-## Cause (confirmée par lecture de `src/index.css` L108-207 et `src/components/FormComponents.tsx` L16-46)
+2. **Corriger le chevauchement à la source CSS**
+   - Ajuster uniquement `src/index.css` pour redonner assez d’espace vertical entre le label flottant et la valeur affichée.
+   - Le problème visible sur la capture vient surtout des `<select>` : la valeur sélectionnée remonte trop haut et passe sous le label.
 
-Le CSS actuel positionne :
-- Le label rétréci à `top: 0.45rem` avec `font-size: 0.68rem`, `line-height: 1` → bord bas du label ≈ 18 px.
-- L'input avec `padding-top: 1.5rem` (24 px) et `font-size: 14 px` sur desktop.
+3. **Traitement spécifique des listes déroulantes**
+   - Ajouter une règle dédiée pour `select.form-input.floating-input` afin de mieux contrôler :
+     - hauteur minimale,
+     - padding haut réel,
+     - line-height,
+     - rendu natif du select.
+   - Éviter que le texte de l’option sélectionnée puisse se dessiner dans la zone du label.
 
-Marge visuelle entre le bas du label et le haut du texte de la valeur : ~6 px seulement. Sur `<select>`, plusieurs moteurs (Safari, Chrome selon la fonte) centrent verticalement le texte de l'option et ignorent en partie `padding-top`, ce qui ramène le texte de la valeur par-dessus le label rétréci.
+4. **Ajuster le label flottant sans changer son concept**
+   - Garder le label réduit en haut, mais le positionner légèrement plus haut et/ou réduire son occupation verticale.
+   - Garder l’ellipsis et la protection contre la flèche du select.
 
-Deuxième effet : `.floating-label` a `white-space: nowrap; text-overflow: ellipsis` ; sur une colonne étroite, un label long (« Lengua materna », « Cargo actual ») peut être tronqué avant même le rétrécissement.
+5. **Appliquer globalement aux composants existants**
+   - Corriger le composant partagé via CSS, pour que le fix s’applique aux deux formulaires :
+     - `FichaRLT.tsx`
+     - `AdminEditFicha.tsx`
+   - Ne pas modifier la logique React ni les données.
 
-## Fix (CSS uniquement, `src/index.css`)
-
-Modifications ciblées, sans toucher à la logique React ni aux formulaires :
-
-1. **`.form-input`** — augmenter la hauteur utile et le rembourrage haut :
-   - `min-height: 52px` (mobile) / `min-height: 48px` (desktop)
-   - `padding-top: 1.75rem`
-   - `padding-bottom: 0.5rem`
-   - Pour `<select>` spécifiquement : ajouter une règle `select.form-input { line-height: 1.2; padding-top: 1.85rem; }` afin de compenser le centrage vertical natif.
-
-2. **`.floating-label` rétréci** (`.field-has-value .floating-label`, `.floating-input:focus ~ .floating-label`, `select.floating-input:focus ~ .floating-label`) :
-   - `top: 0.4rem`
-   - `font-size: 0.7rem`
-   - Garder `line-height: 1`
-   - Ajouter `padding-right: 0.5rem` pour éviter que l'ellipsis colle au bord droit.
-
-3. **`.floating-label` (état non rétréci)** :
-   - Passer de `white-space: nowrap` à `white-space: nowrap; max-width: calc(100% - 1.5rem);` — l'ellipsis ne change pas, mais on garantit qu'il ne dépasse pas dans la zone de la flèche du `<select>`.
-
-4. **Textarea** (`textarea.floating-input:focus ~ .floating-label`, `.field-has-value textarea ~ .floating-label`) :
-   - Aligner sur `top: 0.4rem`, `font-size: 0.7rem` pour la cohérence.
-
-## Vérification
-
-- Recharger `/admin/ficha/…` et `/ficha` : les champs `Lengua materna`, `Región`, `Cargo actual`, `Entidad territorial`, `Municipio`, `Cohorte` doivent afficher clairement le label rétréci au-dessus de la valeur, sans chevauchement.
-- Vérifier sur mobile (viewport 375 px) et desktop.
-- Vérifier le mode lecture (`ficha-readonly`) — les valeurs restent visibles.
-- Vérifier les `<input>` texte (Nombres, Apellidos, Lugar de nacimiento) qui utilisent la même classe.
-
-## Hors périmètre
-
-- Aucune modification de la logique React, des schémas ou de la base.
-- Aucune modification des champs `staticLabel` (déjà correctement espacés).
-- Aucune modification des PDF.
+6. **Validation visuelle**
+   - Vérifier sur la route admin de ta capture que `Lengua materna` affiche bien : label flottant au-dessus, valeur `Español` en dessous, sans chevauchement.
+   - Vérifier aussi `Región`, `Cargo actual`, `Entidad Territorial` et `Municipio`.
