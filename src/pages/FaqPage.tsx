@@ -137,6 +137,16 @@ const faqSections: FaqSection[] = [
         ),
       },
       {
+        q: "¿Por qué un directivo no ve el botón 'Rúbricas' en su Mi Panel?",
+        a: (
+          <div className="space-y-2">
+            <p>Para que un directivo (Rector/a o Coordinador/a) vea el botón <strong>Rúbricas</strong> en su <em>Mi Panel</em>, debe existir al menos una <strong>asignación</strong> creada por el administrador que lo vincule con un evaluador.</p>
+            <p>El administrador crea esta asignación en <AdminLink to="/admin?tab=rubricas">Rúbricas → Evaluadores / Asignaciones</AdminLink>, indicando la cédula del directivo y el evaluador responsable.</p>
+            <p>Además, la asignación debe estar marcada como <strong>visible</strong> (ícono de ojo verde). Si el evaluador o el administrador la oculta desde <AdminLink to="/admin?tab=evaluadores">Evaluadores</AdminLink>, el botón desaparece del panel del directivo.</p>
+          </div>
+        ),
+      },
+      {
         q: "¿Quién evalúa con la rúbrica?",
         a: (
           <span>La rúbrica es utilizada por evaluadores asignados por el administrador en <AdminLink to="/admin?tab=rubricas">Rúbricas</AdminLink>. Cada evaluador tiene directivos asignados para evaluar.</span>
