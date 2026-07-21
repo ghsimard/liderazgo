@@ -202,10 +202,11 @@
     color: hsl(var(--primary));
   }
 
-  /* Native <select> (surtout Safari/iOS) ignore le padding asymétrique et
-     centre verticalement la valeur sélectionnée, ce qui la fait chevaucher
-     le floating-label. On force appearance:none + chevron custom pour que
-     le padding-top réservé au label soit respecté partout. */
+  /* Native <select> (surtout Safari) re-centre verticalement la valeur
+     sélectionnée malgré appearance:none, ce qui la fait chevaucher le
+     floating-label. Solution : quand le select a une valeur ou est focus,
+     on remonte le label AU-DESSUS de la bordure (style "notch" Material),
+     avec un fond opaque. Plus aucun chevauchement possible. */
   select.floating-input {
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -215,9 +216,26 @@
     background-position: right 0.75rem center;
     background-size: 12px 8px;
     padding-right: 2rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
     line-height: 1.2;
+    text-indent: 0.01px;
   }
   select.floating-input::-ms-expand { display: none; }
+
+  /* Label en "notch" au-dessus du select quand rempli ou focus */
+  .field-has-value select.floating-input ~ .floating-label,
+  select.floating-input:focus ~ .floating-label {
+    top: -0.5rem !important;
+    left: 0.5rem;
+    right: auto;
+    padding: 0 0.35rem;
+    background: hsl(var(--background));
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    transform: none !important;
+    z-index: 2;
+  }
 
   .floating-label .required-star {
     color: hsl(var(--destructive));
