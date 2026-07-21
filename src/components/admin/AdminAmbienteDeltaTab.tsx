@@ -322,7 +322,7 @@ export default function AdminAmbienteDeltaTab() {
         onlyEvo,
       },
     };
-  }, [selectedCohortes, campanas, submissions, allowedInstitutionsSet]);
+  }, [selectedCohortes, campanas, submissions, allowedInstitutionsSet, capEvolucion]);
 
 
   const regionesLabel = selectedRegions.length === 0 ? "Todas" : selectedRegions.join(", ");
