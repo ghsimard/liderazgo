@@ -386,28 +386,40 @@ export default function AdminDashboardTab() {
     return ceds.size;
   }, [filteredFichas]);
 
+  // Dedupe by (dia, cedula): a directivo present in multiple modules counts once per day
   const asistenciaByDay = useMemo(() => {
     if (!totalDirectivos) return [];
-    const days: Record<number, number> = {};
+    const perDay: Record<number, Set<string>> = {};
     filteredAsistencia.forEach((a) => {
-      if (a.session_am) days[a.dia] = (days[a.dia] || 0) + 1;
+      if (a.session_am && a.directivo_cedula) {
+        if (!perDay[a.dia]) perDay[a.dia] = new Set();
+        perDay[a.dia].add(a.directivo_cedula);
+      }
     });
-    return Object.entries(days)
+    return Object.entries(perDay)
       .sort(([a], [b]) => Number(a) - Number(b))
-      .map(([dia, present]) => ({
-        name: `Día ${dia}`,
-        rate: Math.round((present / totalDirectivos) * 100),
-        present,
-        total: totalDirectivos,
-      }));
+      .map(([dia, set]) => {
+        const present = set.size;
+        const rate = Math.min(100, Math.round((present / totalDirectivos) * 100));
+        return { name: `Día ${dia}`, rate, present, total: totalDirectivos };
+      });
   }, [filteredAsistencia, totalDirectivos]);
 
   const asistenciaStats = useMemo(() => {
     if (!totalDirectivos) return { total: 0, present: 0, rate: 0 };
-    const present = filteredAsistencia.filter((a) => a.session_am).length;
-    const numDays = new Set(filteredAsistencia.map((a) => a.dia)).size;
+    const perDay: Record<number, Set<string>> = {};
+    filteredAsistencia.forEach((a) => {
+      if (a.session_am && a.directivo_cedula) {
+        if (!perDay[a.dia]) perDay[a.dia] = new Set();
+        perDay[a.dia].add(a.directivo_cedula);
+      }
+    });
+    const days = Object.keys(perDay);
+    const present = days.reduce((sum, d) => sum + perDay[Number(d)].size, 0);
+    const numDays = days.length;
     const expectedTotal = totalDirectivos * numDays;
-    return { total: totalDirectivos, present, rate: expectedTotal ? Math.round((present / expectedTotal) * 100) : 0 };
+    const rate = expectedTotal ? Math.min(100, Math.round((present / expectedTotal) * 100)) : 0;
+    return { total: totalDirectivos, present, rate };
   }, [filteredAsistencia, totalDirectivos]);
 
   const hasFilters = filters.region || filters.modulo || filters.entidad.length > 0 || filters.municipio.length > 0 || filters.institucion.length > 0 || filters.directivo.length > 0;
