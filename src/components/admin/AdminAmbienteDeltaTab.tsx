@@ -96,6 +96,8 @@ export default function AdminAmbienteDeltaTab() {
   const [instSortKey, setInstSortKey] = useState<"institucion" | "countIni" | "countEvo" | "ini" | "evo" | "delta">("delta");
   const [instSortDir, setInstSortDir] = useState<"asc" | "desc">("desc");
   const [ignorarComparabilidad, setIgnorarComparabilidad] = useState(false);
+  const [capEvolucion, setCapEvolucion] = useState(true);
+  const CAP_EVO_N = 25;
 
   // MEL display preferences (persisted in localStorage)
   const PREFS_KEY = "mel-ambiente-prefs";
