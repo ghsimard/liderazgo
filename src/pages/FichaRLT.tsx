@@ -1678,7 +1678,7 @@ export default function FichaRLTForm() {
                   const count = parseInt(watch(field as any) || "0") || 0;
                   return (
                     <div key={nivel} className={cn(
-                      "flex items-center justify-between gap-4 py-2 px-3 rounded-md border bg-background transition-colors",
+                      "static-field flex items-center justify-between gap-4 py-2 px-3 rounded-md border bg-background transition-colors",
                       count > 0 ? "border-primary/50 bg-primary/5" : "border-input"
                     )}>
                       <span className="text-sm flex-1 min-w-0 truncate">{label}</span>
