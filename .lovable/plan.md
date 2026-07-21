@@ -1,37 +1,56 @@
-## Objectif
+## Diagnostic Yuly (CC 1037070409, Coordinadora, Institución Educativa Rural Samaná, Oriente 2026)
 
-Dans l'onglet **Ambiente Escolar / Delta**, limiter la phase **Evolución** aux **25 réponses les plus anciennes** (par institution et par formulaire : docentes / estudiantes / acudientes), afin de mieux comparer avec la phase Inicial et réduire l'exclusion « muestra no comparable ».
+Résultats confirmés sur Render (production) :
 
-## Hypothèse à valider
+| Vérification | Résultat |
+|---|---|
+| Role via `check_cedula_role` | `is_directivo: true`, `cargo_actual: Coordinador/a` ✅ |
+| Ficha | ✅ region = `Oriente 2026`, nombre_ie = `Samaná` |
+| `rubrica_asignaciones` (6 lignes) | 5 sur 6 ont `rubrica_visible = true` — la logique de MiPanel (`.limit(1)`) prend une seule ligne au hasard, donc résultat non déterministe |
+| `encuesta_entrada_visible` / `encuesta_salida_visible` sur asignaciones | true pour toutes |
+| `encuesta_360_visibility` matches pour son cédula / institution / region `Oriente 2026` | ❌ AUCUNE (la seule règle existante est `region = "Oriente"` sans "2026") |
 
-L'idée est que trop de réponses en Evolución (par rapport à Inicial) fait exploser la variation muestrale (> 10 %) et exclut les institutions. En plafonnant Evolución à ~25 réponses les plus anciennes par formulaire, on rapproche N_post de N_base et on garde les répondants « early » (plus représentatifs du démarrage de collecte).
+### Causes racines
 
-## Actions
+**1. Rúbricas masqué (intermittent)** — Dans `src/pages/MiPanel.tsx` (ligne 208-214) la requête sur `rubrica_asignaciones` fait un `.limit(1)` sans `order by`. Postgres peut retourner la ligne où `rubrica_visible = false` (celle avec Ángela María). Résultat : `rubricaEnabled = false` → bouton caché. C'est un bug côté frontend.
 
-🖥️ **Site statique (Frontend) uniquement** — `src/components/admin/AdminAmbienteDeltaTab.tsx`
+**2. Encuesta 360° masquée** — La logique `resolveVisibility` cherche une règle active pour son cédula → institution → région dans `encuesta_360_visibility`. Aucune règle ne matche `Oriente 2026` (seule `Oriente` existe). Retourne `false` → bouton caché.
 
-1. **Après le fetch** des `encuestas_ambiente_escolar`, avant de les passer à `computeInstitucionesMel` :
-   - Grouper les submissions de phase `evolucion` par clé `(institucion_normalizada, tipo_formulario)`.
-   - Trier chaque groupe par `created_at ASC` (les plus anciennes d'abord).
-   - Conserver au maximum les **25 premières** de chaque groupe.
-   - Les submissions `inicial` restent inchangées.
+### Plan d'action
 
-2. **UI** : ajouter un petit badge/note discrète sous le KPI global :
-   > « Evolución limitée aux 25 plus anciennes réponses par institution et par formulaire (comparabilité muestrale) »
-   
-   Optionnel : un toggle « Limiter Evolución à 25 réponses/formulaire » activé par défaut, pour pouvoir comparer les deux modes.
+🖥️ **Site statique (Frontend)** — Corriger le bug `.limit(1)` dans `src/pages/MiPanel.tsx` :
 
-3. **Verifier** que `created_at` est bien récupéré dans le SELECT (sinon l'ajouter à la liste des colonnes).
+Remplacer la requête ligne 208-214 par une qui prend le MAX de `rubrica_visible` sur toutes les asignaciones du directivo, plutôt qu'une ligne arbitraire :
 
-## Détails techniques
+```ts
+const { data: asigData } = await supabase
+  .from("rubrica_asignaciones")
+  .select("rubrica_visible")
+  .eq("directivo_cedula", cedula);
+const hasAsig = (asigData || []).some((r: any) => r.rubrica_visible === true);
+setRubricaEnabled(hasAsig);
+```
 
-- Le plafond de 25 correspond au **seuil minimum** déjà utilisé pour la représentativité par formulaire.
-- Aucune modification à `melAmbienteIndicator.ts` : la logique de calcul reste identique, on ne change que l'ensemble de données d'entrée.
-- Aucune modification backend, aucune migration SQL.
+Cela garantit que si AU MOINS UN evaluador a activé la rúbrica pour ce directivo, elle s'affiche.
 
-## Question
+⚙️ **Web Service (Backend Express)** — Rien.
 
-Confirmes-tu :
-- **Plafond = 25** (pas 30 ou 40) ?
-- **Tri par `created_at` ASC** (plus anciennes) — ou préfères-tu les 25 plus récentes ?
-- **Toggle UI on/off** ou application silencieuse par défaut ?
+🗄️ **Base de données (SQL manuel sur Render via pgAdmin)** — Activer la visibilité 360° pour la région `Oriente 2026`. À exécuter :
+
+```sql
+INSERT INTO encuesta_360_visibility (fase, scope_type, scope_value, is_active)
+VALUES 
+  ('inicial', 'region', 'Oriente 2026', true),
+  ('final',   'region', 'Oriente 2026', true)
+ON CONFLICT (fase, scope_type, scope_value) 
+DO UPDATE SET is_active = true, updated_at = now();
+```
+
+Après le déploiement frontend + l'INSERT SQL, Yuly devra faire **Ctrl+Shift+R**.
+
+### Questions avant implémentation
+
+1. Faut-il ouvrir la 360° pour **toute la région `Oriente 2026`**, ou juste **son institution** (`Samaná`), ou **elle uniquement** ?
+2. Fases à activer : `inicial`, `final`, ou les deux ?
+
+Confirme ces deux points et je passe en build.
