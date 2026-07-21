@@ -922,6 +922,18 @@ export default function AdminAmbienteDeltaTab() {
               Inicial: {phaseSplit.inicial.length} resp · Evolución: {phaseSplit.evolucion.length} resp · Comparables: {institucionesConEvolucion.size} institución(es)
             </div>
           )}
+
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={capEvolucion}
+              onChange={(e) => setCapEvolucion(e.target.checked)}
+              className="h-3.5 w-3.5"
+            />
+            <span>
+              Limitar Evolución a las {CAP_EVO_N} respuestas más antiguas por institución y formulario
+            </span>
+          </label>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleGenerateAnalysis} disabled={generating || !analysis}>
