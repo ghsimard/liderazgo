@@ -272,7 +272,29 @@ export default function AdminAmbienteDeltaTab() {
       });
 
     const inicial = remap(iniRaw, "linea_base");
-    const evolucion = remap(evoRaw, "cierre");
+    let evolucion = remap(evoRaw, "cierre");
+
+    // Cap Evolución to the N oldest responses per (institución, tipo_formulario)
+    // to keep the sample comparable with Inicial (avoids "muestra no comparable"
+    // exclusions when Evolución is still being collected en masse).
+    if (capEvolucion) {
+      const groups = new Map<string, Submission[]>();
+      for (const s of evolucion) {
+        const k = `${s.institucion_educativa}||${s.tipo_formulario}`;
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k)!.push(s);
+      }
+      const capped: Submission[] = [];
+      for (const arr of groups.values()) {
+        arr.sort((a, b) => {
+          const da = a.created_at ? Date.parse(a.created_at) : 0;
+          const db = b.created_at ? Date.parse(b.created_at) : 0;
+          return da - db;
+        });
+        capped.push(...arr.slice(0, CAP_EVO_N));
+      }
+      evolucion = capped;
+    }
 
     const iniNames = new Set(inicial.map((s) => s.institucion_educativa));
     const evoNames = new Set(evolucion.map((s) => s.institucion_educativa));
