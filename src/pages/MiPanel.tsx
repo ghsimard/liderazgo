@@ -240,7 +240,7 @@ export default function MiPanel() {
         setEncuestaSalidaVisible(resolveVisibility("final"));
 
         // Fetch rubrica progress for directivos
-        if (hasAsig) {
+        if (asigData?.rubrica_visible) {
           const { data: submissions } = await supabase
             .from("rubrica_submission_dates")
             .select("module_number")
