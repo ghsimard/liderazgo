@@ -87,6 +87,17 @@ const faqSections: FaqSection[] = [
         ),
       },
       {
+        q: "¿Cómo activa el administrador la Encuesta 360° para una institución o región?",
+        a: (
+          <div className="space-y-2">
+            <p>1) Ir a <AdminLink to="/admin?tab=visibilidad360">Encuesta 360° → Visibilidad</AdminLink>.</p>
+            <p>2) Crear una nueva regla de visibilidad indicando el ámbito (institución específica o región completa), el tipo de formulario (autoevaluación, heteroevaluación, coevaluación), la fase (Entrada o Salida) y marcar como visible.</p>
+            <p>3) Guardar. Los directivos y evaluadores del ámbito verán el botón <strong>Encuesta 360°</strong> en su <em>Mi Panel</em> tras un refresh (Ctrl+Shift+R).</p>
+            <p className="text-sm text-muted-foreground">Sin una regla activa para la región/institución y fase correspondiente, el botón permanece oculto. Se pueden crear reglas separadas por fase para controlar Entrada y Salida de forma independiente.</p>
+          </div>
+        ),
+      },
+      {
         q: "¿Cuántos formularios existen?",
         a: (
           <span>Existen 6 formularios diferentes según el perfil del evaluador: Acudiente, Administrativo, Autoevaluación, Directivo, Docente y Estudiante. Los enlaces se encuentran en <AdminLink to="/admin?tab=formularios">Formularios</AdminLink>.</span>
