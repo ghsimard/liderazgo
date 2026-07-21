@@ -1,18 +1,37 @@
-## Problème
+## Objectif
 
-Le user est sur `/admin/ficha/:id` qui utilise `AdminEditFicha.tsx`, pas `FichaRLT.tsx`. Les changements précédents s'appliquaient uniquement à la ficha utilisateur. Il faut répliquer les mêmes ajustements dans `AdminEditFicha.tsx`.
+Dans l'onglet **Ambiente Escolar / Delta**, limiter la phase **Evolución** aux **25 réponses les plus anciennes** (par institution et par formulaire : docentes / estudiantes / acudientes), afin de mieux comparer avec la phase Inicial et réduire l'exclusion « muestra no comparable ».
+
+## Hypothèse à valider
+
+L'idée est que trop de réponses en Evolución (par rapport à Inicial) fait exploser la variation muestrale (> 10 %) et exclut les institutions. En plafonnant Evolución à ~25 réponses les plus anciennes par formulaire, on rapproche N_post de N_base et on garde les répondants « early » (plus représentatifs du démarrage de collecte).
 
 ## Actions
 
-🖥️ **Site statique (Frontend) uniquement** — `src/pages/AdminEditFicha.tsx`
+🖥️ **Site statique (Frontend) uniquement** — `src/components/admin/AdminAmbienteDeltaTab.tsx`
 
-1. **Section 5 — sedes rural / urbana (lignes 1174 & 1181)**
-   - Remplacer `type="number" min={0} max={999}` + `className="form-input …"` par un input simple : `type="text" inputMode="numeric" pattern="[0-9]*" maxLength={4}`, onInput qui tronque à 4 chiffres, `className="h-9 w-24 rounded-md border border-input bg-background px-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring shrink-0"`.
+1. **Après le fetch** des `encuestas_ambiente_escolar`, avant de les passer à `computeInstitucionesMel` :
+   - Grouper les submissions de phase `evolucion` par clé `(institucion_normalizada, tipo_formulario)`.
+   - Trier chaque groupe par `created_at ASC` (les plus anciennes d'abord).
+   - Conserver au maximum les **25 premières** de chaque groupe.
+   - Les submissions `inicial` restent inchangées.
 
-2. **Section 6 — Personal (lignes 1256-1272)**
-   - Remplacer les 4 `FormFieldWrapper` + `FormInput` par la structure label-à-gauche / input-simple-à-droite (identique à la Section 5), avec maxLength 4.
+2. **UI** : ajouter un petit badge/note discrète sous le KPI global :
+   > « Evolución limitée aux 25 plus anciennes réponses par institution et par formulaire (comparabilité muestrale) »
+   
+   Optionnel : un toggle « Limiter Evolución à 25 réponses/formulaire » activé par défaut, pour pouvoir comparer les deux modes.
 
-3. **Section 7 — Estudiantes (lignes 1292-1314)**
-   - Remplacer l'input `type="number"` par l'input simple avec `maxLength={4}` et onInput de troncature ; conserver la logique de sync `niveles_educativos`.
+3. **Verifier** que `created_at` est bien récupéré dans le SELECT (sinon l'ajouter à la liste des colonnes).
 
-Aucun changement backend, aucun changement de schéma Zod (les champs restent des strings).
+## Détails techniques
+
+- Le plafond de 25 correspond au **seuil minimum** déjà utilisé pour la représentativité par formulaire.
+- Aucune modification à `melAmbienteIndicator.ts` : la logique de calcul reste identique, on ne change que l'ensemble de données d'entrée.
+- Aucune modification backend, aucune migration SQL.
+
+## Question
+
+Confirmes-tu :
+- **Plafond = 25** (pas 30 ou 40) ?
+- **Tri par `created_at` ASC** (plus anciennes) — ou préfères-tu les 25 plus récentes ?
+- **Toggle UI on/off** ou application silencieuse par défaut ?
