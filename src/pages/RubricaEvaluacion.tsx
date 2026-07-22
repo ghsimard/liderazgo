@@ -692,12 +692,14 @@ export default function RubricaEvaluacion() {
     try {
       const currentWorkingModule = getEvaluadorCurrentWorkingModuleNumber();
 
+      const authorCedula = cedula;
       const { error } = await supabase.from("rubrica_seguimientos").insert({
         item_id: itemId,
         directivo_cedula: directivoInfo.cedula,
         module_number: currentWorkingModule,
         nivel: pending.nivel,
         comentario: pending.comentario,
+        evaluador_cedula: authorCedula,
       });
 
       if (error) throw error;
@@ -713,6 +715,7 @@ export default function RubricaEvaluacion() {
       });
 
       toast({ title: "Seguimiento guardado", description: `Nivel actualizado. Cambio registrado en el Módulo ${currentWorkingModule}.` });
+      logActivity(authorCedula, "rubrica_submit", `Seguimiento M${currentWorkingModule}, item ${itemId}`, "/rubrica-evaluacion");
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
