@@ -160,7 +160,20 @@ export default function AdminEvaluadoresTab() {
     const { error } = await supabase.from("rubrica_asignaciones").insert(rows);
     setSaving(false);
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      const msg = String(error.message || "");
+      const isUniqueViolation =
+        (error as any).code === "23505" ||
+        msg.includes("rubrica_asignaciones_directivo_unique") ||
+        msg.toLowerCase().includes("duplicate key");
+      if (isUniqueViolation) {
+        toast({
+          title: "Directivo ya asignado",
+          description: "Uno o más directivos ya están asignados a otro evaluador. Use el botón Transferir para reasignar.",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      }
     } else {
       toast({ title: `${rows.length} asignación(es) creada(s)` });
       setShowAssign(false);
