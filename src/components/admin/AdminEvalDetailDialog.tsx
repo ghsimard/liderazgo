@@ -68,6 +68,7 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
   const [seguimientos, setSeguimientos] = useState<Seguimiento[]>([]);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [evaluadoresByCedula, setEvaluadoresByCedula] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!open || !directivoCedula) return;
@@ -77,11 +78,12 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
   const loadData = async () => {
     setLoading(true);
     setDirty(false);
-    const [{ data: mods }, { data: its }, { data: evals }, { data: segs }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: evals }, { data: segs }, { data: evaluadoresList }] = await Promise.all([
       supabase.from("rubrica_modules").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("*").eq("directivo_cedula", directivoCedula),
-      supabase.from("rubrica_seguimientos").select("item_id, nivel, comentario, created_at").eq("directivo_cedula", directivoCedula).order("created_at", { ascending: true }),
+      supabase.from("rubrica_seguimientos").select("item_id, nivel, comentario, created_at, evaluador_cedula").eq("directivo_cedula", directivoCedula).order("created_at", { ascending: true }),
+      supabase.from("rubrica_evaluadores").select("cedula, nombre"),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
@@ -91,7 +93,32 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
       setEvaluaciones(map);
     }
     if (segs) setSeguimientos(segs as Seguimiento[]);
+    if (evaluadoresList) {
+      const m: Record<string, string> = {};
+      for (const e of evaluadoresList as any[]) {
+        if (e.cedula) m[e.cedula] = e.nombre;
+      }
+      setEvaluadoresByCedula(m);
+    }
     setLoading(false);
+  };
+
+  const formatBogota = (iso?: string | null): string => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      // UTC-5 Bogotá
+      const bogota = new Date(d.getTime() - 5 * 60 * 60 * 1000);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${pad(bogota.getUTCDate())}/${pad(bogota.getUTCMonth() + 1)}/${bogota.getUTCFullYear()} ${pad(bogota.getUTCHours())}:${pad(bogota.getUTCMinutes())}`;
+    } catch {
+      return "";
+    }
+  };
+
+  const resolveAuthor = (cedulaVal?: string | null): string => {
+    if (!cedulaVal) return "—";
+    return evaluadoresByCedula[cedulaVal] || cedulaVal;
   };
 
   const updateField = (itemId: string, field: keyof Evaluacion, value: string) => {
