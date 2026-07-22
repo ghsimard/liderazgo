@@ -143,6 +143,7 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
   const handleSave = async () => {
     setSaving(true);
     try {
+      const adminAuthor = sessionStorage.getItem("user_cedula") || "admin";
       for (const ev of Object.values(evaluaciones)) {
         if (!ev.item_id) continue;
         const payload = {
@@ -164,12 +165,17 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
           .maybeSingle();
 
         if (existing?.id) {
-          await supabase.from("rubrica_evaluaciones").update(payload).eq("id", existing.id);
+          await supabase
+            .from("rubrica_evaluaciones")
+            .update({ ...payload, updated_by: adminAuthor })
+            .eq("id", existing.id);
         } else {
           // Only insert if there's at least one value
           const hasValue = ev.directivo_nivel || ev.equipo_nivel || ev.acordado_nivel;
           if (hasValue) {
-            await supabase.from("rubrica_evaluaciones").insert(payload);
+            await supabase
+              .from("rubrica_evaluaciones")
+              .insert({ ...payload, evaluador_cedula: adminAuthor, updated_by: adminAuthor });
           }
         }
       }
