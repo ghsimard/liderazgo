@@ -208,8 +208,9 @@ export default function MiPanel() {
         const { data: asigData } = await supabase
           .from("rubrica_asignaciones")
           .select("rubrica_visible")
-          .eq("directivo_cedula", cedula);
-        const hasAsig = (asigData || []).some((r: any) => r.rubrica_visible === true);
+          .eq("directivo_cedula", cedula)
+          .maybeSingle();
+        const hasAsig = asigData?.rubrica_visible === true;
         setRubricaEnabled(hasAsig);
 
         // Fetch encuesta 360 visibility from centralized config

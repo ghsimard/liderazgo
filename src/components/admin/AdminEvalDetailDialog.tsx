@@ -32,6 +32,9 @@ interface Evaluacion {
   equipo_comentario: string | null;
   acordado_nivel: string | null;
   acordado_comentario: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
+  evaluador_cedula?: string | null;
 }
 
 interface Seguimiento {
@@ -39,6 +42,7 @@ interface Seguimiento {
   nivel: string | null;
   comentario: string | null;
   created_at: string;
+  evaluador_cedula?: string | null;
 }
 
 const NIVELES = [
@@ -64,6 +68,7 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
   const [seguimientos, setSeguimientos] = useState<Seguimiento[]>([]);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [evaluadoresByCedula, setEvaluadoresByCedula] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!open || !directivoCedula) return;
@@ -73,11 +78,12 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
   const loadData = async () => {
     setLoading(true);
     setDirty(false);
-    const [{ data: mods }, { data: its }, { data: evals }, { data: segs }] = await Promise.all([
+    const [{ data: mods }, { data: its }, { data: evals }, { data: segs }, { data: evaluadoresList }] = await Promise.all([
       supabase.from("rubrica_modules").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_items").select("*").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("*").eq("directivo_cedula", directivoCedula),
-      supabase.from("rubrica_seguimientos").select("item_id, nivel, comentario, created_at").eq("directivo_cedula", directivoCedula).order("created_at", { ascending: true }),
+      supabase.from("rubrica_seguimientos").select("item_id, nivel, comentario, created_at, evaluador_cedula").eq("directivo_cedula", directivoCedula).order("created_at", { ascending: true }),
+      supabase.from("rubrica_evaluadores").select("cedula, nombre"),
     ]);
     if (mods) setModules(mods);
     if (its) setItems(its);
@@ -87,7 +93,32 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
       setEvaluaciones(map);
     }
     if (segs) setSeguimientos(segs as Seguimiento[]);
+    if (evaluadoresList) {
+      const m: Record<string, string> = {};
+      for (const e of evaluadoresList as any[]) {
+        if (e.cedula) m[e.cedula] = e.nombre;
+      }
+      setEvaluadoresByCedula(m);
+    }
     setLoading(false);
+  };
+
+  const formatBogota = (iso?: string | null): string => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      // UTC-5 Bogotá
+      const bogota = new Date(d.getTime() - 5 * 60 * 60 * 1000);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${pad(bogota.getUTCDate())}/${pad(bogota.getUTCMonth() + 1)}/${bogota.getUTCFullYear()} ${pad(bogota.getUTCHours())}:${pad(bogota.getUTCMinutes())}`;
+    } catch {
+      return "";
+    }
+  };
+
+  const resolveAuthor = (cedulaVal?: string | null): string => {
+    if (!cedulaVal) return "—";
+    return evaluadoresByCedula[cedulaVal] || cedulaVal;
   };
 
   const updateField = (itemId: string, field: keyof Evaluacion, value: string) => {
@@ -112,6 +143,7 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
   const handleSave = async () => {
     setSaving(true);
     try {
+      const adminAuthor = sessionStorage.getItem("user_cedula") || "admin";
       for (const ev of Object.values(evaluaciones)) {
         if (!ev.item_id) continue;
         const payload = {
@@ -133,12 +165,17 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
           .maybeSingle();
 
         if (existing?.id) {
-          await supabase.from("rubrica_evaluaciones").update(payload).eq("id", existing.id);
+          await supabase
+            .from("rubrica_evaluaciones")
+            .update({ ...payload, updated_by: adminAuthor })
+            .eq("id", existing.id);
         } else {
           // Only insert if there's at least one value
           const hasValue = ev.directivo_nivel || ev.equipo_nivel || ev.acordado_nivel;
           if (hasValue) {
-            await supabase.from("rubrica_evaluaciones").insert(payload);
+            await supabase
+              .from("rubrica_evaluaciones")
+              .insert({ ...payload, evaluador_cedula: adminAuthor, updated_by: adminAuthor });
           }
         }
       }
@@ -262,8 +299,19 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
                               </Badge>
                             ) : <span className="text-xs text-muted-foreground">—</span>}
                             <p className="text-xs text-muted-foreground">{lastSeg?.comentario || "Sin seguimiento"}</p>
+                            {lastSeg?.evaluador_cedula && (
+                              <p className="text-[10px] text-muted-foreground italic">
+                                Por: {resolveAuthor(lastSeg.evaluador_cedula)} · {formatBogota(lastSeg.created_at)}
+                              </p>
+                            )}
                           </div>
                         </div>
+
+                        {(ev?.updated_at || ev?.updated_by) && (
+                          <div className="text-[10px] text-muted-foreground italic pt-1 border-t border-muted/40">
+                            Última edición: {formatBogota(ev.updated_at)} · Editado por: {resolveAuthor(ev.updated_by)}
+                          </div>
+                        )}
                       </div>
                     );
                   })}

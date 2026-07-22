@@ -296,18 +296,18 @@ export default function RubricaEvaluacion() {
         await loadSeguimientos(fichaData.numero_cedula);
         navigateToLastEnabledModule(modules, dates, "directivo");
 
-        // Load assigned evaluator name for this directivo
-        const { data: asigData } = await supabase
+        // Load assigned evaluator name for this directivo (1-1 garantie par contrainte unique)
+        const { data: asigRow } = await supabase
           .from("rubrica_asignaciones")
           .select("evaluador_id")
           .eq("directivo_cedula", fichaData.numero_cedula)
-          .limit(1);
-        if (asigData && asigData.length > 0) {
+          .maybeSingle();
+        if (asigRow?.evaluador_id) {
           const { data: evalData } = await supabase
             .from("rubrica_evaluadores")
             .select("nombre")
-            .eq("id", asigData[0].evaluador_id)
-            .single();
+            .eq("id", asigRow.evaluador_id)
+            .maybeSingle();
           if (evalData) setAssignedEvaluadorNombre(evalData.nombre);
         }
         // Check if directivo already submitted (has at least one directivo_nivel)
@@ -582,6 +582,8 @@ export default function RubricaEvaluacion() {
         return;
       }
 
+      const authorCedula = cedula; // cédula de l'auteur (directivo ou coach connecté)
+
       for (const item of moduleItems) {
         const ev = evaluaciones[item.id];
         if (!ev) continue;
@@ -611,9 +613,16 @@ export default function RubricaEvaluacion() {
           .maybeSingle();
 
         if (existing?.id) {
-          await supabase.from("rubrica_evaluaciones").update(payload).eq("id", existing.id);
+          // Update: audit uniquement de la dernière MAJ
+          await supabase
+            .from("rubrica_evaluaciones")
+            .update({ ...payload, updated_by: authorCedula })
+            .eq("id", existing.id);
         } else {
-          await supabase.from("rubrica_evaluaciones").insert(payload);
+          // Insert: on renseigne aussi l'auteur initial
+          await supabase
+            .from("rubrica_evaluaciones")
+            .insert({ ...payload, evaluador_cedula: authorCedula, updated_by: authorCedula });
         }
       }
 
@@ -641,7 +650,7 @@ export default function RubricaEvaluacion() {
       }));
 
       toast({ title: "Guardado exitoso", description: "Las evaluaciones han sido guardadas." });
-      logActivity(cedula, "rubrica_submit", `Módulo ${currentModule.module_number}, Tipo: ${submissionType}`, "/rubrica-evaluacion");
+      logActivity(authorCedula, "rubrica_submit", `Módulo ${currentModule.module_number}, ${submissionType}, rol=${role}`, "/rubrica-evaluacion");
       setSubmitted(true);
       setShowReviewModal(true);
     } catch (err: any) {
@@ -683,12 +692,14 @@ export default function RubricaEvaluacion() {
     try {
       const currentWorkingModule = getEvaluadorCurrentWorkingModuleNumber();
 
+      const authorCedula = cedula;
       const { error } = await supabase.from("rubrica_seguimientos").insert({
         item_id: itemId,
         directivo_cedula: directivoInfo.cedula,
         module_number: currentWorkingModule,
         nivel: pending.nivel,
         comentario: pending.comentario,
+        evaluador_cedula: authorCedula,
       });
 
       if (error) throw error;
@@ -704,6 +715,7 @@ export default function RubricaEvaluacion() {
       });
 
       toast({ title: "Seguimiento guardado", description: `Nivel actualizado. Cambio registrado en el Módulo ${currentWorkingModule}.` });
+      logActivity(authorCedula, "rubrica_submit", `Seguimiento M${currentWorkingModule}, item ${itemId}`, "/rubrica-evaluacion");
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
