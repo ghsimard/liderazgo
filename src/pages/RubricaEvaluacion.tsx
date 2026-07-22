@@ -650,7 +650,7 @@ export default function RubricaEvaluacion() {
       }));
 
       toast({ title: "Guardado exitoso", description: "Las evaluaciones han sido guardadas." });
-      logActivity(cedula, "rubrica_submit", `Módulo ${currentModule.module_number}, Tipo: ${submissionType}`, "/rubrica-evaluacion");
+      logActivity(authorCedula, "rubrica_submit", `Módulo ${currentModule.module_number}, ${submissionType}, rol=${role}`, "/rubrica-evaluacion");
       setSubmitted(true);
       setShowReviewModal(true);
     } catch (err: any) {
