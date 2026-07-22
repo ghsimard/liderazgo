@@ -582,6 +582,8 @@ export default function RubricaEvaluacion() {
         return;
       }
 
+      const authorCedula = cedula; // cédula de l'auteur (directivo ou coach connecté)
+
       for (const item of moduleItems) {
         const ev = evaluaciones[item.id];
         if (!ev) continue;
@@ -611,9 +613,16 @@ export default function RubricaEvaluacion() {
           .maybeSingle();
 
         if (existing?.id) {
-          await supabase.from("rubrica_evaluaciones").update(payload).eq("id", existing.id);
+          // Update: audit uniquement de la dernière MAJ
+          await supabase
+            .from("rubrica_evaluaciones")
+            .update({ ...payload, updated_by: authorCedula })
+            .eq("id", existing.id);
         } else {
-          await supabase.from("rubrica_evaluaciones").insert(payload);
+          // Insert: on renseigne aussi l'auteur initial
+          await supabase
+            .from("rubrica_evaluaciones")
+            .insert({ ...payload, evaluador_cedula: authorCedula, updated_by: authorCedula });
         }
       }
 
