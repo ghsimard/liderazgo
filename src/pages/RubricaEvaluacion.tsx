@@ -296,18 +296,18 @@ export default function RubricaEvaluacion() {
         await loadSeguimientos(fichaData.numero_cedula);
         navigateToLastEnabledModule(modules, dates, "directivo");
 
-        // Load assigned evaluator name for this directivo
-        const { data: asigData } = await supabase
+        // Load assigned evaluator name for this directivo (1-1 garantie par contrainte unique)
+        const { data: asigRow } = await supabase
           .from("rubrica_asignaciones")
           .select("evaluador_id")
           .eq("directivo_cedula", fichaData.numero_cedula)
-          .limit(1);
-        if (asigData && asigData.length > 0) {
+          .maybeSingle();
+        if (asigRow?.evaluador_id) {
           const { data: evalData } = await supabase
             .from("rubrica_evaluadores")
             .select("nombre")
-            .eq("id", asigData[0].evaluador_id)
-            .single();
+            .eq("id", asigRow.evaluador_id)
+            .maybeSingle();
           if (evalData) setAssignedEvaluadorNombre(evalData.nombre);
         }
         // Check if directivo already submitted (has at least one directivo_nivel)
