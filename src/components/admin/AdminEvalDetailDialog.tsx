@@ -316,9 +316,6 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
                     );
                   })}
                 </div>
-                    );
-                  })}
-                </div>
               );
             })}
 
