@@ -299,9 +299,23 @@ export default function AdminEvalDetailDialog({ open, onOpenChange, directivoCed
                               </Badge>
                             ) : <span className="text-xs text-muted-foreground">—</span>}
                             <p className="text-xs text-muted-foreground">{lastSeg?.comentario || "Sin seguimiento"}</p>
+                            {lastSeg?.evaluador_cedula && (
+                              <p className="text-[10px] text-muted-foreground italic">
+                                Por: {resolveAuthor(lastSeg.evaluador_cedula)} · {formatBogota(lastSeg.created_at)}
+                              </p>
+                            )}
                           </div>
                         </div>
+
+                        {(ev?.updated_at || ev?.updated_by) && (
+                          <div className="text-[10px] text-muted-foreground italic pt-1 border-t border-muted/40">
+                            Última edición: {formatBogota(ev.updated_at)} · Editado por: {resolveAuthor(ev.updated_by)}
+                          </div>
+                        )}
                       </div>
+                    );
+                  })}
+                </div>
                     );
                   })}
                 </div>
