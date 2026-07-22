@@ -32,6 +32,9 @@ interface Evaluacion {
   equipo_comentario: string | null;
   acordado_nivel: string | null;
   acordado_comentario: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
+  evaluador_cedula?: string | null;
 }
 
 interface Seguimiento {
@@ -39,6 +42,7 @@ interface Seguimiento {
   nivel: string | null;
   comentario: string | null;
   created_at: string;
+  evaluador_cedula?: string | null;
 }
 
 const NIVELES = [
