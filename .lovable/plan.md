@@ -1,33 +1,34 @@
-# Retirer le plafond de 25 réponses dans Delta
-
 ## Objectif
-Rétablir le comportement d'origine de **Ambiente Escolar → Informes → Delta** : les rapports doivent tenir compte de **toutes** les réponses d'Evolución, sans plafond.
 
-## Fichier modifié
-`src/components/admin/AdminAmbienteDeltaTab.tsx`
+Revenir à l'état antérieur : **un directivo peut de nouveau être évalué par plusieurs évaluateurs** (la règle 1-à-1 ajoutée récemment est supprimée).
 
-## Changements
+## Actions à réaliser
 
-1. **Supprimer l'état et la constante** (l. 99-100)
-   - Retirer `const [capEvolucion, setCapEvolucion] = useState(true);`
-   - Retirer `const CAP_EVO_N = 25;`
+### 🗄️ Base de données (SQL manuel sur Render)
 
-2. **Supprimer le bloc de plafonnement** (l. 277-297)
-   - Supprimer tout le bloc `if (capEvolucion) { ... }` qui regroupe par `(institución, tipo_formulario)`, trie par `created_at` et coupe à `CAP_EVO_N`.
-   - Remplacer `let evolucion = remap(evoRaw, "cierre");` par `const evolucion = remap(evoRaw, "cierre");` (plus de réassignation).
+Supprimer la contrainte d'unicité sur `directivo_cedula`.
 
-3. **Retirer la dépendance du `useMemo`** (l. 325)
-   - Enlever `capEvolucion` du tableau de dépendances.
+```sql
+ALTER TABLE public.rubrica_asignaciones
+  DROP CONSTRAINT IF EXISTS rubrica_asignaciones_directivo_unique;
+```
 
-4. **Retirer la case à cocher dans l'UI** (l. 926-936)
-   - Supprimer le `<label>` complet contenant la checkbox « Limitar Evolución a las 25 respuestas más antiguas… ».
+Les colonnes d'audit (`evaluador_cedula`, `updated_by`, etc.) ajoutées en même temps **restent en place** — elles ne gênent rien et continuent d'alimenter le suivi « Última edición ».
 
-## Ce qu'on ne touche pas
-- Aucune autre logique de Delta (comparabilité muestrale, `melAmbienteIndicator`, exclusions MEL, KPI 80 %, etc.) — elles restent telles qu'avant l'ajout du toggle.
-- Aucun autre onglet (Estadísticas, Campañas, Monitoreo, MEL) — le plafond n'y a jamais été appliqué.
-- Aucune modification SQL ni Render.
+La contrainte historique `UNIQUE (evaluador_id, directivo_cedula)` reste, elle : elle empêche seulement qu'un **même évaluateur** soit assigné deux fois au même directivo (comportement d'origine).
 
-## Vérification
-1. Ouvrir Ambiente Escolar → Informes → Delta : plus de case à cocher visible.
-2. Le compteur « Evolución: N resp » affiche le total réel (pas capé à 25).
-3. Les résultats du KPI 80 % et les deltas par composante correspondent à ce qu'ils étaient avant l'introduction du plafond.
+### 🖥️ Site statique (Frontend)
+
+**`src/components/admin/AdminEvaluadoresTab.tsx`** — retirer le message spécifique à la violation d'unicité 1-à-1 dans `handleAssign` (autour des lignes 160-176), puisqu'il ne se déclenchera plus. On garde un simple toast d'erreur générique. Aucun autre changement fonctionnel nécessaire :
+- `TransferDirectivosDialog` reste utile mais optionnel (les admins peuvent aussi simplement créer une seconde assignation).
+- `MiPanel.tsx` et `RubricaEvaluacion.tsx` supportent déjà plusieurs assignations (`.some(...)` pour la visibilité, dernière évaluation affichée via colonnes d'audit).
+
+### ⚙️ Web Service (Backend Express)
+
+Aucune modification. Les routes proxy PostgREST ne référencent pas la contrainte.
+
+## Résultat attendu
+
+- Un admin peut assigner un même directivo à plusieurs évaluateurs (comme avant).
+- Les colonnes d'audit continuent d'enregistrer qui a fait la dernière évaluation.
+- Aucune donnée existante n'est perdue.
