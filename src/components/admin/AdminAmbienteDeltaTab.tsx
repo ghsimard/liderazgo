@@ -96,8 +96,6 @@ export default function AdminAmbienteDeltaTab() {
   const [instSortKey, setInstSortKey] = useState<"institucion" | "countIni" | "countEvo" | "ini" | "evo" | "delta">("delta");
   const [instSortDir, setInstSortDir] = useState<"asc" | "desc">("desc");
   const [ignorarComparabilidad, setIgnorarComparabilidad] = useState(false);
-  const [capEvolucion, setCapEvolucion] = useState(true);
-  const CAP_EVO_N = 25;
 
   // MEL display preferences (persisted in localStorage)
   const PREFS_KEY = "mel-ambiente-prefs";
@@ -272,29 +270,7 @@ export default function AdminAmbienteDeltaTab() {
       });
 
     const inicial = remap(iniRaw, "linea_base");
-    let evolucion = remap(evoRaw, "cierre");
-
-    // Cap Evolución to the N oldest responses per (institución, tipo_formulario)
-    // to keep the sample comparable with Inicial (avoids "muestra no comparable"
-    // exclusions when Evolución is still being collected en masse).
-    if (capEvolucion) {
-      const groups = new Map<string, Submission[]>();
-      for (const s of evolucion) {
-        const k = `${s.institucion_educativa}||${s.tipo_formulario}`;
-        if (!groups.has(k)) groups.set(k, []);
-        groups.get(k)!.push(s);
-      }
-      const capped: Submission[] = [];
-      for (const arr of groups.values()) {
-        arr.sort((a, b) => {
-          const da = a.created_at ? Date.parse(a.created_at) : 0;
-          const db = b.created_at ? Date.parse(b.created_at) : 0;
-          return da - db;
-        });
-        capped.push(...arr.slice(0, CAP_EVO_N));
-      }
-      evolucion = capped;
-    }
+    const evolucion = remap(evoRaw, "cierre");
 
     const iniNames = new Set(inicial.map((s) => s.institucion_educativa));
     const evoNames = new Set(evolucion.map((s) => s.institucion_educativa));
@@ -322,7 +298,7 @@ export default function AdminAmbienteDeltaTab() {
         onlyEvo,
       },
     };
-  }, [selectedCohortes, campanas, submissions, allowedInstitutionsSet, capEvolucion]);
+  }, [selectedCohortes, campanas, submissions, allowedInstitutionsSet]);
 
 
   const regionesLabel = selectedRegions.length === 0 ? "Todas" : selectedRegions.join(", ");
@@ -923,17 +899,6 @@ export default function AdminAmbienteDeltaTab() {
             </div>
           )}
 
-          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={capEvolucion}
-              onChange={(e) => setCapEvolucion(e.target.checked)}
-              className="h-3.5 w-3.5"
-            />
-            <span>
-              Limitar Evolución a las {CAP_EVO_N} respuestas más antiguas por institución y formulario
-            </span>
-          </label>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleGenerateAnalysis} disabled={generating || !analysis}>
