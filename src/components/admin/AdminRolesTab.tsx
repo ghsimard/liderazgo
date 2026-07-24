@@ -370,7 +370,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
               </Table>
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              C = Crear, R = Leer, U = Actualizar, D = Eliminar. Los permisos del padre se heredan a las sub-secciones a menos que se personalicen.
+              Los permisos del padre se heredan a las sub-secciones a menos que se personalicen.
             </p>
           </CardContent>
         </Card>
