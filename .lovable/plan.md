@@ -1,46 +1,33 @@
+# Retirer le plafond de 25 réponses dans Delta
+
 ## Objectif
-SQL déjà passé sur Render (contrainte unique + colonnes d'audit). On adapte maintenant le frontend pour :
-1. remplir les nouvelles colonnes d'audit à chaque écriture,
-2. journaliser qui-fait-quoi-quand,
-3. tirer parti de la garantie 1-1 pour simplifier l'affichage,
-4. gérer proprement l'erreur d'unicité à l'assignation.
+Rétablir le comportement d'origine de **Ambiente Escolar → Informes → Delta** : les rapports doivent tenir compte de **toutes** les réponses d'Evolución, sans plafond.
 
-## 🖥️ Site statique — changements frontend
+## Fichier modifié
+`src/components/admin/AdminAmbienteDeltaTab.tsx`
 
-### 1) `src/pages/RubricaEvaluacion.tsx`
+## Changements
 
-**a. `handleSubmit` (l. 606-617)** — remplir l'audit et enrichir le log
-- Récupérer `evaluadorId` déjà présent dans le state (ou `ev.id` pour le rôle evaluador ; pour le directivo, utiliser sa propre `cedula`).
-- Résoudre la cédula de l'évaluateur : si `role === "equipo"`, faire un lookup `rubrica_evaluadores.cedula` par `evaluadorId` une seule fois au chargement et le garder en state (`evaluadorCedula`). Pour `role === "directivo"`, utiliser `directivoInfo.cedula`.
-- À l'INSERT : ajouter `evaluador_cedula: authorCedula` + `updated_by: authorCedula`.
-- À l'UPDATE : ajouter uniquement `updated_by: authorCedula` (ne pas écraser `evaluador_cedula`).
-- Enrichir `logActivity` (l. 644) : `\`Módulo ${n}, ${submissionType}, rol=${role}\``.
+1. **Supprimer l'état et la constante** (l. 99-100)
+   - Retirer `const [capEvolucion, setCapEvolucion] = useState(true);`
+   - Retirer `const CAP_EVO_N = 25;`
 
-**b. `handleSaveSeguimiento` (l. 686)** — ajouter `evaluador_cedula: authorCedula` à l'INSERT + `logActivity(authorCedula, 'rubrica_submit', \`Seguimiento M${n}, item ${itemId}\`, '/rubrica-evaluacion')`.
+2. **Supprimer le bloc de plafonnement** (l. 277-297)
+   - Supprimer tout le bloc `if (capEvolucion) { ... }` qui regroupe par `(institución, tipo_formulario)`, trie par `created_at` et coupe à `CAP_EVO_N`.
+   - Remplacer `let evolucion = remap(evoRaw, "cierre");` par `const evolucion = remap(evoRaw, "cierre");` (plus de réassignation).
 
-**c. En-tête « Evaluadora asignada » (l. 299-312)**
-- Puisque la contrainte garantit 1 ligne max, remplacer `.limit(1)` par `.maybeSingle()`.
-- Aucun autre changement de comportement — la logique de fallback devient inutile mais reste inoffensive ; on la retire.
+3. **Retirer la dépendance du `useMemo`** (l. 325)
+   - Enlever `capEvolucion` du tableau de dépendances.
 
-### 2) `src/components/admin/AdminEvaluadoresTab.tsx` (l. 141-171)
-- Après le `.insert(rows)` : si `error.code === '23505'` ou `error.message` contient `rubrica_asignaciones_directivo_unique`, afficher un toast dédié :
-  > « Uno o más directivos ya están asignados a otro evaluador. Use el botón **Transferir** para reasignar. »
-- Sinon garder le comportement actuel.
+4. **Retirer la case à cocher dans l'UI** (l. 926-936)
+   - Supprimer le `<label>` complet contenant la checkbox « Limitar Evolución a las 25 respuestas más antiguas… ».
 
-### 3) `src/pages/MiPanel.tsx`
-- La requête récemment passée à `.some()` peut redevenir `.maybeSingle()` sur la ligne unique. Comportement identique, code plus simple.
-
-### 4) `src/components/admin/AdminEvalDetailDialog.tsx` (audit visible côté admin)
-- Ajouter deux petites colonnes dans la table de détail : **Última edición** (`updated_at` formaté `DD/MM/YYYY HH:mm` en UTC-5 Bogotá) et **Editado por** (nom résolu via `rubrica_evaluadores.cedula = updated_by`, avec fallback sur la cédula brute si non trouvé).
-
-## Ce qu'on ne change pas
-- `TransferDirectivosDialog` — fonctionne déjà.
-- `fichas_rlt`, aucune RLS, aucun renommage.
-- Le journal d'activité existant (`user_activity_log`) — on ajoute juste des entrées.
+## Ce qu'on ne touche pas
+- Aucune autre logique de Delta (comparabilité muestrale, `melAmbienteIndicator`, exclusions MEL, KPI 80 %, etc.) — elles restent telles qu'avant l'ajout du toggle.
+- Aucun autre onglet (Estadísticas, Campañas, Monitoreo, MEL) — le plafond n'y a jamais été appliqué.
+- Aucune modification SQL ni Render.
 
 ## Vérification
-1. Soumettre un module en tant que coach → row de `rubrica_evaluaciones` contient `evaluador_cedula` + `updated_by` = cédula du coach ; entrée dans `user_activity_log`.
-2. Modifier un item déjà noté → `updated_by` change, `evaluador_cedula` inchangée.
-3. Saisir un seguimiento → `evaluador_cedula` peuplée, entrée d'activité présente.
-4. Tenter d'assigner un directivo déjà pris via Admin → Evaluadores → toast pointant vers Transferir.
-5. `AdminEvalDetailDialog` affiche colonnes « Última edición / Editado por » (vide pour les lignes historiques, normal).
+1. Ouvrir Ambiente Escolar → Informes → Delta : plus de case à cocher visible.
+2. Le compteur « Evolución: N resp » affiche le total réel (pas capé à 25).
+3. Les résultats du KPI 80 % et les deltas par composante correspondent à ce qu'ils étaient avant l'introduction du plafond.
