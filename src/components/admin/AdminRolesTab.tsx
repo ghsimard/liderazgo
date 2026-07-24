@@ -333,10 +333,10 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[250px]">Sección</TableHead>
-                    <TableHead className="text-center w-16">C</TableHead>
-                    <TableHead className="text-center w-16">R</TableHead>
-                    <TableHead className="text-center w-16">U</TableHead>
-                    <TableHead className="text-center w-16">D</TableHead>
+                    <TableHead className="text-center w-24">Crear</TableHead>
+                    <TableHead className="text-center w-24">Leer</TableHead>
+                    <TableHead className="text-center w-28">Actualizar</TableHead>
+                    <TableHead className="text-center w-24">Eliminar</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
