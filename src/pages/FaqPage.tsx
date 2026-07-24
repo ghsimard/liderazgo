@@ -217,6 +217,18 @@ const faqSections: FaqSection[] = [
         q: "¿Cuál es la diferencia entre admin y superadmin?",
         a: "El superadmin tiene acceso completo, incluyendo la gestión de otros administradores, la exportación de la base de datos, la lectura de mensajes de contacto y la creación de otros superadmins. El admin tiene acceso a la gestión de datos pero no a estas funciones críticas.",
       },
+      {
+        q: "¿Cómo se asignan y configuran los roles y permisos?",
+        a: (
+          <div className="space-y-2">
+            <p>1) Ir a <AdminLink to="/admin?tab=sistema">Sistema → Roles y Permisos</AdminLink>.</p>
+            <p>2) Cada rol (superadmin, admin, operador, etc.) muestra una tabla con las secciones de la plataforma y cuatro permisos por sección: <strong>Crear</strong>, <strong>Leer</strong>, <strong>Actualizar</strong> y <strong>Eliminar</strong>.</p>
+            <p>3) Marcar o desmarcar las casillas correspondientes para otorgar o retirar permisos. Los cambios se guardan automáticamente.</p>
+            <p>4) Para asignar un rol a un usuario administrativo, ir a <AdminLink to="/admin?tab=users">Administradores</AdminLink>, editar el usuario y seleccionar el rol deseado en el menú desplegable.</p>
+            <p className="text-sm text-muted-foreground">Solo el superadmin puede modificar los permisos de otros roles y crear nuevos superadmins. Los cambios se reflejan tras un refresh (Ctrl+Shift+R) en la sesión del usuario afectado.</p>
+          </div>
+        ),
+      },
     ],
   },
 ];
