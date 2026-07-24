@@ -333,10 +333,10 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[250px]">Sección</TableHead>
-                    <TableHead className="text-center w-16">C</TableHead>
-                    <TableHead className="text-center w-16">R</TableHead>
-                    <TableHead className="text-center w-16">U</TableHead>
-                    <TableHead className="text-center w-16">D</TableHead>
+                    <TableHead className="text-center w-24">Crear</TableHead>
+                    <TableHead className="text-center w-24">Leer</TableHead>
+                    <TableHead className="text-center w-28">Actualizar</TableHead>
+                    <TableHead className="text-center w-24">Eliminar</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -370,7 +370,7 @@ export default function AdminRolesTab({ isSuperAdmin }: { isSuperAdmin: boolean 
               </Table>
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              C = Crear, R = Leer, U = Actualizar, D = Eliminar. Los permisos del padre se heredan a las sub-secciones a menos que se personalicen.
+              Los permisos del padre se heredan a las sub-secciones a menos que se personalicen.
             </p>
           </CardContent>
         </Card>
