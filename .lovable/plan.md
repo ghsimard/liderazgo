@@ -93,4 +93,4 @@ Aucun changement : il ne voit pas le schéma `e360`, donc ni les fichas ni les r
 3. Création du projet Lovable e360 + migration des composants 360.
 4. Implémentation de l'onglet Licencias (4 sous-onglets) et du garde de licence.
 5. Backend : CORS, accès schéma `e360`, middleware licence + rôle administrador, expiration automatique.
-6. Chargement des 150 licences `usuario`, création des licences `administrador`, tests d'attribution / renouvellement / suspension / révocation et vérification du journal de transactions.
+6. Chargement des 150 licences `rector`, création des licences `administrador`, tests d'attribution / renouvellement / suspension / révocation et vérification du journal de transactions.
