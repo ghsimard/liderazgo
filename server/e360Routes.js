@@ -242,8 +242,8 @@ module.exports = function e360Routes(pool) {
 
   /* ------------------------------------------- ENCUESTA 360 -------------- */
 
-  // POST /api/e360/respuestas
-  r.post('/e360/respuestas', async (req, res) => {
+  // POST /api/e360app/respuestas
+  r.post('/respuestas', async (req, res) => {
     try {
       const b = req.body || {};
       const cedula = String(b.cedula || '').trim();
