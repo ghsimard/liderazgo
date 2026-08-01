@@ -74,12 +74,13 @@ Pas de RLS ni de policies (contrainte Render en vigueur) : le contrôle d'accès
 ### Web Service (Express, backend)
 - Autoriser le schéma `e360` dans le shim/proxy (les requêtes du nouveau site ciblent `e360.<table>`).
 - Ajouter le domaine du nouveau site à la liste CORS.
-- Middleware de vérification de licence : sur les routes de données e360, refuser (403) si la cédula du JWT/session n'a pas de licence active.
+- Middleware de vérification de licence : sur les routes de données e360, refuser (403) si la cédula du JWT/session n'a pas de licence active ; exiger `tipo_licencia = 'administrador'` sur les routes d'administration.
+- Tâche planifiée (ou vérification à la connexion) appelant la fonction d'expiration.
 
 ### Site statique (Frontend, nouveau projet Lovable)
 - Reprise des pages/composants 360 existants, branchés sur `e360.*` via `dbClient`.
-- Nouveau composant `AdminLicenciasTab` (tableau, compteurs, actions, historial), visible uniquement pour le superadmin.
-- Garde de licence au niveau du routeur : écran de blocage si aucune licence active.
+- Nouveau composant `AdminLicenciasTab` avec les 4 sous-onglets (Licencias, Tarifas, Transacciones, Contrato), visible uniquement pour le superadmin.
+- Garde de licence au niveau du routeur : écran de blocage si aucune licence active ou licence expirée.
 - UI intégralement en espagnol.
 
 ### Site actuel RLT
@@ -87,9 +88,9 @@ Aucun changement : il ne voit pas le schéma `e360`, donc ni les fichas ni les r
 
 ## Étapes
 
-1. Validation du modèle de licence et du schéma dédié.
-2. SQL manuel sur Render : schéma, tables licences, log, trigger de pool, vues de config, grants.
+1. Validation du modèle de licence (2 types, tarifs, journal) et du schéma dédié.
+2. SQL manuel sur Render : schéma, contrat, tarifs, licences, transactions, triggers, vues de config, grants.
 3. Création du projet Lovable e360 + migration des composants 360.
-4. Implémentation de l'onglet Licencias et du garde de licence.
-5. Backend : CORS, accès schéma `e360`, middleware licence.
-6. Chargement des 150 licences initiales et tests d'attribution/suspension/révocation.
+4. Implémentation de l'onglet Licencias (4 sous-onglets) et du garde de licence.
+5. Backend : CORS, accès schéma `e360`, middleware licence + rôle administrador, expiration automatique.
+6. Chargement des 150 licences `usuario`, création des licences `administrador`, tests d'attribution / renouvellement / suspension / révocation et vérification du journal de transactions.
