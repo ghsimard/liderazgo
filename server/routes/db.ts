@@ -403,13 +403,13 @@ function parseFiltersFromQuery(qs: Record<string, any>): Filter[] {
 router.get("/:table", async (req: Request, res: Response) => {
   try {
     const table = req.params.table as string;
-    if (!ALLOWED_TABLES.has(table)) {
+    if (!isAllowedTable(table)) {
       res.status(403).json({ error: `Table "${table}" non autorisée` });
       return;
     }
 
     // Auth check for non-public tables
-    if (!PUBLIC_READ_TABLES.has(table)) {
+    if (!isPublicRead(table)) {
       // Inline auth check
       const authHeader = req.headers.authorization;
       if (!authHeader?.startsWith("Bearer ")) {
@@ -481,13 +481,13 @@ router.get("/:table", async (req: Request, res: Response) => {
 
     if (isHead && countMode) {
       // COUNT only
-      const countSql = `SELECT COUNT(*) as count FROM ${sanitizeIdentifier(table)}${where}`;
+      const countSql = `SELECT COUNT(*) as count FROM ${qualifyTable(table)}${where}`;
       const result = await pool.query(countSql, params);
       res.json({ count: parseInt(result.rows[0].count, 10) });
       return;
     }
 
-    const sql = `SELECT ${selectCols} FROM ${sanitizeIdentifier(table)}${where}${orderClause}${limitClause}${offsetClause}`;
+    const sql = `SELECT ${selectCols} FROM ${qualifyTable(table)}${where}${orderClause}${limitClause}${offsetClause}`;
     const result = await pool.query(sql, params);
 
     if (result.rows.length >= HARD_MAX_ROWS) {
@@ -498,7 +498,7 @@ router.get("/:table", async (req: Request, res: Response) => {
       res.json({ data: result.rows[0] ?? null });
     } else if (countMode) {
       // Return data + count
-      const countSql = `SELECT COUNT(*) as count FROM ${sanitizeIdentifier(table)}${where}`;
+      const countSql = `SELECT COUNT(*) as count FROM ${qualifyTable(table)}${where}`;
       const countResult = await pool.query(countSql, params);
       res.json({ data: result.rows, count: parseInt(countResult.rows[0].count, 10) });
     } else {
@@ -515,7 +515,7 @@ router.get("/:table", async (req: Request, res: Response) => {
 router.post("/:table", async (req: Request, res: Response) => {
   try {
     const table = req.params.table as string;
-    if (!ALLOWED_TABLES.has(table)) {
+    if (!isAllowedTable(table)) {
       res.status(403).json({ error: `Table "${table}" non autorisée` });
       return;
     }
@@ -526,13 +526,13 @@ router.post("/:table", async (req: Request, res: Response) => {
     const method = _method || "POST";
 
     // Auth check: public inserts/updates allowed for certain tables, everything else needs admin
-    if (method === "POST" && !_body?._upsert && PUBLIC_INSERT_TABLES.has(table)) {
+    if (method === "POST" && !_body?._upsert && isPublicInsert(table)) {
       // Public insert allowed, no auth needed
-    } else if (method === "POST" && _body?._upsert && PUBLIC_INSERT_TABLES.has(table) && PUBLIC_UPDATE_TABLES.has(table)) {
+    } else if (method === "POST" && _body?._upsert && isPublicInsert(table) && isPublicUpdate(table)) {
       // Public upsert allowed when table allows both public insert and update
-    } else if (method === "PATCH" && PUBLIC_UPDATE_TABLES.has(table)) {
+    } else if (method === "PATCH" && isPublicUpdate(table)) {
       // Public update allowed, no auth needed
-    } else if (method === "DELETE" && PUBLIC_DELETE_TABLES.has(table)) {
+    } else if (method === "DELETE" && isPublicDelete(table)) {
       // Public delete allowed, no auth needed (used by Evaluador "replace children" flows)
     } else {
       // Need admin auth — check manually since we may not use middleware
@@ -659,7 +659,7 @@ router.post("/:table", async (req: Request, res: Response) => {
       for (const row of rows) {
         const vals = cols.map((c) => pgValue(row[c]));
         const placeholders = cols.map((_, i) => `$${i + 1}`);
-        let sql = `INSERT INTO ${sanitizeIdentifier(table)} (${cols.map(c => sanitizeIdentifier(c)).join(",")}) VALUES (${placeholders.join(",")})`;
+        let sql = `INSERT INTO ${qualifyTable(table)} (${cols.map(c => sanitizeIdentifier(c)).join(",")}) VALUES (${placeholders.join(",")})`;
 
         if (isUpsert && onConflict) {
           const conflictCols = onConflict.split(",").map((c: string) => c.trim());
@@ -696,13 +696,13 @@ router.post("/:table", async (req: Request, res: Response) => {
       });
 
       const where = buildWhereClause(filters, params);
-      const sql = `UPDATE ${sanitizeIdentifier(table)} SET ${setParts.join(",")}${where} RETURNING *`;
+      const sql = `UPDATE ${qualifyTable(table)} SET ${setParts.join(",")}${where} RETURNING *`;
       const result = await pool.query(sql, params);
       res.json({ data: result.rows });
     } else if (method === "DELETE") {
       const params: any[] = [];
       const where = buildWhereClause(filters, params);
-      const sql = `DELETE FROM ${sanitizeIdentifier(table)}${where} RETURNING *`;
+      const sql = `DELETE FROM ${qualifyTable(table)}${where} RETURNING *`;
       const result = await pool.query(sql, params);
       res.json({ data: result.rows });
     } else {
