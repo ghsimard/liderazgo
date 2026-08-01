@@ -1,84 +1,73 @@
-# Cloisonnement des données — Encuesta 360 indépendante
+# Encuesta 360 autonome — Gestion des licences (par utilisateur)
 
 ## Objectif
 
-Le nouveau site Encuesta 360 partage la même base de données que la plateforme actuelle (pour la synchronisation bidirectionnelle de la **configuration** : dominios, competencias, items, ponderaciones), mais les **fichas** et les **résultats** saisis depuis le nouveau site ne doivent **jamais** apparaître dans le site actuel.
+Le nouveau site e360 doit être cessible clé en main au client plus tard, et vendre entre-temps des **licences par utilisateur** (150 licences au départ), pilotées depuis un panneau superadmin.
 
-## Approche retenue
+## Décision d'architecture recommandée
 
-Une colonne d'origine (`app_origen`) sur les tables de données opérationnelles :
+Utiliser un **schéma Postgres dédié `e360`** dans la même base.
 
-- `'rlt'` (valeur par défaut) → données créées par la plateforme actuelle
-- `'e360'` → données créées par le nouveau site
+- Cession future = `pg_dump --schema=e360` + remise du dépôt frontend : rien à démêler.
+- Les données e360 (fichas, réponses, licences) ne sont jamais visibles depuis le site RLT actuel, puisqu'elles ne sont pas dans `public`.
+- La configuration 360 partagée (dominios, competencias, ítems, ponderaciones) reste dans `public` et est lue par e360 via des **vues** `e360.v_*` — synchro bidirectionnelle instantanée tant que les deux sites coexistent.
+- Au moment de la cession, ces vues sont remplacées par des tables matérialisées (copie figée) : le client part avec une base complète et autonome.
 
-Le site actuel filtre systématiquement `app_origen = 'rlt'`. Le nouveau site filtre `app_origen = 'e360'` et démarre donc à zéro côté données collectées, tout en lisant la configuration partagée.
+## Modèle de licence
 
-Cette approche évite de dupliquer 40+ tables et garde la configuration réellement synchronisée en temps réel.
+Une licence = un utilisateur (une cédula) autorisé à accéder au site e360.
 
-```text
-                 ┌───────────────────────────┐
-                 │   Base Postgres partagée  │
-                 ├───────────────────────────┤
-  Site actuel ──▶│ config 360   (partagée)   │◀── Nouveau site
-                 │ ─────────────────────────  │
-                 │ fichas_rlt   app_origen    │
-                 │ encuestas_360 app_origen   │
-                 └───────────────────────────┘
-                   'rlt' visible   'e360' visible
-                   côté actuel     côté nouveau
-```
+- **Pool** : un contrat/tenant possède un nombre de sièges (150 au départ).
+- **Attribution** : le superadmin assigne un siège à une cédula. Le compteur « utilisées / disponibles » se met à jour.
+- **États d'un siège** : `activa`, `suspendida`, `revocada` (libère le siège), avec date d'attribution et date d'expiration.
+- **Contrôle d'accès** : à la connexion, le site e360 vérifie qu'il existe une licence `activa` non expirée pour la cédula. Sinon, message de blocage (« Licencia no activa o expirada »).
+- **Garde-fou** : impossible d'attribuer un siège au-delà du pool ; le superadmin doit d'abord révoquer ou augmenter le pool.
+- **Journal** : chaque attribution, suspension, réactivation, révocation est tracée (qui, quand, quelle cédula).
 
-## Actions à réaliser
+## Panneau superadmin (nouveau site e360)
 
-### 🗄️ Base de données (SQL manuel sur Render)
+Onglet **Licencias** :
+- Bandeau de compteurs : Total / Activas / Suspendidas / Disponibles.
+- Tableau des licences : cédula, nombre, correo, estado, fecha de asignación, fecha de expiración, acciones.
+- Actions : asignar licencia (recherche par cédula), suspender, reactivar, revocar, cambiar fecha de expiración.
+- Actions en lot : asignación masiva depuis une liste de cédulas, suspension en lot.
+- Édition du pool (nombre total de licences du contrat) réservée au superadmin.
+- Export CSV de l'état des licences.
+- Sous-onglet **Historial** : journal des mouvements, filtrable par cédula et par date.
 
-Ajouter la colonne d'origine sur les tables de données collectées, avec valeur par défaut `'rlt'` pour tout l'existant, plus un index pour les filtres :
+## Détails techniques
 
-```sql
-ALTER TABLE public.fichas_rlt
-  ADD COLUMN IF NOT EXISTS app_origen text NOT NULL DEFAULT 'rlt';
+### Base de données (SQL manuel sur Render)
+1. `CREATE SCHEMA e360;`
+2. `e360.licencias_contrato` : `nombre_contrato`, `total_licencias` (150), `fecha_inicio`, `fecha_fin`, `estado`.
+3. `e360.licencias` : `contrato_id`, `cedula`, `nombres_apellidos`, `correo`, `estado` (`activa|suspendida|revocada`), `fecha_asignacion`, `fecha_expiracion`, `asignada_por`, `created_at`, `updated_at` + index unique partiel sur `cedula` là où `estado <> 'revocada'`.
+4. `e360.licencias_log` : `licencia_id`, `cedula`, `accion`, `estado_anterior`, `estado_nuevo`, `actor`, `created_at`.
+5. Trigger de contrôle du pool : refuse un `INSERT`/passage à `activa` si le nombre d'actives dépasse `total_licencias`.
+6. Vues de configuration partagée : `e360.v_360_dominios`, `e360.v_360_competencias`, `e360.v_360_items`, `e360.v_360_ponderaciones` pointant vers les tables `public` correspondantes.
+7. Tables de données propres à e360 (fichas, encuestas, resultados) créées dans `e360`, structure identique à l'actuelle.
+8. `GRANT USAGE ON SCHEMA e360` + `GRANT` sur les tables pour le rôle utilisé par le proxy Express.
 
-ALTER TABLE public.encuestas_360
-  ADD COLUMN IF NOT EXISTS app_origen text NOT NULL DEFAULT 'rlt';
+Pas de RLS ni de policies (contrainte Render en vigueur) : le contrôle d'accès reste applicatif, dans le proxy Express et le frontend.
 
-CREATE INDEX IF NOT EXISTS idx_fichas_rlt_app_origen
-  ON public.fichas_rlt (app_origen);
-CREATE INDEX IF NOT EXISTS idx_encuestas_360_app_origen
-  ON public.encuestas_360 (app_origen);
-```
+### Web Service (Express, backend)
+- Autoriser le schéma `e360` dans le shim/proxy (les requêtes du nouveau site ciblent `e360.<table>`).
+- Ajouter le domaine du nouveau site à la liste CORS.
+- Middleware de vérification de licence : sur les routes de données e360, refuser (403) si la cédula du JWT/session n'a pas de licence active.
 
-À valider avant exécution : si d'autres tables reçoivent des écritures du nouveau site (invitations/tokens d'évaluateurs externes, partages d'accès 360), la même colonne y sera ajoutée dans la même migration.
+### Site statique (Frontend, nouveau projet Lovable)
+- Reprise des pages/composants 360 existants, branchés sur `e360.*` via `dbClient`.
+- Nouveau composant `AdminLicenciasTab` (tableau, compteurs, actions, historial), visible uniquement pour le superadmin.
+- Garde de licence au niveau du routeur : écran de blocage si aucune licence active.
+- UI intégralement en espagnol.
 
-Les tables de **configuration** (`items_360`, `competency_weights`, dominios/competencias, `encuesta_360_visibilidad`) **ne reçoivent pas** cette colonne : elles restent communes aux deux applications.
+### Site actuel RLT
+Aucun changement : il ne voit pas le schéma `e360`, donc ni les fichas ni les résultats du nouveau site.
 
-### ⚙️ Web Service (Backend Express)
+## Étapes
 
-**`server/routes/db.ts`** — ajouter `app_origen` aux listes de colonnes autorisées (whitelists INSERT/UPDATE) pour `fichas_rlt` et `encuestas_360`, afin que le nouveau site puisse écrire sa valeur d'origine et que le site actuel continue d'écrire `'rlt'`.
-
-**`server/routes/rpc.ts`** — les fonctions SQL utilisées par le site actuel (`get_ficha_by_cedula`, `get_own_autoevaluacion`, etc.) doivent restreindre leurs résultats à `app_origen = 'rlt'`, sinon une ficha du nouveau site pourrait ressortir par ce chemin. Les fonctions concernées seront listées et corrigées dans la migration SQL.
-
-### 🖥️ Site statique (Frontend — plateforme actuelle)
-
-Centraliser le filtre plutôt que de le répéter partout :
-
-**`src/utils/dbClient.ts`** — ajouter un helper (par ex. `APP_ORIGEN = 'rlt'`) et l'appliquer :
-- à chaque `.insert()` sur `fichas_rlt` et `encuestas_360` → écrire `app_origen: 'rlt'`
-- à chaque `.select()` sur ces tables → `.eq("app_origen", "rlt")`
-
-Fichiers à mettre à jour (lecture et/ou écriture) :
-- `src/pages/FichaRLT.tsx`, `src/pages/AdminEditFicha.tsx`
-- `src/components/admin/AdminFichasTab.tsx`, `AdminEncuestas360Tab.tsx`, `AdminEncuestaMonitor.tsx`, `AdminDashboardTab.tsx`, `AdminTrashManager.tsx`, `AdminPurgeDataTab.tsx`
-- `src/components/Encuesta360Form.tsx`, `src/pages/Encuesta360Hub.tsx`
-- `src/utils/reporte360Calculator.ts`, `src/utils/reporte360MelCalculator.ts` (rapports et deltas MEL)
-
-Résultat : tous les tableaux de bord, monitoreos, rapports PDF et exports du site actuel excluent automatiquement les données du nouveau site.
-
-### 🆕 Nouveau site Encuesta 360
-
-Même mécanique inversée : constante `APP_ORIGEN = 'e360'`, écrite à chaque insertion et appliquée à chaque lecture de fichas/résultats. La configuration 360 est lue sans filtre (partagée).
-
-## Points de vigilance
-
-- **Purge et Papelera** : les outils de suppression du site actuel doivent aussi filtrer sur `'rlt'`, pour ne jamais effacer des données du nouveau site.
-- **Unicité par cédula** : si une même personne remplit une ficha des deux côtés, les contraintes d'unicité existantes sur `numero_cedula` pourraient bloquer. À vérifier et, le cas échéant, transformer en unicité composite `(numero_cedula, app_origen)`.
-- **Rétroactivité** : aucune donnée existante n'est modifiée — le `DEFAULT 'rlt'` marque automatiquement tout l'historique comme appartenant au site actuel.
+1. Validation du modèle de licence et du schéma dédié.
+2. SQL manuel sur Render : schéma, tables licences, log, trigger de pool, vues de config, grants.
+3. Création du projet Lovable e360 + migration des composants 360.
+4. Implémentation de l'onglet Licencias et du garde de licence.
+5. Backend : CORS, accès schéma `e360`, middleware licence.
+6. Chargement des 150 licences initiales et tests d'attribution/suspension/révocation.
