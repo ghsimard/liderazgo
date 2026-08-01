@@ -19,10 +19,10 @@ Deux types de licences, avec des tarifs distincts définis par le superadmin :
 
 | Type | Public | Durée | Prix |
 |---|---|---|---|
-| `usuario` | Directivos / utilisateurs finaux | définie par le contrat | tarif « usuario » configurable |
+| `rector` | Recteurs / directivos (utilisateurs finaux) | définie par le contrat | tarif « rector » configurable |
 | `administrador` | Administrateurs du système e360 | **1 an** (par défaut, date d'expiration auto-calculée) | tarif « administrador » configurable |
 
-- **Pool** : le contrat possède un nombre de sièges par type (150 sièges `usuario` au départ ; le nombre de sièges `administrador` est fixé par le superadmin).
+- **Pool initial** : 150 sièges `rector` ; le nombre de sièges `administrador` est fixé par le superadmin.
 - **Attribution** : le superadmin assigne un siège à une cédula en choisissant le type. Le compteur « utilisées / disponibles » se met à jour par type.
 - **États d'un siège** : `activa`, `suspendida`, `revocada` (libère le siège), `expirada` (automatique quand la date d'expiration est dépassée).
 - **Renouvellement** : une licence `administrador` peut être renouvelée pour 12 mois supplémentaires ; le renouvellement génère une nouvelle ligne de transaction au tarif en vigueur.
@@ -58,8 +58,8 @@ Onglet **Licencias** avec sous-onglets :
 
 ### Base de données (SQL manuel sur Render)
 1. `CREATE SCHEMA e360;`
-2. `e360.licencias_contrato` : `nombre_contrato`, `total_usuario` (150), `total_administrador`, `fecha_inicio`, `fecha_fin`, `estado`.
-3. `e360.licencias_tarifas` : `tipo_licencia` (`usuario|administrador`), `precio`, `moneda`, `duracion_meses` (12 pour `administrador`), `vigente_desde`, `vigente_hasta`, `created_by`.
+2. `e360.licencias_contrato` : `nombre_contrato`, `total_rector` (150), `total_administrador`, `fecha_inicio`, `fecha_fin`, `estado`.
+3. `e360.licencias_tarifas` : `tipo_licencia` (`rector|administrador`), `precio`, `moneda`, `duracion_meses` (12 pour `administrador`), `vigente_desde`, `vigente_hasta`, `created_by`.
 4. `e360.licencias` : `contrato_id`, `cedula`, `nombres_apellidos`, `correo`, `tipo_licencia`, `estado` (`activa|suspendida|revocada|expirada`), `fecha_asignacion`, `fecha_expiracion`, `asignada_por`, `created_at`, `updated_at` + index unique partiel sur `(cedula, tipo_licencia)` là où `estado NOT IN ('revocada','expirada')`.
 5. `e360.licencias_transacciones` (append-only) : `licencia_id`, `cedula`, `tipo_licencia`, `operacion`, `cantidad`, `precio_unitario`, `monto_total`, `moneda`, `tarifa_id`, `periodo_inicio`, `periodo_fin`, `estado_anterior`, `estado_nuevo`, `actor`, `nota`, `created_at`. Aucun `UPDATE`/`DELETE` (trigger de blocage).
 6. Trigger de contrôle du pool : refuse un `INSERT`/passage à `activa` si le nombre d'actives du type concerné dépasse le total du contrat.
@@ -93,4 +93,4 @@ Aucun changement : il ne voit pas le schéma `e360`, donc ni les fichas ni les r
 3. Création du projet Lovable e360 + migration des composants 360.
 4. Implémentation de l'onglet Licencias (4 sous-onglets) et du garde de licence.
 5. Backend : CORS, accès schéma `e360`, middleware licence + rôle administrador, expiration automatique.
-6. Chargement des 150 licences `usuario`, création des licences `administrador`, tests d'attribution / renouvellement / suspension / révocation et vérification du journal de transactions.
+6. Chargement des 150 licences `rector`, création des licences `administrador`, tests d'attribution / renouvellement / suspension / révocation et vérification du journal de transactions.
