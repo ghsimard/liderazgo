@@ -15,25 +15,44 @@ Utiliser un **schéma Postgres dédié `e360`** dans la même base.
 
 ## Modèle de licence
 
-Une licence = un utilisateur (une cédula) autorisé à accéder au site e360.
+Deux types de licences, avec des tarifs distincts définis par le superadmin :
 
-- **Pool** : un contrat/tenant possède un nombre de sièges (150 au départ).
-- **Attribution** : le superadmin assigne un siège à une cédula. Le compteur « utilisées / disponibles » se met à jour.
-- **États d'un siège** : `activa`, `suspendida`, `revocada` (libère le siège), avec date d'attribution et date d'expiration.
-- **Contrôle d'accès** : à la connexion, le site e360 vérifie qu'il existe une licence `activa` non expirée pour la cédula. Sinon, message de blocage (« Licencia no activa o expirada »).
-- **Garde-fou** : impossible d'attribuer un siège au-delà du pool ; le superadmin doit d'abord révoquer ou augmenter le pool.
-- **Journal** : chaque attribution, suspension, réactivation, révocation est tracée (qui, quand, quelle cédula).
+| Type | Public | Durée | Prix |
+|---|---|---|---|
+| `usuario` | Directivos / utilisateurs finaux | définie par le contrat | tarif « usuario » configurable |
+| `administrador` | Administrateurs du système e360 | **1 an** (par défaut, date d'expiration auto-calculée) | tarif « administrador » configurable |
+
+- **Pool** : le contrat possède un nombre de sièges par type (150 sièges `usuario` au départ ; le nombre de sièges `administrador` est fixé par le superadmin).
+- **Attribution** : le superadmin assigne un siège à une cédula en choisissant le type. Le compteur « utilisées / disponibles » se met à jour par type.
+- **États d'un siège** : `activa`, `suspendida`, `revocada` (libère le siège), `expirada` (automatique quand la date d'expiration est dépassée).
+- **Renouvellement** : une licence `administrador` peut être renouvelée pour 12 mois supplémentaires ; le renouvellement génère une nouvelle ligne de transaction au tarif en vigueur.
+- **Contrôle d'accès** : à la connexion, le site e360 vérifie qu'il existe une licence `activa` non expirée pour la cédula. Les fonctions d'administration exigent en plus une licence de type `administrador`.
+- **Garde-fou** : impossible d'attribuer un siège au-delà du pool du type concerné.
+
+## Tarification (superadmin)
+
+- Table de tarifs par type de licence : montant, devise, durée par défaut (mois), date d'entrée en vigueur.
+- Historique des tarifs conservé : une transaction enregistre toujours le prix appliqué **au moment de l'opération**, jamais le prix courant.
+- Modification d'un tarif = nouvelle version, les transactions passées restent intactes.
+
+## Journal des transactions
+
+Toute opération de licence produit une ligne de transaction immuable :
+- Type d'opération : `asignacion`, `renovacion`, `cambio_tipo`, `suspension`, `reactivacion`, `revocacion`, `expiracion`, `ajuste_pool`, `cambio_tarifa`.
+- Champs : cédula, type de licence, quantité, prix unitaire appliqué, montant total, devise, période couverte (début/fin), état avant/après, auteur (superadmin), date/heure, note libre.
+- Aucune suppression ni modification possible depuis l'interface (append-only).
+- Vue de synthèse : totaux facturés par période, par type de licence, par état.
+- Export CSV du journal complet et filtré.
 
 ## Panneau superadmin (nouveau site e360)
 
-Onglet **Licencias** :
-- Bandeau de compteurs : Total / Activas / Suspendidas / Disponibles.
-- Tableau des licences : cédula, nombre, correo, estado, fecha de asignación, fecha de expiración, acciones.
-- Actions : asignar licencia (recherche par cédula), suspender, reactivar, revocar, cambiar fecha de expiración.
-- Actions en lot : asignación masiva depuis une liste de cédulas, suspension en lot.
-- Édition du pool (nombre total de licences du contrat) réservée au superadmin.
-- Export CSV de l'état des licences.
-- Sous-onglet **Historial** : journal des mouvements, filtrable par cédula et par date.
+Onglet **Licencias** avec sous-onglets :
+
+1. **Licencias** — bandeau de compteurs par type (Total / Activas / Suspendidas / Disponibles), tableau (cédula, nombre, correo, tipo, estado, fecha de asignación, fecha de expiración, acciones), actions : asignar, renovar, suspender, reactivar, revocar, cambiar fecha de expiración, asignación masiva, export CSV.
+2. **Tarifas** — édition des prix par type de licence, durée par défaut, devise, historique des tarifs.
+3. **Transacciones** — journal complet, filtres (cédula, tipo, operación, rango de fechas), totaux, export CSV.
+4. **Contrato** — nombre total de sièges par type, dates du contrat, état.
+
 
 ## Détails techniques
 
