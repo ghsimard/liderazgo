@@ -148,6 +148,89 @@ const ALLOWED_TABLES = new Set([
   "encuesta_360_visibility",
 ]);
 
+// ── Schéma dédié `e360` (application Encuesta 360 autonome) ──────────
+// Les données e360 vivent dans leur propre schéma : invisibles depuis le site RLT.
+const E360_PUBLIC_READ_TABLES = new Set([
+  "v_360_dominios",
+  "v_360_competencias",
+  "v_360_items",
+  "v_360_item_texts",
+  "v_360_ponderaciones",
+  "encuestas_360",
+  "encuesta_invitaciones",
+  "encuesta_360_visibility",
+  "fichas_rlt",
+]);
+
+const E360_PUBLIC_INSERT_TABLES = new Set([
+  "encuestas_360",
+  "encuesta_invitaciones",
+  "fichas_rlt",
+]);
+
+const E360_PUBLIC_UPDATE_TABLES = new Set([
+  "encuesta_invitaciones",
+  "fichas_rlt",
+]);
+
+// Tables de licences : admin/superadmin uniquement
+const E360_ADMIN_TABLES = new Set([
+  "licencias",
+  "licencias_contrato",
+  "licencias_tarifas",
+  "licencias_transacciones",
+  "v_licencias_resumen",
+]);
+
+const E360_ALLOWED_TABLES = new Set([
+  ...E360_PUBLIC_READ_TABLES,
+  ...E360_PUBLIC_INSERT_TABLES,
+  ...E360_PUBLIC_UPDATE_TABLES,
+  ...E360_ADMIN_TABLES,
+]);
+
+/** Découpe "e360.licencias" → { schema: "e360", name: "licencias" } */
+function splitTable(table: string): { schema: string | null; name: string } {
+  const idx = table.indexOf(".");
+  if (idx === -1) return { schema: null, name: table };
+  return { schema: table.slice(0, idx), name: table.slice(idx + 1) };
+}
+
+function isAllowedTable(table: string): boolean {
+  const { schema, name } = splitTable(table);
+  if (schema === "e360") return E360_ALLOWED_TABLES.has(name);
+  if (schema) return false;
+  return ALLOWED_TABLES.has(name);
+}
+
+function isPublicRead(table: string): boolean {
+  const { schema, name } = splitTable(table);
+  if (schema === "e360") return E360_PUBLIC_READ_TABLES.has(name);
+  if (schema) return false;
+  return PUBLIC_READ_TABLES.has(name);
+}
+
+function isPublicInsert(table: string): boolean {
+  const { schema, name } = splitTable(table);
+  if (schema === "e360") return E360_PUBLIC_INSERT_TABLES.has(name);
+  if (schema) return false;
+  return PUBLIC_INSERT_TABLES.has(name);
+}
+
+function isPublicUpdate(table: string): boolean {
+  const { schema, name } = splitTable(table);
+  if (schema === "e360") return E360_PUBLIC_UPDATE_TABLES.has(name);
+  if (schema) return false;
+  return PUBLIC_UPDATE_TABLES.has(name);
+}
+
+function isPublicDelete(table: string): boolean {
+  const { schema, name } = splitTable(table);
+  if (schema === "e360") return false;
+  if (schema) return false;
+  return PUBLIC_DELETE_TABLES.has(name);
+}
+
 // ── Helpers ────────────────────────────────────────────
 
 /** Validate column/table names to prevent SQL injection via identifiers */
