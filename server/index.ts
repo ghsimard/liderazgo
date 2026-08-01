@@ -185,6 +185,8 @@ app.get("/api/health", (_req, res) => {
 });
 
 // SPA fallback — serve index.html for all non-API routes
+const e360Routes = require('./e360Routes');
+app.use('/api', e360Routes(pool));
 app.get("*", (_req, res) => {
   const indexPath = path.join(FRONTEND_DIST_DIR, "index.html");
   if (!fs.existsSync(indexPath)) {
