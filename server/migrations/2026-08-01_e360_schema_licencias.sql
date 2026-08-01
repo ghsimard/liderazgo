@@ -3,8 +3,11 @@
 -- À EXÉCUTER MANUELLEMENT SUR RENDER (Base de données)
 -- Aucune table du schéma `public` (RLT) n'est modifiée.
 -- =====================================================================
+-- NOTE : script idempotent, exécutable en une fois OU section par section.
+-- Volontairement SANS BEGIN/COMMIT : si une section échoue, les précédentes
+-- restent en place et l'erreur est localisable.
 
-BEGIN;
+
 
 -- ── 1. Schéma dédié ──────────────────────────────────────────────────
 CREATE SCHEMA IF NOT EXISTS e360;
@@ -281,13 +284,19 @@ SELECT 'administrador', 0, 'COP', 12, 'migration'
 WHERE NOT EXISTS (SELECT 1 FROM e360.licencias_tarifas WHERE tipo_licencia = 'administrador');
 
 -- ── 15. Droits (rôle applicatif du proxy Express) ────────────────────
-GRANT USAGE ON SCHEMA e360 TO CURRENT_USER;
-GRANT ALL ON ALL TABLES    IN SCHEMA e360 TO CURRENT_USER;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA e360 TO CURRENT_USER;
-GRANT ALL ON ALL FUNCTIONS IN SCHEMA e360 TO CURRENT_USER;
--- Si le proxy se connecte avec un autre rôle, remplacer CURRENT_USER par ce rôle.
+-- Compatible avec toutes les versions de PostgreSQL (GRANT ... TO CURRENT_USER
+-- n'existe qu'à partir de PG 14).
+DO $grants$
+DECLARE r text := current_user;
+BEGIN
+  EXECUTE format('GRANT USAGE ON SCHEMA e360 TO %I', r);
+  EXECUTE format('GRANT ALL ON ALL TABLES    IN SCHEMA e360 TO %I', r);
+  EXECUTE format('GRANT ALL ON ALL SEQUENCES IN SCHEMA e360 TO %I', r);
+  EXECUTE format('GRANT ALL ON ALL FUNCTIONS IN SCHEMA e360 TO %I', r);
+END $grants$;
+-- Si le proxy se connecte avec un autre rôle, remplacer current_user par ce rôle.
 
-COMMIT;
+
 
 -- Cession future au client :
 --   pg_dump --schema=e360 ...
