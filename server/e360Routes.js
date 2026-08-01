@@ -277,8 +277,8 @@ module.exports = function e360Routes(pool) {
     } catch (e) { fail(res, e); }
   });
 
-  // GET /api/e360/reportes/:cedula
-  r.get('/e360/reportes/:cedula', async (req, res) => {
+  // GET /api/e360app/reportes/:cedula
+  r.get('/reportes/:cedula', async (req, res) => {
     try {
       const cedula = String(req.params.cedula).trim();
       const { rows } = await q(
