@@ -19,10 +19,10 @@ Deux types de licences, avec des tarifs distincts définis par le superadmin :
 
 | Type | Public | Durée | Prix |
 |---|---|---|---|
-| `usuario` | Directivos / utilisateurs finaux | définie par le contrat | tarif « usuario » configurable |
+| `rector` | Recteurs / directivos (utilisateurs finaux) | définie par le contrat | tarif « rector » configurable |
 | `administrador` | Administrateurs du système e360 | **1 an** (par défaut, date d'expiration auto-calculée) | tarif « administrador » configurable |
 
-- **Pool** : le contrat possède un nombre de sièges par type (150 sièges `usuario` au départ ; le nombre de sièges `administrador` est fixé par le superadmin).
+- **Pool initial** : 150 sièges `rector` ; le nombre de sièges `administrador` est fixé par le superadmin.
 - **Attribution** : le superadmin assigne un siège à une cédula en choisissant le type. Le compteur « utilisées / disponibles » se met à jour par type.
 - **États d'un siège** : `activa`, `suspendida`, `revocada` (libère le siège), `expirada` (automatique quand la date d'expiration est dépassée).
 - **Renouvellement** : une licence `administrador` peut être renouvelée pour 12 mois supplémentaires ; le renouvellement génère une nouvelle ligne de transaction au tarif en vigueur.
