@@ -9,8 +9,10 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false
   },
-  "include": ["*.ts", "**/*.ts"],
+  "include": ["*.ts", "**/*.ts", "*.js", "**/*.js"],
   "exclude": ["node_modules", "dist"]
 }
