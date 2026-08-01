@@ -58,13 +58,16 @@ Onglet **Licencias** avec sous-onglets :
 
 ### Base de données (SQL manuel sur Render)
 1. `CREATE SCHEMA e360;`
-2. `e360.licencias_contrato` : `nombre_contrato`, `total_licencias` (150), `fecha_inicio`, `fecha_fin`, `estado`.
-3. `e360.licencias` : `contrato_id`, `cedula`, `nombres_apellidos`, `correo`, `estado` (`activa|suspendida|revocada`), `fecha_asignacion`, `fecha_expiracion`, `asignada_por`, `created_at`, `updated_at` + index unique partiel sur `cedula` là où `estado <> 'revocada'`.
-4. `e360.licencias_log` : `licencia_id`, `cedula`, `accion`, `estado_anterior`, `estado_nuevo`, `actor`, `created_at`.
-5. Trigger de contrôle du pool : refuse un `INSERT`/passage à `activa` si le nombre d'actives dépasse `total_licencias`.
-6. Vues de configuration partagée : `e360.v_360_dominios`, `e360.v_360_competencias`, `e360.v_360_items`, `e360.v_360_ponderaciones` pointant vers les tables `public` correspondantes.
-7. Tables de données propres à e360 (fichas, encuestas, resultados) créées dans `e360`, structure identique à l'actuelle.
-8. `GRANT USAGE ON SCHEMA e360` + `GRANT` sur les tables pour le rôle utilisé par le proxy Express.
+2. `e360.licencias_contrato` : `nombre_contrato`, `total_usuario` (150), `total_administrador`, `fecha_inicio`, `fecha_fin`, `estado`.
+3. `e360.licencias_tarifas` : `tipo_licencia` (`usuario|administrador`), `precio`, `moneda`, `duracion_meses` (12 pour `administrador`), `vigente_desde`, `vigente_hasta`, `created_by`.
+4. `e360.licencias` : `contrato_id`, `cedula`, `nombres_apellidos`, `correo`, `tipo_licencia`, `estado` (`activa|suspendida|revocada|expirada`), `fecha_asignacion`, `fecha_expiracion`, `asignada_por`, `created_at`, `updated_at` + index unique partiel sur `(cedula, tipo_licencia)` là où `estado NOT IN ('revocada','expirada')`.
+5. `e360.licencias_transacciones` (append-only) : `licencia_id`, `cedula`, `tipo_licencia`, `operacion`, `cantidad`, `precio_unitario`, `monto_total`, `moneda`, `tarifa_id`, `periodo_inicio`, `periodo_fin`, `estado_anterior`, `estado_nuevo`, `actor`, `nota`, `created_at`. Aucun `UPDATE`/`DELETE` (trigger de blocage).
+6. Trigger de contrôle du pool : refuse un `INSERT`/passage à `activa` si le nombre d'actives du type concerné dépasse le total du contrat.
+7. Trigger d'écriture automatique d'une transaction à chaque changement d'état ou attribution, avec le tarif en vigueur à la date de l'opération.
+8. Fonction d'expiration : passe les licences dont `fecha_expiracion < now()` à `expirada` et journalise l'opération.
+9. Vues de configuration partagée : `e360.v_360_dominios`, `e360.v_360_competencias`, `e360.v_360_items`, `e360.v_360_ponderaciones` pointant vers les tables `public` correspondantes.
+10. Tables de données propres à e360 (fichas, encuestas, resultados) créées dans `e360`, structure identique à l'actuelle.
+11. `GRANT USAGE ON SCHEMA e360` + `GRANT` sur les tables pour le rôle utilisé par le proxy Express.
 
 Pas de RLS ni de policies (contrainte Render en vigueur) : le contrôle d'accès reste applicatif, dans le proxy Express et le frontend.
 
