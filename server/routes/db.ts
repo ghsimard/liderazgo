@@ -254,6 +254,14 @@ function sanitizeIdentifier(name: string): string {
   return `"${name}"`;
 }
 
+/** "e360.licencias" → "e360"."licencias" ; "fichas_rlt" → "fichas_rlt" */
+function qualifyTable(table: string): string {
+  const { schema, name } = splitTable(table);
+  return schema
+    ? `${sanitizeIdentifier(schema)}.${sanitizeIdentifier(name)}`
+    : sanitizeIdentifier(name);
+}
+
 interface Filter {
   type: string;
   col: string;
