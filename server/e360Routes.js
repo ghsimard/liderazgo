@@ -118,13 +118,41 @@ module.exports = function e360Routes(pool) {
   });
 
   /* ------------------------------- ESTRUCTURA 360 (vistas RLT) -----------
-   * Estructura completa e idéntica a RLT: dominios, competencias, ítems,
-   * textos por tipo de formulario y ponderaciones por rol observador.
-   * GET /api/e360app/estructura
+   * Estructura completa e idéntica a RLT: dominios > competencias > ítems,
+   * con la escala de respuesta y las relaciones (tipos de formulario).
+   * GET /api/e360app/estructura?relacion=docente
    */
 
-  r.get('/estructura', async (_req, res) => {
+  const RELACIONES = [
+    { valor: 'autoevaluacion', etiqueta: 'Autoevaluación' },
+    { valor: 'directivo',      etiqueta: 'Directivo docente' },
+    { valor: 'docente',        etiqueta: 'Docente' },
+    { valor: 'administrativo', etiqueta: 'Administrativo' },
+    { valor: 'acudiente',      etiqueta: 'Acudiente' },
+    { valor: 'estudiante',     etiqueta: 'Estudiante' },
+  ];
+
+  const ESCALAS = {
+    frequency: [
+      { valor: 2.5, etiqueta: 'Nunca' },
+      { valor: 5,   etiqueta: 'Pocas veces' },
+      { valor: 7.5, etiqueta: 'Algunas veces' },
+      { valor: 10,  etiqueta: 'Siempre' },
+    ],
+    agreement: [
+      { valor: 2.5, etiqueta: 'Totalmente en desacuerdo' },
+      { valor: 5,   etiqueta: 'Algo en desacuerdo' },
+      { valor: 7.5, etiqueta: 'Algo de acuerdo' },
+      { valor: 10,  etiqueta: 'Totalmente de acuerdo' },
+    ],
+  };
+  const NO_SE = { valor: 0, etiqueta: 'No sé' };
+
+  r.get('/estructura', async (req, res) => {
     try {
+      const relacion = String(req.query.relacion || 'docente').trim() || 'docente';
+      const esAuto = relacion === 'autoevaluacion';
+
       const [d, c, i, t, w] = await Promise.all([
         q(`SELECT id, key, label, sort_order
              FROM e360.v_360_dominios
@@ -154,15 +182,78 @@ module.exports = function e360Routes(pool) {
           Number(row.weight);
       }
 
+      const escalaDe = (tipo) => {
+        const base = ESCALAS[tipo] || ESCALAS.agreement;
+        return esAuto ? base : [...base, NO_SE];
+      };
+
+      // Ítems enriquecidos y agrupados por competencia
+      const itemsPorCompetencia = {};
+      const itemsPlanos = i.rows.map((it) => {
+        const textos = textosPorItem[it.id] || {};
+        const item = {
+          id: it.id,
+          item_number: it.item_number,
+          numero: it.item_number,
+          competency_key: it.competency_key,
+          competencia_key: it.competency_key,
+          response_type: it.response_type,
+          tipo_respuesta: it.response_type,
+          sort_order: it.sort_order,
+          texto: textos[relacion] || textos.docente || textos.autoevaluacion || '',
+          textos,
+          escala: escalaDe(it.response_type),
+        };
+        (itemsPorCompetencia[it.competency_key] || (itemsPorCompetencia[it.competency_key] = [])).push(item);
+        return item;
+      });
+
+      // Competencias agrupadas por dominio
+      const competenciasPorDominio = {};
+      const competencias = c.rows.map((co) => {
+        const comp = {
+          id: co.id,
+          key: co.key,
+          nombre: co.label,
+          label: co.label,
+          domain_id: co.domain_id,
+          dominio_id: co.domain_id,
+          sort_order: co.sort_order,
+          ponderaciones: ponderaciones[co.key] || {},
+          items: (itemsPorCompetencia[co.key] || []).map((it) => ({ ...it, competencia_id: co.id })),
+        };
+        (competenciasPorDominio[co.domain_id] || (competenciasPorDominio[co.domain_id] = [])).push(comp);
+        return comp;
+      });
+
+      const dominios = d.rows.map((dm) => ({
+        id: dm.id,
+        key: dm.key,
+        nombre: dm.label,
+        label: dm.label,
+        descripcion: dm.label,
+        sort_order: dm.sort_order,
+        competencias: (competenciasPorDominio[dm.id] || []).map((co) => ({
+          ...co,
+          items: co.items.map((it) => ({ ...it, dominio_id: dm.id })),
+        })),
+      }));
+
       res.json({
-        dominios: d.rows,
-        competencias: c.rows,
-        items: i.rows.map((it) => ({ ...it, textos: textosPorItem[it.id] || {} })),
+        relacion,
+        relaciones: RELACIONES,
+        escala: escalaDe('frequency'),
+        escalas: { frequency: escalaDe('frequency'), agreement: escalaDe('agreement') },
+        dominios,
+        // Formato plano conservado para compatibilidad
+        competencias,
+        items: itemsPlanos,
         item_texts: t.rows,
         ponderaciones,
       });
     } catch (e) { fail(res, e); }
   });
+
 
   return r;
 };
