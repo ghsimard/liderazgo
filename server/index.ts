@@ -109,6 +109,7 @@ app.use("/api/github", githubRoutes);
 app.use("/api/email", emailRoutes);
 app.use("/api/generate-section-text", generateSectionTextRoutes);
 app.use("/api/adhoc-report", adhocReportRoutes);
+app.use("/api/licencias", licenciasRoutes);
 
 // ─── Public form submission (no auth required) ───────
 import { query as dbQuery } from "./db";
