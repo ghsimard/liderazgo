@@ -118,44 +118,13 @@ module.exports = function e360Routes(pool) {
   });
 
   /* ------------------------------- ESTRUCTURA 360 (vistas RLT) -----------
-   * Estructura completa e idéntica a RLT: dominios > competencias > ítems,
-   * con el texto correspondiente al tipo de formulario solicitado, las
-   * escalas de respuesta y las ponderaciones por rol observador.
-   *
-   * GET /api/e360app/estructura?relacion=docente
+   * Estructura completa e idéntica a RLT: dominios, competencias, ítems,
+   * textos por tipo de formulario y ponderaciones por rol observador.
+   * GET /api/e360app/estructura
    */
 
-  // Escalas de respuesta idénticas a RLT (0 a 10)
-  const ESCALA_FRECUENCIA = [
-    { valor: 2.5, etiqueta: 'Nunca' },
-    { valor: 5, etiqueta: 'Pocas veces' },
-    { valor: 7.5, etiqueta: 'Algunas veces' },
-    { valor: 10, etiqueta: 'Siempre' },
-  ];
-  const ESCALA_ACUERDO = [
-    { valor: 2.5, etiqueta: 'Totalmente en desacuerdo' },
-    { valor: 5, etiqueta: 'Algo en desacuerdo' },
-    { valor: 7.5, etiqueta: 'Algo de acuerdo' },
-    { valor: 10, etiqueta: 'Totalmente de acuerdo' },
-  ];
-  const NO_SE = { valor: 0, etiqueta: 'No sé' };
-
-  const RELACIONES = [
-    { valor: 'autoevaluacion', etiqueta: 'Autoevaluación', rol: 'autoeval' },
-    { valor: 'directivo', etiqueta: 'Equipo directivo', rol: 'coor' },
-    { valor: 'docente', etiqueta: 'Docentes', rol: 'doce' },
-    { valor: 'administrativo', etiqueta: 'Administrativos', rol: 'admi' },
-    { valor: 'acudiente', etiqueta: 'Acudientes', rol: 'acud' },
-    { valor: 'estudiante', etiqueta: 'Estudiantes', rol: 'estu' },
-  ];
-
-  const baseKey = (k) => String(k || '').replace(/_\d+$/, '');
-
-  r.get('/estructura', async (req, res) => {
+  r.get('/estructura', async (_req, res) => {
     try {
-      const relacion = String(req.query.relacion || 'autoevaluacion').trim();
-      const esAuto = relacion === 'autoevaluacion';
-
       const [d, c, i, t, w] = await Promise.all([
         q(`SELECT id, key, label, sort_order
              FROM e360.v_360_dominios
@@ -172,7 +141,7 @@ module.exports = function e360Routes(pool) {
              FROM e360.v_360_ponderaciones`),
       ]);
 
-      // Textos por ítem y tipo de formulario
+      // Textos agrupados por ítem: { [item_id]: { autoevaluacion: "...", ... } }
       const textosPorItem = {};
       for (const row of t.rows) {
         (textosPorItem[row.item_id] || (textosPorItem[row.item_id] = {}))[row.form_type] = row.text;
@@ -185,63 +154,11 @@ module.exports = function e360Routes(pool) {
           Number(row.weight);
       }
 
-      // Índices de competencias por key exacta y por key base
-      const compPorKey = new Map();
-      const compPorBase = new Map();
-      for (const comp of c.rows) {
-        compPorKey.set(comp.key, comp);
-        if (!compPorBase.has(baseKey(comp.key))) compPorBase.set(baseKey(comp.key), comp);
-      }
-
-      // Ítems agrupados por competencia
-      const itemsPorComp = new Map();
-      for (const it of i.rows) {
-        const comp =
-          compPorKey.get(it.competency_key) || compPorBase.get(baseKey(it.competency_key));
-        const ck = comp ? comp.key : it.competency_key;
-        const texto =
-          (textosPorItem[it.id] || {})[relacion] ??
-          (textosPorItem[it.id] || {})['autoevaluacion'] ??
-          null;
-        const lista = itemsPorComp.get(ck) || [];
-        lista.push({
-          id: String(it.id),
-          numero: it.item_number,
-          texto,
-          tipo_respuesta: it.response_type,
-          competencia_id: ck,
-          dominio_id: comp ? String(comp.domain_id) : null,
-        });
-        itemsPorComp.set(ck, lista);
-      }
-
-      // Estructura anidada: dominios > competencias > ítems
-      const dominios = d.rows.map((dom) => ({
-        id: String(dom.id),
-        key: dom.key,
-        nombre: dom.label,
-        descripcion: '',
-        competencias: c.rows
-          .filter((comp) => String(comp.domain_id) === String(dom.id))
-          .map((comp) => ({
-            id: comp.key,
-            key: comp.key,
-            nombre: comp.label,
-            items: itemsPorComp.get(comp.key) || [],
-          }))
-          .filter((comp) => comp.items.length > 0),
-      }));
-
       res.json({
-        relacion,
-        relaciones: RELACIONES.map(({ valor, etiqueta }) => ({ valor, etiqueta })),
-        // Escala por defecto (frecuencia) para compatibilidad
-        escala: esAuto ? ESCALA_FRECUENCIA : [...ESCALA_FRECUENCIA, NO_SE],
-        escalas: {
-          frecuencia: esAuto ? ESCALA_FRECUENCIA : [...ESCALA_FRECUENCIA, NO_SE],
-          acuerdo: esAuto ? ESCALA_ACUERDO : [...ESCALA_ACUERDO, NO_SE],
-        },
-        dominios,
+        dominios: d.rows,
+        competencias: c.rows,
+        items: i.rows.map((it) => ({ ...it, textos: textosPorItem[it.id] || {} })),
+        item_texts: t.rows,
         ponderaciones,
       });
     } catch (e) { fail(res, e); }
@@ -249,4 +166,3 @@ module.exports = function e360Routes(pool) {
 
   return r;
 };
-
