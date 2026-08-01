@@ -38,6 +38,7 @@ import githubRoutes from "./routes/github";
 import emailRoutes from "./routes/email";
 import generateSectionTextRoutes from "./routes/generate-section-text";
 import adhocReportRoutes from "./routes/adhoc-report";
+import licenciasRoutes from "./routes/licencias";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3001", 10);
