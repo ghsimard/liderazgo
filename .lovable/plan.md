@@ -58,8 +58,8 @@ Onglet **Licencias** avec sous-onglets :
 
 ### Base de données (SQL manuel sur Render)
 1. `CREATE SCHEMA e360;`
-2. `e360.licencias_contrato` : `nombre_contrato`, `total_usuario` (150), `total_administrador`, `fecha_inicio`, `fecha_fin`, `estado`.
-3. `e360.licencias_tarifas` : `tipo_licencia` (`usuario|administrador`), `precio`, `moneda`, `duracion_meses` (12 pour `administrador`), `vigente_desde`, `vigente_hasta`, `created_by`.
+2. `e360.licencias_contrato` : `nombre_contrato`, `total_rector` (150), `total_administrador`, `fecha_inicio`, `fecha_fin`, `estado`.
+3. `e360.licencias_tarifas` : `tipo_licencia` (`rector|administrador`), `precio`, `moneda`, `duracion_meses` (12 pour `administrador`), `vigente_desde`, `vigente_hasta`, `created_by`.
 4. `e360.licencias` : `contrato_id`, `cedula`, `nombres_apellidos`, `correo`, `tipo_licencia`, `estado` (`activa|suspendida|revocada|expirada`), `fecha_asignacion`, `fecha_expiracion`, `asignada_por`, `created_at`, `updated_at` + index unique partiel sur `(cedula, tipo_licencia)` là où `estado NOT IN ('revocada','expirada')`.
 5. `e360.licencias_transacciones` (append-only) : `licencia_id`, `cedula`, `tipo_licencia`, `operacion`, `cantidad`, `precio_unitario`, `monto_total`, `moneda`, `tarifa_id`, `periodo_inicio`, `periodo_fin`, `estado_anterior`, `estado_nuevo`, `actor`, `nota`, `created_at`. Aucun `UPDATE`/`DELETE` (trigger de blocage).
 6. Trigger de contrôle du pool : refuse un `INSERT`/passage à `activa` si le nombre d'actives du type concerné dépasse le total du contrat.
