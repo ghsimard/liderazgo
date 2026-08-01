@@ -173,23 +173,13 @@ const E360_PUBLIC_UPDATE_TABLES = new Set([
   "fichas_rlt",
 ]);
 
-// Tables de licences : admin/superadmin uniquement
-const E360_ADMIN_TABLES = new Set([
-  "licencias",
-  "licencias_contrato",
-  "licencias_tarifas",
-  "licencias_transacciones",
-  "v_licencias_resumen",
-]);
-
 const E360_ALLOWED_TABLES = new Set([
   ...E360_PUBLIC_READ_TABLES,
   ...E360_PUBLIC_INSERT_TABLES,
   ...E360_PUBLIC_UPDATE_TABLES,
-  ...E360_ADMIN_TABLES,
 ]);
 
-/** Découpe "e360.licencias" → { schema: "e360", name: "licencias" } */
+/** Découpe "e360.encuestas_360" → { schema: "e360", name: "encuestas_360" } */
 function splitTable(table: string): { schema: string | null; name: string } {
   const idx = table.indexOf(".");
   if (idx === -1) return { schema: null, name: table };
@@ -254,7 +244,7 @@ function sanitizeIdentifier(name: string): string {
   return `"${name}"`;
 }
 
-/** "e360.licencias" → "e360"."licencias" ; "fichas_rlt" → "fichas_rlt" */
+/** "e360.encuestas_360" → "e360"."encuestas_360" ; "fichas_rlt" → "fichas_rlt" */
 function qualifyTable(table: string): string {
   const { schema, name } = splitTable(table);
   return schema
