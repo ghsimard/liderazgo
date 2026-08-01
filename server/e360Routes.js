@@ -242,8 +242,8 @@ module.exports = function e360Routes(pool) {
 
   /* ------------------------------------------- ENCUESTA 360 -------------- */
 
-  // POST /api/e360/respuestas
-  r.post('/e360/respuestas', async (req, res) => {
+  // POST /api/e360app/respuestas
+  r.post('/respuestas', async (req, res) => {
     try {
       const b = req.body || {};
       const cedula = String(b.cedula || '').trim();
@@ -277,8 +277,8 @@ module.exports = function e360Routes(pool) {
     } catch (e) { fail(res, e); }
   });
 
-  // GET /api/e360/reportes/:cedula
-  r.get('/e360/reportes/:cedula', async (req, res) => {
+  // GET /api/e360app/reportes/:cedula
+  r.get('/reportes/:cedula', async (req, res) => {
     try {
       const cedula = String(req.params.cedula).trim();
       const { rows } = await q(
@@ -336,16 +336,50 @@ module.exports = function e360Routes(pool) {
     } catch (e) { fail(res, e); }
   });
 
-  /* ------------------------------- ESTRUCTURA 360 (vistas RLT) ----------- */
+  /* ------------------------------- ESTRUCTURA 360 (vistas RLT) -----------
+   * Estructura completa e idéntica a RLT: dominios, competencias, ítems,
+   * textos por tipo de formulario y ponderaciones por rol observador.
+   * GET /api/e360app/estructura
+   */
 
-  r.get('/e360/estructura', async (_req, res) => {
+  r.get('/estructura', async (_req, res) => {
     try {
-      const [d, c, i] = await Promise.all([
-        q(`SELECT id, key, label, sort_order FROM e360.v_360_dominios ORDER BY sort_order`),
-        q(`SELECT id, key, label, domain_id, sort_order FROM e360.v_360_competencias ORDER BY sort_order`),
-        q(`SELECT id, item_number, competency_key, response_type, sort_order FROM e360.v_360_items ORDER BY sort_order`),
+      const [d, c, i, t, w] = await Promise.all([
+        q(`SELECT id, key, label, sort_order
+             FROM e360.v_360_dominios
+            ORDER BY sort_order, label`),
+        q(`SELECT id, key, label, domain_id, sort_order
+             FROM e360.v_360_competencias
+            ORDER BY sort_order, label`),
+        q(`SELECT id, item_number, competency_key, response_type, sort_order
+             FROM e360.v_360_items
+            ORDER BY sort_order, item_number`),
+        q(`SELECT id, item_id, form_type, text
+             FROM e360.v_360_item_texts`),
+        q(`SELECT competency_key, observer_role, weight
+             FROM e360.v_360_ponderaciones`),
       ]);
-      res.json({ dominios: d.rows, competencias: c.rows, items: i.rows });
+
+      // Textos agrupados por ítem: { [item_id]: { autoevaluacion: "...", ... } }
+      const textosPorItem = {};
+      for (const row of t.rows) {
+        (textosPorItem[row.item_id] || (textosPorItem[row.item_id] = {}))[row.form_type] = row.text;
+      }
+
+      // Ponderaciones: { [competency_key]: { [observer_role]: peso } }
+      const ponderaciones = {};
+      for (const row of w.rows) {
+        (ponderaciones[row.competency_key] || (ponderaciones[row.competency_key] = {}))[row.observer_role] =
+          Number(row.weight);
+      }
+
+      res.json({
+        dominios: d.rows,
+        competencias: c.rows,
+        items: i.rows.map((it) => ({ ...it, textos: textosPorItem[it.id] || {} })),
+        item_texts: t.rows,
+        ponderaciones,
+      });
     } catch (e) { fail(res, e); }
   });
 
