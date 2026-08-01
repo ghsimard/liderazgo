@@ -38,7 +38,6 @@ import githubRoutes from "./routes/github";
 import emailRoutes from "./routes/email";
 import generateSectionTextRoutes from "./routes/generate-section-text";
 import adhocReportRoutes from "./routes/adhoc-report";
-import licenciasRoutes from "./routes/licencias";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3001", 10);
@@ -109,7 +108,6 @@ app.use("/api/github", githubRoutes);
 app.use("/api/email", emailRoutes);
 app.use("/api/generate-section-text", generateSectionTextRoutes);
 app.use("/api/adhoc-report", adhocReportRoutes);
-app.use("/api/licencias", licenciasRoutes);
 
 // ─── Public form submission (no auth required) ───────
 import { query as dbQuery } from "./db";
