@@ -658,6 +658,143 @@ module.exports = function e360Routes(pool) {
 
   r.get('/admin/me', requireAdmin, (req, res) => res.json({ admin: req.admin }));
 
+  /* ------------------------------- restablecer contraseña (por correo) ---- */
+
+  const APP_URL = (process.env.E360_APP_URL || 'https://liderazgo360.co').replace(/\/$/, '');
+  const CORREO_REMITENTE = process.env.E360_CORREO_REMITENTE || 'no-reply@liderazgo360.co';
+
+  /** Envía el correo por Resend (HTTP) o por SMTP (nodemailer) según variables de entorno. */
+  async function enviarCorreo({ to, subject, html }) {
+    if (process.env.RESEND_API_KEY) {
+      const resp = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({ from: CORREO_REMITENTE, to: [to], subject, html }),
+      });
+      if (!resp.ok) throw new Error(`Resend ${resp.status}: ${await resp.text()}`);
+      return;
+    }
+    if (process.env.SMTP_HOST) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const nodemailer = require('nodemailer');
+      const transport = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 587),
+        secure: String(process.env.SMTP_SECURE || '') === 'true',
+        auth: process.env.SMTP_USER
+          ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+          : undefined,
+      });
+      await transport.sendMail({ from: CORREO_REMITENTE, to, subject, html });
+      return;
+    }
+    throw new Error('No hay proveedor de correo configurado (RESEND_API_KEY o SMTP_HOST)');
+  }
+
+  const hashToken = (t) => crypto.createHash('sha256').update(t).digest('hex');
+
+  /** Solicitud de restablecimiento. Respuesta siempre neutra (no revela cuentas). */
+  r.post('/admin/password/solicitar', async (req, res) => {
+    const neutro = { ok: true };
+    try {
+      const correo = String(req.body?.correo || '').trim().toLowerCase();
+      if (!correo) return res.status(400).json({ error: 'Correo obligatorio' });
+
+      const { rows } = await q(
+        `SELECT id, correo, nombre FROM e360.admins
+          WHERE lower(correo) = $1 AND activo = true LIMIT 1`,
+        [correo],
+      );
+      const a = rows[0];
+      if (!a) return res.json(neutro);
+
+      // Máximo 3 solicitudes por hora y cuenta.
+      const { rows: cnt } = await q(
+        `SELECT count(*)::int AS n FROM e360.admin_password_resets
+          WHERE admin_id = $1 AND created_at > now() - interval '1 hour'`,
+        [a.id],
+      );
+      if ((cnt[0]?.n ?? 0) >= 3) return res.json(neutro);
+
+      const token = crypto.randomBytes(32).toString('hex');
+      await q(
+        `INSERT INTO e360.admin_password_resets (admin_id, token_hash, expira_en, ip)
+         VALUES ($1,$2, now() + interval '1 hour', $3)`,
+        [a.id, hashToken(token), req.ip ?? null],
+      );
+
+      const enlace = `${APP_URL}/admin/restablecer?token=${token}`;
+      await enviarCorreo({
+        to: a.correo,
+        subject: 'Restablecer tu contraseña de administración e360',
+        html: `<div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.6">
+          <h2 style="margin:0 0 12px">Restablecer contraseña</h2>
+          <p>Hola${a.nombre ? ` ${a.nombre}` : ''}, recibimos una solicitud para restablecer la
+          contraseña de tu cuenta de administración de <strong>e360</strong>.</p>
+          <p><a href="${enlace}" style="display:inline-block;background:#0f766e;color:#ffffff;
+            padding:12px 20px;border-radius:8px;text-decoration:none">Crear nueva contraseña</a></p>
+          <p style="font-size:13px;color:#475569">El enlace vence en 1 hora y solo puede usarse una vez.
+          Si no solicitaste el cambio, puedes ignorar este mensaje.</p>
+        </div>`,
+      });
+      await log(a, 'password_reset_solicitado', a.correo);
+      res.json(neutro);
+    } catch (e) { fail(res, e); }
+  });
+
+  /** ¿El token sigue siendo válido? (para mostrar el formulario) */
+  r.get('/admin/password/verificar', async (req, res) => {
+    try {
+      const token = String(req.query?.token || '');
+      if (!token) return res.status(400).json({ error: 'Token obligatorio' });
+      const { rows } = await q(
+        `SELECT a.correo FROM e360.admin_password_resets p
+           JOIN e360.admins a ON a.id = p.admin_id
+          WHERE p.token_hash = $1 AND p.usado_en IS NULL AND p.expira_en > now() AND a.activo`,
+        [hashToken(token)],
+      );
+      if (!rows[0]) return res.status(400).json({ error: 'El enlace no es válido o ya venció' });
+      res.json({ valido: true, correo: rows[0].correo });
+    } catch (e) { fail(res, e); }
+  });
+
+  /** Aplica la nueva contraseña y cierra todas las sesiones abiertas. */
+  r.post('/admin/password/restablecer', async (req, res) => {
+    try {
+      const token = String(req.body?.token || '');
+      const password = String(req.body?.password || '');
+      if (!token) return res.status(400).json({ error: 'Token obligatorio' });
+      if (password.length < 8) {
+        return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+      }
+      const { rows } = await q(
+        `UPDATE e360.admin_password_resets p
+            SET usado_en = now()
+          WHERE p.token_hash = $1 AND p.usado_en IS NULL AND p.expira_en > now()
+        RETURNING p.admin_id`,
+        [hashToken(token)],
+      );
+      const adminId = rows[0]?.admin_id;
+      if (!adminId) return res.status(400).json({ error: 'El enlace no es válido o ya venció' });
+
+      const { rows: upd } = await q(
+        `UPDATE e360.admins
+            SET password_hash = crypt($2, gen_salt('bf')), updated_at = now()
+          WHERE id = $1 AND activo = true
+        RETURNING id, correo, nombre, rol`,
+        [adminId, password],
+      );
+      if (!upd[0]) return res.status(400).json({ error: 'Cuenta no disponible' });
+
+      await q(`DELETE FROM e360.admin_sesiones WHERE admin_id = $1`, [adminId]);
+      await log(upd[0], 'password_restablecido', upd[0].correo);
+      res.json({ ok: true, correo: upd[0].correo });
+    } catch (e) { fail(res, e); }
+  });
+
   /* ------------------------------------------------- usuarios y roles ------ */
 
   r.get('/admin/usuarios', requireAdmin, requireSuperadmin, async (_req, res) => {
