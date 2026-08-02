@@ -598,6 +598,26 @@ module.exports = function e360Routes(pool) {
 
   /* ------------------------------------------------------------- sesión ---- */
 
+  /** ¿La cédula pertenece a un administrador? (usado en la página de inicio) */
+  r.post('/admin/verificar-cedula', async (req, res) => {
+    try {
+      const cedula = String(req.body?.cedula || '').trim();
+      if (!cedula) return res.status(400).json({ error: 'Cédula obligatoria' });
+      const { rows } = await q(
+        `SELECT correo, nombre, rol FROM e360.admins
+          WHERE cedula = $1 AND activo = true LIMIT 1`,
+        [cedula],
+      );
+      const a = rows[0];
+      if (!a) return res.json({ es_admin: false });
+      res.json({ es_admin: true, correo: a.correo, nombre: a.nombre, rol: a.rol });
+    } catch (e) {
+      // Si la columna cedula aún no existe, no bloquea el ingreso normal.
+      if (e && e.code === '42703') return res.json({ es_admin: false });
+      fail(res, e);
+    }
+  });
+
   r.post('/admin/login', async (req, res) => {
     try {
       const correo = String(req.body?.correo || '').trim().toLowerCase();
