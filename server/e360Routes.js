@@ -447,8 +447,9 @@ module.exports = function e360Routes(pool) {
 
   /* ------------------------------- ESTRUCTURA 360 (vistas RLT) ----------- */
 
-  r.get('/estructura', async (_req, res) => {
+  r.get('/estructura', async (req, res) => {
     try {
+      const tipo = String(req.query?.tipo || 'autoevaluacion');
       // Vue enrichie (ETAPE-4) si elle existe, sinon la vue d'origine.
       const dominiosQuery = async () => {
         try {
@@ -462,6 +463,16 @@ module.exports = function e360Routes(pool) {
         q(`SELECT * FROM e360.v_360_competencias ORDER BY sort_order`),
         q(`SELECT * FROM e360.v_360_items ORDER BY sort_order`),
       ]);
+
+      // Textos de los enunciados: item_texts_360, por form_type (como RLT/360).
+      const textos = await textosPorItem();
+      const textoDe = (row) => {
+        for (const k of ['id', 'item_id', 'item_number', 'key']) {
+          const t = textos.get(String(row[k]));
+          if (t) return t[tipo] || t['autoevaluacion'] || Object.values(t).find(Boolean) || null;
+        }
+        return null;
+      };
 
       const pick = (row, keys) => {
         for (const k of keys) {
@@ -477,6 +488,7 @@ module.exports = function e360Routes(pool) {
           pick(it, ['competency_key', 'competencia_key', 'competency_id', 'competencia_id']) ?? '',
         );
         const texto =
+          textoDe(it) ??
           pick(it, ['statement_text', 'texto', 'label', 'enunciado', 'pregunta', 'item_text']) ??
           `Ítem ${pick(it, ['item_number', 'id']) ?? ''}`.trim();
         const list = itemsPorCompetencia.get(key) || [];
@@ -562,6 +574,73 @@ module.exports = function e360Routes(pool) {
        VALUES ($1,$2,$3,$4)`,
       [admin?.id ?? null, admin?.correo ?? null, accion, detalle ?? null],
     ).catch(() => {});
+
+  /* ---------------- textos de los enunciados (item_texts_360) -------------- */
+  // En RLT/360 el texto de cada enunciado vive en item_texts_360, con una fila
+  // por (item_id, form_type). items_360 no tiene columna de texto.
+
+  const FORM_TYPES_BASE = [
+    'autoevaluacion', 'docente', 'estudiante', 'directivo', 'acudiente', 'administrativo',
+  ];
+
+  async function formTypes() {
+    try {
+      const t = await tabla('item_texts_360');
+      const { rows } = await q(
+        `SELECT DISTINCT form_type FROM ${t} WHERE form_type IS NOT NULL`,
+      );
+      const extra = rows
+        .map((x) => String(x.form_type))
+        .filter((ft) => !FORM_TYPES_BASE.includes(ft));
+      return [...FORM_TYPES_BASE, ...extra.sort()];
+    } catch {
+      return FORM_TYPES_BASE;
+    }
+  }
+
+  // Map: item_id -> { form_type: texto }
+  async function textosPorItem() {
+    const map = new Map();
+    let rows = [];
+    try {
+      const r1 = await q(`SELECT item_id, form_type, text FROM e360.v_360_item_texts`);
+      rows = r1.rows;
+    } catch {
+      try {
+        const t = await tabla('item_texts_360');
+        const r2 = await q(`SELECT item_id, form_type, text FROM ${t}`);
+        rows = r2.rows;
+      } catch { return map; }
+    }
+    for (const row of rows) {
+      const k = String(row.item_id);
+      const obj = map.get(k) || {};
+      obj[String(row.form_type)] = row.text ?? '';
+      map.set(k, obj);
+    }
+    return map;
+  }
+
+  async function guardarTextoItem(itemId, formType, texto) {
+    const t = await tabla('item_texts_360');
+    try {
+      await q(
+        `INSERT INTO ${t} (item_id, form_type, text) VALUES ($1,$2,$3)
+         ON CONFLICT (item_id, form_type) DO UPDATE SET text = EXCLUDED.text`,
+        [itemId, formType, texto],
+      );
+    } catch {
+      // Sin restricción única en (item_id, form_type): update y si no existe, insert.
+      const upd = await q(
+        `UPDATE ${t} SET text = $3 WHERE item_id::text = $1::text AND form_type = $2`,
+        [String(itemId), formType, texto],
+      );
+      if (upd.rowCount === 0) {
+        await q(`INSERT INTO ${t} (item_id, form_type, text) VALUES ($1,$2,$3)`,
+          [itemId, formType, texto]);
+      }
+    }
+  }
 
   async function adminDeToken(req) {
     const h = req.headers.authorization || '';
@@ -879,7 +958,22 @@ module.exports = function e360Routes(pool) {
         q(`SELECT * FROM ${await tabla('items_360')} ORDER BY competency_key, sort_order NULLS LAST`),
         q(`SELECT * FROM ${await tabla('competency_weights')} ORDER BY competency_key`).catch(() => ({ rows: [] })),
       ]);
-      res.json({ dominios: d.rows, competencias: c.rows, items: i.rows, ponderaciones: w.rows });
+
+      // Los textos de los enunciados viven en item_texts_360 (uno por form_type),
+      // igual que en RLT/360.
+      const textos = await textosPorItem();
+      const items = i.rows.map((it) => ({
+        ...it,
+        textos: textos.get(String(it.id)) ?? {},
+      }));
+
+      res.json({
+        dominios: d.rows,
+        competencias: c.rows,
+        items,
+        ponderaciones: w.rows,
+        form_types: await formTypes(),
+      });
     } catch (e) { fail(res, e); }
   });
 
@@ -926,24 +1020,24 @@ module.exports = function e360Routes(pool) {
     try {
       const b = req.body || {};
       const t = await tabla('items_360');
-      const cols = await q(
-        `SELECT column_name FROM information_schema.columns
-          WHERE table_name = 'items_360'`,
-      );
-      const nombres = cols.rows.map((x) => x.column_name);
-      const textoCol = ['statement_text', 'texto', 'label', 'enunciado'].find((cn) =>
-        nombres.includes(cn),
-      );
-      if (!textoCol) return res.status(400).json({ error: 'No hay columna de texto en items_360' });
       const { rows } = await q(
-        `UPDATE ${t} SET ${textoCol} = COALESCE($2, ${textoCol}),
-                         sort_order = COALESCE($3, sort_order)
+        `UPDATE ${t} SET sort_order = COALESCE($2, sort_order)
           WHERE id::text = $1 RETURNING *`,
-        [String(req.params.id), b.texto ?? null, b.sort_order ?? null],
+        [String(req.params.id), b.sort_order ?? null],
       );
       if (!rows[0]) return res.status(404).json({ error: 'Ítem no encontrado' });
-      await log(req.admin, 'item_actualizado', String(req.params.id));
-      res.json(rows[0]);
+
+      // El texto se guarda en item_texts_360, para el form_type indicado.
+      if (b.texto != null) {
+        const formType = String(b.form_type || 'autoevaluacion');
+        await guardarTextoItem(rows[0].id, formType, String(b.texto));
+        await log(req.admin, 'item_texto_actualizado', `${req.params.id} (${formType})`);
+      } else {
+        await log(req.admin, 'item_actualizado', String(req.params.id));
+      }
+
+      const textos = await textosPorItem();
+      res.json({ ...rows[0], textos: textos.get(String(rows[0].id)) ?? {} });
     } catch (e) { fail(res, e); }
   });
 
