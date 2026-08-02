@@ -622,6 +622,29 @@ module.exports = function e360Routes(pool) {
   }
 
   async function guardarTextoItem(itemId, formType, texto) {
+    return guardarTextoItemImpl(itemId, formType, texto);
+  }
+
+  // Map: item_id -> peso (tabla propia de e360, ver ETAPE-9)
+  async function pesosPorItem() {
+    const map = new Map();
+    try {
+      const { rows } = await q(`SELECT item_id, peso FROM e360.item_ponderaciones`);
+      for (const row of rows) map.set(String(row.item_id), Number(row.peso));
+    } catch { /* tabla aún no creada */ }
+    return map;
+  }
+
+  async function guardarPesoItem(itemId, peso) {
+    await q(
+      `INSERT INTO e360.item_ponderaciones (item_id, peso, updated_at)
+       VALUES ($1::text, $2, now())
+       ON CONFLICT (item_id) DO UPDATE SET peso = EXCLUDED.peso, updated_at = now()`,
+      [String(itemId), Number(peso)],
+    );
+  }
+
+  async function guardarTextoItemImpl(itemId, formType, texto) {
     const t = await tabla('item_texts_360');
     try {
       await q(
@@ -962,9 +985,11 @@ module.exports = function e360Routes(pool) {
       // Los textos de los enunciados viven en item_texts_360 (uno por form_type),
       // igual que en RLT/360.
       const textos = await textosPorItem();
+      const pesos = await pesosPorItem();
       const items = i.rows.map((it) => ({
         ...it,
         textos: textos.get(String(it.id)) ?? {},
+        ponderacion: pesos.has(String(it.id)) ? pesos.get(String(it.id)) : 1,
       }));
 
       res.json({
@@ -1032,12 +1057,23 @@ module.exports = function e360Routes(pool) {
         const formType = String(b.form_type || 'autoevaluacion');
         await guardarTextoItem(rows[0].id, formType, String(b.texto));
         await log(req.admin, 'item_texto_actualizado', `${req.params.id} (${formType})`);
-      } else {
+      } else if (b.peso == null) {
         await log(req.admin, 'item_actualizado', String(req.params.id));
       }
 
+      // Ponderación propia del enunciado (tabla e360.item_ponderaciones).
+      if (b.peso != null) {
+        await guardarPesoItem(rows[0].id, Number(b.peso));
+        await log(req.admin, 'item_ponderacion_actualizada', `${req.params.id} = ${b.peso}`);
+      }
+
       const textos = await textosPorItem();
-      res.json({ ...rows[0], textos: textos.get(String(rows[0].id)) ?? {} });
+      const pesos = await pesosPorItem();
+      res.json({
+        ...rows[0],
+        textos: textos.get(String(rows[0].id)) ?? {},
+        ponderacion: pesos.has(String(rows[0].id)) ? pesos.get(String(rows[0].id)) : 1,
+      });
     } catch (e) { fail(res, e); }
   });
 
