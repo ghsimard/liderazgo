@@ -1777,6 +1777,29 @@ module.exports = function e360Routes(pool) {
   r.post('/admin/geo/sincronizar-territorio', requireAdmin, requireEscritura, async (req, res) => {
     try {
       const incluirInstituciones = req.body?.incluirInstituciones !== false;
+      /* Municipios foco: solo para ellos se importan las instituciones. */
+      const sinAcentos = (v) =>
+        String(v || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .toLowerCase();
+      const MUNICIPIOS_FOCO = [
+        'Apartadó', 'Armenia', 'Barrancabermeja', 'Barranquilla', 'Bello', 'Bucaramanga',
+        'Buenaventura', 'Buga', 'Cali', 'Cartagena', 'Cartago', 'Chía', 'Ciénaga', 'Cúcuta',
+        'Dosquebradas', 'Duitama', 'Envigado', 'Facatativá', 'Florencia', 'Floridablanca',
+        'Funza', 'Fusagasugá', 'Girardot', 'Girón', 'Ibagué', 'Ipiales', 'Itagüí', 'Jamundí',
+        'La Estrella', 'Lorica', 'Magangué', 'Maicao', 'Malambo', 'Manizales', 'Medellín',
+        'Montería', 'Mosquera', 'Neiva', 'Palmira', 'Pasto', 'Pereira', 'Piedecuesta',
+        'Pitalito', 'Popayán', 'Quibdó', 'Riohacha', 'Rionegro', 'Sabaneta', 'Sahagún',
+        'Santa Marta', 'Sincelejo', 'Soacha', 'Sogamoso', 'Soledad', 'Tuluá', 'Tumaco',
+        'Tunja', 'Turbo', 'Uribia', 'Valledupar', 'Villavicencio', 'Yopal', 'Yumbo',
+        'Zipaquirá',
+      ];
+      const municipiosPedidos = Array.isArray(req.body?.municipios) && req.body.municipios.length
+        ? req.body.municipios
+        : MUNICIPIOS_FOCO;
+      const foco = new Set(municipiosPedidos.map(sinAcentos).filter(Boolean));
       const combinaciones = new Map(); // "entidad|municipio" -> { entidad, municipio }
       const PAGINA = 1000;
       const totalEntMun = await fetch(`${DUE_URL}?$select=count(1)`, {
@@ -1880,6 +1903,7 @@ module.exports = function e360Routes(pool) {
             const municipio = titulo(f.nombremunicipio);
             const nombre = titulo(f.nombreestablecimiento);
             if (!entidad || !municipio || !nombre) continue;
+            if (foco.size && !foco.has(sinAcentos(municipio))) continue;
 
             const entId = cacheEnt.get(entidad.toLowerCase());
             if (!entId) continue;
