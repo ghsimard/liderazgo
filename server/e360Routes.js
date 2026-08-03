@@ -1281,7 +1281,8 @@ module.exports = function e360Routes(pool) {
       ).catch(() => ({ rows: [] }));
 
       const f = await q(
-        `SELECT cedula, nombres, apellidos, cargo FROM e360.fichas WHERE cedula = $1`,
+        `SELECT numero_cedula, nombres_apellidos, cargo_actual, nombre_ie
+           FROM e360.fichas WHERE numero_cedula = $1`,
         [cedula],
       );
       const ficha = f.rows[0] || null;
@@ -1292,9 +1293,35 @@ module.exports = function e360Routes(pool) {
         es_admin: adm.rows.length > 0,
         correo: adm.rows[0]?.correo ?? null,
         tiene_ficha: !!ficha,
-        nombre: ficha ? [ficha.nombres, ficha.apellidos].filter(Boolean).join(' ') || null : null,
-        cargo: ficha?.cargo ?? null,
+        nombre: ficha?.nombres_apellidos ?? null,
+        cargo: ficha?.cargo_actual ?? null,
+        institucion: ficha?.nombre_ie ?? null,
         permisos,
+      });
+    } catch (e) { fail(res, e); }
+  });
+
+  /* ------------------------------------------- DATOS GEOGRÁFICOS (RLT) ---- */
+  // Lectura únicamente de las tablas geográficas existentes de RLT.
+  r.get('/geo', async (_req, res) => {
+    try {
+      const [ent, reg, re, rm, ri, mun, ins] = await Promise.all([
+        q(`SELECT id, nombre FROM public.entidades_territoriales`),
+        q(`SELECT * FROM public.regiones`),
+        q(`SELECT * FROM public.region_entidades`),
+        q(`SELECT * FROM public.region_municipios`),
+        q(`SELECT * FROM public.region_instituciones`),
+        q(`SELECT id, nombre, entidad_territorial_id FROM public.municipios`),
+        q(`SELECT id, nombre, municipio_id FROM public.instituciones`),
+      ]);
+      res.json({
+        entidades: ent.rows,
+        regiones: reg.rows,
+        region_entidades: re.rows,
+        region_municipios: rm.rows,
+        region_instituciones: ri.rows,
+        municipios: mun.rows,
+        instituciones: ins.rows,
       });
     } catch (e) { fail(res, e); }
   });
@@ -1303,43 +1330,80 @@ module.exports = function e360Routes(pool) {
   r.get('/fichas/:cedula', async (req, res) => {
     try {
       const cedula = String(req.params.cedula || '').replace(/\D/g, '');
-      const { rows } = await q(`SELECT * FROM e360.fichas WHERE cedula = $1`, [cedula]);
+      const { rows } = await q(`SELECT * FROM e360.fichas WHERE numero_cedula = $1`, [cedula]);
       if (!rows[0]) return res.status(404).json({ error: 'Ficha no encontrada' });
       res.json(rows[0]);
     } catch (e) { fail(res, e); }
   });
 
-  // POST /fichas — crea o actualiza la ficha (upsert por cédula)
+  /* ------------------------------------------------ FICHA (upsert) -------- */
+
+  const FICHA_TEXTO = [
+    'nombres', 'apellidos', 'nombres_apellidos', 'genero', 'lugar_nacimiento',
+    'lengua_materna', 'lengua_otra', 'celular_personal', 'codigo_pais_celular',
+    'correo_personal', 'correo_institucional', 'prefiere_correo',
+    'enfermedad_base', 'enfermedad_detalle', 'contacto_emergencia',
+    'telefono_emergencia', 'codigo_pais_telefono_emergencia',
+    'discapacidad', 'discapacidad_detalle',
+    'tipo_formacion', 'titulo_pregrado', 'titulo_especializacion',
+    'titulo_maestria', 'titulo_doctorado', 'otros_titulos',
+    'region', 'entidad_territorial', 'municipio', 'comuna_barrio', 'nombre_ie',
+    'codigo_dane', 'cargo_actual', 'tipo_vinculacion', 'estatuto', 'grado_escalafon',
+    'direccion_sede_principal', 'telefono_ie', 'codigo_pais_telefono_ie', 'sitio_web',
+    'zona_sede', 'grupos_etnicos', 'proyectos_transversales', 'desplazamiento',
+    'tipo_bachillerato', 'modelo_pedagogico',
+  ];
+  const FICHA_FECHA = [
+    'fecha_nacimiento', 'fecha_vinculacion_servicio',
+    'fecha_nombramiento_cargo', 'fecha_nombramiento_ie',
+  ];
+  const FICHA_ENTERO = [
+    'sedes_rural', 'sedes_urbana', 'total_sedes', 'estudiantes_jec',
+    'num_docentes', 'num_coordinadores', 'num_administrativos', 'num_orientadores',
+    'estudiantes_preescolar', 'estudiantes_primaria', 'estudiantes_basica_secundaria',
+    'estudiantes_media', 'estudiantes_ciclo_complementario', 'estudiantes_jornada_nocturna',
+  ];
+  const FICHA_ARRAY = ['jornadas', 'niveles_educativos'];
+
+  const txt = (v) => {
+    const s = v == null ? '' : String(v).trim();
+    return s === '' ? null : s;
+  };
+  const num = (v) => {
+    if (v == null || v === '') return null;
+    const n = parseInt(String(v).replace(/\D/g, ''), 10);
+    return Number.isFinite(n) ? n : null;
+  };
+  const arr = (v) => (Array.isArray(v) ? v.filter((x) => txt(x) !== null) : []);
+
+  // POST /fichas — crea o actualiza la ficha (upsert por número de cédula)
   r.post('/fichas', async (req, res) => {
     try {
       const b = req.body || {};
-      const cedula = String(b.cedula || '').replace(/\D/g, '');
+      const cedula = String(b.numero_cedula || b.cedula || '').replace(/\D/g, '');
       if (!cedula) return res.status(400).json({ error: 'Cédula inválida' });
-      const datos = b.datos && typeof b.datos === 'object' ? b.datos : {};
+
+      const cols = ['numero_cedula', 'acepta_datos'];
+      const vals = [cedula, b.acepta_datos === true];
+
+      for (const c of FICHA_TEXTO) { cols.push(c); vals.push(txt(b[c])); }
+      for (const c of FICHA_FECHA) { cols.push(c); vals.push(txt(b[c])); }
+      for (const c of FICHA_ENTERO) { cols.push(c); vals.push(num(b[c])); }
+      for (const c of FICHA_ARRAY) { cols.push(c); vals.push(arr(b[c])); }
+
+      const marcadores = cols.map((_, i) => `$${i + 1}`).join(',');
+      const actualiza = cols
+        .filter((c) => c !== 'numero_cedula')
+        .map((c) => `${c} = EXCLUDED.${c}`)
+        .join(', ');
+
       const { rows } = await q(
-        `INSERT INTO e360.fichas
-           (cedula, nombres, apellidos, correo, celular, institucion, cargo, datos)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-         ON CONFLICT (cedula) DO UPDATE
-            SET nombres = EXCLUDED.nombres,
-                apellidos = EXCLUDED.apellidos,
-                correo = EXCLUDED.correo,
-                celular = EXCLUDED.celular,
-                institucion = EXCLUDED.institucion,
-                cargo = EXCLUDED.cargo,
-                datos = EXCLUDED.datos,
-                actualizado_en = now()
+        `INSERT INTO e360.fichas (${cols.join(',')})
+         VALUES (${marcadores})
+         ON CONFLICT (numero_cedula) DO UPDATE
+            SET ${actualiza}, updated_at = now()
          RETURNING *`,
-        [
-          cedula,
-          b.nombres ?? null,
-          b.apellidos ?? null,
-          b.correo ?? null,
-          b.celular ?? null,
-          b.institucion ?? null,
-          b.cargo ?? null,
-          JSON.stringify(datos),
-        ],
+        vals,
       );
       res.status(201).json(rows[0]);
     } catch (e) { fail(res, e); }
@@ -1350,17 +1414,17 @@ module.exports = function e360Routes(pool) {
   r.get('/admin/permisos', requireAdmin, async (_req, res) => {
     try {
       const { rows } = await q(
-        `SELECT f.cedula,
-                NULLIF(TRIM(CONCAT_WS(' ', f.nombres, f.apellidos)), '') AS nombre,
-                f.institucion, f.cargo, f.creado_en,
+        `SELECT f.numero_cedula AS cedula,
+                NULLIF(TRIM(f.nombres_apellidos), '') AS nombre,
+                f.nombre_ie AS institucion, f.cargo_actual AS cargo, f.created_at,
                 COALESCE(pe.habilitado, true)  AS entrada,
                 COALESCE(ps.habilitado, false) AS salida
            FROM e360.fichas f
            LEFT JOIN e360.permisos_encuesta pe
-                  ON pe.cedula = f.cedula AND pe.momento = 'entrada'
+                  ON pe.cedula = f.numero_cedula AND pe.momento = 'entrada'
            LEFT JOIN e360.permisos_encuesta ps
-                  ON ps.cedula = f.cedula AND ps.momento = 'salida'
-          ORDER BY f.creado_en DESC`,
+                  ON ps.cedula = f.numero_cedula AND ps.momento = 'salida'
+          ORDER BY f.created_at DESC`,
       );
       res.json(rows);
     } catch (e) { fail(res, e); }
