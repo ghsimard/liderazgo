@@ -1318,6 +1318,152 @@ module.exports = function e360Routes(pool) {
 
   /* ------------------------------------ FICHAS + PERMISOS (usuario) ------- */
 
+  /* ============ ADMIN: ENCUESTA 360 agrupada por institución ============= */
+
+  const FASES = new Set(['inicial', 'final']);
+  const faseDe = (v) => (FASES.has(String(v)) ? String(v) : 'inicial');
+
+  async function leerVisibilidad(fase) {
+    const { rows } = await q(
+      `SELECT institucion, visible FROM e360.visibilidad_encuesta WHERE fase = $1`,
+      [fase],
+    ).catch(() => ({ rows: [] }));
+    const mapa = new Map();
+    for (const row of rows) mapa.set(row.institucion, row.visible === true);
+    return mapa;
+  }
+
+  // GET /admin/encuesta/instituciones?fase=&entidad=&q=
+  r.get('/admin/encuesta/instituciones', requireAdmin, async (req, res) => {
+    try {
+      const fase = faseDe(req.query.fase);
+      const { rows } = await q(
+        `SELECT COALESCE(NULLIF(TRIM(e.institucion_educativa),''), 'No especificada') AS institucion,
+                e.tipo_formulario,
+                NULLIF(TRIM(f.entidad_territorial),'') AS entidad,
+                NULLIF(TRIM(f.municipio),'')           AS municipio,
+                e.created_at
+           FROM e360.encuestas_360 e
+           LEFT JOIN e360.fichas f ON f.numero_cedula = e.cedula_directivo
+          WHERE COALESCE(e.fase,'inicial') = $1`,
+        [fase],
+      );
+      const vis = await leerVisibilidad(fase);
+      const mapa = new Map();
+      for (const row of rows) {
+        const cur = mapa.get(row.institucion) || {
+          institucion: row.institucion,
+          entidad: null,
+          municipio: null,
+          total: 0,
+          por_rol: {},
+          ultima: null,
+        };
+        cur.total += 1;
+        if (!cur.entidad && row.entidad) cur.entidad = row.entidad;
+        if (!cur.municipio && row.municipio) cur.municipio = row.municipio;
+        const rol = row.tipo_formulario || 'otro';
+        cur.por_rol[rol] = (cur.por_rol[rol] || 0) + 1;
+        if (!cur.ultima || row.created_at > cur.ultima) cur.ultima = row.created_at;
+        mapa.set(row.institucion, cur);
+      }
+      const lista = [...mapa.values()]
+        .map((x) => ({ ...x, visible: vis.has(x.institucion) ? vis.get(x.institucion) : true }))
+        .sort((a, b) => a.institucion.localeCompare(b.institucion, 'es'));
+      res.json({ fase, total: rows.length, instituciones: lista });
+    } catch (e) { fail(res, e); }
+  });
+
+  // GET /admin/encuesta/detalle?fase=&institucion=
+  r.get('/admin/encuesta/detalle', requireAdmin, async (req, res) => {
+    try {
+      const fase = faseDe(req.query.fase);
+      const institucion = String(req.query.institucion || '').trim();
+      if (!institucion) return res.status(400).json({ error: 'Falta la institución' });
+      const { rows } = await q(
+        `SELECT id, tipo_formulario, nombre_completo, cedula,
+                nombre_directivo, cedula_directivo, email_evaluador, created_at
+           FROM e360.encuestas_360
+          WHERE COALESCE(NULLIF(TRIM(institucion_educativa),''),'No especificada') = $1
+            AND COALESCE(fase,'inicial') = $2
+          ORDER BY created_at DESC`,
+        [institucion, fase],
+      );
+      res.json(rows);
+    } catch (e) { fail(res, e); }
+  });
+
+  // PUT /admin/encuesta/visibilidad  { instituciones: [], fase, visible }
+  r.put('/admin/encuesta/visibilidad', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const fase = faseDe(req.body?.fase);
+      const visible = req.body?.visible === true;
+      const lista = Array.isArray(req.body?.instituciones)
+        ? req.body.instituciones.map((x) => String(x).trim()).filter(Boolean)
+        : [String(req.body?.institucion || '').trim()].filter(Boolean);
+      if (!lista.length) return res.status(400).json({ error: 'Falta la institución' });
+      for (const institucion of lista) {
+        await q(
+          `INSERT INTO e360.visibilidad_encuesta (institucion, fase, visible)
+           VALUES ($1,$2,$3)
+           ON CONFLICT (institucion, fase)
+             DO UPDATE SET visible = EXCLUDED.visible, updated_at = now()`,
+          [institucion, fase, visible],
+        );
+      }
+      res.json({ ok: true, actualizadas: lista.length, fase, visible });
+    } catch (e) { fail(res, e); }
+  });
+
+  // GET /admin/encuesta/informes?fase= — promedios por evaluado de una fase
+  r.get('/admin/encuesta/informes', requireAdmin, async (req, res) => {
+    try {
+      const fase = faseDe(req.query.fase);
+      const { rows } = await q(
+        `SELECT cedula_directivo, nombre_directivo, institucion_educativa,
+                tipo_formulario, respuestas
+           FROM e360.encuestas_360
+          WHERE cedula_directivo IS NOT NULL AND COALESCE(fase,'inicial') = $1`,
+        [fase],
+      );
+      const porEvaluado = new Map();
+      for (const row of rows) {
+        const k = row.cedula_directivo;
+        const e = porEvaluado.get(k) || {
+          cedula: k, nombre: row.nombre_directivo, institucion: row.institucion_educativa,
+          total_evaluadores: 0, suma: 0, n: 0, relaciones: {},
+        };
+        e.total_evaluadores += 1;
+        const items = Array.isArray(row.respuestas?.items) ? row.respuestas.items : [];
+        let s = 0, c = 0;
+        for (const it of items) {
+          const v = Number(it.valor);
+          if (!Number.isFinite(v)) continue;
+          s += v; c += 1;
+        }
+        e.suma += s; e.n += c;
+        const rel = row.tipo_formulario || 'otro';
+        const rr = e.relaciones[rel] || { suma: 0, n: 0 };
+        rr.suma += s; rr.n += c;
+        e.relaciones[rel] = rr;
+        porEvaluado.set(k, e);
+      }
+      const round = (x) => Math.round(x * 100) / 100;
+      res.json(
+        [...porEvaluado.values()].map((e) => ({
+          cedula: e.cedula,
+          nombre: e.nombre,
+          institucion: e.institucion,
+          total_evaluadores: e.total_evaluadores,
+          promedio_general: e.n ? round(e.suma / e.n) : 0,
+          por_relacion: Object.fromEntries(
+            Object.entries(e.relaciones).map(([k, v]) => [k, v.n ? round(v.suma / v.n) : 0]),
+          ),
+        })),
+      );
+    } catch (e) { fail(res, e); }
+  });
+
   // Por defecto: Entrada habilitada, Salida deshabilitada.
   const PERMISOS_DEFECTO = { entrada: true, salida: false };
 
@@ -1502,13 +1648,16 @@ module.exports = function e360Routes(pool) {
       let entidadesCreadas = 0, municipiosCreados = 0, institucionesCreadas = 0;
 
       for (const fila of filas) {
-        const entidad = String(fila?.entidad || '').trim();
+        const entidadCruda = String(fila?.entidad || '').trim();
+        const entidad = canonizar(entidadCruda) || entidadCruda;
         const municipio = String(fila?.municipio || '').trim();
         const institucion = String(fila?.institucion || '').trim();
         if (!entidad) continue;
+        /* Regla «una sola casa»: el municipio certificado no cuelga de su departamento. */
+        if (municipio && municipioDuplicado(entidad, municipio)) continue;
 
         let ent = (await q(
-          `SELECT id FROM public.entidades_territoriales WHERE lower(nombre) = lower($1) LIMIT 1`,
+          `SELECT id FROM public.entidades_territoriales WHERE ${NORM('nombre')} = ${NORM('$1')} LIMIT 1`,
           [entidad],
         )).rows[0];
         if (!ent) {
@@ -1522,7 +1671,7 @@ module.exports = function e360Routes(pool) {
 
         let mun = (await q(
           `SELECT id FROM public.municipios
-            WHERE lower(nombre) = lower($1) AND entidad_territorial_id = $2 LIMIT 1`,
+            WHERE ${NORM('nombre')} = ${NORM('$1')} AND entidad_territorial_id = $2 LIMIT 1`,
           [municipio, ent.id],
         )).rows[0];
         if (!mun) {
@@ -1537,7 +1686,7 @@ module.exports = function e360Routes(pool) {
 
         const ins = (await q(
           `SELECT id FROM public.instituciones
-            WHERE lower(nombre) = lower($1) AND municipio_id = $2 LIMIT 1`,
+            WHERE ${NORM('nombre')} = ${NORM('$1')} AND municipio_id = $2 LIMIT 1`,
           [institucion, mun.id],
         )).rows[0];
         if (!ins) {
@@ -1564,6 +1713,70 @@ module.exports = function e360Routes(pool) {
     limpiar(v)
       .toLowerCase()
       .replace(/(^|[\s(/-])([a-záéíóúñ])/g, (_m, a, b) => a + b.toUpperCase());
+
+  /* Comparación insensible a acentos/mayúsculas/espacios, igual que public.e360_norm en SQL.
+     Evita crear "Medellín" y "Medellin" como dos filas distintas. */
+  const NORM = (expr) =>
+    `lower(btrim(regexp_replace(translate(coalesce(${expr},''),` +
+    `'ÁÀÄÂÃÉÈËÊÍÌÏÎÓÒÖÔÕÚÙÜÛÑÇáàäâãéèëêíìïîóòöôõúùüûñç',` +
+    `'AAAAAEEEEIIIIOOOOOUUUUNCaaaaaeeeeiiiiooooouuuunc'), '\\s+', ' ', 'g')))`;
+
+  const sinAcentos = (v) =>
+    String(v || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+  /* Entidades territoriales certificadas: 32 departamentos + Bogotá D.C. + 64 municipios. */
+  const DEPARTAMENTOS = [
+    'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bolívar', 'Boyacá', 'Caldas',
+    'Caquetá', 'Casanare', 'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca',
+    'Guainía', 'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño',
+    'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda',
+    'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima', 'Valle del Cauca',
+    'Vaupés', 'Vichada', 'Bogotá D.C.',
+  ];
+  const MUNICIPIOS_CERTIFICADOS = [
+    'Apartadó', 'Armenia', 'Barrancabermeja', 'Barranquilla', 'Bello', 'Bucaramanga',
+    'Buenaventura', 'Buga', 'Cali', 'Cartagena', 'Cartago', 'Chía', 'Ciénaga', 'Cúcuta',
+    'Dosquebradas', 'Duitama', 'Envigado', 'Facatativá', 'Florencia', 'Floridablanca',
+    'Funza', 'Fusagasugá', 'Girardot', 'Girón', 'Ibagué', 'Ipiales', 'Itagüí', 'Jamundí',
+    'La Estrella', 'Lorica', 'Magangué', 'Maicao', 'Malambo', 'Manizales', 'Medellín',
+    'Montería', 'Mosquera', 'Neiva', 'Palmira', 'Pasto', 'Pereira', 'Piedecuesta',
+    'Pitalito', 'Popayán', 'Quibdó', 'Riohacha', 'Rionegro', 'Sabaneta', 'Sahagún',
+    'Santa Marta', 'Sincelejo', 'Soacha', 'Sogamoso', 'Soledad', 'Tuluá', 'Tumaco',
+    'Tunja', 'Turbo', 'Uribia', 'Valledupar', 'Villavicencio', 'Yopal', 'Yumbo',
+    'Zipaquirá',
+  ];
+  const CANONICO = new Map();
+  for (const n of [...DEPARTAMENTOS, ...MUNICIPIOS_CERTIFICADOS]) CANONICO.set(sinAcentos(n), n);
+  const ALIAS_ET = {
+    'bogota, d.c.': 'Bogotá D.C.',
+    'bogota d.c': 'Bogotá D.C.',
+    'bogota dc': 'Bogotá D.C.',
+    'bogota': 'Bogotá D.C.',
+    'santa fe de bogota d.c.': 'Bogotá D.C.',
+    'archipielago de san andres, providencia y santa catalina': 'San Andrés y Providencia',
+    'archipielago de san andres': 'San Andrés y Providencia',
+    'san andres': 'San Andrés y Providencia',
+    'san andres, providencia y santa catalina': 'San Andrés y Providencia',
+    'guadalajara de buga': 'Buga',
+    'san jose de cucuta': 'Cúcuta',
+    'santiago de cali': 'Cali',
+    'santa marta d.t.c.h.': 'Santa Marta',
+    'distrito turistico cultural e historico de santa marta': 'Santa Marta',
+    'santa cruz de lorica': 'Lorica',
+  };
+  for (const [k, v] of Object.entries(ALIAS_ET)) CANONICO.set(k, v);
+  const canonizar = (v) => CANONICO.get(sinAcentos(v)) || null;
+  const ES_DEPARTAMENTO = new Set(DEPARTAMENTOS.map(sinAcentos));
+  const ES_MUN_CERTIFICADO = new Set(MUNICIPIOS_CERTIFICADOS.map(sinAcentos));
+  /* Regla «una sola casa»: un municipio certificado sólo vive bajo su propia
+     entidad certificada, nunca bajo su departamento. */
+  const municipioDuplicado = (entidad, municipio) =>
+    ES_DEPARTAMENTO.has(sinAcentos(entidad)) && ES_MUN_CERTIFICADO.has(sinAcentos(municipio));
 
   function mapearDue(row) {
     return {
@@ -1706,13 +1919,16 @@ module.exports = function e360Routes(pool) {
       const cacheEnt = new Map(), cacheMun = new Map();
 
       for (const f of filas) {
-        const nombreEntidad = f.secretaria || f.departamento;
+        const nombreEntidad =
+          canonizar(f.secretaria) || canonizar(f.departamento) || f.secretaria || f.departamento;
         if (!nombreEntidad || !f.municipio || !f.nombre) continue;
+        /* Regla «una sola casa»: no duplicar el municipio certificado bajo su departamento. */
+        if (municipioDuplicado(nombreEntidad, f.municipio)) continue;
 
         let entId = cacheEnt.get(nombreEntidad.toLowerCase());
         if (!entId) {
           let ent = (await q(
-            `SELECT id FROM public.entidades_territoriales WHERE lower(nombre) = lower($1) LIMIT 1`,
+            `SELECT id FROM public.entidades_territoriales WHERE ${NORM('nombre')} = ${NORM('$1')} LIMIT 1`,
             [nombreEntidad],
           )).rows[0];
           if (!ent) {
@@ -1731,7 +1947,7 @@ module.exports = function e360Routes(pool) {
         if (!munId) {
           let mun = (await q(
             `SELECT id FROM public.municipios
-              WHERE lower(nombre) = lower($1) AND entidad_territorial_id = $2 LIMIT 1`,
+              WHERE ${NORM('nombre')} = ${NORM('$1')} AND entidad_territorial_id = $2 LIMIT 1`,
             [f.municipio, entId],
           )).rows[0];
           if (!mun) {
@@ -1748,7 +1964,7 @@ module.exports = function e360Routes(pool) {
 
         const ins = (await q(
           `SELECT id FROM public.instituciones
-            WHERE lower(nombre) = lower($1) AND municipio_id = $2 LIMIT 1`,
+            WHERE ${NORM('nombre')} = ${NORM('$1')} AND municipio_id = $2 LIMIT 1`,
           [f.nombre, munId],
         )).rows[0];
         if (!ins) {
@@ -1777,61 +1993,6 @@ module.exports = function e360Routes(pool) {
   r.post('/admin/geo/sincronizar-territorio', requireAdmin, requireEscritura, async (req, res) => {
     try {
       const incluirInstituciones = req.body?.incluirInstituciones !== false;
-      const sinAcentos = (v) =>
-        String(v || '')
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .trim()
-          .toLowerCase();
-      /* Entidades territoriales certificadas: 32 departamentos + Bogotá D.C. + 64 municipios. */
-      const DEPARTAMENTOS = [
-        'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bolívar', 'Boyacá', 'Caldas',
-        'Caquetá', 'Casanare', 'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca',
-        'Guainía', 'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño',
-        'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda',
-        'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima', 'Valle del Cauca',
-        'Vaupés', 'Vichada', 'Bogotá D.C.',
-      ];
-      const MUNICIPIOS_CERTIFICADOS = [
-        'Apartadó', 'Armenia', 'Barrancabermeja', 'Barranquilla', 'Bello', 'Bucaramanga',
-        'Buenaventura', 'Buga', 'Cali', 'Cartagena', 'Cartago', 'Chía', 'Ciénaga', 'Cúcuta',
-        'Dosquebradas', 'Duitama', 'Envigado', 'Facatativá', 'Florencia', 'Floridablanca',
-        'Funza', 'Fusagasugá', 'Girardot', 'Girón', 'Ibagué', 'Ipiales', 'Itagüí', 'Jamundí',
-        'La Estrella', 'Lorica', 'Magangué', 'Maicao', 'Malambo', 'Manizales', 'Medellín',
-        'Montería', 'Mosquera', 'Neiva', 'Palmira', 'Pasto', 'Pereira', 'Piedecuesta',
-        'Pitalito', 'Popayán', 'Quibdó', 'Riohacha', 'Rionegro', 'Sabaneta', 'Sahagún',
-        'Santa Marta', 'Sincelejo', 'Soacha', 'Sogamoso', 'Soledad', 'Tuluá', 'Tumaco',
-        'Tunja', 'Turbo', 'Uribia', 'Valledupar', 'Villavicencio', 'Yopal', 'Yumbo',
-        'Zipaquirá',
-      ];
-      /* Nombre canónico por clave sin acentos + alias frecuentes del DUE. */
-      const CANONICO = new Map();
-      for (const n of [...DEPARTAMENTOS, ...MUNICIPIOS_CERTIFICADOS]) {
-        CANONICO.set(sinAcentos(n), n);
-      }
-      const ALIAS = {
-        'bogota, d.c.': 'Bogotá D.C.',
-        'bogota d.c': 'Bogotá D.C.',
-        'bogota dc': 'Bogotá D.C.',
-        'bogota': 'Bogotá D.C.',
-        'santa fe de bogota d.c.': 'Bogotá D.C.',
-        'archipielago de san andres, providencia y santa catalina':
-          'San Andrés y Providencia',
-        'archipielago de san andres': 'San Andrés y Providencia',
-        'san andres': 'San Andrés y Providencia',
-        'san andres, providencia y santa catalina': 'San Andrés y Providencia',
-        'guadalajara de buga': 'Buga',
-        'san jose de cucuta': 'Cúcuta',
-        'santiago de cali': 'Cali',
-        'santa marta d.t.c.h.': 'Santa Marta',
-        'distrito turistico cultural e historico de santa marta': 'Santa Marta',
-        'santa cruz de lorica': 'Lorica',
-        'valle del cauca': 'Valle del Cauca',
-        'norte de santander': 'Norte de Santander',
-        'la guajira': 'La Guajira',
-      };
-      for (const [k, v] of Object.entries(ALIAS)) CANONICO.set(k, v);
-      const canonizar = (v) => CANONICO.get(sinAcentos(v)) || null;
       const combinaciones = new Map(); // "entidad|municipio" -> { entidad, municipio }
       const PAGINA = 1000;
       const totalEntMun = await fetch(`${DUE_URL}?$select=count(1)`, {
@@ -1855,7 +2016,9 @@ module.exports = function e360Routes(pool) {
           const entidad = canonizar(f.secretaria) || canonizar(f.nombredepartamento);
           const municipio = titulo(f.nombremunicipio);
           if (!entidad || !municipio) continue;
-          combinaciones.set(`${entidad.toLowerCase()}|${municipio.toLowerCase()}`, {
+          /* Regla «una sola casa»: el municipio certificado no cuelga de su departamento. */
+          if (municipioDuplicado(entidad, municipio)) continue;
+          combinaciones.set(`${sinAcentos(entidad)}|${sinAcentos(municipio)}`, {
             entidad,
             municipio,
           });
@@ -1868,10 +2031,10 @@ module.exports = function e360Routes(pool) {
       const cacheMun = new Map(); // "entId|municipio" -> munId
 
       for (const { entidad, municipio } of combinaciones.values()) {
-        let entId = cacheEnt.get(entidad.toLowerCase());
+        let entId = cacheEnt.get(sinAcentos(entidad));
         if (!entId) {
           let ent = (await q(
-            `SELECT id FROM public.entidades_territoriales WHERE lower(nombre) = lower($1) LIMIT 1`,
+            `SELECT id FROM public.entidades_territoriales WHERE ${NORM('nombre')} = ${NORM('$1')} LIMIT 1`,
             [entidad],
           )).rows[0];
           if (!ent) {
@@ -1882,14 +2045,14 @@ module.exports = function e360Routes(pool) {
             entidadesCreadas += 1;
           }
           entId = ent.id;
-          cacheEnt.set(entidad.toLowerCase(), entId);
+          cacheEnt.set(sinAcentos(entidad), entId);
         }
 
-        const clave = `${entId}|${municipio.toLowerCase()}`;
+        const clave = `${entId}|${sinAcentos(municipio)}`;
         if (cacheMun.has(clave)) continue;
         let mun = (await q(
           `SELECT id FROM public.municipios
-            WHERE lower(nombre) = lower($1) AND entidad_territorial_id = $2 LIMIT 1`,
+            WHERE ${NORM('nombre')} = ${NORM('$1')} AND entidad_territorial_id = $2 LIMIT 1`,
           [municipio, entId],
         )).rows[0];
         if (!mun) {
@@ -1935,19 +2098,20 @@ module.exports = function e360Routes(pool) {
             const municipio = titulo(f.nombremunicipio);
             const nombre = titulo(f.nombreestablecimiento);
             if (!entidad || !municipio || !nombre) continue;
+            if (municipioDuplicado(entidad, municipio)) continue;
 
-            const entId = cacheEnt.get(entidad.toLowerCase());
+            const entId = cacheEnt.get(sinAcentos(entidad));
             if (!entId) continue;
-            const munId = cacheMun.get(`${entId}|${municipio.toLowerCase()}`);
+            const munId = cacheMun.get(`${entId}|${sinAcentos(municipio)}`);
             if (!munId) continue;
 
-            const claveIns = `${munId}|${nombre.toLowerCase()}`;
+            const claveIns = `${munId}|${sinAcentos(nombre)}`;
             if (vistos.has(claveIns)) continue;
             vistos.add(claveIns);
 
             const ins = (await q(
               `SELECT id FROM public.instituciones
-                WHERE lower(nombre) = lower($1) AND municipio_id = $2 LIMIT 1`,
+                WHERE ${NORM('nombre')} = ${NORM('$1')} AND municipio_id = $2 LIMIT 1`,
               [nombre, munId],
             )).rows[0];
             if (!ins) {
