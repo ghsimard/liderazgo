@@ -1318,6 +1318,177 @@ module.exports = function e360Routes(pool) {
     } catch (e) { fail(res, e); }
   });
 
+  /* ---------------- ADMIN: CRUD geográfico (Configuración de fichas) ------ */
+
+  // Entidades territoriales
+  r.post('/admin/geo/entidades', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const nombre = String(req.body?.nombre || '').trim();
+      if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
+      const { rows } = await q(
+        `INSERT INTO public.entidades_territoriales (nombre) VALUES ($1) RETURNING id, nombre`,
+        [nombre],
+      );
+      res.status(201).json(rows[0]);
+    } catch (e) { fail(res, e); }
+  });
+
+  r.put('/admin/geo/entidades/:id', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const nombre = String(req.body?.nombre || '').trim();
+      if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
+      const { rows } = await q(
+        `UPDATE public.entidades_territoriales SET nombre = $2 WHERE id = $1 RETURNING id, nombre`,
+        [req.params.id, nombre],
+      );
+      if (!rows[0]) return res.status(404).json({ error: 'No encontrada' });
+      res.json(rows[0]);
+    } catch (e) { fail(res, e); }
+  });
+
+  r.delete('/admin/geo/entidades/:id', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      await q(`DELETE FROM public.entidades_territoriales WHERE id = $1`, [req.params.id]);
+      res.json({ ok: true });
+    } catch (e) { fail(res, e); }
+  });
+
+  // Municipios
+  r.post('/admin/geo/municipios', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const nombre = String(req.body?.nombre || '').trim();
+      const entidadId = req.body?.entidad_territorial_id;
+      if (!nombre || !entidadId) {
+        return res.status(400).json({ error: 'Nombre y entidad territorial requeridos' });
+      }
+      const { rows } = await q(
+        `INSERT INTO public.municipios (nombre, entidad_territorial_id)
+         VALUES ($1, $2) RETURNING id, nombre, entidad_territorial_id`,
+        [nombre, entidadId],
+      );
+      res.status(201).json(rows[0]);
+    } catch (e) { fail(res, e); }
+  });
+
+  r.put('/admin/geo/municipios/:id', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const nombre = String(req.body?.nombre || '').trim();
+      if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
+      const { rows } = await q(
+        `UPDATE public.municipios SET nombre = $2 WHERE id = $1
+         RETURNING id, nombre, entidad_territorial_id`,
+        [req.params.id, nombre],
+      );
+      if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
+      res.json(rows[0]);
+    } catch (e) { fail(res, e); }
+  });
+
+  r.delete('/admin/geo/municipios/:id', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      await q(`DELETE FROM public.municipios WHERE id = $1`, [req.params.id]);
+      res.json({ ok: true });
+    } catch (e) { fail(res, e); }
+  });
+
+  // Instituciones educativas
+  r.post('/admin/geo/instituciones', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const nombre = String(req.body?.nombre || '').trim();
+      const municipioId = req.body?.municipio_id;
+      if (!nombre || !municipioId) {
+        return res.status(400).json({ error: 'Nombre y municipio requeridos' });
+      }
+      const { rows } = await q(
+        `INSERT INTO public.instituciones (nombre, municipio_id)
+         VALUES ($1, $2) RETURNING id, nombre, municipio_id`,
+        [nombre, municipioId],
+      );
+      res.status(201).json(rows[0]);
+    } catch (e) { fail(res, e); }
+  });
+
+  r.put('/admin/geo/instituciones/:id', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const nombre = String(req.body?.nombre || '').trim();
+      if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
+      const { rows } = await q(
+        `UPDATE public.instituciones SET nombre = $2 WHERE id = $1
+         RETURNING id, nombre, municipio_id`,
+        [req.params.id, nombre],
+      );
+      if (!rows[0]) return res.status(404).json({ error: 'No encontrada' });
+      res.json(rows[0]);
+    } catch (e) { fail(res, e); }
+  });
+
+  r.delete('/admin/geo/instituciones/:id', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      await q(`DELETE FROM public.instituciones WHERE id = $1`, [req.params.id]);
+      res.json({ ok: true });
+    } catch (e) { fail(res, e); }
+  });
+
+  // Importación CSV: entidad,municipio,institucion (una fila por institución)
+  r.post('/admin/geo/importar', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const filas = Array.isArray(req.body?.filas) ? req.body.filas : [];
+      if (filas.length === 0) return res.status(400).json({ error: 'CSV vacío' });
+
+      let entidadesCreadas = 0, municipiosCreados = 0, institucionesCreadas = 0;
+
+      for (const fila of filas) {
+        const entidad = String(fila?.entidad || '').trim();
+        const municipio = String(fila?.municipio || '').trim();
+        const institucion = String(fila?.institucion || '').trim();
+        if (!entidad) continue;
+
+        let ent = (await q(
+          `SELECT id FROM public.entidades_territoriales WHERE lower(nombre) = lower($1) LIMIT 1`,
+          [entidad],
+        )).rows[0];
+        if (!ent) {
+          ent = (await q(
+            `INSERT INTO public.entidades_territoriales (nombre) VALUES ($1) RETURNING id`,
+            [entidad],
+          )).rows[0];
+          entidadesCreadas += 1;
+        }
+        if (!municipio) continue;
+
+        let mun = (await q(
+          `SELECT id FROM public.municipios
+            WHERE lower(nombre) = lower($1) AND entidad_territorial_id = $2 LIMIT 1`,
+          [municipio, ent.id],
+        )).rows[0];
+        if (!mun) {
+          mun = (await q(
+            `INSERT INTO public.municipios (nombre, entidad_territorial_id)
+             VALUES ($1, $2) RETURNING id`,
+            [municipio, ent.id],
+          )).rows[0];
+          municipiosCreados += 1;
+        }
+        if (!institucion) continue;
+
+        const ins = (await q(
+          `SELECT id FROM public.instituciones
+            WHERE lower(nombre) = lower($1) AND municipio_id = $2 LIMIT 1`,
+          [institucion, mun.id],
+        )).rows[0];
+        if (!ins) {
+          await q(
+            `INSERT INTO public.instituciones (nombre, municipio_id) VALUES ($1, $2)`,
+            [institucion, mun.id],
+          );
+          institucionesCreadas += 1;
+        }
+      }
+
+      res.json({ ok: true, entidadesCreadas, municipiosCreados, institucionesCreadas });
+    } catch (e) { fail(res, e); }
+  });
+
   // GET /fichas/:cedula
   r.get('/fichas/:cedula', async (req, res) => {
     try {
