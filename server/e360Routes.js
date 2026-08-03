@@ -1260,10 +1260,11 @@ module.exports = function e360Routes(pool) {
   const PERMISOS_DEFECTO = { entrada: true, salida: false };
 
   async function leerPermisos(cedula) {
+    // Si la tabla de permisos aún no existe, se aplican los valores por defecto.
     const { rows } = await q(
       `SELECT momento, habilitado FROM e360.permisos_encuesta WHERE cedula = $1`,
       [cedula],
-    );
+    ).catch(() => ({ rows: [] }));
     const p = { ...PERMISOS_DEFECTO };
     for (const row of rows) p[row.momento] = row.habilitado === true;
     return p;
@@ -1767,6 +1768,13 @@ module.exports = function e360Routes(pool) {
     for (const c of FICHA_FECHA) { cols.push(c); vals.push(txt(b[c])); }
     for (const c of FICHA_ENTERO) { cols.push(c); vals.push(num(b[c])); }
     for (const c of FICHA_ARRAY) { cols.push(c); vals.push(arr(b[c])); }
+
+    // Compatibilidad: nombres_apellidos puede ser NOT NULL en esquemas antiguos.
+    const iNombreCompleto = cols.indexOf('nombres_apellidos');
+    if (iNombreCompleto >= 0 && !vals[iNombreCompleto]) {
+      const completo = [txt(b.nombres), txt(b.apellidos)].filter(Boolean).join(' ').trim();
+      vals[iNombreCompleto] = completo || `C.C. ${cedula}`;
+    }
 
     const marcadores = cols.map((_, i) => `$${i + 1}`).join(',');
     const actualiza = cols
