@@ -1489,6 +1489,179 @@ module.exports = function e360Routes(pool) {
     } catch (e) { fail(res, e); }
   });
 
+  /* ------------------------------------------------------------------ */
+  /* Registro nacional (DUE — datos.gov.co, dataset upkm-vdjb)          */
+  /* ------------------------------------------------------------------ */
+
+  const DUE_URL = 'https://www.datos.gov.co/resource/upkm-vdjb.json';
+
+  const limpiar = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
+  const titulo = (v) =>
+    limpiar(v)
+      .toLowerCase()
+      .replace(/(^|[\s(/-])([a-záéíóúñ])/g, (_m, a, b) => a + b.toUpperCase());
+
+  function mapearDue(row) {
+    return {
+      codigo_dane: limpiar(row.codigoestablecimiento),
+      nombre: titulo(row.nombreestablecimiento),
+      departamento: titulo(row.nombredepartamento),
+      municipio: titulo(row.nombremunicipio),
+      secretaria: titulo(row.secretaria),
+      zona: titulo(row.zona),
+      direccion: limpiar(row.direccion),
+      telefono: limpiar(row.telefono),
+      correo: limpiar(row.correo_electronico),
+      niveles: limpiar(row.niveles),
+      jornadas: limpiar(row.jornada),
+      especialidad: titulo(row.especialidad),
+      modelos_educativos: titulo(row.modelos_educativos),
+      numero_de_sedes: limpiar(row.numero_de_sedes),
+      tipo_establecimiento: titulo(row.tipo_establecimiento),
+    };
+  }
+
+  async function consultarDue(params) {
+    const url = `${DUE_URL}?${params.toString()}`;
+    const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!resp.ok) {
+      throw new Error(`El registro nacional respondió ${resp.status}`);
+    }
+    const filas = await resp.json();
+    return Array.isArray(filas) ? filas.map(mapearDue) : [];
+  }
+
+  const escapeSoql = (v) => String(v).replace(/'/g, "''");
+
+  // GET /due/buscar?q=&municipio=&departamento=&limit=
+  r.get('/due/buscar', async (req, res) => {
+    try {
+      const q0 = limpiar(req.query.q);
+      const municipio = limpiar(req.query.municipio);
+      const departamento = limpiar(req.query.departamento);
+      const limit = Math.min(Number(req.query.limit) || 25, 200);
+      if (q0.length < 3 && !municipio) {
+        return res.json({ resultados: [] });
+      }
+
+      const where = [];
+      if (q0) {
+        const t = escapeSoql(q0.toUpperCase());
+        where.push(
+          /^\d+$/.test(q0)
+            ? `starts_with(codigoestablecimiento, '${t}')`
+            : `upper(nombreestablecimiento) like '%${t}%'`,
+        );
+      }
+      if (municipio) where.push(`upper(nombremunicipio) = '${escapeSoql(municipio.toUpperCase())}'`);
+      if (departamento)
+        where.push(`upper(nombredepartamento) = '${escapeSoql(departamento.toUpperCase())}'`);
+
+      const params = new URLSearchParams({
+        $limit: String(limit),
+        $order: 'nombreestablecimiento',
+      });
+      if (where.length > 0) params.set('$where', where.join(' AND '));
+
+      res.json({ resultados: await consultarDue(params) });
+    } catch (e) { fail(res, e); }
+  });
+
+  // POST /admin/geo/importar-due { departamento?, municipio?, secretaria?, limite? }
+  r.post('/admin/geo/importar-due', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const b = req.body || {};
+      const departamento = limpiar(b.departamento);
+      const municipio = limpiar(b.municipio);
+      const secretaria = limpiar(b.secretaria);
+      const limite = Math.min(Number(b.limite) || 2000, 5000);
+      if (!departamento && !municipio && !secretaria) {
+        return res
+          .status(400)
+          .json({ error: 'Indica al menos un departamento, municipio o secretaría.' });
+      }
+
+      const where = [];
+      if (departamento)
+        where.push(`upper(nombredepartamento) = '${escapeSoql(departamento.toUpperCase())}'`);
+      if (municipio) where.push(`upper(nombremunicipio) = '${escapeSoql(municipio.toUpperCase())}'`);
+      if (secretaria) where.push(`upper(secretaria) = '${escapeSoql(secretaria.toUpperCase())}'`);
+
+      const params = new URLSearchParams({
+        $limit: String(limite),
+        $order: 'nombreestablecimiento',
+        $where: where.join(' AND '),
+      });
+      const filas = await consultarDue(params);
+
+      let entidadesCreadas = 0, municipiosCreados = 0, institucionesCreadas = 0;
+      const cacheEnt = new Map(), cacheMun = new Map();
+
+      for (const f of filas) {
+        const nombreEntidad = f.secretaria || f.departamento;
+        if (!nombreEntidad || !f.municipio || !f.nombre) continue;
+
+        let entId = cacheEnt.get(nombreEntidad.toLowerCase());
+        if (!entId) {
+          let ent = (await q(
+            `SELECT id FROM public.entidades_territoriales WHERE lower(nombre) = lower($1) LIMIT 1`,
+            [nombreEntidad],
+          )).rows[0];
+          if (!ent) {
+            ent = (await q(
+              `INSERT INTO public.entidades_territoriales (nombre) VALUES ($1) RETURNING id`,
+              [nombreEntidad],
+            )).rows[0];
+            entidadesCreadas += 1;
+          }
+          entId = ent.id;
+          cacheEnt.set(nombreEntidad.toLowerCase(), entId);
+        }
+
+        const claveMun = `${entId}|${f.municipio.toLowerCase()}`;
+        let munId = cacheMun.get(claveMun);
+        if (!munId) {
+          let mun = (await q(
+            `SELECT id FROM public.municipios
+              WHERE lower(nombre) = lower($1) AND entidad_territorial_id = $2 LIMIT 1`,
+            [f.municipio, entId],
+          )).rows[0];
+          if (!mun) {
+            mun = (await q(
+              `INSERT INTO public.municipios (nombre, entidad_territorial_id)
+               VALUES ($1, $2) RETURNING id`,
+              [f.municipio, entId],
+            )).rows[0];
+            municipiosCreados += 1;
+          }
+          munId = mun.id;
+          cacheMun.set(claveMun, munId);
+        }
+
+        const ins = (await q(
+          `SELECT id FROM public.instituciones
+            WHERE lower(nombre) = lower($1) AND municipio_id = $2 LIMIT 1`,
+          [f.nombre, munId],
+        )).rows[0];
+        if (!ins) {
+          await q(
+            `INSERT INTO public.instituciones (nombre, municipio_id) VALUES ($1, $2)`,
+            [f.nombre, munId],
+          );
+          institucionesCreadas += 1;
+        }
+      }
+
+      res.json({
+        ok: true,
+        registrosConsultados: filas.length,
+        entidadesCreadas,
+        municipiosCreados,
+        institucionesCreadas,
+      });
+    } catch (e) { fail(res, e); }
+  });
+
   // GET /fichas/:cedula
   r.get('/fichas/:cedula', async (req, res) => {
     try {
