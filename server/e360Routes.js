@@ -1376,36 +1376,171 @@ module.exports = function e360Routes(pool) {
   };
   const arr = (v) => (Array.isArray(v) ? v.filter((x) => txt(x) !== null) : []);
 
+  async function upsertFicha(b, cedulaForzada) {
+    const cedula = String(cedulaForzada || b.numero_cedula || b.cedula || '').replace(/\D/g, '');
+    if (!cedula) return { error: 'Cédula inválida' };
+
+    const cols = ['numero_cedula', 'acepta_datos'];
+    const vals = [cedula, b.acepta_datos === true];
+
+    for (const c of FICHA_TEXTO) { cols.push(c); vals.push(txt(b[c])); }
+    for (const c of FICHA_FECHA) { cols.push(c); vals.push(txt(b[c])); }
+    for (const c of FICHA_ENTERO) { cols.push(c); vals.push(num(b[c])); }
+    for (const c of FICHA_ARRAY) { cols.push(c); vals.push(arr(b[c])); }
+
+    const marcadores = cols.map((_, i) => `$${i + 1}`).join(',');
+    const actualiza = cols
+      .filter((c) => c !== 'numero_cedula')
+      .map((c) => `${c} = EXCLUDED.${c}`)
+      .join(', ');
+
+    const { rows } = await q(
+      `INSERT INTO e360.fichas (${cols.join(',')})
+       VALUES (${marcadores})
+       ON CONFLICT (numero_cedula) DO UPDATE
+          SET ${actualiza}, updated_at = now()
+       RETURNING *`,
+      vals,
+    );
+    return { row: rows[0] };
+  }
+
   // POST /fichas — crea o actualiza la ficha (upsert por número de cédula)
   r.post('/fichas', async (req, res) => {
     try {
-      const b = req.body || {};
-      const cedula = String(b.numero_cedula || b.cedula || '').replace(/\D/g, '');
-      if (!cedula) return res.status(400).json({ error: 'Cédula inválida' });
+      const out = await upsertFicha(req.body || {});
+      if (out.error) return res.status(400).json({ error: out.error });
+      res.status(201).json(out.row);
+    } catch (e) { fail(res, e); }
+  });
 
-      const cols = ['numero_cedula', 'acepta_datos'];
-      const vals = [cedula, b.acepta_datos === true];
+  /* --------------------------- FICHAS (administración) -------------------- */
 
-      for (const c of FICHA_TEXTO) { cols.push(c); vals.push(txt(b[c])); }
-      for (const c of FICHA_FECHA) { cols.push(c); vals.push(txt(b[c])); }
-      for (const c of FICHA_ENTERO) { cols.push(c); vals.push(num(b[c])); }
-      for (const c of FICHA_ARRAY) { cols.push(c); vals.push(arr(b[c])); }
+  const listaParam = (v) => {
+    if (v == null) return [];
+    const bruto = Array.isArray(v) ? v : String(v).split(',');
+    return bruto.map((x) => String(x).trim()).filter(Boolean);
+  };
 
-      const marcadores = cols.map((_, i) => `$${i + 1}`).join(',');
-      const actualiza = cols
-        .filter((c) => c !== 'numero_cedula')
-        .map((c) => `${c} = EXCLUDED.${c}`)
-        .join(', ');
+  function filtrosFichas(query) {
+    const where = [];
+    const vals = [];
+    const agregar = (col, valores) => {
+      const l = listaParam(valores);
+      if (l.length === 0) return;
+      vals.push(l);
+      where.push(`${col} = ANY($${vals.length}::text[])`);
+    };
+    agregar('region', query.regiones);
+    agregar('entidad_territorial', query.entidades);
+    agregar('municipio', query.municipios);
+    agregar('nombre_ie', query.instituciones);
 
+    const q0 = String(query.q || '').trim();
+    if (q0) {
+      vals.push(`%${q0}%`);
+      const i = vals.length;
+      where.push(`(
+        COALESCE(nombres_apellidos,'') ILIKE $${i}
+        OR COALESCE(nombre_ie,'') ILIKE $${i}
+        OR COALESCE(correo_personal,'') ILIKE $${i}
+        OR COALESCE(correo_institucional,'') ILIKE $${i}
+        OR numero_cedula ILIKE $${i}
+      )`);
+    }
+    return { sql: where.length ? `WHERE ${where.join(' AND ')}` : '', vals };
+  }
+
+  // GET /admin/fichas/opciones — valores distintos para los filtros en cascada
+  r.get('/admin/fichas/opciones', requireAdmin, async (_req, res) => {
+    try {
       const { rows } = await q(
-        `INSERT INTO e360.fichas (${cols.join(',')})
-         VALUES (${marcadores})
-         ON CONFLICT (numero_cedula) DO UPDATE
-            SET ${actualiza}, updated_at = now()
-         RETURNING *`,
-        vals,
+        `SELECT DISTINCT
+                NULLIF(TRIM(region),'')              AS region,
+                NULLIF(TRIM(entidad_territorial),'') AS entidad,
+                NULLIF(TRIM(municipio),'')           AS municipio,
+                NULLIF(TRIM(nombre_ie),'')           AS institucion
+           FROM e360.fichas`,
       );
-      res.status(201).json(rows[0]);
+      res.json(rows);
+    } catch (e) { fail(res, e); }
+  });
+
+  // GET /admin/fichas/export — todas las filas filtradas (para CSV)
+  r.get('/admin/fichas/export', requireAdmin, async (req, res) => {
+    try {
+      const f = filtrosFichas(req.query || {});
+      const { rows } = await q(
+        `SELECT * FROM e360.fichas ${f.sql} ORDER BY created_at DESC`,
+        f.vals,
+      );
+      res.json(rows);
+    } catch (e) { fail(res, e); }
+  });
+
+  // GET /admin/fichas — listado paginado
+  r.get('/admin/fichas', requireAdmin, async (req, res) => {
+    try {
+      const pagina = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
+      const porPagina = 20;
+      const f = filtrosFichas(req.query || {});
+      const { rows } = await q(
+        `SELECT numero_cedula AS cedula,
+                NULLIF(TRIM(nombres_apellidos),'') AS nombre,
+                region, entidad_territorial, municipio,
+                nombre_ie AS institucion, cargo_actual AS cargo,
+                correo_personal, created_at, updated_at,
+                COUNT(*) OVER() AS total
+           FROM e360.fichas ${f.sql}
+          ORDER BY created_at DESC
+          LIMIT ${porPagina} OFFSET ${(pagina - 1) * porPagina}`,
+        f.vals,
+      );
+      const total = rows[0] ? Number(rows[0].total) : 0;
+      res.json({
+        rows: rows.map(({ total: _t, ...resto }) => resto),
+        total,
+        page: pagina,
+        porPagina,
+      });
+    } catch (e) { fail(res, e); }
+  });
+
+  // GET /admin/fichas/:cedula
+  r.get('/admin/fichas/:cedula', requireAdmin, async (req, res) => {
+    try {
+      const cedula = String(req.params.cedula || '').replace(/\D/g, '');
+      const { rows } = await q(`SELECT * FROM e360.fichas WHERE numero_cedula = $1`, [cedula]);
+      if (!rows[0]) return res.status(404).json({ error: 'Ficha no encontrada' });
+      res.json(rows[0]);
+    } catch (e) { fail(res, e); }
+  });
+
+  // PUT /admin/fichas/:cedula — upsert administrativo
+  r.put('/admin/fichas/:cedula', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const cedula = String(req.params.cedula || '').replace(/\D/g, '');
+      const out = await upsertFicha(req.body || {}, cedula);
+      if (out.error) return res.status(400).json({ error: out.error });
+      res.json(out.row);
+    } catch (e) { fail(res, e); }
+  });
+
+  // POST /admin/fichas — crear ficha desde la administración
+  r.post('/admin/fichas', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const out = await upsertFicha(req.body || {});
+      if (out.error) return res.status(400).json({ error: out.error });
+      res.status(201).json(out.row);
+    } catch (e) { fail(res, e); }
+  });
+
+  // DELETE /admin/fichas/:cedula — solo superadmin
+  r.delete('/admin/fichas/:cedula', requireAdmin, requireSuperadmin, async (req, res) => {
+    try {
+      const cedula = String(req.params.cedula || '').replace(/\D/g, '');
+      await q(`DELETE FROM e360.fichas WHERE numero_cedula = $1`, [cedula]);
+      res.json({ ok: true });
     } catch (e) { fail(res, e); }
   });
 
