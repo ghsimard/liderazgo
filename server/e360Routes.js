@@ -1530,6 +1530,40 @@ module.exports = function e360Routes(pool) {
 
   /* ---------------- ADMIN: CRUD geográfico (Configuración de fichas) ------ */
 
+  /* --------- Instituciones con su directivo docente (desde las fichas) ---- */
+  // Alimenta la encuesta 360: el evaluador busca su IE y ve el rector asociado.
+  r.get('/instituciones-directivos', async (_req, res) => {
+    try {
+      const { rows } = await q(
+        `SELECT NULLIF(TRIM(nombre_ie), '')            AS institucion,
+                numero_cedula                          AS cedula,
+                COALESCE(NULLIF(TRIM(nombres_apellidos), ''),
+                         TRIM(CONCAT_WS(' ', nombres, apellidos))) AS nombre,
+                cargo_actual                           AS cargo
+           FROM e360.fichas
+          WHERE NULLIF(TRIM(nombre_ie), '') IS NOT NULL
+          ORDER BY 1, 3`,
+      );
+      const mapa = new Map();
+      for (const row of rows) {
+        if (!mapa.has(row.institucion)) mapa.set(row.institucion, []);
+        if (row.nombre) {
+          mapa.get(row.institucion).push({
+            cedula: row.cedula,
+            nombre: row.nombre,
+            cargo: row.cargo ?? null,
+          });
+        }
+      }
+      res.json({
+        instituciones: Array.from(mapa, ([institucion, directivos]) => ({
+          institucion,
+          directivos,
+        })),
+      });
+    } catch (e) { fail(res, e); }
+  });
+
   // Entidades territoriales
   r.post('/admin/geo/entidades', requireAdmin, requireEscritura, async (req, res) => {
     try {
