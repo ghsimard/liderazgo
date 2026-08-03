@@ -1305,21 +1305,13 @@ module.exports = function e360Routes(pool) {
   // Lectura únicamente de las tablas geográficas existentes de RLT.
   r.get('/geo', async (_req, res) => {
     try {
-      const [ent, reg, re, rm, ri, mun, ins] = await Promise.all([
+      const [ent, mun, ins] = await Promise.all([
         q(`SELECT id, nombre FROM public.entidades_territoriales`),
-        q(`SELECT * FROM public.regiones`),
-        q(`SELECT * FROM public.region_entidades`),
-        q(`SELECT * FROM public.region_municipios`),
-        q(`SELECT * FROM public.region_instituciones`),
         q(`SELECT id, nombre, entidad_territorial_id FROM public.municipios`),
         q(`SELECT id, nombre, municipio_id FROM public.instituciones`),
       ]);
       res.json({
         entidades: ent.rows,
-        regiones: reg.rows,
-        region_entidades: re.rows,
-        region_municipios: rm.rows,
-        region_instituciones: ri.rows,
         municipios: mun.rows,
         instituciones: ins.rows,
       });
@@ -1347,7 +1339,7 @@ module.exports = function e360Routes(pool) {
     'discapacidad', 'discapacidad_detalle',
     'tipo_formacion', 'titulo_pregrado', 'titulo_especializacion',
     'titulo_maestria', 'titulo_doctorado', 'otros_titulos',
-    'region', 'entidad_territorial', 'municipio', 'comuna_barrio', 'nombre_ie',
+    'entidad_territorial', 'municipio', 'comuna_barrio', 'nombre_ie',
     'codigo_dane', 'cargo_actual', 'tipo_vinculacion', 'estatuto', 'grado_escalafon',
     'direccion_sede_principal', 'telefono_ie', 'codigo_pais_telefono_ie', 'sitio_web',
     'zona_sede', 'grupos_etnicos', 'proyectos_transversales', 'desplazamiento',
@@ -1431,7 +1423,6 @@ module.exports = function e360Routes(pool) {
       vals.push(l);
       where.push(`${col} = ANY($${vals.length}::text[])`);
     };
-    agregar('region', query.regiones);
     agregar('entidad_territorial', query.entidades);
     agregar('municipio', query.municipios);
     agregar('nombre_ie', query.instituciones);
@@ -1456,7 +1447,6 @@ module.exports = function e360Routes(pool) {
     try {
       const { rows } = await q(
         `SELECT DISTINCT
-                NULLIF(TRIM(region),'')              AS region,
                 NULLIF(TRIM(entidad_territorial),'') AS entidad,
                 NULLIF(TRIM(municipio),'')           AS municipio,
                 NULLIF(TRIM(nombre_ie),'')           AS institucion
@@ -1487,7 +1477,7 @@ module.exports = function e360Routes(pool) {
       const { rows } = await q(
         `SELECT numero_cedula AS cedula,
                 NULLIF(TRIM(nombres_apellidos),'') AS nombre,
-                region, entidad_territorial, municipio,
+                entidad_territorial, municipio,
                 nombre_ie AS institucion, cargo_actual AS cargo,
                 correo_personal, created_at, updated_at,
                 COUNT(*) OVER() AS total
