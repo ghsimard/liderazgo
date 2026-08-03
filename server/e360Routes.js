@@ -484,13 +484,15 @@ module.exports = function e360Routes(pool) {
 
       const itemsPorCompetencia = new Map();
       for (const it of i.rows) {
-        const key = String(
+        const rawKey = String(
           pick(it, ['competency_key', 'competencia_key', 'competency_id', 'competencia_id']) ?? '',
         );
+        // En RLT los ítems suelen referenciar la competencia con sufijo (ej. autoconciencia_1).
+        const key = rawKey.replace(/_\d+$/, '');
         const texto =
           textoDe(it) ??
           pick(it, ['statement_text', 'texto', 'label', 'enunciado', 'pregunta', 'item_text']) ??
-          `Ítem ${pick(it, ['item_number', 'id']) ?? ''}`.trim();
+          `Enunciado ${pick(it, ['item_number', 'id']) ?? ''}`.trim();
         const list = itemsPorCompetencia.get(key) || [];
         list.push({
           id: String(pick(it, ['key', 'id', 'item_number'])),
@@ -499,6 +501,7 @@ module.exports = function e360Routes(pool) {
         });
         itemsPorCompetencia.set(key, list);
       }
+
 
       const competenciasPorDominio = new Map();
       for (const co of c.rows) {
