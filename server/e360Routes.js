@@ -1777,14 +1777,22 @@ module.exports = function e360Routes(pool) {
   r.post('/admin/geo/sincronizar-territorio', requireAdmin, requireEscritura, async (req, res) => {
     try {
       const incluirInstituciones = req.body?.incluirInstituciones !== false;
-      /* Municipios foco: solo para ellos se importan las instituciones. */
       const sinAcentos = (v) =>
         String(v || '')
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '')
           .trim()
           .toLowerCase();
-      const MUNICIPIOS_FOCO = [
+      /* Entidades territoriales certificadas: 32 departamentos + Bogotá D.C. + 64 municipios. */
+      const DEPARTAMENTOS = [
+        'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bolívar', 'Boyacá', 'Caldas',
+        'Caquetá', 'Casanare', 'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca',
+        'Guainía', 'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño',
+        'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda',
+        'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima', 'Valle del Cauca',
+        'Vaupés', 'Vichada', 'Bogotá D.C.',
+      ];
+      const MUNICIPIOS_CERTIFICADOS = [
         'Apartadó', 'Armenia', 'Barrancabermeja', 'Barranquilla', 'Bello', 'Bucaramanga',
         'Buenaventura', 'Buga', 'Cali', 'Cartagena', 'Cartago', 'Chía', 'Ciénaga', 'Cúcuta',
         'Dosquebradas', 'Duitama', 'Envigado', 'Facatativá', 'Florencia', 'Floridablanca',
@@ -1796,10 +1804,34 @@ module.exports = function e360Routes(pool) {
         'Tunja', 'Turbo', 'Uribia', 'Valledupar', 'Villavicencio', 'Yopal', 'Yumbo',
         'Zipaquirá',
       ];
-      const municipiosPedidos = Array.isArray(req.body?.municipios) && req.body.municipios.length
-        ? req.body.municipios
-        : MUNICIPIOS_FOCO;
-      const foco = new Set(municipiosPedidos.map(sinAcentos).filter(Boolean));
+      /* Nombre canónico por clave sin acentos + alias frecuentes del DUE. */
+      const CANONICO = new Map();
+      for (const n of [...DEPARTAMENTOS, ...MUNICIPIOS_CERTIFICADOS]) {
+        CANONICO.set(sinAcentos(n), n);
+      }
+      const ALIAS = {
+        'bogota, d.c.': 'Bogotá D.C.',
+        'bogota d.c': 'Bogotá D.C.',
+        'bogota dc': 'Bogotá D.C.',
+        'bogota': 'Bogotá D.C.',
+        'santa fe de bogota d.c.': 'Bogotá D.C.',
+        'archipielago de san andres, providencia y santa catalina':
+          'San Andrés y Providencia',
+        'archipielago de san andres': 'San Andrés y Providencia',
+        'san andres': 'San Andrés y Providencia',
+        'san andres, providencia y santa catalina': 'San Andrés y Providencia',
+        'guadalajara de buga': 'Buga',
+        'san jose de cucuta': 'Cúcuta',
+        'santiago de cali': 'Cali',
+        'santa marta d.t.c.h.': 'Santa Marta',
+        'distrito turistico cultural e historico de santa marta': 'Santa Marta',
+        'santa cruz de lorica': 'Lorica',
+        'valle del cauca': 'Valle del Cauca',
+        'norte de santander': 'Norte de Santander',
+        'la guajira': 'La Guajira',
+      };
+      for (const [k, v] of Object.entries(ALIAS)) CANONICO.set(k, v);
+      const canonizar = (v) => CANONICO.get(sinAcentos(v)) || null;
       const combinaciones = new Map(); // "entidad|municipio" -> { entidad, municipio }
       const PAGINA = 1000;
       const totalEntMun = await fetch(`${DUE_URL}?$select=count(1)`, {
@@ -1820,7 +1852,7 @@ module.exports = function e360Routes(pool) {
         const filas = await resp.json();
         if (!Array.isArray(filas) || filas.length === 0) break;
         for (const f of filas) {
-          const entidad = titulo(f.secretaria) || titulo(f.nombredepartamento);
+          const entidad = canonizar(f.secretaria) || canonizar(f.nombredepartamento);
           const municipio = titulo(f.nombremunicipio);
           if (!entidad || !municipio) continue;
           combinaciones.set(`${entidad.toLowerCase()}|${municipio.toLowerCase()}`, {
@@ -1899,11 +1931,10 @@ module.exports = function e360Routes(pool) {
           establecimientos += filas.length;
 
           for (const f of filas) {
-            const entidad = titulo(f.secretaria) || titulo(f.nombredepartamento);
+            const entidad = canonizar(f.secretaria) || canonizar(f.nombredepartamento);
             const municipio = titulo(f.nombremunicipio);
             const nombre = titulo(f.nombreestablecimiento);
             if (!entidad || !municipio || !nombre) continue;
-            if (foco.size && !foco.has(sinAcentos(municipio))) continue;
 
             const entId = cacheEnt.get(entidad.toLowerCase());
             if (!entId) continue;
