@@ -1323,16 +1323,6 @@ module.exports = function e360Routes(pool) {
   const FASES = new Set(['inicial', 'final']);
   const faseDe = (v) => (FASES.has(String(v)) ? String(v) : 'inicial');
 
-  async function leerVisibilidad(fase) {
-    const { rows } = await q(
-      `SELECT institucion, visible FROM e360.visibilidad_encuesta WHERE fase = $1`,
-      [fase],
-    ).catch(() => ({ rows: [] }));
-    const mapa = new Map();
-    for (const row of rows) mapa.set(row.institucion, row.visible === true);
-    return mapa;
-  }
-
   // GET /admin/encuesta/instituciones?fase=&entidad=&q=
   r.get('/admin/encuesta/instituciones', requireAdmin, async (req, res) => {
     try {
@@ -1348,7 +1338,6 @@ module.exports = function e360Routes(pool) {
           WHERE COALESCE(e.fase,'inicial') = $1`,
         [fase],
       );
-      const vis = await leerVisibilidad(fase);
       const mapa = new Map();
       for (const row of rows) {
         const cur = mapa.get(row.institucion) || {
@@ -1368,7 +1357,6 @@ module.exports = function e360Routes(pool) {
         mapa.set(row.institucion, cur);
       }
       const lista = [...mapa.values()]
-        .map((x) => ({ ...x, visible: vis.has(x.institucion) ? vis.get(x.institucion) : true }))
         .sort((a, b) => a.institucion.localeCompare(b.institucion, 'es'));
       res.json({ fase, total: rows.length, instituciones: lista });
     } catch (e) { fail(res, e); }
@@ -1390,28 +1378,6 @@ module.exports = function e360Routes(pool) {
         [institucion, fase],
       );
       res.json(rows);
-    } catch (e) { fail(res, e); }
-  });
-
-  // PUT /admin/encuesta/visibilidad  { instituciones: [], fase, visible }
-  r.put('/admin/encuesta/visibilidad', requireAdmin, requireEscritura, async (req, res) => {
-    try {
-      const fase = faseDe(req.body?.fase);
-      const visible = req.body?.visible === true;
-      const lista = Array.isArray(req.body?.instituciones)
-        ? req.body.instituciones.map((x) => String(x).trim()).filter(Boolean)
-        : [String(req.body?.institucion || '').trim()].filter(Boolean);
-      if (!lista.length) return res.status(400).json({ error: 'Falta la institución' });
-      for (const institucion of lista) {
-        await q(
-          `INSERT INTO e360.visibilidad_encuesta (institucion, fase, visible)
-           VALUES ($1,$2,$3)
-           ON CONFLICT (institucion, fase)
-             DO UPDATE SET visible = EXCLUDED.visible, updated_at = now()`,
-          [institucion, fase, visible],
-        );
-      }
-      res.json({ ok: true, actualizadas: lista.length, fase, visible });
     } catch (e) { fail(res, e); }
   });
 
