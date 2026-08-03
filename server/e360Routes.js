@@ -811,7 +811,17 @@ module.exports = function e360Routes(pool) {
         },
         body: JSON.stringify({ from: CORREO_REMITENTE, to: [to], subject, html }),
       });
-      if (!resp.ok) throw new Error(`Resend ${resp.status}: ${await resp.text()}`);
+      if (!resp.ok) {
+        const body = await resp.text();
+        if (resp.status === 403 && body.includes('domain is not verified')) {
+          throw new Error(
+            `El dominio ${CORREO_REMITENTE.split('@')[1]} no está verificado en Resend. ` +
+            'Ve a https://resend.com/domains, añade el dominio y copia los registros DNS que indica Resend. ' +
+            'Mientras tanto, configura E360_CORREO_REMITENTE=onboarding@resend.dev en Render solo para pruebas (solo llega al correo dueño de la cuenta Resend).'
+          );
+        }
+        throw new Error(`Resend ${resp.status}: ${body}`);
+      }
       return;
     }
     if (process.env.SMTP_HOST) {
