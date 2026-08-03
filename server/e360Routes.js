@@ -1542,6 +1542,36 @@ module.exports = function e360Routes(pool) {
 
   const escapeSoql = (v) => String(v).replace(/'/g, "''");
 
+  /* Sinónimos frecuentes en el DUE: los nombres pueden venir abreviados
+     ("IE", "CE") o completos ("INSTITUCION EDUCATIVA"). */
+  const SINONIMOS_DUE = [
+    ['INSTITUCION', 'INSTITUCIÓN', 'INST', 'IE', 'I.E'],
+    ['CENTRO', 'CE', 'C.E'],
+    ['EDUCATIVA', 'EDUCATIVO', 'EDU'],
+    ['COLEGIO', 'COL'],
+  ];
+
+  function condicionToken(token) {
+    const grupo = SINONIMOS_DUE.find((g) =>
+      g.some((s) => s === token || (token.length >= 3 && s.startsWith(token))),
+    );
+    const variantes = grupo ? grupo : [token];
+    const patrones = [];
+    variantes.forEach((v0) => {
+      const v = escapeSoql(v0);
+      if (v0.length <= 3) {
+        /* Abreviaturas cortas ("IE", "CE"): solo como palabra, no como subcadena. */
+        patrones.push(`upper(nombreestablecimiento) like '${v} %'`);
+        patrones.push(`upper(nombreestablecimiento) like '% ${v} %'`);
+        patrones.push(`upper(nombreestablecimiento) like '% ${v}'`);
+        patrones.push(`upper(nombreestablecimiento) like '${v}.%'`);
+      } else {
+        patrones.push(`upper(nombreestablecimiento) like '%${v}%'`);
+      }
+    });
+    return `(${patrones.join(' OR ')})`;
+  }
+
   // GET /due/buscar?q=&municipio=&departamento=&limit=
   r.get('/due/buscar', async (req, res) => {
     try {
@@ -1555,12 +1585,17 @@ module.exports = function e360Routes(pool) {
 
       const where = [];
       if (q0) {
-        const t = escapeSoql(q0.toUpperCase());
-        where.push(
-          /^\d+$/.test(q0)
-            ? `starts_with(codigoestablecimiento, '${t}')`
-            : `upper(nombreestablecimiento) like '%${t}%'`,
-        );
+        if (/^\d+$/.test(q0)) {
+          where.push(`codigoestablecimiento like '${escapeSoql(q0)}%'`);
+        } else {
+          /* Cada palabra (>=3 letras) debe aparecer en el nombre, con sinónimos. */
+          const tokens = q0
+            .toUpperCase()
+            .split(/[^0-9A-ZÁÉÍÓÚÑ.]+/)
+            .filter((t) => t.length >= 3);
+          const usados = tokens.length > 0 ? tokens : [q0.toUpperCase()];
+          usados.forEach((t) => where.push(condicionToken(t)));
+        }
       }
       if (municipio) where.push(`upper(nombremunicipio) = '${escapeSoql(municipio.toUpperCase())}'`);
       if (departamento)
