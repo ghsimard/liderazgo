@@ -858,14 +858,7 @@ module.exports = function e360Routes(pool) {
       const a = rows[0];
       if (!a) return res.json(neutro);
 
-      // Máximo 3 solicitudes por hora y cuenta.
-      const { rows: cnt } = await q(
-        `SELECT count(*)::int AS n FROM e360.admin_password_resets
-          WHERE admin_id = $1 AND created_at > now() - interval '1 hour'`,
-        [a.id],
-      );
-      if ((cnt[0]?.n ?? 0) >= 3) return res.json(neutro);
-
+      // Sin límite de solicitudes: cada petición envía un enlace nuevo.
       const token = crypto.randomBytes(32).toString('hex');
       await q(
         `INSERT INTO e360.admin_password_resets (admin_id, token_hash, expira_en, ip)
