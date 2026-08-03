@@ -1254,5 +1254,137 @@ module.exports = function e360Routes(pool) {
     } catch (e) { fail(res, e); }
   });
 
+  /* ------------------------------------ FICHAS + PERMISOS (usuario) ------- */
+
+  // Por defecto: Entrada habilitada, Salida deshabilitada.
+  const PERMISOS_DEFECTO = { entrada: true, salida: false };
+
+  async function leerPermisos(cedula) {
+    const { rows } = await q(
+      `SELECT momento, habilitado FROM e360.permisos_encuesta WHERE cedula = $1`,
+      [cedula],
+    );
+    const p = { ...PERMISOS_DEFECTO };
+    for (const row of rows) p[row.momento] = row.habilitado === true;
+    return p;
+  }
+
+  // GET /usuarios/:cedula/estado — enruta el ingreso por cédula.
+  r.get('/usuarios/:cedula/estado', async (req, res) => {
+    try {
+      const cedula = String(req.params.cedula || '').replace(/\D/g, '');
+      if (!cedula) return res.status(400).json({ error: 'Cédula inválida' });
+
+      const adm = await q(
+        `SELECT correo, nombre FROM e360.admins WHERE cedula = $1 AND activo = true LIMIT 1`,
+        [cedula],
+      ).catch(() => ({ rows: [] }));
+
+      const f = await q(
+        `SELECT cedula, nombres, apellidos, cargo FROM e360.fichas WHERE cedula = $1`,
+        [cedula],
+      );
+      const ficha = f.rows[0] || null;
+      const permisos = await leerPermisos(cedula);
+
+      res.json({
+        cedula,
+        es_admin: adm.rows.length > 0,
+        correo: adm.rows[0]?.correo ?? null,
+        tiene_ficha: !!ficha,
+        nombre: ficha ? [ficha.nombres, ficha.apellidos].filter(Boolean).join(' ') || null : null,
+        cargo: ficha?.cargo ?? null,
+        permisos,
+      });
+    } catch (e) { fail(res, e); }
+  });
+
+  // GET /fichas/:cedula
+  r.get('/fichas/:cedula', async (req, res) => {
+    try {
+      const cedula = String(req.params.cedula || '').replace(/\D/g, '');
+      const { rows } = await q(`SELECT * FROM e360.fichas WHERE cedula = $1`, [cedula]);
+      if (!rows[0]) return res.status(404).json({ error: 'Ficha no encontrada' });
+      res.json(rows[0]);
+    } catch (e) { fail(res, e); }
+  });
+
+  // POST /fichas — crea o actualiza la ficha (upsert por cédula)
+  r.post('/fichas', async (req, res) => {
+    try {
+      const b = req.body || {};
+      const cedula = String(b.cedula || '').replace(/\D/g, '');
+      if (!cedula) return res.status(400).json({ error: 'Cédula inválida' });
+      const datos = b.datos && typeof b.datos === 'object' ? b.datos : {};
+      const { rows } = await q(
+        `INSERT INTO e360.fichas
+           (cedula, nombres, apellidos, correo, celular, institucion, cargo, datos)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+         ON CONFLICT (cedula) DO UPDATE
+            SET nombres = EXCLUDED.nombres,
+                apellidos = EXCLUDED.apellidos,
+                correo = EXCLUDED.correo,
+                celular = EXCLUDED.celular,
+                institucion = EXCLUDED.institucion,
+                cargo = EXCLUDED.cargo,
+                datos = EXCLUDED.datos,
+                actualizado_en = now()
+         RETURNING *`,
+        [
+          cedula,
+          b.nombres ?? null,
+          b.apellidos ?? null,
+          b.correo ?? null,
+          b.celular ?? null,
+          b.institucion ?? null,
+          b.cargo ?? null,
+          JSON.stringify(datos),
+        ],
+      );
+      res.status(201).json(rows[0]);
+    } catch (e) { fail(res, e); }
+  });
+
+  /* ------------------------------- PERMISOS (administración) -------------- */
+
+  r.get('/admin/permisos', requireAdmin, async (_req, res) => {
+    try {
+      const { rows } = await q(
+        `SELECT f.cedula,
+                NULLIF(TRIM(CONCAT_WS(' ', f.nombres, f.apellidos)), '') AS nombre,
+                f.institucion, f.cargo, f.creado_en,
+                COALESCE(pe.habilitado, true)  AS entrada,
+                COALESCE(ps.habilitado, false) AS salida
+           FROM e360.fichas f
+           LEFT JOIN e360.permisos_encuesta pe
+                  ON pe.cedula = f.cedula AND pe.momento = 'entrada'
+           LEFT JOIN e360.permisos_encuesta ps
+                  ON ps.cedula = f.cedula AND ps.momento = 'salida'
+          ORDER BY f.creado_en DESC`,
+      );
+      res.json(rows);
+    } catch (e) { fail(res, e); }
+  });
+
+  r.put('/admin/permisos/:cedula', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const cedula = String(req.params.cedula || '').replace(/\D/g, '');
+      const b = req.body || {};
+      for (const momento of ['entrada', 'salida']) {
+        if (typeof b[momento] !== 'boolean') continue;
+        await q(
+          `INSERT INTO e360.permisos_encuesta (cedula, momento, habilitado, otorgado_por)
+           VALUES ($1,$2,$3,$4)
+           ON CONFLICT (cedula, momento) DO UPDATE
+              SET habilitado = EXCLUDED.habilitado,
+                  otorgado_por = EXCLUDED.otorgado_por,
+                  otorgado_en = now()`,
+          [cedula, momento, b[momento], req.admin?.correo ?? null],
+        );
+      }
+      res.json({ cedula, permisos: await leerPermisos(cedula) });
+    } catch (e) { fail(res, e); }
+  });
+
   return r;
  };
