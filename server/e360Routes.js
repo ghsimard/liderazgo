@@ -1381,6 +1381,47 @@ module.exports = function e360Routes(pool) {
     } catch (e) { fail(res, e); }
   });
 
+  // GET /admin/encuesta/recoleccion?fase= — estado de recolección por par (directivo)
+  r.get('/admin/encuesta/recoleccion', requireAdmin, async (req, res) => {
+    try {
+      const fase = faseDe(req.query.fase);
+      const pares = await q(
+        `SELECT numero_cedula                             AS cedula,
+                COALESCE(NULLIF(TRIM(nombres_apellidos), ''),
+                         TRIM(CONCAT_WS(' ', nombres, apellidos))) AS nombre,
+                NULLIF(TRIM(nombre_ie), '')               AS institucion,
+                NULLIF(TRIM(entidad_territorial), '')     AS entidad,
+                NULLIF(TRIM(municipio), '')               AS municipio
+           FROM e360.fichas
+          ORDER BY 2`,
+      );
+      const conteos = await q(
+        `SELECT cedula_directivo, tipo_formulario, COUNT(*)::int AS n
+           FROM e360.encuestas_360
+          WHERE cedula_directivo IS NOT NULL AND COALESCE(fase,'inicial') = $1
+          GROUP BY 1, 2`,
+        [fase],
+      );
+      const mapa = new Map();
+      for (const c of conteos.rows) {
+        const cur = mapa.get(c.cedula_directivo) || {};
+        cur[c.tipo_formulario || 'otro'] = c.n;
+        mapa.set(c.cedula_directivo, cur);
+      }
+      res.json({
+        fase,
+        pares: pares.rows.map((p) => ({
+          cedula: p.cedula,
+          nombre: p.nombre,
+          institucion: p.institucion,
+          entidad: p.entidad,
+          municipio: p.municipio,
+          por_rol: mapa.get(p.cedula) || {},
+        })),
+      });
+    } catch (e) { fail(res, e); }
+  });
+
   // GET /admin/encuesta/informes?fase= — promedios por evaluado de una fase
   r.get('/admin/encuesta/informes', requireAdmin, async (req, res) => {
     try {
