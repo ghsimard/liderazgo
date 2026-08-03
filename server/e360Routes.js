@@ -1344,7 +1344,7 @@ module.exports = function e360Routes(pool) {
       ).catch(() => ({ rows: [] }));
 
       const f = await q(
-        `SELECT numero_cedula, nombres_apellidos, cargo_actual, nombre_ie
+        `SELECT numero_cedula, nombres_apellidos, cargo_actual, genero, nombre_ie
            FROM e360.fichas WHERE numero_cedula = $1`,
         [cedula],
       );
@@ -1358,6 +1358,7 @@ module.exports = function e360Routes(pool) {
         tiene_ficha: !!ficha,
         nombre: ficha?.nombres_apellidos ?? null,
         cargo: ficha?.cargo_actual ?? null,
+        genero: ficha?.genero ?? null,
         institucion: ficha?.nombre_ie ?? null,
         permisos,
       });
@@ -1958,7 +1959,7 @@ module.exports = function e360Routes(pool) {
         `SELECT numero_cedula AS cedula,
                 NULLIF(TRIM(nombres_apellidos),'') AS nombre,
                 entidad_territorial, municipio,
-                nombre_ie AS institucion, cargo_actual AS cargo,
+                nombre_ie AS institucion, cargo_actual AS cargo, genero,
                 correo_personal, created_at, updated_at,
                 COUNT(*) OVER() AS total
            FROM e360.fichas ${f.sql}
