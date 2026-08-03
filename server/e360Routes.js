@@ -763,6 +763,38 @@ module.exports = function e360Routes(pool) {
 
   r.get('/admin/me', requireAdmin, (req, res) => res.json({ admin: req.admin }));
 
+  /** Cambio de contraseña propia desde el panel (requiere contraseña actual). */
+  r.put('/admin/me/password', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const actual = String(req.body?.actual || '');
+      const nueva = String(req.body?.nueva || '');
+      if (!actual || !nueva) {
+        return res.status(400).json({ error: 'Contraseña actual y nueva son obligatorias' });
+      }
+      if (nueva.length < 8) {
+        return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' });
+      }
+      const { rows } = await q(
+        `UPDATE e360.admins
+            SET password_hash = crypt($3, gen_salt('bf')), updated_at = now()
+          WHERE id = $1 AND activo = true AND password_hash = crypt($2, password_hash)
+        RETURNING id, correo, nombre, rol`,
+        [req.admin.id, actual, nueva],
+      );
+      if (!rows[0]) return res.status(401).json({ error: 'La contraseña actual no es correcta' });
+
+      // Cierra las demás sesiones abiertas del mismo admin; la actual sigue válida.
+      const h = req.headers.authorization || '';
+      await q(
+        `DELETE FROM e360.admin_sesiones WHERE admin_id = $1 AND token <> $2`,
+        [req.admin.id, h.slice(7)],
+      );
+      await log(rows[0], 'password_cambiado', rows[0].correo);
+      res.json({ ok: true });
+    } catch (e) { fail(res, e); }
+  });
+
+
   /* ------------------------------- restablecer contraseña (por correo) ---- */
 
   const APP_URL = (process.env.E360_APP_URL || 'https://liderazgo360.co').replace(/\/$/, '');
