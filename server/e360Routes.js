@@ -360,6 +360,22 @@ module.exports = function e360Routes(pool) {
       if (!cedula || !evaluado) {
         return res.status(400).json({ error: 'Faltan la cédula del evaluador o del evaluado' });
       }
+      const fase = b.fase ?? 'inicial';
+      // Como en RLT/360: una sola autoevaluación por cédula y fase.
+      if ((b.relacion ?? 'autoevaluacion') === 'autoevaluacion') {
+        const dup = await q(
+          `SELECT 1 FROM e360.encuestas_360
+            WHERE cedula = $1 AND tipo_formulario = 'autoevaluacion'
+              AND COALESCE(fase,'inicial') = $2
+            LIMIT 1`,
+          [cedula, fase],
+        );
+        if (dup.rows.length) {
+          return res.status(409).json({
+            error: `Ya existe una autoevaluación ${fase === 'inicial' ? 'de entrada' : 'de salida'} registrada con esta cédula.`,
+          });
+        }
+      }
       const respuestas = Array.isArray(b.respuestas) ? b.respuestas : [];
       const { rows } = await q(
         `INSERT INTO e360.encuestas_360
@@ -383,6 +399,51 @@ module.exports = function e360Routes(pool) {
         ],
       );
       res.status(201).json({ id: rows[0].id });
+    } catch (e) { fail(res, e); }
+  });
+
+  // GET /api/e360/respuestas/conteos?evaluado=&fase=
+  // Número de respuestas registradas por tipo de formulario (cuotas del hub).
+  r.get('/respuestas/conteos', async (req, res) => {
+    try {
+      const evaluado = String(req.query.evaluado || '').trim();
+      const fase = String(req.query.fase || 'inicial');
+      if (!evaluado) return res.status(400).json({ error: 'Falta la cédula del evaluado' });
+      const { rows } = await q(
+        `SELECT tipo_formulario, count(*)::int AS total
+           FROM e360.encuestas_360
+          WHERE cedula_directivo = $1 AND COALESCE(fase,'inicial') = $2
+          GROUP BY tipo_formulario`,
+        [evaluado, fase],
+      );
+      const conteos = {};
+      for (const row of rows) conteos[row.tipo_formulario] = row.total;
+      res.json({ conteos });
+    } catch (e) { fail(res, e); }
+  });
+
+  // GET /api/e360/respuestas/autoevaluacion/:cedula?fase=
+  // Lectura de la propia autoevaluación (visor de solo lectura).
+  r.get('/respuestas/autoevaluacion/:cedula', async (req, res) => {
+    try {
+      const cedula = String(req.params.cedula).trim();
+      const fase = String(req.query.fase || 'inicial');
+      const { rows } = await q(
+        `SELECT respuestas, created_at
+           FROM e360.encuestas_360
+          WHERE cedula = $1 AND tipo_formulario = 'autoevaluacion'
+            AND COALESCE(fase,'inicial') = $2
+          ORDER BY created_at DESC
+          LIMIT 1`,
+        [cedula, fase],
+      );
+      if (!rows[0]) return res.status(404).json({ error: 'Sin autoevaluación registrada' });
+      const payload = rows[0].respuestas || {};
+      res.json({
+        creada: rows[0].created_at,
+        items: Array.isArray(payload.items) ? payload.items : [],
+        comentarios: payload.comentarios ?? null,
+      });
     } catch (e) { fail(res, e); }
   });
 
@@ -538,10 +599,11 @@ module.exports = function e360Routes(pool) {
         ],
         relaciones: [
           { valor: 'autoevaluacion', etiqueta: 'Autoevaluación' },
-          { valor: 'jefe', etiqueta: 'Jefe directo' },
-          { valor: 'par', etiqueta: 'Par / colega' },
-          { valor: 'colaborador', etiqueta: 'Colaborador' },
-          { valor: 'cliente', etiqueta: 'Cliente interno o externo' },
+          { valor: 'directivo', etiqueta: 'Directivo Par' },
+          { valor: 'docente', etiqueta: 'Docente' },
+          { valor: 'administrativo', etiqueta: 'Administrativo' },
+          { valor: 'estudiante', etiqueta: 'Estudiante' },
+          { valor: 'acudiente', etiqueta: 'Acudiente' },
         ],
         dominios,
       });
