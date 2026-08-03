@@ -1819,6 +1819,28 @@ module.exports = function e360Routes(pool) {
   };
   const arr = (v) => (Array.isArray(v) ? v.filter((x) => txt(x) !== null) : []);
 
+  /**
+   * Normaliza fechas: acepta ISO (AAAA-MM-DD[THH:MM:SSZ]) y el formato local
+   * DD/MM/AAAA que escriben los usuarios. Devuelve AAAA-MM-DD o null.
+   * Evita el error "date/time field value out of range" que hacía fallar
+   * el guardado completo de la ficha.
+   */
+  const fec = (v) => {
+    const s = txt(v);
+    if (!s) return null;
+    let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    m = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(s);
+    if (m) {
+      const d = String(m[1]).padStart(2, '0');
+      const mes = String(m[2]).padStart(2, '0');
+      if (Number(mes) >= 1 && Number(mes) <= 12 && Number(d) >= 1 && Number(d) <= 31) {
+        return `${m[3]}-${mes}-${d}`;
+      }
+    }
+    return null;
+  };
+
   async function upsertFicha(b, cedulaForzada) {
     const cedula = String(cedulaForzada || b.numero_cedula || b.cedula || '').replace(/\D/g, '');
     if (!cedula) return { error: 'Cédula inválida' };
@@ -1827,7 +1849,7 @@ module.exports = function e360Routes(pool) {
     const vals = [cedula, b.acepta_datos === true];
 
     for (const c of FICHA_TEXTO) { cols.push(c); vals.push(txt(b[c])); }
-    for (const c of FICHA_FECHA) { cols.push(c); vals.push(txt(b[c])); }
+    for (const c of FICHA_FECHA) { cols.push(c); vals.push(fec(b[c])); }
     for (const c of FICHA_ENTERO) { cols.push(c); vals.push(num(b[c])); }
     for (const c of FICHA_ARRAY) { cols.push(c); vals.push(arr(b[c])); }
 
