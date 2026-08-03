@@ -1776,9 +1776,14 @@ module.exports = function e360Routes(pool) {
      (consulta agregada, no institución por institución) y crea las que falten. */
   r.post('/admin/geo/sincronizar-territorio', requireAdmin, requireEscritura, async (req, res) => {
     try {
+      const incluirInstituciones = req.body?.incluirInstituciones !== false;
       const combinaciones = new Map(); // "entidad|municipio" -> { entidad, municipio }
       const PAGINA = 1000;
-      for (let offset = 0; offset < 20000; offset += PAGINA) {
+      const totalEntMun = await fetch(`${DUE_URL}?$select=count(1)`, {
+        headers: { Accept: 'application/json' },
+      }).then(r => r.json()).then(j => Number(j?.[0]?.count_1 || 0));
+      const topeEntMun = Math.min(totalEntMun || 30000, 30000);
+      for (let offset = 0; offset < topeEntMun; offset += PAGINA) {
         const params = new URLSearchParams({
           $select: 'secretaria, nombredepartamento, nombremunicipio',
           $group: 'secretaria, nombredepartamento, nombremunicipio',
@@ -1805,7 +1810,7 @@ module.exports = function e360Routes(pool) {
 
       let entidadesCreadas = 0, municipiosCreados = 0;
       const cacheEnt = new Map();
-      const munExistentes = new Set();
+      const cacheMun = new Map(); // "entId|municipio" -> munId
 
       for (const { entidad, municipio } of combinaciones.values()) {
         let entId = cacheEnt.get(entidad.toLowerCase());
@@ -1826,20 +1831,80 @@ module.exports = function e360Routes(pool) {
         }
 
         const clave = `${entId}|${municipio.toLowerCase()}`;
-        if (munExistentes.has(clave)) continue;
-        const mun = (await q(
+        if (cacheMun.has(clave)) continue;
+        let mun = (await q(
           `SELECT id FROM public.municipios
             WHERE lower(nombre) = lower($1) AND entidad_territorial_id = $2 LIMIT 1`,
           [municipio, entId],
         )).rows[0];
         if (!mun) {
-          await q(
-            `INSERT INTO public.municipios (nombre, entidad_territorial_id) VALUES ($1, $2)`,
+          mun = (await q(
+            `INSERT INTO public.municipios (nombre, entidad_territorial_id)
+              VALUES ($1, $2) RETURNING id`,
             [municipio, entId],
-          );
+          )).rows[0];
           municipiosCreados += 1;
         }
-        munExistentes.add(clave);
+        cacheMun.set(clave, mun.id);
+      }
+
+      /* Segunda pasada: lista de instituciones de cada municipio (consulta agregada). */
+      let institucionesCreadas = 0;
+      let establecimientos = 0;
+      let totalRegistros = totalEntMun;
+      if (incluirInstituciones) {
+        const vistos = new Set(); // "munId|nombre"
+        const totalIns = await fetch(`${DUE_URL}?$select=count(1)`, {
+          headers: { Accept: 'application/json' },
+        }).then(r => r.json()).then(j => Number(j?.[0]?.count_1 || 0));
+        const topeIns = Math.min(totalIns || 30000, 30000);
+        totalRegistros = totalIns || totalEntMun;
+        for (let offset = 0; offset < topeIns; offset += PAGINA) {
+          const params = new URLSearchParams({
+            $select: 'secretaria, nombredepartamento, nombremunicipio, nombreestablecimiento',
+            $group: 'secretaria, nombredepartamento, nombremunicipio, nombreestablecimiento',
+            $order: 'nombredepartamento, nombremunicipio, nombreestablecimiento',
+            $limit: String(PAGINA),
+            $offset: String(offset),
+          });
+          const resp = await fetch(`${DUE_URL}?${params.toString()}`, {
+            headers: { Accept: 'application/json' },
+          });
+          if (!resp.ok) throw new Error(`El registro nacional respondió ${resp.status}`);
+          const filas = await resp.json();
+          if (!Array.isArray(filas) || filas.length === 0) break;
+          establecimientos += filas.length;
+
+          for (const f of filas) {
+            const entidad = titulo(f.secretaria) || titulo(f.nombredepartamento);
+            const municipio = titulo(f.nombremunicipio);
+            const nombre = titulo(f.nombreestablecimiento);
+            if (!entidad || !municipio || !nombre) continue;
+
+            const entId = cacheEnt.get(entidad.toLowerCase());
+            if (!entId) continue;
+            const munId = cacheMun.get(`${entId}|${municipio.toLowerCase()}`);
+            if (!munId) continue;
+
+            const claveIns = `${munId}|${nombre.toLowerCase()}`;
+            if (vistos.has(claveIns)) continue;
+            vistos.add(claveIns);
+
+            const ins = (await q(
+              `SELECT id FROM public.instituciones
+                WHERE lower(nombre) = lower($1) AND municipio_id = $2 LIMIT 1`,
+              [nombre, munId],
+            )).rows[0];
+            if (!ins) {
+              await q(
+                `INSERT INTO public.instituciones (nombre, municipio_id) VALUES ($1, $2)`,
+                [nombre, munId],
+              );
+              institucionesCreadas += 1;
+            }
+          }
+          if (filas.length < PAGINA) break;
+        }
       }
 
       res.json({
@@ -1847,6 +1912,9 @@ module.exports = function e360Routes(pool) {
         combinaciones: combinaciones.size,
         entidadesCreadas,
         municipiosCreados,
+        establecimientos,
+        institucionesCreadas,
+        total: totalRegistros,
       });
     } catch (e) { fail(res, e); }
   });
