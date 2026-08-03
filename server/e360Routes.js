@@ -1771,6 +1771,87 @@ module.exports = function e360Routes(pool) {
   });
 
   // GET /fichas/:cedula
+  /* POST /admin/geo/sincronizar-territorio
+     Trae del DUE todas las combinaciones Secretaría/Departamento + Municipio del país
+     (consulta agregada, no institución por institución) y crea las que falten. */
+  r.post('/admin/geo/sincronizar-territorio', requireAdmin, requireEscritura, async (req, res) => {
+    try {
+      const combinaciones = new Map(); // "entidad|municipio" -> { entidad, municipio }
+      const PAGINA = 1000;
+      for (let offset = 0; offset < 20000; offset += PAGINA) {
+        const params = new URLSearchParams({
+          $select: 'secretaria, nombredepartamento, nombremunicipio',
+          $group: 'secretaria, nombredepartamento, nombremunicipio',
+          $order: 'nombredepartamento, nombremunicipio',
+          $limit: String(PAGINA),
+          $offset: String(offset),
+        });
+        const url = `${DUE_URL}?${params.toString()}`;
+        const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (!resp.ok) throw new Error(`El registro nacional respondió ${resp.status}`);
+        const filas = await resp.json();
+        if (!Array.isArray(filas) || filas.length === 0) break;
+        for (const f of filas) {
+          const entidad = titulo(f.secretaria) || titulo(f.nombredepartamento);
+          const municipio = titulo(f.nombremunicipio);
+          if (!entidad || !municipio) continue;
+          combinaciones.set(`${entidad.toLowerCase()}|${municipio.toLowerCase()}`, {
+            entidad,
+            municipio,
+          });
+        }
+        if (filas.length < PAGINA) break;
+      }
+
+      let entidadesCreadas = 0, municipiosCreados = 0;
+      const cacheEnt = new Map();
+      const munExistentes = new Set();
+
+      for (const { entidad, municipio } of combinaciones.values()) {
+        let entId = cacheEnt.get(entidad.toLowerCase());
+        if (!entId) {
+          let ent = (await q(
+            `SELECT id FROM public.entidades_territoriales WHERE lower(nombre) = lower($1) LIMIT 1`,
+            [entidad],
+          )).rows[0];
+          if (!ent) {
+            ent = (await q(
+              `INSERT INTO public.entidades_territoriales (nombre) VALUES ($1) RETURNING id`,
+              [entidad],
+            )).rows[0];
+            entidadesCreadas += 1;
+          }
+          entId = ent.id;
+          cacheEnt.set(entidad.toLowerCase(), entId);
+        }
+
+        const clave = `${entId}|${municipio.toLowerCase()}`;
+        if (munExistentes.has(clave)) continue;
+        const mun = (await q(
+          `SELECT id FROM public.municipios
+            WHERE lower(nombre) = lower($1) AND entidad_territorial_id = $2 LIMIT 1`,
+          [municipio, entId],
+        )).rows[0];
+        if (!mun) {
+          await q(
+            `INSERT INTO public.municipios (nombre, entidad_territorial_id) VALUES ($1, $2)`,
+            [municipio, entId],
+          );
+          municipiosCreados += 1;
+        }
+        munExistentes.add(clave);
+      }
+
+      res.json({
+        ok: true,
+        combinaciones: combinaciones.size,
+        entidadesCreadas,
+        municipiosCreados,
+      });
+    } catch (e) { fail(res, e); }
+  });
+
+  // GET /fichas/:cedula
   r.get('/fichas/:cedula', async (req, res) => {
     try {
       const cedula = String(req.params.cedula || '').replace(/\D/g, '');
