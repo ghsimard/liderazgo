@@ -1518,6 +1518,8 @@ module.exports = function e360Routes(pool) {
       modelos_educativos: titulo(row.modelos_educativos),
       numero_de_sedes: limpiar(row.numero_de_sedes),
       tipo_establecimiento: titulo(row.tipo_establecimiento),
+      /* En el DUE el nombre del rector/director viene en la columna codigo_etc. */
+      rector: titulo(row.codigo_etc),
       /* Registro completo tal como lo devuelve datos.gov.co (todas las columnas). */
       crudo: Object.fromEntries(
         Object.entries(row).map(([k, v]) => [
