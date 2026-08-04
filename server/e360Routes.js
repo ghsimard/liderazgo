@@ -1980,7 +1980,181 @@ module.exports = function e360Routes(pool) {
       });
       if (where.length > 0) params.set('$where', where.join(' AND '));
 
-      res.json({ resultados: await consultarDue(params) });
+      const resultados = await consultarDue(params);
+      res.json({ resultados });
+      /* Respaldo en vivo: lo encontrado se guarda en el espejo para la próxima vez. */
+      for (const f of resultados) {
+        try { await guardarEstablecimiento(f); } catch { /* el espejo es opcional */ }
+      }
+    } catch (e) { fail(res, e); }
+  });
+
+  /* ============ ESPEJO LOCAL DEL REGISTRO NACIONAL (e360.due_establecimientos)
+     La autocompletación de la ficha lee de nuestra base (rápida y disponible);
+     el DUE solo sirve para refrescar el espejo y como respaldo puntual. */
+
+  const normalizar = (v) => sinAcentos(limpiar(v));
+
+  async function guardarEstablecimiento(f) {
+    const entidad = canonizar(f.secretaria) || canonizar(f.departamento) || f.departamento || '';
+    if (!f.codigo_dane || !f.nombre) return null;
+    const { rows } = await q(
+      `INSERT INTO e360.due_establecimientos (
+         codigo_dane, nombre, nombre_norm, secretaria, departamento, municipio,
+         municipio_norm, entidad, entidad_norm, zona, direccion, telefono, correo,
+         niveles, jornadas, especialidad, modelos, numero_de_sedes, tipo, rector,
+         sincronizado_en)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20, now())
+       ON CONFLICT (codigo_dane) DO UPDATE SET
+         nombre = EXCLUDED.nombre, nombre_norm = EXCLUDED.nombre_norm,
+         secretaria = EXCLUDED.secretaria, departamento = EXCLUDED.departamento,
+         municipio = EXCLUDED.municipio, municipio_norm = EXCLUDED.municipio_norm,
+         entidad = EXCLUDED.entidad, entidad_norm = EXCLUDED.entidad_norm,
+         zona = EXCLUDED.zona, direccion = EXCLUDED.direccion,
+         telefono = EXCLUDED.telefono, correo = EXCLUDED.correo,
+         niveles = EXCLUDED.niveles, jornadas = EXCLUDED.jornadas,
+         especialidad = EXCLUDED.especialidad, modelos = EXCLUDED.modelos,
+         numero_de_sedes = EXCLUDED.numero_de_sedes, tipo = EXCLUDED.tipo,
+         rector = EXCLUDED.rector, sincronizado_en = now()
+       RETURNING (xmax = 0) AS creado`,
+      [
+        f.codigo_dane, f.nombre, normalizar(f.nombre), f.secretaria, f.departamento,
+        f.municipio, normalizar(f.municipio), entidad, normalizar(entidad), f.zona,
+        f.direccion, f.telefono, f.correo, f.niveles, f.jornadas, f.especialidad,
+        f.modelos_educativos, f.numero_de_sedes, f.tipo_establecimiento, f.rector || '',
+      ],
+    );
+    return rows[0]?.creado === true;
+  }
+
+  const filaEspejo = (row) => ({
+    codigo_dane: row.codigo_dane,
+    nombre: row.nombre,
+    departamento: row.departamento || '',
+    municipio: row.municipio || '',
+    secretaria: row.secretaria || row.entidad || '',
+    zona: row.zona || '',
+    direccion: row.direccion || '',
+    telefono: row.telefono || '',
+    correo: row.correo || '',
+    niveles: row.niveles || '',
+    jornadas: row.jornadas || '',
+    especialidad: row.especialidad || '',
+    modelos_educativos: row.modelos || '',
+    numero_de_sedes: row.numero_de_sedes || '',
+    tipo_establecimiento: row.tipo || '',
+    rector: row.rector || '',
+  });
+
+  // GET /instituciones/buscar?q=&municipio=&entidad=&limit=  (espejo local)
+  r.get('/instituciones/buscar', async (req, res) => {
+    try {
+      const q0 = limpiar(req.query.q);
+      const municipio = normalizar(req.query.municipio);
+      const entidad = normalizar(req.query.entidad);
+      const limit = Math.min(Number(req.query.limit) || 20, 50);
+      if (q0.length < 2) return res.json({ resultados: [] });
+
+      const where = [];
+      const vals = [];
+      const add = (sql, v) => { vals.push(v); where.push(sql.replace('$?', `$${vals.length}`)); };
+
+      if (/^\d{4,}$/.test(q0)) {
+        add(`codigo_dane LIKE $? || '%'`, q0);
+      } else {
+        const tokens = normalizar(q0).split(/[^0-9A-Z]+/).filter((t) => t.length >= 2);
+        (tokens.length > 0 ? tokens : [normalizar(q0)]).forEach((t) => {
+          add(`nombre_norm LIKE '%' || $? || '%'`, t);
+        });
+      }
+      if (municipio) add(`municipio_norm = $?`, municipio);
+      if (entidad) add(`entidad_norm = $?`, entidad);
+
+      vals.push(limit);
+      const { rows } = await q(
+        `SELECT * FROM e360.due_establecimientos
+          WHERE ${where.join(' AND ')}
+          ORDER BY length(nombre), nombre
+          LIMIT $${vals.length}`,
+        vals,
+      );
+      res.json({ resultados: rows.map(filaEspejo) });
+    } catch (e) { fail(res, e); }
+  });
+
+  /* Sincronización incremental del espejo: recorre el dataset completo por
+     páginas y hace UPSERT por código DANE. Idempotente, nunca borra. */
+  async function sincronizarEspejoDue(origen) {
+    const inicio = (await q(
+      `INSERT INTO e360.due_sincronizaciones (origen) VALUES ($1) RETURNING id`,
+      [origen],
+    )).rows[0];
+    let leidos = 0, creados = 0, actualizados = 0;
+    try {
+      const PAGINA = 1000;
+      for (let offset = 0; offset < 80000; offset += PAGINA) {
+        const params = new URLSearchParams({
+          $limit: String(PAGINA),
+          $offset: String(offset),
+          $order: 'codigoestablecimiento',
+        });
+        const filas = await consultarDue(params);
+        if (filas.length === 0) break;
+        leidos += filas.length;
+        for (const f of filas) {
+          const entidad = canonizar(f.secretaria) || canonizar(f.departamento);
+          if (!entidad) continue; /* fuera de las 97 entidades certificadas */
+          const creado = await guardarEstablecimiento(f);
+          if (creado === true) creados += 1;
+          else if (creado === false) actualizados += 1;
+        }
+        if (filas.length < PAGINA) break;
+      }
+      await q(
+        `UPDATE e360.due_sincronizaciones
+            SET terminado_en = now(), leidos = $2, creados = $3, actualizados = $4
+          WHERE id = $1`,
+        [inicio.id, leidos, creados, actualizados],
+      );
+      return { ok: true, leidos, creados, actualizados };
+    } catch (e) {
+      await q(
+        `UPDATE e360.due_sincronizaciones
+            SET terminado_en = now(), leidos = $2, creados = $3, actualizados = $4, error = $5
+          WHERE id = $1`,
+        [inicio.id, leidos, creados, actualizados, String(e.message || e)],
+      );
+      throw e;
+    }
+  }
+
+  // POST /admin/due/sincronizar — manual, desde el panel de administración
+  r.post('/admin/due/sincronizar', requireAdmin, requireEscritura, async (_req, res) => {
+    try { res.json(await sincronizarEspejoDue('admin')); } catch (e) { fail(res, e); }
+  });
+
+  // POST /due/sincronizar-cron — automática (Render Cron Job), con secreto compartido
+  r.post('/due/sincronizar-cron', async (req, res) => {
+    try {
+      const esperado = process.env.E360_CRON_SECRET;
+      if (!esperado) return res.status(503).json({ error: 'E360_CRON_SECRET no está configurado.' });
+      const enviado =
+        limpiar(req.headers['x-cron-secret']) ||
+        limpiar((req.headers.authorization || '').replace(/^Bearer\s+/i, '')) ||
+        limpiar(req.query.secret);
+      if (enviado !== limpiar(esperado)) return res.status(401).json({ error: 'No autorizado' });
+      res.json(await sincronizarEspejoDue('cron'));
+    } catch (e) { fail(res, e); }
+  });
+
+  // GET /admin/due/estado — última sincronización y total del espejo
+  r.get('/admin/due/estado', requireAdmin, async (_req, res) => {
+    try {
+      const total = (await q(`SELECT count(1)::int AS n FROM e360.due_establecimientos`)).rows[0];
+      const ultima = (await q(
+        `SELECT * FROM e360.due_sincronizaciones ORDER BY iniciado_en DESC LIMIT 1`,
+      )).rows[0] || null;
+      res.json({ total: total?.n ?? 0, ultima });
     } catch (e) { fail(res, e); }
   });
 
