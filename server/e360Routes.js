@@ -1433,6 +1433,15 @@ module.exports = function e360Routes(pool) {
 
   // GET /admin/encuesta/informe-par?cedula=&fase= — datos crudos del informe 360
   r.get('/admin/encuesta/informe-par', requireAdmin, async (req, res) => {
+    return informeParHandler(req, res);
+  });
+
+  // GET /e360/informe-par?cedula=&fase= — mismo informe, para el propio evaluado
+  r.get('/informe-par', async (req, res) => {
+    return informeParHandler(req, res);
+  });
+
+  async function informeParHandler(req, res) {
     try {
       const fase = faseDe(req.query.fase);
       const cedula = String(req.query.cedula || '').trim();
@@ -1476,7 +1485,7 @@ module.exports = function e360Routes(pool) {
         })),
       });
     } catch (e) { fail(res, e); }
-  });
+  }
 
   async function informesHandler(req, res) {
     try {
