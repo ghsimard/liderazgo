@@ -1006,7 +1006,7 @@ module.exports = function e360Routes(pool) {
   r.get('/admin/usuarios', requireAdmin, requireSuperadmin, async (_req, res) => {
     try {
       const { rows } = await q(
-        `SELECT id, correo, nombre, rol, activo, ultimo_ingreso, created_at
+        `SELECT id, correo, nombre, cedula, rol, activo, ultimo_ingreso, created_at
            FROM e360.admins ORDER BY created_at`,
       );
       res.json(rows);
@@ -1018,14 +1018,22 @@ module.exports = function e360Routes(pool) {
       const b = req.body || {};
       const correo = String(b.correo || '').trim().toLowerCase();
       const password = String(b.password || '');
+      const cedula = String(b.cedula || '').replace(/\D/g, '');
       if (!correo || password.length < 8) {
         return res.status(400).json({ error: 'Correo y contraseña (mínimo 8 caracteres) requeridos' });
       }
+      if (!cedula || cedula.length < 5 || cedula.length > 12) {
+        return res.status(400).json({ error: 'Cédula requerida (entre 5 y 12 dígitos)' });
+      }
+      const dup = await q(`SELECT 1 FROM e360.admins WHERE cedula = $1 LIMIT 1`, [cedula]);
+      if (dup.rows[0]) {
+        return res.status(409).json({ error: 'Esa cédula ya está asociada a otra cuenta' });
+      }
       const { rows } = await q(
-        `INSERT INTO e360.admins (correo, nombre, password_hash, rol)
-         VALUES ($1,$2, crypt($3, gen_salt('bf')), COALESCE($4,'admin'))
-         RETURNING id, correo, nombre, rol, activo, created_at`,
-        [correo, b.nombre ?? null, password, b.rol ?? null],
+        `INSERT INTO e360.admins (correo, nombre, cedula, password_hash, rol)
+         VALUES ($1,$2,$3, crypt($4, gen_salt('bf')), COALESCE($5,'admin'))
+         RETURNING id, correo, nombre, cedula, rol, activo, created_at`,
+        [correo, b.nombre ?? null, cedula, password, b.rol ?? null],
       );
       await log(req.admin, 'usuario_creado', correo);
       res.status(201).json(rows[0]);
@@ -1035,18 +1043,22 @@ module.exports = function e360Routes(pool) {
   r.put('/admin/usuarios/:id', requireAdmin, requireSuperadmin, async (req, res) => {
     try {
       const b = req.body || {};
+      const cedula = b.cedula === undefined || b.cedula === null
+        ? null
+        : String(b.cedula).replace(/\D/g, '') || null;
       const { rows } = await q(
         `UPDATE e360.admins
             SET nombre = COALESCE($2, nombre),
                 rol    = COALESCE($3, rol),
                 activo = COALESCE($4, activo),
+                cedula = COALESCE($6, cedula),
                 password_hash = CASE WHEN $5 <> '' THEN crypt($5, gen_salt('bf'))
                                      ELSE password_hash END,
                 updated_at = now()
           WHERE id = $1
-        RETURNING id, correo, nombre, rol, activo, ultimo_ingreso, created_at`,
+        RETURNING id, correo, nombre, cedula, rol, activo, ultimo_ingreso, created_at`,
         [req.params.id, b.nombre ?? null, b.rol ?? null,
-         typeof b.activo === 'boolean' ? b.activo : null, String(b.password || '')],
+         typeof b.activo === 'boolean' ? b.activo : null, String(b.password || ''), cedula],
       );
       if (!rows[0]) return res.status(404).json({ error: 'Usuario no encontrado' });
       await log(req.admin, 'usuario_actualizado', rows[0].correo);
