@@ -394,7 +394,11 @@ module.exports = function e360Routes(pool) {
           b.nombre ?? b.nombre_completo ?? null,
           cedula,
           b.email ?? null,
-          JSON.stringify({ items: respuestas, comentarios: b.comentarios ?? null }),
+          JSON.stringify({
+            items: respuestas,
+            comentarios: b.comentarios ?? null,
+            dias_contacto: b.dias_contacto ?? null,
+          }),
           b.fase ?? null,
         ],
       );
@@ -1424,6 +1428,57 @@ module.exports = function e360Routes(pool) {
 
   // GET /admin/encuesta/informes?fase= — promedios por evaluado de una fase
   r.get('/admin/encuesta/informes', requireAdmin, async (req, res) => {
+    return informesHandler(req, res);
+  });
+
+  // GET /admin/encuesta/informe-par?cedula=&fase= — datos crudos del informe 360
+  r.get('/admin/encuesta/informe-par', requireAdmin, async (req, res) => {
+    try {
+      const fase = faseDe(req.query.fase);
+      const cedula = String(req.query.cedula || '').trim();
+      if (!cedula) return res.status(400).json({ error: 'Falta la cédula del par' });
+
+      const ficha = await q(
+        `SELECT numero_cedula                             AS cedula,
+                COALESCE(NULLIF(TRIM(nombres_apellidos), ''),
+                         TRIM(CONCAT_WS(' ', nombres, apellidos))) AS nombre,
+                NULLIF(TRIM(nombre_ie), '')               AS institucion,
+                NULLIF(TRIM(entidad_territorial), '')     AS entidad,
+                NULLIF(TRIM(municipio), '')               AS municipio,
+                NULLIF(TRIM(codigo_dane), '')             AS codigo_dane,
+                NULLIF(TRIM(cargo_actual), '')            AS cargo
+           FROM e360.fichas
+          WHERE numero_cedula = $1`,
+        [cedula],
+      );
+      const { rows } = await q(
+        `SELECT tipo_formulario, nombre_directivo, institucion_educativa, respuestas
+           FROM e360.encuestas_360
+          WHERE cedula_directivo = $1 AND COALESCE(fase,'inicial') = $2`,
+        [cedula, fase],
+      );
+      const p = ficha.rows[0] || {};
+      res.json({
+        fase,
+        par: {
+          cedula,
+          nombre: p.nombre || rows[0]?.nombre_directivo || cedula,
+          entidad: p.entidad || '',
+          municipio: p.municipio || '',
+          institucion: p.institucion || rows[0]?.institucion_educativa || '',
+          codigo_dane: p.codigo_dane || '',
+          cargo: p.cargo || '',
+        },
+        respuestas: rows.map((row) => ({
+          relacion: row.tipo_formulario || 'otro',
+          dias_contacto: row.respuestas?.dias_contacto ?? null,
+          items: Array.isArray(row.respuestas?.items) ? row.respuestas.items : [],
+        })),
+      });
+    } catch (e) { fail(res, e); }
+  });
+
+  async function informesHandler(req, res) {
     try {
       const fase = faseDe(req.query.fase);
       const { rows } = await q(
@@ -1469,7 +1524,7 @@ module.exports = function e360Routes(pool) {
         })),
       );
     } catch (e) { fail(res, e); }
-  });
+  }
 
   // Por defecto: Entrada habilitada, Salida deshabilitada.
   const PERMISOS_DEFECTO = { entrada: true, salida: false };
