@@ -248,55 +248,89 @@ export default function AdminAmbienteStatsTab() {
     load();
   }, []);
 
-  // Clear downstream filters
-  useEffect(() => { setSelEntidades([]); setSelectedIEs([]); }, [selRegions]);
-  useEffect(() => { setSelectedIEs([]); }, [selEntidades]);
-  useEffect(() => { setSelectedIEs([]); }, [selCohortes]);
-
-  // Build institution list from submissions + fichas, filtered by region/entidad/cohortes
-  const institutionOptions = useMemo(() => {
-    let subsPool = submissions;
-    if (selCohortes.length > 0) {
-      subsPool = subsPool.filter((s) => s.cohorte_id && selCohortes.includes(s.cohorte_id));
+  // ── Index unique IE → { región, entidad, cohortes } ──
+  const ieIndex = useMemo(() => {
+    const m = new Map<string, { region: string; entidad: string; cohortes: Set<string> }>();
+    const ensure = (ie: string) => {
+      let e = m.get(ie);
+      if (!e) {
+        e = { region: "", entidad: "", cohortes: new Set<string>() };
+        m.set(ie, e);
+      }
+      return e;
+    };
+    for (const f of fichas) {
+      if (!f.nombre_ie) continue;
+      const e = ensure(f.nombre_ie);
+      e.region = f.region || "";
+      e.entidad = f.entidad_territorial || "";
     }
-    const ieFromSubs = new Set(subsPool.map((s) => s.institucion_educativa));
-
-    const ieInfo = new Map<string, FichaInfo>();
-    for (const f of fichas) ieInfo.set(f.nombre_ie, f);
-
-    let ieList = Array.from(ieFromSubs);
-
-    if (selRegions.length > 0) {
-      ieList = ieList.filter((ie) => {
-        const info = ieInfo.get(ie);
-        return info && selRegions.includes(info.region);
-      });
+    for (const ci of cohorteInst) {
+      if (!ci.institucion_educativa) continue;
+      ensure(ci.institucion_educativa).cohortes.add(ci.cohorte_id);
     }
-    if (selEntidades.length > 0) {
-      ieList = ieList.filter((ie) => {
-        const info = ieInfo.get(ie);
-        return info && info.entidad_territorial && selEntidades.includes(info.entidad_territorial);
-      });
+    for (const s of submissions) {
+      if (!s.institucion_educativa) continue;
+      const e = ensure(s.institucion_educativa);
+      if (s.cohorte_id) e.cohortes.add(s.cohorte_id);
     }
+    return m;
+  }, [fichas, cohorteInst, submissions]);
 
-    return ieList.sort();
-  }, [submissions, fichas, selRegions, selEntidades, selCohortes]);
+  // Applique tous les filtres sauf la dimension en cours de calcul
+  const ieMatches = useCallback(
+    (
+      ie: string,
+      skip: { region?: boolean; entidad?: boolean; cohorte?: boolean; ie?: boolean } = {}
+    ) => {
+      const info = ieIndex.get(ie);
+      if (!info) return false;
+      if (!skip.region && selRegions.length > 0 && !selRegions.includes(info.region)) return false;
+      if (!skip.entidad && selEntidades.length > 0 && !selEntidades.includes(info.entidad)) return false;
+      if (!skip.cohorte && selCohortes.length > 0 && !selCohortes.some((c) => info.cohortes.has(c)))
+        return false;
+      if (!skip.ie && selectedIEs.length > 0 && !selectedIEs.includes(ie)) return false;
+      return true;
+    },
+    [ieIndex, selRegions, selEntidades, selCohortes, selectedIEs]
+  );
 
+  const allIEs = useMemo(() => Array.from(ieIndex.keys()), [ieIndex]);
+
+  // Options croisées
   const regionOptions = useMemo(() => {
-    const vals = [...new Set(fichas.map((f) => f.region).filter(Boolean))].sort();
-    return vals.map((v) => ({ value: v, label: v }));
-  }, [fichas]);
+    const vals = new Set<string>();
+    for (const ie of allIEs) {
+      if (!ieMatches(ie, { region: true })) continue;
+      const r = ieIndex.get(ie)?.region;
+      if (r) vals.add(r);
+    }
+    return [...vals].sort((a, b) => a.localeCompare(b, "es")).map((v) => ({ value: v, label: v }));
+  }, [allIEs, ieIndex, ieMatches]);
 
   const entidadOptions = useMemo(() => {
-    let pool = fichas;
-    if (selRegions.length > 0) pool = pool.filter((f) => selRegions.includes(f.region));
-    const vals = [...new Set(pool.map((f) => f.entidad_territorial).filter(Boolean) as string[])].sort();
-    return vals.map((v) => ({ value: v, label: v }));
-  }, [fichas, selRegions]);
+    const vals = new Set<string>();
+    for (const ie of allIEs) {
+      if (!ieMatches(ie, { entidad: true })) continue;
+      const e = ieIndex.get(ie)?.entidad;
+      if (e) vals.add(e);
+    }
+    return [...vals].sort((a, b) => a.localeCompare(b, "es")).map((v) => ({ value: v, label: v }));
+  }, [allIEs, ieIndex, ieMatches]);
 
-  const cohorteOptions = useMemo(
-    () => cohortes.map((c) => ({ value: c.id, label: c.nombre })),
-    [cohortes]
+  const cohorteOptions = useMemo(() => {
+    const ids = new Set<string>();
+    for (const ie of allIEs) {
+      if (!ieMatches(ie, { cohorte: true })) continue;
+      ieIndex.get(ie)?.cohortes.forEach((c) => ids.add(c));
+    }
+    return cohortes.filter((c) => ids.has(c.id)).map((c) => ({ value: c.id, label: c.nombre }));
+  }, [allIEs, ieIndex, ieMatches, cohortes]);
+
+  // Institutions compatibles avec cohorte/región/ET (indépendamment de la sélection d'IE)
+  const institutionOptions = useMemo(
+    () => allIEs.filter((ie) => ieMatches(ie, { ie: true })).sort((a, b) => a.localeCompare(b, "es")),
+    [allIEs, ieMatches]
   );
 
   const ieOptions = useMemo(
@@ -304,22 +338,33 @@ export default function AdminAmbienteStatsTab() {
     [institutionOptions]
   );
 
-  // Base filtered (region/entidad/cohortes/IE) — WITHOUT fase filter, used to compute per-fase views.
+  // Retire silencieusement les sélections devenues incompatibles
+  useEffect(() => {
+    if (loading) return;
+    const regionVals = new Set(regionOptions.map((o) => o.value));
+    const entidadVals = new Set(entidadOptions.map((o) => o.value));
+    const cohorteVals = new Set(cohorteOptions.map((o) => o.value));
+    const ieVals = new Set(institutionOptions);
+    setSelRegions((prev) => (prev.every((v) => regionVals.has(v)) ? prev : prev.filter((v) => regionVals.has(v))));
+    setSelEntidades((prev) => (prev.every((v) => entidadVals.has(v)) ? prev : prev.filter((v) => entidadVals.has(v))));
+    setSelCohortes((prev) => (prev.every((v) => cohorteVals.has(v)) ? prev : prev.filter((v) => cohorteVals.has(v))));
+    setSelectedIEs((prev) => (prev.every((v) => ieVals.has(v)) ? prev : prev.filter((v) => ieVals.has(v))));
+  }, [loading, regionOptions, entidadOptions, cohorteOptions, institutionOptions]);
+
+  // Institutions retenues par l'ensemble des filtres (y compris la sélection d'IE)
+  const targetIEs = useMemo(
+    () => allIEs.filter((ie) => ieMatches(ie)).sort((a, b) => a.localeCompare(b, "es")),
+    [allIEs, ieMatches]
+  );
+
+  // Base filtered (cohorte + región + ET + IE) — WITHOUT fase filter
   const baseFiltered = useMemo(() => {
-    let out = submissions;
-    if (selCohortes.length > 0) {
-      out = out.filter((s) => s.cohorte_id && selCohortes.includes(s.cohorte_id));
-    }
-    if (selectedIEs.length > 0) {
-      out = out.filter((s) => selectedIEs.includes(s.institucion_educativa));
-    } else {
-      // Restrict to institutionOptions if any region/entidad filter is applied
-      if (selRegions.length > 0 || selEntidades.length > 0) {
-        out = out.filter((s) => institutionOptions.includes(s.institucion_educativa));
-      }
-    }
-    return out;
-  }, [submissions, selCohortes, selectedIEs, selRegions, selEntidades, institutionOptions]);
+    const allowed = new Set(targetIEs);
+    return submissions.filter((s) => {
+      if (selCohortes.length > 0 && !(s.cohorte_id && selCohortes.includes(s.cohorte_id))) return false;
+      return allowed.has(s.institucion_educativa);
+    });
+  }, [submissions, targetIEs, selCohortes]);
 
   const filteredInicial = useMemo(
     () => baseFiltered.filter((s) => s.fase === FASE_DB.inicial),
@@ -332,11 +377,6 @@ export default function AdminAmbienteStatsTab() {
 
   const hasFilters = selRegions.length > 0 || selEntidades.length > 0 || selCohortes.length > 0 || selectedIEs.length > 0;
 
-  // Institutions selected for export (empty = all in current filter)
-  const targetIEs = useMemo(
-    () => (selectedIEs.length > 0 ? selectedIEs : institutionOptions),
-    [selectedIEs, institutionOptions]
-  );
 
   const fasesRequested: Array<Exclude<FaseKey, "ambas">> = useMemo(
     () => (selFase === "ambas" ? ["inicial", "evolucion"] : [selFase]),
