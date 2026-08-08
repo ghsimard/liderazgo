@@ -1087,7 +1087,7 @@ export default function AdminAmbienteStatsTab() {
                               size="sm"
                               variant="outline"
                               className="gap-1.5"
-                              disabled={subs.length === 0 || iePdfLoading === key}
+                              disabled={(subs.length === 0 && !includeSinRespuestas) || iePdfLoading === key}
                               onClick={() => handleSingleIEPDF(row.ie, fase)}
                             >
                               {iePdfLoading === key ? (
