@@ -401,6 +401,18 @@ export default function AdminAmbienteStatsTab() {
     return plan;
   }, [targetIEs, fasesRequested, baseFiltered]);
 
+  // Consolidés (un par fase demandée, s'il y a des données)
+  const consolidadoPlan = useMemo(
+    () =>
+      fasesRequested.filter((fase) =>
+        baseFiltered.some((s) => s.fase === FASE_DB[fase])
+      ),
+    [fasesRequested, baseFiltered]
+  );
+
+  const totalPdfCount =
+    (wantPorIE ? pdfPlan.length : 0) + (wantConsolidado ? consolidadoPlan.length : 0);
+
   // ── PDF generation ──
   const getLogoFlags = (ie: string) => {
     const fichaInfo = fichas.find((f) => f.nombre_ie === ie);
