@@ -191,6 +191,13 @@ export default function AdminAmbienteStatsTab() {
   const [batchGenerating, setBatchGenerating] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
 
+  // Online report view state
+  const [viewMode, setViewMode] = useState<"consolidado" | "institucion">("institucion");
+  const [openIEs, setOpenIEs] = useState<string[]>([]);
+  const [iePdfLoading, setIePdfLoading] = useState<string | null>(null);
+  const [cohorteOnline, setCohorteOnline] = useState<string>("");
+
+
   useEffect(() => {
     async function load() {
       setLoading(true);
