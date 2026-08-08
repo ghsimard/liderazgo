@@ -886,9 +886,15 @@ export async function generarAmbienteEscolarReportPDF(
       doc.text(sec, margin, y + barH / 2 + 1);
 
       if (count === 0 || san.total === 0) {
-        // Black cell, no text
-        doc.setFillColor(30, 30, 30);
-        doc.rect(margin + labelW, y, barW, barH, "F");
+        // Sin datos: celda neutra con "N/A"
+        doc.setFillColor(245, 245, 245);
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.15);
+        doc.rect(margin + labelW, y, barW, barH, "FD");
+        doc.setTextColor(120, 120, 120);
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.text("N/A", margin + labelW + barW / 2, y + barH / 2 + 1, { align: "center" });
       } else {
         let bx = margin + labelW;
         for (const key of ["S", "A", "N"] as SANKey[]) {
