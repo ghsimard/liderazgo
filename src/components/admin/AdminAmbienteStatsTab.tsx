@@ -689,6 +689,22 @@ export default function AdminAmbienteStatsTab() {
     [cohorteOnline, submissions]
   );
 
+  // Institutions rattachées à la cohorte vs. celles ayant répondu
+  const cohorteOnlineStats = useMemo(() => {
+    if (!cohorteOnline) return { total: 0, conRespuestas: 0, sinRespuestas: [] as string[] };
+    const totalIEs = allIEs.filter((ie) => ieIndex.get(ie)?.cohortes.has(cohorteOnline));
+    const answered = new Set(cohorteOnlineSubs.map((s) => s.institucion_educativa).filter(Boolean));
+    const sinRespuestas = totalIEs
+      .filter((ie) => !answered.has(ie))
+      .sort((a, b) => a.localeCompare(b, "es"));
+    return {
+      total: new Set([...totalIEs, ...answered]).size,
+      conRespuestas: answered.size,
+      sinRespuestas,
+    };
+  }, [cohorteOnline, allIEs, ieIndex, cohorteOnlineSubs]);
+
+
   const handleSingleIEPDF = async (ie: string, fase: Exclude<FaseKey, "ambas">) => {
     setIePdfLoading(`${ie}|${fase}`);
     try {
