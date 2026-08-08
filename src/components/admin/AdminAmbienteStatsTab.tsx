@@ -194,6 +194,7 @@ export default function AdminAmbienteStatsTab() {
   const [batchProgress, setBatchProgress] = useState(0);
   const [wantPorIE, setWantPorIE] = useState(true);
   const [wantConsolidado, setWantConsolidado] = useState(false);
+  const [includeSinRespuestas, setIncludeSinRespuestas] = useState(false);
 
   // Online report view state
   const [viewMode, setViewMode] = useState<"consolidado" | "institucion">("institucion");
@@ -396,11 +397,12 @@ export default function AdminAmbienteStatsTab() {
         const hasData = baseFiltered.some(
           (s) => s.institucion_educativa === ie && s.fase === FASE_DB[fase]
         );
-        if (hasData) plan.push({ ie, fase });
+        if (hasData || includeSinRespuestas) plan.push({ ie, fase });
       }
     }
     return plan;
-  }, [targetIEs, fasesRequested, baseFiltered]);
+  }, [targetIEs, fasesRequested, baseFiltered, includeSinRespuestas]);
+
 
   // Consolidés (un par fase demandée, s'il y a des données)
   const consolidadoPlan = useMemo(
@@ -855,6 +857,17 @@ export default function AdminAmbienteStatsTab() {
               </Select>
             </div>
           </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer mt-3">
+            <Checkbox
+              checked={includeSinRespuestas}
+              onCheckedChange={(v) => setIncludeSinRespuestas(v === true)}
+            />
+            <span>
+              Incluir instituciones sin respuestas
+              <span className="text-muted-foreground"> (también en los PDF)</span>
+            </span>
+          </label>
+
         </CardContent>
       </Card>
 
@@ -1074,7 +1087,7 @@ export default function AdminAmbienteStatsTab() {
                               size="sm"
                               variant="outline"
                               className="gap-1.5"
-                              disabled={subs.length === 0 || iePdfLoading === key}
+                              disabled={(subs.length === 0 && !includeSinRespuestas) || iePdfLoading === key}
                               onClick={() => handleSingleIEPDF(row.ie, fase)}
                             >
                               {iePdfLoading === key ? (
