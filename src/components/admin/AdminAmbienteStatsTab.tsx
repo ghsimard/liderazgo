@@ -497,18 +497,8 @@ export default function AdminAmbienteStatsTab() {
       toast({ title: "Sin informes", description: "No hay datos para la selección actual.", variant: "destructive" });
       return;
     }
-    if (jobs.length === 1) {
-      setGenerating(true);
-      try {
-        await generarAmbienteEscolarReportPDF(jobs[0].data, getPdfLogoSources(images), jobs[0].flags);
-        toast({ title: "PDF generado", description: `Informe descargado — ${jobs[0].label}` });
-      } catch (err: any) {
-        toast({ title: "Error", description: err.message, variant: "destructive" });
-      }
-      setGenerating(false);
-      return;
-    }
-    // Multiple PDFs → ZIP with subfolders
+    // Toujours un ZIP de PDF séparés
+
     setBatchGenerating(true);
     setBatchProgress(0);
     try {
