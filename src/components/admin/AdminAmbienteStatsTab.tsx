@@ -244,6 +244,7 @@ export default function AdminAmbienteStatsTab() {
       setFichas(Array.from(fichaMap.values()));
       setRegions((regRes.data || []) as RegionInfo[]);
       setCohortes(currentCohortes.sort((a, b) => b.year - a.year));
+      setCohorteInst(cohorteInst);
       setLoading(false);
     }
     load();
