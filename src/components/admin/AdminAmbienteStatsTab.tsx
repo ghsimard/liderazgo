@@ -857,6 +857,17 @@ export default function AdminAmbienteStatsTab() {
               </Select>
             </div>
           </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer mt-3">
+            <Checkbox
+              checked={includeSinRespuestas}
+              onCheckedChange={(v) => setIncludeSinRespuestas(v === true)}
+            />
+            <span>
+              Incluir instituciones sin respuestas
+              <span className="text-muted-foreground"> (también en los PDF)</span>
+            </span>
+          </label>
+
         </CardContent>
       </Card>
 
