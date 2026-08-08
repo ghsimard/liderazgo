@@ -397,11 +397,12 @@ export default function AdminAmbienteStatsTab() {
         const hasData = baseFiltered.some(
           (s) => s.institucion_educativa === ie && s.fase === FASE_DB[fase]
         );
-        if (hasData) plan.push({ ie, fase });
+        if (hasData || includeSinRespuestas) plan.push({ ie, fase });
       }
     }
     return plan;
-  }, [targetIEs, fasesRequested, baseFiltered]);
+  }, [targetIEs, fasesRequested, baseFiltered, includeSinRespuestas]);
+
 
   // Consolidés (un par fase demandée, s'il y a des données)
   const consolidadoPlan = useMemo(
