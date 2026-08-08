@@ -877,6 +877,17 @@ export default function AdminAmbienteStatsTab() {
             </label>
           </div>
 
+          <p className="text-xs text-muted-foreground">
+            {totalPdfCount === 0
+              ? "Sin informes para la selección actual."
+              : `Se descargará un archivo ZIP con ${totalPdfCount} PDF separados` +
+                (wantPorIE && wantConsolidado
+                  ? ` (${pdfPlan.length} por institución + ${consolidadoPlan.length} consolidado${consolidadoPlan.length === 1 ? "" : "s"}).`
+                  : wantPorIE
+                    ? ` (${pdfPlan.length} por institución).`
+                    : ` (${consolidadoPlan.length} consolidado${consolidadoPlan.length === 1 ? "" : "s"}).`)}
+          </p>
+
 
           <div className="flex items-center gap-3 flex-wrap">
             <Button
