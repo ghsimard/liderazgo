@@ -176,6 +176,7 @@ export default function AdminAmbienteStatsTab() {
   const [fichas, setFichas] = useState<FichaInfo[]>([]);
   const [regions, setRegions] = useState<RegionInfo[]>([]);
   const [cohortes, setCohortes] = useState<{ id: string; year: number; nombre: string }[]>([]);
+  const [cohorteInst, setCohorteInst] = useState<{ cohorte_id: string; institucion_educativa: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
