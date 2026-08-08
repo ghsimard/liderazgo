@@ -374,6 +374,38 @@ export async function generarAmbienteEscolarReportPDF(
     doc.addImage(cosmoB64, "PNG", (pageW - cosmoWCover) / 2, pageH - 30, cosmoWCover, cosmoHCover);
   }
 
+  // ── Caso sin respuestas: informe corto ──
+  if (data.submissions.length === 0) {
+    doc.addPage();
+    pageNum++;
+    drawPageHeader();
+
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(26, 58, 107);
+    doc.text("SIN RESPUESTAS REGISTRADAS", pageW / 2, y + 20, { align: "center" });
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 80);
+    const msg = doc.splitTextToSize(
+      "A la fecha de generación de este informe, la institución no cuenta con respuestas registradas para la fase seleccionada. Una vez se reciban encuestas de docentes, estudiantes o acudientes, el informe presentará los resultados completos.",
+      contentW - 20
+    );
+    doc.text(msg, pageW / 2, y + 34, { align: "center" });
+
+    drawPageFooter(pageNum);
+
+    if (options.returnBlob) {
+      return doc.output("blob");
+    }
+    const emptyName = data.institucion.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, "").replace(/\s+/g, "_");
+    doc.save(`Informe_Ambiente_Escolar_${emptyName}.pdf`);
+    return;
+  }
+
+
+
   // ════════════════════════════════════════════════════════════
   // PAGE 2 — EXPLANATORY (page 1 of 2)
   // ════════════════════════════════════════════════════════════
