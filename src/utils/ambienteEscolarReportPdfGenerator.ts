@@ -265,6 +265,18 @@ export async function generarAmbienteEscolarReportPDF(
     y += boxH + 2;
   };
 
+  // ── Celda "N/A" (sin datos) ──
+  const drawNaCell = (cx: number, cy: number, w: number, h: number) => {
+    doc.setFillColor(245, 245, 245);
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.15);
+    doc.rect(cx, cy, w, h, "FD");
+    doc.setTextColor(120, 120, 120);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.text("N/A", cx + w / 2, cy + h / 2 + 1, { align: "center" });
+  };
+
   // ── Compact highlighted note (used on ENCUESTADOS) ──
   const drawHighlightedNote = (text: string) => {
     const lines = wrapText(text, contentW - 6, 10);
