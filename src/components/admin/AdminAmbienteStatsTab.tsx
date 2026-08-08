@@ -689,6 +689,22 @@ export default function AdminAmbienteStatsTab() {
     [cohorteOnline, submissions]
   );
 
+  // Institutions rattachées à la cohorte vs. celles ayant répondu
+  const cohorteOnlineStats = useMemo(() => {
+    if (!cohorteOnline) return { total: 0, conRespuestas: 0, sinRespuestas: [] as string[] };
+    const totalIEs = allIEs.filter((ie) => ieIndex.get(ie)?.cohortes.has(cohorteOnline));
+    const answered = new Set(cohorteOnlineSubs.map((s) => s.institucion_educativa).filter(Boolean));
+    const sinRespuestas = totalIEs
+      .filter((ie) => !answered.has(ie))
+      .sort((a, b) => a.localeCompare(b, "es"));
+    return {
+      total: new Set([...totalIEs, ...answered]).size,
+      conRespuestas: answered.size,
+      sinRespuestas,
+    };
+  }, [cohorteOnline, allIEs, ieIndex, cohorteOnlineSubs]);
+
+
   const handleSingleIEPDF = async (ie: string, fase: Exclude<FaseKey, "ambas">) => {
     setIePdfLoading(`${ie}|${fase}`);
     try {
@@ -951,9 +967,22 @@ export default function AdminAmbienteStatsTab() {
                 Consolidado — {cohortes.find((c) => c.id === cohorteOnline)?.nombre}
               </span>
               <span className="text-xs text-muted-foreground">
-                {new Set(cohorteOnlineSubs.map((s) => s.institucion_educativa).filter(Boolean)).size} institución(es)
+                {cohorteOnlineStats.conRespuestas} / {cohorteOnlineStats.total} instituciones con respuestas
               </span>
             </div>
+            {cohorteOnlineStats.sinRespuestas.length > 0 && (
+              <details className="text-xs text-muted-foreground">
+                <summary className="cursor-pointer hover:text-foreground">
+                  Ver instituciones sin respuestas ({cohorteOnlineStats.sinRespuestas.length})
+                </summary>
+                <ul className="mt-2 ml-4 list-disc space-y-0.5">
+                  {cohorteOnlineStats.sinRespuestas.map((ie) => (
+                    <li key={ie}>{ie}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+
             {renderReportBlock(cohorteOnlineSubs, "Todas las fases")}
           </CardContent>
         </Card>
