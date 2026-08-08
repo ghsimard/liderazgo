@@ -436,19 +436,71 @@ export default function AdminAmbienteStatsTab() {
   const safeName = (s: string) =>
     s.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, "").replace(/\s+/g, "_");
 
+  const consolidadoScopeLabel = () => {
+    if (selCohortes.length > 0) {
+      return selCohortes
+        .map((id) => cohortes.find((c) => c.id === id)?.nombre || "")
+        .filter(Boolean)
+        .join(" / ");
+    }
+    if (selEntidades.length > 0) return selEntidades.join(" / ");
+    if (selRegions.length > 0) return selRegions.join(" / ");
+    return "Selección filtrada";
+  };
+
+  const buildConsolidatedData = (fase: Exclude<FaseKey, "ambas">): AmbienteReportData => {
+    const subs = baseFiltered.filter((s) => s.fase === FASE_DB[fase]);
+    const nIE = new Set(subs.map((s) => s.institucion_educativa).filter(Boolean)).size;
+    return {
+      institucion: `${consolidadoScopeLabel()} — ${FASE_LABEL[fase]} (${nIE} institucion${nIE === 1 ? "" : "es"})`,
+      entidadTerritorial: selEntidades.length === 1 ? selEntidades[0] : "",
+      submissions: subs.map((s) => ({ tipo_formulario: s.tipo_formulario, respuestas: s.respuestas })),
+    };
+  };
+
+  type PdfJob = {
+    label: string;
+    path: string;
+    data: AmbienteReportData;
+    flags: { showLogoRlt: boolean; showLogoClt: boolean };
+  };
+
+  const buildJobs = (): PdfJob[] => {
+    const jobs: PdfJob[] = [];
+    if (wantConsolidado) {
+      for (const fase of consolidadoPlan) {
+        jobs.push({
+          label: `Consolidado (${FASE_LABEL[fase]})`,
+          path: `Consolidado/Informe_Consolidado_${FASE_LABEL[fase]}_${safeName(consolidadoScopeLabel())}.pdf`,
+          data: buildConsolidatedData(fase),
+          flags: { showLogoRlt: true, showLogoClt: true },
+        });
+      }
+    }
+    if (wantPorIE) {
+      for (const { ie, fase } of pdfPlan) {
+        jobs.push({
+          label: `${ie} (${FASE_LABEL[fase]})`,
+          path: `${fase === "inicial" ? "Inicial" : "Evolucion"}/Informe_Ambiente_${FASE_LABEL[fase]}_${safeName(ie)}.pdf`,
+          data: buildReportData(ie, fase),
+          flags: getLogoFlags(ie),
+        });
+      }
+    }
+    return jobs;
+  };
+
   const handleGeneratePDF = async () => {
-    if (pdfPlan.length === 0) {
+    const jobs = buildJobs();
+    if (jobs.length === 0) {
       toast({ title: "Sin informes", description: "No hay datos para la selección actual.", variant: "destructive" });
       return;
     }
-    if (pdfPlan.length === 1) {
+    if (jobs.length === 1) {
       setGenerating(true);
       try {
-        const { ie, fase } = pdfPlan[0];
-        const reportData = buildReportData(ie, fase);
-        const flags = getLogoFlags(ie);
-        await generarAmbienteEscolarReportPDF(reportData, getPdfLogoSources(images), flags);
-        toast({ title: "PDF generado", description: `Informe descargado — ${ie} (${FASE_LABEL[fase]})` });
+        await generarAmbienteEscolarReportPDF(jobs[0].data, getPdfLogoSources(images), jobs[0].flags);
+        toast({ title: "PDF generado", description: `Informe descargado — ${jobs[0].label}` });
       } catch (err: any) {
         toast({ title: "Error", description: err.message, variant: "destructive" });
       }
@@ -461,26 +513,22 @@ export default function AdminAmbienteStatsTab() {
     try {
       const zip = new JSZip();
       let count = 0;
-      for (let i = 0; i < pdfPlan.length; i++) {
-        const { ie, fase } = pdfPlan[i];
+      for (let i = 0; i < jobs.length; i++) {
         try {
-          const reportData = buildReportData(ie, fase);
-          const flags = getLogoFlags(ie);
           const blob = await generarAmbienteEscolarReportPDF(
-            reportData,
+            jobs[i].data,
             getPdfLogoSources(images),
-            flags,
+            jobs[i].flags,
             { returnBlob: true }
           );
           if (blob) {
-            const folder = fase === "inicial" ? "Inicial" : "Evolucion";
-            zip.file(`${folder}/Informe_Ambiente_${FASE_LABEL[fase]}_${safeName(ie)}.pdf`, blob);
+            zip.file(jobs[i].path, blob);
             count++;
           }
         } catch {
           // skip failed
         }
-        setBatchProgress(Math.round(((i + 1) / pdfPlan.length) * 100));
+        setBatchProgress(Math.round(((i + 1) / jobs.length) * 100));
       }
       if (count === 0) {
         toast({ title: "Sin informes", description: "No se pudo generar ningún informe", variant: "destructive" });
