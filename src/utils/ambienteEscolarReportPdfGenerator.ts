@@ -1117,17 +1117,12 @@ export async function generarAmbienteEscolarReportPDF(
           if (san.total > 0) {
             doc.text(`${val}%`, cellX + colSanW / 2, y + rowH / 2 + 1, { align: "center" });
           } else {
-            // Black cell, no text
-            doc.setFillColor(30, 30, 30);
-            doc.rect(cellX, y, colSanW, rowH, "F");
+            drawNaCell(cellX, y, colSanW, rowH);
           }
         }
       } else {
         for (let si = 0; si < 3; si++) {
-          const cellX = cx + si * colSanW;
-          // Black cell, no text
-          doc.setFillColor(30, 30, 30);
-          doc.rect(cellX, y, colSanW, rowH, "F");
+          drawNaCell(cx + si * colSanW, y, colSanW, rowH);
         }
       }
       cx += colGroupW;
