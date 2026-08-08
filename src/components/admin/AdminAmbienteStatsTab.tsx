@@ -857,16 +857,30 @@ export default function AdminAmbienteStatsTab() {
           <div className="flex items-center gap-3 flex-wrap">
             <FileText className="w-5 h-5 text-primary" />
             <span className="text-sm font-medium">Informes PDF</span>
+          </div>
+
+          <div className="flex items-center gap-5 flex-wrap">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={wantPorIE} onCheckedChange={(v) => setWantPorIE(v === true)} />
+              <span>PDF por institución <span className="text-muted-foreground">({pdfPlan.length})</span></span>
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={wantConsolidado} onCheckedChange={(v) => setWantConsolidado(v === true)} />
+              <span>PDF consolidado <span className="text-muted-foreground">({consolidadoPlan.length})</span></span>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
             <Button
               size="sm"
               onClick={handleGeneratePDF}
-              disabled={generating || batchGenerating || pdfPlan.length === 0}
+              disabled={generating || batchGenerating || totalPdfCount === 0}
               className="gap-1.5"
             >
               {(generating || batchGenerating) ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               {(generating || batchGenerating)
                 ? "Generando…"
-                : `Generar Informe(s) (${pdfPlan.length} PDF)`}
+                : `Generar informes (${totalPdfCount} PDF)`}
             </Button>
             <Button
               size="sm"
@@ -880,10 +894,10 @@ export default function AdminAmbienteStatsTab() {
             </Button>
           </div>
 
-          {/* Consolidated by Cohorte */}
+          {/* Consolidado por cohorte — vista en línea */}
           <div className="flex items-center gap-3 flex-wrap pt-2 border-t">
             <Layers className="w-5 h-5 text-primary" />
-            <span className="text-sm font-medium">Informe consolidado por Cohorte</span>
+            <span className="text-sm font-medium">Consolidado por cohorte (en línea)</span>
             <Select value={selCohorte} onValueChange={setSelCohorte}>
               <SelectTrigger className="w-[200px] h-9">
                 <SelectValue placeholder="Seleccionar cohorte" />
@@ -896,15 +910,6 @@ export default function AdminAmbienteStatsTab() {
             </Select>
             <Button
               size="sm"
-              onClick={handleCohorteConsolidatedPDF}
-              disabled={generating || !selCohorte}
-              className="gap-1.5"
-            >
-              {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Generar Informe Consolidado
-            </Button>
-            <Button
-              size="sm"
               variant="outline"
               onClick={() => setCohorteOnline(cohorteOnline === selCohorte ? "" : selCohorte)}
               disabled={!selCohorte}
@@ -913,13 +918,23 @@ export default function AdminAmbienteStatsTab() {
               <Eye className="w-4 h-4" />
               {cohorteOnline && cohorteOnline === selCohorte ? "Ocultar" : "Ver en línea"}
             </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleCohorteConsolidatedPDF}
+              disabled={generating || !selCohorte}
+              className="gap-1.5"
+            >
+              {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              PDF de esta cohorte
+            </Button>
           </div>
           {batchGenerating && (
             <Progress value={batchProgress} className="h-2" />
           )}
-          {pdfPlan.length > 1 && !batchGenerating && (
+          {totalPdfCount > 1 && !batchGenerating && (
             <p className="text-xs text-muted-foreground">
-              Se generará un ZIP con {pdfPlan.length} informes (sub-carpetas <strong>Inicial/</strong> y <strong>Evolucion/</strong> según la fase).
+              Se generará un ZIP con {totalPdfCount} informes (sub-carpetas <strong>Consolidado/</strong>, <strong>Inicial/</strong> y <strong>Evolucion/</strong>).
             </p>
           )}
         </CardContent>
