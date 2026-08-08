@@ -799,6 +799,16 @@ export default function AdminAmbienteStatsTab() {
               {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               Generar Informe Consolidado
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCohorteOnline(cohorteOnline === selCohorte ? "" : selCohorte)}
+              disabled={!selCohorte}
+              className="gap-1.5"
+            >
+              <Eye className="w-4 h-4" />
+              {cohorteOnline && cohorteOnline === selCohorte ? "Ocultar" : "Ver en línea"}
+            </Button>
           </div>
           {batchGenerating && (
             <Progress value={batchProgress} className="h-2" />
@@ -811,29 +821,137 @@ export default function AdminAmbienteStatsTab() {
         </CardContent>
       </Card>
 
+      {/* Consolidated cohorte — online */}
+      {cohorteOnline && (
+        <Card>
+          <CardContent className="p-4 space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Layers className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">
+                Consolidado — {cohortes.find((c) => c.id === cohorteOnline)?.nombre}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {new Set(cohorteOnlineSubs.map((s) => s.institucion_educativa).filter(Boolean)).size} institución(es)
+              </span>
+            </div>
+            {renderReportBlock(cohorteOnlineSubs, "Todas las fases")}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Online report */}
       <Card>
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <FileText className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">Rapport en línea</span>
+            <span className="text-sm font-medium">Informe en línea</span>
             <span className="text-xs text-muted-foreground">
               {summaryHeader.ieLabel} · {summaryHeader.cohorteLabel}
             </span>
+            <div className="ml-auto flex rounded-md border border-border overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setViewMode("institucion")}
+                className={`px-3 py-1.5 text-xs ${viewMode === "institucion" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
+              >
+                Por institución
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("consolidado")}
+                className={`px-3 py-1.5 text-xs ${viewMode === "consolidado" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
+              >
+                Consolidado
+              </button>
+            </div>
           </div>
 
-          {selFase === "inicial" && renderReportBlock(filteredInicial, "Inicial")}
-          {selFase === "evolucion" && renderReportBlock(filteredEvolucion, "Evolución")}
-          {selFase === "ambas" && (
-            <div className="space-y-6">
-              {renderReportBlock(filteredInicial, "Inicial")}
-              <div className="border-t pt-4">
-                {renderReportBlock(filteredEvolucion, "Evolución")}
-              </div>
+          {viewMode === "consolidado" ? (
+            <>
+              {selFase === "inicial" && renderReportBlock(filteredInicial, "Inicial")}
+              {selFase === "evolucion" && renderReportBlock(filteredEvolucion, "Evolución")}
+              {selFase === "ambas" && (
+                <div className="space-y-6">
+                  {renderReportBlock(filteredInicial, "Inicial")}
+                  <div className="border-t pt-4">
+                    {renderReportBlock(filteredEvolucion, "Evolución")}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : ieRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Sin instituciones para esta selección.</p>
+          ) : (
+            <div className="space-y-2">
+              {ieRows.map((row) => {
+                const isOpen = openIEs.includes(row.ie);
+                const fases: Array<Exclude<FaseKey, "ambas">> =
+                  selFase === "ambas" ? ["inicial", "evolucion"] : [selFase];
+                return (
+                  <Collapsible
+                    key={row.ie}
+                    open={isOpen}
+                    onOpenChange={(o) =>
+                      setOpenIEs((prev) => (o ? [...prev, row.ie] : prev.filter((x) => x !== row.ie)))
+                    }
+                    className={`border border-border rounded-lg ${row.total === 0 ? "opacity-60" : ""}`}
+                  >
+                    <div className="flex items-center gap-2 p-3 flex-wrap">
+                      <CollapsibleTrigger
+                        disabled={row.total === 0}
+                        className="flex items-center gap-2 text-left flex-1 min-w-0 disabled:cursor-not-allowed"
+                      >
+                        <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                        <Building2 className="w-4 h-4 text-primary shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">{row.ie}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {row.entidad ? `${row.entidad} · ` : ""}
+                            {row.total === 0
+                              ? "Sin respuestas"
+                              : `Inicial: ${row.inicial.length} · Evolución: ${row.evolucion.length}`}
+                          </p>
+                        </div>
+                      </CollapsibleTrigger>
+                      <div className="flex gap-1.5">
+                        {fases.map((fase) => {
+                          const subs = fase === "inicial" ? row.inicial : row.evolucion;
+                          const key = `${row.ie}|${fase}`;
+                          return (
+                            <Button
+                              key={fase}
+                              size="sm"
+                              variant="outline"
+                              className="gap-1.5"
+                              disabled={subs.length === 0 || iePdfLoading === key}
+                              onClick={() => handleSingleIEPDF(row.ie, fase)}
+                            >
+                              {iePdfLoading === key ? (
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5" />
+                              )}
+                              PDF {FASE_LABEL[fase]}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <CollapsibleContent className="px-3 pb-4 space-y-6 border-t pt-4">
+                      {isOpen && fases.map((fase) => (
+                        <div key={fase}>
+                          {renderReportBlock(fase === "inicial" ? row.inicial : row.evolucion, FASE_LABEL[fase])}
+                        </div>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
+
     </div>
   );
 }
