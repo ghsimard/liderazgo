@@ -194,6 +194,7 @@ export default function AdminAmbienteStatsTab() {
   const [batchProgress, setBatchProgress] = useState(0);
   const [wantPorIE, setWantPorIE] = useState(true);
   const [wantConsolidado, setWantConsolidado] = useState(false);
+  const [includeSinRespuestas, setIncludeSinRespuestas] = useState(false);
 
   // Online report view state
   const [viewMode, setViewMode] = useState<"consolidado" | "institucion">("institucion");
