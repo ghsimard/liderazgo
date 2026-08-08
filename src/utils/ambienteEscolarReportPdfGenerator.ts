@@ -265,6 +265,18 @@ export async function generarAmbienteEscolarReportPDF(
     y += boxH + 2;
   };
 
+  // ── Celda "N/A" (sin datos) ──
+  const drawNaCell = (cx: number, cy: number, w: number, h: number) => {
+    doc.setFillColor(245, 245, 245);
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.15);
+    doc.rect(cx, cy, w, h, "FD");
+    doc.setTextColor(120, 120, 120);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.text("N/A", cx + w / 2, cy + h / 2 + 1, { align: "center" });
+  };
+
   // ── Compact highlighted note (used on ENCUESTADOS) ──
   const drawHighlightedNote = (text: string) => {
     const lines = wrapText(text, contentW - 6, 10);
@@ -886,9 +898,15 @@ export async function generarAmbienteEscolarReportPDF(
       doc.text(sec, margin, y + barH / 2 + 1);
 
       if (count === 0 || san.total === 0) {
-        // Black cell, no text
-        doc.setFillColor(30, 30, 30);
-        doc.rect(margin + labelW, y, barW, barH, "F");
+        // Sin datos: celda neutra con "N/A"
+        doc.setFillColor(245, 245, 245);
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.15);
+        doc.rect(margin + labelW, y, barW, barH, "FD");
+        doc.setTextColor(120, 120, 120);
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.text("N/A", margin + labelW + barW / 2, y + barH / 2 + 1, { align: "center" });
       } else {
         let bx = margin + labelW;
         for (const key of ["S", "A", "N"] as SANKey[]) {
@@ -1111,17 +1129,12 @@ export async function generarAmbienteEscolarReportPDF(
           if (san.total > 0) {
             doc.text(`${val}%`, cellX + colSanW / 2, y + rowH / 2 + 1, { align: "center" });
           } else {
-            // Black cell, no text
-            doc.setFillColor(30, 30, 30);
-            doc.rect(cellX, y, colSanW, rowH, "F");
+            drawNaCell(cellX, y, colSanW, rowH);
           }
         }
       } else {
         for (let si = 0; si < 3; si++) {
-          const cellX = cx + si * colSanW;
-          // Black cell, no text
-          doc.setFillColor(30, 30, 30);
-          doc.rect(cellX, y, colSanW, rowH, "F");
+          drawNaCell(cx + si * colSanW, y, colSanW, rowH);
         }
       }
       cx += colGroupW;
