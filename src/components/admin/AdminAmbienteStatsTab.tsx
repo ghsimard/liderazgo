@@ -967,9 +967,22 @@ export default function AdminAmbienteStatsTab() {
                 Consolidado — {cohortes.find((c) => c.id === cohorteOnline)?.nombre}
               </span>
               <span className="text-xs text-muted-foreground">
-                {new Set(cohorteOnlineSubs.map((s) => s.institucion_educativa).filter(Boolean)).size} institución(es)
+                {cohorteOnlineStats.conRespuestas} / {cohorteOnlineStats.total} instituciones con respuestas
               </span>
             </div>
+            {cohorteOnlineStats.sinRespuestas.length > 0 && (
+              <details className="text-xs text-muted-foreground">
+                <summary className="cursor-pointer hover:text-foreground">
+                  Ver instituciones sin respuestas ({cohorteOnlineStats.sinRespuestas.length})
+                </summary>
+                <ul className="mt-2 ml-4 list-disc space-y-0.5">
+                  {cohorteOnlineStats.sinRespuestas.map((ie) => (
+                    <li key={ie}>{ie}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+
             {renderReportBlock(cohorteOnlineSubs, "Todas las fases")}
           </CardContent>
         </Card>
