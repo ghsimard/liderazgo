@@ -877,6 +877,7 @@ export default function AdminAmbienteStatsTab() {
             </label>
           </div>
 
+
           <div className="flex items-center gap-3 flex-wrap">
             <Button
               size="sm"
