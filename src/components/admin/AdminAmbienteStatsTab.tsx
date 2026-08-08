@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { RefreshCw, Users, BookOpen, GraduationCap, Filter, Download, FileText, FlaskConical, Layers, ChevronDown, Building2, Eye } from "lucide-react";
 
@@ -191,6 +192,8 @@ export default function AdminAmbienteStatsTab() {
   const [generating, setGenerating] = useState(false);
   const [batchGenerating, setBatchGenerating] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
+  const [wantPorIE, setWantPorIE] = useState(true);
+  const [wantConsolidado, setWantConsolidado] = useState(false);
 
   // Online report view state
   const [viewMode, setViewMode] = useState<"consolidado" | "institucion">("institucion");
@@ -399,6 +402,18 @@ export default function AdminAmbienteStatsTab() {
     return plan;
   }, [targetIEs, fasesRequested, baseFiltered]);
 
+  // Consolidés (un par fase demandée, s'il y a des données)
+  const consolidadoPlan = useMemo(
+    () =>
+      fasesRequested.filter((fase) =>
+        baseFiltered.some((s) => s.fase === FASE_DB[fase])
+      ),
+    [fasesRequested, baseFiltered]
+  );
+
+  const totalPdfCount =
+    (wantPorIE ? pdfPlan.length : 0) + (wantConsolidado ? consolidadoPlan.length : 0);
+
   // ── PDF generation ──
   const getLogoFlags = (ie: string) => {
     const fichaInfo = fichas.find((f) => f.nombre_ie === ie);
@@ -422,19 +437,71 @@ export default function AdminAmbienteStatsTab() {
   const safeName = (s: string) =>
     s.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, "").replace(/\s+/g, "_");
 
+  const consolidadoScopeLabel = () => {
+    if (selCohortes.length > 0) {
+      return selCohortes
+        .map((id) => cohortes.find((c) => c.id === id)?.nombre || "")
+        .filter(Boolean)
+        .join(" / ");
+    }
+    if (selEntidades.length > 0) return selEntidades.join(" / ");
+    if (selRegions.length > 0) return selRegions.join(" / ");
+    return "Selección filtrada";
+  };
+
+  const buildConsolidatedData = (fase: Exclude<FaseKey, "ambas">): AmbienteReportData => {
+    const subs = baseFiltered.filter((s) => s.fase === FASE_DB[fase]);
+    const nIE = new Set(subs.map((s) => s.institucion_educativa).filter(Boolean)).size;
+    return {
+      institucion: `${consolidadoScopeLabel()} — ${FASE_LABEL[fase]} (${nIE} institucion${nIE === 1 ? "" : "es"})`,
+      entidadTerritorial: selEntidades.length === 1 ? selEntidades[0] : "",
+      submissions: subs.map((s) => ({ tipo_formulario: s.tipo_formulario, respuestas: s.respuestas })),
+    };
+  };
+
+  type PdfJob = {
+    label: string;
+    path: string;
+    data: AmbienteReportData;
+    flags: { showLogoRlt: boolean; showLogoClt: boolean };
+  };
+
+  const buildJobs = (): PdfJob[] => {
+    const jobs: PdfJob[] = [];
+    if (wantConsolidado) {
+      for (const fase of consolidadoPlan) {
+        jobs.push({
+          label: `Consolidado (${FASE_LABEL[fase]})`,
+          path: `Consolidado/Informe_Consolidado_${FASE_LABEL[fase]}_${safeName(consolidadoScopeLabel())}.pdf`,
+          data: buildConsolidatedData(fase),
+          flags: { showLogoRlt: true, showLogoClt: true },
+        });
+      }
+    }
+    if (wantPorIE) {
+      for (const { ie, fase } of pdfPlan) {
+        jobs.push({
+          label: `${ie} (${FASE_LABEL[fase]})`,
+          path: `${fase === "inicial" ? "Inicial" : "Evolucion"}/Informe_Ambiente_${FASE_LABEL[fase]}_${safeName(ie)}.pdf`,
+          data: buildReportData(ie, fase),
+          flags: getLogoFlags(ie),
+        });
+      }
+    }
+    return jobs;
+  };
+
   const handleGeneratePDF = async () => {
-    if (pdfPlan.length === 0) {
+    const jobs = buildJobs();
+    if (jobs.length === 0) {
       toast({ title: "Sin informes", description: "No hay datos para la selección actual.", variant: "destructive" });
       return;
     }
-    if (pdfPlan.length === 1) {
+    if (jobs.length === 1) {
       setGenerating(true);
       try {
-        const { ie, fase } = pdfPlan[0];
-        const reportData = buildReportData(ie, fase);
-        const flags = getLogoFlags(ie);
-        await generarAmbienteEscolarReportPDF(reportData, getPdfLogoSources(images), flags);
-        toast({ title: "PDF generado", description: `Informe descargado — ${ie} (${FASE_LABEL[fase]})` });
+        await generarAmbienteEscolarReportPDF(jobs[0].data, getPdfLogoSources(images), jobs[0].flags);
+        toast({ title: "PDF generado", description: `Informe descargado — ${jobs[0].label}` });
       } catch (err: any) {
         toast({ title: "Error", description: err.message, variant: "destructive" });
       }
@@ -447,26 +514,22 @@ export default function AdminAmbienteStatsTab() {
     try {
       const zip = new JSZip();
       let count = 0;
-      for (let i = 0; i < pdfPlan.length; i++) {
-        const { ie, fase } = pdfPlan[i];
+      for (let i = 0; i < jobs.length; i++) {
         try {
-          const reportData = buildReportData(ie, fase);
-          const flags = getLogoFlags(ie);
           const blob = await generarAmbienteEscolarReportPDF(
-            reportData,
+            jobs[i].data,
             getPdfLogoSources(images),
-            flags,
+            jobs[i].flags,
             { returnBlob: true }
           );
           if (blob) {
-            const folder = fase === "inicial" ? "Inicial" : "Evolucion";
-            zip.file(`${folder}/Informe_Ambiente_${FASE_LABEL[fase]}_${safeName(ie)}.pdf`, blob);
+            zip.file(jobs[i].path, blob);
             count++;
           }
         } catch {
           // skip failed
         }
-        setBatchProgress(Math.round(((i + 1) / pdfPlan.length) * 100));
+        setBatchProgress(Math.round(((i + 1) / jobs.length) * 100));
       }
       if (count === 0) {
         toast({ title: "Sin informes", description: "No se pudo generar ningún informe", variant: "destructive" });
@@ -795,16 +858,30 @@ export default function AdminAmbienteStatsTab() {
           <div className="flex items-center gap-3 flex-wrap">
             <FileText className="w-5 h-5 text-primary" />
             <span className="text-sm font-medium">Informes PDF</span>
+          </div>
+
+          <div className="flex items-center gap-5 flex-wrap">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={wantPorIE} onCheckedChange={(v) => setWantPorIE(v === true)} />
+              <span>PDF por institución <span className="text-muted-foreground">({pdfPlan.length})</span></span>
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={wantConsolidado} onCheckedChange={(v) => setWantConsolidado(v === true)} />
+              <span>PDF consolidado <span className="text-muted-foreground">({consolidadoPlan.length})</span></span>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
             <Button
               size="sm"
               onClick={handleGeneratePDF}
-              disabled={generating || batchGenerating || pdfPlan.length === 0}
+              disabled={generating || batchGenerating || totalPdfCount === 0}
               className="gap-1.5"
             >
               {(generating || batchGenerating) ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               {(generating || batchGenerating)
                 ? "Generando…"
-                : `Generar Informe(s) (${pdfPlan.length} PDF)`}
+                : `Generar informes (${totalPdfCount} PDF)`}
             </Button>
             <Button
               size="sm"
@@ -818,10 +895,10 @@ export default function AdminAmbienteStatsTab() {
             </Button>
           </div>
 
-          {/* Consolidated by Cohorte */}
+          {/* Consolidado por cohorte — vista en línea */}
           <div className="flex items-center gap-3 flex-wrap pt-2 border-t">
             <Layers className="w-5 h-5 text-primary" />
-            <span className="text-sm font-medium">Informe consolidado por Cohorte</span>
+            <span className="text-sm font-medium">Consolidado por cohorte (en línea)</span>
             <Select value={selCohorte} onValueChange={setSelCohorte}>
               <SelectTrigger className="w-[200px] h-9">
                 <SelectValue placeholder="Seleccionar cohorte" />
@@ -834,15 +911,6 @@ export default function AdminAmbienteStatsTab() {
             </Select>
             <Button
               size="sm"
-              onClick={handleCohorteConsolidatedPDF}
-              disabled={generating || !selCohorte}
-              className="gap-1.5"
-            >
-              {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Generar Informe Consolidado
-            </Button>
-            <Button
-              size="sm"
               variant="outline"
               onClick={() => setCohorteOnline(cohorteOnline === selCohorte ? "" : selCohorte)}
               disabled={!selCohorte}
@@ -851,13 +919,23 @@ export default function AdminAmbienteStatsTab() {
               <Eye className="w-4 h-4" />
               {cohorteOnline && cohorteOnline === selCohorte ? "Ocultar" : "Ver en línea"}
             </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleCohorteConsolidatedPDF}
+              disabled={generating || !selCohorte}
+              className="gap-1.5"
+            >
+              {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              PDF de esta cohorte
+            </Button>
           </div>
           {batchGenerating && (
             <Progress value={batchProgress} className="h-2" />
           )}
-          {pdfPlan.length > 1 && !batchGenerating && (
+          {totalPdfCount > 1 && !batchGenerating && (
             <p className="text-xs text-muted-foreground">
-              Se generará un ZIP con {pdfPlan.length} informes (sub-carpetas <strong>Inicial/</strong> y <strong>Evolucion/</strong> según la fase).
+              Se generará un ZIP con {totalPdfCount} informes (sub-carpetas <strong>Consolidado/</strong>, <strong>Inicial/</strong> y <strong>Evolucion/</strong>).
             </p>
           )}
         </CardContent>
