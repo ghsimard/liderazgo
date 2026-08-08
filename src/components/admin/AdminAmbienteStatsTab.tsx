@@ -558,6 +558,46 @@ export default function AdminAmbienteStatsTab() {
     setGenerating(false);
   };
 
+  // ── Per-institution online report ──
+  const ieRows = useMemo(() => {
+    return [...targetIEs]
+      .sort((a, b) => a.localeCompare(b, "es"))
+      .map((ie) => {
+        const inicial = baseFiltered.filter(
+          (s) => s.institucion_educativa === ie && s.fase === FASE_DB.inicial
+        );
+        const evolucion = baseFiltered.filter(
+          (s) => s.institucion_educativa === ie && s.fase === FASE_DB.evolucion
+        );
+        return {
+          ie,
+          entidad: fichas.find((f) => f.nombre_ie === ie)?.entidad_territorial || "",
+          inicial,
+          evolucion,
+          total: inicial.length + evolucion.length,
+        };
+      });
+  }, [targetIEs, baseFiltered, fichas]);
+
+  const cohorteOnlineSubs = useMemo(
+    () => (cohorteOnline ? submissions.filter((s) => s.cohorte_id === cohorteOnline) : []),
+    [cohorteOnline, submissions]
+  );
+
+  const handleSingleIEPDF = async (ie: string, fase: Exclude<FaseKey, "ambas">) => {
+    setIePdfLoading(`${ie}|${fase}`);
+    try {
+      await generarAmbienteEscolarReportPDF(
+        buildReportData(ie, fase),
+        getPdfLogoSources(images),
+        getLogoFlags(ie)
+      );
+      toast({ title: "PDF generado", description: `${ie} (${FASE_LABEL[fase]})` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setIePdfLoading(null);
+  };
 
 
   if (loading) {
