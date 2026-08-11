@@ -68,6 +68,8 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
   const [searchText, setSearchText] = useState("");
   const [pdfPickerOpen, setPdfPickerOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [sortKey, setSortKey] = useState<"ie" | "docentes" | "estudiantes" | "acudientes" | "total">("ie");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { images } = useAppImages();
 
   useEffect(() => {
