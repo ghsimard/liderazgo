@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Mail, Phone, Eye, Search, X, FileDown } from "lucide-react";
+import { RefreshCw, Mail, Phone, Eye, Search, X, FileDown, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppImages } from "@/hooks/useAppImages";
 import { getPdfLogoSources } from "@/utils/pdfLogoHelper";
@@ -68,6 +68,8 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
   const [searchText, setSearchText] = useState("");
   const [pdfPickerOpen, setPdfPickerOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [sortKey, setSortKey] = useState<"ie" | "docentes" | "estudiantes" | "acudientes" | "total">("ie");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { images } = useAppImages();
 
   useEffect(() => {
@@ -238,6 +240,31 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
     };
   }, [directivos, submissions, cohorteInstitutions, filterCohorte, searchText, filterStatus, filterFase]);
 
+  const sortedRows = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filteredRows].sort((a, b) => {
+      if (sortKey === "ie") return a.ie.localeCompare(b.ie, "es") * dir;
+      const va = sortKey === "total" ? a.docentes + a.estudiantes + a.acudientes : a[sortKey];
+      const vb = sortKey === "total" ? b.docentes + b.estudiantes + b.acudientes : b[sortKey];
+      if (va === vb) return a.ie.localeCompare(b.ie, "es");
+      return (va - vb) * dir;
+    });
+  }, [filteredRows, sortKey, sortDir]);
+
+  const toggleSort = (key: typeof sortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("asc"); }
+  };
+
+  const SortIcon = ({ column }: { column: typeof sortKey }) => {
+    if (sortKey !== column) return <ArrowUpDown className="inline w-3 h-3 ml-1 opacity-40" />;
+    return sortDir === "asc"
+      ? <ArrowUp className="inline w-3 h-3 ml-1" />
+      : <ArrowDown className="inline w-3 h-3 ml-1" />;
+  };
+
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -260,7 +287,16 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
         "Todos";
 
       // Always scope PDF to the chosen cohorte (not the table's current filter)
-      const pdfRows = rows.filter(r => r.cohorte_ids.has(sel.cohorteId));
+      const dir = sortDir === "asc" ? 1 : -1;
+      const pdfRows = rows
+        .filter(r => r.cohorte_ids.has(sel.cohorteId))
+        .sort((a, b) => {
+          if (sortKey === "ie") return a.ie.localeCompare(b.ie, "es") * dir;
+          const va = sortKey === "total" ? a.docentes + a.estudiantes + a.acudientes : a[sortKey];
+          const vb = sortKey === "total" ? b.docentes + b.estudiantes + b.acudientes : b[sortKey];
+          if (va === vb) return a.ie.localeCompare(b.ie, "es");
+          return (va - vb) * dir;
+        });
       const tD = pdfRows.reduce((a, r) => a + r.docentes, 0);
       const tE = pdfRows.reduce((a, r) => a + r.estudiantes, 0);
       const tA = pdfRows.reduce((a, r) => a + r.acudientes, 0);
@@ -384,21 +420,32 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Institución</TableHead>
-            <TableHead className="text-center w-24">Docentes</TableHead>
-            <TableHead className="text-center w-24">Estudiantes</TableHead>
-            <TableHead className="text-center w-24">Acudientes</TableHead>
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("ie")}>
+              Institución<SortIcon column="ie" />
+            </TableHead>
+            <TableHead className="text-center w-24 cursor-pointer select-none" onClick={() => toggleSort("docentes")}>
+              Docentes<SortIcon column="docentes" />
+            </TableHead>
+            <TableHead className="text-center w-24 cursor-pointer select-none" onClick={() => toggleSort("estudiantes")}>
+              Estudiantes<SortIcon column="estudiantes" />
+            </TableHead>
+            <TableHead className="text-center w-24 cursor-pointer select-none" onClick={() => toggleSort("acudientes")}>
+              Acudientes<SortIcon column="acudientes" />
+            </TableHead>
+            <TableHead className="text-center w-20 cursor-pointer select-none" onClick={() => toggleSort("total")}>
+              Total<SortIcon column="total" />
+            </TableHead>
             <TableHead className="text-center w-20">Contacto</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredRows.length === 0 ? (
+          {sortedRows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                 No se encontraron instituciones con los filtros seleccionados.
               </TableCell>
             </TableRow>
-          ) : filteredRows.map((r) => {
+          ) : sortedRows.map((r) => {
             const needsFollowUp = r.docentes < 25 || r.estudiantes < 25 || r.acudientes < 25;
             return (
             <TableRow key={r.ie}>
@@ -406,6 +453,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
               <TableCell className="text-center"><CountBadge count={r.docentes} /></TableCell>
               <TableCell className="text-center"><CountBadge count={r.estudiantes} /></TableCell>
               <TableCell className="text-center"><CountBadge count={r.acudientes} /></TableCell>
+              <TableCell className="text-center font-semibold">{r.docentes + r.estudiantes + r.acudientes}</TableCell>
               <TableCell className="text-center">
                 {!needsFollowUp ? (
                   <span className="text-muted-foreground">—</span>
