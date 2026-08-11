@@ -411,21 +411,32 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Institución</TableHead>
-            <TableHead className="text-center w-24">Docentes</TableHead>
-            <TableHead className="text-center w-24">Estudiantes</TableHead>
-            <TableHead className="text-center w-24">Acudientes</TableHead>
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("ie")}>
+              Institución<SortIcon column="ie" />
+            </TableHead>
+            <TableHead className="text-center w-24 cursor-pointer select-none" onClick={() => toggleSort("docentes")}>
+              Docentes<SortIcon column="docentes" />
+            </TableHead>
+            <TableHead className="text-center w-24 cursor-pointer select-none" onClick={() => toggleSort("estudiantes")}>
+              Estudiantes<SortIcon column="estudiantes" />
+            </TableHead>
+            <TableHead className="text-center w-24 cursor-pointer select-none" onClick={() => toggleSort("acudientes")}>
+              Acudientes<SortIcon column="acudientes" />
+            </TableHead>
+            <TableHead className="text-center w-20 cursor-pointer select-none" onClick={() => toggleSort("total")}>
+              Total<SortIcon column="total" />
+            </TableHead>
             <TableHead className="text-center w-20">Contacto</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredRows.length === 0 ? (
+          {sortedRows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                 No se encontraron instituciones con los filtros seleccionados.
               </TableCell>
             </TableRow>
-          ) : filteredRows.map((r) => {
+          ) : sortedRows.map((r) => {
             const needsFollowUp = r.docentes < 25 || r.estudiantes < 25 || r.acudientes < 25;
             return (
             <TableRow key={r.ie}>
@@ -433,6 +444,7 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
               <TableCell className="text-center"><CountBadge count={r.docentes} /></TableCell>
               <TableCell className="text-center"><CountBadge count={r.estudiantes} /></TableCell>
               <TableCell className="text-center"><CountBadge count={r.acudientes} /></TableCell>
+              <TableCell className="text-center font-semibold">{r.docentes + r.estudiantes + r.acudientes}</TableCell>
               <TableCell className="text-center">
                 {!needsFollowUp ? (
                   <span className="text-muted-foreground">—</span>
