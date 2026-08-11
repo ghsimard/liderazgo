@@ -287,7 +287,16 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
         "Todos";
 
       // Always scope PDF to the chosen cohorte (not the table's current filter)
-      const pdfRows = rows.filter(r => r.cohorte_ids.has(sel.cohorteId));
+      const dir = sortDir === "asc" ? 1 : -1;
+      const pdfRows = rows
+        .filter(r => r.cohorte_ids.has(sel.cohorteId))
+        .sort((a, b) => {
+          if (sortKey === "ie") return a.ie.localeCompare(b.ie, "es") * dir;
+          const va = sortKey === "total" ? a.docentes + a.estudiantes + a.acudientes : a[sortKey];
+          const vb = sortKey === "total" ? b.docentes + b.estudiantes + b.acudientes : b[sortKey];
+          if (va === vb) return a.ie.localeCompare(b.ie, "es");
+          return (va - vb) * dir;
+        });
       const tD = pdfRows.reduce((a, r) => a + r.docentes, 0);
       const tE = pdfRows.reduce((a, r) => a + r.estudiantes, 0);
       const tA = pdfRows.reduce((a, r) => a + r.acudientes, 0);
