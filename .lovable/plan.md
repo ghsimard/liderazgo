@@ -1,58 +1,44 @@
-# Evolución : 6 sondages affichés vs 61 en base (production)
+# Evolución : 6 sondages affichés vs 61 réponses en 2026
 
-## Ce qui est confirmé
+## Cause confirmée par la requête de production
 
-Dans `AdminAmbienteStatsTab.tsx`, une réponse n'est comptée en « Evolución » que si les trois conditions suivantes sont vraies :
+Les 61 réponses de 2026 ne sont pas toutes de la phase Evolución :
 
-1. `fase = 'cierre'` exactement (mapping `inicial → linea_base`, `evolucion → cierre`)
-2. `cohorte_id` est renseigné **et** correspond à une cohorte existante dans `ae_cohortes` (les lignes sans cohorte sont écartées au chargement)
-3. `institucion_educativa` correspond **caractère pour caractère** au nom d'école issu de `fichas_rlt` / vue des cohortes (un suffixe « - Municipio » suffit à exclure la ligne)
+| fase | cohorte | docentes | estudiantes | acudientes | total |
+|---|---|---|---|---|---|
+| `cierre` (= Evolución) | Rionegro 2025 (`1724cd6d…`) | 3 | 1 | 2 | **6** |
+| `linea_base` (= Inicial) | Oriente 2026 (`d1a2b3c4-0002…`) | 33 | 8 | 14 | **55** |
 
-La base de développement ne contient aucune donnée 2026 pour cette école, donc la cause exacte en production ne peut pas être confirmée d'ici : elle doit être identifiée par une requête avant tout correctif.
+L'écran affiche donc **6** en Evolución parce que seules 6 réponses portent `fase = 'cierre'`. Les 55 autres, saisies en 2026, sont enregistrées comme **línea base / Inicial** et rattachées à la cohorte **Oriente 2026**, pas à Rionegro 2025.
 
-## Étape 1 — Diagnostic en production
+L'application est donc cohérente avec la base. Le vrai problème est en amont : le formulaire a étiqueté ces 55 réponses comme `linea_base` (cohorte Oriente 2026) alors qu'il s'agit vraisemblablement de la mesure d'évolution de cette école.
 
-```sql
-SELECT fase,
-       cohorte_id,
-       institucion_educativa,
-       tipo_formulario,
-       count(*)
-FROM encuestas_ambiente_escolar
-WHERE institucion_educativa ILIKE '%Normal Superior de Mar%'
-  AND created_at >= '2026-01-01'
-GROUP BY 1,2,3,4
-ORDER BY 3,1,4;
+## Point à trancher avant tout correctif
 
--- cohortes valides
-SELECT id, nombre, year FROM ae_cohortes ORDER BY year, nombre;
-```
+Deux lectures possibles, à confirmer par vous :
 
-Lecture du résultat :
-- `fase` ≠ `cierre` (ex. `evolucion`, `seguimiento`, NULL) → problème de valeur de phase
-- `cohorte_id` NULL ou absent de `ae_cohortes` → lignes écartées au chargement
-- Variantes du nom d'école (suffixe, accents, espaces) → échec d'appariement
+1. **Les 55 réponses sont bien des réponses d'évolution** mal étiquetées → il faut les corriger en base (`fase = 'cierre'`, cohorte correcte) et corriger la campagne active qui a produit cette étiquette.
+2. **Il existe réellement deux cohortes distinctes pour cette école** (une línea base Oriente 2026 + un cierre Rionegro 2025) → rien à corriger, seul l'affichage doit clarifier la répartition.
 
-## Étape 2 — Correctifs selon le diagnostic
+## Correctifs prévus
 
-| Cause trouvée | Action |
-|---|---|
-| Valeurs de phase hétérogènes | 🗄️ SQL manuel : normaliser `fase` vers `linea_base` / `cierre` ; 🖥️ frontend : accepter les alias de phase (`cierre`, `evolucion`, `final`) au lieu d'une égalité stricte |
-| `cohorte_id` manquant | 🗄️ SQL manuel : rattacher les réponses à la bonne cohorte via institution + année ; 🖥️ frontend : ne plus écarter silencieusement les réponses sans cohorte quand aucun filtre de cohorte n'est actif |
-| Nom d'école divergent | 🖥️ frontend : appariement normalisé (trim, accents, suffixe « - Municipio ») dans le regroupement par institution, comme déjà fait dans le calcul MEL |
+### A. Clarification de l'affichage (dans tous les cas)
+Dans **Ambiente Escolar → Informes** :
+- Afficher, pour chaque institution, la répartition par phase **et par cohorte** (ex. « Inicial 55 · Oriente 2026 | Evolución 6 · Rionegro 2025 ») au lieu d'un simple total par phase.
+- Signaler visuellement une école dont les réponses sont réparties sur plusieurs cohortes, pour repérer immédiatement ce type d'anomalie.
 
-## Étape 3 — Garde-fou d'affichage
-
-Ajouter, dans l'onglet Informes, un compteur discret « X réponses ignorées (phase ou cohorte inconnue) » pour que ce type d'écart soit visible immédiatement plutôt que silencieux.
+### B. Correction des données (si option 1)
+- SQL manuel de production : requalifier les 55 réponses concernées (`fase` et `cohorte_id`), après contrôle du périmètre exact (institution + plage de dates).
+- Vérification de la campagne active (`ae_campanas`) qui détermine la phase enregistrée par le formulaire, afin que les prochaines réponses portent la bonne valeur.
 
 ## Détails techniques
 
-- Fichier concerné : `src/components/admin/AdminAmbienteStatsTab.tsx` (constantes `FASE_DB`, filtre `filteredSubs` ligne ~222, `baseFiltered`, `perIERows`).
-- Le même mapping de phase est utilisé par les PDF (individuels, consolidés et ZIP) : la correction se propage automatiquement.
-- Aucune modification du backend Express n'est nécessaire.
+- Fichier front concerné : `src/components/admin/AdminAmbienteStatsTab.tsx` (mapping `FASE_DB : inicial → linea_base`, `evolucion → cierre` ; regroupement par institution ligne ~660).
+- La phase enregistrée provient de la campagne active dans `AmbienteEscolarForm.tsx`, pas d'un choix de l'utilisateur.
+- Aucun changement de schéma nécessaire.
 
 ## Actions Render
 
-- 🖥️ Site statique (Frontend) : republier après correctif
+- 🖥️ Site statique (Frontend) : republier après le correctif d'affichage
 - ⚙️ Web Service (Backend Express) : rien
-- 🗄️ Base de données (SQL manuel) : seulement si le diagnostic montre des phases ou cohortes incohérentes
+- 🗄️ Base de données (SQL manuel) : uniquement si l'option 1 est retenue (requalification des 55 réponses)
