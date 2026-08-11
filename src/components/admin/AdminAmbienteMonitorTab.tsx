@@ -240,6 +240,31 @@ export default function AdminAmbienteMonitorTab({ allowedRegions }: { allowedReg
     };
   }, [directivos, submissions, cohorteInstitutions, filterCohorte, searchText, filterStatus, filterFase]);
 
+  const sortedRows = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filteredRows].sort((a, b) => {
+      if (sortKey === "ie") return a.ie.localeCompare(b.ie, "es") * dir;
+      const va = sortKey === "total" ? a.docentes + a.estudiantes + a.acudientes : a[sortKey];
+      const vb = sortKey === "total" ? b.docentes + b.estudiantes + b.acudientes : b[sortKey];
+      if (va === vb) return a.ie.localeCompare(b.ie, "es");
+      return (va - vb) * dir;
+    });
+  }, [filteredRows, sortKey, sortDir]);
+
+  const toggleSort = (key: typeof sortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("asc"); }
+  };
+
+  const SortIcon = ({ column }: { column: typeof sortKey }) => {
+    if (sortKey !== column) return <ArrowUpDown className="inline w-3 h-3 ml-1 opacity-40" />;
+    return sortDir === "asc"
+      ? <ArrowUp className="inline w-3 h-3 ml-1" />
+      : <ArrowDown className="inline w-3 h-3 ml-1" />;
+  };
+
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
