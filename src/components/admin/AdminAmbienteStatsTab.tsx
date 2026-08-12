@@ -1092,14 +1092,25 @@ export default function AdminAmbienteStatsTab() {
                         <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                         <Building2 className="w-4 h-4 text-primary shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-sm font-medium">{row.ie}</p>
+                          <p className="text-sm font-medium flex items-center gap-2 flex-wrap">
+                            {row.ie}
+                            {row.multiCohorte && (
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                Varias cohortes
+                              </span>
+                            )}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {row.entidad ? `${row.entidad} · ` : ""}
                             {row.total === 0
                               ? "Sin respuestas"
-                              : `Inicial: ${row.inicial.length} · Evolución: ${row.evolucion.length}`}
+                              : [
+                                  `Inicial: ${row.inicial.length}${row.inicialCohortes ? ` (${row.inicialCohortes})` : ""}`,
+                                  `Evolución: ${row.evolucion.length}${row.evolucionCohortes ? ` (${row.evolucionCohortes})` : ""}`,
+                                ].join(" · ")}
                           </p>
                         </div>
+
                       </CollapsibleTrigger>
                       <div className="flex gap-1.5">
                         {fases.map((fase) => {
