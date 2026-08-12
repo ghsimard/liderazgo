@@ -656,6 +656,23 @@ export default function AdminAmbienteStatsTab() {
   };
 
   // ── Per-institution online report ──
+  const cohorteNameById = useMemo(
+    () => new Map(cohortes.map((c) => [c.id, c.nombre])),
+    [cohortes]
+  );
+
+  const describeCohortes = (subs: RawSubmission[]): string => {
+    const counts = new Map<string, number>();
+    for (const s of subs) {
+      const name = (s.cohorte_id && cohorteNameById.get(s.cohorte_id)) || "Sin cohorte";
+      counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, n]) => (counts.size > 1 ? `${name} ${n}` : name))
+      .join(" + ");
+  };
+
   const ieRows = useMemo(() => {
     return [...targetIEs]
       .sort((a, b) => a.localeCompare(b, "es"))
@@ -666,15 +683,22 @@ export default function AdminAmbienteStatsTab() {
         const evolucion = baseFiltered.filter(
           (s) => s.institucion_educativa === ie && s.fase === FASE_DB.evolucion
         );
+        const cohorteIdsUsed = new Set(
+          [...inicial, ...evolucion].map((s) => s.cohorte_id || "—")
+        );
         return {
           ie,
           entidad: fichas.find((f) => f.nombre_ie === ie)?.entidad_territorial || "",
           inicial,
           evolucion,
+          inicialCohortes: describeCohortes(inicial),
+          evolucionCohortes: describeCohortes(evolucion),
+          multiCohorte: cohorteIdsUsed.size > 1,
           total: inicial.length + evolucion.length,
         };
       });
-  }, [targetIEs, baseFiltered, fichas]);
+  }, [targetIEs, baseFiltered, fichas, cohorteNameById]);
+
 
   const cohorteOnlineSubs = useMemo(
     () => (cohorteOnline ? submissions.filter((s) => s.cohorte_id === cohorteOnline) : []),
@@ -1068,14 +1092,25 @@ export default function AdminAmbienteStatsTab() {
                         <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                         <Building2 className="w-4 h-4 text-primary shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-sm font-medium">{row.ie}</p>
+                          <p className="text-sm font-medium flex items-center gap-2 flex-wrap">
+                            {row.ie}
+                            {row.multiCohorte && (
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                Varias cohortes
+                              </span>
+                            )}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {row.entidad ? `${row.entidad} · ` : ""}
                             {row.total === 0
                               ? "Sin respuestas"
-                              : `Inicial: ${row.inicial.length} · Evolución: ${row.evolucion.length}`}
+                              : [
+                                  `Inicial: ${row.inicial.length}${row.inicialCohortes ? ` (${row.inicialCohortes})` : ""}`,
+                                  `Evolución: ${row.evolucion.length}${row.evolucionCohortes ? ` (${row.evolucionCohortes})` : ""}`,
+                                ].join(" · ")}
                           </p>
                         </div>
+
                       </CollapsibleTrigger>
                       <div className="flex gap-1.5">
                         {fases.map((fase) => {
