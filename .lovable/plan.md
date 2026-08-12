@@ -1,33 +1,19 @@
-# Requalification SQL des réponses mal étiquetées — avec undo
+# Requalification SQL des réponses 2026 mal étiquetées — avec undo
 
-Concerne deux écoles (extensible) :
-- Institución Educativa Normal Superior de María
-- Institución Educativa Concejo Municipal El Porvenir
+Périmètre confirmé par votre requête de production :
 
-Oui, un undo est possible : on crée une **table de sauvegarde** avant l'UPDATE, qui conserve l'ancienne `fase` et l'ancien `cohorte_id` de chaque ligne modifiée. Tant que cette table existe, la restauration est exacte.
+| Institution | 2026 `cierre` (Rionegro 2025) | 2026 `linea_base` (Oriente 2026) → à requalifier |
+|---|---|---|
+| Concejo Municipal El Porvenir | 35 | **63** |
+| Normal Superior de María | 6 | **55** |
 
-Note : dans la base de développement, El Porvenir n'a que des réponses 2025 (`linea_base`, cohorte Rionegro 2025). Le périmètre exact doit donc être confirmé en production à l'étape 0 avant tout UPDATE.
+Total à modifier : **118 lignes**. Les réponses 2025 (`linea_base`, 102 + 90) ne sont pas touchées (filtre `created_at >= '2026-01-01'`).
 
-## Étape 0 — Contrôle du périmètre (aucune modification)
+Cohorte cible : `1724cd6d-c72d-49b2-94e0-6d96948c3a1e` (Rionegro 2025).
 
-```sql
-SELECT institucion_educativa, fase, cohorte_id,
-       date_part('year', created_at) AS anio,
-       count(*) AS n,
-       min(created_at AT TIME ZONE 'America/Bogota') AS mas_antigua,
-       max(created_at AT TIME ZONE 'America/Bogota') AS mas_reciente
-FROM encuestas_ambiente_escolar
-WHERE institucion_educativa ILIKE '%Normal Superior de Mar%'
-   OR institucion_educativa ILIKE '%Concejo Municipal El Porvenir%'
-GROUP BY 1,2,3,4
-ORDER BY 1,4,2;
-```
-
-Vérifier, pour chaque école, le nombre de lignes 2026 en `linea_base` à requalifier.
+Oui, un undo est possible : une **table de sauvegarde** conserve l'ancienne `fase` et l'ancien `cohorte_id` de chaque ligne modifiée avant l'UPDATE. Tant que cette table existe, la restauration est exacte.
 
 ## Étape 1 — Sauvegarde + requalification (transaction unique)
-
-Remplacer `<COHORTE_CIERRE_ID>` par l'id de la cohorte cible (Rionegro 2025 : celui déjà utilisé par les réponses `cierre`).
 
 ```sql
 BEGIN;
@@ -47,12 +33,14 @@ WHERE (institucion_educativa ILIKE '%Normal Superior de Mar%'
   AND created_at >= '2026-01-01'
   AND fase = 'linea_base'
 ON CONFLICT (id) DO NOTHING;
+-- attendu : INSERT 0 118
 
 UPDATE encuestas_ambiente_escolar e
 SET fase = 'cierre',
-    cohorte_id = '<COHORTE_CIERRE_ID>'::uuid
+    cohorte_id = '1724cd6d-c72d-49b2-94e0-6d96948c3a1e'::uuid
 FROM _undo_ae_fase_20260812 u
 WHERE e.id = u.id;
+-- attendu : UPDATE 118
 
 -- Contrôle avant validation
 SELECT institucion_educativa, fase, cohorte_id, count(*)
@@ -62,8 +50,10 @@ WHERE (institucion_educativa ILIKE '%Normal Superior de Mar%'
   AND created_at >= '2026-01-01'
 GROUP BY 1,2,3;
 
-COMMIT;  -- ou ROLLBACK; si le contrôle est incorrect
+COMMIT;  -- ou ROLLBACK; si les comptes ne correspondent pas
 ```
+
+Attendu après COMMIT, tout en cohorte Rionegro 2025 : El Porvenir **98** en `cierre`, Normal Superior de María **61** en `cierre`.
 
 ## Étape 2 — Undo (à tout moment tant que la table de sauvegarde existe)
 
@@ -76,27 +66,27 @@ SET fase = u.old_fase,
 FROM _undo_ae_fase_20260812 u
 WHERE e.id = u.id;
 
-SELECT institucion_educativa, fase, count(*)
+SELECT institucion_educativa, fase, cohorte_id, count(*)
 FROM encuestas_ambiente_escolar
 WHERE (institucion_educativa ILIKE '%Normal Superior de Mar%'
     OR institucion_educativa ILIKE '%Concejo Municipal El Porvenir%')
   AND created_at >= '2026-01-01'
-GROUP BY 1,2;
+GROUP BY 1,2,3;
 
 COMMIT;
 ```
 
-Nettoyage seulement une fois le résultat validé et définitif :
+Nettoyage uniquement une fois le résultat validé et définitif :
 
 ```sql
 DROP TABLE _undo_ae_fase_20260812;
 ```
 
-Pour ajouter une autre école plus tard : reprendre les mêmes blocs en ajoutant un `OR institucion_educativa ILIKE '%…%'` dans chaque clause `WHERE`. L'undo reste valable puisque la sauvegarde s'accumule dans la même table (`ON CONFLICT DO NOTHING` protège les valeurs d'origine).
+Pour une école supplémentaire plus tard : ajouter un `OR institucion_educativa ILIKE '%…%'` dans chaque clause `WHERE`. La sauvegarde s'accumule dans la même table, et `ON CONFLICT DO NOTHING` protège les valeurs d'origine déjà enregistrées.
 
-## Point d'amont à vérifier après coup
+## Point d'amont à corriger ensuite
 
-La phase enregistrée provient de la **campagne active** (`ae_campanas`) au moment de la soumission, pas d'un choix de l'utilisateur. Sans correction de la campagne, les prochaines réponses de ces écoles repartiront en `linea_base`.
+La phase enregistrée vient de la **campagne active** (`ae_campanas`) au moment de la soumission. Sans correction, les prochaines réponses de ces écoles repartiront en `linea_base` / Oriente 2026.
 
 ```sql
 SELECT c.id, c.nombre, c.fase, c.fecha_inicio, c.fecha_fin, co.nombre AS cohorte
@@ -108,4 +98,4 @@ ORDER BY c.fecha_inicio DESC;
 
 - 🖥️ Site statique (Frontend) : rien
 - ⚙️ Web Service (Backend Express) : rien
-- 🗄️ Base de données (SQL manuel) : Étape 0 puis Étape 1 (Étape 2 en cas d'undo)
+- 🗄️ Base de données (SQL manuel) : Étape 1 (Étape 2 en cas d'undo)
