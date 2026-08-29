@@ -44,10 +44,10 @@ export interface SatisfaccionFormDef {
 
 // ── Scales ──
 const LIKERT4_AGREEMENT: SatisfaccionOption[] = [
-  { value: "1", label: "Totalmente en desacuerdo" },
-  { value: "2", label: "Algo en desacuerdo" },
-  { value: "3", label: "Algo de acuerdo" },
   { value: "4", label: "Totalmente de acuerdo" },
+  { value: "3", label: "Algo de acuerdo" },
+  { value: "2", label: "Algo en desacuerdo" },
+  { value: "1", label: "Totalmente en desacuerdo" },
 ];
 
 const SINO_PARCIAL: SatisfaccionOption[] = [
