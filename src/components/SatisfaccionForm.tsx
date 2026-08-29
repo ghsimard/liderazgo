@@ -302,7 +302,8 @@ function GridQuestion({ question: q, value, onGridChange, disabled }: { question
   return (
     <div className={`space-y-2 ${disabled ? "opacity-70 pointer-events-none" : ""}`}>
       {q.label && <Label className="font-medium">{q.label} {q.required && <span className="text-destructive">*</span>}</Label>}
-      <div className="overflow-x-auto">
+      {/* Desktop: tabla */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr>
@@ -333,6 +334,32 @@ function GridQuestion({ question: q, value, onGridChange, disabled }: { question
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile / tablette: cartes empilées, sans défilement horizontal */}
+      <div className="md:hidden space-y-3">
+        {q.rows?.map((row) => (
+          <Card key={row.key}>
+            <CardContent className="p-4 space-y-2">
+              <p className="text-sm">{row.label}</p>
+              <RadioGroup
+                value={value[row.key] || ""}
+                onValueChange={(v) => onGridChange(row.key, v)}
+                className="space-y-1"
+                disabled={disabled}
+              >
+                {columns.map((col) => (
+                  <div key={col.value} className="flex items-center gap-2 min-h-[44px]">
+                    <RadioGroupItem value={col.value} id={`${q.key}-${row.key}-${col.value}`} />
+                    <Label htmlFor={`${q.key}-${row.key}-${col.value}`} className="font-normal cursor-pointer text-sm">
+                      {col.label}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
