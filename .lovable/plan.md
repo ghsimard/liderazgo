@@ -9,25 +9,21 @@
 ## Solution
 
 ### 1. Correction des données — SQL (développement + production)
-Mise à jour des définitions stockées pour réordonner les colonnes de la grille `logistica` (et toute question utilisant l'échelle d'accord) : `4 → 3 → 2 → 1` (Totalmente de acuerdo en premier), les `value` restent identiques (aucune réponse existante n'est affectée — seules l'étiquette et la position changent).
+Mise à jour des définitions JSONB stockées dans `satisfaccion_form_definitions` :
+- **Échelle d'accord** (colonnes avec valeurs 1-4, ex. grille `logistica`) : réordonner en `4 → 3 → 2 → 1` (« Totalmente de acuerdo » en premier).
+- **Échelle Sí/No** (`SINO_PARCIAL`) : réordonner en `Sí, Parcialmente, No` (validé par l'utilisateur).
+- Les `value` restent identiques : **aucune réponse existante n'est affectée** — seules la position et l'étiquette d'affichage changent.
+- Exécuté par moi en développement (avec vérification avant/après), puis fourni en SQL à exécuter manuellement en production.
 
-Script : parcourir toutes les lignes de `satisfaccion_form_definitions`, et pour chaque question dont les colonnes correspondent à l'échelle d'accord (valeurs 1-4 avec ces libellés), réécrire le tableau `columns` dans le bon ordre.
+### 2. Code par défaut
+- `src/data/satisfaccionData.ts` : réordonner `SINO_PARCIAL` en `Sí, Parcialmente, No` (une ligne). `LIKERT4_AGREEMENT` et `FREQUENCY4` (Siempre → Nunca) sont déjà dans le bon ordre.
+- Aucune autre modification de code : l'éditeur admin manipule l'ordre tel quel.
 
-- Exécuté par moi en développement (vérification).
-- Fourni à l'utilisateur en SQL à exécuter manuellement en production (🗄️).
+### 3. Vérification
+- Requête SQL avant/après montrant l'ordre des colonnes de chaque définition stockée.
+- Aperçu admin (mobile 393 px) : LOGISTICA affiche « Totalmente de acuerdo » en premier ; grilles Sí/No affichent Sí, Parcialmente, No.
 
-### 2. Même logique pour les autres formulaires
-- **Asistencia** et **Interludio** : si des définitions sont stockées en base (prod), elles seront corrigées par le même script SQL. Les échelles `FREQUENCY4` (Siempre → Nunca) sont déjà dans l'ordre positif → négatif, rien à changer.
-- **Grilles Sí/No (`SINO_PARCIAL`)** : ordre actuel `Sí, No, Parcialmente`. Par cohérence « du plus favorable au moins favorable », proposition : `Sí, Parcialmente, No` (code + données stockées). À confirmer — voir question ci-dessous.
-
-### 3. Garde-fou admin (optionnel, recommandé)
-Dans `AdminSatisfaccionFormsTab`, lors de la sauvegarde, ne rien changer : l'éditeur manipule l'ordre tel quel. Pas de modification de code nécessaire hors données.
-
-## Fichiers / actions
-- 🗄️ Base de données : SQL de réordonnancement des `definition` JSONB (dev exécuté, prod fourni).
-- 🖥️ Frontend : uniquement si l'ordre `Sí, Parcialmente, No` est validé (une ligne dans `satisfaccionData.ts`) + republication.
-- ⚙️ Backend Express : rien.
-
-## Vérification
-- Requête SQL avant/après montrant l'ordre des colonnes.
-- Aperçu admin (mobile 393 px) : LOGISTICA affiche « Totalmente de acuerdo » en premier.
+## Actions par environnement
+- 🖥️ Site statique (Frontend) : republication (changement `SINO_PARCIAL`).
+- ⚙️ Web Service (Backend Express) : rien.
+- 🗄️ Base de données : SQL de réordonnancement des `definition` JSONB — dev exécuté par mes soins, prod fourni à exécuter manuellement.
