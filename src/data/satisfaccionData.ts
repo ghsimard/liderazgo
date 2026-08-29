@@ -52,8 +52,8 @@ const LIKERT4_AGREEMENT: SatisfaccionOption[] = [
 
 const SINO_PARCIAL: SatisfaccionOption[] = [
   { value: "si", label: "Sí" },
-  { value: "no", label: "No" },
   { value: "parcialmente", label: "Parcialmente" },
+  { value: "no", label: "No" },
 ];
 
 const FREQUENCY4: SatisfaccionOption[] = [
