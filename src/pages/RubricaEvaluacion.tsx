@@ -1607,8 +1607,9 @@ export default function RubricaEvaluacion() {
                                       type="button"
                                       key={n.value}
                                       onClick={() => {
-                                        const newValue = ev?.acordado_nivel === n.value ? "" : n.value;
-                                        updateEval(item.id, "acordado_nivel", newValue);
+                                        // Ne jamais vider un nivel acordado : seul un changement vers un autre nivel est permis
+                                        if (ev?.acordado_nivel === n.value) return;
+                                        updateEval(item.id, "acordado_nivel", n.value);
                                       }}
                                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border cursor-pointer text-xs transition-all ${
                                         ev?.acordado_nivel === n.value ? n.color : "hover:bg-muted/50"
