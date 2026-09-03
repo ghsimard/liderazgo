@@ -84,6 +84,7 @@ export default function AdminRubricaRegionalReport() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<string>("__all__");
   const [cedulaRegionMap, setCedulaRegionMap] = useState<Record<string, string>>({});
+  const [cedulaNombreMap, setCedulaNombreMap] = useState<Record<string, string>>({});
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const saveAnalysis = useCallback(async (moduleId: string, text: string) => {
