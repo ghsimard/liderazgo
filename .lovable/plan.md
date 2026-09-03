@@ -1,79 +1,71 @@
 # Rúbricas — rapport régional : n = 30 au lieu de 31
 
-## Constat
+## Constat (confirmé en production)
 
-Le graphique et le tableau proviennent du rapport régional des rúbricas (`AdminRubricaRegionalReport`). La colonne `n` de chaque item se calcule ainsi :
+La requête exécutée en production montre 56 directivos avec un niveau acordado au module 2, et **un seul avec `nivel_comunicacion` à `[null]`** :
 
-- on prend les lignes de `rubrica_evaluaciones` de l'item qui ont un `acordado_nivel` non nul ;
-- on ajoute les directivos qui ont seulement un `rubrica_seguimientos` pour cet item.
+- **José David Redondo Camargo** — cédula `6771555` — Institución Educativa El Progreso — région Oriente.
 
-Autrement dit, `n` ne compte pas les directivos assignés, mais les enregistrements avec un niveau acordado. Un `n` de 30 contre 31 pour les deux autres items du module 2 signifie, presque certainement, qu'**un directivo n'a pas de niveau acordado enregistré pour « Comunicación asertiva »** (cellule vide / valeur nulle), même s'il en a un pour les autres items.
+C'est bien la cause du `n = 30` pour « Comunicación asertiva » alors que les deux autres items du module 2 affichent 31 : ce directivo a un niveau acordado pour les autres items, mais pas pour celui-là.
 
-Je ne peux pas le confirmer d'ici : la base de données de l'environnement de développement ne contient pas d'évaluations de rúbrica, donc le diagnostic doit être vérifié avec une requête en production avant de toucher à quoi que ce soit.
+Rappel du calcul dans `AdminRubricaRegionalReport` : `n` compte les lignes de `rubrica_evaluaciones` avec `acordado_nivel` non nul, plus les directivos ayant seulement un `rubrica_seguimientos`. Le rapport est donc exact — c'est la donnée qui est incomplète.
 
-## Étape 1 — Vérification en production (SQL en lecture seule)
+## Étape 1 — Corriger la donnée en production
 
-Identifier le directivo manquant pour cet item :
+Deux options, au choix :
+
+- **Option A (recommandée)** : l'évaluateur (ou un admin via Rúbricas) complète le niveau acordado de « Comunicación asertiva » pour ce directivo dans l'application. Traçabilité conservée.
+- **Option B** : `UPDATE` ponctuel en base, une fois le niveau réel connu :
 
 ```sql
--- Directivos avec acordado dans le module 2 mais sans acordado pour "Comunicación asertiva"
-WITH mod2 AS (
-  SELECT i.id, i.item_label
-  FROM rubrica_items i
-  JOIN rubrica_modules m ON m.id = i.module_id
-  WHERE m.module_number = 2
-),
-con_acordado AS (
-  SELECT DISTINCT e.directivo_cedula
-  FROM rubrica_evaluaciones e
-  JOIN mod2 i ON i.id = e.item_id
-  WHERE e.acordado_nivel IS NOT NULL
-)
-SELECT c.directivo_cedula,
-       f.nombres_apellidos,
-       f.nombre_ie,
-       f.region,
-       (SELECT e2.acordado_nivel
-          FROM rubrica_evaluaciones e2
-          JOIN mod2 i2 ON i2.id = e2.item_id
-         WHERE e2.directivo_cedula = c.directivo_cedula
-           AND i2.item_label ILIKE 'Comunicación asertiva%') AS nivel_comunicacion
-FROM con_acordado c
-LEFT JOIN fichas_rlt f ON f.numero_cedula = c.directivo_cedula
-ORDER BY nivel_comunicacion NULLS FIRST, f.nombres_apellidos;
+-- Sauvegarde préalable
+CREATE TABLE IF NOT EXISTS _undo_rubrica_comunicacion_20260903 AS
+SELECT e.* FROM rubrica_evaluaciones e
+JOIN rubrica_items i ON i.id = e.item_id
+JOIN rubrica_modules m ON m.id = i.module_id
+WHERE m.module_number = 2
+  AND i.item_label ILIKE 'Comunicación asertiva%'
+  AND e.directivo_cedula = '6771555';
+
+-- Remplacer '<nivel>' par : avanzado | intermedio | basico | sin_evidencia
+UPDATE rubrica_evaluaciones e
+SET acordado_nivel = '<nivel>', updated_at = now()
+FROM rubrica_items i
+JOIN rubrica_modules m ON m.id = i.module_id
+WHERE i.id = e.item_id
+  AND m.module_number = 2
+  AND i.item_label ILIKE 'Comunicación asertiva%'
+  AND e.directivo_cedula = '6771555'
+  AND e.acordado_nivel IS NULL;
 ```
 
-Et vérifier s'il y a des lignes dupliquées (même directivo, même item), ce qui fausserait aussi le comptage :
+Si aucune ligne n'existe pour ce couple (directivo, item), il faut un `INSERT` plutôt qu'un `UPDATE` — à vérifier avec :
 
 ```sql
-SELECT e.item_id, e.directivo_cedula, count(*)
+SELECT e.id, e.acordado_nivel
 FROM rubrica_evaluaciones e
 JOIN rubrica_items i ON i.id = e.item_id
 JOIN rubrica_modules m ON m.id = i.module_id
-WHERE m.module_number = 2 AND e.acordado_nivel IS NOT NULL
-GROUP BY 1, 2 HAVING count(*) > 1;
+WHERE m.module_number = 2
+  AND i.item_label ILIKE 'Comunicación asertiva%'
+  AND e.directivo_cedula = '6771555';
 ```
 
-## Étape 2 — Correction selon le résultat
+## Étape 2 — Rendre ces trous visibles dans l'interface
 
-- **Cas A (le plus probable) : il manque le niveau acordado d'un directivo.** Ce n'est pas une erreur de calcul : le rapport est correct. L'évaluateur doit compléter cet item dans la rúbrica du directivo identifié, ou on corrige avec un `UPDATE` ponctuel si le niveau acordado réel est connu.
-- **Cas B : il y a des lignes dupliquées.** On ajuste le calcul pour compter les directivos uniques au lieu des lignes.
+Pour éviter de devoir passer par SQL la prochaine fois, ajouter au tableau du rapport régional :
 
-## Amélioration de l'interface (indépendante du cas)
-
-Pour que ce type de différence soit visible sans consulter la base de données, ajouter dans le tableau du rapport régional :
-
-- une colonne « Sans enregistrement » avec le nombre de directivos de la région qui n'ont pas de niveau acordado ni de seguimiento pour cet item ;
-- un avertissement visuel quand le `n` d'un item est inférieur au `n` maximum du module, avec la liste des directivos absents dans une infobulle.
+- une colonne « Sin registro » : nombre de directivos de la région (issus de `rubrica_asignaciones`, dédupliqués par cédula) sans niveau acordado ni seguimiento pour cet item ;
+- un indicateur visuel discret quand le `n` d'un item est inférieur au `n` maximum du module, avec la liste des directivos manquants dans une infobulle.
 
 ## Détails techniques
 
-- Fichier concerné : `src/components/admin/AdminRubricaRegionalReport.tsx` (bloc `moduleDistributions`, lignes ~161-238).
-- L'univers de référence serait les `rubrica_asignaciones` de la région (dédupliquées par cédula), comparées aux cédulas qui ont un `acordado_nivel` ou un seguimiento.
-- Les pourcentages continueraient à se calculer sur `n` (réponses effectives), sans changer les valeurs actuelles.
+- Fichier concerné : `src/components/admin/AdminRubricaRegionalReport.tsx`, bloc `moduleDistributions` (lignes ~161-238) et le tableau de rendu.
+- Il faut charger `rubrica_asignaciones` (cédula, nom) pour disposer de l'univers de référence par région.
+- Les pourcentages continuent d'être calculés sur `n` (réponses effectives) : aucune valeur affichée ne change.
 
 ## Actions par environnement
 
-- 🖥️ Site statique (Frontend) : republier après l'amélioration de l'interface.
+- 🖥️ Site statique (Frontend) : republier après l'ajout de la colonne « Sin registro ».
 - ⚙️ Web Service (Backend Express) : rien.
-- 🗄️ Base de données : exécuter en production les requêtes de vérification ; puis, si applicable, l'`UPDATE` ponctuel du niveau manquant.
+- 🗄️ Base de données : compléter le niveau acordado manquant (via l'application ou le SQL ci-dessus).
