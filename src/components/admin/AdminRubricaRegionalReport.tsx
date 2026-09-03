@@ -47,6 +47,9 @@ interface ItemDistribution {
   basico: number;
   sinEvidencia: number;
   total: number;
+  /** Directivos participantes del módulo sin nivel registrado en este ítem */
+  sinRegistro: number;
+  sinRegistroNombres: string[];
   descAvanzado?: string;
   descIntermedio?: string;
   descBasico?: string;
@@ -81,6 +84,7 @@ export default function AdminRubricaRegionalReport() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<string>("__all__");
   const [cedulaRegionMap, setCedulaRegionMap] = useState<Record<string, string>>({});
+  const [cedulaNombreMap, setCedulaNombreMap] = useState<Record<string, string>>({});
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const saveAnalysis = useCallback(async (moduleId: string, text: string) => {
@@ -106,7 +110,7 @@ export default function AdminRubricaRegionalReport() {
       supabase.from("rubrica_items").select("id, module_id, item_type, item_label, sort_order, desc_avanzado, desc_intermedio, desc_basico, desc_sin_evidencia").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel"),
       supabase.from("rubrica_regional_analyses").select("module_id, analysis_text"),
-      supabase.from("fichas_rlt").select("numero_cedula, region"),
+      supabase.from("fichas_rlt").select("numero_cedula, region, nombres_apellidos"),
       supabase.from("rubrica_seguimientos").select("item_id, directivo_cedula, nivel, created_at").order("created_at", { ascending: false }),
     ]);
     if (mods) setModules(mods);
@@ -120,10 +124,13 @@ export default function AdminRubricaRegionalReport() {
     }
     if (fichas) {
       const map: Record<string, string> = {};
+      const nombres: Record<string, string> = {};
       for (const f of fichas) {
         if (f.numero_cedula && f.region) map[f.numero_cedula] = f.region;
+        if (f.numero_cedula && (f as any).nombres_apellidos) nombres[f.numero_cedula] = (f as any).nombres_apellidos;
       }
       setCedulaRegionMap(map);
+      setCedulaNombreMap(nombres);
     }
     setLoading(false);
   };
@@ -171,7 +178,18 @@ export default function AdminRubricaRegionalReport() {
 
     for (const mod of modules) {
       const modItems = items.filter(i => i.module_id === mod.id);
+      const modItemIds = new Set(modItems.map(i => i.id));
       const distributions: ItemDistribution[] = [];
+
+      // Universo del módulo: directivos con al menos un nivel registrado en cualquier ítem del módulo
+      const moduleCedulas = new Set<string>();
+      for (const e of filteredEvaluaciones) {
+        if (e.acordado_nivel && modItemIds.has(e.item_id)) moduleCedulas.add(e.directivo_cedula);
+      }
+      for (const key of segMap.keys()) {
+        const [itemId, cedula] = key.split("__");
+        if (modItemIds.has(itemId)) moduleCedulas.add(cedula);
+      }
 
       for (const item of modItems) {
         // Get all evaluaciones that have acordado_nivel for this item
@@ -187,12 +205,21 @@ export default function AdminRubricaRegionalReport() {
           }
         }
 
+        // Directivos del módulo sin ningún nivel registrado en este ítem
+        const cedulasConRegistro = new Set([...cedulasWithAcordado, ...extraCedulas]);
+        const sinRegistroCedulas = [...moduleCedulas].filter(c => !cedulasConRegistro.has(c));
+        const sinRegistroNombres = sinRegistroCedulas
+          .map(c => cedulaNombreMap[c] || c)
+          .sort((a, b) => a.localeCompare(b));
+
         const total = itemEvals.length + extraCedulas.length;
         if (total === 0) {
           distributions.push({
             itemLabel: item.item_label,
             itemType: item.item_type,
             avanzado: 0, intermedio: 0, basico: 0, sinEvidencia: 0, total: 0,
+            sinRegistro: sinRegistroNombres.length,
+            sinRegistroNombres,
             descAvanzado: item.desc_avanzado || "",
             descIntermedio: item.desc_intermedio || "",
             descBasico: item.desc_basico || "",
@@ -224,6 +251,8 @@ export default function AdminRubricaRegionalReport() {
           basico: Math.round((counts.basico / total) * 100),
           sinEvidencia: Math.round((counts.sin_evidencia / total) * 100),
           total,
+          sinRegistro: sinRegistroNombres.length,
+          sinRegistroNombres,
           descAvanzado: item.desc_avanzado || "",
           descIntermedio: item.desc_intermedio || "",
           descBasico: item.desc_basico || "",
@@ -235,7 +264,7 @@ export default function AdminRubricaRegionalReport() {
     }
 
     return result;
-  }, [modules, items, filteredEvaluaciones, filteredSeguimientos]);
+  }, [modules, items, filteredEvaluaciones, filteredSeguimientos, cedulaNombreMap]);
 
   // Global stats
   const globalStats = useMemo(() => {
@@ -450,6 +479,7 @@ export default function AdminRubricaRegionalReport() {
                       <TableRow>
                         <TableHead className="text-xs">Ítem</TableHead>
                         <TableHead className="text-xs text-center">n</TableHead>
+                        <TableHead className="text-xs text-center text-muted-foreground">Sin registro</TableHead>
                         <TableHead className="text-xs text-center text-emerald-700">Avanzado</TableHead>
                         <TableHead className="text-xs text-center text-blue-700">Intermedio</TableHead>
                         <TableHead className="text-xs text-center text-amber-700">Básico</TableHead>
@@ -464,6 +494,16 @@ export default function AdminRubricaRegionalReport() {
                             {d.itemLabel}
                           </TableCell>
                           <TableCell className="text-xs text-center font-medium">{d.total}</TableCell>
+                          <TableCell
+                            className={`text-xs text-center ${d.sinRegistro > 0 ? "font-semibold text-amber-700 cursor-help" : "text-muted-foreground"}`}
+                            title={
+                              d.sinRegistro > 0
+                                ? `Sin nivel registrado en este ítem: ${d.sinRegistroNombres.join(", ")}`
+                                : undefined
+                            }
+                          >
+                            {d.sinRegistro > 0 ? d.sinRegistro : "—"}
+                          </TableCell>
                           <TableCell className="text-xs text-center font-semibold text-emerald-700">{d.avanzado}%</TableCell>
                           <TableCell className="text-xs text-center font-semibold text-blue-700">{d.intermedio}%</TableCell>
                           <TableCell className="text-xs text-center font-semibold text-amber-700">{d.basico}%</TableCell>
