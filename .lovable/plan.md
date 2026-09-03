@@ -12,38 +12,55 @@ Module 2, cédula `6771555` (I.E. El Progreso, Oriente) :
 
 Dates de soumission du module 2 : autoevaluacion 11/06 18:26, evaluacion 11/06 19:08, **nivel_acordado 11/06 19:54**.
 
-Ligne `51cca070-…` : `created_at` = `updated_at` = **11/06 18:26:19**.
+Fait établi : la ligne existe, les trois étapes ont été soumises, et **seul le niveau acordado de cet ítem est vide**. Le rapport régional est donc correct — `n = 30` au lieu de 31 reflète fidèlement la base.
 
-La ligne n'a donc jamais été modifiée après sa création, alors que deux étapes ultérieures ont été soumises. Ce n'est pas un déclic tardif dans l'interface : **une écriture n'est jamais arrivée jusqu'à cette ligne**, et l'application a quand même enregistré la soumission.
+Ce qui n'est **pas** démontrable : le moment de la perte. `updated_at` est resté à `created_at`, mais la requête sur `pg_trigger` ne renvoie aucune ligne — **le trigger `update_rubrica_evaluaciones_updated_at` n'existe pas sur la base de production**, et le code n'écrit jamais `updated_at` lui-même. Cette colonne n'a donc aucune valeur d'audit ici.
 
-## Cause dans le code
+## Deux causes possibles, toutes deux à corriger
 
-Dans `src/pages/RubricaEvaluacion.tsx` (`handleSave`, lignes ~587-644), la sauvegarde boucle sur les ítems et lance un `update` ou un `insert` par ítem — **sans jamais vérifier le résultat** :
+**A. Écriture perdue en silence.** Dans `src/pages/RubricaEvaluacion.tsx` (`handleSave`, lignes ~587-627), la sauvegarde boucle sur les ítems et lance un `update` ou un `insert` par ítem sans jamais lire l'erreur :
 
 ```ts
 await supabase.from("rubrica_evaluaciones").update({ ...payload, updated_by: authorCedula }).eq("id", existing.id);
 ```
 
-Aucune lecture de `error`, aucun arrêt en cas d'échec. Juste après, la date de soumission est enregistrée et l'utilisateur voit « Guardado exitoso ». Si un appel échoue (coupure réseau, erreur transitoire du proxy Express, refus côté base), l'ítem reste vide et personne ne le sait. C'est exactement le scénario observé ici.
+Juste après, la date de soumission est écrite et l'utilisateur voit « Guardado exitoso ». Un appel échoué (réseau, proxy Express, refus base) laisse l'ítem vide sans que personne ne le sache.
 
-Note : `updated_at` reste égal à `created_at` malgré l'étape « evaluacion » de 19:08, ce qui suggère aussi que le trigger `update_rubrica_evaluaciones_updated_at` n'est pas actif sur la base de production. À vérifier :
+**B. Désélection après coup.** Le choix du niveau acordado est un *toggle* (ligne ~1610 : recliquer sur le niveau coché remet la valeur à vide). La validation exige tous les niveaux **avant** la soumission, mais rien n'empêche de vider une case à la réouverture de la rúbrica.
 
-```sql
-SELECT tgname, tgenabled FROM pg_trigger
-WHERE tgrelid = 'rubrica_evaluaciones'::regclass AND NOT tgisinternal;
-```
-
-## Étape 1 — Fiabiliser la sauvegarde (correctif principal)
+## Étape 1 — Fiabiliser la sauvegarde
 
 Dans `handleSave` :
 
 - récupérer `{ error }` de chaque `update` / `insert` et interrompre la boucle au premier échec ;
-- en cas d'erreur, afficher un message explicite et **ne pas** écrire la date de soumission ni afficher « Guardado exitoso » ;
-- après la boucle, relire les ítems du module et vérifier que le champ de l'étape en cours est bien rempli partout ; sinon, avertir l'utilisateur que la sauvegarde est incomplète.
+- en cas d'erreur : message explicite, **pas** d'écriture de la date de soumission, pas de « Guardado exitoso » ;
+- après la boucle, relire les ítems du module et vérifier que le champ de l'étape en cours est rempli partout ; sinon avertir que la sauvegarde est incomplète.
 
-## Étape 2 — Corriger la donnée en production
+## Étape 2 — Empêcher la désélection après soumission
 
-Option recommandée : l'évaluateur rouvre la rúbrica de ce directivo et resélectionne le niveau acordado de « Comunicación asertiva ».
+Une fois le module soumis en `nivel_acordado`, un clic sur le niveau déjà sélectionné ne le désélectionne plus. Le passage à un autre niveau reste possible selon les règles existantes.
+
+## Étape 3 — Rétablir l'auditabilité
+
+Ajouter en production le trigger manquant, pour que `updated_at` devienne exploitable :
+
+```sql
+CREATE TRIGGER update_rubrica_evaluaciones_updated_at
+BEFORE UPDATE ON rubrica_evaluaciones
+FOR EACH ROW EXECUTE FUNCTION update_rubrica_updated_at();
+```
+
+À vérifier aussi sur `rubrica_seguimientos` :
+
+```sql
+SELECT tgrelid::regclass, tgname FROM pg_trigger
+WHERE tgrelid IN ('rubrica_evaluaciones'::regclass, 'rubrica_seguimientos'::regclass)
+  AND NOT tgisinternal;
+```
+
+## Étape 4 — Corriger la donnée
+
+Option recommandée : l'évaluateur rouvre la rúbrica et resélectionne le niveau acordado de « Comunicación asertiva ».
 
 Option SQL, avec sauvegarde préalable :
 
@@ -58,7 +75,7 @@ WHERE id = '51cca070-a10c-442e-a605-5fb780653671'
   AND acordado_nivel IS NULL;
 ```
 
-Recherche des autres cas du même type (module soumis en `nivel_acordado` mais ítem sans niveau) :
+Recherche des autres cas identiques (module soumis en `nivel_acordado`, ítem sans niveau) :
 
 ```sql
 SELECT e.directivo_cedula, m.module_number, i.item_label
@@ -73,7 +90,7 @@ WHERE e.acordado_nivel IS NULL
 ORDER BY m.module_number, e.directivo_cedula;
 ```
 
-## Étape 3 — Rendre les trous visibles dans les rapports
+## Étape 5 — Rendre les trous visibles dans les rapports
 
 Dans `src/components/admin/AdminRubricaRegionalReport.tsx` (bloc `moduleDistributions`, lignes ~161-238, et le tableau) :
 
@@ -84,6 +101,6 @@ Les pourcentages restent calculés sur `n` (réponses effectives) : aucune valeu
 
 ## Actions par environnement
 
-- 🖥️ Site statique (Frontend) : republier après le correctif de sauvegarde et la colonne « Sin registro ».
+- 🖥️ Site statique (Frontend) : republier après les étapes 1, 2 et 5.
 - ⚙️ Web Service (Backend Express) : rien.
-- 🗄️ Base de données : compléter les niveaux acordados manquants (via l'application de préférence) et vérifier le trigger `updated_at`.
+- 🗄️ Base de données : créer le trigger manquant (étape 3) et compléter les niveaux acordados manquants (étape 4).
