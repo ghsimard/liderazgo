@@ -47,6 +47,9 @@ interface ItemDistribution {
   basico: number;
   sinEvidencia: number;
   total: number;
+  /** Directivos participantes del módulo sin nivel registrado en este ítem */
+  sinRegistro: number;
+  sinRegistroNombres: string[];
   descAvanzado?: string;
   descIntermedio?: string;
   descBasico?: string;
