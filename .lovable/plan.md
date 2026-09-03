@@ -1,97 +1,71 @@
 # Rúbricas — pourquoi José David Redondo Camargo n'a pas de valeur
 
-## Constat confirmé
+## Ce que montrent les résultats de production
 
-Au module 2, 56 directivos ont un niveau acordado. Un seul a `nivel_comunicacion` à `[null]` :
-**José David Redondo Camargo** — cédula `6771555` — I.E. El Progreso — Oriente. C'est exactement l'écart entre `n = 30` et `n = 31`.
+Module 2, cédula `6771555` (I.E. El Progreso, Oriente) :
 
-Le rapport régional est donc correct : c'est la donnée source qui est incomplète. Reste à établir *pourquoi*.
+| Ítem | directivo_nivel | equipo_nivel | acordado_nivel |
+|---|---|---|---|
+| Comunicación asertiva | intermedio | intermedio | **null** |
+| Participación de la comunidad | intermedio | intermedio | intermedio |
+| Visión compartida… | avanzado | intermedio | intermedio |
 
-## Étape 1 — Diagnostic ciblé en production (lecture seule)
+La ligne existe bien (`eval_id` = `51cca070-a10c-442e-…`) : ce n'est pas un enregistrement manquant. L'autoévaluation et l'évaluation d'équipe sont remplies, **seul le niveau acordado a été effacé ou jamais posé** sur cet item. C'est exactement l'écart entre `n = 30` et `n = 31` dans le rapport régional — le rapport est donc correct, c'est la donnée qui est trouée.
 
-Trois hypothèses à départager en une requête :
+## Cause probable côté application
 
-1. la ligne existe mais `acordado_nivel` est nul (l'item a été laissé vide au moment de l'accord) ;
-2. aucune ligne n'existe pour ce couple directivo/item (l'item n'a jamais été ouvert) ;
-3. la ligne existe avec un `acordado_nivel` vide (`''`) plutôt que nul.
+Dans `src/pages/RubricaEvaluacion.tsx`, la sélection du niveau acordado est un *toggle* : recliquer sur le niveau déjà sélectionné remet la valeur à vide (ligne ~1610, `const newValue = ev?.acordado_nivel === n.value ? "" : n.value;`). La validation avant soumission exige un acordado pour chaque item (ligne ~571), mais rien n'empêche de désélectionner **après** la soumission, lors d'une réouverture de la rúbrica. Un clic de trop suffit à vider la case sans aucun avertissement.
 
-```sql
--- État complet du module 2 pour ce directivo
-SELECT i.sort_order,
-       i.item_label,
-       e.id AS eval_id,
-       e.directivo_nivel,
-       e.equipo_nivel,
-       e.acordado_nivel,
-       e.created_at,
-       e.updated_at
-FROM rubrica_items i
-JOIN rubrica_modules m ON m.id = i.module_id
-LEFT JOIN rubrica_evaluaciones e
-       ON e.item_id = i.id AND e.directivo_cedula = '6771555'
-WHERE m.module_number = 2
-ORDER BY i.sort_order;
-```
-
-Compléments utiles :
+À confirmer avec la date de modification de la ligne :
 
 ```sql
--- Y a-t-il un seguimiento pour cet item ?
-SELECT s.* FROM rubrica_seguimientos s
-JOIN rubrica_items i ON i.id = s.item_id
-JOIN rubrica_modules m ON m.id = i.module_id
-WHERE m.module_number = 2 AND s.directivo_cedula = '6771555';
+SELECT e.created_at, e.updated_at
+FROM rubrica_evaluaciones e
+WHERE e.id = '51cca070-a10c-442e-a605-5fb780653...'; -- id complet
 
--- Le module a-t-il été soumis (nivel_acordado) ?
 SELECT * FROM rubrica_submission_dates
 WHERE directivo_cedula = '6771555' ORDER BY module_number, submitted_at;
-
--- Assignation et évaluateur
-SELECT a.*, ev.nombre AS evaluador
-FROM rubrica_asignaciones a
-LEFT JOIN rubrica_evaluadores ev ON ev.id = a.evaluador_id
-WHERE a.directivo_cedula = '6771555';
 ```
 
-## Étape 2 — Correction selon le résultat
+Si `updated_at` est postérieur à la date de soumission `nivel_acordado` du module 2, l'hypothèse du déclic après soumission est confirmée.
 
-- **Ligne présente, `acordado_nivel` nul** → l'évaluateur ouvre la rúbrica du directivo et complète l'item « Comunicación asertiva ». Correction propre, tracée par `updated_at`.
-- **Aucune ligne** → même geste dans l'application (l'enregistrement se crée à la sauvegarde). Un `INSERT` manuel n'est nécessaire que si l'accès applicatif est bloqué.
-- **Chaîne vide** → normaliser en base :
+## Étape 1 — Corriger la donnée
 
-```sql
-UPDATE rubrica_evaluaciones
-SET acordado_nivel = NULL
-WHERE acordado_nivel = '';
-```
+Option recommandée : l'évaluateur rouvre la rúbrica de ce directivo et resélectionne le niveau acordado de « Comunicación asertiva ». Traçable via `updated_at`.
 
-Si un `UPDATE` manuel du niveau est retenu, sauvegarder d'abord :
+Option SQL, avec sauvegarde préalable :
 
 ```sql
 CREATE TABLE IF NOT EXISTS _undo_rubrica_comunicacion_20260903 AS
-SELECT e.* FROM rubrica_evaluaciones e
-JOIN rubrica_items i ON i.id = e.item_id
+SELECT * FROM rubrica_evaluaciones WHERE directivo_cedula = '6771555';
+
+-- Remplacer '<nivel>' par le niveau réellement convenu
+UPDATE rubrica_evaluaciones e
+SET acordado_nivel = '<nivel>', updated_at = now()
+FROM rubrica_items i
 JOIN rubrica_modules m ON m.id = i.module_id
-WHERE m.module_number = 2
+WHERE i.id = e.item_id
+  AND m.module_number = 2
   AND i.item_label ILIKE 'Comunicación asertiva%'
-  AND e.directivo_cedula = '6771555';
+  AND e.directivo_cedula = '6771555'
+  AND e.acordado_nivel IS NULL;
 ```
 
-## Étape 3 — Rendre ces trous visibles dans l'interface
+## Étape 2 — Empêcher que ça se reproduise
 
-Pour ne plus avoir à passer par SQL :
+Dans `RubricaEvaluacion.tsx` : ne plus permettre de vider un niveau acordado déjà enregistré une fois le module soumis. Concrètement, si le module a une date de soumission `nivel_acordado`, un clic sur le niveau déjà sélectionné ne le désélectionne plus (le changement vers un autre niveau reste possible selon les règles existantes).
 
-- colonne « Sin registro » dans le tableau du rapport régional : nombre de directivos de la région sans niveau acordado ni seguimiento pour l'item ;
-- indicateur discret quand le `n` d'un item est inférieur au `n` maximum du module, avec la liste des directivos manquants en infobulle.
+## Étape 3 — Rendre les trous visibles dans les rapports
 
-## Détails techniques
+Dans `src/components/admin/AdminRubricaRegionalReport.tsx` (bloc `moduleDistributions`, lignes ~161-238, plus le tableau) :
 
-- Fichier concerné : `src/components/admin/AdminRubricaRegionalReport.tsx`, bloc `moduleDistributions` (lignes ~161-238) et le tableau de rendu.
-- Charger `rubrica_asignaciones` (cédula, nom) pour disposer de l'univers de référence par région.
-- Les pourcentages restent calculés sur `n` (réponses effectives) : aucune valeur affichée ne change.
+- colonne « Sin registro » : nombre de directivos de la région, issus de `rubrica_asignaciones` dédupliquées par cédula, sans niveau acordado ni seguimiento pour l'ítem ;
+- indicateur discret quand le `n` d'un ítem est inférieur au `n` maximum du module, avec la liste des directivos concernés en infobulle.
+
+Les pourcentages restent calculés sur `n` (réponses effectives) : aucune valeur affichée ne change.
 
 ## Actions par environnement
 
-- 🖥️ Site statique (Frontend) : republier après l'ajout de la colonne « Sin registro ».
+- 🖥️ Site statique (Frontend) : republier après le garde-fou et la colonne « Sin registro ».
 - ⚙️ Web Service (Backend Express) : rien.
-- 🗄️ Base de données : exécuter les requêtes de diagnostic, puis compléter le niveau manquant (de préférence via l'application).
+- 🗄️ Base de données : compléter le niveau acordado manquant (via l'application de préférence).
