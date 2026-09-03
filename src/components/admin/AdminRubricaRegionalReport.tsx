@@ -178,7 +178,18 @@ export default function AdminRubricaRegionalReport() {
 
     for (const mod of modules) {
       const modItems = items.filter(i => i.module_id === mod.id);
+      const modItemIds = new Set(modItems.map(i => i.id));
       const distributions: ItemDistribution[] = [];
+
+      // Universo del módulo: directivos con al menos un nivel registrado en cualquier ítem del módulo
+      const moduleCedulas = new Set<string>();
+      for (const e of filteredEvaluaciones) {
+        if (e.acordado_nivel && modItemIds.has(e.item_id)) moduleCedulas.add(e.directivo_cedula);
+      }
+      for (const key of segMap.keys()) {
+        const [itemId, cedula] = key.split("__");
+        if (modItemIds.has(itemId)) moduleCedulas.add(cedula);
+      }
 
       for (const item of modItems) {
         // Get all evaluaciones that have acordado_nivel for this item
@@ -194,12 +205,21 @@ export default function AdminRubricaRegionalReport() {
           }
         }
 
+        // Directivos del módulo sin ningún nivel registrado en este ítem
+        const cedulasConRegistro = new Set([...cedulasWithAcordado, ...extraCedulas]);
+        const sinRegistroCedulas = [...moduleCedulas].filter(c => !cedulasConRegistro.has(c));
+        const sinRegistroNombres = sinRegistroCedulas
+          .map(c => cedulaNombreMap[c] || c)
+          .sort((a, b) => a.localeCompare(b));
+
         const total = itemEvals.length + extraCedulas.length;
         if (total === 0) {
           distributions.push({
             itemLabel: item.item_label,
             itemType: item.item_type,
             avanzado: 0, intermedio: 0, basico: 0, sinEvidencia: 0, total: 0,
+            sinRegistro: sinRegistroNombres.length,
+            sinRegistroNombres,
             descAvanzado: item.desc_avanzado || "",
             descIntermedio: item.desc_intermedio || "",
             descBasico: item.desc_basico || "",
@@ -231,6 +251,8 @@ export default function AdminRubricaRegionalReport() {
           basico: Math.round((counts.basico / total) * 100),
           sinEvidencia: Math.round((counts.sin_evidencia / total) * 100),
           total,
+          sinRegistro: sinRegistroNombres.length,
+          sinRegistroNombres,
           descAvanzado: item.desc_avanzado || "",
           descIntermedio: item.desc_intermedio || "",
           descBasico: item.desc_basico || "",
@@ -242,7 +264,7 @@ export default function AdminRubricaRegionalReport() {
     }
 
     return result;
-  }, [modules, items, filteredEvaluaciones, filteredSeguimientos]);
+  }, [modules, items, filteredEvaluaciones, filteredSeguimientos, cedulaNombreMap]);
 
   // Global stats
   const globalStats = useMemo(() => {
