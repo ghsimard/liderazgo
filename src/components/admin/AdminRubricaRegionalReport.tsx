@@ -479,6 +479,7 @@ export default function AdminRubricaRegionalReport() {
                       <TableRow>
                         <TableHead className="text-xs">Ítem</TableHead>
                         <TableHead className="text-xs text-center">n</TableHead>
+                        <TableHead className="text-xs text-center text-muted-foreground">Sin registro</TableHead>
                         <TableHead className="text-xs text-center text-emerald-700">Avanzado</TableHead>
                         <TableHead className="text-xs text-center text-blue-700">Intermedio</TableHead>
                         <TableHead className="text-xs text-center text-amber-700">Básico</TableHead>
@@ -493,6 +494,16 @@ export default function AdminRubricaRegionalReport() {
                             {d.itemLabel}
                           </TableCell>
                           <TableCell className="text-xs text-center font-medium">{d.total}</TableCell>
+                          <TableCell
+                            className={`text-xs text-center ${d.sinRegistro > 0 ? "font-semibold text-amber-700 cursor-help" : "text-muted-foreground"}`}
+                            title={
+                              d.sinRegistro > 0
+                                ? `Sin nivel registrado en este ítem: ${d.sinRegistroNombres.join(", ")}`
+                                : undefined
+                            }
+                          >
+                            {d.sinRegistro > 0 ? d.sinRegistro : "—"}
+                          </TableCell>
                           <TableCell className="text-xs text-center font-semibold text-emerald-700">{d.avanzado}%</TableCell>
                           <TableCell className="text-xs text-center font-semibold text-blue-700">{d.intermedio}%</TableCell>
                           <TableCell className="text-xs text-center font-semibold text-amber-700">{d.basico}%</TableCell>
