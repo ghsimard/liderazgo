@@ -110,7 +110,7 @@ export default function AdminRubricaRegionalReport() {
       supabase.from("rubrica_items").select("id, module_id, item_type, item_label, sort_order, desc_avanzado, desc_intermedio, desc_basico, desc_sin_evidencia").order("sort_order", { ascending: true }),
       supabase.from("rubrica_evaluaciones").select("item_id, directivo_cedula, acordado_nivel"),
       supabase.from("rubrica_regional_analyses").select("module_id, analysis_text"),
-      supabase.from("fichas_rlt").select("numero_cedula, region"),
+      supabase.from("fichas_rlt").select("numero_cedula, region, nombres_apellidos"),
       supabase.from("rubrica_seguimientos").select("item_id, directivo_cedula, nivel, created_at").order("created_at", { ascending: false }),
     ]);
     if (mods) setModules(mods);
@@ -124,10 +124,13 @@ export default function AdminRubricaRegionalReport() {
     }
     if (fichas) {
       const map: Record<string, string> = {};
+      const nombres: Record<string, string> = {};
       for (const f of fichas) {
         if (f.numero_cedula && f.region) map[f.numero_cedula] = f.region;
+        if (f.numero_cedula && (f as any).nombres_apellidos) nombres[f.numero_cedula] = (f as any).nombres_apellidos;
       }
       setCedulaRegionMap(map);
+      setCedulaNombreMap(nombres);
     }
     setLoading(false);
   };
