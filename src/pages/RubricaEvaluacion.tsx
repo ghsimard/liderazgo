@@ -605,25 +605,66 @@ export default function RubricaEvaluacion() {
           payload.acordado_comentario = ev.acordado_comentario;
         }
 
-        const { data: existing } = await supabase
+        const { data: existing, error: selectError } = await supabase
           .from("rubrica_evaluaciones")
           .select("id")
           .eq("item_id", ev.item_id)
           .eq("directivo_cedula", directivoInfo.cedula)
           .maybeSingle();
 
+        if (selectError) {
+          throw new Error(`No se pudo guardar "${item.item_label}": ${selectError.message}`);
+        }
+
         if (existing?.id) {
           // Update: audit uniquement de la dernière MAJ
-          await supabase
+          const { error: updateError } = await supabase
             .from("rubrica_evaluaciones")
             .update({ ...payload, updated_by: authorCedula })
             .eq("id", existing.id);
+          if (updateError) {
+            throw new Error(`No se pudo guardar "${item.item_label}": ${updateError.message}`);
+          }
         } else {
           // Insert: on renseigne aussi l'auteur initial
-          await supabase
+          const { error: insertError } = await supabase
             .from("rubrica_evaluaciones")
             .insert({ ...payload, evaluador_cedula: authorCedula, updated_by: authorCedula });
+          if (insertError) {
+            throw new Error(`No se pudo guardar "${item.item_label}": ${insertError.message}`);
+          }
         }
+      }
+
+      // Vérification post-écriture : relire les ítems du módulo et confirmer que
+      // el campo de la etapa actual quedó registrado en todos
+      const nivelField =
+        role === "directivo"
+          ? "directivo_nivel"
+          : evaluadorStep === "nivel_acordado"
+            ? "acordado_nivel"
+            : "equipo_nivel";
+
+      const { data: verifyRows, error: verifyError } = await supabase
+        .from("rubrica_evaluaciones")
+        .select("item_id, directivo_nivel, equipo_nivel, acordado_nivel")
+        .eq("directivo_cedula", directivoInfo.cedula)
+        .in("item_id", moduleItems.map(i => i.id));
+
+      if (verifyError) {
+        throw new Error(`No se pudo verificar el guardado: ${verifyError.message}`);
+      }
+
+      const verifyMap = new Map((verifyRows || []).map((r: any) => [r.item_id, r]));
+      const notSaved = moduleItems.filter(i => !(verifyMap.get(i.id) as any)?.[nivelField]);
+
+      if (notSaved.length > 0) {
+        throw new Error(
+          `El guardado quedó incompleto. No se registró el nivel de: ${notSaved
+            .map(i => i.item_label)
+            .slice(0, 5)
+            .join(", ")}${notSaved.length > 5 ? ` y ${notSaved.length - 5} más` : ""}. Intente guardar nuevamente.`
+        );
       }
 
       // Record submission date
@@ -634,7 +675,7 @@ export default function RubricaEvaluacion() {
         submissionType = evaluadorStep === "nivel_acordado" ? "nivel_acordado" : "evaluacion";
       }
 
-      await supabase
+      const { error: submissionError } = await supabase
         .from("rubrica_submission_dates")
         .upsert({
           directivo_cedula: directivoInfo.cedula,
@@ -642,6 +683,10 @@ export default function RubricaEvaluacion() {
           submission_type: submissionType,
           submitted_at: new Date().toISOString(),
         }, { onConflict: "directivo_cedula,module_number,submission_type" });
+
+      if (submissionError) {
+        throw new Error(`No se pudo registrar la fecha de envío: ${submissionError.message}`);
+      }
 
       // Update local submission dates
       setSubmissionDates(prev => ({
