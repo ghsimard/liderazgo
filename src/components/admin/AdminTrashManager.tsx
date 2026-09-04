@@ -131,6 +131,9 @@ export default function AdminTrashManager() {
       } else if (record.record_type === "institucion") {
         if (d.institucion) await supabase.from("instituciones").insert([d.institucion]);
         if (d.region_instituciones?.length > 0) await supabase.from("region_instituciones").insert(d.region_instituciones.map(({ id, ...rest }: any) => rest));
+      } else if (record.record_type === "rename_institucion") {
+        const result = await renameInstitucionEverywhere(d.new_name, d.old_name);
+        if (!result.success) throw new Error(result.errors.join("; "));
       } else if (record.record_type === "satisfaccion_response") {
         const { id, ...rest } = d;
         await supabase.from("satisfaccion_responses").insert([{ id, ...rest }]);
