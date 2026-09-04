@@ -1,65 +1,60 @@
-# Vérification Oriente 2026 — script SQL
+# Vérification Oriente 2026 — script SQL corrigé
 
-## Objectif
-Fournir un script SQL de vérification, adapté du script Quibdó/Oriente précédent, pour lister et compter les écoles rattachées à la cohorte **Oriente 2026** en production.
+## Cause du résultat « 0 »
+La cohorte **Oriente 2026** n'a pas « Oriente » comme entité territoriale : son entité territoriale est **Antioquia**, et « Oriente » n'apparaît que dans le **nom** de la cohorte. Le filtre `entidad_territorial ILIKE '%oriente%'` ne trouve donc rien.
 
-## Portée
-- Lecture seulement : aucune modification de la base de données, du backend ou du frontend.
-- Cible : production (le script est testable aussi en développement, mais la cohorte Oriente 2026 n’existe pas en dev).
+Vérifié en développement :
+- Cohortes 2026 : `Oriente 2026` (entité : Antioquia) et `Quibdó 2026` (entité : Quibdó).
+- Écoles liées : Oriente 2026 → **16**, Quibdó 2026 → **25**.
 
-## Livrable
-Un script SQL unique à exécuter dans l’éditeur SQL de production, qui retourne :
-1. Le nombre d’écoles liées à une cohorte Oriente 2026.
-2. La liste détaillée de ces écoles avec leur cohorte et entité territoriale.
-3. (Optionnel) Les écoles Oriente 2026 présentes dans `fichas_rlt` mais absentes des cohortes.
+Le bon filtre est sur `c.nombre`.
 
-## Script SQL
+## Script SQL à exécuter en production (lecture seule)
 
 ```sql
 -- ============================================================
 -- VÉRIFICATION LISTE ÉCOLES ORIENTE 2026
 -- ============================================================
 
--- 1. Nombre d'écoles liées à une cohorte Oriente 2026
-SELECT 
-  COUNT(*) AS total_oriente_2026
+-- 0. Voir toutes les cohortes (pour confirmer les noms exacts)
+SELECT id, nombre, entidad_territorial, year, is_baseline
+FROM ae_cohortes
+ORDER BY year, nombre;
+
+-- 1. Nombre d'écoles par cohorte 2026
+SELECT c.nombre AS cohorte, COUNT(*) AS total_escuelas
 FROM ae_cohorte_instituciones aei
 JOIN ae_cohortes c ON aei.cohorte_id = c.id
 WHERE c.year = 2026
-  AND c.entidad_territorial ILIKE '%oriente%';
+GROUP BY c.nombre
+ORDER BY c.nombre;
 
--- 2. Liste détaillée des écoles Oriente 2026
-SELECT 
+-- 2. Liste détaillée Oriente 2026
+SELECT
   aei.institucion_educativa,
   c.nombre AS cohorte,
   c.entidad_territorial
 FROM ae_cohorte_instituciones aei
 JOIN ae_cohortes c ON aei.cohorte_id = c.id
 WHERE c.year = 2026
-  AND c.entidad_territorial ILIKE '%oriente%'
-ORDER BY c.entidad_territorial, aei.institucion_educativa;
+  AND c.nombre ILIKE '%oriente%'
+ORDER BY aei.institucion_educativa;
 
--- 3. Écoles Oriente 2026 présentes dans fichas_rlt mais absentes des cohortes (optionnel)
-SELECT 
-  f.nombre_ie,
-  f.entidad_territorial,
-  f.region
-FROM fichas_rlt f
-WHERE f.region ILIKE '%oriente%'
-  AND f.numero_cedula IS NOT NULL
-  AND NOT EXISTS (
-    SELECT 1
-    FROM ae_cohorte_instituciones aei
-    JOIN ae_cohortes c ON aei.cohorte_id = c.id
-    WHERE c.year = 2026
-      AND c.entidad_territorial ILIKE '%oriente%'
-      AND aei.institucion_educativa = f.nombre_ie
-  )
-ORDER BY f.nombre_ie;
+-- 3. Liste détaillée Quibdó 2026 (comparaison)
+SELECT
+  aei.institucion_educativa,
+  c.nombre AS cohorte,
+  c.entidad_territorial
+FROM ae_cohorte_instituciones aei
+JOIN ae_cohortes c ON aei.cohorte_id = c.id
+WHERE c.year = 2026
+  AND c.nombre ILIKE '%quibdó%'
+ORDER BY aei.institucion_educativa;
 ```
 
-## Résultat attendu en production
-- **17 écoles** pour Oriente 2026 (selon le référentiel établi avant l’import E360 du 3 août).
+## Résultat attendu
+- Oriente 2026 : **16** écoles rattachées à la cohorte (la 17e école de la région, ajoutée en février, n'est pas nécessairement rattachée à la cohorte Ambiente Escolar).
+- Quibdó 2026 : **25** écoles.
 
-## Aucune action technique requise
-Ce plan ne modifie aucun fichier du projet, aucune table et aucun service. Il s’agit uniquement d’un livrable SQL de diagnostic.
+## Actions techniques
+Aucune. Script de diagnostic en lecture seule : aucun changement de code, de backend ni de base de données.
