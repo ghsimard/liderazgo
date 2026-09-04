@@ -38,35 +38,74 @@ export function useGeographicData() {
 
   useEffect(() => {
     (async () => {
-      const [eRes, rRes, reRes, rmRes, riRes, mRes, iRes] = await Promise.all([
-        supabase.from("entidades_territoriales").select("id, nombre"),
-        supabase.from("regiones").select("*"),
-        supabase.from("region_entidades").select("*"),
-        supabase.from("region_municipios").select("*"),
-        supabase.from("region_instituciones").select("*"),
-        supabase.from("municipios").select("id, nombre, entidad_territorial_id"),
-        supabase.from("instituciones").select("id, nombre, municipio_id"),
-      ]);
+      // Paginate large tables to stay under the 1000-row API limit.
+      const fetchAll = async <T = any>(
+        table: string,
+        columns: string,
+        pageSize = 900,
+      ): Promise<T[]> => {
+        const all: T[] = [];
+        let from = 0;
+        let to = pageSize - 1;
+        let page: T[] = [];
+        do {
+          const { data, error } = await supabase
+            .from(table as any)
+            .select(columns)
+            .order("id")
+            .range(from, to);
+          if (error) {
+            console.error(`[useGeographicData] error fetching ${table}:`, error);
+            break;
+          }
+          page = (data ?? []) as T[];
+          all.push(...page);
+          from += pageSize;
+          to += pageSize;
+        } while (page.length === pageSize);
+        return all;
+      };
 
-      const ents = eRes.data ?? [];
-      const regs = rRes.data ?? [];
-      const res = reRes.data ?? [];
-      const rms = rmRes.data ?? [];
-      const ris = riRes.data ?? [];
-      const munis = mRes.data ?? [];
+      const [ents, regs, res, rms, ris, munis, insts] = await Promise.all([
+        fetchAll<EntidadData>("entidades_territoriales", "id, nombre"),
+        fetchAll<RegionData>("regiones", "*"),
+        fetchAll<{ region_id: string; entidad_territorial_id: string }>(
+          "region_entidades",
+          "region_id, entidad_territorial_id",
+        ),
+        fetchAll<{ region_id: string; municipio_id: string }>(
+          "region_municipios",
+          "region_id, municipio_id",
+        ),
+        fetchAll<{ region_id: string; institucion_id: string }>(
+          "region_instituciones",
+          "region_id, institucion_id",
+        ),
+        fetchAll<MunicipioData>(
+          "municipios",
+          "id, nombre, entidad_territorial_id",
+        ),
+        fetchAll<InstitucionData>("instituciones", "id, nombre, municipio_id"),
+      ]);
 
       setEntidades(ents);
       setMunicipios(munis);
-      setInstituciones(iRes.data ?? []);
+      setInstituciones(insts);
 
       // Build region data with entidad IDs/names, municipio IDs and institution IDs
       const regionData: RegionData[] = regs.map((r: any) => {
-        const entidadIds = res.filter((re: any) => re.region_id === r.id).map((re: any) => re.entidad_territorial_id);
+        const entidadIds = res
+          .filter((re: any) => re.region_id === r.id)
+          .map((re: any) => re.entidad_territorial_id);
         const entidadNombres = entidadIds
           .map((eid: string) => ents.find((e: any) => e.id === eid)?.nombre)
           .filter(Boolean) as string[];
-        const munIds = rms.filter((rm: any) => rm.region_id === r.id).map((rm: any) => rm.municipio_id);
-        const instIds = ris.filter((ri: any) => ri.region_id === r.id).map((ri: any) => ri.institucion_id);
+        const munIds = rms
+          .filter((rm: any) => rm.region_id === r.id)
+          .map((rm: any) => rm.municipio_id);
+        const instIds = ris
+          .filter((ri: any) => ri.region_id === r.id)
+          .map((ri: any) => ri.institucion_id);
         return {
           ...r,
           mostrar_logo_rlt: r.mostrar_logo_rlt ?? true,

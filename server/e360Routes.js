@@ -24,6 +24,27 @@ module.exports = function e360Routes(pool) {
     res.status(500).json({ error: e.message || 'Error interno' });
   };
 
+  /* ------------------------------------------------ BLOQUEO GEO RLT ----- */
+  /* El referente geográfico de RLT (entidades, municipios, instituciones)
+     es gestionado únicamente desde el panel de administración de RLT.
+     E360 puede leerlo, pero ya no puede escribirlo para evitar que una
+     importación masiva desde E360 vuelva a contaminar el referente RLT. */
+  const GEO_WRITE_BLOCKED =
+    /^\/admin\/geo\/(entidades|municipios|instituciones|importar|importar-due|sincronizar-territorio)(\/.*)?$/;
+  r.use((req, res, next) => {
+    if (
+      GEO_WRITE_BLOCKED.test(req.path) &&
+      ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)
+    ) {
+      return res.status(403).json({
+        error:
+          'El referente geográfico de RLT es gestionado únicamente desde el panel RLT. ' +
+          'Las escrituras desde E360 están deshabilitadas.',
+      });
+    }
+    next();
+  });
+
   /* ------------------------------------------------ LICENCIAS ------------- */
 
   // GET /api/licencias/verificar/:cedula
