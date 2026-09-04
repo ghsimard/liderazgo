@@ -1554,6 +1554,45 @@ export type Database = {
           },
         ]
       }
+      institucion_renames: {
+        Row: {
+          changed_by_cedula: string | null
+          changed_by_nombre: string | null
+          counts: Json
+          created_at: string
+          id: string
+          new_name: string
+          old_name: string
+          reverted_at: string | null
+          status: string
+          total_rows: number
+        }
+        Insert: {
+          changed_by_cedula?: string | null
+          changed_by_nombre?: string | null
+          counts?: Json
+          created_at?: string
+          id?: string
+          new_name: string
+          old_name: string
+          reverted_at?: string | null
+          status?: string
+          total_rows?: number
+        }
+        Update: {
+          changed_by_cedula?: string | null
+          changed_by_nombre?: string | null
+          counts?: Json
+          created_at?: string
+          id?: string
+          new_name?: string
+          old_name?: string
+          reverted_at?: string | null
+          status?: string
+          total_rows?: number
+        }
+        Relationships: []
+      }
       instituciones: {
         Row: {
           created_at: string
