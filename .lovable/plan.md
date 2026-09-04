@@ -19,6 +19,45 @@ C'est ce qui fait passer Logística de 73,33 % à 100 % et le total de 90,78 % �
 
 La base de développement ne contient aucune réponse Intensivo : l'écart n'existe qu'en production, ce qui explique que les deux environnements ne montrent pas la même chose.
 
+## Hypothèse alternative à écarter d'abord : un recteur retardataire
+
+Il se peut aussi qu'un recteur ait répondu **après** l'envoi du premier rapport. Le rapport d'origine annonce 20 réponses ; il faut donc vérifier s'il y en a toujours 20 aujourd'hui et à quelles dates elles ont été enregistrées.
+
+Requêtes de vérification (lecture seule, à exécuter en production) :
+
+```sql
+-- A. Nombre de réponses et dates, Quibdó module 3
+SELECT count(*) AS total,
+       min(created_at) AS premiere,
+       max(created_at) AS derniere
+FROM satisfaccion_responses
+WHERE form_type = 'intensivo' AND module_number = 3
+  AND region ILIKE '%quibd%';
+
+-- B. Détail par réponse : qui, quand, et valeurs Logística actuelles
+SELECT r.cedula, r.created_at, r.respuestas->'logistica' AS logistica_actuelle,
+       (b.id IS NOT NULL) AS modifiee_le_29_aout
+FROM satisfaccion_responses r
+LEFT JOIN _undo_satisfaccion_logistica_20260829 b ON b.id = r.id
+WHERE r.form_type = 'intensivo' AND r.module_number = 3
+  AND r.region ILIKE '%quibd%'
+ORDER BY r.created_at;
+
+-- C. Valeurs d'origine des réponses modifiées
+SELECT r.cedula, r.created_at, b.respuestas_original->'logistica' AS logistica_origine
+FROM _undo_satisfaccion_logistica_20260829 b
+JOIN satisfaccion_responses r ON r.id = b.id
+WHERE r.form_type = 'intensivo' AND r.module_number = 3
+  AND r.region ILIKE '%quibd%'
+ORDER BY r.created_at;
+```
+
+Lecture des résultats :
+- Si **20 réponses** et plusieurs lignes marquées « modifiée le 29 août » → c'est bien le script du 29 août qui a écrasé les valeurs.
+- Si **21 réponses ou plus**, avec une créée après la date du rapport → une partie de l'écart vient d'une réponse tardive, et il faudra faire la part des deux causes.
+- La requête C montre exactement quelles réponses négatives ont disparu et pour quel recteur.
+
+
 ## Bonne nouvelle : c'est réversible
 
 Le script avait créé une sauvegarde avant toute modification : `_undo_satisfaccion_logistica_20260829`. Les valeurs d'origine y sont intactes.
