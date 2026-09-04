@@ -19,71 +19,55 @@ C'est ce qui fait passer Logística de 73,33 % à 100 % et le total de 90,78 % �
 
 La base de développement ne contient aucune réponse Intensivo : l'écart n'existe qu'en production, ce qui explique que les deux environnements ne montrent pas la même chose.
 
-## Hypothèse alternative à écarter d'abord : un recteur retardataire
+## Vérification faite : hypothèse du recteur retardataire écartée
 
-Il se peut aussi qu'un recteur ait répondu **après** l'envoi du premier rapport. Le rapport d'origine annonce 20 réponses ; il faut donc vérifier s'il y en a toujours 20 aujourd'hui et à quelles dates elles ont été enregistrées.
+- 20 réponses aujourd'hui, comme dans le rapport envoyé. Aucune réponse tardive n'explique l'écart.
+- **7 réponses sur 20** ont été modifiées le 29 août.
 
-Requêtes de vérification (lecture seule, à exécuter en production) :
+Valeurs d'origine des 7 réponses modifiées (Quibdó, module 3) :
 
-```sql
--- A. Nombre de réponses et dates, Quibdó module 3
-SELECT count(*) AS total,
-       min(created_at) AS premiere,
-       max(created_at) AS derniere
-FROM satisfaccion_responses
-WHERE form_type = 'intensivo' AND module_number = 3
-  AND region ILIKE '%quibd%';
+| Cédula | Réponses Logística d'origine | Lecture |
+|---|---|---|
+| 26271555 | tout à 1 | profil « tout en désaccord » |
+| 11799114 | tout à 1 | profil « tout en désaccord » |
+| 11793962 | tout à 1 | profil « tout en désaccord » |
+| 11790040 | tout à 1 | profil « tout en désaccord » |
+| 82382055 | tout à 1 | profil « tout en désaccord » |
+| 54252226 | tout à 4 sauf alimentación = 1 | réponse manifestement réfléchie |
+| 11796714 | 4, 4, 1, 3, 3, 4 | réponse manifestement réfléchie |
 
--- B. Détail par réponse : qui, quand, et valeurs Logística actuelles
-SELECT r.cedula, r.created_at, r.respuestas->'logistica' AS logistica_actuelle,
-       (b.id IS NOT NULL) AS modifiee_le_29_aout
-FROM satisfaccion_responses r
-LEFT JOIN _undo_satisfaccion_logistica_20260829 b ON b.id = r.id
-WHERE r.form_type = 'intensivo' AND r.module_number = 3
-  AND r.region ILIKE '%quibd%'
-ORDER BY r.created_at;
-
--- C. Valeurs d'origine des réponses modifiées
-SELECT r.cedula, r.created_at, b.respuestas_original->'logistica' AS logistica_origine
-FROM _undo_satisfaccion_logistica_20260829 b
-JOIN satisfaccion_responses r ON r.id = b.id
-WHERE r.form_type = 'intensivo' AND r.module_number = 3
-  AND r.region ILIKE '%quibd%'
-ORDER BY r.created_at;
-```
-
-Lecture des résultats :
-- Si **20 réponses** et plusieurs lignes marquées « modifiée le 29 août » → c'est bien le script du 29 août qui a écrasé les valeurs.
-- Si **21 réponses ou plus**, avec une créée après la date du rapport → une partie de l'écart vient d'une réponse tardive, et il faudra faire la part des deux causes.
-- La requête C montre exactement quelles réponses négatives ont disparu et pour quel recteur.
-
+Conclusion : le script du 29 août a effacé aussi bien les éventuelles erreurs de lecture d'échelle (les 5 « tout à 1 ») que **deux réponses clairement volontaires et nuancées**, qui n'auraient jamais dû être touchées. C'est bien lui la cause de l'écart, à 100 %.
 
 ## Bonne nouvelle : c'est réversible
 
-Le script avait créé une sauvegarde avant toute modification : `_undo_satisfaccion_logistica_20260829`. Les valeurs d'origine y sont intactes.
+La sauvegarde `_undo_satisfaccion_logistica_20260829` contient les valeurs d'origine intactes.
 
 ## Ce que je propose
 
-### Étape 1 — Constater l'ampleur (lecture seule)
-Compter, par région et par module, combien de réponses ont été modifiées et lesquelles.
+### Étape 1 — Tout restaurer
+Remettre les valeurs d'origine pour **toutes** les réponses sauvegardées (toutes régions, modules 3 et 4). Quibdó 3 retrouve alors 73,33 % pour Logística et 90,78 % au total, exactement comme le rapport envoyé.
 
-### Étape 2 — Tout restaurer
-Remettre les valeurs d'origine pour toutes les réponses sauvegardées. On revient exactement à l'état du rapport envoyé (90,78 % pour Quibdó 3).
+### Étape 2 — Décider du sort des 5 « tout à 1 »
+Trois options, à trancher :
 
-### Étape 3 — Corriger uniquement les vrais cas d'erreur
-S'il y a réellement eu des participants qui se sont trompés, il faut me dire **qui** (région, module, cédula). La correction sera alors appliquée à ces personnes-là seulement, avec sa propre sauvegarde.
+1. **Ne rien recorriger** — on garde les réponses telles que soumises. C'est la position la plus défendable pour l'intégrité des données.
+2. **Recorriger uniquement les 5 profils « tout à 1 »** (26271555, 11799114, 11793962, 11790040, 82382055), si tu as la confirmation que ces personnes se sont bien trompées d'échelle. Les deux réponses nuancées resteront intactes.
+3. **Recorriger une liste précise de cédulas** que tu me donnes.
 
-Si on ne peut pas identifier ces personnes avec certitude, la position la plus sûre est de ne rien recorriger et de garder les réponses telles que soumises.
+Dans les cas 2 et 3, le script aura sa propre sauvegarde et son annulation.
 
-### Étape 4 — Regénérer le rapport
-Une fois la base restaurée, le rapport en ligne et le PDF de Quibdó 3 retrouveront automatiquement les valeurs d'origine. Les PDF déjà téléchargés doivent être régénérés.
+### Étape 3 — Regénérer le rapport
+Le rapport en ligne et le PDF se recalculent en direct : dès la restauration faite, ils affichent les bonnes valeurs. Les PDF déjà téléchargés doivent être régénérés et renvoyés.
+
+### Étape 4 — Vérifier les autres régions et modules
+Même contrôle pour tous les autres blocs touchés par le script du 29 août, avec la liste des cédulas concernées, pour savoir si d'autres rapports déjà envoyés sont faussés.
 
 ## Actions par service
 
-- 🗄️ Base de données (SQL manuel en production) : le script de vérification, puis le script de restauration. Je les fournis prêts à copier.
+- 🗄️ Base de données (SQL manuel en production) : script de restauration complet + vérification. Je le fournis prêt à copier.
 - ⚙️ Web Service (Backend Express) : aucune action.
-- 🖥️ Site statique (Frontend) : aucune action — aucun changement de code n'est nécessaire, le rapport lit la base en direct.
+- 🖥️ Site statique (Frontend) : aucune action — aucun changement de code, le rapport lit la base en direct.
 
-## Point à trancher avant que je génère le script
+## Point à trancher
 
-Restaure-t-on **toutes** les régions et modules touchés, ou seulement Quibdó module 3 ?
+Quelle option pour l'étape 2 : ne rien recorriger, ou recorriger seulement les 5 profils « tout à 1 » ?
