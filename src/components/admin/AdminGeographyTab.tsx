@@ -80,6 +80,16 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
   const [deleteItem, setDeleteItem] = useState<{ type: string; id: string; nombre: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Rename institution confirmation
+  const [renameConfirmOpen, setRenameConfirmOpen] = useState(false);
+  const [renamePreview, setRenamePreview] = useState<{
+    oldName: string;
+    newName: string;
+    id: string;
+    counts: InstitucionReferenceCount[];
+    duplicateWarning: boolean;
+  } | null>(null);
+
   // Region dialog
   const [regionName, setRegionName] = useState("");
   const [regionSelectedEntidades, setRegionSelectedEntidades] = useState<string[]>([]);
