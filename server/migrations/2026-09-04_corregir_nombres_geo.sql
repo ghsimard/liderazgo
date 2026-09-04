@@ -90,21 +90,12 @@ WHERE EXISTS (
 -- ------------------------------------------------------------
 -- 4. VERIFICACIÓN: IE eliminadas recientemente
 -- ------------------------------------------------------------
-RAISE NOTICE '--- IE eliminadas en los últimos 7 días ---';
-DO $$
-DECLARE
-  rec record;
-BEGIN
-  FOR rec IN
-    SELECT deleted_at, record_label
-    FROM public.deleted_records
-    WHERE record_type = 'institucion'
-      AND deleted_at > now() - interval '7 days'
-    ORDER BY deleted_at DESC
-  LOOP
-    RAISE NOTICE '  %  |  %', rec.deleted_at, rec.record_label;
-  END LOOP;
-END $$;
+SELECT '--- IE eliminadas en los últimos 7 días ---' AS msg;
+SELECT deleted_at, record_label
+FROM public.deleted_records
+WHERE record_type = 'institucion'
+  AND deleted_at > now() - interval '7 days'
+ORDER BY deleted_at DESC;
 
 COMMIT;
 
