@@ -8,7 +8,7 @@
 --
 -- Orden de ejecución:
 --   1. Ejecutar todo el script en una transacción (BEGIN/COMMIT).
---   2. Revisar los mensajes de RAISE NOTICE.
+--   2. Revisar los mensajes devueltos por las consultas SELECT.
 --   3. Si algo va mal, ejecutar la sección UNDO al final.
 -- ============================================================
 
@@ -61,7 +61,7 @@ FROM public.entidades_territoriales e
 WHERE DATE(e.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Bogota') = '2026-08-03';
 
 -- Guardar también los enlaces region -> institución/municipio que sean de registros importados
-DROP TABLE IF EXISTS _undo_geo_links_20260803;
+DROP TABLE IF EXISTS public._undo_geo_links_20260803;
 CREATE TABLE public._undo_geo_links_20260803 AS
 SELECT 'region_municipio' AS tipo, rm.region_id, rm.municipio_id AS child_id, now() AS backup_at
 FROM public.region_municipios rm
@@ -80,7 +80,7 @@ WHERE ri.institucion_id IN (
 CREATE INDEX ON public._undo_geo_import_20260803(tipo, registro_id);
 CREATE INDEX ON public._undo_geo_links_20260803(tipo, child_id);
 
-RAISE NOTICE 'Backup creado: % filas', (SELECT count(*) FROM public._undo_geo_import_20260803);
+SELECT 'Backup creado: ' || count(*) || ' filas' AS msg FROM public._undo_geo_import_20260803;
 
 -- ------------------------------------------------------------
 -- 1. INSTITUCIONES IMPORTADAS SIN REFERENCIAS -> ELIMINAR
@@ -104,7 +104,7 @@ WHERE DATE(i.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Bogota') = '202
   AND NOT EXISTS (SELECT 1 FROM public.region_instituciones ri WHERE ri.institucion_id = i.id)
   AND NOT EXISTS (SELECT 1 FROM public.institucion_renames ir WHERE ir.old_name = i.nombre OR ir.new_name = i.nombre);
 
-RAISE NOTICE 'Instituciones importadas sin referencias (listas para borrar): %', (SELECT count(*) FROM _tmp_instituciones_a_borrar);
+SELECT 'Instituciones importadas sin referencias (listas para borrar): ' || count(*) AS msg FROM _tmp_instituciones_a_borrar;
 
 -- Listar instituciones importadas que SÍ tienen referencias (no se borrarán)
 DO $$
@@ -143,7 +143,7 @@ WHERE DATE(m.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Bogota') = '202
   AND NOT EXISTS (SELECT 1 FROM public.instituciones i WHERE i.municipio_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM public.region_municipios rm WHERE rm.municipio_id = m.id);
 
-RAISE NOTICE 'Municipios importados sin referencias (listos para borrar): %', (SELECT count(*) FROM _tmp_municipios_a_borrar);
+SELECT 'Municipios importados sin referencias (listos para borrar): ' || count(*) AS msg FROM _tmp_municipios_a_borrar;
 
 DELETE FROM public.municipios
 WHERE id IN (SELECT id FROM _tmp_municipios_a_borrar);
@@ -161,7 +161,7 @@ WHERE DATE(e.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Bogota') = '202
   AND NOT EXISTS (SELECT 1 FROM public.fichas_rlt f WHERE f.entidad_territorial = e.nombre)
   AND NOT EXISTS (SELECT 1 FROM public.ae_rectores_2025 r WHERE r.entidad_territorial = e.nombre);
 
-RAISE NOTICE 'Entidades territoriales importadas sin referencias (listas para borrar): %', (SELECT count(*) FROM _tmp_entidades_a_borrar);
+SELECT 'Entidades territoriales importadas sin referencias (listas para borrar): ' || count(*) AS msg FROM _tmp_entidades_a_borrar;
 
 DELETE FROM public.entidades_territoriales
 WHERE id IN (SELECT id FROM _tmp_entidades_a_borrar);
@@ -169,15 +169,14 @@ WHERE id IN (SELECT id FROM _tmp_entidades_a_borrar);
 -- ------------------------------------------------------------
 -- 4. VERIFICACIÓN FINAL
 -- ------------------------------------------------------------
-RAISE NOTICE '--- Totales después del rollback ---';
-RAISE NOTICE 'Total instituciones: %', (SELECT count(*) FROM public.instituciones);
-RAISE NOTICE 'Total municipios: %', (SELECT count(*) FROM public.municipios);
-RAISE NOTICE 'Total entidades territoriales: %', (SELECT count(*) FROM public.entidades_territoriales);
-RAISE NOTICE 'Instituciones en Quibdó: %',
-  (SELECT count(*)
-   FROM public.instituciones i
-   JOIN public.municipios m ON m.id = i.municipio_id
-   WHERE m.nombre ILIKE '%Quibd%');
+SELECT '--- Totales después del rollback ---' AS msg;
+SELECT 'Total instituciones: ' || count(*) AS msg FROM public.instituciones;
+SELECT 'Total municipios: ' || count(*) AS msg FROM public.municipios;
+SELECT 'Total entidades territoriales: ' || count(*) AS msg FROM public.entidades_territoriales;
+SELECT 'Instituciones en Quibdó: ' || count(*) AS msg
+FROM public.instituciones i
+JOIN public.municipios m ON m.id = i.municipio_id
+WHERE m.nombre ILIKE '%Quibd%';
 
 COMMIT;
 
