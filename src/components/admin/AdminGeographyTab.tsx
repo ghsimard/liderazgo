@@ -184,11 +184,76 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
 
   const saveEdit = async () => {
     if (!editItem || !editName.trim()) return;
+
+    // Institution rename requires preview + confirmation because the name is denormalized.
+    if (editItem.type === "institucion") {
+      const oldName = editItem.nombre;
+      const trimmedNewName = editName.trim();
+      if (oldName === trimmedNewName) {
+        setEditItem(null);
+        return;
+      }
+      setSaving(true);
+      const counts = await countInstitucionReferences(oldName);
+      const duplicateCheck = await supabase
+        .from("instituciones")
+        .select("id", { head: true })
+        .eq("nombre", trimmedNewName)
+        .neq("id", editItem.id);
+      setRenamePreview({
+        oldName,
+        newName: trimmedNewName,
+        id: editItem.id,
+        counts,
+        duplicateWarning: (duplicateCheck.count ?? 0) > 0,
+      });
+      setEditItem(null);
+      setRenameConfirmOpen(true);
+      setSaving(false);
+      return;
+    }
+
     setSaving(true);
     const table = editItem.type === "entidad" ? "entidades_territoriales" : editItem.type === "municipio" ? "municipios" : "instituciones";
     const { error } = await supabase.from(table).update({ nombre: editName.trim() }).eq("id", editItem.id);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else { toast({ title: "Actualizado" }); setEditItem(null); fetchAllKeepScroll(); }
+    setSaving(false);
+  };
+
+  const confirmRenameInstitucion = async () => {
+    if (!renamePreview) return;
+    setSaving(true);
+    try {
+      const result = await renameInstitucionEverywhere(renamePreview.oldName, renamePreview.newName);
+      if (!result.success) {
+        toast({
+          title: "Error al renombrar",
+          description: result.errors.join("; "),
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
+      // Backup the rename operation to the trash for undo support
+      await supabase.from("deleted_records").insert({
+        record_type: "rename_institucion",
+        record_label: `${renamePreview.oldName} → ${renamePreview.newName}`,
+        deleted_data: {
+          old_name: renamePreview.oldName,
+          new_name: renamePreview.newName,
+          counts: result.counts,
+        },
+      });
+
+      toast({ title: "Institución renombrada", description: "El cambio se propagó a todas las secciones." });
+      setRenameConfirmOpen(false);
+      setRenamePreview(null);
+      fetchAllKeepScroll();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
     setSaving(false);
   };
 
