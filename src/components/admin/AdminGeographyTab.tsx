@@ -1,5 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/utils/dbClient";
+import {
+  countInstitucionReferences,
+  renameInstitucionEverywhere,
+  InstitucionReferenceCount,
+} from "@/utils/renameInstitucion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
