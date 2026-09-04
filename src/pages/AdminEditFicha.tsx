@@ -232,6 +232,11 @@ function InstitutionSearchField({
           </div>
         )}
       </div>
+      {instituciones.length === 0 && !disabled && (
+        <p className="text-xs text-amber-600">
+          No hay instituciones configuradas para esta región/municipio. Contacte al administrador.
+        </p>
+      )}
       {hasError && errorMsg && <p className="field-error">{errorMsg}</p>}
     </div>
   );

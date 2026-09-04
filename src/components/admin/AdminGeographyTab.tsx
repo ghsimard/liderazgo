@@ -7,6 +7,7 @@ import {
   InstitucionReferenceCount,
 } from "@/utils/renameInstitucion";
 import AdminInstitucionRenameHistory from "@/components/admin/AdminInstitucionRenameHistory";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -743,6 +744,9 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
                             <ChevronRight className="w-3 h-3 text-muted-foreground" />
                             <span>{mun.nombre}</span>
                             <span className="text-xs text-muted-foreground">({institucionesByMunicipio(mun.id).length} inst.)</span>
+                            {!regionMunicipios.some(rm => rm.municipio_id === mun.id) && (
+                              <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-600">Sin región</Badge>
+                            )}
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="pl-6 pb-2">
@@ -768,6 +772,9 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
                                   <div className="flex items-center gap-1.5">
                                     <School className="w-3 h-3 text-muted-foreground" />
                                     <span>{inst.nombre}</span>
+                                    {!regionInstituciones.some(ri => ri.institucion_id === inst.id) && (
+                                      <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-600">Sin región</Badge>
+                                    )}
                                   </div>
                                   {!isViewer && (
                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
