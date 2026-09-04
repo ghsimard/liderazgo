@@ -99,7 +99,7 @@ WHERE DATE(i.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Bogota') = '202
   AND NOT EXISTS (SELECT 1 FROM public.ae_docentes_submissions_2025 d WHERE d.institucion_educativa = i.nombre)
   AND NOT EXISTS (SELECT 1 FROM public.ae_estudiantes_submissions_2025 est WHERE est.institucion_educativa = i.nombre)
   AND NOT EXISTS (SELECT 1 FROM public.ae_acudientes_submissions_2025 ac WHERE ac.institucion_educativa = i.nombre)
-  AND NOT EXISTS (SELECT 1 FROM public.ae_rectores_2025 r WHERE r.nombre_de_la_institucion_educativa_en_la_que_usted_desempena_ = i.nombre)
+  AND NOT EXISTS (SELECT 1 FROM public.ae_rectores_2025 r WHERE r.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_ = i.nombre)
   AND NOT EXISTS (SELECT 1 FROM public.operator_permissions op WHERE op.institucion = i.nombre)
   AND NOT EXISTS (SELECT 1 FROM public.region_instituciones ri WHERE ri.institucion_id = i.id)
   AND NOT EXISTS (SELECT 1 FROM public.institucion_renames ir WHERE ir.old_name = i.nombre OR ir.new_name = i.nombre);
