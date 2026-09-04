@@ -1,68 +1,70 @@
-# Écoles de Quibdó : liste vide dans le formulaire, 64 écoles au lieu de 25
+# Couper la propagation E360 → RLT et restaurer le référentiel d'avant le 3 août
 
-## Diagnostic confirmé (production)
+## Origine confirmée
 
-Les résultats SQL donnent deux causes distinctes, toutes deux vérifiées :
+Les routes d'administration de E360 Insights, servies par la même API Express (`server/e360Routes.js`, montées sous `/api/e360app`), écrivent **directement dans les tables partagées de RLT** :
 
-**1. Le lien région → ville est vide.** La table de liaison entre les régions et les villes ne contient **aucune ligne** (0), ni pour « Quibdó 2026 » ni pour « Oriente 2026 ». Le formulaire de ficha part de la région, descend vers la ville reliée, puis vers les écoles de cette ville : sans ce lien, la liste déroulante est vide pour **toutes** les régions. L'écran d'administration, lui, affiche la liste complète des écoles sans tenir compte de ce lien : d'où la divergence entre les deux écrans.
+- `POST /admin/geo/importar-due` — importation depuis le Directorio Único de Establecimientos;
+- `POST /admin/geo/importar` — importation en lot;
+- `POST /admin/geo/sincronizar-territorio` — synchronisation territoriale;
+- création, modification et suppression d'entités territoriales, de villes et d'écoles.
 
-**2. Une importation massive a pollué le référentiel.** La production contient **22 380 écoles et 1 170 villes**. Les écoles d'origine datent du 21 février 2026; toutes les autres ont été créées le **3 août 2026 à 09:46** (liste nationale : Bogotá, Medellín, Cúcuta, académies privées, etc.). Pour la ville de Quibdó, cela donne 64 écoles au lieu des 25 attendues, avec des doublons proches :
+Au total, 30 écritures visent `public.entidades_territoriales`, `public.municipios` et `public.instituciones` — exactement les tables dont dépendent les formulaires RLT. C'est l'importation du **3 août 2026 à 09:46** qui a porté le référentiel à 22 380 écoles et 1 170 villes.
 
-- « Centro Educativo José Melanio Tunay del 21 » (origine) vs « Centro Educativo Indigena Jose Melanio Tunay Del 21 » (import)
-- « Centro Educativo Munguido » (import) vs « Centro Educativo Rural Mixto Munguido » (origine)
-- « Centro Educativo Jesús Antonio Velásquez del 20 » (origine) alors que les fichas utilisent « Centro Educativo **José** Antonio Velásquez del 20 » — cette école des fichas n'existe pas au référentiel.
+Deuxième constat, indépendant : la table de liaison région → ville est **vide** (0 ligne) en production. Le formulaire de ficha part de la région pour trouver les villes puis les écoles : sans ce lien, la liste déroulante est vide pour toutes les régions. L'administration, elle, affiche la liste brute et ne voit donc pas le problème.
 
-À noter aussi : une école a été renommée le 4 septembre (« Centro Educativo Jorge Valencia Lozano » → « Institución Educativa MIA Jorge Valencia Lozano ») et six écoles ont été supprimées le même jour; ces opérations sont tracées et réversibles.
+## Étape 1 — Couper la propagation (⚙️ Web Service Express)
 
-## Étape 1 — Rétablir les liens région → ville (🗄️ Base de données)
+Neutraliser toute écriture de E360 vers les tables géographiques de RLT :
 
-SQL avec sauvegarde et undo, qui recrée les liaisons manquantes :
+- désactiver les trois routes d'importation et de synchronisation (`importar-due`, `importar`, `sincronizar-territorio`) : elles renvoient une erreur explicite indiquant que le référentiel géographique est géré par RLT;
+- désactiver les créations, modifications et suppressions d'entités, villes et écoles côté E360;
+- conserver les **lectures** (`/admin/geo`, `/instituciones-directivos`) : E360 continue de consulter le référentiel RLT sans pouvoir le modifier.
+
+Cette étape à elle seule garantit qu'aucune nouvelle importation ne pourra polluer RLT.
+
+## Étape 2 — Restaurer la liste d'avant le 3 août (🗄️ Base de données)
+
+SQL à exécuter en production, avec sauvegarde complète et undo :
+
+1. Sauvegarder dans `_undo_geo_import_20260803` toutes les écoles et villes créées le 3 août 2026 (repérées par leur horodatage de création), avec leurs liaisons.
+2. Supprimer ces écoles et ces villes **uniquement si elles ne sont référencées nulle part** : aucune ficha, aucune enquête, aucune assignation, aucune liaison régionale. Les rares lignes retenues par une référence sont listées à part pour décision.
+3. Vérifier ensuite que Quibdó retrouve ses 25 écoles et le Oriente ses 16.
+
+Le référentiel revient ainsi à son état du 21 février, augmenté des ajouts légitimes faits depuis par les administrateurs RLT.
+
+## Étape 3 — Rétablir les liens région → ville (🗄️ Base de données)
+
+SQL avec sauvegarde et undo qui recrée les liaisons disparues :
 
 - « Quibdó 2026 » → ville de Quibdó;
-- « Oriente 2026 » → les 11 villes du Oriente (El Retiro, La Ceja, El Carmen de Viboral, Marinilla, El Santuario, San Rafael, San Carlos, San Luis, El Peñol, Granada, San Vicente), en ciblant les villes rattachées à Antioquia.
+- « Oriente 2026 » → les 11 villes du Oriente rattachées à Antioquia (El Retiro, La Ceja, El Carmen de Viboral, Marinilla, El Santuario, San Rafael, San Carlos, San Luis, El Peñol, Granada, San Vicente).
 
-Effet immédiat : les listes déroulantes des formulaires redeviennent fonctionnelles.
+Effet immédiat : les listes déroulantes redeviennent fonctionnelles.
 
-## Étape 2 — Restreindre chaque région à ses écoles officielles (🗄️ Base de données)
+## Étape 4 — Corriger les écarts de noms restants (🗄️ Base de données)
 
-Comme les villes contiennent désormais des centaines d'écoles importées, relier la ville seule ne suffit pas : la liste afficherait 64 écoles pour Quibdó. On utilise la restriction région → écoles (aujourd'hui vide) pour ne conserver que les écoles du programme :
+- « Centro Educativo Jesús Antonio Velásquez del 20 » → « Centro Educativo José Antonio Velásquez del 20 », le nom réellement utilisé dans les fichas, via le mécanisme de renommage existant qui propage partout;
+- vérifier les six écoles supprimées le 4 septembre et le renommage vers « Institución Educativa MIA Jorge Valencia Lozano » : les rétablir si l'un d'eux était une école officielle.
 
-- insérer les 25 écoles de référence de Quibdó et les 16 du Oriente dans cette table de restriction, par correspondance de nom exacte;
-- lister les noms de référence qui ne trouvent pas de correspondance, pour traitement manuel.
+## Étape 5 — Robustesse de l'affichage (🖥️ Site statique)
 
-Le code existant respecte déjà cette restriction : dès qu'elle est renseignée, seules ces écoles apparaissent dans les formulaires et les filtres.
-
-## Étape 3 — Corriger les écarts de noms (🗄️ Base de données)
-
-- « Centro Educativo Jesús Antonio Velásquez del 20 » → « Centro Educativo José Antonio Velásquez del 20 » (le nom utilisé dans les fichas), via le mécanisme de renommage existant qui propage partout;
-- supprimer les doublons issus de l'import qui font double emploi avec une école officielle, après sauvegarde en corbeille;
-- vérifier que le renommage du 4 septembre est bien reflété dans la liste de référence.
-
-Chaque bloc est sauvegardé au préalable et réversible.
-
-## Étape 4 — Nettoyage optionnel de l'import du 3 août (🗄️ Base de données)
-
-Une fois les étapes 1 à 3 validées, proposer un SQL de suppression des écoles et villes créées le 3 août 2026 à 09:46 **qui ne sont référencées nulle part** (aucune ficha, aucune enquête, aucune restriction régionale). À exécuter seulement sur votre accord, avec sauvegarde complète et undo. Cela ramène le référentiel à sa taille utile et accélère les écrans.
-
-## Étape 5 — Robustesse et prévention (🖥️ Site statique)
-
-- Lire écoles, villes et liaisons par pages successives : avec 22 380 écoles, la lecture est aujourd'hui coupée au plafond de 1000 lignes, ce qui rend l'affichage imprévisible même une fois les liens rétablis.
-- Charger uniquement les écoles des régions concernées plutôt que tout le référentiel national.
-- Afficher un message explicite dans le formulaire quand aucune école n'est disponible (« No hay instituciones configuradas para esta región ») au lieu d'un menu vide et muet.
+- Lire écoles, villes et liaisons par pages successives, pour ne plus être coupé au plafond de 1000 lignes tant que le référentiel reste volumineux.
+- Afficher un message explicite dans le formulaire quand aucune école n'est disponible, au lieu d'un menu vide.
 - Dans « Fichas de Información / Configuración », marquer les villes et écoles non reliées à une région : ce sont exactement celles invisibles dans les formulaires.
 
 ## Détails techniques
 
-- Nouveaux fichiers SQL sous `server/migrations/` : rétablissement des liaisons, restriction régionale, corrections de noms, nettoyage optionnel — chacun avec table de sauvegarde `_undo_*` et bloc undo.
+- `server/e360Routes.js` : neutralisation des routes d'écriture géographique, lectures conservées.
+- Nouveaux fichiers SQL sous `server/migrations/` : `2026-09-04_rollback_import_geo_e360.sql` et `2026-09-04_restaurer_region_municipios.sql`, chacun avec table `_undo_*`, vérifications et bloc undo.
 - Liste de référence : `src/data/instituciones.ts` (25 Quibdó, 16 Oriente).
-- `src/hooks/useGeographicData.ts` : pagination `range` et filtrage par région au chargement.
+- `src/hooks/useGeographicData.ts` : pagination `range`.
 - `src/pages/FichaRLT.tsx`, `src/pages/AdminEditFicha.tsx` : état vide explicite.
 - `src/components/admin/AdminGeographyTab.tsx` : badge « sin región ».
-- Aucune modification du Web Service Express.
 
 ## Déploiement
 
-1. 🗄️ Étape 1 puis vérification immédiate du formulaire en production.
-2. 🗄️ Étapes 2 et 3.
-3. 🖥️ Republier le site statique, puis Ctrl+Shift+R.
-4. 🗄️ Étape 4 (nettoyage) seulement après votre validation.
+1. ⚙️ Redéployer le Web Service Express (coupure de la propagation) — à faire en premier, pour qu'aucune importation ne survienne pendant la restauration.
+2. 🗄️ Exécuter le SQL de retour arrière de l'import du 3 août.
+3. 🗄️ Exécuter le SQL de rétablissement des liens région → ville, puis vérifier le formulaire en production.
+4. 🖥️ Republier le site statique, puis Ctrl+Shift+R.
