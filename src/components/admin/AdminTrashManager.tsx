@@ -36,6 +36,7 @@ const TYPE_LABELS: Record<string, string> = {
   entidad_territorial: "Entidad Territorial",
   municipio: "Municipio",
   institucion: "Institución",
+  rename_institucion: "Renombrar institución",
   admin_user: "Administrador",
   satisfaccion_response: "Respuesta Satisfacción",
 };
