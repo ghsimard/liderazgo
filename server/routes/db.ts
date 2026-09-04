@@ -111,6 +111,7 @@ const ALLOWED_TABLES = new Set([
   "fichas_rlt",
   "encuestas_360",
   "deleted_records",
+  "institucion_renames",
   "custom_roles",
   "role_permissions",
   "user_custom_roles",
