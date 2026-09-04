@@ -137,12 +137,15 @@ export async function logRename(params: {
   oldName: string;
   newName: string;
   counts: InstitucionReferenceCount[];
+  author?: { cedula?: string | null; nombre?: string | null };
 }): Promise<void> {
   const cedula =
+    params.author?.cedula ||
     sessionStorage.getItem("admin_cedula") ||
     sessionStorage.getItem("user_cedula") ||
     null;
   const nombre =
+    params.author?.nombre ||
     sessionStorage.getItem("admin_nombre") ||
     sessionStorage.getItem("user_nombre") ||
     null;
