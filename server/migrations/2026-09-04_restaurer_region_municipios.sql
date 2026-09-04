@@ -7,14 +7,14 @@
 --
 -- Orden de ejecución:
 --   1. Ejecutar todo el script en una transacción.
---   2. Revisar los mensajes de RAISE NOTICE.
+--   2. Revisar los mensajes devueltos por las consultas SELECT.
 --   3. Para deshacer, usar la sección UNDO al final.
 -- ============================================================
 
 BEGIN;
 
-DROP TABLE IF EXISTS _undo_region_municipios_20260904;
-CREATE TABLE _undo_region_municipios_20260904 AS
+DROP TABLE IF EXISTS public._undo_region_municipios_20260904;
+CREATE TABLE public._undo_region_municipios_20260904 AS
 SELECT rm.*, now() AS backup_at
 FROM public.region_municipios rm
 WHERE rm.region_id IN (
@@ -44,7 +44,7 @@ WHERE NOT EXISTS (
   WHERE rm.region_id = r.id AND rm.municipio_id = m.id
 );
 
-RAISE NOTICE 'Enlace Quibdó 2026 -> municipio creado (si no existía).';
+SELECT 'Enlace Quibdó 2026 -> municipio creado (si no existía).' AS msg;
 
 -- ------------------------------------------------------------
 -- 2. Oriente 2026 -> 11 municipios de Antioquia
@@ -71,27 +71,18 @@ WHERE NOT EXISTS (
   WHERE rm.region_id = o.id AND rm.municipio_id = m.id
 );
 
-RAISE NOTICE 'Enlaces Oriente 2026 -> municipios creados (si no existían).';
+SELECT 'Enlaces Oriente 2026 -> municipios creados (si no existían).' AS msg;
 
 -- ------------------------------------------------------------
 -- 3. Verificación
 -- ------------------------------------------------------------
-RAISE NOTICE '--- region_municipios para Quibdó 2026 / Oriente 2026 ---';
-DO $$
-DECLARE
-  rec record;
-BEGIN
-  FOR rec IN
-    SELECT r.nombre AS region, count(rm.municipio_id) AS n_mun
-    FROM public.regiones r
-    LEFT JOIN public.region_municipios rm ON rm.region_id = r.id
-    WHERE r.nombre IN ('Quibdó 2026', 'Oriente 2026')
-    GROUP BY r.id, r.nombre
-    ORDER BY r.nombre
-  LOOP
-    RAISE NOTICE '  %: % municipio(s)', rec.region, rec.n_mun;
-  END LOOP;
-END $$;
+SELECT '--- region_municipios para Quibdó 2026 / Oriente 2026 ---' AS msg;
+SELECT r.nombre AS region, count(rm.municipio_id) AS n_mun
+FROM public.regiones r
+LEFT JOIN public.region_municipios rm ON rm.region_id = r.id
+WHERE r.nombre IN ('Quibdó 2026', 'Oriente 2026')
+GROUP BY r.id, r.nombre
+ORDER BY r.nombre;
 
 COMMIT;
 
@@ -105,6 +96,6 @@ WHERE region_id IN (
   SELECT id FROM public.regiones WHERE nombre IN ('Quibdó 2026', 'Oriente 2026')
 );
 INSERT INTO public.region_municipios (region_id, municipio_id)
-SELECT region_id, municipio_id FROM _undo_region_municipios_20260904;
+SELECT region_id, municipio_id FROM public._undo_region_municipios_20260904;
 COMMIT;
 */
