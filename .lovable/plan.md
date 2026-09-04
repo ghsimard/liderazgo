@@ -49,12 +49,12 @@ ae_rectores_2025.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_
 operator_permissions.institucion
 ```
 
-Tout passe par le proxy `@/utils/dbClient` (aucun accès direct). Avant d'implémenter, il faut vérifier dans le proxy Express (`server/routes/db.ts`) que ces tables acceptent un PATCH administrateur ; les tables `ae_*_2025` sont aujourd'hui en lecture publique, il faudra peut-être les ajouter explicitement à la liste d'écriture administrative. Si nécessaire, ce changement concerne le Web Service.
+Tout passe par le proxy `@/utils/dbClient` (aucun accès direct). Les tables `ae_*_2025` sont déjà dans la liste `ALLOWED_TABLES` du proxy Express, donc un administrateur authentifié peut les mettre à jour sans modifier le backend.
 
 Enregistrement dans `deleted_records` avec `record_type: "rename_institucion"` et `deleted_data: { old_name, new_name, counts }`, et prise en charge du bouton d'annulation dans `AdminTrashManager.tsx`.
 
 ## Actions de déploiement
 
 - Site statique (Frontend) : nouvelle utilité + dialogue de confirmation + annulation dans la Corbeille.
-- Web Service (Backend Express) : uniquement s'il faut étendre la liste des tables avec écriture administrative (`ae_*_2025`).
+- Web Service (Backend Express) : aucune modification requise.
 - Base de données : aucune migration. Les données existantes avec l'ancien nom seront corrigées depuis l'interface lors du renommage.
