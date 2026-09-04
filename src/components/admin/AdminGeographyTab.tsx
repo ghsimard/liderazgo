@@ -3,8 +3,10 @@ import { supabase } from "@/utils/dbClient";
 import {
   countInstitucionReferences,
   renameInstitucionEverywhere,
+  logRename,
   InstitucionReferenceCount,
 } from "@/utils/renameInstitucion";
+import AdminInstitucionRenameHistory from "@/components/admin/AdminInstitucionRenameHistory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -89,6 +91,7 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
     counts: InstitucionReferenceCount[];
     duplicateWarning: boolean;
   } | null>(null);
+  const [historyRefresh, setHistoryRefresh] = useState(0);
 
   // Region dialog
   const [regionName, setRegionName] = useState("");
@@ -247,10 +250,18 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
         },
       });
 
+      // Dedicated rename history (consultable + reversible)
+      await logRename({
+        oldName: renamePreview.oldName,
+        newName: renamePreview.newName,
+        counts: result.counts,
+      });
+
       toast({ title: "Institución renombrada", description: "El cambio se propagó a todas las secciones." });
       setRenameConfirmOpen(false);
       setRenamePreview(null);
       fetchAllKeepScroll();
+      setHistoryRefresh((n) => n + 1);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
@@ -781,6 +792,20 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
             </AccordionItem>
           ))}
         </Accordion>
+      </div>
+
+      {/* Historial de cambios de nombre */}
+      <div>
+        <h3 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+          <School className="w-4 h-4" /> Historial de cambios de nombre
+        </h3>
+        <div className="rounded-lg border bg-background p-4">
+          <AdminInstitucionRenameHistory
+            key={historyRefresh}
+            isViewer={isViewer}
+            onReverted={fetchAllKeepScroll}
+          />
+        </div>
       </div>
 
       {/* ── Dialogs ────────────────────────────────────────────── */}
