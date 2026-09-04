@@ -1,5 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/utils/dbClient";
+import {
+  countInstitucionReferences,
+  renameInstitucionEverywhere,
+  InstitucionReferenceCount,
+} from "@/utils/renameInstitucion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -74,6 +79,16 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
   // Delete dialog
   const [deleteItem, setDeleteItem] = useState<{ type: string; id: string; nombre: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Rename institution confirmation
+  const [renameConfirmOpen, setRenameConfirmOpen] = useState(false);
+  const [renamePreview, setRenamePreview] = useState<{
+    oldName: string;
+    newName: string;
+    id: string;
+    counts: InstitucionReferenceCount[];
+    duplicateWarning: boolean;
+  } | null>(null);
 
   // Region dialog
   const [regionName, setRegionName] = useState("");
@@ -169,11 +184,76 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
 
   const saveEdit = async () => {
     if (!editItem || !editName.trim()) return;
+
+    // Institution rename requires preview + confirmation because the name is denormalized.
+    if (editItem.type === "institucion") {
+      const oldName = editItem.nombre;
+      const trimmedNewName = editName.trim();
+      if (oldName === trimmedNewName) {
+        setEditItem(null);
+        return;
+      }
+      setSaving(true);
+      const counts = await countInstitucionReferences(oldName);
+      const duplicateCheck = await supabase
+        .from("instituciones")
+        .select("id", { head: true })
+        .eq("nombre", trimmedNewName)
+        .neq("id", editItem.id);
+      setRenamePreview({
+        oldName,
+        newName: trimmedNewName,
+        id: editItem.id,
+        counts,
+        duplicateWarning: (duplicateCheck.count ?? 0) > 0,
+      });
+      setEditItem(null);
+      setRenameConfirmOpen(true);
+      setSaving(false);
+      return;
+    }
+
     setSaving(true);
     const table = editItem.type === "entidad" ? "entidades_territoriales" : editItem.type === "municipio" ? "municipios" : "instituciones";
     const { error } = await supabase.from(table).update({ nombre: editName.trim() }).eq("id", editItem.id);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else { toast({ title: "Actualizado" }); setEditItem(null); fetchAllKeepScroll(); }
+    setSaving(false);
+  };
+
+  const confirmRenameInstitucion = async () => {
+    if (!renamePreview) return;
+    setSaving(true);
+    try {
+      const result = await renameInstitucionEverywhere(renamePreview.oldName, renamePreview.newName);
+      if (!result.success) {
+        toast({
+          title: "Error al renombrar",
+          description: result.errors.join("; "),
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
+      // Backup the rename operation to the trash for undo support
+      await supabase.from("deleted_records").insert({
+        record_type: "rename_institucion",
+        record_label: `${renamePreview.oldName} → ${renamePreview.newName}`,
+        deleted_data: {
+          old_name: renamePreview.oldName,
+          new_name: renamePreview.newName,
+          counts: result.counts,
+        },
+      });
+
+      toast({ title: "Institución renombrada", description: "El cambio se propagó a todas las secciones." });
+      setRenameConfirmOpen(false);
+      setRenamePreview(null);
+      fetchAllKeepScroll();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
     setSaving(false);
   };
 
@@ -753,6 +833,47 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditItem(null)}>Cancelar</Button>
             <Button onClick={saveEdit} disabled={saving}>{saving ? "Guardando…" : "Guardar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Institution Confirmation */}
+      <Dialog open={renameConfirmOpen} onOpenChange={(o) => { if (!o) { setRenameConfirmOpen(false); setRenamePreview(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Renombrar institución en todas partes</DialogTitle>
+            <DialogDescription>
+              El nombre de la institución está copiado en varias secciones. Confirme para propagar el cambio.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 space-y-4">
+            <div className="text-sm">
+              <span className="text-muted-foreground">Cambio:</span>{" "}
+              <span className="line-through">{renamePreview?.oldName}</span>{" "}
+              <span>→</span>{" "}
+              <span className="font-semibold">{renamePreview?.newName}</span>
+            </div>
+            {renamePreview?.duplicateWarning && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                <strong>Advertencia:</strong> ya existe una institución llamada "{renamePreview.newName}".
+                Al confirmar, ambas se fusionarán bajo el mismo nombre.
+              </div>
+            )}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Registros que se actualizarán</label>
+              <div className="max-h-60 overflow-y-auto border rounded-md divide-y">
+                {renamePreview?.counts.map((c) => (
+                  <div key={`${c.table}.${c.column}`} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <span className="text-muted-foreground">{c.table}</span>
+                    <span className="font-medium">{c.count === -1 ? "Error" : c.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRenameConfirmOpen(false); setRenamePreview(null); }}>Cancelar</Button>
+            <Button onClick={confirmRenameInstitucion} disabled={saving}>{saving ? "Renombrando…" : "Renombrar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
