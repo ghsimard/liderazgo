@@ -1,65 +1,68 @@
-# Écoles de Quibdó : liste incomplète et erronée en production
+# Écoles de Quibdó : liste vide dans le formulaire, 64 écoles au lieu de 25
 
-## Constat vérifié
+## Diagnostic confirmé (production)
 
-En base de développement, tout est correct : la région « Quibdó 2026 » est reliée à la ville de Quibdó, qui contient bien les 25 écoles, et les 25 apparaissent aussi dans les fichas. Le problème est donc propre aux données de production.
+Les résultats SQL donnent deux causes distinctes, toutes deux vérifiées :
 
-Point important sur la façon dont les deux écrans travaillent :
+**1. Le lien région → ville est vide.** La table de liaison entre les régions et les villes ne contient **aucune ligne** (0), ni pour « Quibdó 2026 » ni pour « Oriente 2026 ». Le formulaire de ficha part de la région, descend vers la ville reliée, puis vers les écoles de cette ville : sans ce lien, la liste déroulante est vide pour **toutes** les régions. L'écran d'administration, lui, affiche la liste complète des écoles sans tenir compte de ce lien : d'où la divergence entre les deux écrans.
 
-- L'écran d'administration « Fichas de Información / Configuración » affiche la liste **complète** des écoles, sans tenir compte des liens avec la région.
-- La liste déroulante du **formulaire de ficha** part de la région choisie, puis descend : région → ville reliée à la région → écoles de cette ville.
+**2. Une importation massive a pollué le référentiel.** La production contient **22 380 écoles et 1 170 villes**. Les écoles d'origine datent du 21 février 2026; toutes les autres ont été créées le **3 août 2026 à 09:46** (liste nationale : Bogotá, Medellín, Cúcuta, académies privées, etc.). Pour la ville de Quibdó, cela donne 64 écoles au lieu des 25 attendues, avec des doublons proches :
 
-C'est pourquoi les deux listes peuvent diverger : si en production le lien entre la région « Quibdó 2026 » et la ville de Quibdó est absent (ou si la région porte un nom différent), l'administration montre des écoles alors que le formulaire n'en montre aucune.
+- « Centro Educativo José Melanio Tunay del 21 » (origine) vs « Centro Educativo Indigena Jose Melanio Tunay Del 21 » (import)
+- « Centro Educativo Munguido » (import) vs « Centro Educativo Rural Mixto Munguido » (origine)
+- « Centro Educativo Jesús Antonio Velásquez del 20 » (origine) alors que les fichas utilisent « Centro Educativo **José** Antonio Velásquez del 20 » — cette école des fichas n'existe pas au référentiel.
 
-Le fait que la liste soit à la fois **incomplète et erronée** oriente vers une modification récente des données : renommages d'écoles, suppressions, ou écoles créées sous la mauvaise ville. Ces hypothèses ne sont pas confirmées : la base de production n'est pas interrogeable d'ici. Le plan commence donc par un diagnostic, avant toute correction.
+À noter aussi : une école a été renommée le 4 septembre (« Centro Educativo Jorge Valencia Lozano » → « Institución Educativa MIA Jorge Valencia Lozano ») et six écoles ont été supprimées le même jour; ces opérations sont tracées et réversibles.
 
-## Étape 1 — Diagnostic (🗄️ Base de données, lecture seule)
+## Étape 1 — Rétablir les liens région → ville (🗄️ Base de données)
 
-Fournir un fichier SQL de lecture seule à exécuter en production, qui répond à :
+SQL avec sauvegarde et undo, qui recrée les liaisons manquantes :
 
-1. Le nom exact de la région de Quibdó et son identifiant.
-2. Les villes reliées à cette région (table de liaison région–ville).
-3. La liste des écoles rattachées à la ville de Quibdó, à comparer avec la liste officielle des 25.
-4. Les écoles dont le nom ne correspond à aucune des 25 (noms erronés, doublons, variantes).
-5. L'historique des renommages d'écoles (table d'historique posée le 4 septembre) et le contenu de la corbeille, pour savoir ce qui a été modifié ou supprimé récemment.
-6. Le nombre total d'écoles et de villes (pour écarter le plafond de lecture de 1000 lignes).
+- « Quibdó 2026 » → ville de Quibdó;
+- « Oriente 2026 » → les 11 villes du Oriente (El Retiro, La Ceja, El Carmen de Viboral, Marinilla, El Santuario, San Rafael, San Carlos, San Luis, El Peñol, Granada, San Vicente), en ciblant les villes rattachées à Antioquia.
 
-Je compare ensuite les résultats à la liste de référence des 25 écoles de Quibdó et je remets un rapport : ce qui manque, ce qui est en trop, ce qui a été renommé.
+Effet immédiat : les listes déroulantes des formulaires redeviennent fonctionnelles.
 
-## Étape 2 — Correction des données (🗄️ Base de données)
+## Étape 2 — Restreindre chaque région à ses écoles officielles (🗄️ Base de données)
 
-Selon le diagnostic, fournir un SQL de correction avec sauvegarde préalable et undo :
+Comme les villes contiennent désormais des centaines d'écoles importées, relier la ville seule ne suffit pas : la liste afficherait 64 écoles pour Quibdó. On utilise la restriction région → écoles (aujourd'hui vide) pour ne conserver que les écoles du programme :
 
-- rétablir le lien région « Quibdó 2026 » → ville « Quibdó » s'il manque;
-- corriger les noms erronés et rattacher les écoles à la bonne ville;
-- réinsérer les écoles manquantes de la liste de référence;
-- fusionner les doublons éventuels en propageant le bon nom partout (le mécanisme de renommage existant s'en charge).
+- insérer les 25 écoles de référence de Quibdó et les 16 du Oriente dans cette table de restriction, par correspondance de nom exacte;
+- lister les noms de référence qui ne trouvent pas de correspondance, pour traitement manuel.
 
-Aucune donnée n'est écrasée sans sauvegarde; chaque bloc est réversible.
+Le code existant respecte déjà cette restriction : dès qu'elle est renseignée, seules ces écoles apparaissent dans les formulaires et les filtres.
 
-## Étape 3 — Robustesse de l'affichage (🖥️ Site statique)
+## Étape 3 — Corriger les écarts de noms (🗄️ Base de données)
 
-Dans le chargement des données géographiques :
+- « Centro Educativo Jesús Antonio Velásquez del 20 » → « Centro Educativo José Antonio Velásquez del 20 » (le nom utilisé dans les fichas), via le mécanisme de renommage existant qui propage partout;
+- supprimer les doublons issus de l'import qui font double emploi avec une école officielle, après sauvegarde en corbeille;
+- vérifier que le renommage du 4 septembre est bien reflété dans la liste de référence.
 
-- lire écoles, villes et liaisons par pages successives, pour ne jamais être coupé au plafond de 1000 lignes;
-- si une région n'a aucune ville reliée, retomber sur les écoles de son entité territoriale au lieu d'une liste vide;
-- afficher un message clair dans le formulaire quand la liste est vide (« No hay instituciones configuradas para esta región ») au lieu d'un menu muet.
+Chaque bloc est sauvegardé au préalable et réversible.
 
-## Étape 4 — Cohérence des deux écrans (🖥️ Site statique)
+## Étape 4 — Nettoyage optionnel de l'import du 3 août (🗄️ Base de données)
 
-Dans « Fichas de Información / Configuración », signaler visuellement les villes et écoles qui ne sont reliées à aucune région : ce sont exactement celles qui n'apparaîtront jamais dans le formulaire. La divergence devient visible avant qu'un utilisateur la découvre.
+Une fois les étapes 1 à 3 validées, proposer un SQL de suppression des écoles et villes créées le 3 août 2026 à 09:46 **qui ne sont référencées nulle part** (aucune ficha, aucune enquête, aucune restriction régionale). À exécuter seulement sur votre accord, avec sauvegarde complète et undo. Cela ramène le référentiel à sa taille utile et accélère les écrans.
+
+## Étape 5 — Robustesse et prévention (🖥️ Site statique)
+
+- Lire écoles, villes et liaisons par pages successives : avec 22 380 écoles, la lecture est aujourd'hui coupée au plafond de 1000 lignes, ce qui rend l'affichage imprévisible même une fois les liens rétablis.
+- Charger uniquement les écoles des régions concernées plutôt que tout le référentiel national.
+- Afficher un message explicite dans le formulaire quand aucune école n'est disponible (« No hay instituciones configuradas para esta región ») au lieu d'un menu vide et muet.
+- Dans « Fichas de Información / Configuración », marquer les villes et écoles non reliées à une région : ce sont exactement celles invisibles dans les formulaires.
 
 ## Détails techniques
 
-- Nouveau `server/migrations/2026-09-04_diagnostic_quibdo.sql` (lecture seule), puis un fichier de correction avec sauvegarde et undo.
-- `src/hooks/useGeographicData.ts` : pagination explicite (`range`) sur `municipios`, `instituciones`, `region_municipios`, `region_instituciones`; repli sur `entidad_territorial_id` quand `municipio_ids` est vide.
-- `src/pages/FichaRLT.tsx` et `src/pages/AdminEditFicha.tsx` : état vide explicite dans le sélecteur d'institution.
-- `src/components/admin/AdminGeographyTab.tsx` : badge « sin región » sur les villes/écoles non reliées.
-- Liste de référence des 25 écoles : `src/data/instituciones.ts`.
-- Aucune modification du Web Service Express (les tables concernées sont déjà autorisées).
+- Nouveaux fichiers SQL sous `server/migrations/` : rétablissement des liaisons, restriction régionale, corrections de noms, nettoyage optionnel — chacun avec table de sauvegarde `_undo_*` et bloc undo.
+- Liste de référence : `src/data/instituciones.ts` (25 Quibdó, 16 Oriente).
+- `src/hooks/useGeographicData.ts` : pagination `range` et filtrage par région au chargement.
+- `src/pages/FichaRLT.tsx`, `src/pages/AdminEditFicha.tsx` : état vide explicite.
+- `src/components/admin/AdminGeographyTab.tsx` : badge « sin región ».
+- Aucune modification du Web Service Express.
 
 ## Déploiement
 
-1. 🗄️ Exécuter le SQL de diagnostic en production et me transmettre les résultats.
-2. 🗄️ Exécuter le SQL de correction des données.
-3. 🖥️ Republier le site statique puis Ctrl+Shift+R.
+1. 🗄️ Étape 1 puis vérification immédiate du formulaire en production.
+2. 🗄️ Étapes 2 et 3.
+3. 🖥️ Republier le site statique, puis Ctrl+Shift+R.
+4. 🗄️ Étape 4 (nettoyage) seulement après votre validation.
