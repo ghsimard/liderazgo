@@ -60,8 +60,8 @@ SET institucion_educativa = 'Centro Educativo José Antonio Velásquez del 20'
 WHERE institucion_educativa = 'Centro Educativo Jesús Antonio Velásquez del 20';
 
 UPDATE public.ae_rectores_2025
-SET nombre_de_la_institucion_educativa_en_la_que_usted_desempena_ = 'Centro Educativo José Antonio Velásquez del 20'
-WHERE nombre_de_la_institucion_educativa_en_la_que_usted_desempena_ = 'Centro Educativo Jesús Antonio Velásquez del 20';
+SET nombre_de_la_institucion_educativa_en_la_actualmente_desempena_ = 'Centro Educativo José Antonio Velásquez del 20'
+WHERE nombre_de_la_institucion_educativa_en_la_actualmente_desempena_ = 'Centro Educativo Jesús Antonio Velásquez del 20';
 
 UPDATE public.operator_permissions
 SET institucion = 'Centro Educativo José Antonio Velásquez del 20'
