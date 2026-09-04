@@ -837,6 +837,47 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
         </DialogContent>
       </Dialog>
 
+      {/* Rename Institution Confirmation */}
+      <Dialog open={renameConfirmOpen} onOpenChange={(o) => { if (!o) { setRenameConfirmOpen(false); setRenamePreview(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Renombrar institución en todas partes</DialogTitle>
+            <DialogDescription>
+              El nombre de la institución está copiado en varias secciones. Confirme para propagar el cambio.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 space-y-4">
+            <div className="text-sm">
+              <span className="text-muted-foreground">Cambio:</span>{" "}
+              <span className="line-through">{renamePreview?.oldName}</span>{" "}
+              <span>→</span>{" "}
+              <span className="font-semibold">{renamePreview?.newName}</span>
+            </div>
+            {renamePreview?.duplicateWarning && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                <strong>Advertencia:</strong> ya existe una institución llamada "{renamePreview.newName}".
+                Al confirmar, ambas se fusionarán bajo el mismo nombre.
+              </div>
+            )}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Registros que se actualizarán</label>
+              <div className="max-h-60 overflow-y-auto border rounded-md divide-y">
+                {renamePreview?.counts.map((c) => (
+                  <div key={`${c.table}.${c.column}`} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <span className="text-muted-foreground">{c.table}</span>
+                    <span className="font-medium">{c.count === -1 ? "Error" : c.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRenameConfirmOpen(false); setRenamePreview(null); }}>Cancelar</Button>
+            <Button onClick={confirmRenameInstitucion} disabled={saving}>{saving ? "Renombrando…" : "Renombrar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Region Dialog */}
       <Dialog open={addRegionOpen} onOpenChange={(o) => { if (!o) setAddRegionOpen(false); }}>
         <DialogContent className="max-w-lg">
