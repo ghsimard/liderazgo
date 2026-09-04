@@ -1,38 +1,38 @@
-# Renombrar una institución y propagarlo a toda la aplicación
+# Renommer une institution et propager le changement partout
 
-## Problema constatado
+## Problème constaté
 
-En Fichas de Información > Configuración, cambiar el nombre de una escuela solo actualiza la lista de instituciones (una sola línea de la base). Todo el resto de la aplicación guarda el nombre de la escuela como texto copiado, así que las fichas, encuestas, rúbricas, invitaciones y permisos siguen mostrando el nombre antiguo. Resultado: la escuela aparece duplicada (nombre viejo + nombre nuevo) en filtros, informes y monitoreos.
+Dans Fichas de Información > Configuración, changer le nom d'une école ne modifie que la liste `instituciones` (une seule ligne). Tout le reste de l'application stocke le nom de l'école en texte copié, donc les fiches, les enquêtes, les rubriques, les invitations et les permissions continuent d'afficher l'ancien nom. Résultat : l'école apparaît en double (ancien + nouveau nom) dans les filtres, les rapports et le suivi.
 
-## Recomendación
+## Recommandation
 
-Convertir el cambio de nombre en una operación de "renombrar y propagar", con confirmación previa.
+Transformer le changement de nom en une opération "renommer et propager", avec confirmation préalable.
 
-### 1. Diálogo de confirmación con vista previa
+### 1. Dialogue de confirmation avec aperçu
 
-Al guardar el nuevo nombre, antes de aplicar nada, mostrar:
+Lors de l'enregistrement du nouveau nom, avant toute application, afficher :
 
-- Nombre antiguo -> nombre nuevo
-- Conteo de registros afectados por área: fichas, encuestas 360, invitaciones, rúbricas (asignaciones), ambiente escolar, cohortes, formularios 2025, permisos de operadores
-- Aviso si el nombre nuevo ya existe en la lista (fusión de dos escuelas): pedir confirmación explícita, porque los datos quedarán unidos
-- Botones: Cancelar / Renombrar en todo el sistema
+- Ancien nom -> nouveau nom
+- Nombre d'enregistrements concernés par domaine : fiches, enquêtes 360, invitations, rubriques (assignations), Ambiente Escolar, cohortes, formulaires 2025, permissions des opérateurs
+- Avertissement si le nouveau nom existe déjà dans la liste (fusion de deux écoles) : demander une confirmation explicite, car les données seront regroupées
+- Boutons : Annuler / Renommer partout
 
-### 2. Propagación
+### 2. Propagation
 
-Tras confirmar, actualizar el nombre en todas las tablas que lo guardan como texto, y guardar una copia de seguridad del cambio en la Papelera (registro tipo `rename_institucion`) para poder revertirlo.
+Après confirmation, mettre à jour le nom dans toutes les tables qui le stockent en texte, et sauvegarder une copie de sécurité du changement dans la Corbeille (`deleted_records`, type `rename_institucion`) pour pouvoir revenir en arrière.
 
-### 3. Reversión
+### 3. Annulation
 
-En la Papelera, el registro de renombrado permite volver al nombre anterior aplicando la misma operación a la inversa.
+Dans la Corbeille, l'enregistrement de renommage permet de revenir au nom précédent en appliquant la même opération en sens inverse.
 
-## Detalles técnicos
+## Détails techniques
 
-Archivo principal: `src/components/admin/AdminGeographyTab.tsx` (línea ~174, `handleEditSave`), que hoy solo hace `update({ nombre })` sobre `instituciones`.
+Fichier principal : `src/components/admin/AdminGeographyTab.tsx` (ligne ~174, `handleEditSave`), qui ne fait aujourd'hui qu'un `update({ nombre })` sur `instituciones`.
 
-Nueva utilidad `src/utils/renameInstitucion.ts`:
+Nouvelle utilité `src/utils/renameInstitucion.ts` :
 
-- `countInstitucionReferences(oldName)` — conteos por tabla para la vista previa
-- `renameInstitucionEverywhere(oldName, newName)` — actualiza secuencialmente:
+- `countInstitucionReferences(oldName)` — comptages par table pour l'aperçu
+- `renameInstitucionEverywhere(oldName, newName)` — met à jour successivement :
 
 ```text
 instituciones.nombre
@@ -49,12 +49,12 @@ ae_rectores_2025.nombre_de_la_institucion_educativa_en_la_actualmente_desempena_
 operator_permissions.institucion
 ```
 
-Todas pasan por el proxy `@/utils/dbClient` (nada de acceso directo). Antes de implementar hay que confirmar en el proxy Express (`server/routes/db.ts`) que estas tablas aceptan PATCH de administrador; las tablas `ae_*_2025` están hoy en la lista de lectura pública, así que puede hacer falta añadirlas explícitamente a la lista de escritura administrativa. Si es necesario, ese cambio es del Web Service.
+Tout passe par le proxy `@/utils/dbClient` (aucun accès direct). Avant d'implémenter, il faut vérifier dans le proxy Express (`server/routes/db.ts`) que ces tables acceptent un PATCH administrateur ; les tables `ae_*_2025` sont aujourd'hui en lecture publique, il faudra peut-être les ajouter explicitement à la liste d'écriture administrative. Si nécessaire, ce changement concerne le Web Service.
 
-Registro en `deleted_records` con `record_type: "rename_institucion"` y `deleted_data: { old_name, new_name, counts }`, y soporte del botón de reversión en `AdminTrashManager.tsx`.
+Enregistrement dans `deleted_records` avec `record_type: "rename_institucion"` et `deleted_data: { old_name, new_name, counts }`, et prise en charge du bouton d'annulation dans `AdminTrashManager.tsx`.
 
-## Acciones de despliegue
+## Actions de déploiement
 
-- Site statique (Frontend): nueva utilidad + diálogo de confirmación + reversión en Papelera.
-- Web Service (Backend Express): solo si hay que ampliar la lista de tablas con escritura administrativa (`ae_*_2025`).
-- Base de datos: ninguna migración. Los datos existentes con nombre antiguo se corrigen desde la interfaz al renombrar.
+- Site statique (Frontend) : nouvelle utilité + dialogue de confirmation + annulation dans la Corbeille.
+- Web Service (Backend Express) : uniquement s'il faut étendre la liste des tables avec écriture administrative (`ae_*_2025`).
+- Base de données : aucune migration. Les données existantes avec l'ancien nom seront corrigées depuis l'interface lors du renommage.
