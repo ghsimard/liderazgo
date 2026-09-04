@@ -249,10 +249,18 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
         },
       });
 
+      // Dedicated rename history (consultable + reversible)
+      await logRename({
+        oldName: renamePreview.oldName,
+        newName: renamePreview.newName,
+        counts: result.counts,
+      });
+
       toast({ title: "Institución renombrada", description: "El cambio se propagó a todas las secciones." });
       setRenameConfirmOpen(false);
       setRenamePreview(null);
       fetchAllKeepScroll();
+      setHistoryRefresh((n) => n + 1);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
