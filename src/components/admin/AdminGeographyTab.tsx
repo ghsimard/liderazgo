@@ -785,6 +785,20 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
         </Accordion>
       </div>
 
+      {/* Historial de cambios de nombre */}
+      <div>
+        <h3 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+          <School className="w-4 h-4" /> Historial de cambios de nombre
+        </h3>
+        <div className="rounded-lg border bg-background p-4">
+          <AdminInstitucionRenameHistory
+            key={historyRefresh}
+            isViewer={isViewer}
+            onReverted={fetchAllKeepScroll}
+          />
+        </div>
+      </div>
+
       {/* ── Dialogs ────────────────────────────────────────────── */}
 
       {/* Add Entidad */}
