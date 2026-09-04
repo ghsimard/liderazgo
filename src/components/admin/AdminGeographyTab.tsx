@@ -91,6 +91,7 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
     counts: InstitucionReferenceCount[];
     duplicateWarning: boolean;
   } | null>(null);
+  const [historyRefresh, setHistoryRefresh] = useState(0);
 
   // Region dialog
   const [regionName, setRegionName] = useState("");
