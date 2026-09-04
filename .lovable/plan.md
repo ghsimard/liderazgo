@@ -1,60 +1,49 @@
-# Vérification Oriente 2026 — script SQL corrigé
+# Oriente 2026 — écart d'une école entre production et développement
 
-## Cause du résultat « 0 »
-La cohorte **Oriente 2026** n'a pas « Oriente » comme entité territoriale : son entité territoriale est **Antioquia**, et « Oriente » n'apparaît que dans le **nom** de la cohorte. Le filtre `entidad_territorial ILIKE '%oriente%'` ne trouve donc rien.
+## Ce que montrent les résultats
+Le filtre corrigé (`c.nombre ILIKE '%oriente%'`) fonctionne : la cohorte **Oriente 2026** porte l'entité territoriale **Antioquia**, d'où le « 0 » du premier essai.
 
-Vérifié en développement :
-- Cohortes 2026 : `Oriente 2026` (entité : Antioquia) et `Quibdó 2026` (entité : Quibdó).
-- Écoles liées : Oriente 2026 → **16**, Quibdó 2026 → **25**.
+Résultats production :
+- Quibdó 2026 : **25** écoles — conforme.
+- Oriente 2026 : **15** écoles — développement en compte **16**.
 
-Le bon filtre est sur `c.nombre`.
+En comparant les deux listes, l'école absente en production est :
+**Institución Educativa Rural Chaparral**
 
-## Script SQL à exécuter en production (lecture seule)
+Les 15 autres sont identiques dans les deux environnements.
+
+## Vérification à faire avant toute correction
+Confirmer en production, en lecture seule, si cette école existe ailleurs (référentiel, fiches, réponses) mais n'est simplement pas rattachée à la cohorte :
 
 ```sql
--- ============================================================
--- VÉRIFICATION LISTE ÉCOLES ORIENTE 2026
--- ============================================================
+-- 1. Existe-t-elle dans le référentiel d'institutions ?
+SELECT id, nombre, created_at FROM instituciones
+WHERE nombre ILIKE '%chaparral%';
 
--- 0. Voir toutes les cohortes (pour confirmer les noms exacts)
-SELECT id, nombre, entidad_territorial, year, is_baseline
-FROM ae_cohortes
-ORDER BY year, nombre;
-
--- 1. Nombre d'écoles par cohorte 2026
-SELECT c.nombre AS cohorte, COUNT(*) AS total_escuelas
+-- 2. Est-elle rattachée à une autre cohorte ?
+SELECT aei.institucion_educativa, c.nombre AS cohorte, c.year
 FROM ae_cohorte_instituciones aei
 JOIN ae_cohortes c ON aei.cohorte_id = c.id
-WHERE c.year = 2026
-GROUP BY c.nombre
-ORDER BY c.nombre;
+WHERE aei.institucion_educativa ILIKE '%chaparral%';
 
--- 2. Liste détaillée Oriente 2026
-SELECT
-  aei.institucion_educativa,
-  c.nombre AS cohorte,
-  c.entidad_territorial
-FROM ae_cohorte_instituciones aei
-JOIN ae_cohortes c ON aei.cohorte_id = c.id
-WHERE c.year = 2026
-  AND c.nombre ILIKE '%oriente%'
-ORDER BY aei.institucion_educativa;
-
--- 3. Liste détaillée Quibdó 2026 (comparaison)
-SELECT
-  aei.institucion_educativa,
-  c.nombre AS cohorte,
-  c.entidad_territorial
-FROM ae_cohorte_instituciones aei
-JOIN ae_cohortes c ON aei.cohorte_id = c.id
-WHERE c.year = 2026
-  AND c.nombre ILIKE '%quibdó%'
-ORDER BY aei.institucion_educativa;
+-- 3. A-t-elle des fiches ou des réponses ?
+SELECT 'fichas' AS source, count(*) FROM fichas_rlt WHERE nombre_ie ILIKE '%chaparral%'
+UNION ALL
+SELECT 'ambiente', count(*) FROM encuestas_ambiente_escolar WHERE institucion_educativa ILIKE '%chaparral%'
+UNION ALL
+SELECT 'renombrages', count(*) FROM institucion_renames WHERE old_name ILIKE '%chaparral%' OR new_name ILIKE '%chaparral%'
+UNION ALL
+SELECT 'corbeille', count(*) FROM deleted_records WHERE record_label ILIKE '%chaparral%';
 ```
 
-## Résultat attendu
-- Oriente 2026 : **16** écoles rattachées à la cohorte (la 17e école de la région, ajoutée en février, n'est pas nécessairement rattachée à la cohorte Ambiente Escolar).
-- Quibdó 2026 : **25** écoles.
+## Suite selon le résultat
+- **Si l'école existe mais n'est pas rattachée à la cohorte** : un simple ajout dans `ae_cohorte_instituciones` (avec sauvegarde et undo) rétablit les 16.
+- **Si l'école a été renommée** : c'est le nouveau nom qu'il faut rattacher, pas l'ancien.
+- **Si elle a été supprimée** : restauration depuis la corbeille, puis rattachement.
+
+Le script de correction sera fourni une fois le diagnostic connu, avec sauvegarde et instruction d'annulation.
 
 ## Actions techniques
-Aucune. Script de diagnostic en lecture seule : aucun changement de code, de backend ni de base de données.
+- 🗄️ Base de données : requêtes de diagnostic en lecture seule ci-dessus (à exécuter en production).
+- 🖥️ Site statique : aucune action.
+- ⚙️ Web Service : aucune action.
