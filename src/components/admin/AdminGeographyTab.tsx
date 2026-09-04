@@ -3,8 +3,10 @@ import { supabase } from "@/utils/dbClient";
 import {
   countInstitucionReferences,
   renameInstitucionEverywhere,
+  logRename,
   InstitucionReferenceCount,
 } from "@/utils/renameInstitucion";
+import AdminInstitucionRenameHistory from "@/components/admin/AdminInstitucionRenameHistory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
