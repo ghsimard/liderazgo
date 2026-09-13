@@ -263,6 +263,66 @@ export type Database = {
         }
         Relationships: []
       }
+      _undo_meta_delete_20260913_entidad: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          nombre: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          nombre?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          nombre?: string | null
+        }
+        Relationships: []
+      }
+      _undo_meta_delete_20260913_instituciones: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          municipio_id: string | null
+          nombre: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          municipio_id?: string | null
+          nombre?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          municipio_id?: string | null
+          nombre?: string | null
+        }
+        Relationships: []
+      }
+      _undo_meta_delete_20260913_municipios: {
+        Row: {
+          created_at: string | null
+          entidad_territorial_id: string | null
+          id: string | null
+          nombre: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entidad_territorial_id?: string | null
+          id?: string | null
+          nombre?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entidad_territorial_id?: string | null
+          id?: string | null
+          nombre?: string | null
+        }
+        Relationships: []
+      }
       admin_cedulas: {
         Row: {
           cedula: string
