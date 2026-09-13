@@ -1,46 +1,41 @@
-# Pourquoi l'import échouait en production (et pas en dev)
+# Reporter les correctifs Géographie sur E360 Insights
 
-## Cause confirmée
+## Ce que j'ai vérifié dans E360 Insights
 
-La base contient aujourd'hui **1 051 municipios**. L'import lisait la liste existante en **une seule requête plafonnée à 1 000 lignes** : 51 municipios restaient donc invisibles pour lui.
+J'ai lu le code réel du projet E360 Insights (onglet « Geografía » des fichas et son backend Express). Résultat :
 
-Enchaînement :
+- **Le problème des 1000 lignes n'existe pas là-bas.** E360 lit la liste des entités, municipes et écoles directement en base via son propre serveur, sans plafond. Rien à corriger.
+- **La casse et les accents sont déjà gérés.** Le serveur compare les noms sans tenir compte des majuscules, des accents ni des espaces multiples avant de créer une ligne. Un « Medellín » et un « MEDELLIN » ne feront pas deux entrées.
 
-1. L'import croit que ces 51 municipios n'existent pas.
-2. Il essaie de les recréer.
-3. La base refuse (un municipio doit être unique par entité) → **tout le lot de 50 lignes est rejeté d'un coup**.
-4. Sans ces municipios, les écoles rattachées sont ignorées.
-5. Aucune erreur n'était affichée : le code ne regardait que le résultat, jamais le message d'erreur. D'où l'impression que « rien ne se passe ».
+Donc les deux correctifs demandés sont, pour l'essentiel, déjà en place sur E360.
 
-En dev, avant, la table faisait moins de 1 000 lignes : le problème ne pouvait pas apparaître. Il s'est déclenché dès que la barre des 1 000 a été franchie.
+## Ce qui manque réellement (les vraies différences)
 
-S'ajoutait un second effet : la comparaison était sensible à la casse et aux accents, ce qui a créé le doublon « META » / « Meta ».
+Trois écarts subsistent par rapport à ce qu'on vient de faire ici :
 
-## Ce qui est déjà corrigé (pas encore en production)
+1. **Lecture du fichier CSV trop fragile.** E360 découpe les lignes sur la virgule ou le point-virgule uniquement : pas de tabulation, pas de gestion du caractère invisible que Excel place en début de fichier, et un nom d'école contenant une virgule entre guillemets est coupé en deux.
+2. **Le message de fin d'import ne dit pas ce qui a été réutilisé.** Il annonce seulement les créations. Si tout existe déjà, on lit « 0, 0, 0 » et on croit que l'import a échoué.
+3. **Les lignes en erreur passent inaperçues.** Si une ligne du fichier pose problème, l'import s'arrête sur un message générique sans indiquer laquelle.
 
-- Lecture complète de toutes les listes, par pages de 1 000, sans plafond.
-- Comparaison insensible à la casse, aux accents et aux espaces multiples.
-- Message de fin d'import indiquant ce qui a été réutilisé et ce qui a été créé.
+## Ce que je propose de faire
 
-## Ce que je propose d'ajouter avant de déployer
+### Étape 1 — Lecture du CSV robuste (côté écran E360)
+Accepter virgule, point-virgule et tabulation, retirer le caractère invisible d'Excel en tête de fichier, et respecter les guillemets pour qu'un nom contenant une virgule reste entier.
 
-### 1. Afficher les erreurs au lieu de les avaler
-À chaque étape de l'import (entités, municipios, écoles), lire le message d'erreur renvoyé et l'afficher. Si un lot échoue, l'import s'arrête avec une explication claire au lieu de finir en silence.
+### Étape 2 — Message de fin d'import complet
+Afficher, pour chaque niveau (entités, municipes, écoles) : combien ont été créées et combien existaient déjà et ont été réutilisées.
 
-### 2. Ne plus perdre 50 lignes à cause d'une seule
-Si un lot de 50 est refusé, réessayer ligne par ligne : les lignes valides passent, seules les vraies erreurs sont listées à la fin.
+### Étape 3 — Erreurs visibles
+Si une ligne échoue, continuer les suivantes et indiquer à la fin combien de lignes ont échoué, avec le numéro et la raison des premières d'entre elles.
 
-### 3. Résumé de fin d'import détaillé
-Créés / réutilisés / ignorés pour chaque niveau, plus la liste des lignes en échec.
+## Actions par service (E360 Insights)
 
-## Actions par service
+- 🖥️ Site statique (Frontend) : lecture du CSV et message de fin d'import — publication du projet E360, puis Ctrl+Shift+R.
+- ⚙️ Web Service (Backend Express) : comptage des réutilisations et remontée des lignes en erreur dans la réponse d'import — redéploiement du service E360.
+- 🗄️ Base de données : aucune action, aucune donnée modifiée.
 
-- 🖥️ **Site statique (Frontend)** : toutes les modifications ci-dessus. Publication via Lovable, puis Ctrl+Shift+R.
-- ⚙️ **Web Service (Backend Express)** : aucune action.
-- 🗄️ **Base de données (SQL manuel)** : aucune action nouvelle ; seul le script déjà prêt `2026-09-13_supprimer_entidad_meta_doublon.sql` reste à passer en production si ce n'est pas déjà fait.
+Ordre de mise en production : backend d'abord, puis publication du frontend, puis rafraîchissement forcé.
 
-## Détails techniques
+## Point important avant de démarrer
 
-- `src/components/admin/AdminGeographyTab.tsx`, `handleImport` : récupérer `error` sur chaque `insert`, arrêter et remonter le message ; fallback d'insertion unitaire en cas d'échec de lot ; compteurs d'échecs dans le toast final.
-- `fetchTable` pagine déjà par 1 000 ; le proxy Express plafonne à 5 000 lignes par requête, la pagination reste donc indispensable.
-- Contraintes en jeu : `UNIQUE(nombre, entidad_territorial_id)` sur `municipios`, `UNIQUE(nombre, municipio_id)` sur `instituciones`.
+E360 Insights est un projet séparé. Depuis ici je peux **lire** son code, mais pas le modifier. Pour appliquer ces changements il faut ouvrir le projet [E360 Insights](/projects/756c507c-a422-4eb8-a40f-4f7daff95338) et m'y redonner ce plan — je le retrouverai et l'exécuterai là-bas.
