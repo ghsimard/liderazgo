@@ -138,15 +138,16 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
       fetchTable<RegionInstitucion>("region_instituciones"),
     ]);
 
-    setEntidades(e.data ?? []);
-    setMunicipios(m.data ?? []);
-    setInstituciones(i.data ?? []);
-    setRegiones(r.data ?? []);
-    setRegionEntidades((re.data ?? []) as RegionEntidad[]);
-    setRegionMunicipios(rm.data ?? []);
-    setRegionInstituciones(ri.data ?? []);
+    setEntidades(e);
+    setMunicipios(m);
+    setInstituciones(i);
+    setRegiones(r);
+    setRegionEntidades(re);
+    setRegionMunicipios(rm);
+    setRegionInstituciones(ri);
     setLoading(false);
-  }, []);
+  }, [fetchTable]);
+
 
   /** Refresh data while preserving scroll position */
   const fetchAllKeepScroll = useCallback(async () => {
