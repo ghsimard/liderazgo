@@ -1,39 +1,42 @@
-# Doublon d'entité territoriale « Meta » / « META »
+# Supprimer le doublon « META » et fiabiliser l'import
 
 ## Diagnostic (vérifié en base)
 
-- L'import CSV géographique a créé ce soir une **nouvelle entité « META »** (en majuscules) alors que **« Meta » existait déjà** depuis février. La correspondance lors de l'import est sensible à la casse : « META » ≠ « Meta ».
-- Ancienne « Meta » : 27 municipalités, **0 institution**, aucun lien de région.
-- Nouvelle « META » : 26 municipalités, **40 institutions** (celles de l'import).
-- **17 municipalités existent en double** (même nom dans les deux entités : Cabuyaro, Granada, La Macarena, etc.). 9 sont nouvelles et n'existent que dans « META ».
+- L'import a créé une **nouvelle entité « META »** (majuscules) alors que **« Meta » existait déjà** depuis février. La correspondance se fait sur le nom exact : « META » ≠ « Meta ».
+- Ancienne « Meta » : 27 municipalités, **0 école**, aucun lien de région.
+- Nouvelle « META » : 26 municipalités, **40 écoles** (celles de l'import).
+- **17 municipalités portent le même nom dans les deux** (Cabuyaro, Granada, La Macarena…). 9 n'existent que dans « META ».
+
+Important : supprimer « META » telle quelle effacerait les 40 écoles. On la supprime donc **après** avoir transféré son contenu dans « Meta ».
 
 ## Ce que je propose
 
-### Étape 1 — Fusionner dans l'ancienne « Meta » (SQL manuel en production)
+### Étape 1 — Transférer puis supprimer « META » (SQL manuel en production)
 
-Script avec sauvegarde (table `_undo_meta_merge_20260913`), transaction BEGIN/COMMIT et bloc de vérification :
+Script unique, avec sauvegarde (`_undo_meta_merge_20260913`), transaction BEGIN/COMMIT et bloc de vérification :
 
-1. **Municipalités en double (17)** : réattribuer leurs institutions à la municipalité homonyme de l'ancienne « Meta », puis supprimer les doublons de « META ».
-2. **Municipalités nouvelles (9)** : les rattacher à l'ancienne « Meta » (simple changement de rattachement, aucune donnée perdue).
-3. **Supprimer l'entité « META »** devenue vide.
-4. **Normaliser le nom** : « Meta » reste tel quel (casse d'origine).
+1. **17 municipalités en double** : rattacher leurs écoles à la municipalité homonyme de « Meta », puis supprimer ces doublons.
+2. **9 municipalités uniques** : les rattacher à « Meta ».
+3. **Supprimer l'entité « META »**, désormais vide.
 
-Résultat : une seule entité « Meta », 36 municipalités, 40 institutions.
+Résultat attendu : une seule entité « Meta », 36 municipalités, 40 écoles. Aucune donnée perdue.
 
-### Étape 2 — Sécuriser l'import CSV (frontend)
+### Étape 2 — Fiabiliser l'import (frontend)
 
-Vous avez déjà corrigé la casse dans le fichier CSV lui-même. Je propose en plus de rendre la correspondance entité/municipalité **insensible à la casse et aux espaces** dans le code d'import géographique : même si un futur CSV contient « META », « meta » ou « Meta », il pointera toujours vers l'entité existante au lieu d'en recréer une.
+Aujourd'hui l'import compare les noms caractère par caractère. Correctif dans l'écran d'import géographique :
 
-### Étape 3 — Vérifier l'absence d'autres doublons
+- Comparaison des entités, municipalités et écoles **insensible à la casse, aux espaces superflus et aux accents**.
+- Quand un nom existe déjà, on réutilise l'enregistrement existant et **on conserve son orthographe d'origine** plutôt que d'en créer un second.
+- Le récapitulatif de fin d'import indiquera aussi le nombre d'éléments **réutilisés**, pour voir immédiatement ce qui a été créé et ce qui a été rattaché.
 
-Requête de contrôle sur toutes les entités (doublons de noms insensibles à la casse) pour s'assurer que « Meta » est le seul cas.
+Vous avez déjà corrigé la casse dans votre CSV ; ce correctif évite que le problème revienne avec un prochain fichier.
+
+### Étape 3 — Contrôler les autres doublons
+
+Requête de contrôle sur toutes les entités et municipalités (noms identiques à la casse/accents près) pour confirmer que « Meta » était le seul cas.
 
 ## Actions par service
 
-- 🗄️ Base de données (SQL manuel en production) : script de fusion + vérification + undo. Je le fournis prêt à copier.
-- 🖥️ Site statique (Frontend) : correctif de l'import CSV (comparaison insensible à la casse) — publication Lovable.
+- 🗄️ Base de données (SQL manuel en production) : script de transfert + suppression + vérification + undo. Je le fournis prêt à copier.
+- 🖥️ Site statique (Frontend) : correctif de l'import géographique — publication Lovable puis Ctrl+Shift+R.
 - ⚙️ Web Service (Backend Express) : aucune action.
-
-## Point à trancher
-
-Aucun : la fusion conserve toutes les données. Les municipalités en double ont des noms identiques, il n'y a pas d'ambiguïté.
