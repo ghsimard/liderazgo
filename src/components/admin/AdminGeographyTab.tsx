@@ -129,13 +129,14 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
   const fetchAll = useCallback(async () => {
     setLoading(true);
     const [e, m, i, r, re, rm, ri] = await Promise.all([
-      fetchTable<EntidadTerritorial>("entidades_territoriales", "*", "nombre"),
+      fetchTable<Entidad>("entidades_territoriales", "*", "nombre"),
       fetchTable<Municipio>("municipios", "*", "nombre"),
       fetchTable<Institucion>("instituciones", "*", "nombre"),
       fetchTable<Region>("regiones", "*", "nombre"),
       fetchTable<RegionEntidad>("region_entidades"),
-      fetchTable<RegionMunicipio>("region_municipios"),
-      fetchTable<RegionInstitucion>("region_instituciones"),
+      fetchTable<{ id: string; region_id: string; municipio_id: string }>("region_municipios"),
+      fetchTable<{ id: string; region_id: string; institucion_id: string }>("region_instituciones"),
+
     ]);
 
     setEntidades(e);
