@@ -20,9 +20,9 @@ Script avec sauvegarde (table `_undo_meta_merge_20260913`), transaction BEGIN/CO
 
 Résultat : une seule entité « Meta », 36 municipalités, 40 institutions.
 
-### Étape 2 — Corriger l'import CSV (frontend)
+### Étape 2 — Sécuriser l'import CSV (frontend)
 
-Rendre la correspondance entité/municipalité **insensible à la casse et aux espaces** dans l'import géographique, pour que « META », « Meta » ou « meta » pointent toujours vers la même entité existante. Sans ce correctif, le prochain import recréera un doublon.
+Vous avez déjà corrigé la casse dans le fichier CSV lui-même. Je propose en plus de rendre la correspondance entité/municipalité **insensible à la casse et aux espaces** dans le code d'import géographique : même si un futur CSV contient « META », « meta » ou « Meta », il pointera toujours vers l'entité existante au lieu d'en recréer une.
 
 ### Étape 3 — Vérifier l'absence d'autres doublons
 
