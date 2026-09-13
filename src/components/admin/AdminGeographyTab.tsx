@@ -111,26 +111,44 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
   const [openEntidades, setOpenEntidades] = useState<string[]>([]);
   const [openMunicipios, setOpenMunicipios] = useState<string[]>([]);
 
+  /** Fetch every row of a table, paginating past the 1000-row API limit. */
+  const fetchTable = useCallback(async <T,>(table: string, columns = "*", orderBy?: string): Promise<T[]> => {
+    const pageSize = 1000;
+    const rows: T[] = [];
+    for (let from = 0; ; from += pageSize) {
+      let q = supabase.from(table as never).select(columns).range(from, from + pageSize - 1);
+      if (orderBy) q = q.order(orderBy);
+      const { data, error } = await q;
+      if (error || !data) break;
+      rows.push(...(data as unknown as T[]));
+      if (data.length < pageSize) break;
+    }
+    return rows;
+  }, []);
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     const [e, m, i, r, re, rm, ri] = await Promise.all([
-      supabase.from("entidades_territoriales").select("*").order("nombre"),
-      supabase.from("municipios").select("*").order("nombre"),
-      supabase.from("instituciones").select("*").order("nombre"),
-      supabase.from("regiones").select("*").order("nombre"),
-      supabase.from("region_entidades").select("*"),
-      supabase.from("region_municipios").select("*"),
-      supabase.from("region_instituciones").select("*"),
+      fetchTable<Entidad>("entidades_territoriales", "*", "nombre"),
+      fetchTable<Municipio>("municipios", "*", "nombre"),
+      fetchTable<Institucion>("instituciones", "*", "nombre"),
+      fetchTable<Region>("regiones", "*", "nombre"),
+      fetchTable<RegionEntidad>("region_entidades"),
+      fetchTable<{ id: string; region_id: string; municipio_id: string }>("region_municipios"),
+      fetchTable<{ id: string; region_id: string; institucion_id: string }>("region_instituciones"),
+
     ]);
-    setEntidades(e.data ?? []);
-    setMunicipios(m.data ?? []);
-    setInstituciones(i.data ?? []);
-    setRegiones(r.data ?? []);
-    setRegionEntidades((re.data ?? []) as RegionEntidad[]);
-    setRegionMunicipios(rm.data ?? []);
-    setRegionInstituciones(ri.data ?? []);
+
+    setEntidades(e);
+    setMunicipios(m);
+    setInstituciones(i);
+    setRegiones(r);
+    setRegionEntidades(re);
+    setRegionMunicipios(rm);
+    setRegionInstituciones(ri);
     setLoading(false);
-  }, []);
+  }, [fetchTable]);
+
 
   /** Refresh data while preserving scroll position */
   const fetchAllKeepScroll = useCallback(async () => {
@@ -539,9 +557,10 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
       await new Promise(r => setTimeout(r, 0));
 
       // Load existing entidades
-      const { data: existingEntidades } = await supabase.from("entidades_territoriales").select("id, nombre");
+      const existingEntidades = await fetchTable<{ id: string; nombre: string }>("entidades_territoriales", "id, nombre");
       const entidadMap = new Map<string, string>(); // normalised name -> id
-      (existingEntidades ?? []).forEach(e => entidadMap.set(norm(e.nombre), e.id));
+      existingEntidades.forEach(e => entidadMap.set(norm(e.nombre), e.id));
+
 
       // Unique entidades from the file, keeping the first spelling encountered
       const uniqueEntidades = new Map<string, string>(); // normalised -> original spelling
@@ -565,9 +584,10 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
       await new Promise(r => setTimeout(r, 0));
 
       // Load existing municipios
-      const { data: existingMunicipios } = await supabase.from("municipios").select("id, nombre, entidad_territorial_id");
+      const existingMunicipios = await fetchTable<{ id: string; nombre: string; entidad_territorial_id: string }>("municipios", "id, nombre, entidad_territorial_id");
       const municipioMap = new Map<string, string>(); // "normalisedName|entidadId" -> id
-      (existingMunicipios ?? []).forEach(m => municipioMap.set(`${norm(m.nombre)}|${m.entidad_territorial_id}`, m.id));
+      existingMunicipios.forEach(m => municipioMap.set(`${norm(m.nombre)}|${m.entidad_territorial_id}`, m.id));
+
 
       // Build unique municipio entries
       const uniqueMunicipios = new Map<string, { nombre: string; entidad_territorial_id: string }>();
@@ -616,8 +636,9 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
         }
 
         // Load existing instituciones
-        const { data: existingInst } = await supabase.from("instituciones").select("id, nombre, municipio_id");
-        const instSet = new Set((existingInst ?? []).map(i => `${norm(i.nombre)}|${i.municipio_id}`));
+        const existingInst = await fetchTable<{ id: string; nombre: string; municipio_id: string }>("instituciones", "id, nombre, municipio_id");
+        const instSet = new Set(existingInst.map(i => `${norm(i.nombre)}|${i.municipio_id}`));
+
 
         const newInst: { nombre: string; municipio_id: string }[] = [];
         for (const [key, val] of uniqueInstituciones) {
