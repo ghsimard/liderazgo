@@ -556,9 +556,10 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
       await new Promise(r => setTimeout(r, 0));
 
       // Load existing entidades
-      const { data: existingEntidades } = await supabase.from("entidades_territoriales").select("id, nombre");
+      const existingEntidades = await fetchTable<{ id: string; nombre: string }>("entidades_territoriales", "id, nombre");
       const entidadMap = new Map<string, string>(); // normalised name -> id
-      (existingEntidades ?? []).forEach(e => entidadMap.set(norm(e.nombre), e.id));
+      existingEntidades.forEach(e => entidadMap.set(norm(e.nombre), e.id));
+
 
       // Unique entidades from the file, keeping the first spelling encountered
       const uniqueEntidades = new Map<string, string>(); // normalised -> original spelling
@@ -582,9 +583,10 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
       await new Promise(r => setTimeout(r, 0));
 
       // Load existing municipios
-      const { data: existingMunicipios } = await supabase.from("municipios").select("id, nombre, entidad_territorial_id");
+      const existingMunicipios = await fetchTable<{ id: string; nombre: string; entidad_territorial_id: string }>("municipios", "id, nombre, entidad_territorial_id");
       const municipioMap = new Map<string, string>(); // "normalisedName|entidadId" -> id
-      (existingMunicipios ?? []).forEach(m => municipioMap.set(`${norm(m.nombre)}|${m.entidad_territorial_id}`, m.id));
+      existingMunicipios.forEach(m => municipioMap.set(`${norm(m.nombre)}|${m.entidad_territorial_id}`, m.id));
+
 
       // Build unique municipio entries
       const uniqueMunicipios = new Map<string, { nombre: string; entidad_territorial_id: string }>();
@@ -633,8 +635,9 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
         }
 
         // Load existing instituciones
-        const { data: existingInst } = await supabase.from("instituciones").select("id, nombre, municipio_id");
-        const instSet = new Set((existingInst ?? []).map(i => `${norm(i.nombre)}|${i.municipio_id}`));
+        const existingInst = await fetchTable<{ id: string; nombre: string; municipio_id: string }>("instituciones", "id, nombre, municipio_id");
+        const instSet = new Set(existingInst.map(i => `${norm(i.nombre)}|${i.municipio_id}`));
+
 
         const newInst: { nombre: string; municipio_id: string }[] = [];
         for (const [key, val] of uniqueInstituciones) {
