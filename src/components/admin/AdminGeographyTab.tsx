@@ -111,17 +111,33 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
   const [openEntidades, setOpenEntidades] = useState<string[]>([]);
   const [openMunicipios, setOpenMunicipios] = useState<string[]>([]);
 
+  /** Fetch every row of a table, paginating past the 1000-row API limit. */
+  const fetchTable = useCallback(async <T,>(table: string, columns = "*", orderBy?: string): Promise<T[]> => {
+    const pageSize = 1000;
+    const rows: T[] = [];
+    for (let from = 0; ; from += pageSize) {
+      let q = supabase.from(table as never).select(columns).range(from, from + pageSize - 1);
+      if (orderBy) q = q.order(orderBy);
+      const { data, error } = await q;
+      if (error || !data) break;
+      rows.push(...(data as unknown as T[]));
+      if (data.length < pageSize) break;
+    }
+    return rows;
+  }, []);
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     const [e, m, i, r, re, rm, ri] = await Promise.all([
-      supabase.from("entidades_territoriales").select("*").order("nombre"),
-      supabase.from("municipios").select("*").order("nombre"),
-      supabase.from("instituciones").select("*").order("nombre"),
-      supabase.from("regiones").select("*").order("nombre"),
-      supabase.from("region_entidades").select("*"),
-      supabase.from("region_municipios").select("*"),
-      supabase.from("region_instituciones").select("*"),
+      fetchTable<EntidadTerritorial>("entidades_territoriales", "*", "nombre"),
+      fetchTable<Municipio>("municipios", "*", "nombre"),
+      fetchTable<Institucion>("instituciones", "*", "nombre"),
+      fetchTable<Region>("regiones", "*", "nombre"),
+      fetchTable<RegionEntidad>("region_entidades"),
+      fetchTable<RegionMunicipio>("region_municipios"),
+      fetchTable<RegionInstitucion>("region_instituciones"),
     ]);
+
     setEntidades(e.data ?? []);
     setMunicipios(m.data ?? []);
     setInstituciones(i.data ?? []);
