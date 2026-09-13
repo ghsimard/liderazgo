@@ -529,24 +529,34 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
         rows.push({ entidad: entidadName, municipio: municipioName, institucion: institucionName });
       }
 
+      // Normalised key: case-, accent- and whitespace-insensitive.
+      // Prevents creating a duplicate "META" when "Meta" already exists.
+      const norm = (s: string) =>
+        s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+
       // ── Phase 2: Batch upsert entidades ──
       setImportProgress({ current: 1, total: 4 });
       await new Promise(r => setTimeout(r, 0));
 
-      const uniqueEntidades = [...new Set(rows.map(r => r.entidad))];
-
       // Load existing entidades
       const { data: existingEntidades } = await supabase.from("entidades_territoriales").select("id, nombre");
-      const entidadMap = new Map<string, string>(); // name -> id
-      (existingEntidades ?? []).forEach(e => entidadMap.set(e.nombre, e.id));
+      const entidadMap = new Map<string, string>(); // normalised name -> id
+      (existingEntidades ?? []).forEach(e => entidadMap.set(norm(e.nombre), e.id));
 
-      const newEntidades = uniqueEntidades.filter(name => !entidadMap.has(name));
+      // Unique entidades from the file, keeping the first spelling encountered
+      const uniqueEntidades = new Map<string, string>(); // normalised -> original spelling
+      for (const r of rows) {
+        const k = norm(r.entidad);
+        if (!uniqueEntidades.has(k)) uniqueEntidades.set(k, r.entidad.trim());
+      }
+
+      const newEntidades = [...uniqueEntidades.entries()].filter(([k]) => !entidadMap.has(k));
+      const reusedEntidades = uniqueEntidades.size - newEntidades.length;
       if (newEntidades.length > 0) {
-        // Insert in chunks of 50
         for (let i = 0; i < newEntidades.length; i += 50) {
-          const chunk = newEntidades.slice(i, i + 50).map(nombre => ({ nombre }));
+          const chunk = newEntidades.slice(i, i + 50).map(([, nombre]) => ({ nombre }));
           const { data } = await supabase.from("entidades_territoriales").insert(chunk).select("id, nombre");
-          (data ?? []).forEach(e => entidadMap.set(e.nombre, e.id));
+          (data ?? []).forEach(e => entidadMap.set(norm(e.nombre), e.id));
         }
       }
 
@@ -554,32 +564,33 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
       setImportProgress({ current: 2, total: 4 });
       await new Promise(r => setTimeout(r, 0));
 
+      // Load existing municipios
+      const { data: existingMunicipios } = await supabase.from("municipios").select("id, nombre, entidad_territorial_id");
+      const municipioMap = new Map<string, string>(); // "normalisedName|entidadId" -> id
+      (existingMunicipios ?? []).forEach(m => municipioMap.set(`${norm(m.nombre)}|${m.entidad_territorial_id}`, m.id));
+
       // Build unique municipio entries
       const uniqueMunicipios = new Map<string, { nombre: string; entidad_territorial_id: string }>();
       for (const row of rows) {
-        const entidadId = entidadMap.get(row.entidad);
+        const entidadId = entidadMap.get(norm(row.entidad));
         if (!entidadId) continue;
-        const key = `${row.municipio}|${entidadId}`;
+        const key = `${norm(row.municipio)}|${entidadId}`;
         if (!uniqueMunicipios.has(key)) {
-          uniqueMunicipios.set(key, { nombre: row.municipio, entidad_territorial_id: entidadId });
+          uniqueMunicipios.set(key, { nombre: row.municipio.trim(), entidad_territorial_id: entidadId });
         }
       }
-
-      // Load existing municipios
-      const { data: existingMunicipios } = await supabase.from("municipios").select("id, nombre, entidad_territorial_id");
-      const municipioMap = new Map<string, string>(); // "name|entidadId" -> id
-      (existingMunicipios ?? []).forEach(m => municipioMap.set(`${m.nombre}|${m.entidad_territorial_id}`, m.id));
 
       const newMunicipios: { nombre: string; entidad_territorial_id: string }[] = [];
       for (const [key, val] of uniqueMunicipios) {
         if (!municipioMap.has(key)) newMunicipios.push(val);
       }
+      const reusedMunicipios = uniqueMunicipios.size - newMunicipios.length;
 
       if (newMunicipios.length > 0) {
         for (let i = 0; i < newMunicipios.length; i += 50) {
           const chunk = newMunicipios.slice(i, i + 50);
           const { data } = await supabase.from("municipios").insert(chunk).select("id, nombre, entidad_territorial_id");
-          (data ?? []).forEach(m => municipioMap.set(`${m.nombre}|${m.entidad_territorial_id}`, m.id));
+          (data ?? []).forEach(m => municipioMap.set(`${norm(m.nombre)}|${m.entidad_territorial_id}`, m.id));
         }
       }
 
@@ -588,29 +599,31 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
       await new Promise(r => setTimeout(r, 0));
 
       let createdInstituciones = 0;
+      let reusedInstituciones = 0;
       const instRows = rows.filter(r => r.institucion);
       if (instRows.length > 0) {
         // Build unique instituciones
         const uniqueInstituciones = new Map<string, { nombre: string; municipio_id: string }>();
         for (const row of instRows) {
-          const entidadId = entidadMap.get(row.entidad);
+          const entidadId = entidadMap.get(norm(row.entidad));
           if (!entidadId) continue;
-          const municipioId = municipioMap.get(`${row.municipio}|${entidadId}`);
+          const municipioId = municipioMap.get(`${norm(row.municipio)}|${entidadId}`);
           if (!municipioId) continue;
-          const key = `${row.institucion}|${municipioId}`;
+          const key = `${norm(row.institucion)}|${municipioId}`;
           if (!uniqueInstituciones.has(key)) {
-            uniqueInstituciones.set(key, { nombre: row.institucion, municipio_id: municipioId });
+            uniqueInstituciones.set(key, { nombre: row.institucion.trim(), municipio_id: municipioId });
           }
         }
 
         // Load existing instituciones
         const { data: existingInst } = await supabase.from("instituciones").select("id, nombre, municipio_id");
-        const instSet = new Set((existingInst ?? []).map(i => `${i.nombre}|${i.municipio_id}`));
+        const instSet = new Set((existingInst ?? []).map(i => `${norm(i.nombre)}|${i.municipio_id}`));
 
         const newInst: { nombre: string; municipio_id: string }[] = [];
         for (const [key, val] of uniqueInstituciones) {
           if (!instSet.has(key)) newInst.push(val);
         }
+        reusedInstituciones = uniqueInstituciones.size - newInst.length;
 
         if (newInst.length > 0) {
           for (let i = 0; i < newInst.length; i += 50) {
@@ -623,7 +636,9 @@ export default function AdminGeographyTab({ isViewer = false }: { isViewer?: boo
 
       setImportProgress({ current: 4, total: 4 });
 
-      const desc = `${newEntidades.length} entidades, ${newMunicipios.length} municipios, ${createdInstituciones} instituciones creadas`;
+      const desc =
+        `Creados: ${newEntidades.length} entidades, ${newMunicipios.length} municipios, ${createdInstituciones} instituciones. ` +
+        `Reutilizados (ya existían): ${reusedEntidades} entidades, ${reusedMunicipios} municipios, ${reusedInstituciones} instituciones.`;
       toast({ title: "Importación completada", description: desc });
     } catch (err: any) {
       toast({ title: "Error al importar", description: err?.message || "Error desconocido", variant: "destructive" });
