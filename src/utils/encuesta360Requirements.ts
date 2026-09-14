@@ -51,8 +51,9 @@ export function roleKeysForInstitucion(
 ): string[] {
   const exc = excepciones?.get(norm(institucion));
   const ce = isCentroEducativo(institucion);
-  const sinEstudiantes = ce || !!exc?.sin_estudiantes;
-  const sinAdministrativos = ce || !!exc?.sin_administrativos;
+  // Una excepción manual registrada tiene prioridad sobre la regla automática.
+  const sinEstudiantes = exc ? !!exc.sin_estudiantes : ce;
+  const sinAdministrativos = exc ? !!exc.sin_administrativos : ce;
   return ROLE_KEYS.filter(
     (k) =>
       !(k === "estudiante" && sinEstudiantes) &&
