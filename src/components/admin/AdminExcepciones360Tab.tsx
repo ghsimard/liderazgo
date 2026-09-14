@@ -15,6 +15,7 @@ interface Row {
   sinEstudiantes: boolean;
   sinAdministrativos: boolean;
   esCentroEducativo: boolean;
+  tieneExcepcionManual: boolean;
 }
 
 interface Props {
@@ -54,13 +55,19 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
 
     setRows(
       Array.from(seen.entries())
-        .map(([institucion, region]) => ({
-          institucion,
-          region,
-          sinEstudiantes: excMap.get(institucion)?.e ?? false,
-          sinAdministrativos: excMap.get(institucion)?.a ?? false,
-          esCentroEducativo: isCentroEducativo(institucion),
-        }))
+        .map(([institucion, region]) => {
+          const exc = excMap.get(institucion);
+          const ce = isCentroEducativo(institucion);
+          return {
+            institucion,
+            region,
+            // Sin excepción manual, los Centros Educativos quedan exceptuados por defecto.
+            sinEstudiantes: exc ? exc.e : ce,
+            sinAdministrativos: exc ? exc.a : ce,
+            esCentroEducativo: ce,
+            tieneExcepcionManual: !!exc,
+          };
+        })
         .sort((a, b) => a.institucion.localeCompare(b.institucion, "es"))
     );
     setLoading(false);
@@ -68,7 +75,7 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
 
   const toggle = async (row: Row, field: "sinEstudiantes" | "sinAdministrativos", value: boolean) => {
     setSaving(row.institucion);
-    const next = { ...row, [field]: value };
+    const next = { ...row, [field]: value, tieneExcepcionManual: true };
     const payload = {
       institucion: row.institucion,
       sin_estudiantes: next.sinEstudiantes,
@@ -91,7 +98,7 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
     return rows.filter((r) => r.institucion.toLowerCase().includes(q) || r.region.toLowerCase().includes(q));
   }, [rows, search]);
 
-  const activas = rows.filter((r) => r.sinEstudiantes || r.sinAdministrativos).length;
+  const activas = rows.filter((r) => r.tieneExcepcionManual).length;
 
   if (loading) {
     return (
@@ -115,8 +122,9 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground">
           Marque las instituciones que no cuentan con estudiantes de los grados requeridos o con personal
-          administrativo. Esos roles dejarán de exigirse en el estado de recolección. Los Centros Educativos ya
-          están exceptuados de forma automática.
+          administrativo. Esos roles dejarán de exigirse en el estado de recolección. Los Centros Educativos
+          aparecen exceptuados por defecto, pero puede desmarcar la casilla para volver a exigir el rol
+          (mínimo 1): su elección manual siempre tiene prioridad.
         </p>
 
         <div className="relative max-w-sm">
@@ -158,16 +166,16 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
                     <TableCell className="text-sm text-muted-foreground">{r.region}</TableCell>
                     <TableCell className="text-center">
                       <Checkbox
-                        checked={r.esCentroEducativo || r.sinEstudiantes}
-                        disabled={isViewer || r.esCentroEducativo || saving === r.institucion}
+                        checked={r.sinEstudiantes}
+                        disabled={isViewer || saving === r.institucion}
                         onCheckedChange={(v) => toggle(r, "sinEstudiantes", !!v)}
                         aria-label={`Sin estudiantes en ${r.institucion}`}
                       />
                     </TableCell>
                     <TableCell className="text-center">
                       <Checkbox
-                        checked={r.esCentroEducativo || r.sinAdministrativos}
-                        disabled={isViewer || r.esCentroEducativo || saving === r.institucion}
+                        checked={r.sinAdministrativos}
+                        disabled={isViewer || saving === r.institucion}
                         onCheckedChange={(v) => toggle(r, "sinAdministrativos", !!v)}
                         aria-label={`Sin administrativos en ${r.institucion}`}
                       />

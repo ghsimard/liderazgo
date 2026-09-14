@@ -42,8 +42,9 @@ export async function fetchExcepciones360(): Promise<ExcepcionesMap> {
 
 /**
  * Roles exigidos para una institución.
- * - Centros Educativos: no se exigen "estudiante" ni "administrativo".
- * - Excepciones manuales registradas por el equipo administrador.
+ * - Centros Educativos: por defecto no se exigen "estudiante" ni "administrativo".
+ * - Si existe una excepción manual registrada por el equipo administrador,
+ *   esa excepción tiene prioridad sobre la regla automática.
  */
 export function roleKeysForInstitucion(
   institucion: string,
@@ -51,8 +52,9 @@ export function roleKeysForInstitucion(
 ): string[] {
   const exc = excepciones?.get(norm(institucion));
   const ce = isCentroEducativo(institucion);
-  const sinEstudiantes = ce || !!exc?.sin_estudiantes;
-  const sinAdministrativos = ce || !!exc?.sin_administrativos;
+  // Una excepción manual registrada tiene prioridad sobre la regla automática.
+  const sinEstudiantes = exc ? !!exc.sin_estudiantes : ce;
+  const sinAdministrativos = exc ? !!exc.sin_administrativos : ce;
   return ROLE_KEYS.filter(
     (k) =>
       !(k === "estudiante" && sinEstudiantes) &&
