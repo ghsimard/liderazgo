@@ -101,7 +101,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
         }
       });
 
-      const keysForRow = roleKeysFor(d.institucion, d.region);
+      const keysForRow = roleKeysForInstitucion(d.institucion, excMap);
       const incomplete = keysForRow.some((k) => counts[k] < ROLE_LIMITS[k].min);
       return { ...d, counts, incomplete };
     });
