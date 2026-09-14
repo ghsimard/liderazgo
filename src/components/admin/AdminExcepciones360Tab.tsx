@@ -165,16 +165,16 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
                     <TableCell className="text-sm text-muted-foreground">{r.region}</TableCell>
                     <TableCell className="text-center">
                       <Checkbox
-                        checked={r.esCentroEducativo || r.sinEstudiantes}
-                        disabled={isViewer || r.esCentroEducativo || saving === r.institucion}
+                        checked={r.sinEstudiantes}
+                        disabled={isViewer || saving === r.institucion}
                         onCheckedChange={(v) => toggle(r, "sinEstudiantes", !!v)}
                         aria-label={`Sin estudiantes en ${r.institucion}`}
                       />
                     </TableCell>
                     <TableCell className="text-center">
                       <Checkbox
-                        checked={r.esCentroEducativo || r.sinAdministrativos}
-                        disabled={isViewer || r.esCentroEducativo || saving === r.institucion}
+                        checked={r.sinAdministrativos}
+                        disabled={isViewer || saving === r.institucion}
                         onCheckedChange={(v) => toggle(r, "sinAdministrativos", !!v)}
                         aria-label={`Sin administrativos en ${r.institucion}`}
                       />
