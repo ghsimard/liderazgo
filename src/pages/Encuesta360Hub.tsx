@@ -50,9 +50,9 @@ interface Invitation {
 
 const FORM_QUOTAS: Record<string, number> = {
   autoevaluacion: 1,
-  directivo: 2,
-  docente: 2,
-  administrativo: 2,
+  directivo: 1,
+  docente: 1,
+  administrativo: 1,
   estudiante: 1,
   acudiente: 1,
 };
