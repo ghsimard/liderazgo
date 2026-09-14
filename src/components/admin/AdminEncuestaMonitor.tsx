@@ -19,24 +19,13 @@ import {
   type LoadedLogos,
 } from "@/utils/pdfLogoHelper";
 import { useAppImages } from "@/hooks/useAppImages";
-import { isQuibdoCentroEducativo } from "@/utils/institutionType";
-
-
-/** Required counts per tipo_formulario */
-const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> = {
-  autoevaluacion: { min: 1, max: 1, label: "Autoevaluación" },
-  directivo: { min: 2, max: 2, label: "Directivo Par" },
-  docente: { min: 2, max: 2, label: "Docente" },
-  administrativo: { min: 2, max: 2, label: "Administrativo" },
-  estudiante: { min: 1, max: 1, label: "Estudiante" },
-  acudiente: { min: 1, max: 1, label: "Acudiente" },
-};
-
-const ROLE_KEYS = Object.keys(ROLE_LIMITS);
-
-/** Para Centros Educativos de Quibdó los estudiantes son demasiado jóvenes: se excluye "estudiante". */
-const roleKeysFor = (institucion: string, region: string): string[] =>
-  isQuibdoCentroEducativo(institucion, region) ? ROLE_KEYS.filter((k) => k !== "estudiante") : ROLE_KEYS;
+import {
+  ROLE_LIMITS,
+  ROLE_KEYS,
+  fetchExcepciones360,
+  roleKeysForInstitucion,
+  type ExcepcionesMap,
+} from "@/utils/encuesta360Requirements";
 
 interface DirectivoRow {
   nombre: string;
