@@ -294,7 +294,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
 
         let xPos = margin + colName + colInst;
         const midY = y + actualRowH / 2 + 1.5;
-        const rowKeys = roleKeysFor(r.institucion, r.region);
+        const rowKeys = roleKeysFor(r.institucion);
         ROLE_KEYS.forEach((k) => {
           if (!rowKeys.includes(k)) {
             doc.setTextColor(150, 150, 150);
