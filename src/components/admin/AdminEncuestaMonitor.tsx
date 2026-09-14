@@ -64,6 +64,9 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   const loadData = async () => {
     setLoading(true);
 
+    const excMap = await fetchExcepciones360();
+    setExcepciones(excMap);
+
     const { data: fichas } = await supabase
       .from("fichas_rlt")
       .select("nombres_apellidos, nombre_ie, region, numero_cedula")
