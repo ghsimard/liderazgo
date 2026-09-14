@@ -75,7 +75,7 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
 
   const toggle = async (row: Row, field: "sinEstudiantes" | "sinAdministrativos", value: boolean) => {
     setSaving(row.institucion);
-    const next = { ...row, [field]: value };
+    const next = { ...row, [field]: value, tieneExcepcionManual: true };
     const payload = {
       institucion: row.institucion,
       sin_estudiantes: next.sinEstudiantes,
@@ -122,8 +122,9 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground">
           Marque las instituciones que no cuentan con estudiantes de los grados requeridos o con personal
-          administrativo. Esos roles dejarán de exigirse en el estado de recolección. Los Centros Educativos ya
-          están exceptuados de forma automática.
+          administrativo. Esos roles dejarán de exigirse en el estado de recolección. Los Centros Educativos
+          aparecen exceptuados por defecto, pero puede desmarcar la casilla para volver a exigir el rol
+          (mínimo 1): su elección manual siempre tiene prioridad.
         </p>
 
         <div className="relative max-w-sm">
