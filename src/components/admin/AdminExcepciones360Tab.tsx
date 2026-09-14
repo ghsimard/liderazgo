@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCw, Search, ShieldCheck } from "lucide-react";
+import { RefreshCw, Search, ShieldCheck, CheckSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isCentroEducativo } from "@/utils/institutionType";
 
@@ -92,6 +93,26 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
     setSaving(null);
   };
 
+  const toggleBoth = async (row: Row) => {
+    const target = !(row.sinEstudiantes && row.sinAdministrativos);
+    setSaving(row.institucion);
+    const next = { ...row, sinEstudiantes: target, sinAdministrativos: target, tieneExcepcionManual: true };
+    const payload = {
+      institucion: row.institucion,
+      sin_estudiantes: target,
+      sin_administrativos: target,
+    };
+    const { error } = await supabase
+      .from("encuesta_360_excepciones")
+      .upsert(payload, { onConflict: "institucion" });
+    if (error) {
+      toast({ title: "Error", description: "No se pudo guardar la excepción.", variant: "destructive" });
+    } else {
+      setRows((prev) => prev.map((r) => (r.institucion === row.institucion ? next : r)));
+    }
+    setSaving(null);
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
@@ -145,43 +166,62 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
                 <TableHead className="min-w-[120px]">Región</TableHead>
                 <TableHead className="text-center whitespace-nowrap">Sin estudiantes</TableHead>
                 <TableHead className="text-center whitespace-nowrap">Sin administrativos</TableHead>
+                <TableHead className="text-center whitespace-nowrap">Ambos</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                     Sin resultados
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((r) => (
-                  <TableRow key={r.institucion}>
-                    <TableCell className="text-sm font-medium">
-                      {r.institucion}
-                      {r.esCentroEducativo && (
-                        <Badge variant="outline" className="ml-2 text-[10px]">Centro Educativo</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{r.region}</TableCell>
-                    <TableCell className="text-center">
-                      <Checkbox
-                        checked={r.sinEstudiantes}
-                        disabled={isViewer || saving === r.institucion}
-                        onCheckedChange={(v) => toggle(r, "sinEstudiantes", !!v)}
-                        aria-label={`Sin estudiantes en ${r.institucion}`}
-                      />
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Checkbox
-                        checked={r.sinAdministrativos}
-                        disabled={isViewer || saving === r.institucion}
-                        onCheckedChange={(v) => toggle(r, "sinAdministrativos", !!v)}
-                        aria-label={`Sin administrativos en ${r.institucion}`}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))
+                filtered.map((r) => {
+                  const bothChecked = r.sinEstudiantes && r.sinAdministrativos;
+                  const bothUnchecked = !r.sinEstudiantes && !r.sinAdministrativos;
+                  const label = bothChecked ? "Desmarcar ambos" : "Marcar ambos";
+                  return (
+                    <TableRow key={r.institucion}>
+                      <TableCell className="text-sm font-medium">
+                        {r.institucion}
+                        {r.esCentroEducativo && (
+                          <Badge variant="outline" className="ml-2 text-[10px]">Centro Educativo</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{r.region}</TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox
+                          checked={r.sinEstudiantes}
+                          disabled={isViewer || saving === r.institucion}
+                          onCheckedChange={(v) => toggle(r, "sinEstudiantes", !!v)}
+                          aria-label={`Sin estudiantes en ${r.institucion}`}
+                        />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox
+                          checked={r.sinAdministrativos}
+                          disabled={isViewer || saving === r.institucion}
+                          onCheckedChange={(v) => toggle(r, "sinAdministrativos", !!v)}
+                          aria-label={`Sin administrativos en ${r.institucion}`}
+                        />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          disabled={isViewer || saving === r.institucion}
+                          onClick={() => toggleBoth(r)}
+                          title={label}
+                          aria-label={`${label} en ${r.institucion}`}
+                        >
+                          <CheckSquare className={`h-4 w-4 ${bothChecked || bothUnchecked ? "text-primary" : "text-muted-foreground"}`} />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
