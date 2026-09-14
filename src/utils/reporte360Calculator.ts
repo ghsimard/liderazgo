@@ -87,6 +87,8 @@ export interface Reporte360Data {
   observerAvg: number;
   /** Whether actual survey responses exist for this directivo in this phase */
   hasResponses: boolean;
+  /** Roles que aún no alcanzan el mínimo requerido (informe parcial) */
+  rolesFaltantes: string[];
 }
 
 // ── Main calculation function ──
