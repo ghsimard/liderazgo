@@ -368,6 +368,9 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
           <TabsContent value="informes-final">
             <AdminReporte360Tab fase="final" />
           </TabsContent>
+          <TabsContent value="excepciones">
+            <AdminExcepciones360Tab isViewer={!can("encuesta360", "update")} />
+          </TabsContent>
         </Tabs>
       );
     }
