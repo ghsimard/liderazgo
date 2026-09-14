@@ -448,7 +448,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                     <TableCell className="font-medium text-sm">{r.nombre}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{r.institucion}</TableCell>
                     {ROLE_KEYS.map((k) => {
-                      const allowed = roleKeysFor(r.institucion, r.region).includes(k);
+                      const allowed = roleKeysFor(r.institucion).includes(k);
                       if (!allowed) {
                         return (
                           <TableCell key={k} className="text-center">
