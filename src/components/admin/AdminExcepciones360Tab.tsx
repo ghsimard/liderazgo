@@ -98,7 +98,7 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
     return rows.filter((r) => r.institucion.toLowerCase().includes(q) || r.region.toLowerCase().includes(q));
   }, [rows, search]);
 
-  const activas = rows.filter((r) => r.sinEstudiantes || r.sinAdministrativos).length;
+  const activas = rows.filter((r) => r.tieneExcepcionManual).length;
 
   if (loading) {
     return (
