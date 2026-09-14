@@ -47,6 +47,8 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   const [filterMode, setFilterMode] = useState<"all" | "incomplete" | "complete">("all");
   const [regionFilter, setRegionFilter] = useState<string>("__all__");
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [excepciones, setExcepciones] = useState<ExcepcionesMap>(new Map());
+  const roleKeysFor = (institucion: string) => roleKeysForInstitucion(institucion, excepciones);
   const { toast } = useToast();
   const { images: appImages } = useAppImages();
 
