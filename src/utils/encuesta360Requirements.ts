@@ -42,8 +42,9 @@ export async function fetchExcepciones360(): Promise<ExcepcionesMap> {
 
 /**
  * Roles exigidos para una institución.
- * - Centros Educativos: no se exigen "estudiante" ni "administrativo".
- * - Excepciones manuales registradas por el equipo administrador.
+ * - Centros Educativos: por defecto no se exigen "estudiante" ni "administrativo".
+ * - Si existe una excepción manual registrada por el equipo administrador,
+ *   esa excepción tiene prioridad sobre la regla automática.
  */
 export function roleKeysForInstitucion(
   institucion: string,

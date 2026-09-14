@@ -15,6 +15,7 @@ interface Row {
   sinEstudiantes: boolean;
   sinAdministrativos: boolean;
   esCentroEducativo: boolean;
+  tieneExcepcionManual: boolean;
 }
 
 interface Props {
