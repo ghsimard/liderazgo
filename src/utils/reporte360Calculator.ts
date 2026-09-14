@@ -313,6 +313,14 @@ export async function calcularReporte360(nombreDirectivo: string, institucion: s
     };
   });
 
+  // 8b. Roles que no alcanzan el mínimo (informe parcial)
+  const countsPorRol: Record<string, number> = { autoevaluacion: autoEncuesta ? 1 : 0 };
+  observerEncuestas.forEach((e) => {
+    countsPorRol[e.tipo_formulario] = (countsPorRol[e.tipo_formulario] || 0) + 1;
+  });
+  const excepciones = await fetchExcepciones360();
+  const faltantes = calcRolesFaltantes(institucion, countsPorRol, excepciones);
+
   // 9. Global averages
   const allAutoScores = competencyScores.map((c) => c.autoScore).filter((s) => s > 0);
   const allObsScores = competencyScores.map((c) => c.observerScore).filter((s) => s > 0);
