@@ -326,6 +326,7 @@ export async function calcularReporte360(nombreDirectivo: string, institucion: s
     autoAvg: avg(allAutoScores),
     observerAvg: avg(allObsScores),
     hasResponses: !!autoEncuesta || observerEncuestas.length > 0,
+    rolesFaltantes: faltantes,
   };
 }
 
