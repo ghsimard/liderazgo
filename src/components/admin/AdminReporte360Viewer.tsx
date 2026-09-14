@@ -83,6 +83,17 @@ export default function AdminReporte360Viewer({ open, onOpenChange, data }: Prop
         </DialogHeader>
 
         <div className="overflow-y-auto flex-1 space-y-8 pr-2 pb-4">
+          {data.rolesFaltantes && data.rolesFaltantes.length > 0 && (
+            <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-900 dark:text-amber-200">
+                <span className="font-semibold">Informe parcial:</span> aún no se alcanza el mínimo de
+                respuestas en {data.rolesFaltantes.join(", ")}. Los resultados se calculan con la información
+                disponible y pueden variar cuando se completen las encuestas.
+              </p>
+            </div>
+          )}
+
           {/* ── IDENTIFICACIÓN ── */}
           <section>
             <h3 className={sectionTitleClass}>IDENTIFICACIÓN</h3>
