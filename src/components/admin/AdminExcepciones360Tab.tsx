@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { RefreshCw, Search, ShieldCheck } from "lucide-react";
+import { RefreshCw, Search, ShieldCheck, CheckSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isCentroEducativo } from "@/utils/institutionType";
 
