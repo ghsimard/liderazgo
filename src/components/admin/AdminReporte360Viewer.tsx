@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, AlertTriangle } from "lucide-react";
 import type { Reporte360Data, DomainScore, CompetencyScore } from "@/utils/reporte360Calculator";
 import { genderizeRole } from "@/utils/genderizeRole";
 import {
