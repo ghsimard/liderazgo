@@ -93,6 +93,26 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
     setSaving(null);
   };
 
+  const toggleBoth = async (row: Row) => {
+    const target = !(row.sinEstudiantes && row.sinAdministrativos);
+    setSaving(row.institucion);
+    const next = { ...row, sinEstudiantes: target, sinAdministrativos: target, tieneExcepcionManual: true };
+    const payload = {
+      institucion: row.institucion,
+      sin_estudiantes: target,
+      sin_administrativos: target,
+    };
+    const { error } = await supabase
+      .from("encuesta_360_excepciones")
+      .upsert(payload, { onConflict: "institucion" });
+    if (error) {
+      toast({ title: "Error", description: "No se pudo guardar la excepción.", variant: "destructive" });
+    } else {
+      setRows((prev) => prev.map((r) => (r.institucion === row.institucion ? next : r)));
+    }
+    setSaving(null);
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
