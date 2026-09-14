@@ -59,6 +59,7 @@ const PUBLIC_READ_TABLES = new Set([
   "satisfaccion_report_content",
   "satisfaccion_form_definitions",
   "encuesta_360_visibility",
+  "encuesta_360_excepciones",
   "operator_permissions",
 ]);
 
