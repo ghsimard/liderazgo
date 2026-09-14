@@ -452,7 +452,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                       if (!allowed) {
                         return (
                           <TableCell key={k} className="text-center">
-                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold bg-muted text-muted-foreground" title="No aplica para Centros Educativos">
+                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold bg-muted text-muted-foreground" title="No aplica para esta institución">
                               —
                             </span>
                           </TableCell>
