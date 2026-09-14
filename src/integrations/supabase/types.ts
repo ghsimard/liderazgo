@@ -995,6 +995,36 @@ export type Database = {
         }
         Relationships: []
       }
+      encuesta_360_excepciones: {
+        Row: {
+          created_at: string
+          id: string
+          institucion: string
+          motivo: string | null
+          sin_administrativos: boolean
+          sin_estudiantes: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          institucion: string
+          motivo?: string | null
+          sin_administrativos?: boolean
+          sin_estudiantes?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          institucion?: string
+          motivo?: string | null
+          sin_administrativos?: boolean
+          sin_estudiantes?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       encuesta_360_visibility: {
         Row: {
           created_at: string

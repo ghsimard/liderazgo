@@ -5,7 +5,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, FileText, Users, MapPin, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit, FileDown, Link2, PlayCircle, FlagTriangleRight, FileBarChart, FileBarChart2, Printer, TrendingUp, Activity, Shield, Eye, ImageIcon } from "lucide-react";
+import { LogOut, RefreshCw, FileText, Users, MapPin, ClipboardList, School, BookOpen, GraduationCap, Copy, Check, Scale, Settings2, Layers, ListTree, ListChecks, Plus, Trash2, BarChart3, MessageSquare, Star, GitCommit, FileDown, Link2, PlayCircle, FlagTriangleRight, FileBarChart, FileBarChart2, Printer, TrendingUp, Activity, Shield, Eye, ImageIcon, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, getToken } from "@/utils/apiFetch";
 import { supabase as cloudClient } from "@/utils/dbClient";
@@ -28,6 +28,7 @@ import AdminItemsManager from "@/components/admin/AdminItemsManager";
 import AdminCompetencyWizard from "@/components/admin/AdminCompetencyWizard";
 import AdminTrashManager from "@/components/admin/AdminTrashManager";
 import AdminReporte360Tab from "@/components/admin/AdminReporte360Tab";
+import AdminExcepciones360Tab from "@/components/admin/AdminExcepciones360Tab";
 import AdminEncuestas360Tab from "@/components/admin/AdminEncuestas360Tab";
 import AdminRubricasTab from "@/components/admin/AdminRubricasTab";
 import AdminMensajesTab from "@/components/admin/AdminMensajesTab";
@@ -305,7 +306,7 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
             <TabsTrigger value="invitaciones" className="gap-1.5"><Users className="w-4 h-4" /> Invitaciones</TabsTrigger>
             <TabsTrigger value="informes-inicial" className="gap-1.5"><FileBarChart className="w-4 h-4" /> Informes Entrada</TabsTrigger>
             <TabsTrigger value="informes-final" className="gap-1.5"><FileBarChart2 className="w-4 h-4" /> Informes Salida</TabsTrigger>
-            
+            <TabsTrigger value="excepciones" className="gap-1.5"><ShieldCheck className="w-4 h-4" /> Excepciones</TabsTrigger>
             <TabsTrigger value="configuracion" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
           </TabsList>
 
@@ -367,6 +368,9 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
           </TabsContent>
           <TabsContent value="informes-final">
             <AdminReporte360Tab fase="final" />
+          </TabsContent>
+          <TabsContent value="excepciones">
+            <AdminExcepciones360Tab isViewer={!can("encuesta360", "update")} />
           </TabsContent>
         </Tabs>
       );

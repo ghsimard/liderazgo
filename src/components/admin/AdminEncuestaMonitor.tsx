@@ -19,24 +19,13 @@ import {
   type LoadedLogos,
 } from "@/utils/pdfLogoHelper";
 import { useAppImages } from "@/hooks/useAppImages";
-import { isQuibdoCentroEducativo } from "@/utils/institutionType";
-
-
-/** Required counts per tipo_formulario */
-const ROLE_LIMITS: Record<string, { min: number; max: number; label: string }> = {
-  autoevaluacion: { min: 1, max: 1, label: "Autoevaluación" },
-  directivo: { min: 2, max: 2, label: "Directivo Par" },
-  docente: { min: 2, max: 2, label: "Docente" },
-  administrativo: { min: 2, max: 2, label: "Administrativo" },
-  estudiante: { min: 1, max: 1, label: "Estudiante" },
-  acudiente: { min: 1, max: 1, label: "Acudiente" },
-};
-
-const ROLE_KEYS = Object.keys(ROLE_LIMITS);
-
-/** Para Centros Educativos de Quibdó los estudiantes son demasiado jóvenes: se excluye "estudiante". */
-const roleKeysFor = (institucion: string, region: string): string[] =>
-  isQuibdoCentroEducativo(institucion, region) ? ROLE_KEYS.filter((k) => k !== "estudiante") : ROLE_KEYS;
+import {
+  ROLE_LIMITS,
+  ROLE_KEYS,
+  fetchExcepciones360,
+  roleKeysForInstitucion,
+  type ExcepcionesMap,
+} from "@/utils/encuesta360Requirements";
 
 interface DirectivoRow {
   nombre: string;
@@ -58,6 +47,8 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
   const [filterMode, setFilterMode] = useState<"all" | "incomplete" | "complete">("all");
   const [regionFilter, setRegionFilter] = useState<string>("__all__");
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [excepciones, setExcepciones] = useState<ExcepcionesMap>(new Map());
+  const roleKeysFor = (institucion: string) => roleKeysForInstitucion(institucion, excepciones);
   const { toast } = useToast();
   const { images: appImages } = useAppImages();
 
@@ -72,6 +63,9 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
 
   const loadData = async () => {
     setLoading(true);
+
+    const excMap = await fetchExcepciones360();
+    setExcepciones(excMap);
 
     const { data: fichas } = await supabase
       .from("fichas_rlt")
@@ -107,7 +101,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
         }
       });
 
-      const keysForRow = roleKeysFor(d.institucion, d.region);
+      const keysForRow = roleKeysForInstitucion(d.institucion, excMap);
       const incomplete = keysForRow.some((k) => counts[k] < ROLE_LIMITS[k].min);
       return { ...d, counts, incomplete };
     });
@@ -300,7 +294,7 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
 
         let xPos = margin + colName + colInst;
         const midY = y + actualRowH / 2 + 1.5;
-        const rowKeys = roleKeysFor(r.institucion, r.region);
+        const rowKeys = roleKeysFor(r.institucion);
         ROLE_KEYS.forEach((k) => {
           if (!rowKeys.includes(k)) {
             doc.setTextColor(150, 150, 150);
@@ -454,11 +448,11 @@ export default function AdminEncuestaMonitor({ fase = "inicial" }: AdminEncuesta
                     <TableCell className="font-medium text-sm">{r.nombre}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{r.institucion}</TableCell>
                     {ROLE_KEYS.map((k) => {
-                      const allowed = roleKeysFor(r.institucion, r.region).includes(k);
+                      const allowed = roleKeysFor(r.institucion).includes(k);
                       if (!allowed) {
                         return (
                           <TableCell key={k} className="text-center">
-                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold bg-muted text-muted-foreground" title="No aplica para Centros Educativos">
+                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold bg-muted text-muted-foreground" title="No aplica para esta institución">
                               —
                             </span>
                           </TableCell>

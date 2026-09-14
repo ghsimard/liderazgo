@@ -59,6 +59,7 @@ const PUBLIC_READ_TABLES = new Set([
   "satisfaccion_report_content",
   "satisfaccion_form_definitions",
   "encuesta_360_visibility",
+  "encuesta_360_excepciones",
   "operator_permissions",
 ]);
 
@@ -147,6 +148,7 @@ const ALLOWED_TABLES = new Set([
   "satisfaccion_form_definitions",
   "satisfaccion_report_content",
   "encuesta_360_visibility",
+  "encuesta_360_excepciones",
 ]);
 
 // ── Schéma dédié `e360` (application Encuesta 360 autonome) ──────────

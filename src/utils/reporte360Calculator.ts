@@ -9,6 +9,7 @@ import {
   COMPETENCY_LABELS,
   REPORT_PHRASES,
 } from "@/data/reporte360Phrases";
+import { fetchExcepciones360, rolesFaltantes as calcRolesFaltantes } from "@/utils/encuesta360Requirements";
 
 // ── Score conversion ──
 
@@ -87,6 +88,8 @@ export interface Reporte360Data {
   observerAvg: number;
   /** Whether actual survey responses exist for this directivo in this phase */
   hasResponses: boolean;
+  /** Roles que aún no alcanzan el mínimo requerido (informe parcial) */
+  rolesFaltantes: string[];
 }
 
 // ── Main calculation function ──
@@ -310,6 +313,14 @@ export async function calcularReporte360(nombreDirectivo: string, institucion: s
     };
   });
 
+  // 8b. Roles que no alcanzan el mínimo (informe parcial)
+  const countsPorRol: Record<string, number> = { autoevaluacion: autoEncuesta ? 1 : 0 };
+  observerEncuestas.forEach((e) => {
+    countsPorRol[e.tipo_formulario] = (countsPorRol[e.tipo_formulario] || 0) + 1;
+  });
+  const excepciones = await fetchExcepciones360();
+  const faltantes = calcRolesFaltantes(institucion, countsPorRol, excepciones);
+
   // 9. Global averages
   const allAutoScores = competencyScores.map((c) => c.autoScore).filter((s) => s > 0);
   const allObsScores = competencyScores.map((c) => c.observerScore).filter((s) => s > 0);
@@ -323,6 +334,7 @@ export async function calcularReporte360(nombreDirectivo: string, institucion: s
     autoAvg: avg(allAutoScores),
     observerAvg: avg(allObsScores),
     hasResponses: !!autoEncuesta || observerEncuestas.length > 0,
+    rolesFaltantes: faltantes,
   };
 }
 
