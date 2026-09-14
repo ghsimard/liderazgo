@@ -9,6 +9,7 @@ import {
   COMPETENCY_LABELS,
   REPORT_PHRASES,
 } from "@/data/reporte360Phrases";
+import { fetchExcepciones360, rolesFaltantes as calcRolesFaltantes } from "@/utils/encuesta360Requirements";
 
 // ── Score conversion ──
 
