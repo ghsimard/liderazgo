@@ -242,6 +242,24 @@ export async function generarReporte360PDF(
   drawPageHeader();
   y = 25;
 
+  // Aviso de informe parcial
+  if (data.rolesFaltantes && data.rolesFaltantes.length > 0) {
+    const boxW = doc.internal.pageSize.getWidth() - margin * 2;
+    doc.setFontSize(8.5);
+    doc.setFont("helvetica", "normal");
+    const avisoTxt = doc.splitTextToSize(
+      `INFORME PARCIAL: aun no se alcanza el minimo de respuestas en ${data.rolesFaltantes.join(", ")}. Los resultados se calculan con la informacion disponible y pueden variar cuando se completen las encuestas.`,
+      boxW - 8,
+    );
+    const boxH = avisoTxt.length * 4.2 + 6;
+    doc.setDrawColor(120, 120, 120);
+    doc.setFillColor(240, 240, 240);
+    doc.roundedRect(margin, y - 4, boxW, boxH, 1.5, 1.5, "FD");
+    doc.setTextColor(40, 40, 40);
+    doc.text(avisoTxt, margin + 4, y + 1);
+    y += boxH + 4;
+  }
+
   // IDENTIFICACIÓN
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
