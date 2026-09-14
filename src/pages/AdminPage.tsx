@@ -305,7 +305,7 @@ function AdminContent({ activeTab, permissions, isSuperAdmin }: { activeTab: str
             <TabsTrigger value="invitaciones" className="gap-1.5"><Users className="w-4 h-4" /> Invitaciones</TabsTrigger>
             <TabsTrigger value="informes-inicial" className="gap-1.5"><FileBarChart className="w-4 h-4" /> Informes Entrada</TabsTrigger>
             <TabsTrigger value="informes-final" className="gap-1.5"><FileBarChart2 className="w-4 h-4" /> Informes Salida</TabsTrigger>
-            
+            <TabsTrigger value="excepciones" className="gap-1.5"><ShieldCheck className="w-4 h-4" /> Excepciones</TabsTrigger>
             <TabsTrigger value="configuracion" className="gap-1.5"><Settings2 className="w-4 h-4" /> Configuración</TabsTrigger>
           </TabsList>
 
