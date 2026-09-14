@@ -55,13 +55,19 @@ export default function AdminExcepciones360Tab({ isViewer = false }: Props) {
 
     setRows(
       Array.from(seen.entries())
-        .map(([institucion, region]) => ({
-          institucion,
-          region,
-          sinEstudiantes: excMap.get(institucion)?.e ?? false,
-          sinAdministrativos: excMap.get(institucion)?.a ?? false,
-          esCentroEducativo: isCentroEducativo(institucion),
-        }))
+        .map(([institucion, region]) => {
+          const exc = excMap.get(institucion);
+          const ce = isCentroEducativo(institucion);
+          return {
+            institucion,
+            region,
+            // Sin excepción manual, los Centros Educativos quedan exceptuados por defecto.
+            sinEstudiantes: exc ? exc.e : ce,
+            sinAdministrativos: exc ? exc.a : ce,
+            esCentroEducativo: ce,
+            tieneExcepcionManual: !!exc,
+          };
+        })
         .sort((a, b) => a.institucion.localeCompare(b.institucion, "es"))
     );
     setLoading(false);
